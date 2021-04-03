@@ -75,7 +75,7 @@ endif
 test32: $(wildcard tests/*.scm)
 	@echo "-- test32 ----------"
 	@rm -f $(FAILED)
-	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm32d $(L) -m32
+	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DOLVM_NOMAIN -o vm32d $(L) -m32
 	@./vm32d
 	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iinclude -DNAKED_VM \
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o ffi32 $(L) -m32
@@ -93,7 +93,7 @@ test32: $(wildcard tests/*.scm)
 test64: $(wildcard tests/*.scm)
 	@echo "-- test64 ----------"
 	@rm -f $(FAILED)
-	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o vm64d $(L) -m64
+	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DOLVM_NOMAIN -o vm64d $(L) -m64
 	@./vm64d
 	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iinclude -DNAKED_VM \
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o ffi64 $(L) -m64
@@ -151,7 +151,7 @@ endif
 
 # -=( vm )=----------------------------------------
 test-vmi:
-	$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DEMBEDDED_VM -o $(vmi)$(affix)$(bits) $(L)
+	$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DOLVM_NOMAIN -o $(vmi)$(affix)$(bits) $(L)
 	   @echo "$(vmi)$(affix)$(bits):"
 	   @$(vmi)$(affix)$(bits)
 vmi=tmp/vmi
@@ -243,7 +243,7 @@ testing-embed: tests/embed.c src/olvm.c include/ol/ol.h tmp/repl.c
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
 	@printf ", debug-32: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DEMBEDDED_VM \
+	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embed32d \
 	   -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m32
 	@if tmp/embed32d >/dev/null; then\
@@ -253,7 +253,7 @@ ifeq ($(HAS_32CDEFS),1)
 	   touch $(FAILED) ;\
 	fi
 	@printf ", release-32: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DEMBEDDED_VM \
+	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embed32r \
 	   -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m32
 	@if tmp/embed32r >/dev/null; then\
@@ -265,7 +265,7 @@ ifeq ($(HAS_32CDEFS),1)
 endif
 ifeq ($(HAS_64CDEFS),1)
 	@printf ", debug-64: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DEMBEDDED_VM \
+	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embed64d \
 	   -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m64
 	@if tmp/embed64d >/dev/null; then\
@@ -275,7 +275,7 @@ ifeq ($(HAS_64CDEFS),1)
 	   touch $(FAILED) ;\
 	fi
 	@printf ", release-64: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DEMBEDDED_VM \
+	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embed64r \
 	   -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m64
 	@if tmp/embed64r >/dev/null; then\
@@ -287,7 +287,7 @@ ifeq ($(HAS_64CDEFS),1)
 endif
 else
 	@printf ", debug: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DEMBEDDED_VM \
+	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embedd \
 	   -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
 	@if tmp/embedd >/dev/null; then\
@@ -297,7 +297,7 @@ else
 	   touch $(FAILED) ;\
 	fi
 	@printf ", release: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DEMBEDDED_VM \
+	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embedr \
 	   -Iextensions -Iinclude -lm $(CFLAGS_RELEASE)
 	@if tmp/embedr >/dev/null; then\

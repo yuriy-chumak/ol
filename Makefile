@@ -267,7 +267,7 @@ include/ol/vm.h: src/olvm.c
 olvm.wasm: src/olvm.c include/ol/vm.h
 	emcc src/olvm.c extensions/embed.c tmp/repl.c -Os \
 	   -o olvm.html -Iinclude \
-	   -DEMBEDDED_VM=1 -DHAS_DLOPEN=0 \
+	   -DOLVM_NOMAIN=1 -DHAS_DLOPEN=0 \
 	   -Dbinary_repl_start=repl \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \

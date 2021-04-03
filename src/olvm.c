@@ -67,6 +67,14 @@ typedef uintptr_t word;
 //	ppc:       4;    ppc64, ppc64le: 8
 //	raspbian:  4
 
+#ifndef NAKED_VM
+#define NAKED_VM 0
+#endif
+
+#ifndef OLVM_NOMAIN
+#define OLVM_NOMAIN 0
+#endif
+
 //
 // virtual machine:
 typedef struct ol_t ol_t;
@@ -1074,11 +1082,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 #ifndef HAS_UNSAFES
 #define HAS_UNSAFES 1 // allows "unsafe" memory access operations
 #endif
-
-#ifndef EMBEDDED_VM   // use as embedded vm in your project
-#define EMBEDDED_VM 0
-#endif
-
 
 #ifndef HAS_STRFTIME
 #define HAS_STRFTIME 1
@@ -3151,7 +3154,7 @@ loop:;
 		#if NAKED_VM
 			| 000000001
 		#endif
-		#if EMBEDDED_VM
+		#if OLVM_NOMAIN
 			| 000000002
 		#endif
 		#if OLVM_FFI
@@ -4014,7 +4017,7 @@ loop:;
 				void* module;
 				if ((word) filename == IFALSE) {
 					module = dlopen(
-				# if defined(__ANDROID__) && !defined(EMBEDDED_VM)
+				# if defined(__ANDROID__) && !OLVM_NOMAIN
 						MODULE_FILENAME
 				# else						
 						OLVM_LIBRARY_SO_NAME
@@ -4999,14 +5002,14 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 
 typedef struct ol_t OL;
 
-#ifndef NAKED_VM
+#if NAKED_VM
+#	define language NULL
+#else
 	extern unsigned char repl[];
 #	define language repl
-#else
-#	define language NULL
 #endif
 
-#if !EMBEDDED_VM
+#if !OLVM_NOMAIN
 int main(int argc, char** argv)
 {
 	unsigned char* bootstrap = language;
@@ -5016,7 +5019,7 @@ int main(int argc, char** argv)
 #endif
 
 	//  vm special key: if command line is "--version" then print a version
-#ifdef NAKED_VM
+#if NAKED_VM
 	if (argc == 2 && strcmp(argv[1], "-v") == 0) {
 		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
 		return 0;
@@ -5048,7 +5051,7 @@ int main(int argc, char** argv)
 	}
 
 	if (file == 0) { // входной файл не указан
-#ifdef NAKED_VM
+#if NAKED_VM
 		goto invalid_binary_script;
 #else
 		argc--; argv++;
@@ -5060,7 +5063,7 @@ int main(int argc, char** argv)
 
 		if (stat(file, &st))
 			goto can_not_stat_file;		// не найден файл или он пустой
-#ifdef NAKED_VM
+#if NAKED_VM
 		if (st.st_size == 0)
 			goto invalid_binary_script;
 #endif
@@ -5085,7 +5088,7 @@ int main(int argc, char** argv)
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
-#ifdef NAKED_VM
+#if NAKED_VM
 			goto invalid_binary_script;
 #else
 			close(bin);
@@ -5158,7 +5161,7 @@ int main(int argc, char** argv)
 	message = "Can't read file";
 	goto fail;
 
-#	ifdef NAKED_VM
+#	if NAKED_VM
 	// no_binary_script:
 	// message = "No binary script provided";
 	// errno = ENOENT;
@@ -5198,7 +5201,7 @@ OLVM_new(unsigned char* bootstrap)
 	// подготовим очереди в/в
 	//fifo_clear(&handle->i);
 	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
-#ifdef EMBEDDED_VM
+#if OLVM_NOMAIN
 	char* S = 0;
 	if (bootstrap && *bootstrap >= 0x20) {
 		S = (char*)bootstrap;
@@ -5245,7 +5248,7 @@ OLVM_new(unsigned char* bootstrap)
 
 	// а теперь подготовим аргументы:
 	word* userdata = (word*) INULL;
-#ifdef EMBEDDED_VM
+#if OLVM_NOMAIN
 	if (S) {
 		char template[] = "/tmp/olvmXXXXXX";
 		int file = mkstemp(template);

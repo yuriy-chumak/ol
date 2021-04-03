@@ -33,7 +33,6 @@ typedef uintptr_t word;
 		ASSERT(output assertion) \
 	END()
 
-#if EMBEDDED_VM
 int main(int argc, char** argv)
 {
 	int failed = 0;
@@ -81,4 +80,3 @@ int main(int argc, char** argv)
 	///
 	return (failed != 0);
 }
-#endif

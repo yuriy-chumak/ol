@@ -264,8 +264,8 @@ If you want to enable/disable some olvm features you can use -Dxxx or -Dxxx=y gc
 
 |Variable      |Value           |Meaning |
 |--------------|----------------|--------|
-|NAKED_VM      | 1\|0, default 0|Disables including of REPL into binary|
-|EMBEDDED_VM   | 1\|0, default 0|Disables 'main' function, makes olvm embed|
+|NAKED_VM      | 1\|0, default 0|Disables including of REPL into binary (via external 'repl' unsigned char\*)|
+|OLVM_NOMAIN   | 1\|0, default 0|Disables 'main' function, makes olvm embed|
 |OLVM_FFI      | 1\|0, default 1|Enables FFI support|
 |OLVM_CALLABLES| 1\|0, default 1|Enables FFI callbacks support|
 |OLVM_INEXACTS | 1\|0, default 1|Enables inexact math support|
@@ -523,7 +523,7 @@ int main(int argc, char** argv)
 }
 ```
 
-Just compile with -DEMBEDDED_VM and link with repl binary.
+Just compile with -DOLVM_NOMAIN and link with repl binary.
 
 Another sample can be found in samples/pacman/ folder.
 
