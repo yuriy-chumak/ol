@@ -68,54 +68,54 @@ int main(int argc, char** argv)
 	// regular C variables to olvm instances.
 	// Please, don't affraid
 
-// --cut-->
-// C preprocessor trick, some kind of "map":
-// https://github.com/swansontec/map-macro
-///*
-#define EVAL0(...) __VA_ARGS__
-#define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
-#define EVAL2(...) EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
-#define EVAL3(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
-#define EVAL4(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
-#define EVAL(...)  EVAL4(EVAL4(EVAL4(__VA_ARGS__)))
+	// --cut-->
+	// C preprocessor trick, some kind of "map":
+	// https://github.com/swansontec/map-macro
+	///*
+	#define EVAL0(...) __VA_ARGS__
+	#define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
+	#define EVAL2(...) EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
+	#define EVAL3(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
+	#define EVAL4(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
+	#define EVAL(...)  EVAL4(EVAL4(EVAL4(__VA_ARGS__)))
 
-#define MAP_END(...)
-#define MAP_OUT
-#define MAP_COMMA ,
+	#define MAP_END(...)
+	#define MAP_OUT
+	#define MAP_COMMA ,
 
-#define MAP_GET_END2() 0, MAP_END
-#define MAP_GET_END1(...) MAP_GET_END2
-#define MAP_GET_END(...) MAP_GET_END1
-#define MAP_NEXT0(test, next, ...) next MAP_OUT
-#define MAP_NEXT1(test, next) MAP_NEXT0(test, next, 0)
-#define MAP_NEXT(test, next)  MAP_NEXT1(MAP_GET_END test, next)
+	#define MAP_GET_END2() 0, MAP_END
+	#define MAP_GET_END1(...) MAP_GET_END2
+	#define MAP_GET_END(...) MAP_GET_END1
+	#define MAP_NEXT0(test, next, ...) next MAP_OUT
+	#define MAP_NEXT1(test, next) MAP_NEXT0(test, next, 0)
+	#define MAP_NEXT(test, next)  MAP_NEXT1(MAP_GET_END test, next)
 
-#define MAP0(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP1)(f, peek, __VA_ARGS__)
-#define MAP1(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP0)(f, peek, __VA_ARGS__)
+	#define MAP0(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP1)(f, peek, __VA_ARGS__)
+	#define MAP1(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP0)(f, peek, __VA_ARGS__)
 
-#define MAP_LIST_NEXT1(test, next) MAP_NEXT0(test, MAP_COMMA next, 0)
-#define MAP_LIST_NEXT(test, next)  MAP_LIST_NEXT1(MAP_GET_END test, next)
+	#define MAP_LIST_NEXT1(test, next) MAP_NEXT0(test, MAP_COMMA next, 0)
+	#define MAP_LIST_NEXT(test, next)  MAP_LIST_NEXT1(MAP_GET_END test, next)
 
-#define MAP_LIST0(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST1)(f, peek, __VA_ARGS__)
-#define MAP_LIST1(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST0)(f, peek, __VA_ARGS__)
+	#define MAP_LIST0(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST1)(f, peek, __VA_ARGS__)
+	#define MAP_LIST1(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST0)(f, peek, __VA_ARGS__)
 
-#define MAP(f, ...) EVAL(MAP1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
-#define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
-//*/  end of C preprocessor trick
+	#define MAP(f, ...) EVAL(MAP1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+	#define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+	//*/  end of C preprocessor trick
 
-// just code simplification (magic):
-// we automatically call new_string or make_integer depends on argument
-//   but in general case you should manually do this. or not.
-#define _Q(x) \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),   new_string(&ol, (char*)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),    new_string(&ol, (char*)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), int),      make_integer((int)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned), make_integer((int)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
-	IFALSE))))))
-#define eval(...) OL_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
-// <--cut--
+	// just code simplification (magic):
+	// we automatically call new_string or make_integer depends of argument
+	//   but in general case you should manually do this. or not.
+	#define _Q(x) \
+		__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),   new_string(&ol, (char*)(uintptr_t)x), \
+		__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),    new_string(&ol, (char*)(uintptr_t)x), \
+		__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
+		__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), int),      make_integer((int)(uintptr_t)x), \
+		__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned), make_integer((int)(uintptr_t)x), \
+		__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
+		IFALSE))))))
+	#define eval(...) OL_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
+	// <--cut--
 
 	// * ok, how about functions? let's sum three numbers
 	r = eval("+", 1, 2, 103);
@@ -126,13 +126,13 @@ int main(int argc, char** argv)
 	assert (r != IFALSE);
 
 	r = eval("f", 7);
-	assert (r == make_integer(5040)); // 7!
+	assert (r == make_integer(5040)); // 7! == 5040
 
 	// Much better, huh?
 
 	// And now we will try to compile some function and execute it without using string names!
 	// first of all we need function compiler. let's compile declared above 'f'
-	r = eval("(vm:pin f)");
+	r = eval("(vm:pin f)"); // or we can do OLVM_pin(ol.vm, eval("f")) and use r as integer
 	assert (is_value(r));
 
 	// very simple, yes? Please, don't forget to delete this function when you will no need it anymore
@@ -168,8 +168,9 @@ int main(int argc, char** argv)
 
 	// let's execute one
 	r = OL_eval(&ol, new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])),
-						new_bytevector(&ol, message, sizeof(message)/sizeof(message[0])),
-						make_integer(3), 0);
+	                 new_bytevector(&ol, message, sizeof(message)/sizeof(message[0])),
+	                 make_integer(3),
+					 0);
 	assert (is_bytevector(r));
 	assert (bytevector_length(r) == 47);
 	assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", 47) == 0);
@@ -192,21 +193,3 @@ int main(int argc, char** argv)
 	printf("ok.\n");
 	return 0;
 }
-
-
-// -----------------------------------------------------------------------------
-// sample public functions:
-/*TALKBACK_API
-int add_ii(int fa, int fb)
-{
-	// math
-	int a = fa;    fprintf(stderr, "DEBUG: add_ii (a) = %d\n", a);
-	int b = fb;    fprintf(stderr, "DEBUG: add_ii (b) = %d\n", b);
-	int r = a + b; fprintf(stderr, "DEBUG: add_ii (r) = %d\n", r);
-
-	// result
-	return r;
-}
-*/
-
-

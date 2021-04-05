@@ -85,7 +85,7 @@ OLVM_run(struct olvm_t* ol, int argc, char** argv);
  * \note First argument must be valid olvm runnable object (function, bytecode, etc.)
  */
 uintptr_t
-OLVM_continue(struct olvm_t* ol, int argc, void** argv);
+OLVM_evaluate(struct olvm_t* ol, uintptr_t function, int argc, uintptr_t* argv);
 
 uintptr_t
 OLVM_apply(struct olvm_t* ol, uintptr_t function, uintptr_t args);
@@ -228,14 +228,19 @@ struct olvm_t {
 		is_enum(u) ? ol2small(u)\
 			: (uintptr_t)ol2small(car(u)) | (uintptr_t)ol2small(cadr(u)) << ((sizeof (uintptr_t) * 8) - 8)/*FBITS*/;})
 
+#define is_vector(x) ({ uintptr_t s = (uintptr_t)(x);\
+		is_reference(s) ?\
+			reftype(s) == 2 : 0; })
+
 
 // internal structure that helps working with olvm
 typedef struct ol_t
 {
 	struct olvm_t* vm;  // ol virtual machine instance
-	uintptr_t eval; // embed pinned 'eval' function id
+	size_t eval; // embed pinned 'eval' function id
 } ol_t;
 
+static
 uintptr_t
 OL_new(ol_t* embed, unsigned char* bootstrap)
 {
@@ -277,24 +282,42 @@ OL_new(ol_t* embed, unsigned char* bootstrap)
  *
  * \param ol embed ol instance
  */
+static
 uintptr_t OL_evalv(ol_t* embed, va_list* vp)
 {
 	va_list vl;
 
-	va_copy(vl, *vp);
 	int count = 0;
+	va_copy(vl, *vp);
 	while (va_arg(vl, void*) != 0)
 		count++;
 	uintptr_t* args = __builtin_alloca((count+1) * sizeof(uintptr_t)); // just one for sanity zero
 
-	va_copy(vl, *vp);
-	args[0] = OLVM_deref(embed->vm, embed->eval); // deref right now, cause GC possibly moved the object
 	int i = 0;
-	while ((args[++i] = (uintptr_t)va_arg(vl, void*)) != 0);
+	va_copy(vl, *vp);
+	for (int i = 0; i < count; i++)
+		args[i] = va_arg(vl, uintptr_t);
 
-	return OLVM_continue(embed->vm, i, (void**)args);
+	// embed->eval is a (lambda (args) ...),
+	// so we need to prepare a list of arguments
+	uintptr_t userdata = 0x236; // #null
+	{
+		uintptr_t* fp = embed->vm->fp;
+		for (int i = count-1; i >= 0; i--, fp += 3) {
+			fp[0] = 0x30006; // TPAIR
+			fp[1] = args[i];
+			fp[2] = userdata;
+			userdata = (uintptr_t) fp;
+		}
+		embed->vm->fp = fp;
+	}
+
+	return OLVM_evaluate(embed->vm,
+		OLVM_deref(embed->vm, embed->eval),
+		1, &userdata);
 }
 
+static
 uintptr_t OL_eval(ol_t* embed, ...)
 {
 	va_list vl;
@@ -302,11 +325,11 @@ uintptr_t OL_eval(ol_t* embed, ...)
 	return OL_evalv(embed, &vl);
 }
 
+static
 void OL_delete(ol_t* embed)
 {
 	OLVM_free(embed->vm);
 }
-
 
 // c++ interface:
 #ifdef __cplusplus
@@ -347,9 +370,9 @@ typedef struct ol_t OL;
 // "new_" prefix do the allocation (in olvm heap, sure).
 
 // same as lisp (ref object n), (car object) and (cdr object) functions
-#define ref(ob, n) (uintptr_t)(((uintptr_t*)(ob))[n+1]) // +1 is for header skipping
-#define car(ob) ref(ob, 0)
-#define cdr(ob) ref(ob, 1)
+#define ref(ob, n) (uintptr_t)(((uintptr_t*)(ob))[n]) // +1 is for header skipping
+#define car(ob) ref(ob, 1)
+#define cdr(ob) ref(ob, 2)
 
 // caar, cadr, cdar, cddr - you can remove this
 #define caar(o) car(car(o))

@@ -5394,7 +5394,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 }
 
 word
-OLVM_continue(OL* ol, int argc, void** argv)
+OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 {
 #ifndef __EMSCRIPTEN__
 	int r = setjmp(ol->fail);
@@ -5402,26 +5402,20 @@ OLVM_continue(OL* ol, int argc, void** argv)
 		return ol->R[3];
 	}
 #endif
-
-	// точка входа в программу
-	word this = (word)argv[0];
-	unsigned short acc = 2;
-
-	// подготовим аргументы:
-	word userdata = INULL;
-	{
-		word* fp = ol->heap.fp;
-
-		argv += argc - 1;
-		for (ptrdiff_t i = argc; i > 1; i--, argv--) {
-			char *v = *argv;
-			userdata = (word) new_pair (v, userdata);
-		}
-
-		ol->heap.fp = fp;
+	if (argc + 3 > NR) {
+		E("arguments count exceeds the maximum value (%d)", NR);
+		return IFALSE;
 	}
-	ol->R[3] = ol->this; // continuation (?)
-	ol->R[4] = userdata;
+
+	// функция к выполнению
+	word this = function;
+
+	// подготовим аргументы
+	unsigned short acc = 1;
+	for (ptrdiff_t i = 0; i < argc; i++)
+		ol->R[acc++ + 3] = (word)argv[i];
+
+	ol->R[3] = IRETURN; // continuation
 
 	// теперь все готово для запуска главного цикла виртуальной машины
 	ol->this = this;
