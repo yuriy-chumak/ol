@@ -5267,6 +5267,7 @@ OLVM_new(unsigned char* bootstrap)
 	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
 	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
 	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
+	handle->ffpin = 4; // first free pin is definitely 4
 
 
 	handle->open = os_open;
