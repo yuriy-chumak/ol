@@ -5368,18 +5368,17 @@ OLVM_run(OL* ol, int argc, char** argv)
 	}
 	ol->R[4] = userdata;
 
-	// результат выполнения скрипта
 	heap_t* heap = &ol->heap;
-	sandboxp = 0;    // static variable
+	sandboxp = 0;  // static variable
 
 	word* ptrs = (word*) heap->begin;
-	int nobjs = header_size(ptrs[0]) - 1;
+	int n_objs = header_size(ptrs[0]) - 1;
 
 	// точка входа в программу - последняя лямбда загруженного образа (λ (args))
 	// thinkme: может стоит искать и загружать какой-нибудь main() ?
-	word this = ptrs[nobjs];
+	word this = ptrs[n_objs];
 
-	unsigned short acc = 2; // boot always calls with 1+1 args, no support for >255arg functions
+	unsigned short acc = 1+1; // boot always calls with 1+1 args, no support for >255arg functions
 
 	// теперь все готово для запуска главного цикла виртуальной машины
 	ol->this = this;
