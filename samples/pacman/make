@@ -1,8 +1,0 @@
-#!/bin/sh
-
-ld -r -b binary -o repl.o ../../repl
-gcc main.c texturing.c -I. -lGL -lglut -lpng \
-   -I../../include -DNAKED_VM -DOLVM_NOMAIN -DNDEBUG \
-   -D_binary_repl_start=_binary_______repl_start \
-   ../../src/olvm.c repl.o -ldl -lm -pthread \
-   -Xlinker --export-dynamic

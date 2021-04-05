@@ -2,7 +2,7 @@
    (import (otus lisp)
            (otus random!))
    (export
-      points
+      points born-blinky
       get-point eat-the-point get-level
       set-blinky get-blinky
       A* blinky-move)
@@ -81,16 +81,17 @@
 (define HEIGHT (size points))
 
 ;(define blinky 'blinky)
-(fork-server 'blinky (lambda ()
-   (let this ((x 13) (y 18))
-      (let*((envelope (wait-mail))
-            (sender msg envelope))
-         (case msg
-            (['set x y]
-               (this x y))
-            (['get]
-               (mail sender (cons x y))
-               (this x y)))))))
+(define (born-blinky)
+   (fork-server 'blinky (lambda ()
+      (let this ((x 13) (y 18))
+         (let*((envelope (wait-mail))
+               (sender msg envelope))
+            (case msg
+               (['set x y]
+                  (this x y))
+               (['get]
+                  (mail sender (cons x y))
+                  (this x y))))))))
 
 (define (set-blinky x y)
    (mail 'blinky ['set x y]))

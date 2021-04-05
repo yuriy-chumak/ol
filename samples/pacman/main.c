@@ -30,63 +30,17 @@ unsigned frames = 0;
 // unsigned ticks = 0; // todo: up every 100 ms
 unsigned rotation = 0;
 
-uintptr_t eat_the_point;
-uintptr_t get_level;
+// our lisp logic:
+void ol_new_ol();
+void ol_delete_ol();
 
-// olvm:
-ol_t ol;
-
-// just code simplification, some kind of magic to not manually write 'new_string' and 'make_integer':
-// we automatically call new_string or make_integer dependly on argument type
-// but in general case you should do this manually. or not.
-// C preprocessor trick, some kind of "map":
-// https://github.com/swansontec/map-macro
-///*
-#define EVAL0(...) __VA_ARGS__
-#define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
-#define EVAL2(...) EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
-#define EVAL3(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
-#define EVAL4(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
-#define EVAL(...)  EVAL4(EVAL4(EVAL4(__VA_ARGS__)))
-
-#define MAP_END(...)
-#define MAP_OUT
-#define MAP_COMMA ,
-
-#define MAP_GET_END2() 0, MAP_END
-#define MAP_GET_END1(...) MAP_GET_END2
-#define MAP_GET_END(...) MAP_GET_END1
-#define MAP_NEXT0(test, next, ...) next MAP_OUT
-#define MAP_NEXT1(test, next) MAP_NEXT0(test, next, 0)
-#define MAP_NEXT(test, next)  MAP_NEXT1(MAP_GET_END test, next)
-
-#define MAP0(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP1)(f, peek, __VA_ARGS__)
-#define MAP1(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP0)(f, peek, __VA_ARGS__)
-
-#define MAP_LIST_NEXT1(test, next) MAP_NEXT0(test, MAP_COMMA next, 0)
-#define MAP_LIST_NEXT(test, next)  MAP_LIST_NEXT1(MAP_GET_END test, next)
-
-#define MAP_LIST0(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST1)(f, peek, __VA_ARGS__)
-#define MAP_LIST1(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST0)(f, peek, __VA_ARGS__)
-
-#define MAP(f, ...) EVAL(MAP1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
-#define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
-//*/  end of C preprocessor trick
-
-#define _Q(x) \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),   new_string(&ol, (char*)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),    new_string(&ol, (char*)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed char),    make_integer((signed)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned char),  make_integer((unsigned)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed short),   make_integer((signed)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned short), make_integer((unsigned)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed int),     make_integer((signed)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned int),   make_integer((unsigned)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
-	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
-	IFALSE))))))))))
-
-#define eval(...) OL_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
+uintptr_t ol_points();
+void ol_get_blinky(int* x, int* y);
+size_t ol_get_heap_memory();
+size_t ol_get_used_memory();
+void ol_eat_the_point(int x, int y);
+void ol_blinky_move(int x, int y);
+int ol_get_level(int x, int y);
 
 
 // Drawing functions
@@ -136,12 +90,13 @@ void draw(void)
 	drawBackground();
 
 	glBindTexture(GL_TEXTURE_2D, point);
-	uintptr_t points = eval("points");                         assert(is_reference(points));
+	uintptr_t points = ol_points();
+	assert(is_reference(points));
 	int points_left = 0;
 	for (int y = 0; y < 31; y++) {
-		uintptr_t line = ref(points, y);
+		uintptr_t line = ref(points, y+1);
 		for (int x = 0; x < 28; x++) {
-			if (ol2int(ref(line, x)) == 1) {
+			if (ol2int(ref(line, x+1)) == 1) {
 				points_left++;
 				drawPoint(x, y);
 			}
@@ -156,10 +111,11 @@ void draw(void)
 
 	glBindTexture(GL_TEXTURE_2D, blinky);
 	{
-		uintptr_t ps = eval("(get-blinky)");                   assert(is_pair(ps));
-		int x = ol2int(car(ps));
-		int y = ol2int(cdr(ps)) + 3;
+		int x, y;
+		ol_get_blinky(&x, &y);
 		float emoji = rand() % 4 / 4.0;
+
+		y += 3;
 		glBegin(GL_QUADS);
 		glTexCoord2d(0, emoji + 0.25); glVertex2f(x, y);
 		glTexCoord2d(0, emoji);        glVertex2f(x, y+1);
@@ -173,9 +129,13 @@ void draw(void)
 	gettimeofday(&now, NULL);
 
 	if (now.tv_sec != timestamp.tv_sec) {
-		int total = ol2int(eval("(ref (syscall 1117) 3)"));
-		int used = ol2int(eval("(ref (syscall 1117) 1)"));
-		printf("fps: %d, memory used: %d/%d (%d%%)\n", frames, total, used, (used * 100) / total);
+		size_t heap = ol_get_heap_memory();
+		size_t used = ol_get_used_memory();
+		printf("fps: %d, used %ld bytes of %ld allocated heap (%ld%%)\n",
+			frames,
+			used * sizeof(uintptr_t),
+			heap * sizeof(uintptr_t),
+			(used * 100) / heap);
 		timestamp = now;
 		frames = 0;
 	}
@@ -216,14 +176,7 @@ void init(void)
 	winner =     loadTexture("resources/winner.png", 0, 0);
 
 	// initial vm communication
-	eval("(import (main))");
-	eval("eat-the-point", mainx, mainy);
-
-	// compile script functions for speedup
-	// but this is not required - we still can call this functions
-	// by name, not by pinned id
-	eat_the_point = eval("(vm:pin eat-the-point)");
-	get_level = eval("(vm:pin get-level)");
+	ol_eat_the_point(mainx, mainy);
 }
 
 void idle() {
@@ -236,12 +189,11 @@ void idle() {
 	if (usec + sec * 1000000 > 1000000/3) { // 3 times per second
 		blinkytimestamp = now;
 		if (!finita && !youwin)
-			eval("blinky-move", mainx, mainy);                    //check_error();
+			ol_blinky_move(mainx, mainy);                    //check_error();
 	}
 
-	uintptr_t ps = eval("(get-blinky)");                   assert(is_pair(ps));
-	int x = ol2int(car(ps));
-	int y = ol2int(cdr(ps));
+	int x, y;
+	ol_get_blinky(&x, &y);
 	if (x == mainx && y == mainy) {
 		finita = 1;
 	}
@@ -269,23 +221,20 @@ void keys(int key, int x, int y) {
 	}
 
 	if (!finita && !youwin) {
-		uintptr_t p = eval(get_level, mainx+dx, mainy+dy); assert(is_enum(p));
-		if (ol2small(p) == 1) {
+		int p = ol_get_level(mainx+dx, mainy+dy);
+		if (p == 1) {
 			mainx += dx;
 			mainy += dy;
-			eval(eat_the_point, mainx, mainy);
+			ol_eat_the_point(mainx, mainy);
 		}
 	}
 	glutPostRedisplay();
 }
 
-extern unsigned char _binary_______repl_start[];
-
 //Main program
 int main(int argc, char **argv)
 {
-	OL_new(&ol, _binary_______repl_start); // ol creation
-	eval("print", "do some logs: ", 42);
+	ol_new_ol();
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB|GLUT_DOUBLE);
@@ -307,6 +256,6 @@ int main(int argc, char **argv)
 	// let's go
 	glutMainLoop();
 
-	OL_delete(&ol);
+	ol_delete_ol();
 	return 0;
 }
