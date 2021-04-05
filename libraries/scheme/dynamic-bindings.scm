@@ -15,16 +15,18 @@
             ; only vectors allowed
             (let ((index (ref msg 1)))
                (if (not index)   ; #false means "add new parameter"
-                  (let*((index _ (vm:add (get bindings 0 0) 1))
+                  (let*((index _ (vm:add (bindings 0 0) 1))
                         (bindings (put bindings 0 index)))
                      (mail sender index)
                      (loop (put bindings index (cons (ref msg 2) (ref msg 3)))))
+               else
                   ; otherwise set parameter value and return old
-                  (let*((value (getf bindings index))
+                  (let*((value (bindings index #false))
                         (converter (cdr value)))
                      (mail sender (car value))
                      (if (eq? (size msg) 1) ; only return value
                         (loop bindings)
+                     else
                         (loop (put bindings index
                            (if converter
                               (cons (converter (ref msg 2)) converter)
