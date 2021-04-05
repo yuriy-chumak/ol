@@ -97,6 +97,20 @@ word OLVM_apply(olvm_t* ol, word function, word args);
 void*OLVM_userdata (olvm_t* ol, void* userdata);
 void*OLVM_allocate (olvm_t* ol, unsigned words);
 
+// // embed ol API
+// typedef struct ol_t
+// {
+// 	struct olvm_t* vm;  // ol virtual machine instance
+// 	size_t eval; // embedded pinned 'eval' function id
+// } ol_t;
+
+// // this functions works only for valid repl
+// word OL_new(ol_t* ol, unsigned char* bootstrap);
+// void OL_delete(ol_t* ol);
+// word OL_evalv(ol_t* ol, va_list* vp);
+// word OL_eval(ol_t* ol, ...);
+
+// -----------------------------------------------------
 // descriptor format
 // заголовок объекта, то, что лежит у него в ob[0] (*ob):
 //  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1 (почему?, а для GC!)
