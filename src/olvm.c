@@ -77,25 +77,25 @@ typedef uintptr_t word;
 
 //
 // virtual machine:
-typedef struct ol_t ol_t;
+typedef struct olvm_t olvm_t;
 
 // ------------------------------------------------------
 // PUBLIC API:
 
-ol_t*OLVM_new (unsigned char* bootstrap);
-void OLVM_free(ol_t* ol);
-word OLVM_run (ol_t* ol, int argc, char** argv);
-word OLVM_continue(ol_t* ol, int argc, void** argv);
+olvm_t*
+     OLVM_new(unsigned char* bootstrap);
+void OLVM_free(olvm_t* ol);
+word OLVM_run(olvm_t* ol, int argc, char** argv);
+word OLVM_evaluate(olvm_t* ol, word function, int argc, word* argv);
 
 // "pinned" objects supporting functions
-size_t OLVM_pin(ol_t* ol, word ref);
-word OLVM_deref(ol_t* ol, size_t p);
-word OLVM_unpin(ol_t* ol, size_t p);
-word OLVM_apply(ol_t* ol, word function, word args);
+size_t OLVM_pin(olvm_t* ol, word ref);
+word OLVM_deref(olvm_t* ol, size_t p);
+word OLVM_unpin(olvm_t* ol, size_t p);
+word OLVM_apply(olvm_t* ol, word function, word args);
 
-void*OLVM_userdata (ol_t* ol, void* userdata);
-void*OLVM_allocate (ol_t* ol, unsigned words);
-
+void*OLVM_userdata (olvm_t* ol, void* userdata);
+void*OLVM_allocate (olvm_t* ol, unsigned words);
 
 // descriptor format
 // заголовок объекта, то, что лежит у него в ob[0] (*ob):
@@ -397,7 +397,7 @@ struct heap_t
 	// вызвать GC если в памяти мало места (в словах)
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
-	int (*gc)(struct ol_t* ol, int ws);
+	int (*gc)(struct olvm_t* ol, int ws);
 };
 typedef struct heap_t heap_t;
 
@@ -1806,7 +1806,7 @@ void set_signal_handler()
 /***********************************************************************************
  * OL
  */
-struct ol_t
+struct olvm_t
 {
 	heap_t heap; // MUST be first (!)
 	// word max_heap_size; // max heap size in MiB
@@ -1912,7 +1912,7 @@ float OL2F(word arg) {
 }
 
 // TODO: add memory checking
-word d2ol(struct ol_t* ol, double v) {
+word d2ol(struct olvm_t* ol, double v) {
 	word* fp;
 	// check for non representable numbers:
 	if (v == INFINITY || v == -INFINITY || v == NAN)
@@ -1995,8 +1995,8 @@ word d2ol(struct ol_t* ol, double v) {
 
 
 static //__attribute__((aligned(8)))
-word runtime(struct ol_t* ol);  // главный цикл виртуальной машины
-// требует полностью валидную структуру ol_t
+word runtime(struct olvm_t* ol);  // главный цикл виртуальной машины
+// требует полностью валидную структуру olvm_t
 
 #define TICKS                       10000 // # of function calls in a thread quantum
 
@@ -2008,7 +2008,7 @@ word runtime(struct ol_t* ol);  // главный цикл виртуально�
 #define A5                          R[ip[5]]
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
-static int OLVM_gc(struct ol_t* ol, int ws) // ws - required size in words
+static int OLVM_gc(struct olvm_t* ol, int ws) // ws - required size in words
 {
 	word *fp = ol->heap.fp; // memory allocation pointer
 
@@ -2089,7 +2089,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 
 
 static //__attribute__((aligned(8)))
-word runtime(struct ol_t* ol)
+word runtime(struct olvm_t* ol)
 {
 	heap_t* heap = &ol->heap; // global vm heap
 
@@ -2152,7 +2152,7 @@ apply:;
 			for (int i = acc; i > 1; i--)
 				args = new_pair(R[i+2], args);
 
-			word (*function)(struct ol_t*, word*) = (word (*)(struct ol_t*, word*)) car(this);  assert (function);
+			word (*function)(struct olvm_t*, word*) = (word (*)(struct olvm_t*, word*)) car(this);  assert (function);
 			size_t cont = OLVM_pin(ol, R[3]);
 
 			heap->fp = fp;
@@ -5000,7 +5000,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 // -=( virtual machine functions )=--------------------------------
 //
 
-typedef struct ol_t OL;
+typedef struct olvm_t OL;
 
 #if NAKED_VM
 #	define language NULL
@@ -5185,7 +5185,7 @@ fail:;
 }
 #endif
 
-struct ol_t*
+struct olvm_t*
 OLVM_new(unsigned char* bootstrap)
 {
 	// если отсутствует исполнимый образ
@@ -5311,16 +5311,16 @@ void* OLVM_allocate(OL* ol, unsigned words)
 }
 
 
-read_t*  OLVM_set_read (struct ol_t* ol, read_t  read);
-write_t* OLVM_set_write(struct ol_t* ol, write_t write);
-open_t*  OLVM_set_open (struct ol_t* ol, open_t  open);
-close_t* OLVM_set_close(struct ol_t* ol, close_t close);
+read_t*  OLVM_set_read (struct olvm_t* ol, read_t  read);
+write_t* OLVM_set_write(struct olvm_t* ol, write_t write);
+open_t*  OLVM_set_open (struct olvm_t* ol, open_t  open);
+close_t* OLVM_set_close(struct olvm_t* ol, close_t close);
 
-idle_t*  OLVM_set_idle (struct ol_t* ol, idle_t  idle);
+idle_t*  OLVM_set_idle (struct olvm_t* ol, idle_t  idle);
 
 // i/o polymorphism
 #define override(name) \
-name##_t* OLVM_set_##name(struct ol_t* ol, name##_t name) {\
+name##_t* OLVM_set_##name(struct olvm_t* ol, name##_t name) {\
 	name##_t *old_##name = ol->name;\
 	ol->name = name;\
 	return old_##name;\
@@ -5439,7 +5439,7 @@ OLVM_continue(OL* ol, int argc, void** argv)
 // [0..3] - errors
 // 0 means "no space left"
 // 1 means "no pinnable object"
-size_t OLVM_pin(struct ol_t* ol, word ref)
+size_t OLVM_pin(struct olvm_t* ol, word ref)
 {
     if (ref == IFALSE)
         return 1; // #false is not a pinnable object
@@ -5454,7 +5454,7 @@ size_t OLVM_pin(struct ol_t* ol, word ref)
     return 0; // no space left
 }
 
-word OLVM_deref(struct ol_t* ol, size_t p)
+word OLVM_deref(struct olvm_t* ol, size_t p)
 {
 	size_t id = p;
 	if (id > 3 && id < CR)
@@ -5463,7 +5463,7 @@ word OLVM_deref(struct ol_t* ol, size_t p)
 		return IFALSE;
 }
 
-word OLVM_unpin(struct ol_t* ol, size_t p)
+word OLVM_unpin(struct olvm_t* ol, size_t p)
 {
     word re = IFALSE;
     size_t id = p;
@@ -5478,7 +5478,7 @@ word OLVM_unpin(struct ol_t* ol, size_t p)
     return re;
 }
 
-word OLVM_apply(struct ol_t* ol, word object, word args)
+word OLVM_apply(struct olvm_t* ol, word object, word args)
 {
 	ol->this = object; // lambda для обратного вызова
 //	ol->ticker = ol->bank ? ol->bank : 999;

@@ -22,7 +22,7 @@
 // Design Issues for Foreign Function Interfaces
 // http://autocad.xarch.at/lisp/ffis.html
 
-// TODO: add OL_cast function that converts void* into strings or something etc.
+// TODO: OLVM_cast function that converts void* into strings or something etc.
 // TODO: remove any kind of mallocs
 // TODO: utf-8 notes https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 
@@ -157,7 +157,7 @@ typedef big_t ret_t;
 // data type.
 // (Small embedded systems using special floating-point formats may be another
 // matter however.)
-word d2ol(struct ol_t* ol, double v);        // implemented in olvm.c
+word d2ol(struct olvm_t* ol, double v);        // implemented in olvm.c
 double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 
 static
@@ -1239,7 +1239,7 @@ char* not_a_string(char* ptr, word string)
 // Главная функция механизма ffi:
 PUBLIC
 __attribute__((used))
-word* OLVM_ffi(ol_t* this, word* arguments)
+word* OLVM_ffi(olvm_t* this, word* arguments)
 {
 	// a - function address
 	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
@@ -2418,7 +2418,7 @@ word* OLVM_ffi(ol_t* this, word* arguments)
  * 20 - void*
  */
 PUBLIC
-word OLVM_sizeof(ol_t* self, word* arguments)
+word OLVM_sizeof(olvm_t* self, word* arguments)
 {
 	word* A = (word*)car(arguments); // type
 	switch (value(A)) {
@@ -2461,7 +2461,7 @@ word OLVM_sizeof(ol_t* self, word* arguments)
 //       все остальные свои сопрограммы.
 // ret is ret address to the caller function
 static
-int64_t callback(ol_t* ol, size_t id, int_t* argi
+int64_t callback(olvm_t* ol, size_t id, int_t* argi
 	#if __amd64__ || __aarch64__
 		, inexact_t* argf, int_t* rest
 	#endif
@@ -2470,7 +2470,7 @@ int64_t callback(ol_t* ol, size_t id, int_t* argi
 
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
 PUBLIC
-word OLVM_mkcb(ol_t* self, word* arguments)
+word OLVM_mkcb(olvm_t* self, word* arguments)
 {
 	word* A = (word*)car(arguments);
 	unless (is_value(A))
@@ -2518,7 +2518,7 @@ word OLVM_mkcb(ol_t* self, word* arguments)
 #elif __amd64__
 	// Windows x64
 # ifdef _WIN32
-	//long long callback(ol_t* ol, int id, long long* argi, double* argf, long long* rest)
+	//long long callback(olvm_t* ol, int id, long long* argi, double* argf, long long* rest)
 	static char bytecode[] =
 			"\x90" // nop
 			"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
@@ -2565,7 +2565,7 @@ word OLVM_mkcb(ol_t* self, word* arguments)
 	*(uint64_t*)&ptr[82] = (uint64_t)callback;
 
 # else // System V (linux, unix, macos, android, ...)
-	//long long callback(ol_t* ol, int id, long long* argi, double* argf, long long* rest)
+	//long long callback(olvm_t* ol, int id, long long* argi, double* argf, long long* rest)
 	// rdi: ol, rsi: id, rdx: argi, rcx: argf, r8: rest
 	// not used: r9
 
@@ -2617,7 +2617,7 @@ word OLVM_mkcb(ol_t* self, word* arguments)
 # endif
 #elif __aarch64__
 
-	//long long callback(ol_t* ol, int id, long long* argi, double* argf, long long* rest);
+	//long long callback(olvm_t* ol, int id, long long* argi, double* argf, long long* rest);
 	static char bytecode[] =
 		"\xee\x03\x00\x91" //mov  x14, sp
 		"\xfd\x7b\xbf\xa9" //stp  x29, x30, [sp,#-16]!
@@ -2681,14 +2681,14 @@ word OLVM_mkcb(ol_t* self, word* arguments)
 }
 
 
-//long long callback(ol_t* ol, int id, word* args) // win32
-//long long callback(ol_t* ol, int id, long long* argi, double* argf, long long* others) // linux
+//long long callback(olvm_t* ol, int id, word* args) // win32
+//long long callback(olvm_t* ol, int id, long long* argi, double* argf, long long* others) // linux
 // notes:
 //	http://stackoverflow.com/questions/11270588/variadic-function-va-arg-doesnt-work-with-float
 
 static
 __attribute__((used))
-int64_t callback(ol_t* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
+int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
 #if __amd64__ || __aarch64__
 		, inexact_t* argf, int_t* rest //win64
 #endif
