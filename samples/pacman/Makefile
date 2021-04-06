@@ -11,20 +11,20 @@ pacman1: main.c embed1.c texturing.c repl.o
 	    -I../../include -DNAKED_VM -DOLVM_NOMAIN \
 	    -D_binary_repl_start=_binary_______repl_start \
 	    ../../src/olvm.c -ldl -lm -pthread \
-	    -Xlinker --export-dynamic -o $@
+	    -o $@
 
 pacman2: main.c embed2.c texturing.c repl.o
 	gcc $^ -I. -lGL -lglut -lpng \
 	    -I../../include -DNAKED_VM -DOLVM_NOMAIN \
 	    -D_binary_repl_start=_binary_______repl_start \
 	    ../../src/olvm.c -ldl -lm -pthread \
-	    -Xlinker --export-dynamic -o $@
+	    -o $@
 
 pacman3: main.c embed3.c texturing.c binf.c
 	gcc $^ -I. -lGL -lglut -lpng \
 	    -I../../include -DNAKED_VM -DOLVM_NOMAIN \
 	    ../../src/olvm.c -ldl -lm -pthread \
-	    -Xlinker --export-dynamic -o $@
+	    -o $@
 
 tmp.bin: precompile.scm main.scm
 	ol precompile.scm
