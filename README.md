@@ -19,12 +19,21 @@ Otus Lisp, Version 2.2
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
-It implements an extended subset of R<sup>7</sup>RS Scheme includes, but is not limited to, some of the SRFIs.
-It's tiny (~42kb), embeddable and cross-platform; provides a portable, high-level way to call code written in other languages.
+It implements an extended subset of the R<sup>7</sup>RS Scheme, including
+but not limited to some SRFIs. It is tiny (~ 42kb), embeddable
+and cross-platform.  Provides a portable high-level way to run
+code is written in other languages.
 
-You can use Ol in GNU/Linux, Windows, Unixes (macOS, Solaris, kinds of BSD), Android, webOS, Minoca and lot of other operation systems based on various hardware architectures (x86/x86_64, arm, aarch64, ppc, mips, etc).
+You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
+Android, webOS and lot of any other operation systems based on
+various hardware architectures (x86, x86_64, arm, aarch64, ppc,
+mips, etc).
 
-Additionally Ol ported to the Web and tested under Chrome, Firefox, Opera, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape.
+It supports direct calls to external "C" functions for 32- and
+64-bit platforms with full callables (aka callbacks) support.
+
+Additionally Ol is ported to the Web and used in Chrome, Opera,
+Firefox, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape, etc.
 
 
 LICENSE
@@ -33,10 +42,8 @@ LICENSE
 Otus Lisp is available under 2 licenses:
 [MIT License](LICENSE) and
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
-
-Copyright (c) 2011-2014 Aki Helin
-
-Copyright (c) 2014-2021 Yuriy Chumak
+<br>Copyright (c) 2011-2014 Aki Helin
+<br>Copyright (c) 2014-2021 Yuriy Chumak
 
 
 SUPPORT
@@ -53,6 +60,7 @@ LEARNING
 You can find Ol samples at:
 * [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
 * [Samples](https://github.com/yuriy-chumak/ol/tree/master/samples) and [Tests](https://github.com/yuriy-chumak/ol/tree/master/tests) repository folders.
+* Embed usage available as toy [pacman game](https://github.com/yuriy-chumak/ol/tree/master/samples/pacman) sample.
 
 
 DOWNLOAD / INSTALLATION
@@ -61,51 +69,57 @@ DOWNLOAD / INSTALLATION
 You can use basic Ol functionality without any installation -
 just copy the `ol` (`ol.exe` for Windows) binary to any user
 accessible path. Basic functionality includes a rich set of
-functions: lists, ffs (builtin associative arrays), i/o, lazies,
-strings, symbols, vectors, math, regex, etc.
+functions: lists, vectors, associative arrays (named ff's),
+i/o streams and files, lazy calculations, strings, symbols,
+math, regex, etc.
 
-Extended functionality (i.e. OpenGL support) requires a full installation of Ol package.
-Additionally, you can manually copy desired [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory.
+Advanced functionality (i.e. OpenGL support) require a complete installation of Ol package:
 
-Next platforms installation packages can be found at
-[openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol):
+* You can refer to the 'BUILD' page below to manually build and install full Ol libraries,
 
-* CentOS 6 (x86, amd64), CentOS 7 (amd64),
-* Debian 7 (x86, amd64), Debian 8 (x86, amd64),
-* Fedora 22 (x86, amd64), Fedora 23 (x86, amd64),
-* RHEL 5 (x86, amd64), RHEL 6 (x86, amd64), RHEL 7 (amd64),
-* SLE 10 (x86, amd64), SLE 11 (x86, amd64), SLE 12 (amd64),
-* ScientificLinux 6 (x86, amd64), ScientificLinux 7 (amd64),
-* Univention 3.2 (x86, amd64), Univention 4.0 (x86, amd64),
-* openSUSE 13.1 (x86, amd64), openSUSE 13.2 (x86, amd64),
-  openSUSE Factory (aarch64, armv7l),
-  openSUSE Leap 42.1 (amd64),
-  openSUSE Tumbleweed (x86, amd64),
-* Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64)
+* or You can use installation packages available at [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol),
+  * CentOS 6 (x86, amd64), CentOS 7 (amd64),
+  * Debian 7 (x86, amd64), Debian 8 (x86, amd64),
+  * Fedora 22 (x86, amd64), Fedora 23 (x86, amd64),
+  * RHEL 5 (x86, amd64), RHEL 6 (x86, amd64), RHEL 7 (amd64),
+  * SLE 10 (x86, amd64), SLE 11 (x86, amd64), SLE 12 (amd64),
+  * ScientificLinux 6 (x86, amd64), ScientificLinux 7 (amd64),
+  * Univention 3.2 (x86, amd64), Univention 4.0 (x86, amd64),
+  * openSUSE 13.1 (x86, amd64), openSUSE 13.2 (x86, amd64),
+    openSUSE Factory (aarch64, armv7l),
+    openSUSE Leap 42.1 (amd64),
+    openSUSE Tumbleweed (x86, amd64),
+  * Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64),
 
-Next platforms installation packages can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page:
+* Next platforms installation packages can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page:
+  * Windows (x86, amd64),
+  * Android (arm64-v8a, armeabi, armeabi-v7a, mips, mips64, x86, x86_64),
 
-* Windows (x86, amd64)
-* Android (arm64-v8a, armeabi, armeabi-v7a, mips, mips64, x86, x86_64)
+* or You can manually copy required [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory,
+
+* Some libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
 
 
 BUILD REQUIREMENTS
 ------------------
 
-You should have GCC 3.2+ or CLANG 3.5+ or TCC installed.
-For Windows you should have MinGW (with GCC) installed.
-For macOS you should have xcode-tools installed.
+You should have GCC 3.2+ (with gcc-multilib) or CLANG 3.5+ installed.
+Windows support requires MinGW installed (with GCC).
+MacOS users should have xcode-tools installed.
 
-If you want to compile asm.js binary (is not required by regular build, but only for Web) you should have Emscripten 1.37.40+.
+If you want to compile wasm binary (is not required by regular build, but only for Web) you should have Emscripten 1.37.40+.
 
 
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 * 2.1. Identifiers
   * `|\t\t|` and `|\x9;\x9;|` are **different** in Ol, but *the same* in Scheme.
-  * Ol is definitely **case sensitive**, but Sheme is *configurable thru #!fold-case and #!no-fold-case*.
+  * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
 * 4.1.5. Conditionals
-  * Ol provides **extended *if*** in form `(if <cond> <then> else <else>)`, while Schmeme is *not*.
+  * Ol provides **extended *if*** in forms
+  `(if <condition> <then-clause> else <else1-clause>..<elseN-clause>)` and
+  `(if <condition> then <then1-clause> <then2-clause> else <else1-clause>..<elseN-clause>)`,
+  while Scheme is *not*.
 * 4.1.6. Assignments
   * **No** `set!` in Ol.
     - *note: Ol is purely functional language.*
@@ -150,6 +164,7 @@ R<sup>7</sup>RS DIFFERENCES
 * Ol has builtin **regular expressions** while Scheme *not*.
   * *note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` (with optional 'g' suffix) and `c/<pattern>/` as functions to match, change and split the string.*
 
+
 BUILD
 -----
 
@@ -158,7 +173,7 @@ BUILD
 ```bash
 $ make; make install
 ```
-> use *gmake* for unix clients
+* use *gmake* for unix clients
 
 ### REGULAR WAY
 
@@ -215,7 +230,7 @@ $ gcc src/olvm.c -DNAKED_VM  -std=gnu99 -O2  -lc -lm  -o vm
 ##### Build ol (with integrated REPL):
 ```bash
 $ ld -r -b binary -o tmp/repl.o repl
-$ gcc src/olvm.c tmp/repl.o  -std=gnu99 -O2  -lc -lm  -o ol
+$ gcc src/olvm.c tmp/repl.o  -std=gnu99 -O2  -lc -lm  -o ol -Drepl=_binary_repl_start
 ```
 
 #### Android:
@@ -262,53 +277,52 @@ CASTOMIZATION
 
 If you want to enable/disable some olvm features you can use -Dxxx or -Dxxx=y gcc syntax. This is a list of currently accessible customizations:
 
-|Variable      |Value           |Meaning |
-|--------------|----------------|--------|
-|NAKED_VM      | 1\|0, default 0|Disables including of REPL into binary (via external 'repl' unsigned char\*)|
-|OLVM_NOMAIN   | 1\|0, default 0|Disables 'main' function, makes olvm embed|
-|OLVM_FFI      | 1\|0, default 1|Enables FFI support|
-|OLVM_CALLABLES| 1\|0, default 1|Enables FFI callbacks support|
-|OLVM_INEXACTS | 1\|0, default 1|Enables inexact math support|
-|OLVM_BUILTIN_FMATH| 1\|0, default 1|Enables builtin vm floating-point math|
-|CAR_CHECK     | 1\|0, default 1|Enables car arguments check|
-|CDR_CHECK     | 1\|0, default 1|Enables cdr arguments check|
+|Variable      |Value            |Meaning |
+|--------------|-----------------|--------|
+|NAKED_VM      | 1\|0, default 0 |Disables including of REPL into binary (via external 'repl' unsigned char\*)|
+|OLVM_NOMAIN   | 1\|0, default 0 |Disables 'main' function, makes olvm embed|
+|OLVM_FFI      | 1\|0, default 1 |Enables FFI support|
+|OLVM_CALLABLES| 1\|0, default 1 |Enables FFI callbacks support|
+|OLVM_INEXACTS | 1\|0, default 1 |Enables inexact math support|
+|OLVM_BUILTIN_FMATH| 1\|0, default 1 |Enables builtin vm floating-point math|
+|CAR_CHECK     | 1\|0, default 1 |Enables car arguments check|
+|CDR_CHECK     | 1\|0, default 1 |Enables cdr arguments check|
 
-This variables have no default values and are automatically set by the Makefile (like `configure` script). You can override those values, sure:
+This variables are automatically set by the Makefile (like `configure` script). You can override those values, sure:
 
-|Variable      |Value |Meaning |
-|--------------|------|--------|
-|HAS_SOCKETS   | 1\|0 |Enables sockets support (bind, listen, socket, etc.)
-|HAS_DLOPEN    | 1\|0 |Enables dlopen/dlsym functions support| TS   | 1\   |Enables socket functions support|
-|HAS_UNSAFES   | 1\|0 |Enables "unsafe" functions|
-|HAS_SANDBOX   | 1\|0 |Enables internal sandbox support (depends on OS kernel)|
-|HAS_STRFTIME  | 1\|0 |Enables strftime function support|
+|Variable      |Value            |Meaning |
+|--------------|-----------------|--------|
+|HAS_SOCKETS   | 1\|0, default 1 |Enables sockets support (bind, listen, socket, etc.)|
+|HAS_DLOPEN    | 1\|0, default 1 |Enables dlopen/dlsym functions support|
+|HAS_UNSAFES   | 1\|0, default 1 |Enables "unsafe" external and internal functions|
+|HAS_SANDBOX   | 1\|0, default 0 |Enables internal sandbox support (depends on OS kernel)|
+|HAS_STRFTIME  | 1\|0, default 1 |Enables strftime function support|
 
-Please note that external libraries (like opengl, sqlite, etc.)
-support require HAS_DLOPEN and OLVM_FFI enabled.
+Please note that external libraries (like opengl, sqlite, etc.) support require HAS_DLOPEN and OLVM_FFI enabled.
 
 Additionally you can disable the following olvm features by setting the variables to 0 (-Dxxx=0):
 
 |Variable         |Meaning |
 |-----------------|--------|
-|SYSCALL_SYSINFO  | sysinfo() function usage|
-|SYSCALL_PIPE     | pipe() function usage|
-|SYSCALL_GETRLIMIT| getrlimit() function usage|
-|SYSCALL_GETRUSAGE| getrusage() function usage|
+|SYSCALL_SYSINFO  | sysinfo() function usage |
+|SYSCALL_PIPE     | pipe() function usage |
+|SYSCALL_GETRLIMIT| getrlimit() function usage |
+|SYSCALL_GETRUSAGE| getrusage() function usage |
 
 
 CHANGING THE LANGUAGE
 ---------------------
 
-You can change the whole Ol language (yes, you can) by editing sources in lang/ and libraries/ subfolders.
-Additionally you can change virtual machine by editing src/vm.scm and src/olvm.c source files.
+You can change the Otus Lisp language as a language (yes, you can) by editing the sources in lang/ and libraries/ subfolders.
+Additionally, you can change the virtual machine itself by editing the src/vm.scm and src/olvm.c source files.
 
-To build Ol language (not Ol virtual machine) named REPL:
+To build the Otus Lisp language (not olvm) named REPL do:
 
 ```bash
 $ make recompile
 ```
 
-This will create new (in successful way) REPL binary (`./repl`) that contains compiled ol code.
+This will create a new (in successful way) REPL binary `./repl` containing the compiled ol code.
 
 
 RUNNING
@@ -319,14 +333,14 @@ $ ol [[vm-options] [filename]] [arguments]]
 
 * if no filename given all options is ol options, not an olvm
 * if no filename given ol will use stdin as source
-* if you want to use stdin as source but must provide a filename, use "-"
+* if you want to use stdin as source but must provide a filename and/or arguments, use "-"
 * if you want to break vm-options scanning and provide filename like option (i.e. '--version'), use "--" as 'end-of-option' flag
 
 Current olvm command line options available:
-* '--version': print olvm version and, if no filename given, exit
+* '--version': print olvm version and exit
 
 
-There are few ways to execute ol
+Ol can be executed interactively or in the unattended mode.
 
 #### Interactive mode
 
@@ -357,7 +371,7 @@ $ ol scriptname.bl                # binary (compiled) script
 $ echo '(print (+ 1 2 3))' | ol
 ```
 
-For Windows:
+Windows:
 
 ```cmd
 > ol scriptname.ol
@@ -379,7 +393,7 @@ using this code:
 (fasl-save main "out.bl")
 ```
 
-, where "out.bl" is your binary output file name.
+where "out.bl" is your binary output file name.
 This code creates binary script that can be executed directly by ol or vm:
 
 ```bash
@@ -394,19 +408,19 @@ hello !
 FILES
 -----
 
-* repl  - the compiled ol binary interpreter+compiler
+* repl  - the compiled ol binary interpreter/compiler
 * src/olvm.c  - the ol virtual machine source code (in C)
 * include/ol/ol.h  - the common ol header (not required by compiler, just for use as embed)
-* include/ol/ol.h  - the ol virtual machine header (not required by compiler, just for use as embed)
+* include/ol/vm.h  - the ol virtual machine header (not required by compiler, just for use as embed)
 * extensions/ffi.c  - FFI implementation
 * lang/*.scm  - ol repl and compiler source codes (in Lisp)
 * libraries/**.scm - various OL libraries (in Lisp):
   * libraries/scheme/core.scm - r7rs core implementation
   * libraries/owl/*.scm - legacy basic libraries
-  * libraries/lib/*.scm - some external native libraries mappings
+  * libraries/lib/*.scm - some external native library mappings
   * etc.
 * tests/** - some basic automation tests (in Lisp and C)
-* tests/rosettacode/*.scm - additional automation tests (in Lisp)
+* tests/rosettacode/*.scm - additional automation tests (in Lisp) that described at the [Rosetta Code](http://rosettacode.org/) programming chrestomathy site.
 
 
 SOME NOTES
@@ -438,18 +452,18 @@ DOCUMENTATION
 -------------
 
 Please refer to the [project page](https://yuriy-chumak.github.io/ol/)
-
-Or check the source codes - libraries/scheme/core.scm
+or check the source codes - libraries/scheme/core.scm
 
 
 RELATED
 ----------------------------------------------------------------------
 
-Copyright (c) 2014 Aki Helin,
-Copyright (c) 2014 - 2019 Yuriy Chumak
+<br>Copyright (c) 2014 Aki Helin
+<br>Copyright (c) 2014 - 2021 Yuriy Chumak
 
 Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
 
+Thanks to:
 * http://groups.csail.mit.edu/mac/projects/scheme/
 * http://people.csail.mit.edu/jaffer/Scheme
 * http://r7rs.org
