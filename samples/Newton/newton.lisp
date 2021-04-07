@@ -3,7 +3,7 @@
 (import (lib gl))
 (import (otus random!))
 (import (otus ffi))
-(import (lib newton))
+(import (lib newton-dynamics))
 
 (define (gettimeofday) (syscall 96))
 
@@ -16,22 +16,16 @@
 (define world (or
    (NewtonCreate)
    (runtime-error "Can't create newton world" #f)))
-
-(NewtonSetSolverModel world 1)
+(NewtonSetSolverIterations world 2)
 
 (print "NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
-
-;(NewtonWorldSetDestructorCallback world (cons
-;   (list type-vptr)
-;   (lambda (world)
-;      (print "world destroyed"))))
-
 
 ; создадим "пол"
 (define collision (or
    (NewtonCreateTreeCollision world 0)
    (runtime-error "Can't create background" #f)))
 (NewtonTreeCollisionBeginBuild collision)
+
 ; пол
 (NewtonTreeCollisionAddFace collision 4 '(
    -9 0.1  9
@@ -54,16 +48,12 @@
 (NewtonCreateDynamicBody world collision '(1 0 0 0  0 1 0 0  0 0 1 0  0 0 0 1))
 (NewtonDestroyCollision collision)
 
-
 ; apply-gravity callback
-(define ApplyGravity (vm:pin (cons
-   (list fft-int type-vptr fft-float fft-int)
+(define ApplyGravityCallback (NewtonApplyForceAndTorque
    (lambda (body timestep threadIndex)
-      (NewtonBodySetForce body '(0 -9.8 0 0))
-))))
-(define ApplyGravityCallback (make-callback ApplyGravity))
+      (NewtonBodySetForce body '(0 -9.8 0 0)))))
 
-; добавим один куб
+; добавим куб сто кубов
 (define collision (or
    (NewtonCreateBox world  1 1 1  0  #f)
    (runtime-error "Can't create box" #f)))
@@ -78,9 +68,9 @@
                0 1 0 0 ; up
                0 0 1 0 ; right
 
-               ,(/ (- (rand! 2000) 1000) 100) ; x
-               ,(+ (/ id 3) 5)                ; y
-               ,(/ (- (rand! 2000) 1000) 100) ; z
+               ,(/ (- (rand! 1600) 800) 100) ; x
+               ,(+ (/ id 3) 5)               ; y
+               ,(/ (- (rand! 1600) 800) 100) ; z
                1       ; posit
              ))))
    (iota 100)))
@@ -91,10 +81,10 @@
 (NewtonDestroyCollision collision)
 
 
-(define collision (or
-   (NewtonCreateSphere world  0.5  0  #f)
-   (runtime-error "Can't create box" #f)))
-(NewtonDestroyCollision collision)
+;; (define collision (or
+;;    (NewtonCreateSphere world  0.5  0  #f)
+;;    (runtime-error "Can't create box" #f)))
+;; (NewtonDestroyCollision collision)
 
 (define spheres null)
 
