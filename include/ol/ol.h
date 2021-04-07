@@ -30,11 +30,12 @@
     extern "C" {
 #endif
 
-#include <stdint.h> // uintptr_t
-#include <unistd.h> // (s)size_t
 #include <assert.h> // assert
 #include <stdarg.h> // va_list
 #include <string.h> // strlen
+
+#include <stdint.h> // uintptr_t
+#include <unistd.h> // (s)size_t
 
 // (игра слов)
 // OL:

@@ -179,7 +179,7 @@ clean:
 	rm -f ./vm ./ol
 	rm -r tmp/*
 
-install: ol repl
+install: ol include/ol/vm.h
 	# install Ol executable to $(DESTDIR)$(PREFIX)/bin:
 	@echo Installing main binary...
 	install -d $(DESTDIR)$(PREFIX)/bin
@@ -188,14 +188,20 @@ install: ol repl
 	@echo Installing REPL...
 	install -d $(DESTDIR)$(PREFIX)/lib/ol
 	install -m 644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
+	@echo Installing headers...
+	install -d $(DESTDIR)$(PREFIX)/include/ol
+	install -m 644 include/ol/vm.h $(DESTDIR)$(PREFIX)/include/ol/vm.h
+	install -m 644 include/ol/ol.h $(DESTDIR)$(PREFIX)/include/ol/ol.h
 	# and libraries to $(DESTDIR)$(PREFIX)/lib/ol:
 	@echo Installing basic libraries...
 	find libraries -type d -exec bash -c 'install -d "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
 	find libraries -type f -exec bash -c 'install -m 644 "$$0" "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
+	@echo Ok.
 
 uninstall:
 	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
+	-rm -rf $(DESTDIR)$(PREFIX)/include/ol
 
 ## actual 'building' part
 debug: CFLAGS += $(CFLAGS_DEBUG)
@@ -216,16 +222,17 @@ android: jni/*.c tmp/repl.c
 # ol
 vm: src/olvm.c
 	$(CC) src/olvm.c -DNAKED_VM -o $@\
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c\
+	   -Isrc extensions/ffi.c\
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
 ol: src/olvm.c tmp/repl.c
 	$(CC) src/olvm.c tmp/repl.c -o $@\
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c\
+	   -Isrc extensions/ffi.c\
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
+# just internal dependency
 src/olvm.c: extensions/ffi.c
 	touch src/olvm.c
 
@@ -238,7 +245,7 @@ tmp/repl.c: repl
 #	   -e 's/$$/};/'> $@
 
 include/ol/vm.h: src/olvm.c
-	@sed -n '/USE_OLVM_DECLARATION/q;p' $^ >$@
+	sed -n '/USE_OLVM_DECLARATION/q;p' $^ >$@
 
 # # emscripten version 1.37.40+
 # deprecated repl.js: repl
@@ -304,11 +311,9 @@ ol.exe: src/olvm.c tmp/repl.c
 	$(CC) src/olvm.c tmp/repl.c -o $@\
 	   -DOLVM_FFI=1 -Iwin32 -Isrc extensions/ffi.c\
 	   $(MINGWCFLAGS) -lws2_32
-	@echo Ok.
 
 # compiling the Ol language
 recompile: boot.fasl
-boot.fasl: CFLAGS += $(CFLAGS_RELEASE) # will rebuild in release, for speed
 boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
 	@vm repl --version="`git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`" \
 	   src/ol.scm
