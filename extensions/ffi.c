@@ -26,6 +26,10 @@
 // TODO: remove any kind of mallocs
 // TODO: utf-8 notes https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 
+#ifndef OLVM_FFI
+#define OLVM_FFI HAS_DLOPEN // ffi have no sense without dlopen/dlsym
+#endif
+
 #if OLVM_FFI
 
 // defaults:
