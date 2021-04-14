@@ -131,10 +131,18 @@
                               (skip (imm #\.))
                               (digits (greedy* (rune-if (lambda (rune) (<= #\0 rune #\9))))))
                            (/ (list->number digits 10) (expt 10 (length digits))))
-                        (epsilon 0))))
-                  ;(pow get-exponent))
-               ;(sign (* (+ num tail) pow))))
-         (signer (+ int frac))))
+                        (epsilon 0)))
+            (exponent (any-of
+                  (let-parse* (
+                        (e (imm #\e))
+                        (signer (any-of
+                           (word "+" (lambda (x) x))
+                           (word "-" (lambda (x) (- x)))
+                           (epsilon  (lambda (x) x))))
+                        (exp (greedy+ (rune-if (lambda (rune) (<= #\0 rune #\9))))))
+                     (signer (expt 10 (list->number exp 10))))
+                  (epsilon 1))))
+         (* (signer (+ int frac)) exponent)))
 
    (define (object)
       (let-parse* (
