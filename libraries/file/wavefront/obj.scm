@@ -56,6 +56,14 @@
          (z get-number)
          (skip (get-imm #\newline)))
       [x y z]))
+(define get-vt
+   (let-parses(
+         (skip (get-word "vt " #t))
+         (x get-number)
+         (skip (get-imm #\space))
+         (y get-number)
+         (skip (get-imm #\newline)))
+      [x y]))
 (define get-vn
    (let-parses(
          (skip (get-word "vn " #t))
@@ -108,13 +116,15 @@
          (mtllib get-mtllib)
          (name (get-either get-g get-o))
          (v (get-greedy+ get-v))
+         (vt (get-greedy+ get-vt))
          (vn (get-greedy+ get-vn))
          (facegroups (get-greedy+ facegroup-parser)))
       {
          'mtllib  (bytes->string mtllib)
          'name  (bytes->string name)
          'v  v
-         'vn  vn
+         'vt vt
+         'vn vn
          'facegroups facegroups}
       ))
 
