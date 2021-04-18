@@ -12,16 +12,15 @@
 
 /**
  * Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
- *
- * It implements an extended subset of R7RS Scheme including, but
- * not limited to, some of the SRFIs. It's tiny(42kb), embeddable
- * and crossplatform;  provides a portable, highlevel way to call
- * code written in other languages.
- *
- * You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
- * Android, webOS and lot of any other operation systems based on
- * various hardware architectures (x86, x86_64, arm, aarch64, ppc,
- * mips, etc).
+ * 
+ * It implements an extended subset of the R7RS Scheme, including
+ * but not limited to some SRFIs. It is tiny (~ 42kb), embeddable
+ * and cross-platform.  Provides a portable, high-level interface
+ * to call code written in another language.
+ * 
+ * You can use Ol on Linux, Windows, macOS, Android, BSD (and its
+ * descendants), webOS, Solaris and other operating systems based
+ * on various hardware architectures (intel, arm, ppc, mips, etc).
 **/
 
 #ifndef __OL_H__65374DBFFB460CF7E3F765DF2A1F3A24__

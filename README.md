@@ -21,19 +21,15 @@ Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
 It implements an extended subset of the R<sup>7</sup>RS Scheme, including
 but not limited to some SRFIs. It is tiny (~ 42kb), embeddable
-and cross-platform.  Provides a portable high-level way to run
-code is written in other languages.
+and cross-platform.  Provides a portable, high-level interface
+to call code written in another language.
 
-You can use Ol in Linux, Windows, Unixes (macOS, kinds of BSD),
-Android, webOS and lot of any other operation systems based on
-various hardware architectures (x86, x86_64, arm, aarch64, ppc,
-mips, etc).
+You can use Ol on Linux, Windows, macOS, Android, BSD (and its
+descendants), webOS, Solaris and other operating systems based
+on various hardware architectures (intel, arm, ppc, mips, etc).
 
-It supports direct calls to external "C" functions for 32- and
-64-bit platforms with full callables (aka callbacks) support.
 
-Additionally Ol is ported to the Web and used in Chrome, Opera,
-Firefox, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape, etc.
+Also Ol is ported to the Web and can be used in Chrome, Firefox, Opera, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape, etc.
 
 
 LICENSE
@@ -42,8 +38,9 @@ LICENSE
 Otus Lisp is available under 2 licenses:
 [MIT License](LICENSE) and
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
-<br>Copyright (c) 2011-2014 Aki Helin
-<br>Copyright (c) 2014-2021 Yuriy Chumak
+
+Copyright (c) 2011-2014 Aki Helin                              <br/>
+Copyright (c) 2014-2021 Yuriy Chumak                           <br/>
 
 
 SUPPORT
