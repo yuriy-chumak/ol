@@ -30,13 +30,14 @@
 #endif
 
 #include <assert.h> // assert
-#include <stdarg.h> // va_list
 #include <string.h> // strlen
 
 #include <stdint.h> // uintptr_t
 #include <unistd.h> // (s)size_t
 
-// (игра слов)
+#include <stdarg.h> // va_list
+
+// notes: (игра слов)
 // OL:
 //	* сокращение от названия проекта - Otus Lisp (вырос из Owl Lisp'а),
 //	* низкий порог вхождения (0L - число 0, L - level): Lisp - ОЧЕНЬ простой язык,

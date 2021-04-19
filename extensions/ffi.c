@@ -4,11 +4,11 @@
  * A ForeignFunctionInterface (FFI) is an interface that allows calling code written
  * in one programming language, from another that is neither a superset nor a subset.
  *
- * Тут у нас реализация ffi механизма. Примеры в lib/opengl.scm, lib/sqlite.scm, etc
+ * Тут у нас реализация ffi механизма. Примеры в lib/opengl.scm, lib/sqlite.scm, etc.
  *
- * FFI is Fatal Familial Insomnia too.
- *  Hmmm...
+ * btw, FFI is Fatal Familial Insomnia too. Hmmm...
  */
+
 
 /*!
  * ### Source file: extensions/ffi.c
@@ -45,7 +45,6 @@
 
 #include <string.h>
 #include <stdio.h> // temp
-
 
 #if defined(__unix__) || defined(__APPLE__)
 #	include <sys/mman.h>
@@ -173,20 +172,6 @@ unsigned int llen(word list)
 	return i;
 }
 
-static
-unsigned int lenn(char *pos, size_t max) {
-	unsigned int p = 0;
-	while (p < max && *pos++) p++;
-	return p;
-}
-
-static
-unsigned int lenn16(short *pos, size_t max) {
-	unsigned int i = 0;
-	while (i < max && *pos++) i++;
-	return i;
-}
-
 // note: invalid codepoint will be encoded as "?", so len is 1
 #define codepoint_len(x) ({ int cp = x; \
 	cp < 0x80 ? 1 : \
@@ -194,7 +179,7 @@ unsigned int lenn16(short *pos, size_t max) {
 	cp < 0x10000 ? 3 : \
 	cp < 0x110000 ? 4 : 1; })
 
-static __inline__ // length of wide string in utf-8 encoded bytes
+static // length of wide string in utf-8 encoded bytes
 int utf8_len(word widestr)
 {
 	int len = 0;
@@ -1114,43 +1099,6 @@ long to_long(word arg) {
 	return 0;
 }*/
 
-#	ifndef __EMSCRIPTEN__
-// stupid clang does not support builtin in functions function,
-// so we need to do this stupid workaround
-static __inline__
-word* new_npair(word**fpp, int type, intmax_t value) {
-    word* fp = *fpp;
-    intmax_t a = value >> VBITS;
-    word* b = (a > VMAX) ? new_npair(&fp, TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
-    word* p = new_pair(type, I(value & VMAX), b);
-    *fpp = fp;
-    return p;
-}
-static __inline__
-word* ll2ol(word**fpp, intmax_t val) {
-    intmax_t x5 = val;
-    intmax_t x6 = x5 < 0 ? -x5 : x5;
-    int type = x5 < 0 ? TINTN : TINTP;
-    return (x6 > VMAX) ? new_npair(fpp, type, x6) : (word*)make_value(x5 < 0 ? TENUMN : TENUMP, x6);
-};
-
-static __inline__
-word* new_unpair(word**fpp, int type, uintmax_t value) {
-    word* fp = *fpp;
-    uintmax_t a = value >> VBITS;
-    word* b = (a > VMAX) ? new_unpair(&fp, TPAIR, a) : new_pair(TPAIR, I(a & VMAX), INULL);
-    word* p = new_pair(type, I(value & VMAX), b);
-    *fpp = fp;
-    return p;
-}
-static __inline__
-word* ul2ol(word**fpp, intmax_t val) {
-    uintmax_t x = val;
-    return (x > VMAX) ? new_unpair(fpp, TINTP, x) : (word*)make_value(x < 0 ? TENUMN : TENUMP, x);
-};
-
-#	endif
-
 static
 char* chars2ol(char* ptr, word string)
 {
@@ -1164,7 +1112,7 @@ char* chars2ol(char* ptr, word string)
 static
 char* wchars2utf8(char* ptr, word widestring)
 {
-	//assert (is_stringwide(widestring))
+	//assert (is_stringwide(widestring));
 
 	// utf-8 encoding
 	// we don't know actual length of encoded string
@@ -1237,7 +1185,6 @@ char* not_a_string(char* ptr, word string)
 	E("invalid parameter value (requested string)");
 	return ptr;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
@@ -2261,7 +2208,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 	returntype &= 0x3F;
 	switch (returntype) {
-		// TENUMP - deprecated
+		// TENUMP - deprecated, TODO: remove
 		case TENUMP: // type-enum+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
 			result = (word*) make_enum (got);
 			break;
@@ -2331,7 +2278,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						utf8q++;
 						p += ((ch & 0b11100000) == 0b11000000) ? 1 :
 						     ((ch & 0b11110000) == 0b11100000) ? 2 :
-						     ((ch & 0b11111000) == 0b11110000) ? 3 : 1; // todo: process error, show E("not a utf-8") and return #false
+						     ((ch & 0b11111000) == 0b11110000) ? 3 : 1; // todo: process error, show E("not a utf-8")
 					}
 				}
 
@@ -2349,7 +2296,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					char* str = (char*) &car(result);
 					memcpy(str, (char*)(word)got, len);
 				}
-				// utf8 (maximal size of utf-8 encoded character is 21 bit that smaller than 24 for enum for 32-bit platforms)
+				// utf8 (maximal size of utf-8 encoded character is 21 bit that is smaller than 24 bits for enum for 32-bit platforms)
+				// so we definitely can use I() instead of make_number()
 				// https://www.vertex42.com/ExcelTips/unicode-symbols.html
 				else {
 					word* str = result = new (TSTRINGWIDE, len);

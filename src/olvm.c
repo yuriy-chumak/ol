@@ -2011,19 +2011,6 @@ word d2ol(struct olvm_t* ol, double v) {
 #endif
 
 
-static //__attribute__((aligned(8)))
-word runtime(struct olvm_t* ol);  // главный цикл виртуальной машины
-// требует полностью валидную структуру olvm_t
-
-#define TICKS                       10000 // # of function calls in a thread quantum
-
-#define A0                          R[ip[0]]
-#define A1                          R[ip[1]]
-#define A2                          R[ip[2]]
-#define A3                          R[ip[3]]
-#define A4                          R[ip[4]]
-#define A5                          R[ip[5]]
-
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
 static int OLVM_gc(struct olvm_t* ol, unsigned ws) // ws - required size in words
 {
@@ -2104,6 +2091,14 @@ word get(word *ff, word key, word def, jmp_buf fail)
 }
 #define CHECK(exp,val,errorcode)    if (!(exp)) FAIL(errorcode, val, ITRUE);
 
+#define TICKS                       10000 // # of function calls in a thread quantum
+
+#define A0                          R[ip[0]]
+#define A1                          R[ip[1]]
+#define A2                          R[ip[2]]
+#define A3                          R[ip[3]]
+#define A4                          R[ip[4]]
+#define A5                          R[ip[5]]
 
 static //__attribute__((aligned(8)))
 word runtime(struct olvm_t* ol)
@@ -5489,6 +5484,7 @@ word OLVM_unpin(struct olvm_t* ol, size_t p)
     return re;
 }
 
+// ffi callbacks support
 word OLVM_apply(struct olvm_t* ol, word object, word args)
 {
 	ol->this = object; // lambda для обратного вызова
