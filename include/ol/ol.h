@@ -147,7 +147,7 @@ struct olvm_t {
 
 	// call the GC,
 	// returns 1 if does something
-	int (*gc)(struct olvm_t* ol, int words);
+	int (*gc)(struct olvm_t* ol, unsigned words);
 };
 
 // =====================================================================

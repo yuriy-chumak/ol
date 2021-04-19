@@ -258,6 +258,7 @@ object_t
 #define is_rawstream(x)             ((struct object_t*)(x))->rawness // ((*(word*)(x)) & RAWBIT)
 
 #define W                           (sizeof (word)) // todo: change to WSIZE
+#define WALIGN(x)                   (((x) + W - 1) / W)
 
 // makes olvm reference from system pointer (and just do sanity check in DEBUG)
 #define R(v) ({\
@@ -412,8 +413,9 @@ struct heap_t
 	// вызвать GC если в памяти мало места (в словах)
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
-	int (*gc)(struct olvm_t* ol, int ws);
+	int (*gc)(struct olvm_t* ol, unsigned ws);
 };
+
 typedef struct heap_t heap_t;
 
 
@@ -821,7 +823,7 @@ word*p = new (TVECTOR, 13);\
 
 #define new_rawstream(type, length) ({\
 	int _size = (length);\
-	int _words = (_size + W - 1) / W;\
+	int _words = WALIGN(_size);\
 	int _pads = (_words * W - _size);\
 	\
 word* p = new (type, _words, _pads);\
@@ -2023,7 +2025,7 @@ word runtime(struct olvm_t* ol);  // главный цикл виртуальн�
 #define A5                          R[ip[5]]
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
-static int OLVM_gc(struct olvm_t* ol, int ws) // ws - required size in words
+static int OLVM_gc(struct olvm_t* ol, unsigned ws) // ws - required size in words
 {
 	word *fp = ol->heap.fp; // memory allocation pointer
 
@@ -2755,10 +2757,10 @@ loop:;
 				el = A2;
 				//no break
 			case 2: {
-				size_t len = 0;
+				unsigned len = 0;
 				word list = value;
 				if (is_numberp(value))
-					len = number(value);
+					len = numberp(value);
 				else
 				while (is_pair(list)) {
 					++len;
@@ -2818,9 +2820,9 @@ loop:;
 				el = (size_t) value(A2);
 				// no break
 			case 2: {
-				size_t len = el;
+				unsigned len = el;
 				if (is_numberp(value))
-					len = untoi(value);
+					len = numberp(value);
 				else
 				if (!el) {
 					word list = value;
@@ -3422,7 +3424,7 @@ loop:;
 #endif
 						count = ((heap->end - fp) - 1) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
 
-				int words = ((count + W - 1) / W) + 1; // in words
+				unsigned words = WALIGN(count) + 1; // in words
 				if (fp + words > heap->end) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
@@ -3821,10 +3823,10 @@ loop:;
 				CHECK_NUMBER(2);
 				CHECK_NUMBER_OR_FALSE(3);
 
-				size_t length = number(A2); // in bytes
+				size_t count = number(A2); // in bytes
 
-				int words = ((length + W - 1) / W) + 1; // in words
-				if (words > (heap->end - fp)) {
+				unsigned words = WALIGN(count) + 1; // in words
+				if (fp + words > heap->end) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
@@ -3839,8 +3841,8 @@ loop:;
 					? number(A3)
 					: 0;
 
-				r = new_bytevector(length);
-				memcpy(&car(r), address + offset, length);
+				r = new_bytevector(count);
+				memcpy(&car(r), address + offset, count);
 				break;
 			}
 #endif
@@ -4933,7 +4935,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		case 2: {
 			int type = *hp++; assert (!(type & ~0x3F)); // & 0x3F; // type is 6 bits long
 			int size = get_nat(&hp);
-			int words = (size + W - 1) / W;
+			int words = WALIGN(size);
 			int pads = words * W - size;//(W - (size % W));
 
 			unsigned char *p = (unsigned char*)&car(new (type, words, pads));

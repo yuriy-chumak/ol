@@ -1279,7 +1279,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #endif
 
 	// 1. do memory precalculations and count number of arguments
-	int words = 0;
+	unsigned words = 0;
 	int i = 0;     // актуальное количество аргументов
 
 	word* p = (word*)C;   // ol arguments
@@ -1327,7 +1327,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
                     l + cnt*W; // size for array + size of all strings
                 }) : cnt;
 
-				words += ((len *
+				words += WALIGN(len *
 					atype == TINT8 || atype == TUINT8   ? sizeof(int8_t) :
 					atype == TINT16 || atype == TUINT16 ? sizeof(int16_t) :
 					atype == TINT32 || atype == TUINT32 ? sizeof(int32_t) :
@@ -1337,7 +1337,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					atype == TVPTR                      ? sizeof(void*) : // removed "&& !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) " just for speedup
                     atype == TSTRING                    ? sizeof(char) :
 					atype == TSTRINGWIDE                ? sizeof(widechar) :
-					0) + W - 1) / W + 1;
+					0) + 1;
 			}
 			else
 			switch (type) {
@@ -1347,26 +1347,26 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				case TSTRING:
 					switch (reference_type (arg)) {
 						case TSTRING:
-							words += (reference_size(arg) + W - 1) / W + 1;
+							words += WALIGN(reference_size(arg)) + 1;
 							break;
 						case TSTRINGWIDE:
-							words += (utf8_len(arg) + W - 1) / W + 1;
+							words += WALIGN(utf8_len(arg)) + 1;
 							break;
                         case TSTRINGDISPATCH:
-                            words += (number(ref(arg, 1)) + W - 1) / W + 1; // todo: process whole string as utf8_len and use FAST_STRING_CALC macro
+                            words += WALIGN(number(ref(arg, 1))) + 1; // todo: process whole string as utf8_len and use FAST_STRING_CALC macro
                             break;
 					}
 					break;
 				case TSTRINGWIDE:
 					switch (reference_type (arg)) {
 						case TSTRING:
-							words += (sizeof(widechar)*reference_size(arg) + W - 1) / W + 1;
+							words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
 							break;
 						case TSTRINGWIDE:
-							words += (sizeof(widechar)*reference_size(arg) + W - 1) / W + 1;
+							words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
 							break;
                         case TSTRINGDISPATCH:
-                            words += (sizeof(widechar)*number(ref(arg, 1)) + W - 1) / W + 1;
+                            words += WALIGN(sizeof(widechar) * number(ref(arg, 1))) + 1;
                             break;
 					}
 					break;
@@ -1388,12 +1388,12 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	// special case of returning a structure:
 	if (is_pair(car(B))) {
 		if (value(caar(B)) == TBYTEVECTOR)
-			words += (number(cdar(B)) + W-1) / W + 1;
+			words += WALIGN(number(cdar(B))) + 1;
 	}
 
 	// ensure that all arguments will fit in heap
 	heap_t* heap = (heap_t*)this;
-	if (words > (heap->end - heap->fp)) {
+	if (heap->fp + words > heap->end) {
         size_t a = OLVM_pin(this, A);
         size_t b = OLVM_pin(this, B);
         size_t c = OLVM_pin(this, C);
@@ -2336,7 +2336,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				}
 
 				// memory check
-				int words = (len * (utf8q ? sizeof(word) : sizeof(char)) + (W - 1)) / W;
+				unsigned words = WALIGN(len * (utf8q ? sizeof(word) : sizeof(char)));
 				if (fp + words > heap->end) {
 					heap->fp = fp;
 					heap->gc(this, words);
@@ -2372,7 +2372,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TSTRINGWIDE:
 			if ((word)got) {
 				widechar* p = (widechar*) (word)got;
-				size_t words = 0;
+				unsigned words = 0;
 				while (i++ <= VMAX && *p++) words++;
 
 				if (fp + words > heap->end) {
