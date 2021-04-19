@@ -2303,16 +2303,26 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					word* str = result = new (TSTRINGWIDE, len);
 					unsigned char* p = (unsigned char*)(word)got;
 					while (ch = *p) {
-						if ((ch & 0b10000000) == 0b00000000) // only ansi
-							*++str = I((word)(*p++));
-						else if ((ch & 0b11100000) == 0b11000000)
-							*++str = I(((word)(*p++) & 0x1F) <<  6 | (word)(*p++ & 0x3F));
-						else if ((ch & 0b11110000) == 0b11100000)
-							*++str = I(((word)(*p++) & 0x0F) << 12 | (word)(*p++ & 0x3F) <<  6 | (word)(*p++ & 0x3F));
-						else if ((ch & 0b11111000) == 0b11110000)
-							*++str = I(((word)(*p++) & 0x07) << 18 | (word)(*p++ & 0x3F) << 12 | (word)(*p++ & 0x3F) << 6 | (word)(*p++ & 0x3F));
-						else // invalid character (todo: add surrogates)
-							*++str = I((word)(*p++));
+						if ((ch & 0b10000000) == 0b00000000) { // ansi
+							*++str = I((word)(p[0]));
+							p += 1;
+						}
+						else if ((ch & 0b11100000) == 0b11000000) {
+							*++str = I(((word)(p[0]) & 0x1F) <<  6 | (word)(p[1] & 0x3F));
+							p += 2;
+						}
+						else if ((ch & 0b11110000) == 0b11100000) {
+							*++str = I(((word)(p[0]) & 0x0F) << 12 | (word)(p[1] & 0x3F) <<  6 | (word)(p[2] & 0x3F));
+							p += 3;
+						}
+						else if ((ch & 0b11111000) == 0b11110000) {
+							*++str = I(((word)(p[0]) & 0x07) << 18 | (word)(p[1] & 0x3F) << 12 | (word)(p[2] & 0x3F) << 6 | (word)(p[3] & 0x3F));
+							p += 4;
+						}
+						else { // invalid character (todo: add surrogates)
+							*++str = I('?');
+							p += 1;
+						}
 					}
 				}
 			}
