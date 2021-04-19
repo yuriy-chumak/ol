@@ -58,12 +58,12 @@ struct olvm_t*
 OLVM_new(unsigned char* bootstrap);
 
 /**
- * Release the OL virtual machine (olvm)
+ * Destroy created OL virtual machine (olvm)
  *
  * \param[in] ol Valid olvm instance
  */
 void
-OLVM_free(struct olvm_t* ol);
+OLVM_delete(struct olvm_t* ol);
 
 /**
  * Run the OL virtual machine (olvm)
@@ -330,7 +330,7 @@ uintptr_t OL_eval(ol_t* embed, ...)
 static
 void OL_delete(ol_t* embed)
 {
-	OLVM_free(embed->vm);
+	OLVM_delete(embed->vm);
 }
 
 // c++ interface:

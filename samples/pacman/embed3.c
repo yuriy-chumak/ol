@@ -34,7 +34,7 @@ void ol_new_ol()
 
 void ol_delete_ol()
 {
-	OLVM_free(vm);
+	OLVM_delete(vm);
 }
 
 

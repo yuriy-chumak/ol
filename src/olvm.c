@@ -84,7 +84,7 @@ typedef struct olvm_t olvm_t;
 
 olvm_t*
      OLVM_new(unsigned char* bootstrap);
-void OLVM_free(olvm_t* ol);
+void OLVM_delete(olvm_t* ol);
 word OLVM_run(olvm_t* ol, int argc, char** argv);
 word OLVM_evaluate(olvm_t* ol, word function, int argc, word* argv);
 
@@ -5149,7 +5149,7 @@ int main(int argc, char** argv)
         if (is_number(r))
             v = number(r);
 
-		OLVM_free(olvm);
+		OLVM_delete(olvm);
 	}
 
 #if	HAS_SOCKETS && defined(_WIN32)
@@ -5293,11 +5293,11 @@ OLVM_new(unsigned char* bootstrap)
 	return handle;
 
 fail:
-	OLVM_free(handle);
+	OLVM_delete(handle);
 	return 0;
 }
 
-void OLVM_free(OL* ol)
+void OLVM_delete(OL* ol)
 {
 	if (sandboxp)
 		return;

@@ -8,7 +8,7 @@ typedef uintptr_t word;
 { \
 	printf("Testing " x " instruction... ");
 #define END() \
-	OLVM_free(olvm); \
+	OLVM_delete(olvm); \
 }
 
 #define EVAL(...) \
