@@ -137,12 +137,13 @@ idle_t*  OLVM_set_idle(struct olvm_t* ol, idle_t idle);
 
 // ==========================================================================
 struct olvm_t {
+	// new (size) === { *(size*)fp; fp += size; }
+	uintptr_t *fp;        // allocation pointer
+
 	// always: begin <= genstart <= end
 	uintptr_t *begin;     // begin of heap
 	uintptr_t *end;       // end of heap
 	uintptr_t *genstart;  // young generation begin pointer
-	// new (size) == *(size*)fp; fp += size
-	uintptr_t *fp;        // allocation pointer
 
 	// call the GC,
 	// returns 1 if does something

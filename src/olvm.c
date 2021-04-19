@@ -401,12 +401,13 @@ void E(char* format, ...);
 // память машины, управляемая сборщиком мусора
 struct heap_t
 {
-	//  begin <= genstart <= end
+	// new (size) === { *(size*)fp; fp += size; }
+	word *fp;        // allocation pointer
+
+	// always: begin <= genstart <= end
 	word *begin;     // begin of heap
 	word *end;       // end of heap
 	word *genstart;  // young generation begin pointer
-	// new (size) == *(size*)fp; fp+=size
-	word *fp;        // allocation pointer
 
 	// вызвать GC если в памяти мало места (в словах)
 	// для безусловного вызова передать 0
