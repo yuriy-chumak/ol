@@ -138,9 +138,9 @@ int main(int argc, char** argv)
 	// very simple, yes? Please, don't forget to delete this function when you will no need it anymore
 	uintptr_t f = r;
 	r = eval(f, 4);
-	assert (r = make_integer(24)); // 4!
+	assert (r == make_integer(24)); // 4!
 	r = eval(f, 7);
-	assert (r = make_integer(5040)); // 7!
+	assert (r == make_integer(5040)); // 7!
 
 	r = eval("vm:unpin", f); // free
     assert (r != IFALSE);

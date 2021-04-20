@@ -38,8 +38,7 @@
 #endif
 
 // use virtual machine declaration from olvm source code
-#define USE_OLVM_DECLARATION
-#include "olvm.c"
+#include <ol/vm.h>
 
 #define unless(...) if (! (__VA_ARGS__))
 
@@ -53,6 +52,14 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#endif
+
+#ifndef WARN_ALL
+#	ifdef __clang__
+#		pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#	endif
+#	pragma GCC diagnostic ignored "-Wparentheses"
+#	pragma GCC diagnostic ignored "-Wunused-label"
 #endif
 
 

@@ -6,9 +6,9 @@ else
 
 FAILED := $(shell mktemp /tmp/failed.XXXXXXXXX -u)
 
-MINGW32Q := $(shell which i686-w64-mingw32-gcc >/dev/null && echo 1)
-MINGW64Q := $(shell which x86_64-w64-mingw32-gcc >/dev/null && echo 1)
-WINEQ    := $(shell which wine >/dev/null && echo 1)
+MINGW32Q := $(shell which i686-w64-mingw32-gcc 2>/dev/null && echo 1)
+MINGW64Q := $(shell which x86_64-w64-mingw32-gcc 2>/dev/null && echo 1)
+WINEQ    := $(shell which wine 2>/dev/null && echo 1)
 
 ok:="\033[1;32mok\033[0m"
 failed:="\033[1;31mfailed\033[0m"
@@ -32,12 +32,12 @@ vm32 = true
 endif
 
 
-vm32: src/olvm.c include/ol/vm.h
+vm32: src/olvm.c includes/ol/vm.h
 	$(CC) src/olvm.c -DNAKED_VM -o $@ \
 	   $(L) -m32 -DOLVM_FFI=0 \
 	   $(CFLAGS)
 	@echo Ok.
-vm64: src/olvm.c include/ol/vm.h
+vm64: src/olvm.c includes/ol/vm.h
 	$(CC) src/olvm.c -DNAKED_VM -o $@ \
 	   $(L) -m64 -DOLVM_FFI=0 \
 	   $(CFLAGS)
@@ -47,8 +47,9 @@ vm64: src/olvm.c include/ol/vm.h
 # win
 define winbuild
 	$(CC) src/olvm.c -DNAKED_VM -o $1 \
-	   -DOLVM_FFI=1 -Iwin32 -Isrc extensions/ffi.c\
-	   -std=gnu99 -fno-exceptions -lws2_32\
+	   -DOLVM_FFI=1 -Iwin32 -Iincludes \
+	   extensions/ffi.c \
+	   -std=gnu99 -fno-exceptions -lws2_32 \
 	   -DHAS_DLOPEN=1 -DHAS_SOCKES=1 $2
 	@echo Ok.
 endef
@@ -75,10 +76,10 @@ endif
 test32: $(wildcard tests/*.scm)
 	@echo "-- test32 ----------"
 	@rm -f $(FAILED)
-	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DOLVM_NOMAIN -o vm32d $(L) -m32
+	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DNAKED_VM -DOLVM_NOMAIN -o vm32d $(L) -m32
 	@./vm32d
-	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iinclude -DNAKED_VM \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o ffi32 $(L) -m32
+	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes -DNAKED_VM \
+	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o ffi32 $(L) -m32
 	@for F in $^ ;do \
 	   printf "Testing $$F ... " ;\
 	   if OL_HOME=`pwd`/libraries ./ffi32 repl $$F >/dev/null; then\
@@ -93,10 +94,10 @@ test32: $(wildcard tests/*.scm)
 test64: $(wildcard tests/*.scm)
 	@echo "-- test64 ----------"
 	@rm -f $(FAILED)
-	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DOLVM_NOMAIN -o vm64d $(L) -m64
+	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DNAKED_VM -DOLVM_NOMAIN -o vm64d $(L) -m64
 	@./vm64d
-	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iinclude -DNAKED_VM \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o ffi64 $(L) -m64
+	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes -DNAKED_VM \
+	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o ffi64 $(L) -m64
 	@for F in $^ ;do \
 	   printf "Testing $$F ... " ;\
 	   if OL_HOME=`pwd`/libraries ./ffi64 repl $$F >/dev/null; then\
@@ -113,8 +114,8 @@ test: test64
 
 # -=( ffi )=----------------------------------------
 test-ffi:
-	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iinclude -DNAKED_VM \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o $(ffi)$(affix)$(bits) $(L) \
+	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes -DNAKED_VM \
+	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(ffi)$(affix)$(bits) $(L) \
 	   -fsigned-char # for ffi tests we should use char as signed by default
 	@printf "Testing $(ffi)$(affix)$(bits) ... "
 	@if $(ffi)$(affix)$(bits) repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
@@ -151,7 +152,7 @@ endif
 
 # -=( vm )=----------------------------------------
 test-vmi:
-	$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iinclude -DNAKED_VM -DOLVM_NOMAIN -o $(vmi)$(affix)$(bits) $(L)
+	$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DNAKED_VM -DOLVM_NOMAIN -o $(vmi)$(affix)$(bits) $(L)
 	   @echo "$(vmi)$(affix)$(bits):"
 	   @$(vmi)$(affix)$(bits)
 vmi=tmp/vmi
@@ -181,10 +182,10 @@ endif
 
 vm-debug:
 	$(CC) src/olvm.c $(CFLAGS) -DNAKED_VM \
-	-DOLVM_FFI=1 -Isrc extensions/ffi.c -o $(vm)d$(bits) $(L) $(CFLAGS_DEBUG)
+	-DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(vm)d$(bits) $(L) $(CFLAGS_DEBUG)
 vm-release:
 	$(CC) src/olvm.c $(CFLAGS) -DNAKED_VM \
-	-DOLVM_FFI=1 -Isrc extensions/ffi.c -o $(vm)r$(bits) $(L) $(CFLAGS_RELEASE)
+	-DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(vm)r$(bits) $(L) $(CFLAGS_RELEASE)
 vm=tmp/vm
 
 # special case, maximal testings under main development platform
@@ -238,14 +239,14 @@ else
 	@echo "Built."
 endif
 
-testing-embed: tests/embed.c src/olvm.c include/ol/ol.h tmp/repl.c
+testing-embed: tests/embed.c src/olvm.c includes/ol/ol.h tmp/repl.c
 	@printf "Testing embed ... "
 ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
 ifeq ($(HAS_32CDEFS),1)
 	@printf ", debug-32: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embed32d \
-	   -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m32
+	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed32d \
+	   -Iincludes -lm $(CFLAGS_DEBUG) -m32 -Wno-unused-function
 	@if tmp/embed32d >/dev/null; then\
 	   printf $(ok) ;\
 	else \
@@ -254,8 +255,8 @@ ifeq ($(HAS_32CDEFS),1)
 	fi
 	@printf ", release-32: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embed32r \
-	   -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m32
+	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed32r \
+	   -Iincludes -lm $(CFLAGS_RELEASE) -m32 -Wno-unused-function
 	@if tmp/embed32r >/dev/null; then\
 	   printf $(ok) ;\
 	else \
@@ -266,8 +267,8 @@ endif
 ifeq ($(HAS_64CDEFS),1)
 	@printf ", debug-64: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embed64d \
-	   -Iextensions -Iinclude -lm $(CFLAGS_DEBUG) -m64
+	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed64d \
+	   -Iincludes -lm $(CFLAGS_DEBUG) -m64 -Wno-unused-function
 	@if tmp/embed64d >/dev/null; then\
 	   printf $(ok) ;\
 	else \
@@ -276,8 +277,8 @@ ifeq ($(HAS_64CDEFS),1)
 	fi
 	@printf ", release-64: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embed64r \
-	   -Iextensions -Iinclude -lm $(CFLAGS_RELEASE) -m64
+	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed64r \
+	   -Iincludes -lm $(CFLAGS_RELEASE) -m64 -Wno-unused-function
 	@if tmp/embed64r >/dev/null; then\
 	   printf $(ok) ;\
 	else \
@@ -288,8 +289,8 @@ endif
 else
 	@printf ", debug: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embedd \
-	   -Iextensions -Iinclude -lm $(CFLAGS_DEBUG)
+	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embedd \
+	   -Iincludes -lm $(CFLAGS_DEBUG) -Wno-unused-function
 	@if tmp/embedd >/dev/null; then\
 	   printf $(ok) ;\
 	else \
@@ -298,8 +299,8 @@ else
 	fi
 	@printf ", release: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
-	   -DOLVM_FFI=1 -Isrc extensions/ffi.c -o tmp/embedr \
-	   -Iextensions -Iinclude -lm $(CFLAGS_RELEASE)
+	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embedr \
+	   -Iincludes -lm $(CFLAGS_RELEASE) -Wno-unused-function
 	@if tmp/embedr >/dev/null; then\
 	   printf $(ok) ;\
 	else \
@@ -339,7 +340,7 @@ endif
 	@printf ".\n"
 
 # -=( tests )=-------------------------------------
-tests: repl include/ol/vm.h
+tests: repl includes/ol/vm.h
 tests: testing-binaries
 tests: testing-embed
 tests: $(wildcard tests/*.scm)

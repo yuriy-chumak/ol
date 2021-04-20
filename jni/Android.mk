@@ -36,8 +36,8 @@ LOCAL_SRC_FILES := ../src/olvm.c
 LOCAL_SRC_FILES += ../tmp/repl.c
 LOCAL_SRC_FILES += ../extensions/ffi.c
 
-LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O0 -g3 -Iinclude -fsigned-char
 LOCAL_CFLAGS   += -Ijni/../src -DOLVM_FFI=1
+LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O0 -g3 -Iincludes -fsigned-char
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
 LOCAL_LDLIBS   += -llog -landroid

@@ -407,8 +407,8 @@ FILES
 
 * repl  - the compiled ol binary interpreter/compiler
 * src/olvm.c  - the ol virtual machine source code (in C)
-* include/ol/ol.h  - the common ol header (not required by compiler, just for use as embed)
-* include/ol/vm.h  - the ol virtual machine header (not required by compiler, just for use as embed)
+* includes/ol/ol.h  - the common ol header (not required by compiler, just for use as embed)
+* includes/ol/vm.h  - the ol virtual machine header (not required by compiler, just for use as embed)
 * extensions/ffi.c  - FFI implementation
 * lang/*.scm  - ol repl and compiler source codes (in Lisp)
 * libraries/**.scm - various OL libraries (in Lisp):

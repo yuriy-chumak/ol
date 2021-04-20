@@ -732,11 +732,12 @@ word*p = new (TVECTOR, 13);\
 //   that is equal to -2147483648 for 32-bit and -9223372036854775808 for 64-bit
 // in this case -val cenverts into "0" by machine math and we got invalid value
 //   so we need to compare val with INT_T_MIN and use a longer converter
-
-// Yes, clang, I know. This is not an error. I don't want to make a code
-// completely unreadable to satisfy your paranoia.
-#pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
-#pragma clang diagnostic ignored "-Wparentheses"
+//
+// Stupid clang generates warnings just after preprocessor and
+//   before __builtin_types_compatible_p() / sizeof() preprocessor,
+//   and founds a "-Wtautological-constant-out-of-range-compare" warnings
+//   in places that definitely will not compile.
+// I don't want to make a code completely unreadable to satisfy it.
 
 #if OLVM_ANSI_INT_LIMITS
 # define NOT_A_MIN_INT(i) (1)
@@ -917,6 +918,20 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 #	if __STDC_VERSION__ < 199901L
 #		error "Required gnu99 enabled (-std=gnu99)"
 #	endif
+#endif
+
+#ifndef WARN_ALL
+#	ifdef __clang__
+		// Stupid clang generates warnings just after preprocessor and
+		//   before __builtin_types_compatible_p() / sizeof() preprocessor,
+		//   and founds a warnings in places that definitely will not compile.
+		// I don't want to make a code completely unreadable to satisfy it.
+#		pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#	endif
+	// while (ch = *p++)
+#	pragma GCC diagnostic ignored "-Wparentheses"
+	// my unused labels will be used in future
+#	pragma GCC diagnostic ignored "-Wunused-label"
 #endif
 
 // #ifndef __has_feature
@@ -1799,10 +1814,13 @@ unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in
 	return p;
 }
 
-#ifdef _WIN32
+#if !OLVM_NOMAIN
+#	ifdef _WIN32
+
 static
 void set_signal_handler() { }
-#else
+
+#	else
 
 static
 void sigint_handler(int sig)
@@ -1818,8 +1836,9 @@ void set_signal_handler()
 	signal(SIGINT, sigint_handler);
 	signal(SIGPIPE, SIG_IGN);	// do not break on sigpipe
 }
-#endif//_WIN32
 
+#	endif//_WIN32
+#endif
 /***********************************************************************************
  * OL
  */

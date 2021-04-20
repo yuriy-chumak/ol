@@ -8,21 +8,21 @@ repl.o: ../../repl
 
 pacman1: main.c embed1.c texturing.c repl.o
 	gcc $^ -I. -lGL -lglut -lpng \
-	    -I../../include -DNAKED_VM -DOLVM_NOMAIN \
+	    -I../../includes -DNAKED_VM -DOLVM_NOMAIN \
 	    -D_binary_repl_start=_binary_______repl_start \
 	    ../../src/olvm.c -ldl -lm -pthread \
 	    -o $@
 
 pacman2: main.c embed2.c texturing.c repl.o
 	gcc $^ -I. -lGL -lglut -lpng \
-	    -I../../include -DNAKED_VM -DOLVM_NOMAIN \
+	    -I../../includes -DNAKED_VM -DOLVM_NOMAIN \
 	    -D_binary_repl_start=_binary_______repl_start \
 	    ../../src/olvm.c -ldl -lm -pthread \
 	    -o $@
 
 pacman3: main.c embed3.c texturing.c binf.c
 	gcc $^ -I. -lGL -lglut -lpng \
-	    -I../../include -DNAKED_VM -DOLVM_NOMAIN \
+	    -I../../includes -DNAKED_VM -DOLVM_NOMAIN \
 	    ../../src/olvm.c -ldl -lm -pthread \
 	    -o $@
 

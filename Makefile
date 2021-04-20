@@ -2,7 +2,7 @@ export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
 
-.PHONY: all debug release slim config recompile install uninstall clean android
+.PHONY: all debug release check slim config recompile install uninstall clean android
 .PHONY: describe
 
 all: release
@@ -54,7 +54,8 @@ HAS_SECCOMP ?= $(call exists,,<linux/seccomp.h>, prctl)
 HAS_SOCKETS ?= $(call exists,,<stdlib.h>, socket)
 
 CFLAGS += -std=gnu99 -fno-exceptions
-CFLAGS_DEBUG   := -O0 -g2
+CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
+CFLAGS_DEBUG   := -O0 -g2 -Wall
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 
 # builtin "sin", "cos", "sqrt", etc. functions support
@@ -68,9 +69,9 @@ endif
 #  only one warning instance. I don't want to add SEVEN lines of code
 #  to disable only ONE warning that in fact is not a warning but fully
 #  planned behavior. so disable all same warnings to the release build.
-ifeq ($(CC),clang)
-   CFLAGS_RELEASE += -Wno-tautological-constant-out-of-range-compare
-endif
+# ifeq ($(CC),clang)
+#    CFLAGS_RELEASE += -Wno-tautological-constant-out-of-range-compare
+# endif
 
 CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
           $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
@@ -111,7 +112,7 @@ ifeq ($(UNAME),MINGW32_NT-6.1)
 endif
 
 ifeq ($(UNAME),Darwin)
-  CFLAGS += -DSYSCALL_SYSINFO=0 -Wno-tautological-constant-out-of-range-compare
+  CFLAGS += -DSYSCALL_SYSINFO=0
   PREFIX ?= /usr/local
 endif
 
@@ -179,7 +180,7 @@ clean:
 	rm -f ./vm ./ol
 	rm -r tmp/*
 
-install: ol include/ol/vm.h
+install: ol includes/ol/vm.h
 	# install Ol executable to $(DESTDIR)$(PREFIX)/bin:
 	@echo Installing main binary...
 	install -d $(DESTDIR)$(PREFIX)/bin
@@ -190,8 +191,8 @@ install: ol include/ol/vm.h
 	install -m 644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
 	@echo Installing headers...
 	install -d $(DESTDIR)$(PREFIX)/include/ol
-	install -m 644 include/ol/vm.h $(DESTDIR)$(PREFIX)/include/ol/vm.h
-	install -m 644 include/ol/ol.h $(DESTDIR)$(PREFIX)/include/ol/ol.h
+	install -m 644 includes/ol/vm.h $(DESTDIR)$(PREFIX)/include/ol/vm.h
+	install -m 644 includes/ol/ol.h $(DESTDIR)$(PREFIX)/include/ol/ol.h
 	# and libraries to $(DESTDIR)$(PREFIX)/lib/ol:
 	@echo Installing basic libraries...
 	find libraries -type d -exec bash -c 'install -d "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
@@ -204,6 +205,9 @@ uninstall:
 	-rm -rf $(DESTDIR)$(PREFIX)/include/ol
 
 ## actual 'building' part
+check: CFLAGS += $(CFLAGS_CHECK)
+check: vm
+
 debug: CFLAGS += $(CFLAGS_DEBUG)
 debug: vm repl ol
 
@@ -220,21 +224,17 @@ android: jni/*.c tmp/repl.c
 #	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
 
 # ol
-vm: src/olvm.c
-	$(CC) src/olvm.c -DNAKED_VM -o $@\
-	   -Isrc extensions/ffi.c\
+vm: src/olvm.c extensions/ffi.c
+	$(CC) src/olvm.c -DNAKED_VM -o $@ \
+	   extensions/ffi.c -Iincludes \
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
-ol: src/olvm.c tmp/repl.c
-	$(CC) src/olvm.c tmp/repl.c -o $@\
-	   -Isrc extensions/ffi.c\
+ol: src/olvm.c extensions/ffi.c tmp/repl.c
+	$(CC) src/olvm.c tmp/repl.c -o $@ \
+	   extensions/ffi.c -Iincludes \
 	   $(CFLAGS) $(L)
 	@echo Ok.
-
-# just internal dependency
-src/olvm.c: extensions/ffi.c
-	touch src/olvm.c
 
 tmp/repl.c: repl
 #	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
@@ -244,8 +244,10 @@ tmp/repl.c: repl
 #	   -e 's/^/unsigned char repl[] = {/' \
 #	   -e 's/$$/};/'> $@
 
-include/ol/vm.h: src/olvm.c
+extensions/ffi.c: includes/ol/vm.h
+includes/ol/vm.h: src/olvm.c
 	sed -n '/USE_OLVM_DECLARATION/q;p' $^ >$@
+
 
 # # emscripten version 1.37.40+
 # deprecated repl.js: repl
@@ -271,9 +273,9 @@ include/ol/vm.h: src/olvm.c
 # 	   -s NO_EXIT_RUNTIME=1 \
 # 	   --memory-init-file 0
 
-olvm.wasm: src/olvm.c include/ol/vm.h
+olvm.wasm: src/olvm.c includes/ol/vm.h
 	emcc src/olvm.c extensions/embed.c tmp/repl.c -Os \
-	   -o olvm.html -Iinclude \
+	   -o olvm.html -Iincludes \
 	   -DOLVM_NOMAIN=1 -DHAS_DLOPEN=0 \
 	   -Dbinary_repl_start=repl \
 	   -s ASSERTIONS=0 \
@@ -307,9 +309,9 @@ ol.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
 ol.exe: MINGWCFLAGS += -DHAS_DLOPEN=1
 ol.exe: MINGWCFLAGS += -DHAS_SOCKES=1
 ol.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
-ol.exe: src/olvm.c tmp/repl.c
+ol.exe: src/olvm.c extensions/ffi.c tmp/repl.c
 	$(CC) src/olvm.c tmp/repl.c -o $@\
-	   -DOLVM_FFI=1 -Iwin32 -Isrc extensions/ffi.c\
+	   -DOLVM_FFI=1 -Iwin32 -Iincludes extensions/ffi.c\
 	   $(MINGWCFLAGS) -lws2_32
 
 # compiling the Ol language

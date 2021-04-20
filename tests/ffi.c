@@ -468,7 +468,7 @@ char* reverse_string(char* str)
 	int rlen = 0;
 	while (*str) {
 		int x = 0;
-		u32[rlen++] = sgetu8(str, &x);
+		u32[rlen++] = sgetu8((unsigned char*)str, &x);
 		str += x;
 	}
 

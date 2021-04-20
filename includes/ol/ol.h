@@ -295,7 +295,6 @@ uintptr_t OL_evalv(ol_t* embed, va_list* vp)
 		count++;
 	uintptr_t* args = __builtin_alloca((count+1) * sizeof(uintptr_t)); // just one for sanity zero
 
-	int i = 0;
 	va_copy(vl, *vp);
 	for (int i = 0; i < count; i++)
 		args[i] = va_arg(vl, uintptr_t);
