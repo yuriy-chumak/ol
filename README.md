@@ -63,38 +63,15 @@ You can find Ol samples at:
 DOWNLOAD / INSTALLATION
 -----------------------
 
-You can use basic Ol functionality without any installation -
-just copy the `ol` (`ol.exe` for Windows) binary to any user
-accessible path. Basic functionality includes a rich set of
-functions: lists, vectors, associative arrays (named ff's),
-i/o streams and files, lazy calculations, strings, symbols,
-math, regex, etc.
+You can use basic Ol functionality without any installation - just copy the `ol` (`ol.exe` for Windows) binary to any user-accessible path.
 
-Advanced functionality (i.e. OpenGL support) require a complete installation of Ol package:
+Basic functionality includes a rich set of features: lists, vectors and bytevectors, numbers math with unlimited accuracy, strings, associative arrays (named `ff`), i/o streams and files, lazy calculations, regular expressions, coroutines, etc.
 
-* You can refer to the 'BUILD' page below to manually build and install full Ol libraries,
+Advanced functionality (i.e. OpenGL support) requires a complete installation of the Ol package:
+  * You can use precompiled binaries and/or installation packages that can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page.
+  * or You can manually copy required [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory,
 
-* or You can use installation packages available at [openSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol),
-  * CentOS 6 (x86, amd64), CentOS 7 (amd64),
-  * Debian 7 (x86, amd64), Debian 8 (x86, amd64),
-  * Fedora 22 (x86, amd64), Fedora 23 (x86, amd64),
-  * RHEL 5 (x86, amd64), RHEL 6 (x86, amd64), RHEL 7 (amd64),
-  * SLE 10 (x86, amd64), SLE 11 (x86, amd64), SLE 12 (amd64),
-  * ScientificLinux 6 (x86, amd64), ScientificLinux 7 (amd64),
-  * Univention 3.2 (x86, amd64), Univention 4.0 (x86, amd64),
-  * openSUSE 13.1 (x86, amd64), openSUSE 13.2 (x86, amd64),
-    openSUSE Factory (aarch64, armv7l),
-    openSUSE Leap 42.1 (amd64),
-    openSUSE Tumbleweed (x86, amd64),
-  * Ubuntu 12.04 (x86, amd64), Ubuntu 14.04 (x86, amd64, aarch64, armv7l), Ubuntu 16.04 (x86, amd64),
-
-* Next platforms installation packages can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page:
-  * Windows (x86, amd64),
-  * Android (arm64-v8a, armeabi, armeabi-v7a, mips, mips64, x86, x86_64),
-
-* or You can manually copy required [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory,
-
-* Some libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
+Some libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
 
 
 BUILD REQUIREMENTS

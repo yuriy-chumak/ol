@@ -1328,7 +1328,7 @@ void E(char* format, ...)
 	switch (*format++) {
 	case 0: { // exit
 		char newline[] = "\n";
-		write(fd, newline, sizeof(newline));
+		(void)write(fd, newline, sizeof(newline));
 		// fsync(fd);
 		va_end(args);
 		return;
@@ -1340,13 +1340,13 @@ void E(char* format, ...)
 			continue;
 		case 's': {
 			char* s = va_arg(args, char*);
-			write(fd, s, strlen(s));
+			(void)write(fd, s, strlen(s));
 			break;
 		}
 		case 'd': {
 			int d = va_arg(args, int);
 			if (d < 0) {
-				write(fd, "-", 1);
+				(void)write(fd, "-", 1);
 				d = -d;
 			}
 			int q = 1;
@@ -1354,16 +1354,16 @@ void E(char* format, ...)
 				q *= 10;
 			q /= 10;
 			for (int i = q; i != 0; i /= 10)
-				write(fd, "0123456789" + (d / i) % 10, 1);
+				(void)write(fd, "0123456789" + (d / i) % 10, 1);
 			break;
 		}
 		default:
-			write(fd, format-1, sizeof(char));
+			(void)write(fd, format-1, sizeof(char));
 		}
 		continue;
 	}
 	default:
-		write(fd, format-1, sizeof(char));
+		(void)write(fd, format-1, sizeof(char));
 	}
 }
 #pragma GCC diagnostic pop
