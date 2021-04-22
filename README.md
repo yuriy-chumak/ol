@@ -246,7 +246,7 @@ You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton
 !["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
 
 
-CASTOMIZATION
+CUSTOMIZATION
 -------------
 
 If you want to enable/disable some olvm features you can use -Dxxx or -Dxxx=y gcc syntax. This is a list of currently accessible customizations:
