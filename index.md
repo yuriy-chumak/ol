@@ -13,6 +13,21 @@ It implements an extended subset of [R<sup>7</sup>RS](https://www.r7rs.org) Sche
 
 
 ### Downloads
+
+:boom:
+Release **2.2** is prepared.
+
+Major changes:
+  * stabilized simple dictionaries ([{}](https://github.com/yuriy-chumak/ol/wiki/%7B%7D)) and vectors ([[]](https://github.com/yuriy-chumak/ol/wiki/%5B%5D)) syntax,
+  * new experimental human readable [if](https://github.com/yuriy-chumak/ol/wiki/if) statement extension,
+  * +nan.0, -inf.0, and +inf.0 as legal inexact numbers and more built-in inexact math functions provided,
+  * a lot of ffi updates and changes,
+  * introduced Otus Lisp Packages Repository (based on KISS pm).
+
+Full changes list and prebuilt binaries can be found at [link](https://github.com/yuriy-chumak/ol/releases).
+
+
+#### old downloads
 Release **2.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
 
 
