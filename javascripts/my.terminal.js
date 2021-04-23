@@ -97,6 +97,7 @@ var Module = {
       ol_eval = Module.cwrap('ol_eval', 'number', ['string']);
 
       ol_init();
+		doit('(print "Welcome to Otus Lisp " (cdr *version*) "\\n")(define *interactive* #t)');
 
       terminal.resume();
       terminal.set_prompt('> ');
@@ -106,7 +107,13 @@ var Module = {
    print: function(text) {
       if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
 
-      if (terminal.ready == false) {
+		if (text == ";; Defined *interactive*") // Ol became in terminal really started
+			return;
+		if (text.startsWith("> > "))
+			text = text.substring(4);
+
+		// first output detected.
+		if (terminal.ready == false) {
          terminal.ready = true;
          terminal.clear();
       }
