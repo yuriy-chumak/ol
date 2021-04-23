@@ -246,13 +246,11 @@ static
 uintptr_t
 OL_new(ol_t* embed, unsigned char* bootstrap)
 {
-	int interactive = 0;
-
 	embed->vm = OLVM_new(bootstrap);
 	OLVM_userdata(embed->vm, embed);
 
 	uintptr_t r; // execution result
-	char* args[] = { "--embed", interactive ? "--interactive" : "--no-interactive" }; // ol execution arguments
+	char* args[] = { "--embed" }; // ol execution arguments
 	r = OLVM_run(embed->vm, sizeof(args) / sizeof(*args), args);
 	// well, we have our "smart" script prepared,
 	//  now save both eval and env variables
