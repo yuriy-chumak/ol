@@ -14,7 +14,6 @@ describe: all
 ## 'configure' part:
 # check the library and/or function
 exists = $(shell echo "\
-	\#include $2\\n\
 	char $3();\
 	\
 	int main() {\
