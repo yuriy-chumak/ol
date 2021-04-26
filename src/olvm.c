@@ -1489,10 +1489,23 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 // набор макросов - проверок для команд
 // car, cdr:
 #ifndef CAR_CHECK
-#	define CAR_CHECK(arg) is_pair(arg) || is_npairp(arg) || is_npairn(arg) || is_rational(arg) || is_complex(arg)
+#define CAR_CHECK 1
 #endif
+
+#if CAR_CHECK
+#	define CHECKCAR(arg) is_pair(arg) || is_npairp(arg) || is_npairn(arg) || is_rational(arg) || is_complex(arg)
+#else
+#	define CHECKCAR(arg) 1
+#endif
+
 #ifndef CDR_CHECK
-#	define CDR_CHECK(arg) is_pair(arg) || is_npairp(arg) || is_npairn(arg) || is_rational(arg) || is_complex(arg)
+#define CDR_CHECK 1
+#endif
+
+#if CDR_CHECK
+#	define CHECKCDR(arg) is_pair(arg) || is_npairp(arg) || is_npairn(arg) || is_rational(arg) || is_complex(arg)
+#else
+#	define CHECKCDR(arg) 1
 #endif
 
 
@@ -2995,7 +3008,7 @@ loop:;
 	// speed version of (ref a 1)
 	case CAR: {  // car a -> r
 		word T = A0;
-		CHECK(CAR_CHECK(T), T, CAR);
+		CHECK(CHECKCAR(T), T, CAR);
 		A1 = car(T);//((word*)T)[1];
 		ip += 2; break;
 	}
@@ -3003,7 +3016,7 @@ loop:;
 	// speed version of (ref a 2)
 	case CDR: {  // cdr a -> r
 		word T = A0;
-		CHECK(CDR_CHECK(T), T, CDR);
+		CHECK(CHECKCDR(T), T, CDR);
 		A1 = cdr(T);//((word*)T)[2];
 		ip += 2; break;
 	}

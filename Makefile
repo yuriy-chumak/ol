@@ -56,6 +56,7 @@ CFLAGS += -std=gnu99 -fno-exceptions
 CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
 CFLAGS_DEBUG   := -O0 -g2 -Wall
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
+CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
 
 # builtin "sin", "cos", "sqrt", etc. functions support
 # can be disabled using -DOLVM_NO_BUILTIN_FMATH=1
