@@ -153,13 +153,14 @@ WebAssembly binary compilation requires Emscripten 1.37.40+.
 ```bash
 $ make; make install
 ```
-* use *gmake* for unix clients
+* Note: use *gmake* for unix clients
+* Note: use *make uninstall* to completely uninstall Ol.
 
 ### BUILD IN REGULAR WAY
 
 #### GNU/Linux:
 
-##### Build olvm (Ol virtual machine):
+##### Build olvm (ol virtual machine):
 
 ```bash
 $ cc src/olvm.c  -std=gnu99 -O2  -lm -ldl  -o vm

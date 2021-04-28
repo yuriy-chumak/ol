@@ -11,11 +11,11 @@
 
    (export
       call-with-input-file
-      ;; call-with-output-file
-      ;; open-binary-input-file
-      ;; open-binary-output-file
-      ;; open-input-file
-      ;; open-output-file
+      call-with-output-file
+      open-binary-input-file
+      open-binary-output-file
+      open-input-file
+      open-output-file
       ;; with-input-from-file
       ;; with-output-to-file
 
@@ -34,9 +34,30 @@
 
       (define (call-with-input-file filename proc)
          (let ((port (open-input-file filename)))
-            (if port
+            (when port
                (let ((result (proc port)))
                   (close-port port)
                   result))))
+      (define (call-with-output-file filename proc)
+         (let ((port (open-output-file filename)))
+            (when port
+               (let ((result (proc port)))
+                  (close-port port)
+                  result))))
+
+      (define (sys:open path mode)
+         (cond
+            ((c-string path) =>
+               (λ (path) (syscall 2 path mode)))))
+
+      (define (open-binary-input-file path)
+         (sys:open path #o100000)) ; O_RDONLY|O_BINARY
+      (define (open-binary-output-file path)
+         (sys:open path #o101102)) ; O_CREAT|O_TRUNC|O_RDWR+O_BINARY
+
+      (define (open-input-file path)
+         (sys:open path #o0000))  ; O_RDONLY
+      (define (open-output-file path)
+         (sys:open path #o1102)) ; O_CREAT|O_TRUNC|O_RDWR
 
 ))
