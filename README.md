@@ -20,7 +20,7 @@ Otus Lisp, Version 2.2
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
 It implements an extended subset of the R<sup>7</sup>RS Scheme, including
-but not limited to some SRFIs. It is tiny (~ 42kb), embeddable
+but not limited to some SRFIs. It is tiny (< 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
 to call code written in another language.
 
@@ -122,9 +122,8 @@ R<sup>7</sup>RS DIFFERENCES
     - *explanation: This is for a historical reason. Ol supports two types of numbers - 'small' numbers and 'long' numbers. 'Small' numbers are used as 'glyphs' (or 'runes' in other word) inside strings for better Unicode support. An additional 'character' type with requirements to use the char->integer and integer->char functions every time is too boring and slow. Thanks.*
     - *note: Ol supports full Unicode 12.1.0 (2020 Jun 13) character set.*
     - *note: If you want to print a character in the form of a letter (or a digit, etc.), use a function 'string', i.e. instead of (print #\λ) use (print (string #\λ)), otherwise you will get a number 955.*
-* 6.9. Bytevectors
-  * NEGATIVE indices of a bytevector is **valid** in Ol, but *invalid* in Scheme.
-    - *note: Negative indices of a bytevector can be used to access to the n-th element from the end of a vector. I mean "-1" is the last vector element, "-2" - before the last element, "-N" - N-th element from the end of a bytevector.*
+* 6.8. Vectors
+  * NEGATIVE indices of a vector is **valid** in Ol, but *invalid* in Scheme.
     - *note: Negative indices of a vector can be used to access to the n-th element from the end of a vector. I mean "-1" is the last vector element, "-2" - before the last element, "-N" - N-th element from the end of a vector.*
 * 6.11. Exceptions
   * **No** exceptions handling in Ol.

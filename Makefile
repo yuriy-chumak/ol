@@ -253,7 +253,7 @@ debug: vm repl ol
 release: CFLAGS += $(CFLAGS_RELEASE)
 release: vm repl ol
 
-slim: CFLAGS += -DOLVM_FFI=0
+slim: CFLAGS += -DHAS_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
 slim: release
 
 NDK_ROOT ?=/opt/android/ndk

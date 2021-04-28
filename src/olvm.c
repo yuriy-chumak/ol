@@ -1137,10 +1137,12 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 //#define _POSIX_C_SOURCE // Obsolette. Enables functionality from the POSIX.1 standard (IEEE Standard 1003.1),
 //                      //            as well as all of the ISO C facilities.
 
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600 // (Since glibc 2.2) The value 600 or greater additionally
-                  // exposes definitions for SUSv3 (UNIX 03; i.e., the
-                  // POSIX.1-2001 base specification plus the XSI extension)
-                  // and C99 definitions.
+                          // exposes definitions for SUSv3 (UNIX 03; i.e., the
+                          // POSIX.1-2001 base specification plus the XSI extension)
+                          // and C99 definitions.
+#endif
 
 // http://man7.org/linux/man-pages/man7/posixoptions.7.html
 #define _BSD_SOURCE 1
