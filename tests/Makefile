@@ -6,9 +6,9 @@ else
 
 FAILED := $(shell mktemp /tmp/failed.XXXXXXXXX -u)
 
-MINGW32Q := $(shell which i686-w64-mingw32-gcc 2>/dev/null && echo 1)
-MINGW64Q := $(shell which x86_64-w64-mingw32-gcc 2>/dev/null && echo 1)
-WINEQ    := $(shell which wine 2>/dev/null && echo 1)
+MINGW32Q := $(shell which i686-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
+MINGW64Q := $(shell which x86_64-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
+WINEQ    := $(shell which wine 1>/dev/null 2>/dev/null && echo 1)
 
 ok:="\033[1;32mok\033[0m"
 failed:="\033[1;31mfailed\033[0m"
@@ -33,41 +33,40 @@ endif
 
 
 vm32: src/olvm.c includes/ol/vm.h
-	$(CC) src/olvm.c -DNAKED_VM -o $@ \
+	$(CC) src/olvm.c -o $@ \
 	   $(L) -m32 -DOLVM_FFI=0 \
 	   $(CFLAGS)
-	@echo Ok.
+	@echo $(ok)
 vm64: src/olvm.c includes/ol/vm.h
-	$(CC) src/olvm.c -DNAKED_VM -o $@ \
+	$(CC) src/olvm.c -o $@ \
 	   $(L) -m64 -DOLVM_FFI=0 \
 	   $(CFLAGS)
-	@echo Ok.
+	@echo $(ok)
 
 # -------------
 # win
 define winbuild
-	$(CC) src/olvm.c -DNAKED_VM -o $1 \
+	$(CC) src/olvm.c -o $1 \
 	   -DOLVM_FFI=1 -Iwin32 -Iincludes \
 	   extensions/ffi.c \
 	   -std=gnu99 -fno-exceptions -lws2_32 \
 	   -DHAS_DLOPEN=1 -DHAS_SOCKES=1 $2
-	@echo Ok.
 endef
 
 ifeq ($(MINGW32Q),1)
-tmp/ol32d.exe: CC=i686-w64-mingw32-gcc
-tmp/ol32d.exe: src/olvm.c
+tmp/vm32d.exe: CC=i686-w64-mingw32-gcc
+tmp/vm32d.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_DEBUG))
-tmp/ol32r.exe: CC=i686-w64-mingw32-gcc
-tmp/ol32r.exe: src/olvm.c
+tmp/vm32r.exe: CC=i686-w64-mingw32-gcc
+tmp/vm32r.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_RELEASE))
 endif
 ifeq ($(MINGW64Q),1)
-tmp/ol64d.exe: CC=x86_64-w64-mingw32-gcc
-tmp/ol64d.exe: src/olvm.c
+tmp/vm64d.exe: CC=x86_64-w64-mingw32-gcc
+tmp/vm64d.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_DEBUG))
-tmp/ol64r.exe: CC=x86_64-w64-mingw32-gcc
-tmp/ol64r.exe: src/olvm.c
+tmp/vm64r.exe: CC=x86_64-w64-mingw32-gcc
+tmp/vm64r.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_RELEASE))
 endif
 
@@ -76,9 +75,9 @@ endif
 test32: $(wildcard tests/*.scm)
 	@echo "-- test32 ----------"
 	@rm -f $(FAILED)
-	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DNAKED_VM -DOLVM_NOMAIN -o vm32d $(L) -m32
+	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DOLVM_NOMAIN -o vm32d $(L) -m32
 	@./vm32d
-	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes -DNAKED_VM \
+	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes \
 	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o ffi32 $(L) -m32
 	@for F in $^ ;do \
 	   printf "Testing $$F ... " ;\
@@ -94,9 +93,9 @@ test32: $(wildcard tests/*.scm)
 test64: $(wildcard tests/*.scm)
 	@echo "-- test64 ----------"
 	@rm -f $(FAILED)
-	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DNAKED_VM -DOLVM_NOMAIN -o vm64d $(L) -m64
+	@$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DOLVM_NOMAIN -o vm64d $(L) -m64
 	@./vm64d
-	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes -DNAKED_VM \
+	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes \
 	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o ffi64 $(L) -m64
 	@for F in $^ ;do \
 	   printf "Testing $$F ... " ;\
@@ -114,7 +113,7 @@ test: test64
 
 # -=( ffi )=----------------------------------------
 test-ffi:
-	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes -DNAKED_VM \
+	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes \
 	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(ffi)$(affix)$(bits) $(L) \
 	   -fsigned-char # for ffi tests we should use char as signed by default
 	@printf "Testing $(ffi)$(affix)$(bits) ... "
@@ -152,7 +151,7 @@ endif
 
 # -=( vm )=----------------------------------------
 test-vmi:
-	$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DNAKED_VM -DOLVM_NOMAIN -o $(vmi)$(affix)$(bits) $(L)
+	$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DOLVM_NOMAIN -o $(vmi)$(affix)$(bits) $(L)
 	   @echo "$(vmi)$(affix)$(bits):"
 	   @$(vmi)$(affix)$(bits)
 vmi=tmp/vmi
@@ -181,10 +180,10 @@ test-vmi-release-64: test-vmi-release
 endif
 
 vm-debug:
-	$(CC) src/olvm.c $(CFLAGS) -DNAKED_VM \
+	$(CC) src/olvm.c $(CFLAGS) \
 	-DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(vm)d$(bits) $(L) $(CFLAGS_DEBUG)
 vm-release:
-	$(CC) src/olvm.c $(CFLAGS) -DNAKED_VM \
+	$(CC) src/olvm.c $(CFLAGS) \
 	-DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(vm)r$(bits) $(L) $(CFLAGS_RELEASE)
 vm=tmp/vm
 
@@ -206,7 +205,7 @@ endif
 
 testing-binaries:
 	@echo "Building test binaries:"
-ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
+ifeq ($(UNAME),Linux) # main development platform, try to do a maximal testings
 ifeq ($(HAS_32CDEFS),1)
 	@printf "    linux 32-bit debug and release versions... "
 	@$(MAKE) -s vm-debug-32
@@ -221,14 +220,14 @@ ifeq ($(HAS_64CDEFS),1)
 endif
 ifeq ($(MINGW32Q),1)
 	@printf "    mingw 32-bit debug and release versions... "
-	@$(MAKE) -s tmp/ol32d.exe
-	@$(MAKE) -s tmp/ol32r.exe
+	@$(MAKE) -s $(vm)32d.exe
+	@$(MAKE) -s $(vm)32r.exe
 	@echo $(ok)
 endif
 ifeq ($(MINGW64Q),1)
 	@printf "    mingw 64-bit debug and release versions... "
-	@$(MAKE) -s tmp/ol64d.exe
-	@$(MAKE) -s tmp/ol64r.exe
+	@$(MAKE) -s $(vm)64d.exe
+	@$(MAKE) -s $(vm)64r.exe
 	@echo $(ok)
 endif
 	@echo "built."
@@ -241,7 +240,7 @@ endif
 
 testing-embed: tests/embed.c src/olvm.c includes/ol/ol.h tmp/repl.c
 	@printf "Testing embed ... "
-ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
+ifeq ($(UNAME),Linux) # main development platform, try to do a maximal testings
 ifeq ($(HAS_32CDEFS),1)
 	@printf ", debug-32: "
 	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
@@ -331,12 +330,10 @@ endef
 	$(call testok,$(vm)r,release)
 	$(call testok,$(vm)r32,release-32)
 	$(call testok,$(vm)r64,release-64)
-ifeq ($(WINEQ),1)
-	$(call testok,tmp/ol32d.exe,win-debug-32,wine)
-	$(call testok,tmp/ol32r.exe,win-release-32,wine)
-	$(call testok,tmp/ol64d.exe,win-debug-64,wine)
-	$(call testok,tmp/ol64r.exe,win-release-64,wine)
-endif
+	$(call testok,$(vm)32d.exe,win-debug-32,wine)
+	$(call testok,$(vm)32r.exe,win-release-32,wine)
+	$(call testok,$(vm)64d.exe,win-debug-64,wine)
+	$(call testok,$(vm)64r.exe,win-release-64,wine)
 	@printf ".\n"
 
 # -=( tests )=-------------------------------------

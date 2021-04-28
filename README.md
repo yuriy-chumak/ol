@@ -31,6 +31,9 @@ on various hardware architectures (intel, arm, ppc, mips, etc).
 
 Also Ol is ported to the Web and can be used in Chrome, Firefox, Opera, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape, etc.
 
+### Otus Lisp, Version 2.2.1 RC1
+
+The build command line has been changed. See the "BUILD" section.
 
 LICENSE
 -------
@@ -72,16 +75,6 @@ Advanced functionality (i.e. OpenGL support) requires a complete installation of
   * or You can manually copy required [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory,
 
 Some libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
-
-
-BUILD REQUIREMENTS
-------------------
-
-You should have GCC 3.2+ (with gcc-multilib) or CLANG 3.5+ installed.
-Windows support requires MinGW installed (with GCC).
-MacOS users should have xcode-tools installed.
-
-If you want to compile wasm binary (is not required by regular build, but only for Web) you should have Emscripten 1.37.40+.
 
 
 R<sup>7</sup>RS DIFFERENCES
@@ -132,6 +125,7 @@ R<sup>7</sup>RS DIFFERENCES
 * 6.9. Bytevectors
   * NEGATIVE indices of a bytevector is **valid** in Ol, but *invalid* in Scheme.
     - *note: Negative indices of a bytevector can be used to access to the n-th element from the end of a vector. I mean "-1" is the last vector element, "-2" - before the last element, "-N" - N-th element from the end of a bytevector.*
+    - *note: Negative indices of a vector can be used to access to the n-th element from the end of a vector. I mean "-1" is the last vector element, "-2" - before the last element, "-N" - N-th element from the end of a vector.*
 * 6.11. Exceptions
   * **No** exceptions handling in Ol.
     - *note: Yet.*
@@ -142,21 +136,34 @@ R<sup>7</sup>RS DIFFERENCES
 BUILD
 -----
 
-### SIMPLEST WAY
+> Note: Since version 2.2.1, the build command line has been changed.
+> The variable NAKED_VM is no longer supported. Instead, a new REPL build variable is provided.
+
+### BUILD REQUIREMENTS
+
+You should have GCC 3.2+ (with gcc-multilib) or CLANG 3.5+ installed.
+
+MacOS users should have xcode-tools installed.
+
+Windows support requires MinGW installed (with GCC). Wine cross-compilation is also supported.
+
+WebAssembly binary compilation requires Emscripten 1.37.40+.
+
+### BUILD IN SIMPLEST WAY
 
 ```bash
 $ make; make install
 ```
 * use *gmake* for unix clients
 
-### REGULAR WAY
+### BUILD IN REGULAR WAY
 
 #### GNU/Linux:
 
-##### Build only olvm (ol virtual machine):
+##### Build olvm (Ol virtual machine):
 
 ```bash
-$ gcc src/olvm.c -DNAKED_VM  -std=gnu99 -O2  -lm -ldl  -o vm
+$ cc src/olvm.c  -std=gnu99 -O2  -lm -ldl  -o vm
 ```
 
 ##### Build ol (with integrated REPL):
@@ -166,31 +173,37 @@ $ xxd --include repl >tmp/repl.c
 OR
 $ echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl >tmp/repl.c
 THEN
-$ gcc src/olvm.c tmp/repl.c  -std=gnu99 -O2  -lm -ldl  -o ol
+$ cc src/olvm.c tmp/repl.c  -DREPL=repl  -std=gnu99 -O2  -lm -ldl  -o ol
 ```
 
-##### Build Web Binaries (in wasm form):
+For some platforms, build can be done without using the `xxd` tool or vm itself.
+```bash
+$ ld -r -b binary -o repl.o repl
+$ cc src/olvm.c -DREPL=_binary_repl_start  repl.o  -std=gnu99 -O2  -lm -ldl  -o ol
+```
+
+##### Build WebAssembly Binaries (in wasm form):
 
 ```bash
 $ source {your-emsdk-path}/emsdk_env.sh
 $ make olvm.wasm
 ```
 
-This should create olvm.wasm - web assembly ol representation.
-Example of using ol as an embedded web application you can check on the official [project page](https://yuriy-chumak.github.io/ol/) (or source branch on [Github](https://github.com/yuriy-chumak/ol/tree/gh-pages)).
+This should create olvm.wasm and olvm.js - web assembly ol representation.
+An example usage of Ol as a built-in web application you can check at the official [project page](https://yuriy-chumak.github.io/ol/).
 
 #### Windows:
 
-##### Build only olvm (ol virtual machine):
+##### Build olvm (ol virtual machine):
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
-> gcc.exe src\olvm.c -DNAKED_VM -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
+> gcc.exe src\olvm.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
 ```
 ##### Build ol (with integrated REPL):
 ```cmd
 > set PATH=%PATH%;C:\MinGW\bin
 > ld -r -b binary -o tmp/repl.o repl
-> gcc.exe src\olvm.c tmp\repl.o -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
+> gcc.exe src\olvm.c tmp\repl.o -DREPL=repl -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
 ```
 
 #### \*BSDs:
@@ -199,12 +212,12 @@ You should include "c" library instead of "dl":
 
 ##### Build only olvm (ol virtual machine):
 ```bash
-$ gcc src/olvm.c -DNAKED_VM  -std=gnu99 -O2  -lc -lm  -o vm
+$ cc src/olvm.c  -std=gnu99 -O2  -lc -lm  -o vm
 ```
 ##### Build ol (with integrated REPL):
 ```bash
 $ ld -r -b binary -o tmp/repl.o repl
-$ gcc src/olvm.c tmp/repl.o  -std=gnu99 -O2  -lc -lm  -o ol -Drepl=_binary_repl_start
+$ cc src/olvm.c tmp/repl.o  -std=gnu99 -O2  -lc -lm  -o ol -DREPL=_binary_repl_start
 ```
 
 #### Android:
@@ -253,24 +266,24 @@ If you want to enable/disable some olvm features you can use -Dxxx or -Dxxx=y gc
 
 |Variable      |Value            |Meaning |
 |--------------|-----------------|--------|
-|NAKED_VM      | 1\|0, default 0 |Disables including of REPL into binary (via external 'repl' unsigned char\*)|
-|OLVM_NOMAIN   | 1\|0, default 0 |Disables 'main' function, makes olvm embed|
-|OLVM_FFI      | 1\|0, default 1 |Enables FFI support|
-|OLVM_CALLABLES| 1\|0, default 1 |Enables FFI callbacks support|
-|OLVM_INEXACTS | 1\|0, default 1 |Enables inexact math support|
-|OLVM_BUILTIN_FMATH| 1\|0, default 1 |Enables builtin vm floating-point math|
-|CAR_CHECK     | 1\|0, default 1 |Enables car arguments check|
-|CDR_CHECK     | 1\|0, default 1 |Enables cdr arguments check|
+|REPL          | undefined       |Which source code binary data is a REPL|
+|OLVM_NOMAIN   | 1\|0, default 0 |Disable 'main' function, make olvm embed|
+|OLVM_FFI      | 1\|0, default 1 |Enable FFI support|
+|OLVM_CALLABLES| 1\|0, default 1 |Enable FFI callbacks support|
+|OLVM_INEXACTS | 1\|0, default 1 |Enable inexact math support|
+|OLVM_BUILTIN_FMATH| 1\|0, default 1 |Enable builtin vm floating-point math|
+|CAR_CHECK     | 1\|0, default 1 |Enable car arguments check|
+|CDR_CHECK     | 1\|0, default 1 |Enable cdr arguments check|
 
 This variables are automatically set by the Makefile (like `configure` script). You can override those values, sure:
 
 |Variable      |Value            |Meaning |
 |--------------|-----------------|--------|
-|HAS_SOCKETS   | 1\|0, default 1 |Enables sockets support (bind, listen, socket, etc.)|
-|HAS_DLOPEN    | 1\|0, default 1 |Enables dlopen/dlsym functions support|
-|HAS_UNSAFES   | 1\|0, default 1 |Enables "unsafe" external and internal functions|
-|HAS_SANDBOX   | 1\|0, default 0 |Enables internal sandbox support (depends on OS kernel)|
-|HAS_STRFTIME  | 1\|0, default 1 |Enables strftime function support|
+|HAS_SOCKETS   | 1\|0, default 1 |Enable sockets support (bind, listen, socket, etc.)|
+|HAS_DLOPEN    | 1\|0, default 1 |Enable dlopen/dlsym functions support|
+|HAS_UNSAFES   | 1\|0, default 1 |Enable "unsafe" external and internal functions|
+|HAS_SANDBOX   | 1\|0, default 0 |Enable internal sandbox support (depends on OS kernel)|
+|HAS_STRFTIME  | 1\|0, default 1 |Enable strftime function support|
 
 Please note that external libraries (like opengl, sqlite, etc.) support require HAS_DLOPEN and OLVM_FFI enabled.
 

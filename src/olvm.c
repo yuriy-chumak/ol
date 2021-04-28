@@ -67,10 +67,6 @@ typedef uintptr_t word;
 //	ppc:       4;    ppc64, ppc64le: 8
 //	raspbian:  4
 
-#ifndef NAKED_VM
-#define NAKED_VM 0
-#endif
-
 #ifndef OLVM_NOMAIN
 #define OLVM_NOMAIN 0
 #endif
@@ -3195,7 +3191,7 @@ loop:;
 	case 29: // (vm:features)
 		A0 = I(0
 		// general build options
-		#if NAKED_VM
+		#ifndef REPL
 			| 000000001
 		#endif
 		#if OLVM_NOMAIN
@@ -5046,11 +5042,11 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 
 typedef struct olvm_t OL;
 
-#if NAKED_VM
-#	define language NULL
+#ifdef REPL
+	extern unsigned char REPL[];
+#	define language REPL
 #else
-	extern unsigned char repl[];
-#	define language repl
+#	define language NULL
 #endif
 
 #if !OLVM_NOMAIN
@@ -5063,7 +5059,7 @@ int main(int argc, char** argv)
 #endif
 
 	//  vm special key: if command line is "--version" then print a version
-#if NAKED_VM
+#ifndef REPL
 	if (argc == 2 && strcmp(argv[1], "-v") == 0) {
 		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
 		return 0;
@@ -5095,8 +5091,8 @@ int main(int argc, char** argv)
 	}
 
 	if (file == 0) { // входной файл не указан
-#if NAKED_VM
-		goto invalid_binary_script;
+#ifndef REPL
+		goto no_binary_script;
 #else
 		argc--; argv++;
 #endif
@@ -5107,7 +5103,7 @@ int main(int argc, char** argv)
 
 		if (stat(file, &st))
 			goto can_not_stat_file;		// не найден файл или он пустой
-#if NAKED_VM
+#ifndef REPL
 		if (st.st_size == 0)
 			goto invalid_binary_script;
 #endif
@@ -5132,7 +5128,7 @@ int main(int argc, char** argv)
 		}
 
 		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
-#if NAKED_VM
+#ifndef REPL
 			goto invalid_binary_script;
 #else
 			close(bin);
@@ -5205,11 +5201,11 @@ int main(int argc, char** argv)
 	message = "Can't read file";
 	goto fail;
 
-#	if NAKED_VM
-	// no_binary_script:
-	// message = "No binary script provided";
-	// errno = ENOENT;
-	// goto fail;
+#	ifndef REPL
+	no_binary_script:
+	message = "No binary script provided";
+	errno = ENOENT;
+	goto fail;
 
 	invalid_binary_script:
 	message = "Invalid binary script";

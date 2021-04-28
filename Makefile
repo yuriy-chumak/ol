@@ -11,6 +11,44 @@ describe: all
 	./ol --version
 	echo "(print (syscall 63))"|./vm repl
 
+# default toolchain
+CC ?= gcc
+LD ?= ld
+
+# source code dependencies and flags
+# ----------------------------------
+
+# posix
+vm: src/olvm.c
+vm: extensions/ffi.c
+ol: src/olvm.c
+ol: extensions/ffi.c
+ol: tmp/repl.c
+
+# win/wine
+ol.exe: src/olvm.c
+ol.exe: extensions/ffi.c
+ol.exe: tmp/repl.c
+
+# sources
+extensions/ffi.c: CFLAGS += -Iincludes
+
+# 
+extensions/ffi.c: includes/ol/vm.h
+includes/ol/vm.h: src/olvm.c
+	sed -n '/USE_OLVM_DECLARATION/q;p' $^ >$@
+
+tmp/repl.c: repl
+	xxd --include repl >tmp/repl.c
+# or
+#	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
+# or
+#	@od -An -vtx1 repl| tr -d '\n'| sed \
+#	   -e 's/^ /0x/' -e 's/ /,0x/g' \
+#	   -e 's/^/unsigned char repl[] = {/' \
+#	   -e 's/$$/};/'> $@
+
+
 ## 'configure' part:
 # check the library and/or function
 exists = $(shell echo "\
@@ -48,9 +86,9 @@ doc/olvm.md: src/olvm.c extensions/ffi.c
 # endif
 
 # default platform features
-HAS_DLOPEN  ?= $(call exists,,<stdlib.h>, dlopen, -ldl)
-HAS_SECCOMP ?= $(call exists,,<linux/seccomp.h>, prctl)
-HAS_SOCKETS ?= $(call exists,,<stdlib.h>, socket)
+HAS_DLOPEN  ?= $(call exists,,stdlib.h, dlopen, -ldl)
+HAS_SECCOMP ?= $(call exists,,linux/seccomp.h, prctl)
+HAS_SOCKETS ?= $(call exists,,stdlib.h, socket)
 
 CFLAGS += -std=gnu99 -fno-exceptions
 CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
@@ -73,58 +111,14 @@ endif
 #    CFLAGS_RELEASE += -Wno-tautological-constant-out-of-range-compare
 # endif
 
-CFLAGS += $(if $(HAS_DLOPEN), -DHAS_DLOPEN=1, -DHAS_DLOPEN=0)\
-          $(if $(HAS_SOCKETS), -DHAS_SOCKETS=1, -DHAS_SOCKETS=0)\
-          $(if $(HAS_SECCOMP), -DHAS_SANDBOX=1, -DHAS_SANDBOX=0)\
+CFLAGS += -DHAS_SOCKETS=$(if $(HAS_SOCKETS),1,0) \
+		  -DHAS_DLOPEN=$(if $(HAS_DLOPEN),1,0)   \
+          -DHAS_SANDBOX=$(if $(HAS_SECCOMP),1,0)
 
+# ===============================================
 ## 'os dependent' part
 UNAME ?= $(shell uname -s)
 
-ifeq ($(UNAME),Linux)
-  L := $(if HAS_DLOPEN, -ldl) \
-       -Xlinker --export-dynamic
-
-#Debian i586 fix
-ifeq ($(CC),gcc)
-  CFLAGS += -I/usr/include/$(shell gcc -print-multiarch)
-endif
-
-endif #Linux
-
-ifeq ($(UNAME),FreeBSD)
-  L := $(if HAS_DLOPEN, -lc) -lm \
-       -Xlinker --export-dynamic
-
-  LD := ld.bfd
-endif
-ifeq ($(UNAME),NetBSD)
-  L := $(if HAS_DLOPEN, -lc) -lm \
-       -Xlinker --export-dynamic
-endif
-ifeq ($(UNAME),OpenBSD)
-  L := $(if HAS_DLOPEN, -lc) \
-       -Xlinker --export-dynamic
-endif
-
-# Windows+MinGW
-ifeq ($(UNAME),MINGW32_NT-6.1)
-  L := -lws2_32
-endif
-
-ifeq ($(UNAME),Darwin)
-  CFLAGS += -DSYSCALL_SYSINFO=0
-  PREFIX ?= /usr/local
-endif
-
-# Mac OS X                    Darwin
-# Cygwin 32-bit (Win-XP)      CYGWIN_NT-5.1
-# Cygwin 32-bit (Win-7 32-bit)CYGWIN_NT-6.1
-# Cygwin 32-bit (Win-7 64-bit)CYGWIN_NT-6.1-WOW64
-# Cygwin 64-bit (Win-7 64-bit)CYGWIN_NT-6.1
-# MinGW (Windows 7 32-bit)    MINGW32_NT-6.1
-# MinGW (Windows 10 64-bit)   MINGW64_NT-10.0
-# Interix (Services for UNIX) Interix
-# MSYS                        MSYS_NT-6.1
 # Android                     Linux
 # coreutils                   Linux
 # CentOS                      Linux
@@ -164,9 +158,54 @@ endif
 # IBM AIX                     AIX
 # IBM i with QSH              OS400
 # HP-UX                       HP-UX
+# Cygwin 32-bit (Win-XP)      CYGWIN_NT-5.1
+# Cygwin 32-bit (Win-7 32-bit)CYGWIN_NT-6.1
+# Cygwin 32-bit (Win-7 64-bit)CYGWIN_NT-6.1-WOW64
+# Cygwin 64-bit (Win-7 64-bit)CYGWIN_NT-6.1
+# Mac OS X                    Darwin
+# MinGW (Windows 7 32-bit)    MINGW32_NT-6.1
+# MinGW (Windows 10 64-bit)   MINGW64_NT-10.0
+# Interix (Services for UNIX) Interix
+# MSYS                        MSYS_NT-6.1
 
-CC ?= gcc
-LD ?= ld
+# Linux
+ifeq ($(UNAME),Linux)
+  L := $(if $(HAS_DLOPEN), -ldl) \
+       -Xlinker --export-dynamic
+
+#Debian i586 fix
+ifeq ($(CC),gcc)
+  CFLAGS += -I/usr/include/$(shell gcc -print-multiarch)
+endif
+
+endif
+
+# BSD
+ifeq ($(UNAME),FreeBSD)
+  L := $(if $(HAS_DLOPEN), -lc) -lm \
+       -Xlinker --export-dynamic
+
+  LD := ld.bfd
+endif
+ifeq ($(UNAME),NetBSD)
+  L := $(if $(HAS_DLOPEN), -lc) -lm \
+       -Xlinker --export-dynamic
+endif
+ifeq ($(UNAME),OpenBSD)
+  L := $(if $(HAS_DLOPEN), -lc) \
+       -Xlinker --export-dynamic
+endif
+
+# Windows+MinGW
+ifeq ($(UNAME),MINGW32_NT-6.1)
+  L := -lws2_32
+endif
+
+ifeq ($(UNAME),Darwin)
+  CFLAGS += -DSYSCALL_SYSINFO=0
+  PREFIX ?= /usr/local
+endif
+# -----------------------------------------------
 
 ## 'clean/install' part
 # http://www.gnu.org/prep/standards/html_node/DESTDIR.html
@@ -224,29 +263,18 @@ android: jni/*.c tmp/repl.c
 #	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
 
 # ol
-vm: src/olvm.c extensions/ffi.c
-	$(CC) src/olvm.c -DNAKED_VM -o $@ \
+vm:
+	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
-ol: src/olvm.c extensions/ffi.c tmp/repl.c
-	$(CC) src/olvm.c tmp/repl.c -o $@ \
+ol:
+	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
-	   $(CFLAGS) $(L)
+	   $(CFLAGS) $(L) \
+	   tmp/repl.c -DREPL=repl
 	@echo Ok.
-
-tmp/repl.c: repl
-#	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
-	xxd --include repl >tmp/repl.c
-#	@od -An -vtx1 repl| tr -d '\n'| sed \
-#	   -e 's/^ /0x/' -e 's/ /,0x/g' \
-#	   -e 's/^/unsigned char repl[] = {/' \
-#	   -e 's/$$/};/'> $@
-
-extensions/ffi.c: includes/ol/vm.h
-includes/ol/vm.h: src/olvm.c
-	sed -n '/USE_OLVM_DECLARATION/q;p' $^ >$@
 
 
 # # emscripten version 1.37.40+
@@ -273,8 +301,9 @@ includes/ol/vm.h: src/olvm.c
 # 	   -s NO_EXIT_RUNTIME=1 \
 # 	   --memory-init-file 0
 
-olvm.wasm: src/olvm.c includes/ol/vm.h
-	emcc src/olvm.c extensions/embed.c tmp/repl.c -Os \
+olvm.wasm: src/olvm.c tmp/repl.c
+	emcc src/olvm.c extensions/wasm.c \
+	     tmp/repl.c -DREPL=repl -Os \
 	   -o olvm.html -Iincludes \
 	   -DOLVM_NOMAIN=1 -DHAS_DLOPEN=0 \
 	   -Dbinary_repl_start=repl \
@@ -310,8 +339,9 @@ ol.exe: MINGWCFLAGS += -DHAS_DLOPEN=1
 ol.exe: MINGWCFLAGS += -DHAS_SOCKES=1
 ol.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
 ol.exe: src/olvm.c extensions/ffi.c tmp/repl.c
-	$(CC) src/olvm.c tmp/repl.c -o $@\
-	   -DOLVM_FFI=1 -Iwin32 -Iincludes extensions/ffi.c\
+	$(CC) src/olvm.c tmp/repl.c -o $@ \
+	   -DREPL=repl -DOLVM_FFI=1 \
+	   -Iwin32 -Iincludes extensions/ffi.c \
 	   $(MINGWCFLAGS) -lws2_32
 
 # compiling the Ol language
@@ -424,7 +454,7 @@ endif
 # --------------------------------------------------------------------
 
 arm: src/olvm.c
-	arm-linux-gnueabihf-gcc-5 src/olvm.c -DNAKED_VM -o $@ \
+	arm-linux-gnueabihf-gcc-5 src/olvm.c -o $@ \
 	   -Xlinker --export-dynamic $(L) \
 	   -march=armv7-a -mfpu=neon-vfpv4 \
 	   $(CFLAGS)

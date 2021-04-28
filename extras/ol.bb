@@ -2,7 +2,7 @@
 
 SUMMARY = "ol"
 DESCRIPTION = "ol"
-LICENSE = "CLOSED"
+LICENSE = "MIT, LGPL3"
 AUTHOR = "Yuriy Chumak <yuriy.chumak@github.com>"
 
 DEPENDS = ""

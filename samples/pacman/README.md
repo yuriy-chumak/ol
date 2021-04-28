@@ -127,7 +127,7 @@ int main(int argc, char** argv)
 }
 ```
 
-Just compile with -DNAKED_VM, -DOLVM_NOMAIN, and link with repl binary.
+Just compile with -DOLVM_NOMAIN, and link with repl binary.
 
 Additional sample can be found in automated tests folder - [embed.c](https://github.com/yuriy-chumak/ol/blob/master/tests/embed.c).
 

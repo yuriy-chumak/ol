@@ -2410,6 +2410,7 @@ word OLVM_sizeof(olvm_t* self, word* arguments)
 	}
 }
 
+// PUBLIC
 #endif//OLVM_FFI
 
 
