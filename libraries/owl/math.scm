@@ -237,35 +237,69 @@
       (setq |0.| (vm:cast 0 type-inexact)) ; * internal
 
       (define (zero? x)
-      (or
-         (eq? x 0)
-         (equal? x |0.|))) ; inexact numbers support
+         (or
+            (eq? x 0)
+            (equal? x |0.|)))
 
       (assert (zero? 0)              ===>  #t)
       (assert (zero? 4)              ===>  #f)
       (assert (zero? (fsub 7 7))     ===>  #t)
       (assert (zero? (fadd 7 7))     ===>  #f)
 
-      (define (negative? a)
-         (case (type a)
-            (type-enum+ #false)
-            (type-enum- #true)
-            (type-int+ #false)
-            (type-int- #true)
-            (type-rational
-               (case (type (ncar a))
-                  (type-enum+ #false)
-                  (type-enum- #true)
-                  (type-int+ #false)
-                  (type-int- #true)
-                  (else (runtime-error "Bad number: " a))))
-            (type-inexact
-               (equal? a -inf.0))
-            (else (runtime-error 'negative? a))))
 
-      (define (positive? a)
-         (unless (negative? a)
-            (not (equal? a +nan.0))))
+      ; procedure:  (positive? z)
+      (define (positive? x)
+         (case (type x)
+            (type-enum+ #true)
+            (type-int+ #true)
+            (type-enum- #false)
+            (type-rational
+               (let* ((n d x))
+                  (positive? n)))
+            (type-inexact
+               (or
+                  (fless? |0.| x)
+                  (equal? x |0.|)
+                  (equal? x +inf.0)))))
+
+      (assert (positive? -1)       ===> #false)
+      (assert (positive? -11111111111111111111111) ===> #false)
+      (assert (positive? 42)       ===> #true)
+      (assert (positive? 111111111111111111111111) ===> #true)
+      (assert (positive? -3/7)     ===> #false)
+      (assert (positive? 3/-7)     ===> #false)
+      (assert (positive? 17/9)     ===> #true)
+      (assert (positive? -inf.0)   ===> #false)
+      (assert (positive? +inf.0)   ===> #true)
+      (assert (positive? +nan.0)   ===> #false)
+      (assert (positive? |0.|)     ===> #true)
+
+
+      ; procedure:  (negative? z)
+      (define (negative? x)
+         (case (type x)
+            (type-enum- #true)
+            (type-int- #true)
+            (type-enum+ #false)
+            (type-rational
+               (let* ((n d x))
+                  (negative? n)))
+            (type-inexact
+               (or
+                  (fless? x |0.|)
+                  (equal? x -inf.0)))))
+
+      (assert (negative? -1)       ===> #true)
+      (assert (negative? -11111111111111111111111) ===> #true)
+      (assert (negative? 42)       ===> #false)
+      (assert (negative? 111111111111111111111111) ===> #false)
+      (assert (negative? -3/7)     ===> #true)
+      (assert (negative? 3/-7)     ===> #true)
+      (assert (negative? 17/9)     ===> #false)
+      (assert (negative? -inf.0)   ===> #true)
+      (assert (negative? +inf.0)   ===> #false)
+      (assert (negative? +nan.0)   ===> #false)
+      (assert (negative? |0.|)     ===> #false)
 
 
       ;;;
