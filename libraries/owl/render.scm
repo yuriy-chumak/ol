@@ -10,7 +10,6 @@
       (owl list-extra)
       (owl symbol)
       (owl ff)
-      (owl tuple)
       (owl rlist)
       (owl interop)
       (owl lazy)
