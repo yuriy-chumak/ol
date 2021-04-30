@@ -51,9 +51,12 @@
    (begin
       (define o (λ (f g) (λ (x) (f (g x)))))
 
+      (define-syntax ncons
+         (syntax-rules ()
+            ((ncons a d) (vm:new type-int+ a d))))
+
       (define ncar car)
       (define ncdr cdr)
-      (define (ncons a b) (vm:new type-int+ a b))
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
@@ -70,7 +73,7 @@
 ;      now changed to vm call (vm:maxvalue)
 
       ;; biggest before highest bit is set (needed in some bignum ops)
-      (define (*pre-max-fixnum*)
+      (define (*pre-max-fixnum*) ; TODO: сделать константой, не вызовом функции
          (let*
             ((f o (vm:shr (vm:maxvalue) 1)))
             f))
@@ -86,9 +89,12 @@
 ;                  (loop f n)))))
 ;      now changed to vm call (vm:valuewidth)
 
+      ; this is special internal number that is not a number
+      ; should be serialized in different manner
       (define *big-one*
          (ncons 1 #null))
 
+      ; same
       (define *first-bignum*
          (ncons 0 *big-one*))
 
@@ -98,6 +104,83 @@
       ;      ((fxdivmod a b)
       ;         (lets ((q1 q2 r (vm:div 0 a b)))
       ;            (values q2 r)))))
+
+      ; ========================================================
+      ; procedure:  (zero? z)
+      (setq |0.| (vm:cast 0 type-inexact)) ; * internal
+
+      (define (zero? x)
+         (or
+            (eq? x 0)
+            (equal? x |0.|)))
+
+      (assert (zero? 0)              ===>  #t)
+      (assert (zero? 4)              ===>  #f)
+      (assert (zero? (fsub 7 7))     ===>  #t)
+      (assert (zero? (fadd 7 7))     ===>  #f)
+
+
+      ; procedure:  (positive? z)
+      (define (positive? x)
+         (case (type x)
+            (type-enum+ #true)
+            (type-int+ #true)
+            (type-enum- #false)
+            (type-rational
+               (let* ((n d x))
+                  (positive? n)))
+            (type-inexact
+               (or
+                  (fless? |0.| x)
+                  (equal? x |0.|)
+                  (equal? x +inf.0)))))
+
+      (assert (positive? -1)       ===> #false)
+      (assert (positive? -11111111111111111111111) ===> #false)
+      (assert (positive? 42)       ===> #true)
+      (assert (positive? 111111111111111111111111) ===> #true)
+      (assert (positive? -3/7)     ===> #false)
+      (assert (positive? 3/-7)     ===> #false)
+      (assert (positive? 17/9)     ===> #true)
+      (assert (positive? -inf.0)   ===> #false)
+      (assert (positive? +inf.0)   ===> #true)
+      (assert (positive? +nan.0)   ===> #false)
+      (assert (positive? |0.|)     ===> #true)
+
+
+      ; procedure:  (negative? z)
+      (define (negative? x)
+         (case (type x)
+            (type-enum- #true)
+            (type-int- #true)
+            (type-enum+ #false)
+            (type-rational
+               (let* ((n d x))
+                  (negative? n)))
+            (type-inexact
+               (or
+                  (fless? x |0.|)
+                  (equal? x -inf.0)))))
+
+      (assert (negative? -1)       ===> #true)
+      (assert (negative? -11111111111111111111111) ===> #true)
+      (assert (negative? 42)       ===> #false)
+      (assert (negative? 111111111111111111111111) ===> #false)
+      (assert (negative? -3/7)     ===> #true)
+      (assert (negative? 3/-7)     ===> #true)
+      (assert (negative? 17/9)     ===> #false)
+      (assert (negative? -inf.0)   ===> #true)
+      (assert (negative? +inf.0)   ===> #false)
+      (assert (negative? +nan.0)   ===> #false)
+      (assert (negative? |0.|)     ===> #false)
+
+
+
+
+
+
+
+
 
       (define-syntax define-traced
          (syntax-rules ()
@@ -233,73 +316,6 @@
 
       ; later just, is major type X
 
-      ; procedure:  (zero? z)
-      (setq |0.| (vm:cast 0 type-inexact)) ; * internal
-
-      (define (zero? x)
-         (or
-            (eq? x 0)
-            (equal? x |0.|)))
-
-      (assert (zero? 0)              ===>  #t)
-      (assert (zero? 4)              ===>  #f)
-      (assert (zero? (fsub 7 7))     ===>  #t)
-      (assert (zero? (fadd 7 7))     ===>  #f)
-
-
-      ; procedure:  (positive? z)
-      (define (positive? x)
-         (case (type x)
-            (type-enum+ #true)
-            (type-int+ #true)
-            (type-enum- #false)
-            (type-rational
-               (let* ((n d x))
-                  (positive? n)))
-            (type-inexact
-               (or
-                  (fless? |0.| x)
-                  (equal? x |0.|)
-                  (equal? x +inf.0)))))
-
-      (assert (positive? -1)       ===> #false)
-      (assert (positive? -11111111111111111111111) ===> #false)
-      (assert (positive? 42)       ===> #true)
-      (assert (positive? 111111111111111111111111) ===> #true)
-      (assert (positive? -3/7)     ===> #false)
-      (assert (positive? 3/-7)     ===> #false)
-      (assert (positive? 17/9)     ===> #true)
-      (assert (positive? -inf.0)   ===> #false)
-      (assert (positive? +inf.0)   ===> #true)
-      (assert (positive? +nan.0)   ===> #false)
-      (assert (positive? |0.|)     ===> #true)
-
-
-      ; procedure:  (negative? z)
-      (define (negative? x)
-         (case (type x)
-            (type-enum- #true)
-            (type-int- #true)
-            (type-enum+ #false)
-            (type-rational
-               (let* ((n d x))
-                  (negative? n)))
-            (type-inexact
-               (or
-                  (fless? x |0.|)
-                  (equal? x -inf.0)))))
-
-      (assert (negative? -1)       ===> #true)
-      (assert (negative? -11111111111111111111111) ===> #true)
-      (assert (negative? 42)       ===> #false)
-      (assert (negative? 111111111111111111111111) ===> #false)
-      (assert (negative? -3/7)     ===> #true)
-      (assert (negative? 3/-7)     ===> #true)
-      (assert (negative? 17/9)     ===> #false)
-      (assert (negative? -inf.0)   ===> #true)
-      (assert (negative? +inf.0)   ===> #false)
-      (assert (negative? +nan.0)   ===> #false)
-      (assert (negative? |0.|)     ===> #false)
 
 
       ;;;
@@ -2180,7 +2196,7 @@
             (unfold (λ (n) (lets ((q r (quotrem n base))) (values (char-of r) q))) num zero?)))
 
       ;; move to math.scm
-      (define i-zero (inexact 0))
+      (define i-zero (inexact 0)) ; TODO: change to |0.| that is already present
 
       (define (render-number num tl base)
          (cond

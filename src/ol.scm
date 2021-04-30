@@ -458,8 +458,7 @@
       (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 
 
-
-
+(import (otus fasl))
 (let*((path "boot.fasl")
       (port ;; where to save the result
          (open-output-file path))
@@ -467,7 +466,7 @@
       (symbols (symbols-of make-main-entry))
       (codes   (codes-of   make-main-entry))
       (bytes ;; encode the resulting object for saving in some form
-         (fasl-encode (make-main-entry symbols codes))))
+         (fasl2-encode (make-main-entry symbols codes))))
    (if (not port)
       (begin
          (print "Could not open " path " for writing")

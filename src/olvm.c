@@ -4908,53 +4908,101 @@ done:;
 //	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 static __inline__
 word get_nat(unsigned char** hp)
+	// TODO: assert if overflow
 {
 	word nat = 0;
-	char i;
+	int i = 0;
+	unsigned char ch;
 
-	#ifndef OVERFLOW_KILLS
-	#define OVERFLOW_KILLS(n) { E("invalid nat"); }
-	#endif
 	do {
-		word underflow = nat; // can be removed for release
-		nat <<= 7;
-		if (nat >> 7 != underflow) // can be removed for release
-			OVERFLOW_KILLS(9);     // can be removed for release
-		i = *(*hp)++;
-		nat = nat + (i & 127);
-	} while (i & (1 << 7)); // 128
+		ch = *(*hp)++;
+		nat |= (ch & 0x7F) << i;
+		i += 7;
+	} while (ch & 0x80);
 	return nat;
-}
-static __inline__
-void decode_field(unsigned char** hp, word *ptrs, int pos, word** fp) {
-	if (*(*hp) == 0) { // value
-		(*hp)++;
-		unsigned char type = *(*hp)++;
-		word val = make_value(type, get_nat(hp));
-		*(*fp)++ = val;
-	} else {           // reference
-		word diff = get_nat(hp);
-		*(*fp)++ = ptrs[pos-diff];
-	}
 }
 
 // возвращает новый топ стека
 static
 word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
+	// TODO: process both formats!
 	unsigned char* hp = bootstrap;
 
 	// function entry:
-	for (ptrdiff_t me = 0; me < nobjs; me++) {
-		ptrs[me] = (word) fp;
+	for (ptrdiff_t id = 0; id < nobjs; id++) {
+		ptrs[id] = (word) fp;
 
 		switch (*hp++) { // todo: adding type information here would reduce fasl and executable size
 		case 1: {
 			int type = *hp++;
 			int size = get_nat(&hp);
+			word* object = fp;
 			*fp++ = make_header(type, size + 1); // +1 to include header in size
-			while (size--)
-				decode_field(&hp, ptrs, me, &fp);
+			while (size--) {
+				if (*hp != 0) { // reference
+					word diff = get_nat(&hp);
+					*fp++ = ptrs[id - diff];
+				}
+				else { // value
+					hp++;
+					unsigned char type = *hp++;
+					// тут надо проверить, если тип велью - число,
+					// значит либо читаем число как велью, либо если оно слишком большое - читаем его ПЕРЕД родителем
+					// а самого родителя сдвигаем направо. вписываем родителю указатель на это число
+					// todo: читаем по 24 бита и формируем число
+
+					// читаем до W-1 байт, если еще не закончили
+					// то перемещаем все эти объекты повыше, создаем с ними новый объект "число"
+					// и так продолжаем, пока он не закончится.
+					word* obj = object;
+
+					word nat = 0;
+					int i = 0;
+					unsigned char ch;
+					do {
+						ch = *hp++;
+						nat |= (ch & 0x7F) << i;
+						i += 7;
+						if (i >= VBITS) {
+							// well, this value is too big. let's produce a number
+							// *ptr = (word) object; // save a pointer to the newly created number
+							memmove(obj + 3, obj, (fp - obj) * W); fp += 3; // shift object
+							object += 3;
+							// сдвинуть всю цепочку вверх
+
+							obj[0] = make_header(type == TENUMP ? TINTP : TINTN, 3);
+							obj[1] = I(nat & (((word)1 << VBITS) - 1));
+							obj[2] = INULL;
+
+							nat >>= VBITS;
+							i -= VBITS;
+						}
+					} while (ch & 0x80);
+
+					if (obj == object) { // мы ничего никуда не сдвигали, значит число оказалось маленьким
+						word val = make_value(type, nat);
+						*fp++ = val;
+					}
+					else { // мы сдвигали, надо сохранить оставшийся кусок числа
+						memmove(obj + 3, obj, (fp - obj) * W); fp += 3; // shift object, move fp
+						object += 3;
+
+						obj[0] = make_header(TPAIR, 3);
+						obj[1] = I(nat); // assert (nat <= VMAX)
+						obj[2] = INULL;
+
+						// а теперь заполним все указатели
+						obj += 3;
+						while (obj < object) {
+							obj[2] = (word) (obj - 3);
+							obj += 3;
+						}
+						*fp++ = (word) (obj - 3);
+						ptrs[id] = (word) object; // обновим указатель
+					}
+				}
+			}
 			break;
 		}
 		case 2: {
@@ -4978,22 +5026,10 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	return fp;
 }
 
-static __inline__
-word decode_word(unsigned char** hp) {
-	word nat = 0;
-	char i;
-	do {
-		nat <<= 7;
-		i = *(*hp)++;
-		nat = nat + (i & 127);
-	}
-	while (i & 128);
-	return nat;
-}
-
 static
 // функция подсчета количества объектов в загружаемом образе
 int count_fasl_objects(word *words, unsigned char *lang) {
+	// TODO: process both formats!
 	unsigned char* hp;
 
 	// count:
@@ -5003,21 +5039,34 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 	int allocated = 0;
 	while (*hp != 0) {
 		switch (*hp++) {
-		case 1: { // value
+		case 1: { // object
 			hp++; ++allocated;
-			int size = decode_word(&hp);
+			int size = get_nat(&hp);
 			while (size--) {
 				//decode_field:
-				if (*hp == 0)
-					hp += 2;
-				decode_word(&hp); // simply skip word
-				++allocated;
+				if (*hp == 0) {
+					hp++;
+					unsigned char* op = hp++;
+					get_nat(&hp); // нужна копия этой функции без проверки переполнения
+
+					// большие числа превращаются в 0 allocated, если <= W-1, и в 
+					int type = *op++;
+					if (type == TENUMP || type == TENUMN) {
+						int size = hp - op;
+						int words = (size < W) ? 1 : ((size + W-2) / (W-1)) * 3;
+						allocated += words;
+					}
+				}
+				else {
+					get_nat(&hp); // simply skip word (a number of referenced object)
+					++allocated;
+				}
 			}
 			break;
 		}
-		case 2: { // reference
+		case 2: { // raw object
 			hp++;
-			int size = decode_word(&hp);
+			int size = get_nat(&hp);
 			hp += size;
 
 			int words = (size / W) + ((size % W) ? 2 : 1);
@@ -5283,6 +5332,10 @@ OLVM_new(unsigned char* bootstrap)
 
 	// Десериализация загруженного образа в объекты
 	word *ptrs = new(TVECTOR, nobjs, 0);
+	// этот вектор содержит "неправильные" ссылки в смысле модели памяти ol,
+	// которые указывают вперед по куче, а не назад. но так как на него никто
+	// не указывает, то этот объект будет спокойно удален во время первой же
+	// полной сборки кучи (которую стоило бы сделать в deserialize()).
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
 
 	if (fp == 0)
