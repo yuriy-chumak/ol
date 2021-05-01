@@ -89,14 +89,15 @@
 ;                  (loop f n)))))
 ;      now changed to vm call (vm:valuewidth)
 
-      ; this is special internal number that is not a number
-      ; should be serialized in different manner
-      (define *big-one*
-         (ncons 1 #null))
+      ; this is special internal "number" that is not a number
+      ; should not be a type-int+
+      (setq *big-one* (cons 1 #null)) ; this 
 
       ; same
-      (define *first-bignum*
-         (ncons 0 *big-one*))
+      (setq *first-bignum* (cons 0 *big-one*))
+
+      ; same
+      (setq *big-zero* (cons 0 #null))
 
       ;; deprecated primop
       ;(define-syntax fxdivmod
@@ -1288,7 +1289,7 @@
 
       (define (rmul-digit n d) ; -> bignum
          (cond
-            ((eq? d 0) (ncons 0 #null))
+            ((eq? d 0) *big-zero*) ; special number
             ((eq? d 1) n)
             (else
                (lets ((tl carry (rmul n d)))
@@ -1395,7 +1396,7 @@
                (divex bit bp (subi a (<< b bp))
                   b (ncons (vm:ior bit (ncar out)) (ncdr out))))))
 
-      (define divex-start (ncons 0 #null))
+      (define divex-start *big-zero*)
 
       ; FIXME: shifts are O(a+b), switch to bit walking later to get O(1)
 

@@ -4966,7 +4966,6 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 						i += 7;
 						if (i >= VBITS) {
 							// well, this value is too big. let's produce a number
-							// *ptr = (word) object; // save a pointer to the newly created number
 							memmove(obj + 3, obj, (fp - obj) * W); fp += 3; // shift object
 							object += 3;
 							// сдвинуть всю цепочку вверх
@@ -5049,7 +5048,6 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 					unsigned char* op = hp++;
 					get_nat(&hp); // нужна копия этой функции без проверки переполнения
 
-					// большие числа превращаются в 0 allocated, если <= W-1, и в 
 					int type = *op++;
 					if (type == TENUMP || type == TENUMN) {
 						int size = hp - op;

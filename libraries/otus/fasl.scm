@@ -2,6 +2,8 @@
 ;;; Object serialization and reconstruction
 ;;;
 
+;; fasl - FASt Lisp format
+
 ;; todo: removing dependencies to bignum math would increase speed
 ;; todo: add a version which handles symbols and ff's specially
 
@@ -57,12 +59,12 @@
       (define fasl-finale (list 0)) ; stream end marker
 
       (define low7 #b1111111)
-      (define (special? obj)
-         (and
-            (eq? (type obj) type-int+)
-            (or
-               (null? (cdr obj)) ; большие числа не могут состоять из одного элемента (это маленькие числа)
-               (eq? (car obj) 0)))) ; большие числа не могут начинаться с нуля
+      ;; (define (special? obj)
+      ;;    (and
+      ;;       (eq? (type obj) type-int+)
+      ;;       (or
+      ;;          (null? (cdr obj)) ; большие числа не могут состоять из одного элемента (это маленькие числа)
+      ;;          (eq? (car obj) 0)))) ; большие числа не могут начинаться с нуля
 
 
       (define (object->list obj)
@@ -128,12 +130,13 @@
          ;; (print ") / {" pos "}")
          (foldr (lambda (elem out)
                (cond
-                  ; we should skip special integer case: *big-num* and similars
-                  ; "специальные" числа
-                  ((special? elem)
-                     (let ((target (index elem))) ; assert elem is already index
-                        ;; (print "special number! pos: " pos " -> " target)
-                        (send-number (- pos target) out)))
+                  ;; ; we should skip special integer case: *big-num* and similars
+                  ;; ; "специальные" числа
+                  ;; ((special? elem)
+                  ;;    (print "special " (type elem) " " (size elem) " - " (vm:cast type-enum+ (car elem)) " . " (cdr elem))
+                  ;;    (let ((target (index elem))) ; assert elem is already index
+                  ;;       ;; (print "special number! pos: " pos " -> " target)
+                  ;;       (send-number (- pos target) out)))
                   ((integer? elem)
                      ; note: position number будет потерян
                      (encode-integer elem out))
@@ -169,15 +172,15 @@
                   (ilist 2 t
                      (send-number s
                         (copy-bytes tail val (- s 1))))))
-            ; специальные "числа", вроде *int-max*
-            ((special? val)
-               ;; (print "encoding SPECIAL number")
-               (let ((t (type val))
-                     (s (size val)))
-                  (ilist 1 t
-                     (send-number s
-                        (render-fields (object->list val) pos index
-                           tail)))))
+            ;; ; специальные "числа", вроде *int-max*
+            ;; ((special? val)
+            ;;    ;; (print "encoding SPECIAL number")
+            ;;    (let ((t (type val))
+            ;;          (s (size val)))
+            ;;       (ilist 1 t
+            ;;          (send-number s
+            ;;             (render-fields (object->list val) pos index
+            ;;                tail)))))
             ; все остальные числа
             ((integer? val) ; сюда мы можем придти только если непосредственно энкодим число, как часть объекта оно сюда придти не может
                ;; (print "encoding number: " val)
@@ -205,9 +208,9 @@
       (define (object-closure root)
          (let loop ((seen #empty) (obj root))
             (cond
-               ; специальные "числа"
-               ((special? obj)
-                  (collect loop seen obj))
+               ;; ; специальные "числа"
+               ;; ((special? obj)
+               ;;    (collect loop seen obj))
                ; обычные числа
                ((integer? obj)
                   seen)
@@ -248,8 +251,8 @@
       ; object -> serialized lazy list
       (define (encode obj)
          (cond
-            ((special? obj)
-               (encode-object obj fasl-finale))
+            ;; ((special? obj)
+            ;;    (encode-object obj fasl-finale))
             ((integer? obj)
                (encode-integer obj fasl-finale))
             ((value? obj)
