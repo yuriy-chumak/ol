@@ -59,12 +59,6 @@
       (define fasl-finale (list 0)) ; stream end marker
 
       (define low7 #b1111111)
-      ;; (define (special? obj)
-      ;;    (and
-      ;;       (eq? (type obj) type-int+)
-      ;;       (or
-      ;;          (null? (cdr obj)) ; большие числа не могут состоять из одного элемента (это маленькие числа)
-      ;;          (eq? (car obj) 0)))) ; большие числа не могут начинаться с нуля
 
 
       (define (object->list obj)
@@ -72,20 +66,6 @@
             (if (eq? pos 0)
                tail
                (loop (-- pos) (cons (ref obj pos) tail)))))
-
-      ;; (define (object2->list obj)
-      ;;    (let loop ((pos (size obj)) (tail #null))
-      ;;       ;; (print "pos: " pos)
-      ;;       (if (eq? pos 0)
-      ;;          tail
-      ;;          (let*((item (ref obj pos))
-      ;;                (item (if (special? item)
-      ;;                      then ; сюда мы не должны попадать
-      ;;                         (print "This is invalid number !!! -- " pos " / " (ref item 1))
-      ;;                         item
-      ;;                      else
-      ;;                         item)))
-      ;;          (loop (-- pos) (cons item tail))))))
 
       ;;;
       ;;; Encoder
@@ -108,43 +88,27 @@
 
       ;; encode the value
       (define (encode-value val tail)
-         ;; (print "encoding value " val)
          (cons 0
             (cons (type val)
                (send-number val tail))))
 
       ;; encode the integer number
       (define (encode-integer val tail)
-         ;; (print "encode integer: " val)
          (cons 0
             (cons (if (positive? val) type-enum+ type-enum-)
                (send-number (abs val) tail))))
 
 
       (define (render-fields lst pos index tail)
-         ;; (display "   render-fields( ")
-         ;; (for-each (lambda (l)
-         ;;       (write l)
-         ;;       (display " "))
-         ;;    lst)
-         ;; (print ") / {" pos "}")
          (foldr (lambda (elem out)
                (cond
-                  ;; ; we should skip special integer case: *big-num* and similars
-                  ;; ; "специальные" числа
-                  ;; ((special? elem)
-                  ;;    (print "special " (type elem) " " (size elem) " - " (vm:cast type-enum+ (car elem)) " . " (cdr elem))
-                  ;;    (let ((target (index elem))) ; assert elem is already index
-                  ;;       ;; (print "special number! pos: " pos " -> " target)
-                  ;;       (send-number (- pos target) out)))
                   ((integer? elem)
-                     ; note: position number будет потерян
                      (encode-integer elem out))
                   ; проверять на соответствие 24-битному размеру
                   ((value? elem)
                      (encode-value elem out))
                   (else
-                     (let ((target (get index elem "bug")))
+                     (let ((target (index elem #false)))
                         ; hack warning: objects cannot refer to themselves and the
                         ; heap is unidirectional, so pos - target > 0, so a 0 can
                         ; be safely used as the immediate marker, and pointers can
@@ -161,32 +125,17 @@
       ;; todo - pack type to this now that they fit 6 bits
       ;; encode the reference
       (define (encode-reference val pos index tail)
-         ;; (display "encode reference: ")
-         ;; (write val)
-         ;; (print ", pos: " pos ", tail: " tail)
          (cond
             ((ref val 0) ; ==(raw object? val), 0 in ref works only for binary objects
-               ;; (print "encoding raw obj: " val)
                (let ((t (type val))
                      (s (size val)))
                   (ilist 2 t
                      (send-number s
                         (copy-bytes tail val (- s 1))))))
-            ;; ; специальные "числа", вроде *int-max*
-            ;; ((special? val)
-            ;;    ;; (print "encoding SPECIAL number")
-            ;;    (let ((t (type val))
-            ;;          (s (size val)))
-            ;;       (ilist 1 t
-            ;;          (send-number s
-            ;;             (render-fields (object->list val) pos index
-            ;;                tail)))))
             ; все остальные числа
             ((integer? val) ; сюда мы можем придти только если непосредственно энкодим число, как часть объекта оно сюда придти не может
-               ;; (print "encoding number: " val)
                (encode-integer val tail))
             (else
-               ;; (print "encoding regular object: " val)
                (let ((t (type val))
                      (s (size val)))
                   (ilist 1 t
@@ -208,10 +157,7 @@
       (define (object-closure root)
          (let loop ((seen #empty) (obj root))
             (cond
-               ;; ; специальные "числа"
-               ;; ((special? obj)
-               ;;    (collect loop seen obj))
-               ; обычные числа
+               ; целые числа
                ((integer? obj)
                   seen)
                ; остальные константы
@@ -251,12 +197,10 @@
       ; object -> serialized lazy list
       (define (encode obj)
          (cond
-            ;; ((special? obj)
-            ;;    (encode-object obj fasl-finale))
-            ((integer? obj)
-               (encode-integer obj fasl-finale))
-            ((value? obj)
-               (encode-value obj fasl-finale))
+            ((integer? obj) ; todo: remove from fasl2-encode
+               (encode-integer obj #null))
+            ((value? obj) ; todo: remove from fasl2-encode
+               (encode-value obj #null))
             (else
                (encode-object obj fasl-finale))))
 

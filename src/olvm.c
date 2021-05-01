@@ -2394,6 +2394,7 @@ mainloop:;
 	#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 
 	#	define SYSCALL 63
+	#		define SYSCALL_SYSCALL ? // TODO: https://linux.die.net/man/2/syscall and remove redundant calls
 			// read, write, open, close must exist
 	#		define SYSCALL_READ 0    // 
 	#		define SYSCALL_WRITE 1   // 
@@ -2427,7 +2428,7 @@ mainloop:;
 	#		define SYSCALL_EXIT 60
 	#		define SYSCALL_GETDENTS 78
 	#		define SYSCALL_CHDIR 80
-	#		define SYSCALL_MKDIR 83
+	#		define SYSCALL_MKDIR 83 // todo: move SYSCALL_MKDIR as part of SYSCALL_SYSCALL, remove redundant code
 
 	#		define SYSCALL_GETTIMEOFDAY 96
 

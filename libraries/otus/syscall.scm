@@ -1,4 +1,4 @@
-(define-library (otus syscall)
+(define-library (otus syscall) ; todo: rename to (sys calls) ?
    (export 
       gettimeofday
       strftime)

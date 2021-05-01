@@ -60,33 +60,14 @@
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
-;      ;; check how many fixnum bits the vm supports with vm:shl
-;      ;; idea is to allow the vm to be compiled with different ranges, initially fixed to 24
-;      (define *max-fixnum*
-;         (let loop ((f 0))
-;            (lets
-;               ((o f (vm:shl f 1)) ;; repeat (f<<1)|1 until overflow
-;                (f (vm:ior f 1)))
-;               (if (eq? o 0)
-;                  (loop f)
-;                  f))))
 ;      now changed to vm call (vm:maxvalue)
 
       ;; biggest before highest bit is set (needed in some bignum ops)
+      ; эта функция довольно редко вызывается
       (define (*pre-max-fixnum*) ; TODO: сделать константой, не вызовом функции
-         (let*
-            ((f o (vm:shr (vm:maxvalue) 1)))
+         (let* ((f o (vm:shr (vm:maxvalue) 1)))
             f))
 
-;      ;; count the number of bits in *max-fixnum*
-;      (define (*fixnum-bits*)
-;         (let loop ((f (vm:maxvalue)) (n 0))
-;            (if (eq? f 0)
-;               n
-;               (lets
-;                  ((f _ (vm:shr f 1))
-;                   (n _ (vm:add n 1)))
-;                  (loop f n)))))
 ;      now changed to vm call (vm:valuewidth)
 
       ; this is special internal "number" that is not a number
