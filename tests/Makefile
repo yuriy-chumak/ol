@@ -4,7 +4,7 @@ ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
 else
 
-FAILED := $(shell mktemp /tmp/failed.XXXXXXXXX -u)
+FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
 
 MINGW32Q := $(shell which i686-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
 MINGW64Q := $(shell which x86_64-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
