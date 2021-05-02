@@ -28,12 +28,18 @@ You can use Ol on Linux, Windows, macOS, Android, BSD (and its
 descendants), webOS, Solaris and other operating systems based
 on various hardware architectures (intel, arm, ppc, mips, etc).
 
-
 Also Ol is ported to the Web and can be used in Chrome, Firefox, Opera, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape, etc.
 
-### Otus Lisp, Version 2.2.1 RC1
+Source code available under tag "[2.2](https://github.com/yuriy-chumak/ol/releases/tag/2.2)" or at [Releases](https://github.com/yuriy-chumak/ol/releases) page.
 
-The build command line has been changed. See the "BUILD" section.
+### Otus Lisp, Version 2.3 rc1
+
+There are already new Ol changes in the Master branch that will be included in the 2.3 release:.
+ * the build command line has been changed. See the "BUILD" section.
+ * fasl format changed,
+   * fasl is fully 32/64 bit independent (32-bit machines can execute 64-bit fasl and vice versa),
+   * numbers encoded as numbers, not as objects,
+   * big endian numbers order changed to little-endian
 
 LICENSE
 -------
