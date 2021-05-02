@@ -1,8 +1,7 @@
-#include <ol/vm.h>
-
 #include <stdio.h>
 #include <unistd.h>
-typedef uintptr_t word;
+
+#include <ol/vm.h>
 
 #define BEGIN(x) \
 { \
@@ -49,11 +48,11 @@ int main(int argc, char** argv)
 		{ 2, 16, 4,  77, 6,  24, 6,  0 }
 	);
 	TESTCASE("LDT",  == 0x136, // #true
-		//lambda(x)  LDN[6]  RET[6]
+		//lambda(x)  LDT[6]  RET[6]
 		{ 2, 16, 4, 141, 6,  24, 6,  0 }
 	);
 	TESTCASE("LDF",  == 0x036, // #false
-		//lambda(x)  LDN[6]  RET[6]
+		//lambda(x)  LDF[6]  RET[6]
 		{ 2, 16, 4, 205, 6,  24, 6,  0 }
 	);
 
