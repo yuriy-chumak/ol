@@ -991,6 +991,10 @@ ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
 		default: fprintf(stderr, "Unsupported parameters count for ffi function: %d", i);\
 			return 0;\
 		};
+static
+inline ret_t call_x(word args[], int i, void* function, int type) {
+	CALL();
+}
 #endif
 
 
@@ -1930,19 +1934,15 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	        i, 0,
 	        function, returntype & 0x3F); //(?)
 #	endif
-#elif __mips__
-	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
-	inline ret_t call(word args[], int i, void* function, int type) {
-		CALL();
-	}
-	got = call(args, i, function, returntype & 0x3F);
 #elif __EMSCRIPTEN__
 	got = asmjs_call(args, fmask, function, returntype & 0x3F);
+#elif __mips__
+	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
+	got = call_x(args, i, function, returntype & 0x3F);
+#elif __sparc64__
+	got = call_x(args, i, function, returntype & 0x3F);
 #else // ALL other
-	inline ret_t call(word args[], int i, void* function, int type) {
-		CALL();
-	}
-	got = call(args, i, function, returntype & 0x3F);
+	got = call_x(args, i, function, returntype & 0x3F);
 /*	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
 		CALL(__cdecl);
 	}
