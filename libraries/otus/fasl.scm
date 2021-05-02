@@ -80,15 +80,15 @@
       (setq add (lambda (a b)         ; * internal
          (values-apply (vm:add a b) (lambda (n carry) n))))
 
-      (define (send-biggish-num num done)
+      (define (send-biggish-num num tail)
          (if (less? num 127)
-            (cons num done) ; highest chunk must have a bit 8 clear
+            (cons (vm:cast num type-enum+) tail) ; highest chunk must have a bit 8 clear
             (cons (vm:ior (band num 127) 128)
-                  (send-biggish-num (>> num 7) done))))
+                  (send-biggish-num (>> num 7) tail))))
 
       (define (send-number num tail)
          (if (less? num 128)
-            (cons num tail)
+            (cons (vm:cast num type-enum+) tail)
             (cons (vm:ior (band num 127) 128)
                   (send-biggish-num (>> num 7) tail))))
 
@@ -105,7 +105,7 @@
                (send-number (abs val) tail))))
 
 
-      (define (render-fields lst pos index tail)
+      (define (encode-fields lst pos index tail)
          (foldr (lambda (elem out)
                (cond
                   ((integer? elem)
@@ -146,7 +146,7 @@
                      (s (size val)))
                   (ilist 1 t
                      (send-number s
-                        (render-fields (object->list val) pos index
+                        (encode-fields (object->list val) pos index
                            tail)))))))
 
       ; -----
@@ -182,8 +182,8 @@
          (ff-fold
             (λ (fc key _)
                (let* ((fp clos fc))
-                  ; TODO: для оптимизации, если не ожидать больше 16777216 объектов, можно использовать ++
-                  (cons (+ fp 1) (ff-update clos key fp))))
+                  ; no more than 16777216 object for x32 is allowed
+                  (cons (++ fp) (ff-update clos key fp))))
             (cons 0 clos) clos))
 
 
@@ -201,7 +201,7 @@
                      (loop (force kvs)))))))
 
       ; object -> serialized lazy list
-      (define (encode obj)
+      (define (encode2 obj)
          (cond
             ((integer? obj) ; todo: remove from fasl2-encode
                (encode-integer obj #null))
@@ -212,174 +212,185 @@
 
       ; object -> serialized list
       (define (fasl2-encode obj)
-         (force-ll (encode obj)))
-
-      ; dump the data, but cook each allocated value with cook just before dumping
-      ; (to allow for example changing code from functions without causing
-      ;  them to move in the heap, which would break object order)
-      ;; (define (fasl-encode-cooked obj cook)
-      ;;    (force-ll (encode obj cook)))
-
-      ;; (define chunk-size 4096)
-
-      ;; (define (chunk-stream bs n buff)
-      ;;    (cond
-      ;;       ((eq? n chunk-size)
-      ;;          (cons
-      ;;             (make-bytevector (reverse buff))
-      ;;             (chunk-stream bs 0 null)))
-      ;;       ((null? bs)
-      ;;          (if (null? buff)
-      ;;             null
-      ;;             (list (make-bytevector (reverse buff)))))
-      ;;       ((pair? bs)
-      ;;          (lets ((n _ (vm:add n 1)))
-      ;;             (chunk-stream (cdr bs) n (cons (car bs) buff))))
-      ;;       (else
-      ;;          (chunk-stream (bs) n buff))))
-
-      ;; (define (fasl-encode-stream obj cook)
-      ;;    (chunk-stream (encode obj cook) 0 null))
+         (force-ll (encode2 obj)))
 
       ;; ;;;
       ;; ;;; Decoder
       ;; ;;;
 
-      ;; (define (grab ll fail)
-      ;;    (cond
-      ;;       ((null? ll) (fail enodata))
-      ;;       ((pair? ll) (values (cdr ll) (car ll)))
-      ;;       (else (grab (ll) fail))))
+      ; process lazy list
+      (define (grab ll fail)
+         ;; (print "grab")
+         (cond
+            ((null? ll) (fail enodata))
+            ((pair? ll) (values (cdr ll) (car ll)))
+            (else (grab (force ll) fail))))
 
-      ;; (define (get-nat ll fail top)
-      ;;    (lets ((ll b (grab ll fail)))
-      ;;       (if (eq? 0 (vm:and b 128)) ; leaf case
-      ;;          (values ll (bor (<< top 7) b))
-      ;;          (get-nat ll fail (bor (<< top 7) (band b low7))))))
+      (define (get-number ll fail)
+         (let gnloop ((ll ll) (value 0) (shift 0))
+            ;; (print "gnloop/ value: " value ", shift: " shift)
+            (let* ((ll byte (grab ll fail)))
+               (if (eq? (vm:and byte 128) 0) ; leaf case
+               then
+                  ;; (print "byte: " byte)
+                  (define data (band byte 127))
+                  ;; (print "data: " data)
+                  ;; (print "shifted: " (<< data shift))
+                  ;; (print "result: " (bor value (<< byte shift)))
+                  (values ll (bor value (<< byte shift)))
+               else
+                  ;; (print "byte: " byte)
+                  (define data (band byte 127))
+                  ;; (print "data: " data)
+                  ;; (print "shifted: " (<< data shift))
+                  ;; (print "result: " (bor value (<< byte shift)))
+                  (gnloop ll (bor value (<< data shift)) (+ shift 7))))))
 
-      ;; (define (decode-immediate ll fail)
-      ;;    (lets
-      ;;       ((ll type (grab ll fail))
-      ;;        (ll val  (get-nat ll fail 0)))
-      ;;       (values ll (vm:cast val type))))
+      (define (decode-value ll fail)
+         ;; (print "        decode-value")
+         (let*((ll atype (grab ll fail))
+               ;; (_ (print "         type: " atype))
+               (ll value (get-number ll fail)))
+            ;; (print "        dv: " value ", type: " (type value))
+            (values ll (cond
+               ((value? value)
+                  ;; (print "        value")
+                  ;; (print "        dv: " (vm:cast value atype))
+                  (vm:cast value atype))
+               ((eq? atype type-enum+)
+                  ;; (print "        enum+")
+                  ;; (print "        dv: " (vm:cast value type-int+))
+                  (vm:cast value type-int+))
+               ((eq? atype type-enum-)
+                  ;; (print "        enum-")
+                  ;; (print "        dv: " (vm:cast value type-int-))
+                  (vm:cast value type-int-))
+               (else
+                  ;; (print "        else")
+                  (fail "invalid value type"))))))
 
-      ;; (define nan "not here") ; eq?-unique
+      (define nan "not here") ; eq?-unique
 
-      ;; (define (get-fields ll got size fail out)
-      ;;    (if (eq? size 0)
-      ;;       (values ll (reverse out))
-      ;;       (lets ((ll fst (grab ll fail)))
-      ;;          (if (eq? fst 0)
-      ;;             (lets ((ll val (decode-immediate ll fail)))
-      ;;                (get-fields ll got (- size 1) fail (cons val out)))
-      ;;             (lets
-      ;;                ((ll pos (get-nat (cons fst ll) fail 0)))
-      ;;                (if (eq? pos 0)
-      ;;                   (fail "bad reference")
-      ;;                   (let ((val (rget got (- pos 1) nan)))
-      ;;                      (if (eq? val nan)
-      ;;                         (fail "bad reference")
-      ;;                         (get-fields ll got (- size 1) fail (cons val out))))))))))
+      (define (get-bytes ll n fail tail)
+         (if (eq? n 0)
+            (values ll tail)
+            (let* ((ll byte (grab ll fail)))
+               (get-bytes ll (-- n) fail (cons byte tail)))))
 
-      ;; (define (get-bytes ll n fail out)
-      ;;    (if (eq? n 0)
-      ;;       (values ll out)
-      ;;       (lets ((ll byte (grab ll fail)))
-      ;;          (get-bytes ll (- n 1) fail (cons byte out)))))
+      (define (decode-fields ll index size fail fields)
+         ;; (print "    decode-fields, fields: " fields)
+         ;; (print "      /size: " size)
+         (if (eq? size 0)
+         then
+            ;; (print "          " fields " -> " (reverse fields))
+            (values ll (reverse fields))
+         else
+            (let* ((ll fst (grab ll fail)))
+               ;; (print "      field reference: " fst)
+               (if (eq? fst 0) ; a value
+                  (let* ((ll val (decode-value ll fail)))
+                     ;; (print "      val: " val)
+                     (decode-fields ll index (-- size) fail (cons val fields)))
+               else ; a reference
+                  (let*((ll pos (get-number (cons fst ll) fail)))
+                     ;; (print "      pos: " pos)
+                     (if (eq? pos 0)
+                        (fail "bad reference"))
+                     (define val (rget index (-- pos) nan))
+                     ;; (print "      val: " val)
+                     (if (eq? val nan)
+                        (fail "bad reference"))
+                     (decode-fields ll index (-- size) fail (cons val fields)))))))
 
       ;; ; → ll value | (fail reason)
-      ;; (define (decoder ll got fail)
-      ;;    (cond
-      ;;       ((null? ll)
-      ;;          ;; no terminal 0, treat as a bug
-      ;;          (fail "no terminal zero"))
-      ;;       ((pair? ll)
-      ;;          (lets ((kind ll ll))
-      ;;             (cond
-      ;;                ((eq? kind 1) ; allocated, type SIZE
-      ;;                   (lets
-      ;;                      ((ll type (grab ll fail))
-      ;;                       (ll size (get-nat ll fail 0))
-      ;;                       (ll fields (get-fields ll got size fail null))
-      ;;                       (obj (vm:make type #|size|# fields)))
-      ;;                      (decoder ll (rcons obj got) fail)))
-      ;;                ((eq? kind 2) ; raw, type SIZE byte ...
-      ;;                   (lets
-      ;;                      ((ll type (grab ll fail))
-      ;;                       (ll size (get-nat ll fail 0))
-      ;;                       (foo (if (> size 65535) (fail "bad raw object size")))
-      ;;                       (ll rbytes (get-bytes ll size fail null))
-      ;;                       (obj (vm:makeb type (reverse rbytes))))
-      ;;                      (decoder ll (rcons obj got) fail)))
-      ;;                ((eq? kind 0) ;; fasl stream end marker
-      ;;                   ;; object done
-      ;;                   (values ll (rcar got)))
-      ;;                ((eq? (band kind 3) 3) ; shortcut allocated
-      ;;                   (lets
-      ;;                      ((type (>> kind 2))
-      ;;                       (ll size (get-nat ll fail 0))
-      ;;                       (foo (if (> size 65535) (fail "bad raw object size")))
-      ;;                       (ll rbytes (get-bytes ll size fail null))
-      ;;                       (obj (vm:makeb type (reverse rbytes))))
-      ;;                      (decoder ll (rcons obj got) fail)))
-      ;;                (else
-      ;;                   (fail (list "unknown object tag: " kind))))))
-      ;;       (else
-      ;;          (decoder (ll) got fail))))
+      ;; index is a "random accessible list"
+      (define (decode-object ll index fail)
+         ;; (print "decode-object, index: " index)
+         (cond
+            ((null? ll)
+               ;; no terminal 0, treat as a bug
+               (fail "no terminal zero"))
+            ((pair? ll)
+               (let* ((kind ll ll))
+                  ;; (print "  kind: " kind)
+                  (cond
+                     ; regular object
+                     ((eq? kind 1)
+                        (let*((ll type (grab ll fail))
+                              ;; (_ (print "    type: " type))
+                              (ll size (get-number ll fail))
+                              ;; (_ (print "    size: " size))
+                              (ll fields (decode-fields ll index size fail #null))
+                              ;; (_ (print "    fields: " fields))
+                              (obj (vm:make type fields)))
+                           ;; (print "    obj: " obj)
+                           (decode-object ll (rcons obj index) fail)))
+                     ; bitstream object
+                     ((eq? kind 2)
+                        (let*((ll type (grab ll fail))
+                              (ll size (get-number ll fail))
+                              (ll rbytes (get-bytes ll size fail null))
+                              (obj (vm:makeb type (reverse rbytes))))
+                           ;; (print "    obj: " obj)
+                           (decode-object ll (rcons obj index) fail)))
+                     ;; fasl stream end marker
+                     ((eq? kind 0)
+                        ;; object done
+                        (values ll (rcar index)))
+   ;;                ((eq? (band kind 3) 3) ; shortcut allocated
+   ;;                   (lets
+   ;;                      ((type (>> kind 2))
+   ;;                       (ll size (get-nat ll fail 0))
+   ;;                       (foo (if (> size 65535) (fail "bad raw object size")))
+   ;;                       (ll rbytes (get-bytes ll size fail null))
+   ;;                       (obj (vm:makeb type (reverse rbytes))))
+   ;;                      (decode-object ll (rcons obj got) fail)))
+                     (else
+                        (fail (list "unknown object tag: " kind))))))
+            (else
+               (decode-object (force ll) index fail))))
 
-      ;; (define (decode-or ll err) ; -> ll obj | null (err why)
-      ;;    (let*/cc ret
-      ;;          ((fail (λ (why) (ret null (err why)))))
-      ;;       (cond
-      ;;          ((null? ll) (fail enodata))
-      ;;          ((pair? ll)
-      ;;             ; a leading 0 is special and means the stream has no allocated objects, just one immediate one
-      ;;             (if (eq? (car ll) 0)
-      ;;                (decode-immediate (cdr ll) fail)
-      ;;                (decoder ll null fail)))
-      ;;          (else
-      ;;             (decode-or (ll) err)))))
-      ;;    ;; (call/cc ; setjmp2000
-      ;;    ;;    (λ (ret)
-      ;;    ;;       (lets ((fail (λ (why) (ret null (err why)))))
+      (define (decode-or ll err) ; -> ll obj | null (err why)
+         ;; (print "decode-or : " ll)
+         (let*/cc ret
+               ((fail (λ (why) (ret #false (err why)))))
+            (cond
+               ((null? ll)
+                  (fail enodata))
+               ((pair? ll)
+                  ; a leading 0 is special and means the stream has a value or a number
+                  (if (eq? (car ll) 0)
+                     (decode-value (cdr ll) fail)
+                     (decode-object ll #null fail)))
+               (else
+                  (decode-or (force ll) err)))))
 
-      ;; ;; decode a full (possibly lazy) list of data, and succeed only if it exactly matches a fasl-encoded object
-
-      ;; (define failed "fail") ;; a unique object
+      (define failed "fail") ;; a unique object
 
       ;; ;; ll fail → val | fail
-      ;; (define (decode ll fail-val)
-      ;;    (lets ((ll ob (decode-or ll (λ (why) failed))))
-      ;;       (cond
-      ;;          ((eq? ob failed) fail-val)
-      ;;          ((null? (force-ll ll)) ob)
-      ;;          (else fail-val))))
+      ; serialized lazy list -> object
+      (define (decode2 ll fail)
+         (let* ((ll ob (decode-or ll (λ (why) failed))))
+            (cond
+               ((eq? ob failed)
+                  fail)
+               ((null? ll) ob)
+               (else
+                  fail))))
 
       ;; ;; byte-stream → (ob ...) | (ob ... err)
-      ;; (define (decode-stream ll err)
-      ;;    (cond
-      ;;       ((pair? ll)
-      ;;          (lets ((ll ob (decode-or ll (λ (why) failed))))
-      ;;             (if (eq? ob failed)
-      ;;                (list err)
-      ;;                (pair ob (decode-stream ll err)))))
-      ;;       ((null? ll) null)
-      ;;       (else (decode-stream (ll) err))))
+      (define fasl2-decode decode2)
 
-      ;; (define fasl-decode decode)
-
+      ; ---------------------------
       (define (fasl2-save obj path)
-         (define port (open-output-file path))
-         (when port
-            (write-bytes port (fasl2-encode obj))
-            (close-port port)))
+         (bytevector->file
+            (list->bytevector (fasl2-encode obj))
+            path))
+
+      (define (fasl2-load path fail-val)
+         (let ((bs (file->bytestream path)))
+            (if bs
+               (fasl2-decode bs fail-val)
+               fail-val)))
 
 ))
-
-
-;; ;; (import (otus fasl))
-;; ;(print (send-number 123456123456123456123456123456123456123456123456 #f))
-
-;; ;(print (fasl-encode 'xyz))
-;; (print
-;;    (force-ll (encode 1111111111111111111)))
