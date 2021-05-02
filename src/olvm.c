@@ -5177,7 +5177,7 @@ int main(int argc, char** argv)
 			st.st_size--;
 		}
 
-		if (bom > 3) {	// ха, это текстовая программа (скрипт)!
+		if (bom > 2) {	// ха, это текстовая программа (скрипт)!
 #ifndef REPL
 			goto invalid_binary_script;
 #else
