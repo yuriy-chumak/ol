@@ -17,7 +17,6 @@
       (scheme bytevector)
       (scheme vector)
       (otus blobs)
-      (only (owl fasl) sub-objects)
       (only (owl math) render-number number?)
       (only (owl string) render-string string? string->list))
 
@@ -25,8 +24,7 @@
       make-serializer    ;; names → ((obj tl) → (byte ... . tl))
       ;serialize       ;; obj tl        → (byte ... . tl), eager, always shared
       ;serialize-lazy  ;; obj tl share? → (byte ... . tl), lazy, optional sharing
-      render          ;; obj tl        → (byte ... . tl) -- deprecated
-      )
+      render)          ;; obj tl        → (byte ... . tl) -- deprecated
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -257,6 +255,26 @@
       ;; a value worth checking for sharing in datum labeler
       (define (shareable? x)
          (not (or (function? x) (symbol? x) (port? x))))
+
+
+      (define (partial-object-closure root pred)
+         (define (clos seen obj)
+            (cond
+               ((value? obj) seen)
+               ((not (pred obj)) seen)
+               ((getf seen obj) =>
+                  (λ (n) (fupd seen obj (+ n 1))))
+               (else
+                  (let ((seen (put seen obj 1)))
+                     (if (ref obj 0) ; ==(blob? obj), 0 in ref works only for blobs
+                        seen
+                        (fold clos seen (vector->list obj)))))))
+         (clos empty root))
+
+      ;; don't return ff, type of which is changing atm
+      (define (sub-objects root pred)
+         (ff->alist
+            (partial-object-closure root pred)))
 
       ;; val → ff of (ob → node-id)
       (define (label-shared-objects val)

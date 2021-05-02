@@ -1,10 +1,12 @@
-;;;
-;;; Object serialization and reconstruction
-;;;
+(define-library (otus fasl)
+   (version 2.0)
+   (license MIT/LGPL3)
+   (description "object serialization library")
 
-;; fasl - FASt Lisp format
+;  fasl - FASt Lisp binary format
+;
 
-;; limitations:
+; limitations:
 ;
 ; * maximum size of marshalled object
 ;    is 16MB for x32
@@ -12,12 +14,9 @@
 ; * maximum count of marshalled objects
 ;    is 16MB for x32
 ;   and 64PB for x64 (Petabytes)
+; * symbols deserialzed uninterned
 
-;; todo: add a version which handles symbols and ff's specially
-
-;; fixme: encoder which returns the number of objects is probably no longer needed
-
-; protocol
+; protocol:
 ;  <obj> = 0 <type> <value>            -- immediate object
 ;        = 1 <type> <size> <field> ... -- allocated
 ;        = 2 <type> <size> <byte>  ... -- allocated, raw data
@@ -30,42 +29,27 @@
 ;  <field> = 0 <type> <val>...<val> -- immediate
 ;          = <N> -- pointer to nth last object
 
-(define-library (otus fasl)
-
+;; todo: add a version which handles symbols and ff's specially
    (export
+      encode2               ; obj -> (lazy) fasl list
       fasl2-encode          ; obj -> (byte ... 0)
 
-      ;; fasl-decode          ; (byte ...) -> obj, input can be lazy
-
-      fasl2-save
-
-      ;; decode-or            ; (byte ...) fail → object | (fail reason)
-      ;; encode               ; obj -> (byte ... 0), n-alloc-objs (mainly for bootstrapping)
-      ;; objects-below        ; obj -> (obj ...), all allocated objects below obj
-      ;; decode-stream        ; ll failval → (ob ...) | (ob .. failval)
-      ;; sub-objects          ; obj wanted? -> ((obj . n-occurrences) ...)
-      )
+      decode2               ; (lazy) fasl list -> obj
+      fasl2-decode)         ; (byte ...) -> obj
 
    (import
       (scheme core)
-      (scheme vector)
 
-      (otus blobs)
       (owl math)
       (owl ff)
-      (owl io) (owl string) (scheme bytevector) (owl math fp); temp
       (owl lazy)
       (owl list)
       (owl rlist))
 
    (begin
-      (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define enodata #false) ;; reason to fail if out of data (progressive readers want this)
       (define fasl-finale (list 0)) ; stream end marker
-
-      (define low7 #b1111111)
-
 
       (define (object->list obj)
          (let loop ((pos (size obj)) (tail #null))
@@ -220,7 +204,6 @@
 
       ; process lazy list
       (define (grab ll fail)
-         ;; (print "grab")
          (cond
             ((null? ll) (fail enodata))
             ((pair? ll) (values (cdr ll) (car ll)))
@@ -228,45 +211,26 @@
 
       (define (get-number ll fail)
          (let gnloop ((ll ll) (value 0) (shift 0))
-            ;; (print "gnloop/ value: " value ", shift: " shift)
             (let* ((ll byte (grab ll fail)))
                (if (eq? (vm:and byte 128) 0) ; leaf case
-               then
-                  ;; (print "byte: " byte)
-                  (define data (band byte 127))
-                  ;; (print "data: " data)
-                  ;; (print "shifted: " (<< data shift))
-                  ;; (print "result: " (bor value (<< byte shift)))
                   (values ll (bor value (<< byte shift)))
                else
-                  ;; (print "byte: " byte)
                   (define data (band byte 127))
-                  ;; (print "data: " data)
-                  ;; (print "shifted: " (<< data shift))
-                  ;; (print "result: " (bor value (<< byte shift)))
-                  (gnloop ll (bor value (<< data shift)) (+ shift 7))))))
+                  (gnloop ll (bor value (<< data shift))
+                     ; (+ shift 7) speedup:
+                     (values-apply (vm:add shift 7) (lambda (n carry) n)))))))
 
       (define (decode-value ll fail)
-         ;; (print "        decode-value")
          (let*((ll atype (grab ll fail))
-               ;; (_ (print "         type: " atype))
                (ll value (get-number ll fail)))
-            ;; (print "        dv: " value ", type: " (type value))
             (values ll (cond
                ((value? value)
-                  ;; (print "        value")
-                  ;; (print "        dv: " (vm:cast value atype))
                   (vm:cast value atype))
                ((eq? atype type-enum+)
-                  ;; (print "        enum+")
-                  ;; (print "        dv: " (vm:cast value type-int+))
                   (vm:cast value type-int+))
                ((eq? atype type-enum-)
-                  ;; (print "        enum-")
-                  ;; (print "        dv: " (vm:cast value type-int-))
                   (vm:cast value type-int-))
                (else
-                  ;; (print "        else")
                   (fail "invalid value type"))))))
 
       (define nan "not here") ; eq?-unique
@@ -278,52 +242,37 @@
                (get-bytes ll (-- n) fail (cons byte tail)))))
 
       (define (decode-fields ll index size fail fields)
-         ;; (print "    decode-fields, fields: " fields)
-         ;; (print "      /size: " size)
          (if (eq? size 0)
-         then
-            ;; (print "          " fields " -> " (reverse fields))
             (values ll (reverse fields))
          else
             (let* ((ll fst (grab ll fail)))
-               ;; (print "      field reference: " fst)
                (if (eq? fst 0) ; a value
                   (let* ((ll val (decode-value ll fail)))
-                     ;; (print "      val: " val)
                      (decode-fields ll index (-- size) fail (cons val fields)))
                else ; a reference
                   (let*((ll pos (get-number (cons fst ll) fail)))
-                     ;; (print "      pos: " pos)
                      (if (eq? pos 0)
                         (fail "bad reference"))
                      (define val (rget index (-- pos) nan))
-                     ;; (print "      val: " val)
                      (if (eq? val nan)
                         (fail "bad reference"))
                      (decode-fields ll index (-- size) fail (cons val fields)))))))
 
-      ;; ; → ll value | (fail reason)
       ;; index is a "random accessible list"
       (define (decode-object ll index fail)
-         ;; (print "decode-object, index: " index)
          (cond
             ((null? ll)
                ;; no terminal 0, treat as a bug
                (fail "no terminal zero"))
             ((pair? ll)
                (let* ((kind ll ll))
-                  ;; (print "  kind: " kind)
                   (cond
                      ; regular object
                      ((eq? kind 1)
                         (let*((ll type (grab ll fail))
-                              ;; (_ (print "    type: " type))
                               (ll size (get-number ll fail))
-                              ;; (_ (print "    size: " size))
                               (ll fields (decode-fields ll index size fail #null))
-                              ;; (_ (print "    fields: " fields))
                               (obj (vm:make type fields)))
-                           ;; (print "    obj: " obj)
                            (decode-object ll (rcons obj index) fail)))
                      ; bitstream object
                      ((eq? kind 2)
@@ -331,27 +280,17 @@
                               (ll size (get-number ll fail))
                               (ll rbytes (get-bytes ll size fail null))
                               (obj (vm:makeb type (reverse rbytes))))
-                           ;; (print "    obj: " obj)
                            (decode-object ll (rcons obj index) fail)))
                      ;; fasl stream end marker
                      ((eq? kind 0)
                         ;; object done
                         (values ll (rcar index)))
-   ;;                ((eq? (band kind 3) 3) ; shortcut allocated
-   ;;                   (lets
-   ;;                      ((type (>> kind 2))
-   ;;                       (ll size (get-nat ll fail 0))
-   ;;                       (foo (if (> size 65535) (fail "bad raw object size")))
-   ;;                       (ll rbytes (get-bytes ll size fail null))
-   ;;                       (obj (vm:makeb type (reverse rbytes))))
-   ;;                      (decode-object ll (rcons obj got) fail)))
                      (else
                         (fail (list "unknown object tag: " kind))))))
             (else
                (decode-object (force ll) index fail))))
 
       (define (decode-or ll err) ; -> ll obj | null (err why)
-         ;; (print "decode-or : " ll)
          (let*/cc ret
                ((fail (λ (why) (ret #false (err why)))))
             (cond
@@ -378,19 +317,5 @@
                (else
                   fail))))
 
-      ;; ;; byte-stream → (ob ...) | (ob ... err)
       (define fasl2-decode decode2)
-
-      ; ---------------------------
-      (define (fasl2-save obj path)
-         (bytevector->file
-            (list->bytevector (fasl2-encode obj))
-            path))
-
-      (define (fasl2-load path fail-val)
-         (let ((bs (file->bytestream path)))
-            (if bs
-               (fasl2-decode bs fail-val)
-               fail-val)))
-
 ))
