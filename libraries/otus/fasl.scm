@@ -4,7 +4,15 @@
 
 ;; fasl - FASt Lisp format
 
-;; todo: removing dependencies to bignum math would increase speed
+;; limitations:
+;
+; * maximum size of marshalled object
+;    is 16MB for x32
+;   and 64PB for x64 (Petabytes)
+; * maximum count of marshalled objects
+;    is 16MB for x32
+;   and 64PB for x64 (Petabytes)
+
 ;; todo: add a version which handles symbols and ff's specially
 
 ;; fixme: encoder which returns the number of objects is probably no longer needed
@@ -17,17 +25,15 @@
 ;     00 - imm
 ;     01 - alloc
 ;     10 - alloc raw
-;     11 - free -> use as tag for allocs where the type fits 6 bits (not in use atm)
+;     11 - free
 ;
-;  <field> = 0 <type> <val> -- immediate
-;          = <N> -- pointer to nth last object (see hack warning below)
+;  <field> = 0 <type> <val>...<val> -- immediate
+;          = <N> -- pointer to nth last object
 
 (define-library (otus fasl)
 
    (export
       fasl2-encode          ; obj -> (byte ... 0)
-      ;; fasl-encode-cooked   ; obj cook -> (byte ... 0), with (cook alloc-obj) -> alloc-obj'
-      ;; fasl-encode-stream   ; obj cook -> (bvec ...) stream
 
       ;; fasl-decode          ; (byte ...) -> obj, input can be lazy
 
