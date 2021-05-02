@@ -308,8 +308,7 @@
                (write-really (make-bytevector (reverse out)) fd))
             (else
                ;; avoid dependency on generic math in IO
-               (lets ((len _ (vm:add len 1)))
-                  (printer (cdr lst) len (cons (car lst) out) fd)))))
+               (printer (cdr lst) (++ len) (cons (car lst) out) fd))))
 
       (define (writer-to names)
          (let ((serialize (make-serializer names)))
