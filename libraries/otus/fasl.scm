@@ -31,11 +31,11 @@
 
 ;; todo: add a version which handles symbols and ff's specially
    (export
-      encode2               ; obj -> (lazy) fasl list
-      fasl2-encode          ; obj -> (byte ... 0)
+      encode2              ; obj -> (lazy) fasl list
+      fasl-encode          ; obj -> (byte ... 0) ; TODO: rename to serialize
 
-      decode2               ; (lazy) fasl list -> obj
-      fasl2-decode)         ; (byte ...) -> obj
+      decode2              ; (lazy) fasl list -> obj
+      fasl-decode)         ; (byte ...) -> obj ; TODO: rename to deserialize
 
    (import
       (scheme core)
@@ -195,7 +195,7 @@
                (encode-object obj fasl-finale))))
 
       ; object -> serialized list
-      (define (fasl2-encode obj)
+      (define (fasl-encode obj)
          (force-ll (encode2 obj)))
 
       ;; ;;;
@@ -317,5 +317,5 @@
                (else
                   fail))))
 
-      (define fasl2-decode decode2)
+      (define fasl-decode decode2)
 ))

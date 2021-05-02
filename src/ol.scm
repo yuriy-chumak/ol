@@ -105,7 +105,6 @@
 ;;       (eq? (ref x 1) error-tag)))
 
 (import (owl time))
-(import (owl fasl))
 
 ;; fixme: should sleep one round to get a timing, and then use avg of the last one(s) to make an educated guess
 ;(define (sleep ms)
@@ -466,7 +465,7 @@
       (symbols (symbols-of make-main-entry))
       (codes   (codes-of   make-main-entry))
       (bytes ;; encode the resulting object for saving in some form
-         (fasl2-encode (make-main-entry symbols codes))))
+         (fasl-encode (make-main-entry symbols codes))))
    (if (not port)
       (begin
          (print "Could not open " path " for writing")

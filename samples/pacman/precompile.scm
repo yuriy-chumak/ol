@@ -4,7 +4,7 @@
 (import (lang threading))
 (import (otus fasl))
 
-(fasl2-save (lambda (args)
+(fasl-save (lambda (args)
       ; well, our code use messages (fork-server, mail, interact)
       ; so we should start a thread controller.
       ; in simple case we can just return a vector of pinned functions

@@ -45,8 +45,6 @@
       system-print system-println system-stderr
       fasl-save         ;; obj path → done?
       fasl-load         ;; path default → done?
-      fasl2-save         ;; obj path → done?
-      fasl2-load         ;; path default → done?
 
       io:init
    )
@@ -62,7 +60,7 @@
       (owl render)
       (owl list)
       (owl math)
-      (owl fasl) (otus fasl)
+      (otus fasl)
       (owl lazy)
       (scheme bytevector)
       (otus vm)
@@ -526,18 +524,6 @@
             (if bs
                (fasl-decode bs fail-val)
                fail-val)))
-
-      (define (fasl2-save obj path)
-         (bytevector->file
-            (list->bytevector (fasl2-encode obj))
-            path))
-
-      (define (fasl2-load path fail-val)
-         (let ((bs (file->bytestream path)))
-            (if bs
-               (fasl2-decode bs fail-val)
-               fail-val)))
-
 
       ; global io subsystem initializer
       (define (io:init)
