@@ -4828,7 +4828,7 @@ loop:;
 			*(inexact_t*)&car(A3) = __builtin_log(a) / __builtin_log(b);
 			break;
 
-		case 0x80: // fexpt
+		case 0x81: // fexpt
 			*(inexact_t*)&car(A3) = __builtin_pow(a, b);
 			break;
 	#endif

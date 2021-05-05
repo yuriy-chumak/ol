@@ -43,6 +43,6 @@
       (FP1 fexp  #x81)
 
       (FP2 fatan2 #xF3)
-      (FP2 flog2 #xF1)
-      (FP2 fexpt #x80) ; a ** b
+      (FP2 flog2  #xF1)
+      (FP2 fexpt  #x81) ; a ** b
 ))
