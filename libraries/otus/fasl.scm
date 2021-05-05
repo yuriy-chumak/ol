@@ -353,12 +353,9 @@
                      (runtime-error "unknown-endian unsupported" #null)))))
 
          (let* ((ll ob (decode-or ll (λ (why) failed) copybytes)))
-            (cond
-               ((eq? ob failed)
-                  fail)
-               ((null? ll) ob)
-               (else
-                  fail))))
+            (if (eq? ob failed)
+               fail
+            else ob)))
 
       (define fasl-decode decode2)
 ))
