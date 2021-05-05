@@ -54,8 +54,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include <endian.h>
-
 // unsigned int that is capable of storing a pointer
 // основной data type, зависит от разрядности машины
 //   базируется на C99 стандарте, <stdint.h>
@@ -5303,17 +5301,6 @@ OLVM_new(unsigned char* bootstrap)
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
-	// подготовим очереди в/в
-	//fifo_clear(&handle->i);
-	//fifo_clear(&handle->o); (не надо, так как хватает memset вверху)
-#if OLVM_NOMAIN
-	char* S = 0;
-	if (bootstrap && *bootstrap >= 0x20) {
-		S = (char*)bootstrap;
-		bootstrap = language;
-	}
-#endif
-
 	// а теперь поработаем с сериализованным образом:
 	word words = 0;
 	word nobjs = count_fasl_objects(&words, bootstrap); // подсчет количества слов и объектов в образе
@@ -5355,30 +5342,16 @@ OLVM_new(unsigned char* bootstrap)
 	if (fp == 0)
 		goto fail;
 
-	// а теперь подготовим аргументы:
-	word* userdata = (word*) INULL;
-#if OLVM_NOMAIN
-	if (S) {
-		char template[] = "/tmp/olvmXXXXXX";
-		int file = mkstemp(template);
-		if (write(file, S, strlen(S)) == -1)
-			goto fail;
-		close(file);
-
-		userdata = new_pair (new_string (template), userdata);
-	}
-#endif
-
 	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
 	word* R = handle->R; // регистры виртуальной машины:
 	for (ptrdiff_t i = 0; i < NR+CR; i++)
 		R[i] = IFALSE;
 	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
 	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
-	R[4] = (word) userdata; // first argument: command line as '(script arg0 arg1 arg2 ...)
+	R[4] = INULL;  // arguments: command line as '(script arg0 arg1 arg2 ...)
 	handle->ffpin = 4; // first free pin is definitely 4
 
-
+	// i/o
 	handle->open = os_open;
 	handle->close = os_close;
 	handle->read = os_read;
