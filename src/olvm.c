@@ -54,6 +54,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include <endian.h>
+
 // unsigned int that is capable of storing a pointer
 // основной data type, зависит от разрядности машины
 //   базируется на C99 стандарте, <stdint.h>
@@ -5012,8 +5014,21 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			int pads = words * W - size;//(W - (size % W));
 
 			unsigned char *p = (unsigned char*)&car(new (type, words, pads));
-			while (size--)
-				*p++ = *hp++;
+			// неточные числа
+#if __BYTE_ORDER == __BIG_ENDIAN
+#	ifdef OLVM_INEXACTS
+			if (type == TINEXACT) {
+				int s = size;
+				while (size--)
+					p[size] = *hp++;
+				p += s;
+			}
+			else
+#	endif
+#endif
+			// обычные байтовые последовательности
+				while (size--)
+					*p++ = *hp++;
 			while (pads--) // not required, but will be usefull
 				*p++ = 0;
 			break;

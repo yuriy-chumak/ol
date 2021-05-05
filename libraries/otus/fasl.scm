@@ -112,19 +112,34 @@
             out
             (copy-bytes (cons (ref bvec p) out) bvec (- p 1))))
 
+      (define (copyreverse-bytes out bvec p)
+         (let loop ((n 0) (out out))
+            (if (eq? (++ p) n)
+               out
+               (loop (++ n) (cons (ref bvec n) out)))))
+
+      (define (encode-inexact val tail copybytes)
+         (let ((t (type val))
+               (s (size val)))
+            (ilist 2 t
+               (send-number s
+                  (copybytes tail val (-- s))))))
+
+
       ;; todo - pack type to this now that they fit 6 bits
       ;; encode the reference
-      (define (encode-reference val pos index tail)
+      (define (encode-reference val pos index tail copybytes)
          (cond
+            ((integer? val) ; сюда мы можем придти только если непосредственно энкодим число, как часть объекта оно сюда придти не может
+               (encode-integer val tail))
+            ((eq? (type val) type-inexact)
+               (encode-inexact val tail copybytes))
             ((ref val 0) ; ==(raw object? val), 0 in ref works only for binary objects
                (let ((t (type val))
                      (s (size val)))
                   (ilist 2 t
                      (send-number s
-                        (copy-bytes tail val (- s 1))))))
-            ; все остальные числа
-            ((integer? val) ; сюда мы можем придти только если непосредственно энкодим число, как часть объекта оно сюда придти не может
-               (encode-integer val tail))
+                        (copy-bytes tail val (-- s))))))
             (else
                (let ((t (type val))
                      (s (size val)))
@@ -173,6 +188,19 @@
 
       ; root -> byte-stream processor
       (define (encode-object obj tail)
+         ; special case for endian-dependent bytevectors
+         (define copybytes
+            (let ((one (vm:cast 1 type-vptr)))
+               (cond
+                  ((eq? (ref one 0) 1)
+                     copy-bytes)
+                  ((eq? (ref one (-- (size one))) 1)
+                     copyreverse-bytes)
+                  ((eq? (ref one 1) 1)
+                     (runtime-error "middle-endian unsupported" #null))
+                  (else
+                     (runtime-error "unknown-endian unsupported" #null)))))
+         ; generate subobjects index
          (let ((index (cdr (index-closure (object-closure obj)))))
             (let loop ((kvs (ff-iter index)))
                (cond
@@ -180,13 +208,14 @@
                   ((pair? kvs)
                      (let ((kv (car kvs)))
                         (encode-reference (car kv) (cdr kv) index
-                           (lambda () (loop (cdr kvs))))))
+                           (lambda () (loop (cdr kvs))) copybytes)))
                   (else
                      (loop (force kvs)))))))
 
       ; object -> serialized lazy list
       (define (encode2 obj)
          (cond
+            ;; todo: add inexacts
             ((integer? obj) ; todo: remove from fasl2-encode
                (encode-integer obj #null))
             ((value? obj) ; todo: remove from fasl2-encode
@@ -259,7 +288,7 @@
                      (decode-fields ll index (-- size) fail (cons val fields)))))))
 
       ;; index is a "random accessible list"
-      (define (decode-object ll index fail)
+      (define (decode-object ll index fail copybytes)
          (cond
             ((null? ll)
                ;; no terminal 0, treat as a bug
@@ -273,14 +302,14 @@
                               (ll size (get-number ll fail))
                               (ll fields (decode-fields ll index size fail #null))
                               (obj (vm:make type fields)))
-                           (decode-object ll (rcons obj index) fail)))
+                           (decode-object ll (rcons obj index) fail copybytes)))
                      ; bitstream object
                      ((eq? kind 2)
                         (let*((ll type (grab ll fail))
                               (ll size (get-number ll fail))
                               (ll rbytes (get-bytes ll size fail null))
-                              (obj (vm:makeb type (reverse rbytes))))
-                           (decode-object ll (rcons obj index) fail)))
+                              (obj (vm:makeb type ((if (eq? type type-inexact) copybytes reverse) rbytes))))
+                           (decode-object ll (rcons obj index) fail copybytes)))
                      ;; fasl stream end marker
                      ((eq? kind 0)
                         ;; object done
@@ -288,9 +317,9 @@
                      (else
                         (fail (list "unknown object tag: " kind))))))
             (else
-               (decode-object (force ll) index fail))))
+               (decode-object (force ll) index fail copybytes))))
 
-      (define (decode-or ll err) ; -> ll obj | null (err why)
+      (define (decode-or ll err copybytes) ; -> ll obj | null (err why)
          (let*/cc ret
                ((fail (λ (why) (ret #false (err why)))))
             (cond
@@ -300,16 +329,30 @@
                   ; a leading 0 is special and means the stream has a value or a number
                   (if (eq? (car ll) 0)
                      (decode-value (cdr ll) fail)
-                     (decode-object ll #null fail)))
+                     (decode-object ll #null fail copybytes)))
                (else
-                  (decode-or (force ll) err)))))
+                  (decode-or (force ll) err copybytes)))))
 
       (define failed "fail") ;; a unique object
 
       ;; ;; ll fail → val | fail
       ; serialized lazy list -> object
       (define (decode2 ll fail)
-         (let* ((ll ob (decode-or ll (λ (why) failed))))
+         ; special case for endian-dependent bytevectors
+         (define copybytes
+            (let ((one (vm:cast 1 type-vptr)))
+               (cond
+                  ((eq? (ref one 0) 1)
+                     reverse)
+                  ((eq? (ref one (-- (size one))) 1)
+                     (lambda (x)
+                        x)) ; same
+                  ((eq? (ref one 1) 1)
+                     (runtime-error "middle-endian unsupported" #null))
+                  (else
+                     (runtime-error "unknown-endian unsupported" #null)))))
+
+         (let* ((ll ob (decode-or ll (λ (why) failed) copybytes)))
             (cond
                ((eq? ob failed)
                   fail)
