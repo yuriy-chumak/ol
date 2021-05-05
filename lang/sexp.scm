@@ -27,6 +27,7 @@
 
       (owl parse)
       (owl math)
+      (owl math fp)
       (owl string)
       (owl list)
       ;; (owl math-extra)
@@ -182,6 +183,11 @@
                      (epsilon n))))
             m))
 
+      ; IEEE 754
+      (setq |+inf.0| (fdiv 1 0)) ; 1 / 0 = +infin
+      (setq |-inf.0| (flog 0))   ; log( 0 ) = -infin
+      (setq |+nan.0| (fsqrt -1)) ; sqrt( -1 ) = NaN
+
       (define real
          (any-of
                (word "+inf.0" +inf.0)
@@ -196,12 +202,6 @@
                (im (either real (epsilon 1))) ; we also want 0+i
                (/ (imm #\i)))
             (s im)))
-
-      ; https://srfi.schemers.org/srfi-77/srfi-77.html
-      ; this defines not needed anymore
-      ;(setq |+inf.0| (vm:fp2 #xF9 1 0)) ; 1 / 0 = +infin
-      ;(setq |-inf.0| (vm:fp2 #xF9 -1 0));-1 / 0 = -infin
-      ;(setq |+nan.0| (vm:fp2 #xF9 0 0)) ; 0 / 0 = NaN
 
       (define number
          (let-parse* (

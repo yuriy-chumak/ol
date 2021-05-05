@@ -1,3 +1,5 @@
+; http://rosettacode.org/wiki/Infinity#Ol
+
 (define (infinite? x) (or (equal? x +inf.0) (equal? x -inf.0)))
 
 (print (infinite? +inf.0)) ; #true
