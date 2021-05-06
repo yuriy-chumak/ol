@@ -285,6 +285,7 @@ object_t
 #define TBYTECODE                   (16) // must be RAW type
 #define TPROC                       (17)
 #define TCLOS                       (18)
+#define TCONSTRUCTOR                (63) // вызываемая процедура (не байткод! не замыкание!), TODO: проверить, что точно работает
 
 #define TFF                         (24) // // 26,27 same
 #	define TRIGHT                     1 // flags for TFF
@@ -2162,6 +2163,10 @@ apply:;
 		if (type == TCLOS) { //hdr == header(TCLOS, 0)) { // clos (66% for "yes")
 			R[1] = this; this = car(this); // ob = car(ob)
 			R[2] = this; this = car(this); // ob = car(ob)
+		}
+		else
+		if (type == TCONSTRUCTOR) {
+			R[1] = this; this = car(this); // ob = car(ob)
 		}
 		else
 		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
@@ -4923,20 +4928,34 @@ word get_nat(unsigned char** hp)
 }
 
 // возвращает новый топ стека
+// TODO: держать отдельную цепочку конструкторов, к ней
+//	добавить последнюю лямбду, и уже эту лямбду вызывать
+//  с помощью вызова цепочки конструкторов:
+// (define (construction obj)
+//    (unless (null? obj)
+//       (construction (cdr obj))
+//       (force (car obj))))
+// цепочку конструкторов надо положить в отдельный регистр машины (?)
+// таким образом эта лямбда будет вызвана последней после инициализации всех остальных
+
 static
 word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
 	// TODO: process both formats!
 	unsigned char* hp = bootstrap;
+	word* constructor;
 
-	// function entry:
+	constructor = (word*) INULL;
 	for (ptrdiff_t id = 0; id < nobjs; id++) {
 		ptrs[id] = (word) fp;
 
+		int type;
+		int size;
 		switch (*hp++) { // todo: adding type information here would reduce fasl and executable size
 		case 1: {
-			int type = *hp++;
-			int size = get_nat(&hp);
+			type = *hp++;
+			size = get_nat(&hp);
+
 			word* object = fp;
 			*fp++ = make_header(type, size + 1); // +1 to include header in size
 			while (size--) {
@@ -5005,8 +5024,9 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			break;
 		}
 		case 2: {
-			int type = *hp++; assert (!(type & ~0x3F)); // & 0x3F; // type is 6 bits long
-			int size = get_nat(&hp);
+			type = *hp++; assert (!(type & ~0x3F)); // & 0x3F; // type is 6 bits long
+			size = get_nat(&hp);
+
 			int words = WALIGN(size);
 			int pads = words * W - size;//(W - (size % W));
 
@@ -5034,7 +5054,11 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			D("Bad object in heap at %d", (void*)(hp-bootstrap));
 			return 0;
 		}
+		// если мы декодировали конструктор, надо его добавить в цепочку
+		if (type == 63) // special case: constructor
+			constructor = new_pair(ptrs[id], constructor);
 	}
+	ptrs[nobjs] = (word) constructor;
 	return fp;
 }
 
@@ -5331,7 +5355,9 @@ OLVM_new(unsigned char* bootstrap)
 	// handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты
-	word *ptrs = new(TVECTOR, nobjs, 0);
+	// обязательно выделить n+1 объектов,
+	// последнее место зарезервировано для конструктора
+	word *ptrs = new(TBYTEVECTOR, nobjs + 1, 0);
 	// этот вектор содержит "неправильные" ссылки в смысле модели памяти ol,
 	// которые указывают вперед по куче, а не назад. но так как на него никто
 	// не указывает, то этот объект будет спокойно удален во время первой же
@@ -5345,9 +5371,10 @@ OLVM_new(unsigned char* bootstrap)
 	word* R = handle->R; // регистры виртуальной машины:
 	for (ptrdiff_t i = 0; i < NR+CR; i++)
 		R[i] = IFALSE;
-	R[0] = IFALSE; // MCP - master control program (in this case NO mcp)
-	R[3] = IHALT;  // continuation, in this case simply notify mcp about thread finish
-	R[4] = INULL;  // arguments: command line as '(script arg0 arg1 arg2 ...)
+	R[0] = IFALSE; // MCP - master control program (NO mcp for now)
+	R[3] = IHALT;  // continuation, just finish job
+//	R[4] = IFALSE; // first argument
+
 	handle->ffpin = 4; // first free pin is definitely 4
 
 	// i/o
@@ -5358,6 +5385,42 @@ OLVM_new(unsigned char* bootstrap)
 
 //	handle->exit = exit;
 
+	// точка входа в программу - последняя лямбда загруженного образа (λ (args))
+	// но мы должны выполнить бутстрап код, который обязан выполнить
+	// автостартующие функции
+	// (define (construction obj main args) ; obj - список конструкторов
+	//    (let loop ((obj obj))
+	//       (unless (null? obj)
+	//          (loop (cdr obj))
+	//          (force (car obj))))
+	//    (main args))
+	// где obj - список автостартующий функций (лежит в [nobjs+1])
+	// main - последняя лямбда образа (точка входа в программу)
+	// args - аргументы, которые подставить функция OLVM_run (а мы пока положим #null)
+	{
+		unsigned char construction[] = {2, 16, 19, 11, 1, 0, 14, 1, 1, 2, 4, 52, 4, 5, 1, 1, 3, 3, 2, 5, 1, 0, 2, 16, 28, 11, 3, 0, 23, 80, 4, 15, 0, 53, 4, 6, 7, 4, 2, 4, 3, 3, 9, 6, 4, 2, 5, 3, 205, 6, 24, 6, 0, 2, 16, 28, 11, 1, 0, 23, 1, 1, 4, 4, 1, 1, 3, 5, 1, 1, 2, 6, 9, 4, 7, 5, 5, 3, 6, 4, 2, 7, 2, 0, 1, 17, 2, 2, 3, 2, 16, 22, 11, 4, 0, 17, 1, 1, 3, 7, 7, 5, 2, 6, 3, 5, 3, 9, 7, 5, 2, 5, 3, 0, 1, 17, 3, 1, 3, 2, 0};
+		// unsigned char construction[] = { 2, 16, 13, 11, 4, 0, 8, 205, 7, 9, 6, 4, 2, 5, 2, 0, 0 };
+		word w = 0;
+		word n = count_fasl_objects(&w, construction); // подсчет количества слов и объектов в образе
+		w += n + 2; // assert (w < NUMPAD), etc.
+		word *p = new(TBYTEVECTOR, n + 1, 0);
+		// этот вектор содержит "неправильные" ссылки в смысле модели памяти ol,
+		// которые указывают вперед по куче, а не назад. но так как на него никто
+		// не указывает, то этот объект будет спокойно удален во время первой же
+		// полной сборки кучи (которую стоило бы сделать в deserialize()).
+		fp = deserialize(&p[1], n, construction, fp);
+
+		handle->this = p[n]; // (construction constructors main args)
+		handle->R[4] = ptrs[nobjs+1];
+		handle->R[5] = ptrs[nobjs];
+		handle->R[6] = INULL;
+		handle->arity = 3 + 1;
+	}
+
+	// ol->this = ptrs[nobjs];
+	// ol->arity = 1+1; // boot always calls with 1+1 args
+
+	// теперь все готово для запуска главного цикла виртуальной машины
 	heap->fp = fp;
 	return handle;
 
@@ -5430,7 +5493,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 #endif
 
 	// подготовим аргументы:
-	word userdata = ol->R[4];
+	word userdata = ol->R[6];
 	{
 		word* fp = ol->heap.fp;
 
@@ -5441,29 +5504,16 @@ OLVM_run(OL* ol, int argc, char** argv)
 			while ((*pos = *v++) != 0)
 				pos++;
 			int length = pos - (char*)(fp + 1);
+			// todo: check the memory!
 			if (length > 0) // если есть что добавить
 				userdata = (word) new_pair (new_rawstream(TSTRING, length), userdata);
 		}
 
 		ol->heap.fp = fp;
 	}
-	ol->R[4] = userdata;
+	ol->R[6] = userdata;
 
-	heap_t* heap = &ol->heap;
 	sandboxp = 0;  // static variable
-
-	word* ptrs = (word*) heap->begin;
-	int n_objs = header_size(ptrs[0]) - 1;
-
-	// точка входа в программу - последняя лямбда загруженного образа (λ (args))
-	// thinkme: может стоит искать и загружать какой-нибудь main() ?
-	word this = ptrs[n_objs];
-
-	unsigned short acc = 1+1; // boot always calls with 1+1 args, no support for >255arg functions
-
-	// теперь все готово для запуска главного цикла виртуальной машины
-	ol->this = this;
-	ol->arity = acc;
 
 #ifndef __EMSCRIPTEN__
 	longjmp(ol->fail,

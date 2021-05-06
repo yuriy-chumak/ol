@@ -40,7 +40,9 @@
       denominator numerator
       remainder modulo
       truncate round
-      rational complex)
+      rational complex
+      
+      math-constructor)
 
    (import
       (scheme core)
@@ -86,6 +88,20 @@
       ;      ((fxdivmod a b)
       ;         (lets ((q1 q2 r (vm:div 0 a b)))
       ;            (values q2 r)))))
+
+      (define (copy! to from)  ; * internal helper
+         (define start 0)
+         (define end (size to))
+         (let loop ((p start))
+            (when (less? p end)
+               (set-ref! to p (ref from p))
+               (loop (++ p)))))
+
+      ; создадим библиотечный конструктор (экспериментальная фича)
+      (define math-constructor (vm:cast (lambda ()
+            ; floating point constants:
+            (copy! +nan.0 (fsqrt -1))
+         ) 63))
 
       ; ========================================================
       ; procedure:  (zero? z)
