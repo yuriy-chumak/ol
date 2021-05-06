@@ -184,13 +184,12 @@ object_t
 {
 	union {
 		struct {
-			unsigned char mark : 1;    // mark bit (can be 1 only during gc)
-			unsigned char i    : 1;    // for objects always 1
+			unsigned char mark : 1;    // always 0, (mark by 1 during gc)
+			unsigned char i    : 1;    // object mark, always 1
 			unsigned char type : 6;    // object type
 
-			unsigned char padding : 3; // number of padding (unused) bytes at the end of object
+			unsigned char padding : 3; // number of padding (empty) bytes after the end of reasonable object data
 			unsigned char rawness : 1; // 1 for rawstream, 0 for vectors
-			unsigned char user    : 4; // unused, can be used by user
 
 			unsigned char size[sizeof(word) - 2];
 		};
@@ -5317,7 +5316,7 @@ OLVM_new(unsigned char* bootstrap)
 
 	// в соответствии со стратегией сборки 50*1.3-33*0.9, и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
-	int required_memory_size = words*2;
+	int required_memory_size = words * 2;
 
 	fp = heap->begin = (word*) malloc((required_memory_size + GCPAD(NR) + MEMPAD) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {

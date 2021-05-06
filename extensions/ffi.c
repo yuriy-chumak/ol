@@ -95,14 +95,12 @@
 #define TINT32        (52)
 #define TINT64        (53)
 // 54 for 128 ?
-// 55 for 256 ?
 
 #define TUINT8        (55)
 #define TUINT16       (56)
 #define TUINT32       (57)
 #define TUINT64       (58)
 // 59 for 128 ?
-// 60 for 256 ?
 
 
 #define TMASK     0x00FFF
