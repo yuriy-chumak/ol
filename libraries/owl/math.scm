@@ -98,10 +98,12 @@
                (loop (++ p)))))
 
       ; создадим библиотечный конструктор (экспериментальная фича)
-      (define math-constructor (vm:cast (lambda ()
-            ; floating point constants:
+      (define math-constructor (vm:new 63 (lambda (args)
+            ; platform-dependent floating point constants:
             (copy! +nan.0 (fsqrt -1))
-         ) 63))
+
+            ; (set-car! limits (vm:maxvalue))
+         #T)))
 
       ; ========================================================
       ; procedure:  (zero? z)

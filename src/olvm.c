@@ -2165,10 +2165,6 @@ apply:;
 			R[2] = this; this = car(this); // ob = car(ob)
 		}
 		else
-		if (type == TCONSTRUCTOR) {
-			R[1] = this; this = car(this); // ob = car(ob)
-		}
-		else
 		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
 			word cont = R[3];
@@ -2211,9 +2207,14 @@ apply:;
 		}
 		else
 #endif
-		if (type != TBYTECODE)
+		if (type == TCONSTRUCTOR) {
+			this = car(this);
+			goto apply;
+		}
+		else
+		if (type != TBYTECODE) {
 			FAIL(258, this, INULL);
-
+		}
 
 		// А не стоит ли нам переключить поток?
 		if (--ticker < 0) {
@@ -4928,16 +4929,6 @@ word get_nat(unsigned char** hp)
 }
 
 // возвращает новый топ стека
-// TODO: держать отдельную цепочку конструкторов, к ней
-//	добавить последнюю лямбду, и уже эту лямбду вызывать
-//  с помощью вызова цепочки конструкторов:
-// (define (construction obj)
-//    (unless (null? obj)
-//       (construction (cdr obj))
-//       (force (car obj))))
-// цепочку конструкторов надо положить в отдельный регистр машины (?)
-// таким образом эта лямбда будет вызвана последней после инициализации всех остальных
-
 static
 word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 {
@@ -4953,7 +4944,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		int size;
 		switch (*hp++) { // todo: adding type information here would reduce fasl and executable size
 		case 1: {
-			type = *hp++;
+			type = *hp++; assert (!(type & ~0x3F)); // type is 6 bits long
 			size = get_nat(&hp);
 
 			word* object = fp;
@@ -5024,7 +5015,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			break;
 		}
 		case 2: {
-			type = *hp++; assert (!(type & ~0x3F)); // & 0x3F; // type is 6 bits long
+			type = *hp++; assert (!(type & ~0x3F)); // type is 6 bits long
 			size = get_nat(&hp);
 
 			int words = WALIGN(size);
@@ -5046,7 +5037,8 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			// обычные байтовые последовательности
 				while (size--)
 					*p++ = *hp++;
-			while (pads--) // not required, but will be usefull
+			// not required, but may be usefull
+			while (pads--)
 				*p++ = 0;
 			break;
 		}
@@ -5058,6 +5050,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		if (type == 63) // special case: constructor
 			constructor = new_pair(ptrs[id], constructor);
 	}
+	// return construction list
 	ptrs[nobjs] = (word) constructor;
 	return fp;
 }
@@ -5373,7 +5366,7 @@ OLVM_new(unsigned char* bootstrap)
 		R[i] = IFALSE;
 	R[0] = IFALSE; // MCP - master control program (NO mcp for now)
 	R[3] = IHALT;  // continuation, just finish job
-//	R[4] = IFALSE; // first argument
+	R[4] = INULL;  // first argument
 
 	handle->ffpin = 4; // first free pin is definitely 4
 
@@ -5385,40 +5378,43 @@ OLVM_new(unsigned char* bootstrap)
 
 //	handle->exit = exit;
 
+	// if no autoprun points found, just run last one lambla (like old behavior)
 	// точка входа в программу - последняя лямбда загруженного образа (λ (args))
-	// но мы должны выполнить бутстрап код, который обязан выполнить
-	// автостартующие функции
-	// (define (construction obj main args) ; obj - список конструкторов
-	//    (let loop ((obj obj))
-	//       (unless (null? obj)
-	//          (loop (cdr obj))
-	//          (force (car obj))))
-	//    (main args))
-	// где obj - список автостартующий функций (лежит в [nobjs+1])
-	// main - последняя лямбда образа (точка входа в программу)
-	// args - аргументы, которые подставить функция OLVM_run (а мы пока положим #null)
-	{
-		unsigned char construction[] = {2, 16, 19, 11, 1, 0, 14, 1, 1, 2, 4, 52, 4, 5, 1, 1, 3, 3, 2, 5, 1, 0, 2, 16, 28, 11, 3, 0, 23, 80, 4, 15, 0, 53, 4, 6, 7, 4, 2, 4, 3, 3, 9, 6, 4, 2, 5, 3, 205, 6, 24, 6, 0, 2, 16, 28, 11, 1, 0, 23, 1, 1, 4, 4, 1, 1, 3, 5, 1, 1, 2, 6, 9, 4, 7, 5, 5, 3, 6, 4, 2, 7, 2, 0, 1, 17, 2, 2, 3, 2, 16, 22, 11, 4, 0, 17, 1, 1, 3, 7, 7, 5, 2, 6, 3, 5, 3, 9, 7, 5, 2, 5, 3, 0, 1, 17, 3, 1, 3, 2, 0};
-		// unsigned char construction[] = { 2, 16, 13, 11, 4, 0, 8, 205, 7, 9, 6, 4, 2, 5, 2, 0, 0 };
-		word w = 0;
-		word n = count_fasl_objects(&w, construction); // подсчет количества слов и объектов в образе
-		w += n + 2; // assert (w < NUMPAD), etc.
-		word *p = new(TBYTEVECTOR, n + 1, 0);
-		// этот вектор содержит "неправильные" ссылки в смысле модели памяти ol,
-		// которые указывают вперед по куче, а не назад. но так как на него никто
-		// не указывает, то этот объект будет спокойно удален во время первой же
-		// полной сборки кучи (которую стоило бы сделать в deserialize()).
-		fp = deserialize(&p[1], n, construction, fp);
-
-		handle->this = p[n]; // (construction constructors main args)
-		handle->R[4] = ptrs[nobjs+1];
-		handle->R[5] = ptrs[nobjs];
-		handle->R[6] = INULL;
-		handle->arity = 3 + 1;
+	// TODO: make configurable
+	if (ptrs[nobjs + 1] == INULL) {
+		handle->this = ptrs[nobjs]; // (construction constructors main args)
+		handle->arity = 2; // 1 argument
 	}
+	// точка входа в программу - бутстрап, обрабатывающий список автовыполняемых функций
+	else {
+		// (define (construction args objects)
+		// (foldr (lambda (constructor args)
+		// 		(constructor args))
+		// 	args objects))
+		// где objects - список автостартующих функций (лежит в [nobjs]), заменяет в загрузчике последнюю лямбду
+		// args - аргументы, которые предоставляет функция OLVM_run (а мы пока положим #null)
+		//
+		// (fasl-encode construction):
+		// unsigned char construction[] = {2,16,12,11,4,0,7,1,1,2,7,2,7,5,0,2,16,33,11,1,0,28,1,1,4,4,1,1,3,5,1,1,2,6,9,4,8,5,5,9,3,5,5,6,4,9,3,2,8,3,0,2,16,27,11,5,0,22,80,6,16,0,52,6,8,53,6,6,7,5,2,8,3,4,3,2,7,5,24,5,0,2,16,26,11,3,0,21,1,1,2,6,1,1,3,7,5,6,9,5,6,5,4,5,7,4,2,9,4,0,1,17,2,2,3,1,17,2,5,1,2,16,13,11,3,0,8,5,4,7,5,4,2,7,2,0,1,17,3,4,2,1,0};
 
-	// ol->this = ptrs[nobjs];
-	// ol->arity = 1+1; // boot always calls with 1+1 args
+		// (define (construction args objects)
+		//    (unless (null? objects)
+		//       (construction args (cdr objects))
+		//       ((car objects) args)))
+		//
+		// (fasl-encode construction):
+		unsigned char construction[] = {2,16,12,11,3,0,7,1,1,2,6,2,6,4,0,2,16,23,11,1,0,18,1,1,2,4,52,4,5,1,1,4,3,1,1,3,4,2,5,2,0,2,16,29,11,4,0,24,80,5,16,0,53,5,7,7,5,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,0,1,17,2,1,2,1,17,2,4,1,0};
+
+		word wc = 0;
+		word no = count_fasl_objects(&wc, construction); // подсчет количества слов и объектов в образе
+		// assert (w < NUMPAD), etc.
+		word *p = new(TBYTEVECTOR, no+1, 0);
+		fp = deserialize(&p[1], no, construction, fp);
+
+		handle->this = p[no]; // (construction constructors main args)
+		handle->R[5] = ptrs[nobjs+1];
+		handle->arity = 3; // two arguments
+	}
 
 	// теперь все готово для запуска главного цикла виртуальной машины
 	heap->fp = fp;
@@ -5493,7 +5489,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 #endif
 
 	// подготовим аргументы:
-	word userdata = ol->R[6];
+	word userdata = ol->R[4];
 	{
 		word* fp = ol->heap.fp;
 
@@ -5511,7 +5507,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 
 		ol->heap.fp = fp;
 	}
-	ol->R[6] = userdata;
+	ol->R[4] = userdata;
 
 	sandboxp = 0;  // static variable
 

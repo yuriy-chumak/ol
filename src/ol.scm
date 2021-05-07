@@ -464,8 +464,8 @@
 
       (symbols (symbols-of make-main-entry))
       (codes   (codes-of   make-main-entry))
-      (bytes ;; encode the resulting object for saving in some form
-         (fasl-encode (make-main-entry symbols codes))))
+      (bytes ;; encode entry as "autorun" function
+         (fasl-encode (vm:new 63 (make-main-entry symbols codes)))))
    (if (not port)
       (begin
          (print "Could not open " path " for writing")
