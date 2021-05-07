@@ -32,14 +32,6 @@ Also Ol is ported to the Web and can be used in Chrome, Firefox, Opera, Icewease
 
 Source code available under tag "[2.2](https://github.com/yuriy-chumak/ol/releases/tag/2.2)" or at [Releases](https://github.com/yuriy-chumak/ol/releases) page.
 
-### Otus Lisp, Version 2.3 rc1
-
-There are already new Ol changes in the Master branch that will be included in the 2.3 release:.
- * the build command line has been changed. See the "BUILD" section.
- * fasl format changed,
-   * fasl is fully 32/64 bit independent (32-bit machines can execute 64-bit fasl and vice versa),
-   * numbers encoded as numbers, not as objects,
-   * big endian numbers order changed to little-endian
 
 LICENSE
 -------
@@ -81,6 +73,19 @@ Advanced functionality (i.e. OpenGL support) requires a complete installation of
   * or You can manually copy required [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory,
 
 Some libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
+
+
+### Otus Lisp, Version 2.3 rc1
+
+New Ol changes have been added to the Master branch:
+ * the build command line has been changed. See the "BUILD" section.
+ * fasl format updated:
+   * fasl is fully 32/64 bit independent (32-bit machines can execute 64-bit fasl and vice versa),
+   * numbers encoded as numbers, not as objects,
+   * big endian numbers order changed to little-endian
+   * introduced a new object type 63 - "constructor", constructors are automatically executed by olvm during fasl loading process
+     * if no constructors are found, the vanilla behavior will be used
+     * note: for example the library (owl math) contains a constructor (math-constructor) that recalculates a NaN value which is different under different fpu architectures.
 
 
 R<sup>7</sup>RS DIFFERENCES
