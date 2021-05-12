@@ -956,6 +956,7 @@
       (assert (real? 1e10)                  ===>  #t)
       (assert (real? -2.5+0i)               ===>  #t)
       (assert (real? +inf.0)                ===>  #t)
+      (assert (real? -inf.0)                ===>  #t)
       (assert (real? +nan.0)                ===>  #t)
 
       ; procedure:  (complex? obj)
@@ -998,7 +999,7 @@
 
       ; procedure:  (inexact? z)
       (define (inexact? z)
-         (unless (exact? z) #true))
+         (eq? (type z) type-inexact))
 
       ; procedure:  (exact-integer? z)  * todo: (scheme base)
       (define exact-integer? integer?)
