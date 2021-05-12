@@ -444,7 +444,7 @@
             ; res is either fixnum or bignum
             (case (type res)
                (type-enum+ (vm:cast res type-enum-))
-               (else (vm:cast res type-int-)))))
+               (else (ncons- (car res) (cdr res))))))
 
 
       ; substract from a, which must be bigger
@@ -490,7 +490,7 @@
                   (cond
                      ((eq? neg 0) neg)
                      ((eq? (type neg) type-enum+) (vm:cast neg type-enum-))
-                     (else (vm:cast neg type-int-)))))
+                     (else (ncons- (car neg) (cdr neg))))))
             (else
                (sub-digits a b #false #true))))
 
@@ -499,20 +499,21 @@
       (define (add-small->negative a b)
          (lets ((r overflow? (vm:add a b)))
             (if overflow?
-               (vm:cast (ncons r *big-one*) type-int-)
+               (ncons- r *big-one*)
+            else
                (vm:cast r type-enum-))))
 
 
       ; for changing the (default positive) sign of unsigned operations
       (define-syntax negative
-         (syntax-rules (imm vm:cast if fix+)
+         (syntax-rules ()
             ((negative (op . args))
                (let ((foo (op . args)))
                   (negative foo)))
             ((negative x)
                (if (eq? (type x) type-enum+)
                   (vm:cast x type-enum-)
-                  (vm:cast x type-int-)))))
+                  (ncons- (car x) (cdr x))))))
 
       (define-syntax rational
          (syntax-rules ()
@@ -2187,15 +2188,20 @@
          (if (negative? a)
             (if (negative? b)
                (remainder a b)
+            else
                (let ((r (remainder a b)))
                   (if (eq? r 0)
                      r
-                     (add b r))))
+                  else
+                     (addi b r))))
+         else
             (if (negative? b)
                (let ((r (remainder a b)))
                   (if (eq? r 0)
                      r
-                     (add b r)))
+                  else
+                     (addi b r)))
+            else
                (remainder a b))))
 
       (define mod modulo)
