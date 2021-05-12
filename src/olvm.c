@@ -4972,9 +4972,8 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 					unsigned char ch;
 					do {
 						ch = *hp++;
-						nat |= (ch & 0x7F) << i;
-						i += 7;
-						if (i >= VBITS) {
+						nat |= (word)(ch & 0x7F) << i;
+						if (i > VBITS) {
 							// well, this value is too big. let's produce a number
 							memmove(obj + 3, obj, (fp - obj) * W); fp += 3; // shift object
 							object += 3;
@@ -4987,6 +4986,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 							nat >>= VBITS;
 							i -= VBITS;
 						}
+						i += 7;
 					} while (ch & 0x80);
 
 					if (obj == object) { // мы ничего никуда не сдвигали, значит число оказалось маленьким

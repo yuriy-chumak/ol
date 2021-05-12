@@ -41,8 +41,8 @@
       remainder modulo
       truncate round
       rational complex
-      
-      math-constructor)
+
+      math-constructor!)
 
    (import
       (scheme core)
@@ -57,29 +57,44 @@
          (syntax-rules ()
             ((ncons a d) (vm:new type-int+ a d))))
 
+      (define-syntax ncons+
+         (syntax-rules ()
+            ((ncons+ a d) (vm:new type-int+ a d))))
+      (define-syntax ncons-
+         (syntax-rules ()
+            ((ncons- a d) (vm:new type-int- a d))))
+
       (define ncar car)
       (define ncdr cdr)
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
-;      now changed to vm call (vm:maxvalue)
 
-      ;; biggest before highest bit is set (needed in some bignum ops)
-      ; эта функция довольно редко вызывается
-      (define (*pre-max-fixnum*) ; TODO: сделать константой, не вызовом функции
-         (let* ((f o (vm:shr (vm:maxvalue) 1)))
-            f))
+      ; --- numerical constants ------------
+      ; biggest enum value (that can be stored as a value)
+      (define-syntax max-enum-value
+         (syntax-rules ()
+            ((max-enum-value) (vm:maxvalue))))
 
-;      now changed to vm call (vm:valuewidth)
+      ; biggest before highest bit is set (needed in some bignum ops)
+      (define-syntax max-enum-value/2
+         (syntax-rules ()
+            ((max-enum-value/2)
+               (let* ((v/2 rem (vm:shr (max-enum-value) 1)))
+                  v/2))))
 
-      ; this is special internal "number" that is not a number
-      ; should not be a type-int+
-      (setq *big-one* (cons 1 #null)) ; this 
+      ; the width of a value in bits
+      (define-syntax enum-bit-width
+         (syntax-rules ()
+            ((enum-bit-width) (vm:valuewidth))))
 
-      ; same
+
+      ; --------------------------------------------------
+      ; a special internal "numbers" that is not a numbers
+      ; should be a type-pair, not a type-int+
+
+      (setq *big-one* (cons 1 #null))
       (setq *first-bignum* (cons 0 *big-one*))
-
-      ; same
       (setq *big-zero* (cons 0 #null))
 
       ;; deprecated primop
@@ -98,14 +113,16 @@
                (loop (++ p)))))
 
       ; создадим библиотечный конструктор (экспериментальная фича)
-      (define math-constructor (vm:new 63 (lambda (args)
-            ; platform-dependent floating point constants:
-            (copy! +nan.0 (fsqrt -1))
+      (define math-constructor!
+         (vm:new 63 (lambda (args)
 
-            ; (set-car! limits (vm:maxvalue))
-         #T)))
+               ; (platform-dependent floating point constants)
+               (copy! +nan.0 (fsqrt -1))
 
-      ; ========================================================
+            #T)))
+      (math-constructor! "let's recalculate basic math constants")
+
+      ; ==========================================================
       ; procedure:  (zero? z)
       (setq |0.| (vm:cast 0 type-inexact)) ; * internal
 
@@ -326,12 +343,12 @@
          (let ((t (type n)))
             (cond
                ((eq? t type-enum+)
-                  (if (eq? n (vm:maxvalue))
+                  (if (eq? n (max-enum-value))
                      *first-bignum*
                      (lets ((n x (vm:add n 1))) n)))
                ((eq? t type-int+)
                   (let ((lo (ncar n)))
-                     (if (eq? lo (vm:maxvalue))
+                     (if (eq? lo (max-enum-value))
                         (ncons 0 (nat-succ (ncdr n)))
                         (lets ((lo x (vm:add lo 1)))
                            (ncons lo (ncdr n))))))
@@ -646,7 +663,7 @@
       (define (>> a b)
          (case (type b)
             (type-enum+
-               (lets ((_ wor bits (vm:div 0 b (vm:valuewidth))))
+               (lets ((_ wor bits (vm:div 0 b (enum-bit-width))))
                   (if (eq? wor 0)
                      (case (type a)
                         (type-enum+ (values-apply (vm:shr a bits) (lambda (hi lo) hi)))
@@ -666,7 +683,7 @@
                ;; todo, use digit multiples instead or drop each digit
                (if (eq? a 0)
                   0 ;; terminate early if out of bits
-                  (>> (ncdr a) (subi b (vm:valuewidth)))))
+                  (>> (ncdr a) (subi b (enum-bit-width)))))
             (else
                (big-bad-args '>> a b))))
 
@@ -694,7 +711,7 @@
          (cond
             ((eq? a 0) 0)
             ((eq? (type b) type-enum+)
-               (lets ((_ words bits (vm:div 0 b (vm:valuewidth))))
+               (lets ((_ words bits (vm:div 0 b (enum-bit-width))))
                   (case (type a)
                      (type-enum+
                         (lets ((hi lo (vm:shl a bits)))
@@ -727,7 +744,7 @@
                         (big-bad-args '<< a b)))))
             ((eq? (type b) type-int+)
                ;; not likely to happen though
-               (<< (<< a (vm:maxvalue)) (subi b (vm:maxvalue))))
+               (<< (<< a (max-enum-value)) (subi b (max-enum-value))))
             (else
                ;; could allow negative shift left to mean a shift right, but that is
                ;; probably more likely an accident than desired behavior, so failing here
@@ -1167,10 +1184,10 @@
                   ((null? na)
                      (if (null? nb)
                         (let ((b-lead (ncar b)))
-                           (if (eq? b-lead (vm:maxvalue))
+                           (if (eq? b-lead (max-enum-value))
                               (if (eq? n 0)
                                  0
-                                 (shift-local-down (ncar a) (*pre-max-fixnum*) (subi n 1)))
+                                 (shift-local-down (ncar a) (max-enum-value/2) (subi n 1)))
                               (let ((aa (ncar a)) (bb (addi b-lead 1)))
                                  ; increment b to ensure b'000.. > b....
                                  (cond
@@ -1181,7 +1198,7 @@
                         ; divisor is larger
                         0))
                   ((null? nb)
-                     (div-shift (ncdr a) b (addi n (vm:valuewidth))))
+                     (div-shift (ncdr a) b (addi n (enum-bit-width))))
                   (else
                      (div-shift (ncdr a) (ncdr b) n))))))
 
@@ -1374,7 +1391,7 @@
       ; b is usually shorter, so shift b right and then substract instead
       ; of moving a by s
 
-      (define last-bit (subi (vm:valuewidth) 1))
+      (define last-bit (subi (enum-bit-width) 1))
 
       (define (divex bit bp a b out)
          (cond
@@ -1590,7 +1607,7 @@
       ;; lazy gcd
 
       (define (pre-m)
-         (let* ((value carry (vm:sub (vm:valuewidth) 1)))
+         (let* ((value carry (vm:sub (enum-bit-width) 1)))
             value))
 
       ; O(1), shift focus bit
@@ -2140,7 +2157,7 @@
       (define (ilog2-big n digs)
          (let ((tl (ncdr n)))
             (if (null? tl)
-               (add (ilog2-msd (ncar n)) (mul digs (vm:valuewidth)))
+               (add (ilog2-msd (ncar n)) (mul digs (enum-bit-width)))
                (ilog2-big tl (add digs 1)))))
 
       (define (ilog2 n)
