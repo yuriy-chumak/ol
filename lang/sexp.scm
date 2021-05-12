@@ -184,9 +184,9 @@
             m))
 
       ; IEEE 754
-      (setq |+inf.0| (fdiv 1 0)) ; 1 / 0 = +infin
-      (setq |-inf.0| (flog 0))   ; log( 0 ) = -infin
-      (setq |+nan.0| (fsqrt -1)) ; sqrt( -1 ) = NaN
+      ;(setq |+inf.0| (fdiv 1 0)) ; 1 / 0 = +infin
+      ;(setq |-inf.0| (flog 0))   ; log( 0 ) = -infin
+      ;(setq |+nan.0| (fsqrt -1)) ; sqrt( -1 ) = NaN
 
       (define real
          (any-of

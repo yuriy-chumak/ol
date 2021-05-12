@@ -167,9 +167,9 @@
          (primop 'cons   2 1 cons) ; (make-bytecode '(51 4 5 6  24 6))
 
          ; геттеры
-         (primop 'car    1 1 car)  ; (make-bytecode '(52 4 5    24 5))
-         (primop 'cdr    1 1 cdr)  ; (make-bytecode '(53 4 5    24 5))
          (primop 'ref    2 1 ref)  ; (make-bytecode '(47 4 5 6  24 6))
+         (primop 'car    1 1 car)  ; (make-bytecode '(52 4 5    24 5))  ;; speedup for (ref o 1)
+         (primop 'cdr    1 1 cdr)  ; (make-bytecode '(53 4 5    24 5))  ;; speedup for (ref o 2)
 
          ; компараторы
          (primop 'eq?    2 1 eq?)  ; (make-bytecode '(54 4 5 6  24 6))
