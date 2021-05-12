@@ -2459,7 +2459,7 @@ mainloop:;
 	#		define SYSCALL_DLERROR 178
 
 		// tuples, trees
-	#	define TUPLEAPPLY 32
+	#	define VECTORAPPLY 32
 	#	define FFAPPLY 49
 
 	#	define FFLEAF    42 // make ff leaf
@@ -3259,7 +3259,7 @@ loop:;
 		ip += 1; break;
 
 	// bind vector to registers
-	case TUPLEAPPLY: { /* bind <vector > <n> <r0> .. <rn> */
+	case VECTORAPPLY: { /* bind <vector > <n> <r0> .. <rn> */
 		word *tuple = (word *) R[*ip++];
 		//CHECK(is_reference(tuple), tuple, BIND);
 
