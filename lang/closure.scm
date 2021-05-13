@@ -60,7 +60,7 @@
                            ((dummy-cont
                               ;;; FIXME, should check arity & gensym
                               ;;; used only once and called immediately
-                              (mklambda_new (list '_foo)
+                              (mklambda (list '_foo)
                                  (mkcall (mkvar name)
                                     (list (mkvar '_foo))))))
                            (closurize-call closurize rator

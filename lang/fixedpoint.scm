@@ -128,7 +128,7 @@
 
       (define (make-bindings names values body)
          (mkcall
-            (mklambda_new names body) ; mklambda_new ?
+            (mklambda names body)
             values))
 
       (define (var-eq? node sym)
@@ -162,7 +162,7 @@
                (['value val] exp)
                (['var sym]
                   (if (eq? sym name)
-                     (mklambda_new (reverse (cdr (reverse deps))) ['call exp (map mkvar deps)])
+                     (mklambda (reverse (cdr (reverse deps))) ['call exp (map mkvar deps)])
                      exp))
                (else
                   (runtime-error "carry-simple-recursion: what is this node type: " exp))))
@@ -209,7 +209,7 @@
                   (['recursive formals deps]
                      (let 
                         ((lexp 
-                           (mklambda_new formals 
+                           (mklambda formals 
                               (mkcall exp (map mkvar (append formals deps))))))
                         ; (print "carry-bindings: made local closure " lexp)
                         lexp))
@@ -244,7 +244,7 @@
                (let*((lexp (value-of node))
                      (formals (lambda-formals lexp))
                      (body (lambda-body lexp)))
-                  (mklambda_new
+                  (mklambda
                      (append formals (deps-of node))
                      (carry-bindings body env))))
             nodes))
@@ -255,7 +255,7 @@
                (deps (deps-of node))
                (formals (lambda-formals lexp))
                (body (lambda-body lexp)))
-            (mklambda_new formals
+            (mklambda formals
                (mkcall
                   (mkvar name)
                   (map mkvar

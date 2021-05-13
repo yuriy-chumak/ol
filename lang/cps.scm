@@ -64,7 +64,7 @@
                         (cps-args cps (cons (mkvar this) (cdr args)) call env free)))
                      (cps (car args)
                         env
-                        (mklambda_new (list this) rest)
+                        (mklambda (list this) rest)
                         free))))))
 
       (define (cps-values cps vals env cont free)
@@ -79,7 +79,7 @@
                   ; if no fixed? then error
                   (lets ((body free (cps body env cont free)))
                      (cps-args cps (list (car rands))
-                        (list (mklambda_new formals body) rator)
+                        (list (mklambda formals body) rator)
                         env free)))
                (else
                   (runtime-error "bad arguments for vector bind: " rands)))
@@ -114,12 +114,12 @@
                            ;;; drop lambdas from ((lambda () X))
                            (values body free)
                            (cps-args cps rands
-                              (list (mklambda_new formals body))
+                              (list (mklambda formals body))
                               env free))))
                   ((enlist-improper-args formals rands) => ;; downgrade to a regular lambda converting arguments
                      (λ (rands)
                         (cps-call cps 
-                           (mklambda_new formals body)
+                           (mklambda formals body)
                            rands env cont free)))
                   (else
                      (runtime-error "Bad head lambda arguments:" (list 'args formals 'rands rands)))))
@@ -129,12 +129,12 @@
                    (call-exp free 
                      (cps-args cps rands (list cont (mkvar this)) env free)))
                   (cps rator env
-                     (mklambda_new (list this) call-exp)
+                     (mklambda (list this) call-exp)
                      free)))
             (['ifeq a b then else]
                (lets ((this free (fresh free)))
                   (cps
-                     (mkcall (mklambda_new (list this) (mkcall (mkvar this) rands))
+                     (mkcall (mklambda (list this) (mkcall (mkvar this) rands))
                         (list rator))
                      env cont free)))
             (['value val]
@@ -154,7 +154,7 @@
                      (cps-ifeq cps a b then else env (mkvar this) free)))
                   (values
                      (mkcall
-                        (mklambda_new (list this) exp)
+                        (mklambda (list this) exp)
                         (list cont))
                      free)))
             ((call? a)
@@ -162,13 +162,13 @@
                   ((this free (fresh free))
                    (rest free
                      (cps-ifeq cps (mkvar this) b then else env cont free)))
-                  (cps a env (mklambda_new (list this) rest) free)))
+                  (cps a env (mklambda (list this) rest) free)))
             ((call? b)
                (lets
                   ((this free (fresh free))
                    (rest free 
                      (cps-ifeq cps a (mkvar this) then else env cont free)))
-                  (cps b env (mklambda_new (list this) rest) free)))
+                  (cps b env (mklambda (list this) rest) free)))
             (else
                (lets
                   ((then free (cps then env cont free))
@@ -244,13 +244,13 @@
                            (val-eq? (ref exp 2) '_sans_cps)
                            (eq? (length (ref exp 3)) 1))
                         (ok
-                           (mklambda_new (list cont-sym) 
+                           (mklambda (list cont-sym) 
                               (mkcall (mkvar cont-sym)
                                  (list (car (ref exp 3)))))
                            env)
                         (lets ((exp free (cps-exp exp env (mkvar cont-sym) (gensym cont-sym))))
                            (ok
-                              (mklambda_new (list cont-sym) exp)
+                              (mklambda (list cont-sym) exp)
                               env))))))
             (fail "cps failed")))
 ))

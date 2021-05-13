@@ -4,7 +4,7 @@
 
 (define-library (lang ast)
 
-   (export call? var? value-of sexp->ast mkcall mklambda mklambda_new mkvar mkval)
+   (export call? var? value-of sexp->ast mkcall mklambda mkvar mkval)
 
    (import
       (scheme base)
@@ -29,9 +29,6 @@
          ['value val])
 
       (define (mklambda formals body)
-         ['lambda formals body])
-
-      (define (mklambda_new formals body)
          ['lambda-var #true formals body])
 
       (define (mkcall rator rands)
