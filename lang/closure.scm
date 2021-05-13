@@ -91,7 +91,7 @@
                    (clos (diff bused formals)))
                   (values
                      (if close?
-                        ['closure formals body clos]
+                        ['closure #true formals body clos]
                         ['lambda formals body])
                      (union used clos))))
             (['lambda-var fixed? formals body]
@@ -101,7 +101,7 @@
                    (clos (diff bused formals)))
                   (values
                      (if close?
-                        ['closure-var fixed? formals body clos]
+                        ['closure fixed? formals body clos]
                         ['lambda-var fixed? formals body])
                      (union used clos))))
             (['ifeq a b then else]
@@ -175,15 +175,15 @@
             (['lambda-var fixed? formals body]
                (lets ((body used (literalize body used)))
                   (values ['lambda-var fixed? formals body] used)))
-            (['closure formals body clos]
-               ;; note, the same closure exp (as in eq?) is stored to both literals 
+            ; 
+            (['closure fixed? formals body clos]
+               ;; note, the same closure exp (as in eq?) is stored to both literals
                ;; and code. the one in code will be used to make instructions 
                ;; for closing it and the one in literals will be the executable 
                ;; part to close against.
-               (lets
-                  ((body bused (literalize body null))
-                   (closure-exp ['closure formals body clos bused])
-                   (used (append used (list (cons closure-tag closure-exp)))))
+               (let*((body bused (literalize body null))
+                     (closure-exp ['closure fixed? formals body clos bused])
+                     (used (append used (list (cons closure-tag closure-exp)))))
                   (values
                      ;;; literals will be #(header <code> l0 ... ln)
                      ['make-closure (+ 1 (length used)) clos bused]
@@ -191,12 +191,7 @@
                      ;; and calling protocol are different depending on 
                      ;; whether there are literals
                      used)))
-            (['closure-var fixed? formals body clos] ;; clone branch, merge later
-               (lets
-                  ((body bused (literalize body null))
-                   (closure-exp ['closure-var fixed? formals body clos bused])
-                   (used (append used (list (cons closure-tag closure-exp)))))
-                  (values ['make-closure (+ 1 (length used)) clos bused] used)))
+
             (['closure-case body clos] ;; clone branch, merge later
                (lets
                   ((body bused (literalize body null))

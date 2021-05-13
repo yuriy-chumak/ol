@@ -602,11 +602,7 @@
       ; env node → env' owl-func
       (define (rtl-procedure node)
          (case node
-            (['closure formals body clos literals]
-               (rtl-plain-lambda rtl-procedure
-                  ['lambda-var #true formals body]
-                  clos (rtl-literals rtl-procedure literals) null))
-            (['closure-var fixed? formals body clos literals]
+            (['closure fixed? formals body clos literals]
                (rtl-plain-lambda rtl-procedure
                   ['lambda-var fixed? formals body]
                   clos (rtl-literals rtl-procedure literals) null))
@@ -621,7 +617,7 @@
       ; exp → exp'
       (define (rtl-exp exp)
          (case exp
-            (['closure formals body clos literals]
+            (['closure fixed? formals body clos literals]
                (if (null? clos)
                   (rtl-procedure exp)
                   (runtime-error "rtl-exp: free variables in entry closure: " clos)))
