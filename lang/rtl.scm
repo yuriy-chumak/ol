@@ -10,7 +10,7 @@
 ;  + case-lambda nodes separately
 ;     o
 
-(define-library (lang compile)
+(define-library (lang rtl)
 
    (export
       compile)
@@ -499,10 +499,28 @@
                               ;; fixme: should be a way to show just parts of AST nodes, which may look odd
                               (runtime-error "Bad number of arguments for primitive: "
                                  (list 'op (primop-name op) 'got (length (cdr rands)) 'arguments))))
+                        (['lambda-var fixed? formals body]
+                           ; assert (fixed? == #true)
+                           (if (opcode-arity-ok-2? op (length (cdr rands)))
+                              (rtl-primitive regs op formals (cdr rands)
+                                 (λ (regs) (rtl-any regs body)))
+                              ;; fixme: should be a way to show just parts of AST nodes, which may look odd
+                              (runtime-error "Bad number of arguments for primitive: "
+                                 (list 'op (primop-name op) 'got (length (cdr rands)) 'arguments))))
                         (else
                            (runtime-error "bad primitive args: " rands)))
                      (case rator
                         (['lambda formals body]
+                           ; assert (fixed? == #true)
+                           ;; ((lambda (args) ...) ...) => add new aliases for values
+                           (rtl-args regs rands
+                              (λ (regs args)
+                                 ;;; note that this is an alias thing...
+                                 (if (eq? (length formals) (length args))
+                                    (rtl-any (create-aliases regs formals args) body)
+                                    (runtime-error "Bad argument count in lambda call: " (list 'args args 'formals formals))))))
+                        (['lambda-var fixed? formals body]
+                           ; assert (fixed? == #true)
                            ;; ((lambda (args) ...) ...) => add new aliases for values
                            (rtl-args regs rands
                               (λ (regs args)
@@ -560,6 +578,7 @@
                            (length formals)
                            (rtl-any (entry-regs clos literals formals) body)]
                         tail)))
+                  ;(print-to stderr " exec: (" (size exec) ") - " (vm:cast exec type-bytevector))
                   (if (null? literals)
                      exec ; #<bytecode>
                      (list->procedure (cons exec literals)))))
@@ -585,6 +604,7 @@
          (case exp
             (['lambda-var fixed? formals body]
                (rtl-plain-lambda rtl exp clos literals null))
+            
             (['lambda formals body] ;; soon to be deprecated
                (rtl-brae rtl
                   ['lambda-var #true formals body]
