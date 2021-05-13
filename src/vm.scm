@@ -307,6 +307,6 @@
                         ;   (brae (lambda (c . x) (apply/cc k x))
                         ;         (lambda () (arity-error)))))))))
 
-      (setq ARITY-ERROR (opcode 'arity-error))
+      (setq ARITY-ERROR (ref arity-error 0))
 
 ))
