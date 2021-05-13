@@ -28,7 +28,7 @@
       << >>
       band bor bxor
       div ediv rem mod quotrem divmod
-      add nat-succ sub mul big-bad-args negate
+      add nat+1 sub mul big-bad-args negate
       gcd gcdl lcm
       min max minl maxl
       quotient quot
@@ -40,7 +40,7 @@
       denominator numerator
       remainder modulo
       truncate round
-      rational complex
+      complex
 
       math-constructor!)
 
@@ -53,22 +53,36 @@
    (begin
       (define o (λ (f g) (λ (x) (f (g x)))))
 
-      (define-syntax ncons
+      (define-syntax ncons; if no sign significant
          (syntax-rules ()
             ((ncons a d) (vm:new type-int+ a d))))
-
-      (define-syntax ncons+
-         (syntax-rules ()
-            ((ncons+ a d) (vm:new type-int+ a d))))
-      (define-syntax ncons-
-         (syntax-rules ()
-            ((ncons- a d) (vm:new type-int- a d))))
 
       (define ncar car)
       (define ncdr cdr)
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
+      ; numeric constructors
+      (define-syntax ncons+   ; * internal
+         (syntax-rules ()
+            ((ncons+ a d) (vm:new type-int+ a d))))
+      (define-syntax ncons-   ; * internal
+         (syntax-rules ()
+            ((ncons- a d) (vm:new type-int- a d))))
+
+      (define (int+ x)        ; * internal
+         (ncons+ (ncar x) (ncdr x)))
+
+      (define (int- x)        ; * internal
+         (ncons- (ncar x) (ncdr x)))
+
+      (define-syntax rational ; * internal
+         (syntax-rules ()
+            ((rational a b) (vm:new type-rational a b))))
+
+      (define-syntax complex  ; public
+         (syntax-rules ()
+            ((complex a b) (vm:new type-complex a b))))
 
       ; --- numerical constants ------------
       ; biggest enum value (that can be stored as a value)
@@ -97,13 +111,7 @@
       (setq *first-bignum* (cons 0 *big-one*))
       (setq *big-zero* (cons 0 #null))
 
-      ;; deprecated primop
-      ;(define-syntax fxdivmod
-      ;   (syntax-rules ()
-      ;      ((fxdivmod a b)
-      ;         (lets ((q1 q2 r (vm:div 0 a b)))
-      ;            (values q2 r)))))
-
+      ;
       (define (copy! to from)  ; * internal helper
          (define start 0)
          (define end (size to))
@@ -192,20 +200,27 @@
       (assert (negative? |0.|)     ===> #false)
 
 
+      ; ------------------------
+      (define (negate num) ; * internal
+         (case (type num)
+            ; small numbers
+            (type-enum+
+               (if (eq? num 0)
+                  0
+                  (vm:cast num type-enum-)))      ;; a  -> -a
+            (type-enum- (vm:cast num type-enum+)) ;; -a ->  a
+            ; big numbers
+            (type-int+  (int- num))               ;;  A -> -A
+            (type-int-  (int+ num))               ;; -A -> A
+            ; rationals
+            (type-rational
+               (let* ((a b num))
+                  (rational (negate a) b)))
+            ; inexacts
+            (type-inexact
+               (fsub 0 num))))
 
-
-
-
-
-
-
-      (define-syntax define-traced
-         (syntax-rules ()
-            ((define-traced (name arg ...) . whatever)
-               (define (name arg ...)
-                  (print (list (quote name) (list (quote arg) '= arg) ...))
-                  . whatever))))
-
+      ; ------------------------
       (define (nrev-walk num to)
          (if (eq? num #null)
             to
@@ -217,6 +232,7 @@
          (syntax-rules ()
             ((nrev num)
                (nrev-walk num #null))))
+               
 
       (define (big-bad-args op a b)
          (runtime-error "Bad math:" (list op a b)))
@@ -229,33 +245,33 @@
       ;;; COMPARISON
       ;;;
 
-      ; looks like big-digits-equal? === equal?
-      (define (big-digits-equal? a b)
+      ; big-equal? is like equal?, but faster
+      (define (big-equal? a b) ; * internal
          (cond
             ((eq? a b) #true)      ; shared tail or both empty
             ((eq? a #null) #false)
             ((eq? b #null) #false)
             ((eq? (ncar a) (ncar b))
-               (big-digits-equal? (ncdr a) (ncdr b)))
-            (else #false)))
+               (big-equal? (ncdr a) (ncdr b)))))
 
-      (define (big-less a b lower)
+      (define (big-less? a b lower) ; * internal
          (cond
             ((eq? a b)    ; both ended or shared tail
                lower)
             ((eq? a #null) #true)
             ((eq? b #null) #false)
             (else
-               (let ((ad (ncar a)) (bd (ncar b)))
+               (let ((an (ncar a)) (bn (ncar b))
+                     (ad (ncdr a)) (bd (ncdr b)))
                   (cond
-                     ((less? ad bd)
-                        (big-less (ncdr a) (ncdr b) #true))
-                     ((eq? ad bd)
-                        (big-less (ncdr a) (ncdr b) lower))
+                     ((less? an bn)
+                        (big-less? ad bd #true))
+                     ((eq? an bn)
+                        (big-less? ad bd lower))
                      (else
-                        (big-less (ncdr a) (ncdr b) #false)))))))
+                        (big-less? ad bd #false)))))))
 
-      ;; fixnum/integer <
+      ;; integer "<"
       (define (int< a b)
          (case (type a)
             (type-enum+
@@ -266,96 +282,83 @@
             (type-enum-
                (case (type b)
                   (type-enum+ #true)
-                  (type-enum- (less? b a))
                   (type-int+ #true)
+                  (type-enum- (less? b a))
                   (else #false)))
             (type-int+
                (case (type b)
-                  (type-int+ (big-less a b #false))
+                  (type-int+ (big-less? a b #false))
                   (else #false)))
             (type-int-
                (case (type b)
-                  ; todo: rewrite
                   (type-int-
-                     (if (big-less a b #false) #false #true))
+                     (big-less? b a #true)) ;(if (big-less a b #false) #false #true))
                   (else #true)))
             (else
-               (big-bad-args 'int< a b))))
+               (big-bad-args '< a b))))
 
-      ;        =       (compare-numbers a b #false #true #false)
-      ;(define (> a b)  (compare-numbers a b #false #false #true))
-      ;(define (>= a b) (compare-numbers a b #false #true #true))
-      ;(define (< a b) (compare-numbers a b #true #false #false))
-      ;(define (<= a b) (compare-numbers a b #true #true #false))
-
-
-
-      ; a slightly optimized =
-
+      ; public "="
       (define (= b a)
          (case (type a)
-            (type-enum+ (if (eq? (type b) type-inexact) (equal? (inexact a) b) (eq? a b)))
-            (type-enum- (if (eq? (type b) type-inexact) (equal? (inexact a) b) (eq? a b)))
+            (type-enum+ (if (eq? (type b) type-inexact)
+                           (equal? (inexact a) b)
+                           (eq? a b)))
+            (type-enum- (if (eq? (type b) type-inexact)
+                           (equal? (inexact a) b)
+                           (eq? a b)))
             (type-int+
                (case (type b)
-                  (type-int+ (big-digits-equal? a b))
+                  (type-int+ (big-equal? a b))
                   (type-inexact (equal? (inexact a) b))
-                  (else #false)))
+                  (else
+                     #false)))
             (type-int-
                (case (type b)
-                  (type-int- (big-digits-equal? a b))
+                  (type-int- (big-equal? a b))
                   (type-inexact (equal? (inexact a) b))
-                  (else #false)))
+                  (else
+                     #false)))
             (type-rational
                (case (type b)
                   (type-rational
-                     ;; todo: add eq-simple to avoid this becoming recursive
-                     (if (= (ncar a) (ncar b))
-                        (= (ncdr a) (ncdr b))
-                        #false))
+                     (and (= (ncar a) (ncar b))
+                          (= (ncdr a) (ncdr b))))
                   (type-inexact (equal? (inexact a) b))
-                  (else #false)))
+                  (else
+                     #false)))
+            ; only complex numbers can be equal to other complex number
             (type-complex
                (if (eq? (type b) type-complex)
-                  (and (= (ref a 1) (ref b 1))
-                       (= (ref a 2) (ref b 2)))
-                  #false))
+                  (and (= (ncar a) (ncar b))
+                       (= (ncdr a) (ncdr b)))))
             (type-inexact
-               ; complex means "have an 'i'", so it's definitely not equal
                (unless (eq? (type b) type-complex)
                   (equal? a (inexact b))))
             (else
                (big-bad-args '= a b))))
-
-      ; assert (= +inf.0 +inf.0)
-      ; assert (not (= -inf.0 +inf.0))
-      ; assert (= -inf.0 -inf.0)
-
-      ; later just, is major type X
-
 
 
       ;;;
       ;;; ADDITION
       ;;;
 
-      (define (nat-succ n)
-         (let ((t (type n)))
-            (cond
-               ((eq? t type-enum+)
-                  (if (eq? n (max-enum-value))
+      (define (nat+1 n) ; == natural + 1
+         (case (type n)
+            (type-enum+
+               (let* ((n+1 overflow (vm:add n 1)))
+                  (if overflow
                      *first-bignum*
-                     (lets ((n x (vm:add n 1))) n)))
-               ((eq? t type-int+)
-                  (let ((lo (ncar n)))
-                     (if (eq? lo (max-enum-value))
-                        (ncons 0 (nat-succ (ncdr n)))
-                        (lets ((lo x (vm:add lo 1)))
-                           (ncons lo (ncdr n))))))
-               ((eq? n #null)
-                  *big-one*)
-               (else
-                  (big-bad-args 'inc n n)))))
+                     n+1)))
+            (type-int+
+               (let* ((n+1 overflow (vm:add (ncar n) 1)))
+                  (if overflow
+                     (ncons 0 (nat+1 (ncdr n)))
+                     (ncons n+1 (ncdr n)))))
+            (else
+               (if (eq? n #null)
+                  *big-one*
+               else
+                  (big-bad-args 'nat+1 n n)))))
 
       (define (nlen n)
          (cond
@@ -365,13 +368,12 @@
                (let loop ((n n) (i 0))
                   (if (null? n)
                      i
-                     (loop (ncdr n) (nat-succ i)))))))
+                     (loop (ncdr n) (nat+1 i)))))))
 
       (define (add-number-big a big)
-         (lets
-            ((b bs big)
-             (new overflow? (vm:add a b)))
-            (if overflow?
+         (let*((b bs big)
+               (new overflow (vm:add a b)))
+            (if overflow
                (if (eq? bs #null)
                   (ncons new *big-one*)
                   (ncons new (add-number-big 1 bs)))
@@ -485,7 +487,7 @@
 
       (define (sub-big a b)
          (cond
-            ((big-less a b #false)
+            ((big-less? a b #false)
                (let ((neg (sub-digits b a #false #true)))
                   (cond
                      ((eq? neg 0) neg)
@@ -514,30 +516,6 @@
                (if (eq? (type x) type-enum+)
                   (vm:cast x type-enum-)
                   (ncons- (car x) (cdr x))))))
-
-      (define-syntax rational
-         (syntax-rules ()
-            ((rational a b) (vm:new type-rational a b))))
-
-      (define (negate num)
-         (case (type num)
-            (type-enum+
-               (if (eq? num 0)
-                  0
-                  (vm:cast num type-enum-)))      ;; a  -> -a
-            (type-enum- (vm:cast num type-enum+)) ;; -a ->  a
-            (type-int+                ;;  A -> -A
-               (vm:new type-int- (ncar num) (ncdr num)))
-            (type-int-             ;; -A -> A
-               (vm:new type-int+ (ncar num) (ncdr num)))
-            (type-rational
-               (let* ((a b num))
-                  (rational (negate a) b)))
-            (type-inexact
-               (fsub 0 num))
-            (else
-               (big-bad-args 'negate num #false))))
-
 
       ;;;
       ;;; Addition and substraction generics
@@ -1174,7 +1152,7 @@
             (else
                (lets ((over b (vm:shl b 1)))
                   (if (eq? over 0)
-                     (shift-local-up a b (nat-succ n))
+                     (shift-local-up a b (nat+1 n))
                      (subi n 1))))))
 
       (define (div-shift a b n)
@@ -1207,7 +1185,7 @@
          (let ((next (subi a b)))
             (if (negative? next)
                (values out a)
-               (nat-quotrem-finish next b (nat-succ out)))))
+               (nat-quotrem-finish next b (nat+1 out)))))
 
       (define (nat-quotrem a b)
          (let loop ((a a) (out 0))
@@ -1676,10 +1654,6 @@
       ;;; RATIONALS and COMPLEX (stub)
       ;;;
 
-      (define-syntax complex
-         (syntax-rules ()
-            ((complex a b) (vm:new type-complex a b))))
-
       ; normalize, fix sign and construct rational
       (define (rationalize a b)
          (let ((f (gcd a b)))
@@ -2053,7 +2027,7 @@
             (type-rational
                (let* ((a b n))
                   (if (negative? a)
-                     (negate (nat-succ (div (abs a) b)))
+                     (negate (nat+1 (div (abs a) b)))
                      (div a b))))
             (type-inexact
                (ffloor n))
@@ -2065,7 +2039,7 @@
             (lets ((a b n))
                (if (negative? a)
                   (div a b)
-                  (nat-succ (floor n))))
+                  (nat+1 (floor n))))
             n))
 
       (define (truncate n)
@@ -2082,7 +2056,7 @@
                (if (eq? b 2)
                   (if (negative? a)
                      (>> (sub a 1) 1)
-                     (>> (nat-succ a) 1))
+                     (>> (nat+1 a) 1))
                   (div a b)))
             n))
 

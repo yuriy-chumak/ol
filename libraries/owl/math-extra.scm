@@ -47,7 +47,7 @@
             ((eq? n 0) f)
             ((eq? (type n) type-enum+)
                (lets ((hi lo (vm:shr n 1)))
-                  (nbits hi (nat-succ f))))
+                  (nbits hi (nat+1 f))))
             (else
                (let ((tl (cdr n)))
                   (if (null? tl)

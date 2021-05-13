@@ -919,8 +919,8 @@
       (define (integer? a)
          (case (type a)
             (type-enum+ #true)
-            (type-enum- #true)
             (type-int+ #true)
+            (type-enum- #true)
             (type-int- #true)))
 
       (assert (integer? 3+0i)               ===>  #t) ; imag part is 0
@@ -1001,12 +1001,12 @@
       (define (inexact? z)
          (eq? (type z) type-inexact))
 
-      ; procedure:  (exact-integer? z)  * todo: (scheme base)
+      ; procedure:  (exact-integer? z)
       (define exact-integer? integer?)
 
-      ; library procedure:  (finite? z)  * implemented in (scheme inexact)
-      ; library procedure:  (infinite? z)  * implemented in (scheme inexact)
-      ; library procedure:  (nan? z)  * implemented in (scheme inexact)
+      ; procedure:  (finite? z)    * implemented in (scheme inexact)
+      ; procedure:  (infinite? z)  * implemented in (scheme inexact)
+      ; procedure:  (nan? z)       * implemented in (scheme inexact)
 
       ; procedure:  (= z1 z2 z3 ...)  * implemented in (owl math)
       ; procedure:  (< x1 x2 x3 ...)  * implemented in (owl math)
