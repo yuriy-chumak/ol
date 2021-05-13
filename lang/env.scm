@@ -139,14 +139,14 @@
                   (list 'quote exp))
                ((list? exp)
                   (case (car exp)
-                     ((quote) exp)
-                     ((lambda)
+                     ('quote exp)
+                     ('lambda
                         (if (and (eq? (length exp) 3) (formals-cool? exp))
                            (list 'lambda (cadr exp)
                               ((walker (env-bind env (cadr exp)) fail)
                                  (caddr exp)))
                            (fail (list "funny lambda " exp))))
-                     ((let-eval)
+                     ('let-eval
                         (if (and (eq? (length exp) 4) (formals-cool? exp))
                            (let ((walk (walker (env-bind env (cadr exp)) fail)))
                               (list 'let-eval
@@ -154,16 +154,22 @@
                                  (map walk (caddr exp))
                                  (walk (car (cdddr exp)))))
                            (fail (list "funny let-eval " (list exp 'len (length exp) 'forms (formals-cool? exp))))))
-                     ((values values-apply ifeq brae)
+                     ('values
+                        (cons (car exp) (map walk (cdr exp))))
+                     ('values-apply
+                        (cons (car exp) (map walk (cdr exp))))
+                     ('ifeq
+                        (cons (car exp) (map walk (cdr exp))))
+                     ('brae
                         (cons (car exp) (map walk (cdr exp))))
                      (else
                         (map walk exp))))
+               ((number? exp)
+                  exp)
                ((symbol? exp)
                   (handle-symbol exp env fail))
                ((pair? exp)
                   (fail (list "improper code: " exp)))
-               ((number? exp)
-                  exp)
                (else
                   (list 'quote exp))))
          walk)

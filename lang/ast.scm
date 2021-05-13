@@ -4,7 +4,7 @@
 
 (define-library (lang ast)
 
-   (export call? var? value-of sexp->ast mkcall mklambda mkvarlambda mkvar mkval)
+   (export call? var? value-of sexp->ast mkcall mklambda mklambda_new mkvar mkval)
 
    (import
       (scheme base)
@@ -31,10 +31,8 @@
       (define (mklambda formals body)
          ['lambda formals body])
 
-      ;; formals is a list as usual, but last one will be bound to an arg list
-      ;; having an extra var? field because the fixed one could be merged to this later
-      (define (mkvarlambda formals body)
-         ['lambda-var #false formals body])
+      (define (mklambda_new formals body)
+         ['lambda-var #true formals body])
 
       (define (mkcall rator rands)
          ['call rator rands])
@@ -71,11 +69,11 @@
          (case (lookup env (car exp))
             (['special thing]
                (case thing
-                  ((quote)
+                  ('quote
                      (if (eq? (length exp) 2)
                         (mkval (cadr exp))
                         (list "Strange quote: " exp)))
-                  ((lambda)
+                  ('lambda
                      (let ((len (length exp)))
                         (cond
                            ((eq? len 3)
@@ -87,12 +85,9 @@
                                  (cond
                                     ((not formals) ;; non-symbols, duplicate variables, etc
                                        (fail (list "Bad lambda: " exp)))
-                                    (fixed?
-                                       (mklambda formals
-                                          (translate body (env-bind env formals) fail)))
                                     (else
-                                       (mkvarlambda formals
-                                          (translate body (env-bind env formals) fail))))))
+                                       ['lambda-var fixed? formals
+                                          (translate body (env-bind env formals) fail)]))))
                            ((> len 3)
                               ;; recurse via translate
                               (let
@@ -103,7 +98,7 @@
                                        (cons 'begin body)) env fail)))
                            (else
                               (fail (list "Bad lambda: " exp))))))
-                  ((let-eval) ;;; (let-eval formals definitions body)
+                  ('let-eval ;;; (let-eval formals definitions body)
                      (if (eq? (length exp) 4)
                         (let
                            ((formals (lref exp 1))
@@ -122,7 +117,7 @@
                                     (translate body env fail)])
                               (fail (list "Bad let-eval: " exp))))
                         (fail (list "Bad let-eval: " exp))))
-                  ((ifeq) ;;; (ifeq a b then else)
+                  ('ifeq ;;; (ifeq a b then else)
                      (if (eq? (length exp) 5)
                         (let ((a (second exp))
                               (b (third exp))
@@ -134,17 +129,17 @@
                               (translate then env fail)
                               (translate else env fail)])
                         (fail (list "Bad ifeq " exp))))
-                  ((brae) ; (brae (lambda-ok) (lambda-else))
+                  ('brae ; (brae (lambda-ok) (lambda-else))
                      (if (eq? (length exp) 3)
                         ['brae
                            (translate (second exp) env fail)
                            (translate (third exp) env fail)]
                         (fail (list "Bad brae: " exp))))
 
-                  ((values)
+                  ('values
                      ['values
                         (map (lambda (arg) (translate arg env fail)) (cdr exp))])
-                  ((values-apply)
+                  ('values-apply
                      ['values-apply
                         (translate (lref exp 1) env fail)
                         (translate (lref exp 2) env fail)])
@@ -209,25 +204,9 @@
       ; -> #(ok exp' env) | #(fail reason)
 
       (define (sexp->ast exp env)
-;         (if (env-get env '*debug-ast* #false) (begin
-;            (display "sexp->ast: ")
-;            (print exp)))
-;         (call/cc
-;            (lambda (drop)
-;               (let ((translated
-;                           (translate exp env
-;                              (lambda (reason) (drop (fail reason))))))
-;                  (if (env-get env '*interactive* #false) (begin
-;                     (display "sexp->ast result: ")
-;                     (print translated)))
-;                  ['ok
-;                     translated
-;                     env]))))
-         (call/cc
-            (lambda (drop)
-               ['ok
-                  (translate exp env (lambda (reason) (drop (fail reason))))
-                  env])))
+         (call/cc (lambda (drop)
+            (ok (translate exp env (lambda (reason) (drop (fail reason))))
+                env))))
 
 
 ))

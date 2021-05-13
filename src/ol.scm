@@ -81,7 +81,7 @@
 (import (lang cps))
 (import (lang closure))
 (import (lang assemble))
-(import (lang compile))
+(import (lang rtl))
 
 
 (define *features* (append *features* `(

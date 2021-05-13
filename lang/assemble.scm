@@ -290,7 +290,7 @@
                      (let*/cc ret  ((fail (λ (why) (runtime-error "Error in bytecode assembly: " why) #false))
                                     (bytes (assemble insts fail))
                                     (len (length bytes)))
-                        (if (> len #xffff)
+                        (if (> len #xffff) ; TODO: can be removed?
                            (runtime-error "too much bytecode: " len))
                         (bytes->bytecode
                            (if fixed?

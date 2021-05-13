@@ -26,7 +26,7 @@
       LD LDE LDN LDT LDF
       MOVE REFI MOVE2
 
-      NEW    ; used by (lang compile)
+      NEW    ; used by (lang rtl)
 
       ; types
       TENUM+ TENUM- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
@@ -249,7 +249,7 @@
       ;  vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements
       ;  vm:make - smarter allocator, can create objects with size and default element
       ;  vm:makeb - same as vm:make, but for binary (raw, blob) objects
-      (setq NEW (opcode 'vm:new))        ; no real (vm:new) command required, check rtl-primitive in (lang compile)
+      (setq NEW (opcode 'vm:new))        ; no real (vm:new) command required, check rtl-primitive in (lang rtl)
 
       ; The origins of the names for CAR and CDR, on the other hand, are esoteric: CAR is an acronym from
       ; the phrase `Contents of the Address part of the Register'; and CDR (pronounced `could-er') is an

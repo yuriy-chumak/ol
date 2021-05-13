@@ -27,7 +27,7 @@
       (scheme srfi-0)
 
       (owl list)
-      (lang compile)
+      (lang rtl)
       (lang closure)
       (lang cps)
       (lang alpha)
@@ -164,14 +164,14 @@
       (define compiler-passes
          (list
                             ;; macres have already been expanded
-            apply-env       ;; apply previous definitions
-            sexp->ast       ;; safe sane vectored structure
-            fix-points      ;; make recursion explicit <3
-            alpha-convert   ;; assign separate symbols to all bound values
-            cps             ;; convert to continuation passing style
-                            ;; partial eval here?
-            build-closures  ;; turn lambdas into closures where necessary
-            compile         ;; translate and flatten to bytecode
+            apply-env       ;; env: apply previous definitions
+            sexp->ast       ;; ast: safe sane vectored structure
+            fix-points      ;; fixedpoint: make recursion explicit <3
+            alpha-convert   ;; alpha: assign separate symbols to all bound values
+            cps             ;; cps: convert to continuation passing style
+                            ;;      partial eval here?
+            build-closures  ;; closure: turn lambdas into closures where necessary
+            compile         ;; rtl: translate and flatten to bytecode
                             ;;   |
                             ;;   '---> split this into separate passes
                             ;;           + ast->rtl      - refer registers and closures (infinite regs here)

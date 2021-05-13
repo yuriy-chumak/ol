@@ -293,9 +293,9 @@
                      (case (lookup env (car exp))
                         (['special thing]
                            (case thing
-                              ((quote) (values exp free))
+                              ('quote (values exp free))
 
-                              ((lambda)
+                              ('lambda
                                  (if (or (null? (cdr exp)) (null? (cddr exp))) ;; todo: use matcher instead
                                     (abort (list "Bad lambda: " exp))
                                     (lets
@@ -308,14 +308,14 @@
                                         (body free
                                           (expand body (env-bind env formals) free abort)))
                                        (values (list 'lambda formals body) free))))
-                              ((setq)
+                              ('setq
                                  (lets
                                     ((value free
                                        (expand (caddr exp) env free abort)))
                                     (values
                                        (list 'setq (cadr exp) value)
                                        free)))
-                              ((let-eval)
+                              ('let-eval
                                  (let*((formals (second exp))    ; lref 1
                                        (definitions (third exp)) ; lref 2
                                        (body (fourth exp))       ; lref 3
@@ -327,9 +327,9 @@
                                     (values
                                        (list 'let-eval formals definitions body)
                                        free)))
-                              ((ifeq)
+                              ('ifeq
                                  (expand-list exp env free))
-                              ((brae)
+                              ('brae
                                  (if (or (null? (cdr exp)) (null? (cddr exp)))
                                     (abort (list "Bad brae: " exp))
                                     (lets
@@ -337,9 +337,9 @@
                                         (rest  free (expand (caddr exp) env free abort)))
                                        (values (list 'brae first rest) free))))
 
-                              ((values)
+                              ('values
                                  (expand-list exp env free))
-                              ((values-apply)
+                              ('values-apply
                                  (expand-list exp env free))
 
                               (else

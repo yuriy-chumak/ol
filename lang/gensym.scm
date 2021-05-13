@@ -47,9 +47,6 @@
          (case exp
             (['var sym]
                (max-gensym-id sym max))
-            (['lambda formals body]
-               (max-ast-id body
-                  (max-gensym-id formals max)))
             (['lambda-var fixed? formals body]
                (max-ast-id body
                   (max-gensym-id formals max)))

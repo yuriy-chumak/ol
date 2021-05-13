@@ -43,14 +43,6 @@
                (let*((rator free (alpha rator env free))
                      (rands free (alpha-list alpha rands env free)))
                   (values (mkcall rator rands) free)))
-            (['lambda formals body]
-               (let*((new-formals free (gensyms free (length formals)))
-                     (body free (alpha body
-                                 (fold (λ (env old new)
-                                          (put env old new))
-                                    env formals new-formals)
-                                 free)))
-                  (values (mklambda new-formals body) free)))
             (['lambda-var fixed? formals body] ;; <- mostly clone branch to be merged later
                (let*((new-formals free (gensyms free (length formals)))
                      (body free (alpha body

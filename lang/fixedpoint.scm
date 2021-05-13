@@ -44,8 +44,6 @@
             (case exp
                (['var exp]
                   (take exp found bound))
-               (['lambda formals body]
-                  (walk body (union formals bound) found))
                (['lambda-var fixed? formals body]
                   (walk body (union formals bound) found))
                (['ifeq a b then else]
@@ -69,7 +67,9 @@
          (walk exp null null))
 
       (define (lambda? exp env)
-         (eq? (ref exp 1) 'lambda))
+         (or
+            (eq? (ref exp 1) 'lambda)
+            (eq? (ref exp 1) 'lambda-var)))
 
       (define (set-deps node deps) (set-ref node 3 deps))
       (define (deps-of node) (ref node 3))
@@ -128,7 +128,7 @@
 
       (define (make-bindings names values body)
          (mkcall
-            (mklambda names body)
+            (mklambda_new names body) ; mklambda_new ?
             values))
 
       (define (var-eq? node sym)
@@ -149,10 +149,10 @@
                      ['call
                         (walk rator)
                         (map walk rands)]))
-               (['lambda formals body]
+               (['lambda-var fixed? formals body]
                   (if (has? formals name)
                      exp
-                     ['lambda formals (walk body)]))
+                     ['lambda-var fixed? formals (walk body)]))
                (['ifeq a b then else]
                   ['ifeq (walk a) (walk b) (walk then) (walk else)])
                (['values vals]
@@ -162,7 +162,7 @@
                (['value val] exp)
                (['var sym]
                   (if (eq? sym name)
-                     ['lambda (reverse (cdr (reverse deps))) ['call exp (map mkvar deps)]]
+                     (mklambda_new (reverse (cdr (reverse deps))) ['call exp (map mkvar deps)])
                      exp))
                (else
                   (runtime-error "carry-simple-recursion: what is this node type: " exp))))
@@ -193,10 +193,10 @@
                   (else
                      (mkcall (carry-bindings rator env)
                         (map (lambda (exp) (carry-bindings exp env)) rands)))))
-            (['lambda formals body]
-               (mklambda formals
+            (['lambda-var fixed? formals body]
+               ['lambda-var fixed? formals
                   (carry-bindings body
-                     (env-bind env formals))))
+                     (env-bind env formals))])
             (['ifeq a b then else]
                (let
                   ((a (carry-bindings a env))
@@ -209,7 +209,7 @@
                   (['recursive formals deps]
                      (let 
                         ((lexp 
-                           (mklambda formals 
+                           (mklambda_new formals 
                               (mkcall exp (map mkvar (append formals deps))))))
                         ; (print "carry-bindings: made local closure " lexp)
                         lexp))
@@ -229,14 +229,22 @@
       ;;; ((name (lambda (formals) body) deps) ...) env 
       ;;; -> ((lambda (formals+deps) body') ...)
 
+      (define (lambda-formals exp)
+         (case exp
+            (['lambda-var fixed? formals body] formals)))
+
+      (define (lambda-body exp)
+         (case exp
+            (['lambda-var fixed? formals body] body)))
+
       (define (handle-recursion nodes env)
          ; convert the lambda and carry bindings in the body
          (map
             (lambda (node)
                (let*((lexp (value-of node))
-                     (formals (ref lexp 2))
-                     (body (ref lexp 3)))
-                  (mklambda
+                     (formals (lambda-formals lexp))
+                     (body (lambda-body lexp)))
+                  (mklambda_new
                      (append formals (deps-of node))
                      (carry-bindings body env))))
             nodes))
@@ -245,9 +253,9 @@
          (let*((name (name-of node))
                (lexp (value-of node))
                (deps (deps-of node))
-               (formals (ref lexp 2))
-               (body (ref lexp 3)))
-            (mklambda formals
+               (formals (lambda-formals lexp))
+               (body (lambda-body lexp)))
+            (mklambda_new formals
                (mkcall
                   (mkvar name)
                   (map mkvar
@@ -275,7 +283,7 @@
                      ((env-rec
                         (fold
                            (lambda (env node)
-                              (let ((formals (ref (value-of node) 2)))
+                              (let ((formals (lambda-formals (value-of node))))
                                  (env-put-raw env  
                                     (name-of node) 
                                     ['recursive formals 
@@ -308,7 +316,7 @@
                               (lambda (body node)
                                  (lets ((name val deps node))
                                     (carry-simple-recursion body name 
-                                       (append (ref val 2) deps)))) ; add self to args
+                                       (append (lambda-formals val) deps)))) ; add self to args
                               body nodes)
                            ))))
 
@@ -328,7 +336,7 @@
                       (env-rec
                         (fold
                            (lambda (env node)
-                              (let ((formals (ref (value-of node) 2)))
+                              (let ((formals (lambda-formals (value-of node))))
                                  (env-put-raw env 
                                     (name-of node) 
                                     ['recursive formals partition])))
@@ -379,12 +387,9 @@
                ['call
                   (unletrec rator env)
                   (unletrec-list rands)])
-            (['lambda formals body]
-               (mklambda formals
-                  (unletrec body (env-bind env formals))))
             (['lambda-var fixed? formals body]
-               (mkvarlambda formals
-                  (unletrec body (env-bind env formals))))
+               ['lambda-var fixed? formals
+                  (unletrec body (env-bind env formals))])
             (['let-eval names values body]
                (let*((env (env-bind env names))
                      (handle (lambda (exp) (unletrec exp env)))

@@ -51,17 +51,16 @@
                (begin
                   ;(print " no clos for " rator)
                   (case (car rands)
-                     (['lambda formals body]
-                        (lets
-                           ((cont used (closurize (car rands) used #false))
-                            (rands used (closurize-list closurize (cdr rands) used)))
+                     (['lambda-var fixed? formals body]
+                        (let*((cont used (closurize (car rands) used #false))
+                              (rands used (closurize-list closurize (cdr rands) used)))
                            (values (mkcall rator (cons cont rands)) used)))
                      (['var name]
                         (let
                            ((dummy-cont
                               ;;; FIXME, should check arity & gensym
                               ;;; used only once and called immediately
-                              (mklambda (list '_foo)
+                              (mklambda_new (list '_foo)
                                  (mkcall (mkvar name)
                                     (list (mkvar '_foo))))))
                            (closurize-call closurize rator
@@ -84,16 +83,6 @@
                   (values exp (cons sym used))))
             (['call rator rands]
                (closurize-call closurize rator rands used))
-            (['lambda formals body]
-               (lets
-                  ((body bused
-                     (closurize body null #true))
-                   (clos (diff bused formals)))
-                  (values
-                     (if close?
-                        ['closure #true formals body clos]
-                        ['lambda formals body])
-                     (union used clos))))
             (['lambda-var fixed? formals body]
                (lets
                   ((body bused
@@ -169,9 +158,6 @@
                (values exp used))
             (['call rator rands]
                (literalize-call literalize rator rands used))
-            (['lambda formals body]
-               (lets ((body used (literalize body used)))
-                  (values ['lambda formals body] used)))
             (['lambda-var fixed? formals body]
                (lets ((body used (literalize body used)))
                   (values ['lambda-var fixed? formals body] used)))
