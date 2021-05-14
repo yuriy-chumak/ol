@@ -4957,14 +4957,6 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 				else { // value
 					hp++;
 					unsigned char type = *hp++;
-					// тут надо проверить, если тип велью - число,
-					// значит либо читаем число как велью, либо если оно слишком большое - читаем его ПЕРЕД родителем
-					// а самого родителя сдвигаем направо. вписываем родителю указатель на это число
-					// todo: читаем по 24 бита и формируем число
-
-					// читаем до W-1 байт, если еще не закончили
-					// то перемещаем все эти объекты повыше, создаем с ними новый объект "число"
-					// и так продолжаем, пока он не закончится.
 					word* obj = object;
 
 					word nat = 0;
@@ -4980,7 +4972,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 							// сдвинуть всю цепочку вверх
 
 							obj[0] = make_header(type == TENUMP ? TINTP : TINTN, 3);
-							obj[1] = I(nat & (((word)1 << VBITS) - 1));
+							obj[1] = I(nat & VMAX);
 							obj[2] = INULL;
 
 							nat >>= VBITS;
