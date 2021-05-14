@@ -735,7 +735,7 @@
             ((case thing ((make-vector (list cp . args)) . body) . clauses)
                (if (eq? cp (ref thing 1))
                   (vector-apply thing
-                     (lambda (| | . args)
+                     (lambda (_ . args)
                         . body))
                   (case thing . clauses)))
 
