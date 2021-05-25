@@ -59,12 +59,12 @@
 //   базируется на C99 стандарте, <stdint.h>
 typedef uintptr_t word;
 
-//	arm, armv7-a, armv8-a: 4; arm64: 8
-//	risc-v 32: 4;         risc-v 64: 8
+//	arm, armv7-a, armv8-a: 4; arch64: 8
+//	risc-v 32: 4;          risc-v 64: 8
 //	wasm:      4
-//	x86:       4;            x86-64: 8
-//	mips:      4;            mips64: 8
-//	ppc:       4;    ppc64, ppc64le: 8
+//	x86:       4;             x86-64: 8
+//	mips:      4;             mips64: 8
+//	ppc:       4;     ppc64, ppc64le: 8
 //	raspbian:  4
 
 #ifndef OLVM_NOMAIN
@@ -88,6 +88,7 @@ word OLVM_evaluate(olvm_t* ol, word function, int argc, word* argv);
 size_t OLVM_pin(olvm_t* ol, word ref);
 word OLVM_deref(olvm_t* ol, size_t p);
 word OLVM_unpin(olvm_t* ol, size_t p);
+
 word OLVM_apply(olvm_t* ol, word function, word args);
 
 void*OLVM_userdata (olvm_t* ol, void* userdata);
