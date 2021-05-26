@@ -1094,8 +1094,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 
 // http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
 
-// DEFAULTS. please don't change! use -D{OPTION}={0|1} command line instead
-//           or use -DHAS_CONFIG=1 and change your local config copy
+// DEFAULTS.
+// please don't change! use -D{OPTION}={0|1} compiler command line instead
 #ifndef HAS_SOCKETS
 #define HAS_SOCKETS 1 // assume system sockets support
 #endif
@@ -5018,12 +5018,10 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 
 			// inexact numbers
 // is it a big-endian target architecture?
-#if defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN || \
-    defined(__BIG_ENDIAN__) || \
-    defined(__ARMEB__) || \
-    defined(__THUMBEB__) || \
-    defined(__AARCH64EB__) || \
-    defined(_MIBSEB) || defined(__MIBSEB) || defined(__MIBSEB__)
+#if (defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN) || \
+    (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) ||\
+	(defined(__BIG_ENDIAN__)) || \
+    (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIBSEB) || defined(__MIBSEB) || defined(__MIBSEB__))
 #	ifdef OLVM_INEXACTS
 			if (type == TINEXACT) {
 				int s = size;
@@ -5034,12 +5032,11 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			else
 #	endif
 // is it a little-endian target architecture?
-#elif defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN || \
-    defined(__LITTLE_ENDIAN__) || \
-    defined(__ARMEL__) || \
-    defined(__THUMBEL__) || \
-    defined(__AARCH64EL__) || \
-    defined(_MIPSEL) || defined(__MIPSEL) || defined(__MIPSEL__)
+#elif\
+    (defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN) || \
+    (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) ||\
+	(defined(__LITTLE_ENDIAN__)) || \
+    (defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIBSEL) || defined(__MIBSEL) || defined(__MIBSEL__))
 			// nothing to do
 #else
 #	error "Unknown target endianness arcitecture"
