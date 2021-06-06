@@ -202,11 +202,12 @@
 
    ; accept
    (let loop ()
-      (if (syscall 23 socket) ; select
+      (if (syscall 23 socket 1) ; select
          (let ((fd (syscall 43 socket))) ; accept
             ;; (print-to stderr "\n# " (timestamp) ": new request from " (syscall 51 fd))
-            (fork (on-accept (generate-unique-id) fd onRequest))))
-      (set-ticker-value 0)
+            (fork (on-accept (generate-unique-id) fd onRequest)))
+      else
+         (set-ticker-value 0))
       (loop))))
 
 ; -=( parse url )=-------------------------------------
