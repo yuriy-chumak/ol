@@ -881,9 +881,9 @@
                         (['ok value env2]
                            (lets
                               ((env (env-set env (cadr exp) value))
-                               (env (maybe-name-function env (cadr exp) value))
-                               ;(env (maybe-save-metadata env (cadr exp) value))
-                               )
+                              (env (maybe-name-function env (cadr exp) value))
+                              ;(env (maybe-save-metadata env (cadr exp) value))
+                              )
                               (ok
                                  (repl-message
                                     (bytes->string (render ";; Defined " (render (cadr exp) null))))
@@ -908,34 +908,34 @@
                         (['fail reason]
                            (fail
                               (list "Definition of" (cadr exp) "failed because" reason)))))
-                  ((export? exp)
-                     (lets ((module (build-export (cdr exp) env (λ (x) x)))) ; <- to be removed soon, dummy fail cont
-                        (ok module env)))
+                  ;; ((export? exp)
+                  ;;    (lets ((module (build-export (cdr exp) env (λ (x) x)))) ; <- to be removed soon, dummy fail cont
+                  ;;       (ok module env)))
                   ((library-definition? exp)
                      ;; evaluate libraries in a blank *src-olvm* env (only primops, specials and define-syntax)
                      ;; include just loaded *libraries* and *include-paths* from the current one to share them
                      (let*/cc ret
                         ((exps (map cadr (cdr exp))) ;; drop the quotes
-                         (name exps (uncons exps #false))
-                         (libs (env-get env '*libraries* null))
-                         ;; mark the current library as being loaded for circular dependency detection
-                         (env (env-set env '*libraries* (cons (cons name 'loading) libs)))
-                         (fail
+                        (name exps (uncons exps #false))
+                        (libs (env-get env '*libraries* null))
+                        ;; mark the current library as being loaded for circular dependency detection
+                        (env (env-set env '*libraries* (cons (cons name 'loading) libs)))
+                        (fail
                            (λ (reason)
                               (ret (fail (list "Library" name "failed:" reason)))))
-                         (lib-env
+                        (lib-env
                            (fold
                               (λ (lib-env key) (env-set lib-env key (env-get env key null)))
                               *src-olvm* library-exports))
-                         (lib-env (env-set lib-env current-library-key name)))
+                        (lib-env (env-set lib-env current-library-key name)))
                         (case (repl-library exps lib-env repl fail) ;; anything else must be incuded explicitly
                            (['ok library lib-env]
                               ;; get new function names and metadata from lib-env (later to be handled differently)
                               (lets
                                  ((names (env-get lib-env name-tag empty))
-                                  (env (env-set env name-tag (ff-union (env-get env name-tag empty) names (λ (old new) new))))
-                                  (meta (env-get lib-env meta-tag empty))
-                                  (env (env-set env meta-tag (ff-union (env-get env meta-tag empty) meta (λ (old new) new)))))
+                                 (env (env-set env name-tag (ff-union (env-get env name-tag empty) names (λ (old new) new))))
+                                 (meta (env-get lib-env meta-tag empty))
+                                 (env (env-set env meta-tag (ff-union (env-get env meta-tag empty) meta (λ (old new) new)))))
                                  (ok
                                     (repl-message
                                        (list->string
@@ -954,7 +954,6 @@
             (['fail reason]
                ['fail
                   (list "Macro expansion failed: " reason)])))
-
 
       ; !
       ; in this repl changed from (repl env in) to (repl env in evaluator)
@@ -978,12 +977,15 @@
                         ((repl-op? this)
                            (repl-op repl__ (cadr this) in env)) ; todo: add last
                         (else
-                           (case (eval-repl this env repl__ evaluator)
-                              (['ok result env]
-                                 (prompt env result)
-                                 (loop env in result "> "))
-                              (['fail reason]
-                                 (repl-fail env reason)))))))
+                           (if this
+                              (case (eval-repl this env repl__ evaluator)
+                                 (['ok result env]
+                                    (prompt env result)
+                                    (loop env in result "> "))
+                                 (['fail reason]
+                                    (repl-fail env reason)))
+                           else
+                              ['fail (list ";; syntax error")])))))
                (else
                   (loop env (in) last #false)))))
 
@@ -1030,9 +1032,7 @@
                      ; better luck next time
                      (boing env))
 
-                  ; notify hooker about strange error
-                  ; is this cannot be reached?
+                  ; well, someone called a (shutdown .) ?
                   (else is foo
-                     (print "Repl is rambling: " foo) ; what is this?
-                     (boing env)))));)
+                     foo))))
 ))
