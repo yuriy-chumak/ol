@@ -4,6 +4,7 @@
    (description "otus-lisp gl library")
 (import
    (otus lisp) (otus ffi)
+   (scheme dynamic-bindings)
    (lib gl config)
    (lib keyboard))
 
@@ -596,7 +597,7 @@
                            ; рендерера нет, значит оновим буфер
                            (gl:SwapBuffers (get dictionary 'context #f)))
                            ; рендерер есть, но режим интерактивный? тогда вернем управление юзеру
-                           ;(if *interactive* ;(or (zero? (length *vm-args*)) (string-eq? (car *vm-args*) "-"))
+                           ;(if *interactive* ;(or (zero? (length (command-line))) (string-eq? (car (command-line)) "-"))
                            ;   (mail sender 'ok)))
                         (this (put dictionary 'customer sender)))
 
@@ -690,34 +691,18 @@
                   (this dictionary)))))))))
 
 (begin
-; userdata
-(fork-server 'opengl-userdata (lambda ()
-(let this ((dictionary #empty))
-   (let*((envelope (wait-mail))
-         (sender msg envelope))
-      (case msg
-         ; low level interaction interface
-         (['set key data]
-            (this (put dictionary key data)))
-         (['get key]
-            (mail sender (getf dictionary key))
-            (this dictionary))
-         (['debug] ; *debug interface
-            (mail sender dictionary)
-            (this dictionary))
-         (else
-            (print-to stderr "opengl-userdata: unknown message " msg)
-            (this dictionary)))))))
 
 ; -=( main )=--------------------------
 ; force window creation.
 (native:create-context "Ol: OpenGL Window")
 
 ; -----------------------------
+(define gl:userdata (make-parameter {}))
+
 (define (gl:set-userdata userdata)
-   (mail 'opengl-userdata ['set 'userdata userdata]))
+   (gl:userdata userdata))
 (define (gl:get-userdata)
-   (interact 'opengl-userdata ['get 'userdata]))
+   (gl:userdata))
 
 (define (gl:set-renderer renderer)
    (mail 'opengl ['set-renderer renderer]))
