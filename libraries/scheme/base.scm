@@ -1,6 +1,7 @@
 (define-library (scheme base)
 (export
    (exports (scheme core))
+   (exports (scheme process-context))
 
    caaar caadr cadar caddr ; moved from (scheme cxr)
    cdaar cdadr cddar cdddr ; moved from (scheme cxr)
@@ -256,10 +257,11 @@
       (scheme core) (src vm)
       (scheme vector)
       (scheme bytevector)
-      ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (required coroutines)
+      ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (coroutines required)
       (owl io) (owl math) (owl math-extra)
       (scheme inexact)
-      (owl string))
+      (owl string)
+      (scheme process-context))
 
    (begin
       ; * internal staff

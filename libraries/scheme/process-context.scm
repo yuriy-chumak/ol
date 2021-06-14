@@ -1,22 +1,36 @@
 (define-library (scheme process-context)
-   (export 
+;; An interface to the system environment, command
+;; line, and process exit status is available in the (scheme
+;; process-context) library.
+
+   (export
       command-line
       exit
       emergency-exit
       get-environment-variable
-      get-environment-variables
-      )
+      get-environment-variables)
 
    (import
-      (scheme core))
+      (scheme core)
+      (owl interop)
+      (owl string))
 
    (begin
       (define-syntax command-line
-         (syntax-rules (*vm-args*)
+         (syntax-rules (*command-line*)
             ((command-line)
-               *vm-args*)))
+               *command-line*)))
 
       (define exit (case-lambda
+         ((code)
+            (shutdown (case code
+               (#true 0)
+               (#false -1)
+               (else code))))
+         (()
+            (shutdown 0))))
+      
+      (define emergency-exit (case-lambda
          ((code)
             (vm:exit (case code
                (#true 0)
@@ -24,8 +38,6 @@
                (else code))))
          (()
             (vm:exit 0))))
-      
-      (define emergency-exit exit)
 
       (define (get-environment-variable name)
          (let ((name (c-string name)))
