@@ -1820,7 +1820,7 @@
       ; 4.2.6  Quasiquotation
 
 
-      ; deprecated, todo: change to list
+      ; Improper List (a chain of pairs that doesn't end in the empty list)
       (define-syntax ilist
          (syntax-rules ()
             ((ilist a) a)
