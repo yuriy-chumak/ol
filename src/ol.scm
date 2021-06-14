@@ -317,6 +317,7 @@
                                                    (string-eq? uname "Darwin"))
                                            "/usr/local/lib/ol"))
                                      "/usr/lib/ol"))
+                           (command-line vm-args)
 
                            (version (cons "OL" (get options 'version (cdr *version*))))
                            (env (fold
@@ -327,7 +328,9 @@
                                        (cons '*owl-names* initial-names)
                                        (cons '*path* (list "." home))
                                        (cons '*interactive* interactive?)
-                                       (cons '*vm-args* vm-args)
+                                       (cons '*command-line* command-line)
+                                       ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead
+                                       (cons '*vm-args* vm-args) ; deprecated
                                        (cons '*version* version)
                                        (cons '*features* (let*((*features* (cons
                                                                               (string->symbol (string-append "ol-" (cdr version)))
