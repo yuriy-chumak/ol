@@ -52,7 +52,8 @@
    srfi-16 ; case-lambda
    srfi-87 ; <= in cases
    srfi-71 ; extended LET-syntax for multiple values
-   otus-lisp))
+   otus-lisp ; scheme-compliant naming
+   |otus-lisp-2.2|))
 
 (define *path* '("." "libraries")) ;; now we can do (import <libname>) and have them be autoloaded to current repl
 (define *owl-names* #empty)
