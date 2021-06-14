@@ -550,13 +550,12 @@
          (values l r p v))
 
       (define (bytestream->exp-stream ll parser fail)
-         (λ () ; we want to do a first loop in (repl) to show the prompt
+         (λ ()
             (let*((lp r p val (parser #null ll 0 parser-succ)))
                (cond
                   (lp ;; something parsed successfully
                      (pair val (bytestream->exp-stream r parser fail)))
                   ((null? r) ;; end of input
-                     ;; typically there is whitespace, so this does not happen
                      #null)
                   ((function? fail)
                      (fail

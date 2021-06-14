@@ -39,7 +39,7 @@
 (import (scheme base))    ;; ... набор Scheme
 
 ;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*libraries* *primops* *vm-args* *version* stdin stdout stderr build-start) ;set-ticker-value
+,forget-all-but (*libraries* *primops* *version* stdin stdout stderr build-start) ;set-ticker-value
 
 ;;;
 ;;; Time for a new REPL
