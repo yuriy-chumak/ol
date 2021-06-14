@@ -4515,6 +4515,24 @@ loop:;
 			}
 			#endif
 
+			case 1015: { // environ
+				extern char **environ;
+				
+				char** ptr = environ;
+				word* strings = (word*)INULL;
+				while (*ptr != NULL) {
+					char* p = strchr(*ptr, '=');
+					if (p)
+						strings = new_pair(new_pair(new_string(*ptr, p - *ptr), new_string(p+1)), strings);
+					else
+						strings = new_pair(new_pair(new_string(*ptr), IFALSE), strings);
+					ptr++;
+				}
+
+				r = strings;
+				break;
+
+			}
 			// getenv
 			case 1016: { // getenv <owl-raw-bvec-or-ascii-leaf-string>
 				word *name = (word *)A1;

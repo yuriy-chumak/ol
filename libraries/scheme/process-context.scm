@@ -45,5 +45,5 @@
                (syscall 1016 name))))
 
       (define (get-environment-variables)
-         (runtime-error 'get-environment-variables #f))
+         (syscall 1015))
 ))
