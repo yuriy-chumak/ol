@@ -1,9 +1,4 @@
-;; Defined *interactive*
-;; Defined fruits
-;; Defined fruits
 0
 0
 -1
-;; Defined make-enumeration
-'#ff((apple . 0) (banana . 1) (cherry . 2))
-bye-bye :/
+#ff((apple . 0) (banana . 1) (cherry . 2))
