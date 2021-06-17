@@ -139,6 +139,9 @@ R<sup>7</sup>RS DIFFERENCES
 * 6.11. Exceptions
   * **No** exceptions handling in Ol.
     - *note: Yet.*
+* 6.13. Input and output
+  * `current-input-port`, `current-output-port`, and `current-error-port` always return **stdin**, **stdout**, and **stderr** in Ol respectively, but *a parameter objects* in Scheme.
+    - *note: due to large performance impact.*
 * Ol has builtin **regular expressions** while Scheme *not*.
   * *note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` (with optional 'g' suffix) and `c/<pattern>/` as functions to match, change and split the string.*
 

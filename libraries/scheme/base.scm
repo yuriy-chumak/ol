@@ -6,11 +6,6 @@
    caaar caadr cadar caddr ; moved from (scheme cxr)
    cdaar cdadr cddar cdddr ; moved from (scheme cxr)
 
-   ;; ; i/o from r6rs
-   ;; current-input-port
-   ;; current-output-port
-   ;; current-error-port
-
    ; -----------------------------------------
    ; r7rs small (scheme base) list
    *
@@ -70,9 +65,9 @@
    cond
 ;  cond-expand    * builtin, (lang eval)
    cons
-      ;; current-error-port
-      ;; current-input-port
-      ;; current-output-port
+   current-error-port  ; * (owl io)
+   current-input-port  ; * (owl io)
+   current-output-port ; * (owl io)
    define
    define-record-type
 ;  define-syntax  * builtin (lang eval)
