@@ -5,59 +5,40 @@
 ;;;; Алгоритм ориентирования и поиска пути в сложном лабиринте
 (import
    (owl ff) (otus random!)
+   (scheme dynamic-bindings)
    (lib gl))
 
-(define (nth list n)
-   (if (= n 0) (car list)
-               (nth (cdr list) (- n 1))))
-
 ; ===========================================================================
-(define scheme '(
-   (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  1 1 1 1 1 1 1 2 2 1 1 1 1 1)
-   (1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 1 0 0 0 0 2 2 0 0 0 0 1)
-   (1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 1 1 0 0 0 2 2 0 1 0 0 1)
-   (1 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 2 2 0 0 2 2 0 0 0 1)
-   (1 0 1 1 1 1 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 3 0 2 2 0 2 2 0 0 0 1)
-   (1 0 1 0 0 0 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 1 1 0 1 1  0 0 0 0 0 0 2 2 2 2 0 1 0 1)
-   (1 0 1 0 0 0 1 0 0 1 1 1 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 3 0 0 2 2 0 0 0 0 1)
-   (1 0 1 0 0 0 1 0 0 0 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0 1  0 3 0 0 0 0 0 2 2 2 0 0 0 1)
-   (1 0 1 0 0 0 1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 0 0 0 2 2 2 0 0 0 1)
-   (1 0 1 0 0 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0 0 3 0 0 0 0 2 2 0 0 0 0 1)
-   (1 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 0 0 0 2 2 0 0 0 0 1)
-   (1 0 0 0 0 0 0 0 0 1 1 1 1 0 0 1 1 1 1 1 1 1 1 0 1 1  0 0 0 3 0 0 0 2 2 0 0 0 0 1)
-   (1 0 1 0 0 0 0 0 0 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 1 0 0 0 0 2 2 2 0 0 0 0 1)
-   (1 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 2 0 0 0 0 0 1)
-   (1 0 1 1 1 1 1 1 1 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 0 0 0 0 3 0 1)
-   (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 0 3 0 0 0 0 1)
-   (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 2 2 0 0 0 0 0 0 0 1)
-   (1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 0 0 0 0 0 3 0 0 1)
-   (1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 2 2 0 0 0 0 0 0 0 1)
-   (1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  1 1 1 1 2 2 1 1 1 1 1 1 1 1)))
+(define scheme [
+   [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  1 1 1 1 1 1 1 2 2 1 1 1 1 1]
+   [1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 1 0 0 0 0 2 2 0 0 0 0 1]
+   [1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 1 1 0 0 0 2 2 0 1 0 0 1]
+   [1 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 2 2 0 0 2 2 0 0 0 1]
+   [1 0 1 1 1 1 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 3 0 2 2 0 2 2 0 0 0 1]
+   [1 0 1 0 0 0 1 0 0 1 0 0 0 0 0 1 0 0 0 0 1 1 1 0 1 1  0 0 0 0 0 0 2 2 2 2 0 1 0 1]
+   [1 0 1 0 0 0 1 0 0 1 1 1 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 3 0 0 2 2 0 0 0 0 1]
+   [1 0 1 0 0 0 1 0 0 0 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0 1  0 3 0 0 0 0 0 2 2 2 0 0 0 1]
+   [1 0 1 0 0 0 1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 0 0 0 2 2 2 0 0 0 1]
+   [1 0 1 0 0 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0  0 0 3 0 0 0 0 2 2 0 0 0 0 1]
+   [1 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 0 0 0 2 2 0 0 0 0 1]
+   [1 0 0 0 0 0 0 0 0 1 1 1 1 0 0 1 1 1 1 1 1 1 1 0 1 1  0 0 0 3 0 0 0 2 2 0 0 0 0 1]
+   [1 0 1 0 0 0 0 0 0 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 1 0 0 0 0 2 2 2 0 0 0 0 1]
+   [1 0 1 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 2 0 0 0 0 0 1]
+   [1 0 1 1 1 1 1 1 1 1 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 0 0 0 0 3 0 1]
+   [1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 2 2 0 3 0 0 0 0 1]
+   [1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 1  0 0 0 0 2 2 0 0 0 0 0 0 0 1]
+   [1 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 1  0 0 0 0 0 0 0 0 0 0 3 0 0 1]
+   [1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 0 0 0 0 1 0 0 0 0 1  0 0 0 0 2 2 0 0 0 0 0 0 0 1]
+   [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1  1 1 1 1 2 2 1 1 1 1 1 1 1 1]])
 
 (define (at x y)
-   ;(if (and (>= x 0) (>= y 0))
-   (nth (nth scheme y) x))
-
-(define (ne? a b) (not (eq? a b)))
-
-(define (at2 x y scheme)
-   (nth (nth scheme y) x))
-
-(define (safe-nth list n)
-   (if (and list (not (null? list)))
-   (if (= n 0) (car list)
-               (safe-nth (cdr list) (- n 1)))))
-
-(define (safe-at x y)
-   (if (and (>= x 0) (>= y 0))
-      (safe-nth (safe-nth scheme y) x)))
-
+   (ref (ref scheme y) x))
 
 ; константы
-(define WIDTH (length (car scheme)))
+(define WIDTH (size (car scheme))) ; same as (ref x 1)
 (define -WIDTH (- WIDTH))
 (define +WIDTH (+ WIDTH))
-(define HEIGHT (length scheme))
+(define HEIGHT (size scheme))
 (define -HEIGHT (- HEIGHT))
 (define +HEIGHT (+ HEIGHT))
 
@@ -66,12 +47,16 @@
 
 (define WIDTH-1 (- WIDTH 1))
 (define HEIGHT-1 (- HEIGHT 1))
+(define WIDTH+1 (+ WIDTH 1))
+(define HEIGHT+1 (+ HEIGHT 1))
 
 ; загрузка модуля с ai
-,load "ai.lisp"
+(import (ai))
+(print "ai loaded")
 
-(define me (new-creature 1 1))
-;(mail me (tuple 'update-fov scheme))
+(define hero (new-creature))
+(mail hero ['set-location (cons 2 2)])
+(mail hero ['look-around scheme])
 
 (gl:set-window-title "Pathfinder sample")
 (import (OpenGL version-1-1))
@@ -95,9 +80,39 @@
    (glVertex2f (+ x 1) y))
 
 
+(define cell-codes '(
+   ((#T #T #T #T) . (3/8 . 3/8)) ; монолитная стена
+
+   ; прямые стены:
+   ((#F #F #T #T) . (3/8 . 1/8)) ; сверху вниз
+   ((#T #T #F #F) . (1/8 . 3/8)) ; слева направо
+
+   ; углы:
+   ((#T #F #F #T) . (4/8 . 2/8)) ; правый-верхний угол
+   ((#T #F #T #F) . (4/8 . 4/8)) ; правый-нижний угол
+   ((#F #T #F #T) . (2/8 . 2/8)) ; левый-верхний угол
+   ((#F #T #T #F) . (2/8 . 4/8)) ; левый-нижний угол
+
+   ; ответвления:
+   ((#T #F #T #T) . (2/8 . 3/8)) ; влево
+   ((#T #T #F #T) . (3/8 . 4/8)) ; вниз
+   ((#T #T #T #F) . (3/8 . 2/8)) ; вверх
+   ((#F #T #T #T) . (4/8 . 3/8)) ; вправо
+
+   ; тупики:
+   ((#T #F #F #F) . (6/8 . 3/8)) ; правый тупик
+   ((#F #T #F #F) . (0/8 . 3/8)) ; левый тупик
+   ((#F #F #T #F) . (3/8 . 6/8)) ; нижний тупик
+   ((#F #F #F #T) . (3/8 . 0/8)) ; верхний тупик
+
+   ; островок
+   ((#F #F #F #F) . (3/8 . 3/8)) ))
 
 (define (draw-map-cell x y cell alpha)
    (cond
+   ((eq? cell 0) ; пустой пол
+      (glColor3f alpha alpha alpha)
+      (quadT x y 1/8 1/8))
    ((eq? cell 2) ; вода
       (glColor3f 0 (* alpha 0.4) alpha)
       (quadT x y 6/8 6/8))
@@ -106,114 +121,18 @@
       (quadT x y 5/8 5/8))
    ((eq? cell 1)
       (glColor3f alpha alpha alpha)
-      (cond
-      ; монолитная стена
-      ((and (eq? (safe-at (- x 1) y) 1)
-            (eq? (safe-at (+ x 1) y) 1)
-            (eq? (safe-at x (- y 1)) 1)
-            (eq? (safe-at x (+ y 1)) 1))
-         (quadT x y 3/8 3/8))
+      (define code (list
+         (eq? (at (- x 1) y) 1)
+         (eq? (at (+ x 1) y) 1)
+         (eq? (at x (- y 1)) 1)
+         (eq? (at x (+ y 1)) 1)))
 
-      ; прямые стены:
-      ; сверху вниз
-      ((and (ne? (safe-at (- x 1) y) 1)
-            (ne? (safe-at (+ x 1) y) 1)
-            (eq? (safe-at x (- y 1)) 1)
-            (eq? (safe-at x (+ y 1)) 1))
-         (quadT x y 3/8 1/8))
-
-      ; слева направо
-      ((and (eq? (safe-at (- x 1) y) 1)
-            (eq? (safe-at (+ x 1) y) 1)
-            (ne? (safe-at x (- y 1)) 1)
-            (ne? (safe-at x (+ y 1)) 1))
-         (quadT x y 1/8 3/8))
-
-      ; углы:
-      ; правый-верхний угол
-      ((and (eq? (safe-at (- x 1) y) 1)
-            (ne? (safe-at (+ x 1) y) 1)
-            (ne? (safe-at x (- y 1)) 1)
-            (eq? (safe-at x (+ y 1)) 1))
-         (quadT x y 4/8 2/8))
-      ; правый-нижний угол
-      ((and (eq? (safe-at (- x 1) y) 1)
-            (ne? (safe-at (+ x 1) y) 1)
-            (eq? (safe-at x (- y 1)) 1)
-            (ne? (safe-at x (+ y 1)) 1))
-         (quadT x y 4/8 4/8))
-      ; левый-верхний угол
-      ((and (ne? (safe-at (- x 1) y) 1)
-            (eq? (safe-at (+ x 1) y) 1)
-            (ne? (safe-at x (- y 1)) 1)
-            (eq? (safe-at x (+ y 1)) 1))
-         (quadT x y 2/8 2/8))
-      ; левый-нижний угол
-      ((and (ne? (safe-at (- x 1) y) 1)
-            (eq? (safe-at (+ x 1) y) 1)
-            (eq? (safe-at x (- y 1)) 1)
-            (ne? (safe-at x (+ y 1)) 1))
-         (quadT x y 2/8 4/8))
-
-
-      ; ответвления:
-      ; влево
-      ((and (eq? (safe-at (- x 1) y) 1)
-            (ne? (safe-at (+ x 1) y) 1)
-            (eq? (safe-at x (- y 1)) 1)
-            (eq? (safe-at x (+ y 1)) 1))
-         (quadT x y 2/8 3/8))
-      ; вниз
-      ((and (eq? (safe-at (- x 1) y) 1)
-            (eq? (safe-at (+ x 1) y) 1)
-            (ne? (safe-at x (- y 1)) 1)
-            (eq? (safe-at x (+ y 1)) 1))
-         (quadT x y 3/8 4/8))
-      ; вверх
-      ((and (eq? (safe-at (- x 1) y) 1)
-            (eq? (safe-at (+ x 1) y) 1)
-            (eq? (safe-at x (- y 1)) 1)
-            (ne? (safe-at x (+ y 1)) 1))
-         (quadT x y 3/8 2/8))
-      ; вправо
-      ((and (ne? (safe-at (- x 1) y) 1)
-            (eq? (safe-at (+ x 1) y) 1)
-            (eq? (safe-at x (- y 1)) 1)
-            (eq? (safe-at x (+ y 1)) 1))
-         (quadT x y 4/8 3/8))
-
-      ; тупики:
-      ; правый тупик
-      ((and (eq? (safe-at (- x 1) y) 1)
-            (ne? (safe-at (+ x 1) y) 1)
-            (ne? (safe-at x (- y 1)) 1)
-            (ne? (safe-at x (+ y 1)) 1))
-         (quadT x y 6/8 3/8))
-      ; левый тупик
-      ((and (ne? (safe-at (- x 1) y) 1)
-            (eq? (safe-at (+ x 1) y) 1)
-            (ne? (safe-at x (- y 1)) 1)
-            (ne? (safe-at x (+ y 1)) 1))
-         (quadT x y 0/8 3/8))
-      ; нижний тупик
-      ((and (ne? (safe-at (- x 1) y) 1)
-            (ne? (safe-at (+ x 1) y) 1)
-            (eq? (safe-at x (- y 1)) 1)
-            (ne? (safe-at x (+ y 1)) 1))
-         (quadT x y 3/8 6/8))
-      ; верхний тупик
-      ((and (ne? (safe-at (- x 1) y) 1)
-            (ne? (safe-at (+ x 1) y) 1)
-            (ne? (safe-at x (- y 1)) 1)
-            (eq? (safe-at x (+ y 1)) 1))
-         (quadT x y 3/8 0/8))
-
-      ; островок
-      ((and (ne? (safe-at (- x 1) y) 1)
-            (ne? (safe-at (+ x 1) y) 1)
-            (ne? (safe-at x (- y 1)) 1)
-            (ne? (safe-at x (+ y 1)) 1))
-         (quadT x y 3/8 3/8))))))
+      (call/cc (lambda (break)
+         (for-each (lambda (p)
+               (when (equal? (car p) code)
+                  (quadT x y (cadr p) (cddr p))
+                  (break #t)))
+            cell-codes)))) ))
 
 ; окно - рисовалка
 ; ---------------------------------------------------------------------------
@@ -221,16 +140,8 @@
 ; init
 (glMatrixMode GL_PROJECTION)
 (glLoadIdentity) ; тут надо зеркально отразить карту сверху вниз
-(glOrtho -1 (+ WIDTH 1) (+ HEIGHT 3) -3  -1 1)
+(glOrtho -1 (+ WIDTH 3) (+ HEIGHT 3) -1  -1 1)
 (glMatrixMode GL_MODELVIEW)
-
-(glBindTexture GL_TEXTURE_2D 0)
-(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-(glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
-   16 16
-   0 GL_BGR GL_UNSIGNED_BYTE (file->bytevector "ground.rgb"))
-(glDisable GL_TEXTURE_2D)
 
 (glEnable GL_TEXTURE_2D)
 (glBindTexture GL_TEXTURE_2D 1)
@@ -240,81 +151,63 @@
    128 128
    0 GL_BGR GL_UNSIGNED_BYTE (file->bytevector "tileset.rgb"))
 
-;(glEnable GL_BLEND)
-(gl:set-userdata #empty)
+(define (find-empty-random-place)
+   (let do ((x (rand! WIDTH))
+            (y (rand! HEIGHT)))
+      (if (eq? (at x y) 0)
+         (cons x y)
+         (do (rand! WIDTH) (rand! HEIGHT)))))
+
+; dynamic userdata
+(define userdata
+   (let ((xy (find-empty-random-place)))
+      (make-parameter {
+         'x (car xy)
+         'y (cdr xy)
+         'old-time (let* ((new-time _ (clock))) new-time)
+      })))
 
 ; draw
 (gl:set-renderer (lambda (mouse)
-(let*((userdata (gl:get-userdata))
-      (x (get userdata 'x 14))
-      (y (get userdata 'y 1))
-      (old-time (get userdata 'old-time 0)))
+(let*((ud (userdata))
+      (x (ud 'x)) ; позиция яблокаs
+      (y (ud 'y))
+      (old-time (ud 'old-time)))
 
    (glClearColor 0.2 0.2 0.2 1.)
    (glClear GL_COLOR_BUFFER_BIT)
 
    ; нарисуем карту как она есть
+   ; для пользователя (всю карту видим только мы)
    (glEnable GL_TEXTURE_2D)
-   (glBindTexture GL_TEXTURE_2D 0)
-
-   ; сначала пол
-   (glBegin GL_QUADS)
-      (glColor3f 0.8 0.8 0.8)
-      (glTexCoord2f 0 0)
-      (glVertex2f   0 0)
-      (glTexCoord2f 0 HEIGHT)
-      (glVertex2f   0 HEIGHT)
-      (glTexCoord2f WIDTH HEIGHT)
-      (glVertex2f   WIDTH HEIGHT)
-      (glTexCoord2f WIDTH 0)
-      (glVertex2f   WIDTH 0)
-   (glEnd)
-
-   ; а теперь стены для пользователя
    (glBindTexture GL_TEXTURE_2D 1)
    (glBegin GL_QUADS)
-      (let by-y ((y 0) (line scheme))
-      (if (not (null? line)) (begin
-         (let by-x ((x 0) (cell (car line)))
-         (if (not (null? cell)) (begin
-            (draw-map-cell x y (car cell) 0.2)
-            (by-x (+ x 1) (cdr cell)))))
-         (by-y (+ y 1) (cdr line)))))
+      (for-each (lambda (y)
+            (for-each (lambda (x)
+                  (draw-map-cell x y (at x y) 0.2))
+               (iota WIDTH 1)))
+         (iota HEIGHT 1))
    (glEnd)
    (glDisable GL_TEXTURE_2D)
 
-   ; будем что-то делать только раз в секунду
+   ; ходим не чаше ? раз в секунду
    (let*((new-time _ (clock))
-         (step (if #t ;(> new-time old-time)
-                  (begin
-                    (mail me ['update-fov scheme])
-                    (interact me ['A* x y]))
-                  [0 0 #empty #empty])))
-
-      ; попросим монстра осмотреться
-
+         (step (interact hero ['A* x y])))
 
       ; нарисуем карту, которую "помнит" создание
       (if #t
-      (let ((map (interact me ['get-fov])))
+      (let ((map (interact hero ['get-fov])))
          (glEnable GL_TEXTURE_2D)
          (glBegin GL_QUADS)
-         (for-each (lambda (i)
-            (for-each (lambda (j)
-               (if (> (at2 i j map) 0)
-                  (let ((age (at2 i j map))) ; как давно оно клетку "видело"
-                     (let ((color (/ 1.0 (/ (- 100 age) 7))))
-                     ;(glColor3f color color color)
-                     (draw-map-cell i j (at i j) 1)))))
-               (lrange 0 1 HEIGHT)))
-            (lrange 0 1 WIDTH))
+         (ff-fold (lambda (_ key value)
+               (let* ((x y (unhash key)))
+                  (draw-map-cell x y (car value) (/ (cdr value) 600))
+               #t))
+            #f map)
          (glEnd))
       )
 
-      ; один из списков
-;      (print (ref step 3))
-      (if show-path
-      ;(if (not (and (eq? (ref step 1) 0) (eq? (ref step 2) 0)))
+      ; дебаг ИИ
       (let ((map (ref step 3)))
          ; draw 'open list
          (glDisable GL_TEXTURE_2D)
@@ -329,15 +222,14 @@
                               (glColor3f 0.2 0.2 0.2)
                               (glVertex2f (+ (car to) 0.5) (+ (cdr to) 0.5))))))
             #f map)
-         (glEnd)
-      ))
+         (glEnd))
 
 
-      ; нарисуем, где сейчас наше создание находится:
+      ; нарисуем, где сейчас находится наш герой:
       (glEnable GL_TEXTURE_2D)
       (glColor3f 1 1 1)
       (glBegin GL_QUADS)
-      (let ((xy (interact me ['get-location])))
+      (let ((xy (interact hero ['get-location])))
          (if (and (= (car xy) x) (= (cdr xy) y))
             (quadT x y 7/8 1/8)
             (begin
@@ -345,170 +237,34 @@
                (quadT x y 6/8 1/8)))) ; куда собирается пойти
       (glEnd)
 
+      ;; ; отрисуем точки на карте, ибо хочу посмотреть
+      ;; (glDisable GL_TEXTURE_2D)
+      ;; (glColor3f 1 0 0)
+      ;; (glBegin GL_POINTS)
+      ;;    (for-each (lambda (x)
+      ;;          (for-each (lambda (y)
+      ;;                (glVertex2f x y))
+      ;;             (iota HEIGHT 1)))
+      ;;       (iota WIDTH 1))
+      ;; (glEnd)
 
       ; все, теперь можем двигаться туда,  куда хотели:
-      (mail me ['move (ref step 1) (ref step 2)])
+      ;; (when (not (eq? new-time old-time))
+         (mail hero ['move (ref step 1) (ref step 2)])
+         (mail hero ['look-around scheme]) ;)
 
-   ; вернем модифицированные параметры
-      (gl:set-userdata (put
+      ; вернем модифицированные параметры
+      (userdata (put
          (if (and (eq? (ref step 1) 0) (eq? (ref step 2) 0) (> new-time old-time))
             (let do ((x (rand! WIDTH))
                      (y (rand! HEIGHT)))
-               (if (eq? (at2 x y scheme) 0)
-                  (put (put userdata 'x x) 'y y)
+               (if (eq? (at x y) 0)
+                  (put (put ud 'x x) 'y y)
                   (do (rand! WIDTH) (rand! HEIGHT))))
-            userdata)
-            ; send new
+         else
+            ud)
+         ; send new
          'old-time new-time))))))
-
-   ; пол (как травку)
-;   (BindTexture grass-texture)
-;   (glBegin GL_QUADS)
-;   (let* ((my (get userdata 'mouse (cons 0 0)))
-;          (x (car my))
-;          (y (cdr my)))
-;   (for-each (lambda (i)
-;      (for-each (lambda (j)
-;         (if (= (at i j) 0)
-;            (let ((c (+
-;                        (if (is-visible i j             x y) 0.25 0)
-;                        (if (is-visible (+ i 1) j       x y) 0.25 0)
-;                        (if (is-visible (+ i 1) (+ j 1) x y) 0.25 0)
-;                        (if (is-visible i (+ j 1)       x y) 0.25 0))))
-;               (glColor3f c c c)
-;               (quadT i j))))
-;         (lrange 0 1 HEIGHT)))
-;      (lrange 0 1 WIDTH)))
-;   (glEnd)
-;   (glDisable GL_TEXTURE_2D)
-
-;   (glColor3f 0 0 0)
-;   (glBegin GL_LINES)
-;   (for-each (lambda (i)
-;       (glVertex2f i 0)
-;       (glVertex2f i HEIGHT))
-;      (lrange 0 1 WIDTH))
-;   (for-each (lambda (i)
-;       (glVertex2f 0 i)
-;       (glVertex2f WIDTH i))
-;      (lrange 0 1 HEIGHT))
-;   (glEnd)
-
-
-
-   ; нарисуем линию
-;   #|
-;   (let ((mx (get userdata 'mouse #f)))
-;      (if mx (begin
-;         (glColor3f 0.2 0.2 0.2)
-;         (let ((xy (get-mouse-pos)))
-;            (if xy (begin
-;               (glPointSize 3.0)
-;               (glColor3f 1 0 0)
-;               (glBegin GL_POINTS)
-;               ;(if (is-point-can-see-point (car mx) (cdr mx)  (car xy) (cdr xy))
-;               (if (is-point-can-see-point (floor (car mx)) (floor (cdr mx))  (floor (car xy)) (floor (cdr xy)))
-;                  (glColor3f 0 1 0)
-;                  (glColor3f 0.2 0.2 0.2))
-;               (glEnd)
-;
-;               ;(glLineWidth 3.0)
-;               (glBegin GL_LINES)
-;                (glVertex2f (floor (car mx)) (floor (cdr mx)))
-;                ;(glVertex2f (car mx) (cdr mx))
-;                ;(glVertex2f (car xy) (cdr xy))
-;                (glVertex2f (floor (car xy)) (floor (cdr xy)))
-;               (glEnd)))))))
-;   #||#
-
-;   (let ((ms (get userdata 'mouse #f)))
-;   (if ms (begin
-;      (glPointSize 4.0)
-;      (glColor3f 0 0 1)
-;      (glBegin GL_POINTS)
-;      (glVertex2f (car ms) (cdr ms))
-;      (glEnd)
-;   )))
-
-   ; осмотр себя любимого на N клеток вокруг
-;   |#
-;   (let ((me (get-mouse-pos))
-;         (N 6))
-;   (glColor3f 0 1 0)
-;   (glBegin GL_LINES)
-;   (let lookout ((n 0)  (x (+ (floor (car me)) 0.5)) (y (+ (floor (cdr me)) 0.5)))
-;      (if (= n N)
-;         #t
-;      (begin
-;         (let left-to-right ((x (- (floor x) n)) (y (- (floor y) n))  (i (+ n n)))
-;            (if (= i 0)
-;               #f
-;            (begin
-;               (if (is-visible (car me) (cdr me) x y) (begin
-;                  (glVertex2f x y)
-;                  (glVertex2f (car me) (cdr me))))
-;               (left-to-right (+ x 1) y (- i 1)))))
-;         (let top-to-bottom ((x (+ (floor x) n 1)) (y (- (floor y) n))  (i (+ n n)))
-;            (if (is-visible (car me) (cdr me) x y) (begin
-;               (glVertex2f x y)
-;               (glVertex2f (car me) (cdr me))))
-;            (if (> i 0)
-;               (top-to-bottom x (+ y 1) (- i 1))))
-;         (let right-to-left ((x (+ (floor x) n 1)) (y (+ (floor y) n 1))  (i (+ n n)))
-;            (if (is-visible (car me) (cdr me) x y) (begin
-;               (glVertex2f x y)
-;               (glVertex2f (car me) (cdr me))))
-;            (if (> i 0)
-;               (right-to-left (- x 1) y (- i 1))))
-;         (let bottom-to-top ((x (- (floor x) n)) (y (+ (floor y) n 1))  (i (+ n n)))
-;            (if (is-visible (car me) (cdr me) x y) (begin
-;               (glVertex2f x y)
-;               (glVertex2f (car me) (cdr me))))
-;            (if (> i 0)
-;               (bottom-to-top x (- y 1) (- i 1))))
-;         (lookout (+ n 1) x y)))))
-;   (glEnd)
-;   #||#
-
-
-   ; хорошо, теперь попробуем построить список ключевых точек (вейпоинтов), про которые мы теперь знаем, что они на карте есть
-   ;
-   ;  для начала - по тем, что сверху
-;   #|
-;   (let* ((me (get-mouse-pos))
-;          (points (get-waypoints me 7)))
-;
-;      (glColor3f 0 0 1)
-;      (glPointSize 4.0)
-;      (glBegin GL_POINTS)
-;
-;      (let draw ((p points))
-;         (if (null? p)
-;            #t
-;            (begin
-;               (glVertex2f (car (car p)) (cdr (car p)))
-;               (draw (cdr p)))))
-;      (glEnd))
-;   #||#
-
-
-
-
-;         (let top-to-bottom ((x (+ (floor x) n 1)) (y (- (floor y) n))  (i (+ n n)))
-;            (if (is-visible (car me) (cdr me) x y)
-;               (check-corner x y))
-;            (if (> i 0)
-;               (top-to-bottom x (+ y 1) (- i 1))))
-;         (let right-to-left ((x (+ (floor x) n 1)) (y (+ (floor y) n 1))  (i (+ n n)))
-;            (if (is-visible (car me) (cdr me) x y)
-;               (check-corner x y))
-;            (if (> i 0)
-;               (right-to-left (- x 1) y (- i 1))))
-;         (let bottom-to-top ((x (- (floor x) n)) (y (+ (floor y) n 1))  (i (+ n n)))
-;            (if (is-visible (car me) (cdr me) x y)
-;               (check-corner x y))
-;            (if (> i 0)
-;               (bottom-to-top x (- y 1) (- i 1))))
 
 
 ;(mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
