@@ -884,7 +884,7 @@ inexact_t f = (inexact_t) a;\
 
 /****************************************************************/
 #endif//__OLVM_H__
-#ifndef USE_OLVM_DECLARATION
+
 #ifndef __OLVM_C__
 #define __OLVM_C__
 /****************************************************************/
@@ -5671,4 +5671,3 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
 
 
 #endif//__OLVM_C__
-#endif//USE_OLVM_DECLARATION

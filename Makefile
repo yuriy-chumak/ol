@@ -36,7 +36,7 @@ extensions/ffi.c: CFLAGS += -Iincludes
 # 
 extensions/ffi.c: includes/ol/vm.h
 includes/ol/vm.h: src/olvm.c
-	sed -n '/USE_OLVM_DECLARATION/q;p' $^ >$@
+	sed -n '/__OLVM_C__/q;p' $^ >$@
 
 tmp/repl.c: repl
 	xxd --include repl >tmp/repl.c
