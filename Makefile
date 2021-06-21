@@ -77,7 +77,7 @@ offsetof = $(shell OFFSETOF=`mktemp /tmp/offsetof.XXXXXXXXX`; \
 	          -o $$OFFSETOF 2>/dev/null && $$OFFSETOF)
 
 doc/olvm.md: src/olvm.c extensions/ffi.c
-	cat src/olvm.c extensions/ffi.c| ./makedoc >doc/olvm.md
+	cat src/olvm.c extensions/ffi.c| tools/makedoc >doc/olvm.md
 
 
 # check required libs
