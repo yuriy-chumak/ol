@@ -1,0 +1,48 @@
+.TH ol 1 "Jun 21, 2021"
+.SH NAME
+ol \- a purely functional dialect of Lisp
+.SH SYNOPSIS
+.B ol
+.I [options] [ [filename] [arguments] ]
+.SH DESCRIPTION
+Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
+
+It implements an extended subset of the R7RS Scheme, including
+but not limited to some SRFIs. It is tiny (< 64KB), embeddable
+and cross-platform.  Provides a portable, high-level interface
+to call code written in another language.
+.PP
+.SH OPTIONS
+This program follows the usual GNU command line syntax, with long
+options starting with two dashes (`-').
+A summary of essential command line flats options is included below.
+.TP
+.B \-\-version
+Show version of program.
+.TP
+.B \-\-version=...
+Override real program version with different one.
+.TP
+.B \-\-home=...
+Override library searching path.
+.TP
+.B \-\-sandbox
+Goes to sandboxed environment (if applicable).
+.TP
+.B \-\-interactive
+Forces the running mode into interactive one (useful when working remotely over pipe, for example).
+.TP
+.B \-\-no-interactive
+Forces the running mode into non-interactive.
+.TP
+.B \-\-embed
+Special case when running as embedded.
+.TP
+.B \-\-
+End of options. Next argument will be treated as filename, even if it's name looks like an option ("--sandbox", for example).
+.SH ENVIRONMENT
+.TP
+.B OL_HOME
+Library searching path.
+.SH AUTHOR
+(c) 2011-2014 Aki Helin, (c) 2014-2021 Yuriy Chumak
