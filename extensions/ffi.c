@@ -41,6 +41,7 @@
 #include <ol/vm.h>
 
 #define unless(...) if (! (__VA_ARGS__))
+#define max(a,b) ((a) > (b) ? (a) : (b))
 
 #include <string.h>
 #include <stdio.h> // temp
@@ -1242,7 +1243,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	word* t = (word*)cdr (B); // rtty
 
 	while ((word)p != INULL && (word)t != INULL) { // пока есть аргументы
-		int type = value(car(t)); // destination type
+		//int type = value(car(t)); // destination type
+		int type = is_value(car(t)) ? value(car(t)) : reference_type(car(t));
 		word arg = (word)car(p);
 
 //		again:
@@ -1326,6 +1328,13 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
                             break;
 					}
 					break;
+				case TPAIR: // structures
+					if (value(caar(t)) == TBYTEVECTOR &&
+						value(cdar(t)) > 16) // __amd64__ && __linux__
+					{
+						i += max(i, 6) + WALIGN(value(cdar(t))) + 1;
+					}
+					break;
 			}
 		}
 
@@ -1341,10 +1350,21 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		E("Arguments count mismatch", 0);
 		return (word*)IFALSE;
 	}
+
 	// special case of returning a structure:
-	if (is_pair(car(B))) {
-		if (value(caar(B)) == TBYTEVECTOR)
-			words += WALIGN(number(cdar(B))) + 1;
+	// http://www.sco.com/developers/devspecs/abi386-4.pdf
+	//
+	// Functions Returning Structures or Unions
+	//
+	// If a function returns a structure or union, then the caller provides space for the
+	// return value and places its address on the stack as argument word zero. In effect,
+	// this address becomes a ‘‘hidden’’ first argument. Having the caller supply the
+	// return object’s space allows re-entrancy.
+	if (is_pair(car(B)) &&
+		value(caar(B)) == TBYTEVECTOR)
+		// && value(cdar(B)) > sizeof(ret_t) // commented for speedup
+	{
+		words += WALIGN(value(cdar(B))) + 1;
 	}
 
 	// ensure that all arguments will fit in heap
@@ -1370,22 +1390,30 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	t = (word*)cdr (B); // rtty
 	int has_wb = 0; // has write-back in arguments (speedup)
 
-	// process a case with structure as function return
+	// special case of structures-by-value
+	// x86-64-psABI-1.0.pdf:
+	// 3.2.3 Parameter Passing
+
+	// too much work for it :(
+	int lower = 0;
+
+	// special case of returning a structure:
+	// allocate a space for the return value
 	if (is_pair(car(B)) &&
 		value(caar(B)) == TBYTEVECTOR &&
 		value(cdar(B)) > sizeof(ret_t))
 	{
-		int len = number(cdar(B));
+		int len = value(cdar(B));
 		word* result = new_bytevector(len);
 		args[i++] = (word) &car(result);
 	}
-
 
 	while ((word)p != INULL) { // пока есть аргументы
 		assert (reference_type(p) == TPAIR); // assert(list)
 		assert (reference_type(t) == TPAIR); // assert(list)
 
-		int type = value(car(t)); // destination type
+//		int type = value(car(t)); // destination type
+		int type = is_value(car(t)) ? value(car(t)) : reference_type(car(t));
 		word arg = (word) car(p);
 
 /*		// todo: add argument overriding as PAIR as argument value
@@ -1393,6 +1421,12 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			type = value (((word*)p[1])[1]);
 			arg = ((word*)p[1])[2];
 		}*/
+
+		// #ifdef linux x64, struct-by-value-passing
+		if (i == 6 && lower) {
+			i = lower;
+		}
+		// #endif
 
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
 #if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
@@ -1738,6 +1772,47 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 		}
 
+		// special case of a structure by value
+		case TPAIR:
+			// todo: check a types of structure
+			switch (reference_type(arg)) {
+			case TBYTEVECTOR: {
+				// assert rawstream_size(arg) == required size of data
+				//
+				// TODO: If the size of an object is larger than eight
+				// eightbytes, or it contains unaligned fields, it has
+				// class MEMORY
+
+				// #ifndef linux 64-bit
+				if (rawstream_size(arg) > 16) {
+					int j = max(max(i, 6), lower);
+
+					int ttt = reference_size(arg);
+					word* p = &car(arg);
+					for (int k = 0; k < ttt; k++)
+						args[j++] = *p++;
+
+					// отметим, что мы заняли место в стеке
+					lower = j;
+				}
+				else {
+					int ttt = reference_size(arg);
+					word* p = &car(arg);
+					for (int k = 0; k < ttt; k++)
+						args[i++] = *p++;
+					--i;
+				}
+				break;
+				// else
+				// 	memcpy((void*)&args[i], (void*)&car(arg), rawstream_size(arg));
+				// break;
+			}
+
+			default:
+				E("invalid parameter values (requested bytevector)");
+			}
+			break;
+
 		case TBYTEVECTOR:
 //		case TBYTEVECTOR + FFT_PTR:
 //		case TBYTEVECTOR + FFT_REF:
@@ -1906,7 +1981,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 #if  __amd64__
 #	if (__unix__ || __APPLE__)
-		got = nix64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
+		got = nix64_call(args, ad, max(i, lower), d, floatsmask, function, returntype & 0x3F);
 #	elif _WIN64
 		got = win64_call(args, i, function, returntype & 0x3F);
 #	else
@@ -2212,6 +2287,19 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	word* result = (word*)IFALSE;
 
 	returntype &= 0x3F;
+
+	// special case of returning a structure:
+	// allocate a space for the return value
+	if (is_pair(car(B)) && value(caar(B)) == TBYTEVECTOR) {
+		if (value(cdar(B)) > sizeof(ret_t))
+			result = (word)args[0] - W;
+		else {
+			int len = value(cdar(B));
+			result = new_bytevector(len);
+			memcpy((void*) &car(result), &got, len);
+		}
+	}
+	else // usual case
 	switch (returntype) {
 		// TENUMP - deprecated, TODO: remove
 		case TENUMP: // type-enum+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)

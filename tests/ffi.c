@@ -503,6 +503,8 @@ widechar* reverse_string_wide(widechar* str)
 	return out;
 }
 
+// structores
+
 typedef struct item12
 {
 	int x;
@@ -511,7 +513,7 @@ typedef struct item12
 } item12;
 
 PUBLIC
-item12 iiv2struct12(int x, int y, int z)
+item12 iii2struct12(int x, int y, int z)
 {
 	item12 i;
 	i.x = x;
@@ -531,7 +533,7 @@ typedef struct item20
 } item20;
 
 PUBLIC
-item20 iiv2struct20(int x, int y, int z)
+item20 iii2struct20(int x, int y, int z)
 {
 	item20 i;
 	i.x = x;
@@ -540,5 +542,27 @@ item20 iiv2struct20(int x, int y, int z)
 	i.w1 = 0; i.w2 = 0;
 
 	printf(" = { %d, %d, %d }\n", i.x, i.y, i.z); fflush(stdout);
+	return i;
+}
+
+PUBLIC
+item12 iistruct122struct12(int x, int y, item12 z)
+{
+	item12 i = z;
+	i.x = x;
+	i.y = y;
+
+	printf(" = { %d, %d, %d, %d, %d}\n", i.x, i.y, z.x, z.y, z.z); fflush(stdout);
+	return i;
+}
+
+PUBLIC
+item20 iistruct202struct20(int x, int y, item20 z)
+{
+	item20 i = z;
+	i.x = x;
+	i.y = y;
+
+	printf(" = { %d, %d, %d, %d, %d, %d, %d}\n", i.x, i.y, z.x, z.y, z.z, z.w1, z.w2); fflush(stdout);
 	return i;
 }
