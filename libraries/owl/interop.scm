@@ -16,7 +16,7 @@
    (begin
       ; list of interop codes can be found in lang/threading as mcp-syscalls
       (define (mcp op a b)
-         (call/cc (λ (resume) (vm:sys resume op a b))))
+         (call/cc (λ (resume) (vm:mcp resume op a b))))
 
       (define (exit-thread value)
          (mcp 2 value value))

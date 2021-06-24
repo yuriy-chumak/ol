@@ -13,7 +13,7 @@
    (export
       apply apply/cc arity-error
       call-with-current-continuation
-      vm:run vm:sys ; internal commands, don't act as primop
+      vm:run vm:mcp ; internal commands, don't act as primop
 
       *primops* ; global list of primitive operations with parameters
       multiple-return-variable-primops
@@ -230,7 +230,7 @@
 
       ; other instructions
       (setq vm:nop  (make-bytecode '(21)))
-      (setq vm:sys  (make-bytecode '(27 4 5 6 7 8  24 8)))
+      (setq vm:mcp  (make-bytecode '(27 4 5 6 7 8  24 8)))
       (setq vm:run  (make-bytecode '(50 4 5)))
 
 
