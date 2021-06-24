@@ -14,8 +14,8 @@
 
    (export
       start-thread-controller
-      thread-controller
-      repl-signal-handler)
+      thread-controller)
+      ;; repl-signal-handler)
 
    (import
       (scheme core)
@@ -74,7 +74,7 @@
                   (deliver-messages (cons waked todo) done state (cdr subs) msg tc)
                   (deliver-messages todo done state (cdr subs) msg tc)))))
 
-      (define eval-break-message ['repl-eval ['breaked]])
+      ;; (define eval-break-message ['repl-eval ['breaked]])
 
       (define (subscribers-of state id)
          (get (get state link-tag empty) id null))
@@ -172,7 +172,7 @@
                                  state))))))
                   (tc todo done state)))
 
-            ; 5, user thrown error
+            ; 5, user thrown error. (runtime-error ...)
             (λ (id a b c todo done state tc)
                ; (system-println "mcp: interop 5 -- user poof")
                (drop-delivering todo done state id
@@ -476,12 +476,12 @@
       (define (start-thread-controller threads)
          (thread-controller threads #null #empty))
 
-      ;; signal handler which kills the 'repl-eval thread if there, or repl
-      ;; if not, meaning we are just at toplevel minding our own business.
-      (define (repl-signal-handler threads state controller)
-         (if (first (λ (x) (eq? (ref x 1) 'repl-eval)) threads #false)
-            ;; there is a thread evaling user input, linkely gone awry somehow
-            (drop-thread 'repl-eval threads null state eval-break-message controller)
-            ;; nothing evaling atm, exit owl
-            (signal-halt threads state controller)))
+      ;; ;; signal handler which kills the 'repl-eval thread if there, or repl
+      ;; ;; if not, meaning we are just at toplevel minding our own business.
+      ;; (define (repl-signal-handler threads state controller)
+      ;;    (if (first (λ (x) (eq? (ref x 1) 'repl-eval)) threads #false)
+      ;;       ;; there is a thread evaling user input, linkely gone awry somehow
+      ;;       (drop-thread 'repl-eval threads null state eval-break-message controller)
+      ;;       ;; nothing evaling atm, exit owl
+      ;;       (signal-halt threads state controller)))
 ))

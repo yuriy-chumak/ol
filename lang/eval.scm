@@ -73,64 +73,6 @@
          (if (env-get env '*debug* #false)
             (apply print msg)))
 
-      (define (verbose-vm-error opcode a b)
-         (list "error" opcode "->"
-            (case opcode
-               (ARITY-ERROR  ;; arity error, could be variable
-                              ; this is either a call, in which case it has an implicit continuation,
-                              ; or a return from a function which doesn't have it. it's usually a call,
-                              ; so -1 to not count continuation. there is no way to differentiate the
-                              ; two, since there are no calls and returns, just jumps.
-                  `(function ,a did not accept ,(- b 1) arguments))
-               (52 ; (car not-a-pair)
-                  `(trying to get ,car of a non-pair ,a))
-               (53 ; (cdr not-a-pair)
-                  `(trying to get ,cdr of a non-pair ,a))
-
-               ((261 258) ; (not-an-executable-object)
-                  `(illegal invocation of ,a))
-               (259 ; (ff)
-                  `(,a is not a procedure))
-               (260 ; (ff not-existent-key)
-                  `(key ,b not found in ,a))
-
-               ; ------------------------------------------------------------
-               ; syscall errors:
-               (62000
-                  `(too ,(if (> a b) 'many 'few) arguments given to syscall))
-
-               (62001
-                  `(syscall argument ,a is not a port))
-               (62002
-                  `(syscall argument ,a is not a number))
-               (62003
-                  `(syscall argument ,a is not a reference))
-               (62004
-                  `(syscall argument ,a is not a binary sequence))
-               (62005
-                  `(syscall argument ,a is not a string))
-               (62006
-                  `(syscall argument ,a is not a string or port))
-               (62006
-                  `(syscall argument ,a is not a positive number))
-
-
-               ;; (62000 ; syscall number is not a number
-               ;;    `(syscall "> " ,a is not a number))
-               ;; ;; 0, read
-               ;; (62001 ; too few/many arguments given to
-               ;;    `(syscall "> " too ,(if (> a b) 'many 'few) arguments given to))
-               ;; (62002 ;
-               ;;    `(syscall "> " ,a is not a port))
-               (else
-                  (if (less? opcode 256)
-                     `(,(primop-name opcode) reported error ": " ,a " " ,b)
-                     `(,opcode " .. " ,a " " ,b))))))
-         ;   ;((eq? opcode 52)
-         ;   ;   `(trying to get car of a non-pair ,a))
-         ;   (else
-         ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
-
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
       (define *src-olvm* ; TODO: rename to *special-forms*
          (fold
@@ -194,22 +136,30 @@
                   compiler-passes))))
 
       ; run the code in its own thread
-      (define (evaluate-as exp env task)
-         ; run the compiler chain in a new task
-         (fork-linked task
+      (define (evaluate-as exp env name)
+         (fork-linked name
             (λ ()
                (evaluate exp env)))
-         ; grab the result
-         (case (ref (accept-mail (λ (env) (eq? (ref env 1) task))) 2)
+         (case (ref (accept-mail (λ (env) (eq? (ref env 1) name))) 2)
+            ;; evaluated, typical behavior
             (['finished result not used]
-               result) ; <- is already ok/fail
+               result)
+
+            ; (VM::FAIL ...), vm pushed an error
             (['crashed opcode a b]
-               (fail (verbose-vm-error opcode a b)))
+               (fail ((env-get env 'describe-vm-error
+                        (lambda (opcode a b)
+                           (list "error" opcode "->" a " / " b)))
+                     opcode a b)))
+
+            ; (runtime-error ...)
+            ; note, these could easily be made resumable by storing cont
             (['error cont reason info]
-               ; note, these could easily be made resumable by storing cont
                (fail (list reason info)))
-            (['breaked]
-               (fail (list "breaked")))
+
+            ;; (['breaked]
+            ;;    (print-to stderr "breaked")
+            ;;    (fail (list "breaked")))
             (else is foo
                (fail (list "Funny result for compiler " foo)))))
 
@@ -393,7 +343,8 @@
          (λ (val result?) null))
 
       (define (repl-evaluate exp env)
-         (evaluate-as exp env 'repl-eval))
+         (define uniq [])
+         (evaluate-as exp env uniq))
 
       ;; load and save path to *loaded*
 
