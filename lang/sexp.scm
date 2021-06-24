@@ -47,21 +47,27 @@
             (or (less? lo x) (eq? lo x))
             (or (less? x hi) (eq? x hi))))
 
-      (define special-initial-chars (string->runes "!$%&*+-/:<=>?^_~")) ; dot(.) reserved for numbers and pairs, sorry.
-      (define special-subseqent-chars (string->runes "@'")) ; we can use ' as part of symols (but not an initial)
+      ;; 
+      (define symbol-lead-chars (alist->ff
+         (foldr append #null
+            (list
+               (map (lambda (char) (cons char #true)) (iota (- #\Z #\A -1) #\A))  ;; A - Z
+               (map (lambda (char) (cons char #true)) (iota (- #\z #\a -1) #\a))  ;; a - z
+               (map (lambda (char) (cons char #true)) (string->runes "!$%&*+-/:<=>?@^_~"))))))
+
+      (define symbol-chars (ff-union (alist->ff
+         (foldr append #null
+            (list
+               (map (lambda (char) (cons char #true)) (iota (- #\9 #\0 -1) #\0))  ;; 0 - 9
+               (map (lambda (char) (cons char #true)) (string->runes "'")))))     ;; we can use ' as part of symbol names
+         symbol-lead-chars
+         (lambda (a b) a)))
 
       (define (symbol-lead-char? n)
-         (or
-            (between? #\a n #\z)
-            (between? #\A n #\Z)
-            (has? special-initial-chars n)
-            (> n 127)))         ;; allow high code points in symbols
+         (symbol-lead-chars n (less? 126 n)))
 
       (define (symbol-char? n)
-         (or
-            (symbol-lead-char? n)
-            (between? #\0 n #\9)
-            (has? special-subseqent-chars n)))
+         (symbol-chars n (less? 126 n)))
 
       (define symbol
          (either
@@ -75,13 +81,8 @@
                   (skip (imm #\|)))
                (string->uninterned-symbol (runes->string chars)))))
 
-;      (define (digit-char? x)
-;         (or
-;            (between? #\0 x #\9)
-;            (between? #\A x #\F)
-;            (between? #\a x #\f)))
-
-      (define digit-values (pairs->ff
+      ;; 
+      (define digit-values (alist->ff
          (foldr append #null
             (list
                (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
