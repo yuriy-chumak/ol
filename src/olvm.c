@@ -1494,7 +1494,7 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 #if CAR_CHECK
 #	define CHECKCAR(arg) is_pair(arg) || is_npairp(arg) || is_npairn(arg) || is_rational(arg) || is_complex(arg)
 #else
-#	define CHECKCAR(arg) 1
+#	define CHECKCAR(arg) is_reference(arg)
 #endif
 
 #ifndef CDR_CHECK
@@ -1504,7 +1504,7 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 #if CDR_CHECK
 #	define CHECKCDR(arg) is_pair(arg) || is_npairp(arg) || is_npairn(arg) || is_rational(arg) || is_complex(arg)
 #else
-#	define CHECKCDR(arg) 1
+#	define CHECKCDR(arg) is_reference(arg)
 #endif
 
 
