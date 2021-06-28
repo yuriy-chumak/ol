@@ -45,8 +45,7 @@
       (owl list-extra)
       (owl render)
       (owl string)
-      (lang sexp)
-      (only (owl parse) parse) ; needed by eval-string
+      (owl parse) (lang sexp)
       (owl string)
       (scheme misc)
       (owl lazy)
@@ -128,9 +127,10 @@
                (fold
                   (λ (state next)
                      (if (ok? state)
-                        (begin
-                           (debug env " * " (ref state 2))
-                           (next (ref state 2) (ref state 3)))
+                     then
+                        (debug env " * " (ref state 2))
+                        (next (ref state 2) (ref state 3))
+                     else
                         (exit state)))
                   (ok exp env)
                   compiler-passes))))
@@ -141,12 +141,14 @@
             (λ ()
                (evaluate exp env)))
          (case (ref (accept-mail (λ (env) (eq? (ref env 1) name))) 2)
-            ;; evaluated, typical behavior
-            (['finished result not used]
+            ;; evaluated, typical behavior (ok, fail)
+            (['finished result]
+               ;; (print-to stderr "finished with " (ref result 1))
                result)
 
             ; (VM::FAIL ...), vm pushed an error
             (['crashed opcode a b]
+               ;; (print-to stderr "crashed")
                (fail ((env-get env 'describe-vm-error
                         (lambda (opcode a b)
                            (list "error" opcode "->" a " / " b)))
@@ -155,6 +157,7 @@
             ; (runtime-error ...)
             ; note, these could easily be made resumable by storing cont
             (['error cont reason info]
+               ;; (print-to stderr "error")
                (fail (list reason info)))
 
             ;; (['breaked]
@@ -326,8 +329,18 @@
                   (else
                      (loop datap next))))))
 
-      (define (silent-syntax-fail val)
-         (λ (cont ll msg) val))
+      ; todo: move to the sexp-parser
+      (define (silent-syntax-fail cont ll msg)
+         (call/cc (lambda (return)
+            ; in case of empty s-exp and #eof detected we just return an end-of-stream
+            (when (eof? msg)
+               (define w-or-c (try-parse (greedy+ whitespace-or-comment) ll #f))
+               (when w-or-c
+                  (if (null? (cdr w-or-c))
+                     (return #null))))
+
+            ; no, this is not a last one whitespace or comment
+            (cons #false msg)))) ; #false for "invalid stream" and msg for reason
 
       (define (syntax-fail pos info lst)
          (list syntax-error-mark info
@@ -336,14 +349,14 @@
       (define (syntax-error? x) (and (pair? x) (eq? syntax-error-mark (car x))))
 
       (define (repl-ok env value) ['ok value env])
-      (define (repl-fail env reason) ['error reason env])
+      (define (repl-error env reason) ['error reason env])
 
       ;; just be quiet
       (define repl-load-prompt
          (λ (val result?) null))
 
       (define (repl-evaluate exp env)
-         (define uniq [])
+         (define uniq ['repl-evaluate])
          (evaluate-as exp env uniq))
 
       ;; load and save path to *loaded*
@@ -355,7 +368,7 @@
                   (let loop ((paths paths))
                      (unless (null? paths)
                         ;; (print "loading..." (car paths))
-                        (or (file->exp-stream (car paths) sexp-parser (silent-syntax-fail (list #false)))
+                        (or (file->exp-stream (car paths) sexp-parser silent-syntax-fail) ; we should use "list" due to "uncons"
                             (loop (cdr paths)))))))
             (if exps
                (let*((interactive (env-get env '*interactive* #false))
@@ -366,8 +379,8 @@
                         (repl (mark-loaded (env-set env '*interactive* interactive) path) in))
                      (['error reason partial-env]
                         ; fixme, check that the fd is closed!
-                        (repl-fail env (list "Could not load" path "because" reason)))))
-               (repl-fail env
+                        (repl-error env (list "Could not load" path "because" reason)))))
+               (repl-error env
                   (list "Could not find any of" paths "for loading.")))))
 
       ;; regex-fn | string | symbol → regex-fn | #false
@@ -404,7 +417,7 @@
                      ((string? op)
                         (repl-load repl op in env))
                      (else
-                        (repl-fail env (list "Not loadable: " op))))))
+                        (repl-error env (list "Not loadable: " op))))))
             ((forget-all-but)
                (lets ((op in (uncons in #false)))
                   (if (and (list? op) (all symbol? op))
@@ -434,7 +447,7 @@
                            ;         (else env)))
                            ;   env env)
                            in))
-                     (repl-fail env (list "bad word list: " op)))))
+                     (repl-error env (list "bad word list: " op)))))
             ((words w)
                (prompt env
                   (repl-message
@@ -921,10 +934,11 @@
                ((pair? in)
                   (lets ((this in (uncons in #false)))
                      (cond
-                        ((eof? this)
-                           (repl-ok env last))
+                        ;; ((eof? this) ; ??? TODO: remove this
+                        ;;    (print-to stderr "eof detected, last: " last)
+                        ;;    (repl-ok env last))
                         ((syntax-error? this)
-                           (repl-fail env (cons "This makes no sense: " (cdr this))))
+                           (repl-error env (cons "This makes no sense: " (cdr this))))
                         ((repl-op? this)
                            (repl-op repl__ (cadr this) in env)) ; todo: add last
                         (else
@@ -934,15 +948,15 @@
                                     (prompt env result)
                                     (loop env in result "> "))
                                  (['fail reason]
-                                    (repl-fail env reason)))
+                                    (repl-error env reason)))
                            else
-                              ['fail (list ";; syntax error")])))))
+                              ['error (list ";; syntax error" #|in|#)])))))
                (else
                   (loop env (in) last #false)))))
 
       (define (repl-port env fd)
          (repl env
-            (fd->exp-stream fd sexp-parser (silent-syntax-fail (list #false)))
+            (fd->exp-stream fd sexp-parser silent-syntax-fail) ; we should use "list" due to "uncons"
             repl-evaluate))
 
       (define (repl-file env path)
@@ -983,7 +997,8 @@
                      ; better luck next time
                      (boing env))
 
-                  ; well, someone called a (shutdown .) ?
+                  ; well, someone called an (exit-thread .) ?
                   (else is foo
+                     ;; (print-to stderr "repl-trampoline: " foo)
                      foo))))
 ))

@@ -456,13 +456,13 @@
                                  (halt (vm:pin evaluate)))
                            else
                               ; regular repl:
-                              (fork-server 'repl (lambda ()
+                              (fork-server ['repl] (lambda ()
                                  ;; set a signal handler which stop evaluation instead of owl
                                  ;; if a repl eval thread is running
                                  ;(set-signal-action repl-signal-handler)
 
                                  ;; repl
-                                 (shutdown
+                                 (exit-thread
                                     (repl-trampoline env file)))))))])))))
 
 ;;;

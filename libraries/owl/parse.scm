@@ -94,6 +94,10 @@
 
 
       ;; bactrtrack function : l r fp why
+      ; l - stream
+      ; r - ?
+      ; p - ?
+      ; why - reason
       (define (backtrack l r p why)
          (if (null? l)
             (values #f r p why) ;; final outcome if error
@@ -102,7 +106,7 @@
                   (backtrack (cdr l) (cons hd r) p why)
                   (hd (cdr l) r p why)))))
 
-      (define eof-error "end of input")
+      (define eof-error #eof) ;"end of input")
       (define wrong-char "syntax error")
 
       (define (epsilon val)
@@ -127,7 +131,8 @@
       ;;          r p ok)))
 
       (define (maybe x val)
-         (either x
+         (either
+            x
             (epsilon val)))
 
       (define-syntax any-of
@@ -188,7 +193,7 @@
          ; question: why not a simple version?
          (let-parse* (
                (b byte)
-               (verify (pred b) `(bad byte ,b)))
+               (verify (pred b) `("bad character '" ,(if (> b 31) (string b) " ") "' (" ,b ")")))
             b))
          ;; (λ (l r p ok)
          ;;    (cond
@@ -406,13 +411,12 @@
       (define (parse parser data unused-path errmsg fail-val) ; todo: use path
          (let loop ((try (λ () (parser #null data 0 parser-succ))))
             (let* ((l r p val (try)))
-                (cond
+               (cond
                   ((not l)
                      fail-val)
-                  ((lpair? r) =>
-                     (λ (r)
-                        ;; trailing garbage
-                        fail-val))
+                  ((lpair? r) => (λ (r)
+                     ;; trailing garbage
+                     fail-val))
                   (else
                      ;; full match
                      val)))))

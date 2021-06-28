@@ -13,7 +13,7 @@
       ; parser
       number get-number
       whitespace
-      ;; get-symbol
+      whitespace-or-comment
 
       get-sexps
       get-padded-sexps
@@ -491,9 +491,20 @@
       (define (fail reason) ['fail reason])
 
       (define sexp-parser
-         (let-parse* (
-               (s-exp (sexp)))
-            (intern-symbols s-exp)))
+         ;; old code:
+         ;; (let-parse* (
+         ;;       (s-exp (sexp)))
+         ;;    (intern-symbols s-exp)))
+         (λ (l r p ok)
+            (let* ((l r p val ((sexp) l r p
+                                 ; ok
+                                 (λ (l r p val)
+                                    (ok l r p (intern-symbols val))))))
+               ; well, we can do a trick:
+               ; issue: when we parse a whitespace or a newline and got an #eof accidentally
+               ; we should not return an error "unparsed sentence" but just an empty list
+               ; todo: do the same as issue fix in "lang/eval"
+               (values l r p val))))
 
       (define get-sexps
          (greedy* sexp-parser))
@@ -558,7 +569,7 @@
                      (pair val (bytestream->exp-stream r parser fail)))
                   ((null? r) ;; end of input
                      #null)
-                  ((function? fail)
+                  ((function? fail) ; (fail cont r reason)
                      (fail
                         (λ (ll) (bytestream->exp-stream ll parser fail))
                            r val))
