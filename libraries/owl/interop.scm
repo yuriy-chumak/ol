@@ -58,9 +58,11 @@
       (define (release-thread thread)
          (mcp 17 #false thread))
 
+      ; exit current thread and make a proposal to the exit code
+      ; todo: change. Stop all threads and exit program with proposed value
       (define (shutdown value)
          (mcp 19 value value) ;; set exit value proposal in thread scheduler
-         (exit-thread value))     ;; stop self and leave the rest (io etc) running to completion
+         (exit-thread value) value) ;; stop self and leave the rest (io etc) running to completion
 
       ;; (executable ...) → (first-value . rest-ll) | (), or crash if something crashes in them
       (define (par* ts)
