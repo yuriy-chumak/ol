@@ -4316,8 +4316,7 @@ loop:;
 
 				// CHECK(is_port(a), a, SYSCALL);
 				int sockfd = port(a);
-				int timeus = is_numberp(b) ? untoi (b) : 100000;
-				// todo: timeout as "b"
+				int timeus = is_numberp(b) ? untoi (b) : 100000; // default is 100 ms
 
 				fd_set fds;
 				FD_ZERO(&fds); FD_SET(sockfd, &fds);

@@ -190,25 +190,36 @@
 
 
 (define (http:run port onRequest)
-(let ((socket (syscall 41)))
-   ; bind
-   (let loop ((port port))
-      (if (not (syscall 49 socket port)) ; bind
-         (loop (+ port 2))
-         (print-to stderr "Server binded to " port)))
-   ; listen
-   (if (not (syscall 50 socket)) ; listen
-      (shutdown (print-to stderr "Can't listen")))
+(call/cc (lambda (return)
+   (define socket (syscall 41))
 
-   ; accept
+   ; bind
+   ;; (let loop ((port port))
+   ;;    (if (syscall 49 socket port)
+   ;;       (print-to stderr "server binded to " port)
+   ;;    else
+   ;;       (print-to stderr "can't bind to port " port)
+   ;;       (loop (+ port 2))))
+   (unless (syscall 49 socket port)
+      (print-to stderr "can't bind to a port " port)
+      (return #false))
+   (print-to stderr "server binded to " port)
+
+
+   ; listen
+   (unless (syscall 50 socket)
+      (print-to stderr "can't listen a socket")
+      (return #false))
+
+   (print-to stderr "server listening to 0.0.0.0:" port)
+   ; accept loop
    (let loop ()
-      (if (syscall 23 socket 1) ; select
+      (if (syscall 23 socket
+            (if (null? (running-threads)) 1000000 1)) ; wait a 30 second if no running threads detected
          (let ((fd (syscall 43 socket))) ; accept
-            ;; (print-to stderr "\n# " (timestamp) ": new request from " (syscall 51 fd))
             (fork (on-accept (generate-unique-id) fd onRequest)))
-      else
-         (set-ticker-value 0))
-      (loop))))
+         (set-ticker-value 0)) ; else just switch context
+      (loop)) )))
 
 ; -=( parse url )=-------------------------------------
 (define (get-path url)
