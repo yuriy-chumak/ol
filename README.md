@@ -165,6 +165,13 @@ R<sup>7</sup>RS DIFFERENCES
   * *note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` (with optional 'g' suffix) and `c/<pattern>/` as functions to match, change and split the string.*
 
 
+REPRECATIONS
+------------
+
+* `(ilist ...)` is deprecated, use `(cons* ...)` instead.
+* `(interact ...)` from (owl ~~interop~~ async) is deprecated. Use `(await (mail ...))` instead.
+
+
 BUILD
 -----
 
