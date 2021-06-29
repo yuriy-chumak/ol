@@ -52,6 +52,13 @@ Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://b
 Post bugs and issues at [the issues](https://github.com/yuriy-chumak/ol/issues) page. If your architecture is not supported, post an issue too.
 
 
+Q/A
+---
+
+1. Q. Why no arrow keys processing and a history in Ol command line?<br/>
+   A. For the simplicity. Use a 'rlwrap' tool, please - will have a one.
+
+
 Table of Contents
 -----------------
 1. [License](#license)
