@@ -30,13 +30,10 @@
       (owl math fp)
       (owl string)
       (owl list)
-      ;; (owl math-extra)
-      ;; (owl list-extra)
       (owl ff)
       (owl lazy)
       (owl io) ; testing
       (owl unicode)
-      ;; (only (owl interop) interact)
       (only (lang intern) string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 

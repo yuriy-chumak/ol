@@ -120,7 +120,7 @@
                                           (is-point-can-see-point X Y    x      (+ y 1)   at)
                                           (is-point-can-see-point X Y (+ x 1/2) (+ y 1/2) at))
                                           ;; вот тут надо бы проапдейтить вейпоинты, которые зависят от этого блока (?)
-                                       (put ff (hash x y) (cons (ref (ref map y) x) 600)) ; 100 - сколько ходов будем помнить
+                                       (put ff (hash x y) (cons (ref (ref map y) x) 600)) ; N - сколько ходов будем помнить
                                     else
                                        ff))
                               ff (iota HEIGHT 1)))
