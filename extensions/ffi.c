@@ -2292,7 +2292,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	// allocate a space for the return value
 	if (is_pair(car(B)) && value(caar(B)) == TBYTEVECTOR) {
 		if (value(cdar(B)) > sizeof(ret_t))
-			result = (word)args[0] - W;
+			result = (word*)args[0] - 1;
 		else {
 			int len = value(cdar(B));
 			result = new_bytevector(len);
