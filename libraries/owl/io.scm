@@ -55,7 +55,7 @@
 
    (import
       (scheme core)
-      (owl interop)
+      (owl async)
       (owl queue)
       (owl string)
       (owl list-extra)

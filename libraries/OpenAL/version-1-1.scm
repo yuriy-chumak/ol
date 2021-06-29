@@ -65,9 +65,12 @@
 ; ============================================================================
 ; == implementation ==========================================================
    (import
-      (scheme core) (owl math) (owl io) (owl string)
+      (scheme core) (owl io)
+      (owl math) (owl async)
+      (owl string)
+
       (otus ffi)
-      (owl interop) (owl list))
+      (owl list))
 
 (begin
    (define AL_VERSION_1_0 1)

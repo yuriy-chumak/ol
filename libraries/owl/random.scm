@@ -44,7 +44,7 @@
       (owl list-extra)
       (owl rlist)
       (owl io)
-      (owl interop)
+      (owl async)
       (owl sort)
       (owl time))
 

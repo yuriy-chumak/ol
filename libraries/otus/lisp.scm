@@ -24,7 +24,7 @@
       (exports (owl sort))
       (exports (otus blobs))
       (exports (owl render))
-      (exports (owl interop))
+      (exports (owl async))
       (exports (otus fasl))
       (exports (owl time))
       (exports (owl regex))
@@ -57,7 +57,7 @@
       (otus blobs)
       (owl regex)
       (owl render)
-      (owl interop)
+      (owl async)
       (owl math)
 
       (scheme vector)

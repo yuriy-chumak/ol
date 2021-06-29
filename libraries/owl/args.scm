@@ -15,7 +15,7 @@
       (owl list-extra)
       (owl lazy)
       (owl math)
-      (owl interop)
+      (owl async)
       (owl io)
       (owl render)
       (owl list)

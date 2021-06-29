@@ -37,7 +37,7 @@
       (lang fixedpoint)
       (lang ast)
       (lang env)
-      (owl interop)
+      (owl async)
       (owl time) ;; for testing metadata
       (otus blobs)
       (owl io)

@@ -12,7 +12,7 @@
       (scheme core)
       (owl math)
       (owl list)
-      (owl interop))
+      (owl async)) ;?
 
    (begin
       (define lref list-ref)

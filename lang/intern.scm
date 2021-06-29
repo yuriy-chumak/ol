@@ -18,7 +18,7 @@
    (import
       (scheme core)
       (owl string)
-      (owl interop)
+      (owl async)
       (owl list)
       (owl math)
       (owl io)

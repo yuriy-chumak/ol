@@ -13,9 +13,8 @@
       (owl ff)
       (owl list)
       (owl math)
-      (owl interop)
+      (owl async)
       (owl list-extra)
-      (only (owl interop) interact)
       (src vm)
       (lang env)
       (lang primop)
@@ -107,8 +106,8 @@
 
       ;; make bytecode and intern it
       (define (bytes->bytecode bytes)
-         (interact bytecode-server
-            (vm:makeb type-bytecode bytes)))
+         (await (mail bytecode-server
+            (vm:makeb type-bytecode bytes))))
 
 
       (define (reg a)

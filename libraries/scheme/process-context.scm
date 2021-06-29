@@ -12,7 +12,7 @@
 
    (import
       (scheme core)
-      (owl interop)
+      (owl async)
       (owl string))
 
    (begin

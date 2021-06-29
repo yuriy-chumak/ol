@@ -4,7 +4,7 @@
 
 (import
    (scheme core)
-   (owl interop) (owl io)
+   (owl async) (owl io)
    (scheme vector)
    (only (lang sexp) sexp))
 

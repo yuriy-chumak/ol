@@ -10,9 +10,8 @@
 
    (import
       (scheme core)
-      (owl io)
-      (owl interop)
-      (owl math))
+      (owl math) (owl async)
+      (owl io))
 
    (begin
       ;(define (clock) (syscall 96)) (syscall 96) in usec, (clock) in ms

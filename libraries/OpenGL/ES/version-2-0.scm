@@ -456,7 +456,7 @@
    (import
       (scheme core) (otus ffi)
       (OpenGL ES platform)
-      (owl string) (owl interop))
+      (owl string) (owl async))
 
 (begin
    (define GL_ES_VERSION_2_0 1)

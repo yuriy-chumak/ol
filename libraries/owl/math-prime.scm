@@ -18,7 +18,7 @@
       (owl list-extra)
       (owl math-extra)
       (owl sort)
-      (only (owl interop) por por*)
+      (only (owl async) por por*)
       (owl ff))
 
    (begin

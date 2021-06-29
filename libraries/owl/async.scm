@@ -1,13 +1,20 @@
-(define-library (owl interop)
+(define-library (owl async)
 
    (export
-      interact fork accept-mail wait-mail check-mail
-      release-thread catch-thread set-signal-action
-      single-thread? kill mail fork-linked-server fork-server
-      return-mails fork-server fork-linked fork-named exit-thread shutdown
-      poll-mail-from running-threads par*
-      start-nested-parallel-computation wrap-the-whole-world-to-a-thunk ; ??
-      par por* por)
+      fork fork-named
+      fork-linked fork-server
+      fork-linked-server
+
+      accept-mail wait-mail check-mail
+      mail await
+      return-mails poll-mail-from
+
+      running-threads single-thread? kill
+      exit-thread shutdown
+      start-nested-parallel-computation wrap-the-whole-world-to-a-thunk
+      ; release-thread catch-thread
+      interact ; deprecated
+      par par* por por*)
 
    (import
       (src vm)
@@ -31,11 +38,11 @@
       (define (fork-server name handler)
          (mcp 4 (list name 'mailbox) handler))
 
-      (define (return-mails rmails)
-         (mcp 6 rmails rmails))
-
       (define (fork-linked-server name handler)
          (mcp 4 (list name 'mailbox 'link) handler))
+
+      (define (return-mails rmails)
+         (mcp 6 rmails rmails))
 
       (define (running-threads)
          (mcp 8 #false #false))
@@ -43,7 +50,7 @@
       (define (mail id msg)
          (mcp 9 id msg))
 
-      (define (kill id)
+      (define (kill id) ; todo: rename
          (mcp 15 id #false))
 
       (define (single-thread?)
@@ -149,4 +156,9 @@
          (mail whom message)
          (ref (accept-mail (λ (env) (eq? (ref env 1) whom))) 2))
 
+      (define (await sentmail)
+         (if sentmail
+            (ref (accept-mail (λ (env) (eq? (ref env 1) sentmail))) 2)))
+
+      ; example: (await (mail 'who ['a 'message]))
 ))

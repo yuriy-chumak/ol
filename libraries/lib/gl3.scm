@@ -1,7 +1,7 @@
 (define-library (lib gl3)
 (import
    (scheme base)
-   (owl math) (owl interop)
+   (owl math) (owl async)
    (lib gl config)
    (lib gl) (OpenGL version-3-0))
 (export

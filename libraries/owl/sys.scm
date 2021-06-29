@@ -32,7 +32,7 @@
       (owl string)
       (owl math)
       (owl io)
-      (owl interop)
+      (owl async)
       (owl list))
 
    (begin

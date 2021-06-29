@@ -59,7 +59,7 @@
    (import (owl list-extra))
    (import (owl lazy))
    (import (owl math))
-   (import (only (owl interop) interact)) ; used by string->symbol
+   (import (only (owl async) await mail)) ; used by string->symbol
 
    (include "owl/unicode-char-folds.scm")
 
@@ -191,7 +191,7 @@
             (ref str 1)))
       (define (string->symbol str)
          (if (string? str)
-            (interact 'intern str))) ; do not works without (lang intern)
+            (await (mail 'intern str)))) ; do not work without (lang intern)
 
 
       ;; making strings (temp)

@@ -11,7 +11,7 @@
       (owl symbol)
       (owl ff)
       (owl rlist)
-      (owl interop)
+      (owl async)
       (owl lazy)
       (owl math)
       (scheme bytevector)

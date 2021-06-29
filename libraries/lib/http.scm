@@ -6,7 +6,7 @@
     http:parse-url)
   (import (scheme base) (scheme srfi-1)
       (owl parse)
-      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl interop)
+      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl async)
       (otus vm))
 
 (begin

@@ -15,13 +15,12 @@
    (export
       start-thread-controller
       thread-controller)
-      ;; repl-signal-handler)
 
    (import
       (scheme core)
       (only (src vm) vm:run)
       (owl queue)
-      (owl interop)
+      (owl async)
       (owl ff)
       (owl list)
       (owl math)
@@ -209,9 +208,10 @@
                      done state)))
 
             ; 9, send mail
+            ; return id of thread if delievered or not
             (λ (id cont to msg todo done state tc)
-               ;(system-stderr "interop 9 - mail")
-               (let ((todo (cons [id (λ () (cont 'delivered))] todo)))
+               ; (system-stderr "interop 9 - mail")
+               (let ((todo (cons [id (λ () (cont to))] todo)))
                   ; send a normal mail
                   (lets ((state waked (deliver-mail state to [id msg])))
                      (if waked

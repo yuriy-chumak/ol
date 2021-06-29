@@ -5,7 +5,7 @@
    parameterize)
 (import
    (scheme core)
-   (owl ff) (owl interop))
+   (owl ff) (owl async))
 (begin
    (setq server '|4.2.6 Dynamic bindings|)
    (fork-server server (lambda ()
@@ -36,14 +36,14 @@
       (define (return index)
          (case-lambda
             ((); just return value
-               (interact server [index]))
+               (await (mail server [index])))
             ((new)
-               (interact server [index new]))))
+               (await (mail server [index new])))))
       (case-lambda
          ((init)
-            (return (interact server [#false init])))
+            (return (await (mail server [#false init]))))
          ((init converter)
-            (return (interact server [#false (converter init) converter]))))))
+            (return (await (mail server [#false (converter init) converter])))))))
 
    (define-syntax parameterize
       (syntax-rules ()
