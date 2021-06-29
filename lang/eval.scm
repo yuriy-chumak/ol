@@ -950,7 +950,7 @@
                                  (['fail reason]
                                     (repl-error env reason)))
                            else
-                              ['error (list ";; syntax error" #|in|#)])))))
+                              (repl-error env (list ";; syntax error" #|in|#)))))))
                (else
                   (loop env (in) last #false)))))
 
@@ -963,29 +963,31 @@
          (let ((fd (open-input-file path)))
             (if fd
                (repl-port env fd)
-               ['error "can't open file" env])))
+               (repl-error env "can't open file"))))
 
       (define (eval-string env str)
          (let ((exps (parse get-padded-sexps (str-iter str) #false syntax-fail #false))) ; todo: change syntax-fail
             ;; list of sexps
             (if exps
                (repl env exps evaluate)
-               ['error "not parseable" env])))
+               (repl-error env "not parseable"))))
 
       ;; run the repl on a fresh input stream, report errors and catch exit
-      (define (repl-trampoline env in)
+      (define (repl-trampoline env in) ; TODO: rename to repl-loop or something similar
          (let boing ((env env))
-            ;(let ((env (bind-toplevel env)))
+            ;; (let ((env (bind-toplevel env)))
                (case (repl-port env in)
-                  (['ok val env]
-                     ;; bye-bye
+                  ; "in" ended, all ok
+                  (['ok result env]
                      (let ((hook:exit (env-get env 'hook:exit #false)))
                         (if (function? hook:exit)
-                           (hook:exit val)))
+                           (hook:exit result)))
 
                      (if (interactive? env)
                         (print "bye-bye :/"))
-                     val) ; returning value
+                     result); returning value
+
+                  ; something wrong
                   (['error reason env]
                      (let ((hook:fail (env-get env 'hook:fail #false)))
                         (if (function? hook:fail)
@@ -997,8 +999,7 @@
                      ; better luck next time
                      (boing env))
 
-                  ; well, someone called an (exit-thread .) ?
+                  ; well, someone called an (exit-thread .)?
                   (else is foo
-                     ;; (print-to stderr "repl-trampoline: " foo)
                      foo))))
 ))
