@@ -533,11 +533,11 @@
       (bytes ;; encode entry as "autorun" function
          (fasl-encode (vm:new 63 (make-main-entry symbols codes)))))
    (if (not port)
-      (begin
-         (print "Could not open " path " for writing")
-         -1) ; error
-      (begin ;; just save the fasl dump
-         (write-bytes port bytes)
-         (close-port port)
-         (print "Output written at " (- (time-ms) build-start) " ms.")
-         0))) ; ok
+   then
+      (print "Could not open " path " for writing")
+      (exit -1) ; error
+   else ;; just save the fasl dump
+      (write-bytes port bytes)
+      (close-port port)
+      (print "Output written at " (- (time-ms) build-start) " ms.")
+      (exit 0))) ; ok
