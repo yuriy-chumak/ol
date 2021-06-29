@@ -15,6 +15,10 @@ describe: all
 CC ?= gcc
 LD ?= ld
 
+# cleanup after insuccessfull builds
+# ----------------------------------
+$(shell [ -s tmp/repl.c ] || rm -r tmp/repl.c)
+
 # source code dependencies and flags
 # ----------------------------------
 
