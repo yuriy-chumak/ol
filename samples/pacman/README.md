@@ -17,11 +17,11 @@ Files:
 * **embed2.c** - embedding option 2, simplest way with few oddish c-macroses.
 * **embed3.c** - embedding option 3, fastest and smallest way with precompiled lisp code (which require more deep knowledge of otus lisp language).
 * **precompile.scm** - lisp compiler for option 3.
-* **repl.o** - Otus Lisp REPL binary (400 KB).
 
 Temporary files:
+* **repl.o** - Otus Lisp REPL binary (400 KB).
 * **tmp.bin** - precompiled by precompile.scm game lisp binaries (66 KB).
-* **binf.c** - converted into unsigned char* variable tmp.bin (using xxd tool).
+* **binf.c** - tmp.bin, converted into unsigned char* variable (using xxd tool) (400 KB).
 
 Output files:
 * **pacman1** - compiled embedding option 1 (consumes about 3 MB of memory).
