@@ -67,9 +67,7 @@
          (walk exp null null))
 
       (define (lambda? exp env)
-         (or
-            (eq? (ref exp 1) 'lambda)
-            (eq? (ref exp 1) 'lambda-var)))
+         (eq? (ref exp 1) 'lambda-var))
 
       (define (set-deps node deps) (set-ref node 3 deps))
       (define (deps-of node) (ref node 3))
