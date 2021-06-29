@@ -69,12 +69,12 @@
       ("rQ2Q" . ,fft-signed-long-long)))
 
 ; ----------------------------------------------------------------
-(print "returning a structure test:")
-
-(define iiv2struct12 (this (cons type-bytevector 12) "iiv2struct12" fft-int fft-int fft-int))
-(try "iiv2struct12" iiv2struct12 1 2 123)
-(define iiv2struct20 (this (cons type-bytevector 20) "iiv2struct20" fft-int fft-int fft-int))
-(try "iiv2struct20" iiv2struct20 1 2 123)
+;(print "returning a structure test:")
+;
+;(define iiv2struct12 (this (cons type-bytevector 12) "iiv2struct12" fft-int fft-int fft-int))
+;(try "iiv2struct12" iiv2struct12 1 2 123)
+;(define iiv2struct20 (this (cons type-bytevector 20) "iiv2struct20" fft-int fft-int fft-int))
+;(try "iiv2struct20" iiv2struct20 1 2 123)
 
 ; ----------------------------------------------------------------
 (print "type limits checking:")
