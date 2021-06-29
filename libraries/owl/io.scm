@@ -116,7 +116,7 @@
             (list (cons n id)) ;; last bed, select alarm
             (let ((this (caar ls)))
                (if (< n this) ;; add before someone to be waked later
-                  (ilist
+                  (cons*
                      (cons n id)
                      (cons (- this n) (cdr (car ls)))
                      (cdr ls))

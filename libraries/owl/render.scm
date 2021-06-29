@@ -40,7 +40,7 @@
          (define (render obj tl)
             (cond
                ((null? obj)
-                  (ilist #\( #\) tl))
+                  (cons* #\( #\) tl))
 
                ((number? obj)
                   (render-number obj tl 10))
@@ -58,20 +58,20 @@
                                  (cons #\space
                                     (render (car obj) (loop (cdr obj) tl))))
                               (else
-                                 (ilist #\space #\. #\space (render obj tl))))))))
+                                 (cons* #\space #\. #\space (render obj tl))))))))
 
                ((symbol? obj)
                   (render-symbol obj tl))
 
                ((bytevector? obj)
-                  (ilist #\# #\u #\8 (render (bytevector->list obj) tl)))
+                  (cons* #\# #\u #\8 (render (bytevector->list obj) tl)))
 
                ((blob? obj)
                   (cons #\# (render (blob->list obj) tl)))
 
                ((vector? obj)
                   (cons #\# (render (vector->list obj) tl)))
-                  ;; (ilist #\# #\(
+                  ;; (cons* #\# #\(
                   ;;    (render (ref obj 1)
                   ;;       (fold
                   ;;          (λ (tl pos) (cons #\space (render (ref obj pos) tl)))
@@ -83,13 +83,13 @@
                   ;; anonimas
                   ;(let ((symp (interact 'intern ['get-name obj])))
                   ;   (if symp
-                  ;      (ilist #\# #\< (render symp (cons #\> tl)))
+                  ;      (cons* #\# #\< (render symp (cons #\> tl)))
                   ;      (render "#<function>" tl))))
 
 
 ; disabled, because records currently unload
 ;               ((record? obj)
-;                  (ilist #\# #\{
+;                  (cons* #\# #\{
 ;                     (render (ref obj 1) ;; type tag object
 ;                        (fold
 ;                           (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
@@ -97,17 +97,17 @@
 ;                           (lrange (size obj) -1 1)))))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
-                  (ilist #\# #\r (render (rlist->list obj) tl)))
+                  (cons* #\# #\r (render (rlist->list obj) tl)))
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (ilist #\# #\f #\f (render (ff->alist obj) tl)))
+                  (cons* #\# #\f #\f (render (ff->alist obj) tl)))
 
-               ((eq? obj #true)  (ilist #\# #\t #\r #\u #\e tl))
-               ((eq? obj #false) (ilist #\# #\f #\a #\l #\s #\e tl))
-               ((eq? obj #empty) (ilist #\# #\e #\m #\p #\t #\y tl)) ;; don't print as #()
-               ((eq? obj #eof)   (ilist #\# #\e #\o #\f tl))
+               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e tl))
+               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e tl))
+               ((eq? obj #empty) (cons* #\# #\e #\m #\p #\t #\y tl)) ;; don't print as #()
+               ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
 
-               ((port? obj) (ilist #\# #\< #\f #\d #\space (render (vm:cast obj type-enum+) (cons #\> tl))))
+               ((port? obj) (cons* #\# #\< #\f #\d #\space (render (vm:cast obj type-enum+) (cons #\> tl))))
 
                ((eq? (type obj) type-const)
                   (render-number (vm:cast obj type-enum+) tl 16))
@@ -134,17 +134,17 @@
                ;((getf sh obj) =>
                ;   (λ (id)
                ;      (if (< id 0) ;; already written, just refer
-               ;         (ilist #\# (render (abs id) (pair #\# (k sh))))
-               ;         (ilist #\#
+               ;         (cons* #\# (render (abs id) (pair #\# (k sh))))
+               ;         (cons* #\#
                ;            (render id
-               ;               (ilist #\# #\=
+               ;               (cons* #\# #\=
                ;                  (ser (del sh obj) obj
                ;                     (λ (sh)
                ;                        (delay
                ;                           (k (put sh obj (- 0 id))))))))))))
 
                ((null? obj)
-                  (ilist #\' #\( #\) (k sh)))
+                  (cons* #\' #\( #\) (k sh)))
 
                ((number? obj)
                   (render-number obj (delay (k sh)) 10))
@@ -163,7 +163,7 @@
                               (pair #\) (k sh)))
                            ;((getf sh obj) =>
                            ;   (λ (id)
-                           ;      (ilist #\. #\space #\#
+                           ;      (cons* #\. #\space #\#
                            ;         (render (abs id)
                            ;            (cons #\#
                            ;               (if (< id 0)
@@ -185,7 +185,7 @@
                                           (cons #\space (loop sh (cdr obj))))))))
                            (else
                               ;; improper list
-                              (ilist #\. #\space
+                              (cons* #\. #\space
                                  (ser sh obj
                                     (λ (sh) (pair 41 (k sh))))))))))
 
@@ -198,7 +198,7 @@
                   (render-symbol obj (delay (k sh))))
 
                ((bytevector? obj)
-                  (ilist #\# #\u #\8
+                  (cons* #\# #\u #\8
                      (ser sh (bytevector->list obj) k))) ;; <- should convert incrementally!
 
                ((blob? obj)
@@ -225,13 +225,13 @@
                   (foldr render (delay (k sh)) (list "#<" (get names obj "function") ">")))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
-                  (ilist #\# #\r (ser sh (rlist->list obj) k)))
+                  (cons* #\# #\r (ser sh (rlist->list obj) k)))
 
                ((eq? obj #empty) ;; don't print as #()
-                  (ilist #\# #\e #\m #\p #\t #\y (delay (k sh))))
+                  (cons* #\# #\e #\m #\p #\t #\y (delay (k sh))))
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (ilist #\# #\f #\f (ser sh (ff->alist obj) k)))
+                  (cons* #\# #\f #\f (ser sh (ff->alist obj) k)))
 
                ((port? obj)   (render obj (λ () (k sh))))
                ((eof? obj)    (render obj (λ () (k sh))))

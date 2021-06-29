@@ -138,8 +138,8 @@
             (['move a b more]
                (let ((tl (assemble more fail)))
                   (if (eq? (car tl) MOVE) ;; [move a b] + [move c d] = [move2 a b c d] to remove a common dispatch
-                     (ilist MOVE2 (reg a) (reg b) (cdr tl))
-                     (ilist MOVE (reg a) (reg b) tl))))
+                     (cons* MOVE2 (reg a) (reg b) (cdr tl))
+                     (cons* MOVE (reg a) (reg b) tl))))
             (['prim op args to more]
                (cond
                   ;; fixme: handle mk differently, this was supposed to be a temp hack
@@ -203,28 +203,28 @@
                (cond
                   ;; todo: add implicit load values to free bits of the instruction
                   ((eq? val null)
-                     (ilist LDN (reg to)
+                     (cons* LDN (reg to)
                         (assemble cont fail)))
                   ((eq? val #false)
-                     (ilist LDF (reg to)
+                     (cons* LDF (reg to)
                         (assemble cont fail)))
                   ((eq? val #true)
-                     (ilist LDT (reg to)
+                     (cons* LDT (reg to)
                         (assemble cont fail)))
                   ((eq? val #empty)
-                     (ilist LDE (reg to)
+                     (cons* LDE (reg to)
                         (assemble cont fail)))
                   ((eq? (type val) type-enum+)
                      (let ((code (assemble cont fail)))
                         (if (> val 126) ;(or (> val 126) (< val -126)) ; would be a bug
                            (fail (list "ld: big value: " val)))
-                        (ilist LD
+                        (cons* LD
                            (if (< val 0) (+ 256 val) val)
                            (reg to) code)))
                   (else
                      (fail (list "cannot assemble a load for " val)))))
             (['refi from offset to more]
-               (ilist
+               (cons*
                   REFI (reg from) offset (reg to)
                   (assemble more fail)))
             (['goto op nargs]
@@ -241,35 +241,35 @@
                      (else (assemble else fail))
                      (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (cons* JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (['jz a then else] ; todo: merge next four cases into one
                (let*((then (assemble then fail))
                      (else (assemble else fail))
                      (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist JZ (reg a) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (cons* JZ (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (['jn a then else]
                (let*((then (assemble then fail))
                      (else (assemble else fail))
                      (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist JN (reg a) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (cons* JN (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (['je a then else]
                (let*((then (assemble then fail))
                      (else (assemble else fail))
                      (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist JE (reg a) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (cons* JE (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (['jf a then else]
                (let*((then (assemble then fail))
                      (else (assemble else fail))
                      (len (length else)))
                   (cond
-                     ((< len #xffff) (ilist JF (reg a) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (cons* JF (reg a) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list "need a bigger jump instruction: length is " len))))))
             (else
                ;(print "assemble: what is " code)
@@ -295,14 +295,14 @@
                            (if fixed?
                               ; без проверки на арность проваливается тест "case-lambda"
                               ; todo: оставить проверку для lambda, забрать для всего остального
-                              (ilist JAF arity
+                              (cons* JAF arity
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes
                                     (if (null? tail)
                                        (list ARITY-ERROR)
                                        tail)))
-                              (ilist JAFX (if fixed? arity (- arity 1))
+                              (cons* JAFX (if fixed? arity (- arity 1))
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes

@@ -153,7 +153,7 @@
                ; (system-println "mcp: interop 4 -- fork")
                (lets
                   ((new-id (car opts))
-                   (todo (ilist [new-id thunk] [id (λ () (cont new-id))] todo))
+                   (todo (cons* [new-id thunk] [id (λ () (cont new-id))] todo))
                    (state
                       (for state (cdr opts)
                         (λ (state req)
@@ -215,7 +215,7 @@
                   ; send a normal mail
                   (lets ((state waked (deliver-mail state to [id msg])))
                      (if waked
-                        (tc (ilist (car todo) waked (cdr todo)) done state)
+                        (tc (cons* (car todo) waked (cdr todo)) done state)
                         (tc todo done state)))))
 
             ; 10, breaked - call signal handler
@@ -287,7 +287,7 @@
                         (cons [id (λ () (cont val))] all)
                         null state))
                   (tc
-                     (ilist [id (λ () (cont 'released))] info todo)
+                     (cons* [id (λ () (cont 'released))] info todo)
                      done state)))
 
             ; 18, get a list of currently running thread ids

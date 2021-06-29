@@ -107,18 +107,18 @@
             ((< point #x80) ; ascii, fits 7 bits
                (cons point tl))
             ((< point #b100000000000) ; 5 + 6 bits
-               (ilist
+               (cons*
                   (bor (band (>> point 6) #x1f) #xc0)
                   (ext point)
                   tl))
             ((< point #b10000000000000000) ; 4 + 2*6 bits
-               (ilist
+               (cons*
                   (bor (band (>> point 12) #x0f) #xe0)
                   (ext (>> point 6))
                   (ext point)
                   tl))
             ((< point #b1000000000000000000000) ; 3 + 3*6 bits
-               (ilist
+               (cons*
                   (bor (band (>> point 18) #b111) #xf0)
                   (ext (>> point 12))
                   (ext (>> point 6))

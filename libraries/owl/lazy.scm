@@ -125,7 +125,7 @@
                ((b _ (vm:add a 1))
                 (c _ (vm:add b 1))
                 (d _ (vm:add c 1)))
-               (ilist a b c (lambda () (lnums-fix d))))
+               (cons* a b c (lambda () (lnums-fix d))))
             (lnums-other a)))
 
       (define (lnums n)

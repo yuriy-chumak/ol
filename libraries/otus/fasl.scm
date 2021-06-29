@@ -121,7 +121,7 @@
       (define (encode-inexact val tail copybytes)
          (let ((t (type val))
                (s (size val)))
-            (ilist 2 t
+            (cons* 2 t
                (send-number s
                   (copybytes tail val (-- s))))))
 
@@ -137,13 +137,13 @@
             ((ref val 0) ; ==(raw object? val), 0 in ref works only for binary objects
                (let ((t (type val))
                      (s (size val)))
-                  (ilist 2 t
+                  (cons* 2 t
                      (send-number s
                         (copy-bytes tail val (-- s))))))
             (else
                (let ((t (type val))
                      (s (size val)))
-                  (ilist 1 t
+                  (cons* 1 t
                      (send-number s
                         (encode-fields (object->list val) pos index
                            tail)))))))
