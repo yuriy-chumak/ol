@@ -52,6 +52,25 @@ Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://b
 Post bugs and issues at [the issues](https://github.com/yuriy-chumak/ol/issues) page. If your architecture is not supported, post an issue too.
 
 
+Table of Contents
+-----------------
+1. [License](#license)
+1. [Support](#support)
+1. [Learhing](#learning)
+1. [Download / Installation](#download-/-installation)
+1. [R<sup>7</sup>RS Differences](#r7rs-differences)
+1. [Deprecations](#deprecations)
+1. [Build](#build)
+1. [Samples](#samples)
+1. [Customization](#customization)
+1. [Running](#running)
+1. [Binary Scripts](#binary-scripts)
+1. [Files](#files)
+1. [Embedding](#embedding)
+1. [Docs](#documentation)
+1. [Related](#related)
+
+
 LEARNING
 --------
 
