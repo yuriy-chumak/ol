@@ -1,9 +1,9 @@
-.TH ol 1 "Jun 21, 2021"
+.TH OL 1 "Jun 29, 2021"
 .SH NAME
-ol \- a purely functional dialect of Lisp
+ol \- an Otus Lisp, functional dialect of Lisp
 .SH SYNOPSIS
 .B ol
-.I [options] [ [filename] [arguments] ]
+.I [OPTION...] [FILE [FILE-ARGS]]
 .SH DESCRIPTION
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
@@ -11,8 +11,12 @@ It implements an extended subset of the R7RS Scheme, including
 but not limited to some SRFIs. It is tiny (< 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
 to call code written in another language.
+
+A FILE of "-" denotes standard input. If FILE is not specified, standard input is used.
+
+If FILE is a text script, then FILE-ARGS is passed to FILE as the result of the standard "command-line" function call.
+If FILE is a binary (compiled) script, then FILE-ARGS is passed as a list to the last FILE lambda expression.
 .PP
-.SH OPTIONS
 This program follows the usual GNU command line syntax, with long
 options starting with two dashes (`-').
 A summary of essential command line flats options is included below.
@@ -39,10 +43,13 @@ Forces the running mode into non-interactive.
 Special case when running as embedded.
 .TP
 .B \-\-
-End of options. Next argument will be treated as filename, even if it's name looks like an option ("--sandbox", for example).
+End of options. Next argument will be treated as FILE even if its name looks like an option ("--version", for example).
 .SH ENVIRONMENT
 .TP
 .B OL_HOME
 Library searching path.
 .SH AUTHOR
-(c) 2011-2014 Aki Helin, (c) 2014-2021 Yuriy Chumak
+Yuriy Chumak
+.SH COPYRIGHT
+(c) 2011-2014 Aki Helin,
+(c) 2014-2021 Yuriy Chumak

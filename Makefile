@@ -240,12 +240,15 @@ install: ol includes/ol/vm.h
 	@echo Installing basic libraries...
 	find libraries -type d -exec bash -c 'install -d "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
 	find libraries -type f -exec bash -c 'install -m 644 "$$0" "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
+	@echo Installing man page...
+	gzip <ol.1 >/usr/share/man/man1/ol.1.gz
 	@echo Ok.
 
 uninstall:
 	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/include/ol
+	-rm /usr/share/man/man1/ol.1.gz
 
 ## actual 'building' part
 check: CFLAGS += $(CFLAGS_CHECK)
