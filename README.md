@@ -57,7 +57,7 @@ Table of Contents
 1. [License](#license)
 1. [Support](#support)
 1. [Learhing](#learning)
-1. [Download / Installation](#download-/-installation)
+1. [Download / Installation](#download--installation)
 1. [R<sup>7</sup>RS Differences](#r7rs-differences)
 1. [Deprecations](#deprecations)
 1. [Build](#build)
@@ -165,7 +165,7 @@ R<sup>7</sup>RS DIFFERENCES
   * *note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` (with optional 'g' suffix) and `c/<pattern>/` as functions to match, change and split the string.*
 
 
-REPRECATIONS
+DEPRECATIONS
 ------------
 
 * `(ilist ...)` is deprecated, use `(cons* ...)` instead.
