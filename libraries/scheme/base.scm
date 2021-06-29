@@ -64,7 +64,7 @@
    complex?
    cond
 ;  cond-expand    * builtin, (lang eval)
-   cons
+   cons cons*
    current-error-port  ; * (owl io)
    current-input-port  ; * (owl io)
    current-output-port ; * (owl io)

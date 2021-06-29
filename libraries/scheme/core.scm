@@ -1827,6 +1827,12 @@
             ((ilist a . b)
                (cons a (ilist . b)))))
 
+      (define-syntax cons* ; * case from MIT/GNU Scheme
+         (syntax-rules ()
+            ((cons* a) a)
+            ((cons* a . b)
+               (cons a (cons* . b)))))
+
 
       (define-syntax define-library
          (syntax-rules (export import begin _define-library define-library
@@ -2002,6 +2008,7 @@
       
       ; ----------------------------
       list length append reverse
+      cons*
       ilist ; deprecated
       define-library
 
