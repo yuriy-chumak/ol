@@ -43,6 +43,7 @@
 
       vector-for-each
       vector-map
+      vector-fold
    )
 
    (import
@@ -227,5 +228,15 @@
       (assert (vector-map (lambda (x) x) #(1 2 3 4 5))  ===>  #(1 2 3 4 5))
       (assert (vector-map (lambda (x y) (cons x y))
                   #(1 2 3) #(9 8 7))                    ===>  #((1 . 9) (2 . 8) (3 . 7)))
+
+   (define vector-fold (case-lambda
+      ((f z a)       (fold f z (vector->list a)))
+      ((f z a b)     (fold f z (vector->list a) (vector->list b)))
+      ((f z a b . c) (apply fold (cons* f z (map vector->list (cons a (cons b c))))))
+      ((f z) z)))
+
+      (assert (vector-fold + 7 [1 2 3 4 5])  ===>  22)
+      (assert (vector-fold + -1
+                         #(1 2 3) #(9 8 7))  ===>  29)
 
 ))
