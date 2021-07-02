@@ -1,6 +1,7 @@
 #!/usr/bin/env ol
 (import (lib gl))
 (import (otus random!))
+(import (scheme dynamic-bindings))
 
 ; read initial population
 (import (owl parse))
@@ -8,7 +9,7 @@
 
 (define population (parse xpm-parser (file->bytestream
    (or
-      (and (pair? *vm-args*) (car *vm-args*))
+      (and (pair? (command-line)) (car (command-line)))
       "initial.xpm"))
    #f #f #f))
 
@@ -59,7 +60,7 @@
    (glPointSize (/ width WIDTH))))
 
 
-(gl:set-userdata
+(define userdata (make-parameter
    (let ((initial population))
       (fold (lambda (ff row y)
                (fold (lambda (ff col x)
@@ -69,11 +70,11 @@
                   ff row (iota (initial 'width) (/ (- WIDTH (initial 'width)) 2))))
          #empty
          (initial 'bitmap)
-         (iota (initial 'height) (/ (- HEIGHT (initial 'height)) 2)))))
+         (iota (initial 'height) (/ (- HEIGHT (initial 'height)) 2))))))
 
 
 (gl:set-renderer (lambda (mouse)
-(let ((generation (gl:get-userdata)))
+(let ((generation (userdata)))
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glColor3f 0.2 0.5 0.2)
@@ -106,7 +107,7 @@
                   '(-1 -1 -1   0  0  +1 +1 +1))))
          {} generation) generation (lambda (a b) b))) ; save the current point age
 
-   (gl:set-userdata
+   (userdata
       (ff-fold (lambda (st key value)
             (if (alive generation key)
                (put st key (+ value 1))

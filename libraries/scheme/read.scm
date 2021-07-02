@@ -43,11 +43,11 @@
 
       (define (non-buffered-input-stream-n n)
          (lambda ()
-            (define in (interact server n))
+            (define in (await (mail server n)))
             (case in
                (#f #null) ; port error
                (#t ; input not ready
-                  (interact 'io 5)
+                  (await (mail 'io 5))
                   (non-buffered-input-stream-n n))
                (#eof ; end-of-file
                   (close-port port)

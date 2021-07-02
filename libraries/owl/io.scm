@@ -171,7 +171,7 @@
                         (sleeper (wake-neighbours (cdr ls))))))))) ;; wake up all the ((0 . id) ...) after it, if any
 ;         (sleep 1)) ; is it required?
 
-      (define (sleep n) (interact 'io n))
+      (define (sleep n) (await (mail 'io n)))
 
 
 
@@ -195,7 +195,7 @@
                      (cond
                         ((eq? wrote end) #true) ;; ok, wrote the whole chunk
                         ((eq? wrote 0) ;; 0 = EWOULDBLOCK
-                           (interact 'io 2) ;; fixme: adjustable delay rounds
+                           (await (mail 'io 2)) ;; fixme: adjustable delay rounds
                            (loop))
                         (wrote ;; partial write
                            (write-really (bvec-tail bvec wrote) fd))
@@ -222,7 +222,7 @@
             (if (eq? res #true) ;; would block
                (if block?
                   (begin
-                     (interact 'io 5)
+                     (await (mail 'io 5))
                      (try-get-block fd block-size #true))
                   res)
                res))) ;; is #false, eof or bvec

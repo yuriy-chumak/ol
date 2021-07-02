@@ -96,7 +96,7 @@
 (define (set-blinky x y)
    (mail 'blinky ['set x y]))
 (define (get-blinky)
-   (interact 'blinky ['get]))
+   (await (mail 'blinky ['get])))
 
 (define (A* to-x to-y)
 (let*((xy (get-blinky))

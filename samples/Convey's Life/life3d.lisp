@@ -123,7 +123,7 @@
 
 (define population (parse xpm-parser (file->bytestream
    (or
-      (and (pair? *vm-args*) (car *vm-args*))
+      (and (pair? (command-line)) (car (command-line)))
       "initial.xpm"))
    #f #f #f))
 
@@ -173,7 +173,7 @@
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
-   (define A 230)
+   (define A 130)
    (set-car! angle (mod (+ (unbox angle) 1) 2261))
    (define eyeX (* A (sin (/ (unbox angle) 360))))
    (define eyeY (* A (cos (/ (unbox angle) 360))))
