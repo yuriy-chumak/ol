@@ -176,7 +176,7 @@
       ;; quote just ":s for now
       (define (encode-quoted-point p tl)
          (if (eq? p #\") ;"
-            (ilist #\\ p tl)
+            (cons* #\\ p tl)
             (encode-point p tl)))
 
       ; note: it is assumed string construction has checked that all code points are valid and thus encodable
@@ -297,7 +297,12 @@
                (string-eq-walk (str-iter a) (str-iter b))
                #false)))
 
-      (define string-append str-app)
+      (define string-append (case-lambda
+         ((a)   a)
+         ((a b) (str-app a b))
+         ((a b . c)
+            (fold str-app a (cons b c)))))
+      
       (define string->list string->runes)
       (define list->string runes->string)
 

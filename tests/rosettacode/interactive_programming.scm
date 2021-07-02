@@ -2,6 +2,6 @@
 
 (define *interactive* #t)
 (define (f head tail mid)
-     (fold string-append "" (list head mid mid tail)))
+     (string-append head mid mid tail))
 (f "Rosetta" "Code" ":")
 ,quit

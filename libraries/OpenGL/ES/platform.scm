@@ -159,7 +159,7 @@
    (import (owl regex))
    (setq split (string->regex "c/ /"))
    (define (gl:QueryExtension extension)
-      (display-to stderr (fold string-append "" (list "Checking " extension " support..."))) ; debug info
+      (display-to stderr (string-append "Checking " extension " support...")) ; debug info
       (let ((extensions (split (or
                (glGetString GL_EXTENSIONS)
                ; if no extensions - use empty string:

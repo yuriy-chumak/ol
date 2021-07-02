@@ -284,7 +284,7 @@
       (define (decode-value env l)
          (cond
             ((function? l)
-               (fold string-append "#<" (list (function->name env l) ">")))
+               (string-append "#<" (function->name env l) ">"))
             ((list? l)
                (map (lambda (r) (if (not (function? r)) r (decode-value env r))) l))
             (else l)))
@@ -363,7 +363,7 @@
 
       ;; todo: should keep a list of documents *loading* and use that to detect circular loads (and to indent the load msgs)
       (define (repl-load repl path in env)
-         (let*((paths (map (lambda (dir) (fold string-append dir `("/" ,path))) (env-get env '*path* '("."))))
+         (let*((paths (map (lambda (dir) (string-append dir "/" path)) (env-get env '*path* '("."))))
                (exps ;; find the file to read
                   (let loop ((paths paths))
                      (unless (null? paths)
