@@ -1,14 +1,40 @@
 #!/usr/bin/env ol
 
-(import (otus ffi))
 (import (otus ann))
 
+; =================================================
 (import (lib gl2))
 (import (OpenGL EXT geometry_shader4))
 
 (gl:set-window-title "Sample ANN (mnist database)")
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.8 0.8 0.8 1)
+
+(import (lib soil))
+; -=( сразу нарисуем сплеш )=---------------------------
+(glOrtho 0 1 1 0 0 1)
+(glEnable GL_TEXTURE_2D)
+
+(define id
+   (let ((file (file->bytevector "splash.png")))
+      (SOIL_load_OGL_texture_from_memory file (size file) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)))
+(glBindTexture GL_TEXTURE_2D id)
+(glBegin GL_QUADS)
+   ; рисуем на весь экран квадратик с текстурой
+   (for-each (lambda (xy)
+         (glTexCoord2f (car xy) (cdr xy))
+         (glVertex2f (car xy) (cdr xy)))
+      '((0 . 0) (1 . 0) (1 . 1) (0 . 1)))
+(glEnd)
+(glDisable GL_TEXTURE_2D)
+(gl:SwapBuffers (interact 'opengl ['get 'context])) ; todo: make a function
+(glDeleteTextures 1 (list id)) ; и спокойно удалим сплеш текстуру
+
+(define numbers
+   (map (lambda (i)
+      (let ((file (file->bytevector (fold string-append "" (list "media/" (number->string i 10) ".png")))))
+         (SOIL_load_OGL_texture_from_memory file (size file) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)))
+   (iota 10)))
 
 ; создадим шейдер превращения точек в квадратики
 (define po (glCreateProgram))
@@ -114,7 +140,7 @@
             (number-of-images uint32)
             (number-of-rows uint32)
             (number-of-columns uint32)
-            ;; (number-of-images (get-epsilon 16))
+            ;(number-of-images (epsilon 1000)) ; tmp
             (images (times number-of-images (times (* number-of-rows number-of-columns) byte))))
          {
             'magic magic
@@ -127,7 +153,7 @@
 (import (file mnist))
 
 (define mnist-root (or
-   (and (not (null? *vm-args*)) (car *vm-args*))
+   (and (not (null? (command-line))) (car (command-line)))
    "/media/uri/1TB/DATA/mnist/"))
 
 ;; read the data
@@ -151,11 +177,12 @@
 
 (gl:set-renderer (lambda (mouse)
    (glClear GL_COLOR_BUFFER_BIT)
-
    (glUseProgram po)
 
    (define state (*state*))
    (when state
+
+      ; цифра (в левой части поля)
       (define digit (ref state 1))
 
       (define m 28) ;(length digit))
@@ -174,21 +201,45 @@
          (iota (* m n) 1))
       (glEnd)
 
+      ; правая-верхняя часть поля
       (glLoadIdentity)
       (glOrtho -10 +10 -10 10 -1 1)
 
       (define label (ref state 2))
       (define guess (ref state 3))
-      (glBegin GL_POINTS)
+
+      ; настоящая цифра
+      (glUseProgram 0)
+      (glEnable GL_TEXTURE_2D)
+
       (for-each (lambda (j)
-            ; настоящая цифра
             (if (eq? label j)
                (glColor3f 1 1 1)
                (glColor3f 0 0 0))
-            (glVertex2f j 8)
 
-            ; что хочет сказать нейросеть
+            (glBindTexture GL_TEXTURE_2D (lref numbers j))
+            (glBegin GL_QUADS)
+               (glTexCoord2f 0 1)
+               (glVertex2f    j    7)
+               (glTexCoord2f 1 1)
+               (glVertex2f (+ j 1) 7)
+               (glTexCoord2f 1 0)
+               (glVertex2f (+ j 1) 8)
+               (glTexCoord2f 0 0)
+               (glVertex2f    j    8)
+            (glEnd))
+         (iota 10))
+
+      (glDisable GL_TEXTURE_2D)
+      (glUseProgram po)
+
+      ; что хочет сказать нейросеть
+      (glBegin GL_POINTS)
+      (for-each (lambda (j)
             (define g (at guess 1 (+ j 1)))
+            (glColor3f g g g)
+            
+            (glVertex2f j 9)
             (cond
                ((and (< g 0.5) (not (eq? label j)))
                   (glColor3f 0 (- 1 (* 2 g)) 0))
@@ -200,11 +251,7 @@
                   (glColor3f (- (* 2 g) 1) 0 0))
                (else
                   (glColor3f 0 0 0)))
-            (glVertex2f j 9)
-
-            ; ну и просто пару квадратиков
-            (glColor3f (/ j 10) (/ j 10) (/ j 10))
-            (glVertex2f j 7))
+            (glVertex2f j 8))
          (iota 10))
       (glEnd))
 
@@ -214,8 +261,9 @@
       (define l0 (car l0-l1))
       (define l1 (cdr l0-l1))
 
+      ; первый слой нейросети
       (glLoadIdentity)
-      (glOrtho (- (ref l0 1)) (ref l0 1) (* 2 (ref l0 2)) (* 2 (- (ref l0 2))) -1 1)
+      (glOrtho (- (ref l0 1)) (ref l0 1) (* 1 (ref l0 2)) (* 1 (- (ref l0 2))) -1 1)
 
       (glBegin GL_POINTS)
       (for-each (lambda (i)
@@ -229,7 +277,7 @@
       (glEnd)
       
       (glLoadIdentity)
-      (glOrtho (- (ref l1 1)) (ref l1 1) (* 8 (- (ref l1 2))) (* 8 (ref l1 2)) -1 1)
+      (glOrtho (- (ref l1 1)) (ref l1 1) (* 4 (- (ref l1 2))) (* 4 (ref l1 2)) -1 1)
 
       (glBegin GL_POINTS)
       (for-each (lambda (i)
@@ -240,9 +288,10 @@
                   (glVertex2f i j))
                (iota (ref l1 2))))
          (iota (ref l1 1)))
-      (glEnd)
-   )
+      (glEnd))
+
 ))
+
 
 (gl:set-mouse-handler (lambda (button x y)
    (when (eq? button 1)
@@ -266,8 +315,12 @@
 ; попробуем создать новую сеть через новый api
 (define ann (make-ann
    (make-dense-layer 10 σ ; второй промежуточный слой
-   (make-dense-layer 99 σ ; первый промежуточный слой ; 128
+   (make-dense-layer 64 σ ; первый промежуточный слой ; 128
    (make-input-layer (* 28 28))))))
+
+; прочитаем состояние из файлов
+(read-matrix! (get-layer ann 1) "syn0")
+(read-matrix! (get-layer ann 2) "syn1")
 
 ; обучение сети
 (fork-server 'ann (lambda ()
@@ -282,17 +335,20 @@
                   (map (lambda (p) (if (eq? p label) 1 0))
                      (iota 10))))
 
-            (eva (evaluate ann X))   ; процесс вычисления нейросети
-            (_ (backpropagate! eva (sub Y (caar eva)))) ; а теперь ее обучим
+            ; процесс вычисления нейросети
+            (eva (evaluate ann X))
+            ; а теперь ее обучим:
+            (_ (backpropagate! eva (sub Y (caar eva))))
 
-            ;; (_ (when (zero? (mod n 1000))
-            ;;       (print
-            ;;          "     used memory: " (inexact (/ (* 8 (ref (syscall 1117) 3)) 1024 1024)) " MiB")))
-
- 
             ; передадим наше состояние для отображения на экране
             (_ (*l0-l1* (cons
                   (get-layer ann 1)
                   (get-layer ann 2))))
             (_ (*state* [X label (caar eva)])))
+         ; 
+         (when (zero? (mod n 100))
+            (print
+               "     used memory: " (inexact (/ (* 8 (ref (syscall 1117) 3)) 1024 1024)) " MiB")
+            (sleep 1))
+
          (this (++ n))))))
