@@ -30,7 +30,7 @@ on various hardware architectures (intel, arm, ppc, mips, etc).
 
 Also Ol is ported to the Web and can be used in Chrome, Firefox, Opera, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape, etc.
 
-Source code available under tag "[2.2](https://github.com/yuriy-chumak/ol/releases/tag/2.2)" or at [Releases](https://github.com/yuriy-chumak/ol/releases) page.
+Current stable source code available under tag "[2.2](https://github.com/yuriy-chumak/ol/releases/tag/2.2)" or at [Releases](https://github.com/yuriy-chumak/ol/releases) page.
 
 
 LICENSE
@@ -129,7 +129,7 @@ R<sup>7</sup>RS DIFFERENCES
     - *note: Ol is purely functional language.*
 * 4.1.7. Inclusion
   * **No** `include` and `include-ci` in Ol.
-    - *note: Use ",load" instead.*
+    - *note: Use libraries (import, define-library, export, etc.) instead. Top level ",load" is available too.*
 * 4.2.1. Conditionals
   * Result of the `when` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
   * Result of the `unless` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
@@ -143,7 +143,7 @@ R<sup>7</sup>RS DIFFERENCES
 * 6.1. Equivalence predicate `eqv?`
   * `(eqv? +nan.0 +nan.0)` is **#true** in Ol, but *unspecified* in Scheme. The same for `+inf.0` and `-inf.0`.
 * 6.2.5. Syntax of numerical constants
-  * NUMBERS WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
+  * `Numbers without precision` considered to be **exact** in Ol, but *inexact* in Scheme.
     - *explanation: Inexactness can be disabled by compiler features or/and unsupported by platform. But we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).*
 * 6.2.6. Numerical operations
   * Just Note: `complex?` is the same as `number?`, like in Scheme.
@@ -223,7 +223,7 @@ THEN
 $ cc src/olvm.c tmp/repl.c  -DREPL=repl  -std=gnu99 -O2  -lm -ldl  -o ol
 ```
 
-For some platforms, build can be done without using the `xxd` tool or vm itself.
+Note: for some platforms, build can be done without using the `xxd` tool or vm itself.
 ```bash
 $ ld -r -b binary -o repl.o repl
 $ cc src/olvm.c -DREPL=_binary_repl_start  repl.o  -std=gnu99 -O2  -lm -ldl  -o ol

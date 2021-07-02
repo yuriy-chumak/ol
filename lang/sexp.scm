@@ -392,7 +392,7 @@
                         (word "true"  #true)
                         (word "null"  #null)    ; empty list (system constant)
                         (word "empty" #empty)   ; empty ff (system constant)
-                        (word "eof"   #eof)     ; (vm:cast 4 13))
+                        (word "eof"   #eof)     ; previously (vm:cast 4 13)
                         ; сокращения
                         (word "t"     #true)
                         (word "f"     #false)
