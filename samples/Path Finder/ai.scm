@@ -103,7 +103,7 @@
          ; обновить "свою" карту мира (fov) на основе заданной карты (map)
          ; осмотреться
          (['look-around map]
-               (define WIDTH (size (car map)))
+               (define WIDTH (size (ref map 1))) ; no car for vectors
                (define HEIGHT (size map))
                ; смотрим из "середины" точки
                (define X (+ x 0.5))

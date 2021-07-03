@@ -35,7 +35,7 @@
    (ref (ref scheme y) x))
 
 ; константы
-(define WIDTH (size (car scheme))) ; same as (ref x 1)
+(define WIDTH (size (ref scheme 1)))
 (define -WIDTH (- WIDTH))
 (define +WIDTH (+ WIDTH))
 (define HEIGHT (size scheme))
@@ -179,16 +179,16 @@
 
    ; нарисуем карту как она есть
    ; для пользователя (всю карту видим только мы)
-   (glEnable GL_TEXTURE_2D)
-   (glBindTexture GL_TEXTURE_2D 1)
-   (glBegin GL_QUADS)
-      (for-each (lambda (y)
-            (for-each (lambda (x)
-                  (draw-map-cell x y (at x y) 0.2))
-               (iota WIDTH 1)))
-         (iota HEIGHT 1))
-   (glEnd)
-   (glDisable GL_TEXTURE_2D)
+   ;; (glEnable GL_TEXTURE_2D)
+   ;; (glBindTexture GL_TEXTURE_2D 1)
+   ;; (glBegin GL_QUADS)
+   ;;    (for-each (lambda (y)
+   ;;          (for-each (lambda (x)
+   ;;                (draw-map-cell x y (at x y) 0.2))
+   ;;             (iota WIDTH 1)))
+   ;;       (iota HEIGHT 1))
+   ;; (glEnd)
+   ;; (glDisable GL_TEXTURE_2D)
 
    ; ходим не чаше ? раз в секунду
    (let*((new-time _ (clock))
@@ -250,8 +250,8 @@
 
       ; все, теперь можем двигаться туда,  куда хотели:
       ;; (when (not (eq? new-time old-time))
-         (mail hero ['move (ref step 1) (ref step 2)])
-         (mail hero ['look-around scheme]) ;)
+      (mail hero ['move (ref step 1) (ref step 2)])
+      (mail hero ['look-around scheme]) ;)
 
       ; вернем модифицированные параметры
       (userdata (put
@@ -300,3 +300,17 @@
 ;      (return (put userdata 'mouse (to-map-from-screen (cons x y))))))
 ;   userdata)))))
 
+(gl:set-mouse-handler (lambda (button x y)
+   (when (eq? button 1)
+      (define px (floor (- (* (/ x (ref gl:window-dimensions 3)) (+ WIDTH 4)) 1)))
+      (define py (floor (- (* (/ y (ref gl:window-dimensions 4)) (+ HEIGHT 4)) 1)))
+
+      (if (eq? (at px py) 0)
+         (userdata 
+            (put (put (userdata) 'x px) 'y py))) )))
+
+         ;; (let do ((x (rand! WIDTH))
+         ;;          (y (rand! HEIGHT)))
+         ;;    (if (eq? (at x y) 0)
+         ;;       (put (put (userdata) 'x x) 'y y)
+         ;;       (do (rand! WIDTH) (rand! HEIGHT))))))))
