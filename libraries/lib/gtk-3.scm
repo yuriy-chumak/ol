@@ -65,6 +65,7 @@
       ; https://developer.gnome.org/gtk3/stable/GtkTextBuffer.html
       GtkTextBuffer*
       gtk_text_buffer_insert_at_cursor
+      gtk_text_buffer_set_text
 
       ; 
       ;GtkTextView*
@@ -152,6 +153,7 @@
 ; (lib gtp textbuffer)
 (define GtkTextBuffer* fft-void*)
 (define gtk_text_buffer_insert_at_cursor (GTK fft-void "gtk_text_buffer_insert_at_cursor" GtkTextBuffer* type-string gint))
+(define gtk_text_buffer_set_text (GTK fft-void "gtk_text_buffer_set_text" GtkTextBuffer* type-string gint))
 
 
 ))
