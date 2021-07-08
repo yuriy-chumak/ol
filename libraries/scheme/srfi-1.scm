@@ -10,6 +10,8 @@
    (owl list))
 
    (export
+      ; Constructors
+      cons list
       xcons iota
 
       first second third fourth fifth sixth seventh eighth ninth tenth

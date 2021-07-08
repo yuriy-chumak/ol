@@ -1827,7 +1827,7 @@
             ((ilist a . b)
                (cons a (ilist . b)))))
 
-      (define-syntax cons* ; * case from MIT/GNU Scheme
+      (define-syntax cons* ; * MIT/GNU Scheme, srfi-1
          (syntax-rules ()
             ((cons* a) a)
             ((cons* a . b)
