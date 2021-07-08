@@ -36,6 +36,7 @@
       gtk_builder_add_from_file
       gtk_builder_get_object
 
+      gtk_builder_add_callback_symbol
       gtk_builder_connect_signals
 
       ; todo: move to (lib gtk label)
@@ -61,14 +62,21 @@
       gtk_widget_get_allocated_height
       gtk_render_background
 
+      make-GtkTextIter
+      GtkTextIter*
+
       ; todo: move to (lib gtk textbuffer)
       ; https://developer.gnome.org/gtk3/stable/GtkTextBuffer.html
       GtkTextBuffer*
       gtk_text_buffer_insert_at_cursor
       gtk_text_buffer_set_text
+      gtk_text_buffer_get_text
+
+      gtk_text_buffer_get_start_iter
+      gtk_text_buffer_get_end_iter
 
       ; 
-      ;GtkTextView*
+      GtkTextView*
 
 
 
@@ -114,7 +122,8 @@
 (define gtk_builder_get_object (GTK GObject* "gtk_builder_get_object" GtkBuilder* type-string))
 
 (define GtkBuilderConnectFunc GtkCallback) ; void (*GtkBuilderConnectFunc)(GtkBuilder *builder, GObject *object, const gchar *signal_name, const gchar *handler_name, GObject *connect_object, GConnectFlags flags, gpointer user_data)
-(define gtk_builder_connect_signals (GTK fft-void "gtk_builder_connect_signals" GtkBuilder* GtkBuilderConnectFunc gpointer))
+(define gtk_builder_add_callback_symbol (GTK fft-void "gtk_builder_add_callback_symbol" GtkBuilder* gchar* GCallback))
+(define gtk_builder_connect_signals (GTK fft-void "gtk_builder_connect_signals" GtkBuilder* gpointer))
 
 ; (lib gtk bbox)
 (define GtkButton* type-vptr)
@@ -150,10 +159,22 @@
 (define gtk_widget_get_allocated_height (GTK fft-int "gtk_widget_get_allocated_height" GtkWidget*))
 (define gtk_render_background (GTK fft-void "gtk_render_background" GtkStyleContext* cairo_t* gdouble gdouble gdouble gdouble))
 
-; (lib gtp textbuffer)
+; (lib gtk textiter)
+(define |sizeof GtkTextIter| 80)
+(define (make-GtkTextIter)
+   (make-bytevector |sizeof GtkTextIter| 0))
+(define GtkTextIter* fft-void*)
+
+; (lib gtk textbuffer)
 (define GtkTextBuffer* fft-void*)
+
 (define gtk_text_buffer_insert_at_cursor (GTK fft-void "gtk_text_buffer_insert_at_cursor" GtkTextBuffer* type-string gint))
 (define gtk_text_buffer_set_text (GTK fft-void "gtk_text_buffer_set_text" GtkTextBuffer* type-string gint))
+(define gtk_text_buffer_get_text (GTK type-string "gtk_text_buffer_get_text" GtkTextBuffer* GtkTextIter* GtkTextIter* gboolean))
 
+(define gtk_text_buffer_get_start_iter (GTK fft-void "gtk_text_buffer_get_start_iter" GtkTextBuffer* GtkTextIter*))
+(define gtk_text_buffer_get_end_iter (GTK fft-void "gtk_text_buffer_get_end_iter" GtkTextBuffer* GtkTextIter*))
+
+(define GtkTextView* fft-void*)
 
 ))

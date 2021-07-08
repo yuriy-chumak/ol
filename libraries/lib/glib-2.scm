@@ -2,7 +2,7 @@
    (export
       gint guint gulong gpointer
       gdouble
-      gchar*
+      gchar* gboolean
 
       TRUE FALSE
 
@@ -40,6 +40,7 @@
 (define gpointer fft-void*)
 (define gdouble fft-double)
 (define gchar* type-string)
+(define gboolean gint)
 
 (define GCallback type-callable) ; void (*GCallback)(void)
 (define GClosureNotify type-callable) ; void (*GClosureNotify)(gpointer, GClosure)
