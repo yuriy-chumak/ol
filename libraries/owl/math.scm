@@ -212,11 +212,14 @@
             ; big numbers
             (type-int+  (int- num))               ;;  A -> -A
             (type-int-  (int+ num))               ;; -A -> A
-            ; rationals
+            ; rational/complex numbers
             (type-rational
                (let* ((a b num))
                   (rational (negate a) b)))
-            ; inexacts
+            (type-complex
+               (let* ((a b num))
+                  (complex (negate a) b)))
+            ; inexact numbers
             (type-inexact
                (fsub 0 num))))
 
