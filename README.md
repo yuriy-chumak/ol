@@ -28,9 +28,9 @@ You can use Ol on Linux, Windows, macOS, Android, BSD (and its
 descendants), webOS, Solaris and other operating systems based
 on various hardware architectures (intel, arm, ppc, mips, etc).
 
-Also Ol is ported to the Web and can be used in Chrome, Firefox, Opera, Iceweasel, Epiphany, Luakit, SeaMonkey, Iceape, etc.
-
-Current stable source code available under tag "[2.2](https://github.com/yuriy-chumak/ol/releases/tag/2.2)" or at [Releases](https://github.com/yuriy-chumak/ol/releases) page.
+Also, Ol is ported to the Web (in WebAssembly form) and can be
+used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
+Luakit, Iceape, etc.
 
 
 LICENSE
@@ -49,22 +49,20 @@ SUPPORT
 
 Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby), additionally [Freenode](https://webchat.freenode.net) channel *#otus-lisp* is available.
 
-Post bugs and issues at [the issues](https://github.com/yuriy-chumak/ol/issues) page. If your architecture is not supported, post an issue too.
+Post bugs and issues at [the Issues](https://github.com/yuriy-chumak/ol/issues) page.
 
 
 Q/A
 ---
 
 1. Q. Why no arrow keys processing and a history in Ol command line?<br/>
-   A. For the simplicity. Use a 'rlwrap' tool, please - will have a one.
+   A. For the simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool: `$ rlwrap ol` .
 
 
 Table of Contents
 -----------------
-1. [License](#license)
-1. [Support](#support)
-1. [Learhing](#learning)
 1. [Download / Installation](#download--installation)
+1. [Learhing](#learning)
 1. [R<sup>7</sup>RS Differences](#r7rs-differences)
 1. [Deprecations](#deprecations)
 1. [Build](#build)
@@ -78,6 +76,29 @@ Table of Contents
 1. [Related](#related)
 
 
+DOWNLOAD / INSTALLATION
+-----------------------
+[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
+[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
+[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
+
+**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).
+
+Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
+
+### Otus Lisp, Version 2.2.1
+
+2.2.1 changelog:
+ * the build command line changed. See the "BUILD" section.
+ * fasl format updated:
+   * fasl is fully 32/64 bit independent (32-bit machines can execute 64-bit fasl and vice versa),
+   * numbers encoded as numbers, not as objects,
+   * big endian numbers order changed to little-endian
+   * introduced a new object type 63 - "constructor", constructors are automatically executed by olvm during fasl loading process
+     * if no constructors are found, the vanilla behavior will be used
+     * note: for example, the (owl math) library contains a constructor named `math-constructor` that recalculates a native binary NaN value which is different under different FPU architectures.
+
+
 LEARNING
 --------
 
@@ -85,33 +106,6 @@ You can find Ol samples at:
 * [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
 * [Samples](https://github.com/yuriy-chumak/ol/tree/master/samples) and [Tests](https://github.com/yuriy-chumak/ol/tree/master/tests) repository folders.
 * Embed usage available as toy [pacman game](https://github.com/yuriy-chumak/ol/tree/master/samples/pacman) sample.
-
-
-DOWNLOAD / INSTALLATION
------------------------
-
-You can use basic Ol functionality without any installation - just copy the `ol` (`ol.exe` for Windows) binary to any user-accessible path.
-
-Basic functionality includes a rich set of features: lists, vectors and bytevectors, numbers math with unlimited accuracy, strings, associative arrays (named `ff`), i/o streams and files, lazy calculations, regular expressions, coroutines, etc.
-
-Advanced functionality (i.e. OpenGL support) requires a complete installation of the Ol package:
-  * You can use precompiled binaries and/or installation packages that can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page.
-  * or You can manually copy required [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory,
-
-Some libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
-
-
-### Otus Lisp, Version 2.3 rc1
-
-New Ol changes have been added to the Master branch:
- * the build command line has been changed. See the "BUILD" section.
- * fasl format updated:
-   * fasl is fully 32/64 bit independent (32-bit machines can execute 64-bit fasl and vice versa),
-   * numbers encoded as numbers, not as objects,
-   * big endian numbers order changed to little-endian
-   * introduced a new object type 63 - "constructor", constructors are automatically executed by olvm during fasl loading process
-     * if no constructors are found, the vanilla behavior will be used
-     * note: for example the library (owl math) contains a constructor (math-constructor) that recalculates a NaN value which is different under different fpu architectures.
 
 
 R<sup>7</sup>RS DIFFERENCES
@@ -362,6 +356,15 @@ This will create a new (in successful way) REPL binary `./repl` containing the c
 RUNNING
 -------
 
+You can use basic Ol functionality without any installation - just copy the `ol` (`ol.exe` for Windows) binary to any user-accessible path.
+
+Basic functionality includes a rich set of features: lists, vectors and bytevectors, numbers math with unlimited accuracy, strings, associative arrays (named `ff`), i/o streams and files, lazy calculations, regular expressions, coroutines, etc.
+
+Advanced functionality (i.e. OpenGL support) requires a complete installation of the Ol package:
+  * You can use precompiled binaries and/or installation packages that can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page.
+  * or You can manually copy required [libraries](https://github.com/yuriy-chumak/ol/tree/master/libraries) to your OL_HOME or current directory,
+
+
 Ol command line is:
 $ ol [[vm-options] [filename]] [arguments]]
 
@@ -501,8 +504,3 @@ Thanks to:
 * http://groups.csail.mit.edu/mac/projects/scheme/
 * http://people.csail.mit.edu/jaffer/Scheme
 * http://r7rs.org
-
-----------------------------------------------------------------------
-[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
-[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
-[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
