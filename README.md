@@ -40,8 +40,8 @@ Otus Lisp is available under 2 licenses:
 [MIT License](LICENSE) and
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
 
-Copyright (c) 2011-2014 Aki Helin                              <br/>
-Copyright (c) 2014-2021 Yuriy Chumak                           <br/>
+Copyright (c) 2011-2014 Aki Helin                         <br/>
+Copyright (c) 2014-2021 Yuriy Chumak                      <br/>
 
 
 SUPPORT
@@ -101,6 +101,8 @@ Some additional libraries can be installed using 'kiss' package manager. Usage i
 
 LEARNING
 --------
+
+Otus Lisp language based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with little changes and extensions.
 
 You can find Ol samples at:
 * [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
