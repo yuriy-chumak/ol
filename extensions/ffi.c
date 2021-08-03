@@ -1008,12 +1008,12 @@ int_t from_uint(word arg) {
 
 #if UINTPTR_MAX == 0xffffffff // 32-bit platform math
 static
-intmax_t from_ulong(word arg) {
+int64_t from_ulong(word arg) {
 	assert (is_reference(arg));
-	intmax_t v = car(arg) >> 8;
+	int64_t v = car(arg) >> 8;
 	int shift = VBITS;
 	while (cdr(arg) != INULL) {
-		v |= ((intmax_t)(car(cdr(arg)) >> 8) << shift);
+		v |= ((int64_t)(car(cdr(arg)) >> 8) << shift);
 		shift += VBITS;
 		arg = cdr(arg);
 	}
@@ -1022,17 +1022,11 @@ intmax_t from_ulong(word arg) {
 #endif
 
 static
-#if UINTPTR_MAX == 0xffffffff // 32-bit machines (__SIZEOF_PTRDIFF_T__ == 4)
-long
-#endif
-long from_rational(word arg) {
+int64_t from_rational(word arg) {
 	word* pa = (word*)car(arg);
 	word* pb = (word*)cdr(arg);
 
-	#if UINTPTR_MAX == 0xffffffff // 32-bit machines
-	long
-	#endif
-	long a = 0;
+	int64_t a = 0;
 	if (is_value(pa))
 		a = enum(pa);
 	else {
@@ -1046,10 +1040,7 @@ long from_rational(word arg) {
 		}
 	}
 
-	#if UINTPTR_MAX == 0xffffffff // 32-bit machines
-	long
-	#endif
-	long b = 1;
+	int64_t b = 1;
 	if (is_value(pb))
 		b = enum(pb);
 	else {
@@ -1822,6 +1813,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			case TSTRING: // ansi strings marshaling to bytevector data "as is" without conversion
 				args[i] = (word) &car(arg);
 				break;
+
 			default:
 				E("invalid parameter values (requested bytevector)");
 			}
