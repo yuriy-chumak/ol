@@ -20,7 +20,7 @@ Otus Lisp, Version 2.2
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
 It implements an extended subset of the R<sup>7</sup>RS Scheme, including
-but not limited to some SRFIs. It is tiny (< 64KB), embeddable
+but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
 to call code written in another language.
 
@@ -47,9 +47,9 @@ Copyright (c) 2014-2021 Yuriy Chumak                      <br/>
 SUPPORT
 -------
 
-Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby), additionally [Freenode](https://webchat.freenode.net) channel *#otus-lisp* is available.
+Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby). Additionally, the [Libera.Chat](https://web.libera.chat/) *#otus-lisp* channel is available (the previous Freenode channel is closed).
 
-Post bugs and issues at [the Issues](https://github.com/yuriy-chumak/ol/issues) page.
+Submit bug reports and issues on [the Issues](https://github.com/yuriy-chumak/ol/issues) page.
 
 
 Q/A
