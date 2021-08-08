@@ -432,10 +432,27 @@
                      #false ; no menu
                      #false ; instance
                      #false))
-                  (pfd (make-bytevector '(#x28 00  1  00  #x25 00 00 00 00 #x10 00 00 00 00 00 00
-                                          00 00 00 00 00 00 00 #x10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00)))
+                  (pfd (make-bytevector '(
+                           #x28 00 ; nSize
+                              1 00 ; nVersion
+                           #x25 00 00 00 ; dwFlags - PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER
+                           00 ; iPixelType - PFD_TYPE_RGBA
+                           24 ; cColorBits
+                           00 00 00 00 00 00 ; cRedBits, cRedShift, cGreenBits, cGreenShift, cBlueBits, cBlueShift (Not used)
+                           00 00             ; cAlphaBits, cAlphaShift 
+                           00 00 00 00 00    ; cAccumBits, cAccumRedBits, cAccumGreenBits, cAccumBlueBits, cAccumAlphaBits
+                           32 ; cDepthBits
+                           00 ; cStencilBits
+                           00 ; cAuxBuffers
+                           00 ; iLayerType - PFD_MAIN_PLANE
+                           00 ; bReserved
+                           00 00 00 00 ; dwLayerMask
+                           00 00 00 00 ; dwVisibleMask
+                           00 00 00 00 ; dwDamageMask
+                        )))
                   (hDC (GetDC window))
                   (PixelFormat (ChoosePixelFormat hDC pfd)))
+
                (SetPixelFormat hDC PixelFormat pfd)
                (let ((hRC (gl:CreateContext hDC)))
                   (gl:MakeCurrent hDC hRC)

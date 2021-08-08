@@ -1226,6 +1226,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	// nothing special for Windows (both x32 and x64)
 #endif
 
+
 	// 1. do memory precalculations and count number of arguments
 	unsigned words = 0;
 	int i = 0;     // актуальное количество аргументов
