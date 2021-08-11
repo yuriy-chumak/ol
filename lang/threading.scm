@@ -449,7 +449,10 @@
       (define (thread-controller todo done state)
          (if (eq? todo null)
             (if (null? done)
-               (halt-thread-controller state)  ;; nothing left to run
+            then
+               ;; (print-to stderr "nothing left to run: " state)
+               (halt-thread-controller state)  ;; nothing left to run, TODO: use last one code if no "shutdown" code
+            else
                (thread-controller done null state))    ;; new scheduler round
             (lets
                ((this todo todo)

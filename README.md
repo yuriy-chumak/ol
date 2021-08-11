@@ -183,11 +183,11 @@ BUILD
 
 ### BUILD REQUIREMENTS
 
-You should have GCC 3.2+ (with gcc-multilib) or CLANG 3.5+ installed.
+You should have GCC 3.2+ (with gcc-multilib and binutils) or CLANG 3.5+ installed.
 
 MacOS users should have xcode-tools installed.
 
-Windows support requires MinGW installed (with GCC). Wine cross-compilation is also supported.
+Windows support requires MinGW installed. Wine cross-compilation is also supported.
 
 WebAssembly binary compilation requires Emscripten 1.37.40+.
 

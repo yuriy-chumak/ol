@@ -143,7 +143,7 @@
             (['prim op args to more]
                (cond
                   ;; fixme: handle mk differently, this was supposed to be a temp hack
-                  ((> op #xff)
+                  ((> op #xff) ; dead leaf - we do not have opcodes larger than 255 (for now)
                      (output-code op
                         (cons (reg (length (cdr args))) ; vector size
                            (cons (reg (car args)) ; type

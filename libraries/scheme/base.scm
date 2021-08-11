@@ -371,10 +371,6 @@
       ; Returns a newly allocated copy of the given obj if it is a
       ; list. Only the pairs themselves are copied; the cars of the
       ; result are the same (in the sense of eqv?) as the cars of list.
-      ; If obj is an improper list, so is the result, and the final cdrs
-      ; are the same in the sense of eqv?. An obj which is not a
-      ; list is returned unchanged. It is an error if obj is a circular
-      ; list.
       (define (list-copy obj)
          (map (lambda (o) (vm:cast o (type o))) obj))
 
