@@ -1,4 +1,6 @@
-.PHONY: tests testing-binaries
+.PHONY: check tests testing-binaries
+
+check: tests
 
 ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)

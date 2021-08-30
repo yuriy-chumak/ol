@@ -252,9 +252,6 @@ uninstall:
 	-rm /usr/share/man/man1/ol.1.gz
 
 ## actual 'building' part
-check: CFLAGS += $(CFLAGS_CHECK)
-check: vm
-
 debug: CFLAGS += $(CFLAGS_DEBUG)
 debug: vm repl ol
 

@@ -1,4 +1,6 @@
-.PHONY: rosettacode
+.PHONY: check rosettacode
+
+check: rosettacode
 
 ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
