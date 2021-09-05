@@ -187,15 +187,18 @@
       (define (liter op st)
          (pair st (liter op (op st))))
 
-      (define (ltaker l n o)
-         (cond
-            ((null? l) (reverse o))
-            ((pair? l)
-               (if (eq? n 0)
-                  (reverse o)
-                  (ltaker (cdr l) (- n 1) (cons (car l) o))))
-            (else
-               (ltaker (l) n o))))
+      ; take n elements of lazy stream l
+      (define (ltake l n)
+         (let take ((l l) (n n) (o #null))
+            (if (eq? n 0)
+               (reverse o)
+            else
+               (cond
+                  ((null? l) (reverse o)) ; too short stream
+                  ((pair? l)
+                     (take (cdr l) (- n 1) (cons (car l) o)))
+                  (else
+                     (take (l) n o))))))
 
       ;; l n → l | Null (if out of list)
       (define (ldrop l n)
@@ -214,8 +217,6 @@
             (if (eq? val blank)
                (runtime-error "llref: out of list: " p)
                val)))
-
-      (define (ltake l n) (ltaker l n null))
 
       ;; zip, preserves laziness of first argument
       (define (lzip op a b)
