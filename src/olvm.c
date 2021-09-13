@@ -4540,7 +4540,7 @@ loop:;
 				if (is_string(name)) {
 					char* env = getenv(string(name));
 					if (env)
-						r = new_string(env, lenn(env, VMAX));
+						r = new_string(env);
 				}
 				break;
 			}
