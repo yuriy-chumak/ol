@@ -183,6 +183,7 @@ BUILD
 
 ### BUILD REQUIREMENTS
 
+You should have gnu make installed.
 You should have GCC 3.2+ (with gcc-multilib and binutils) or CLANG 3.5+ installed.
 
 MacOS users should have xcode-tools installed.
@@ -296,7 +297,7 @@ For example:
 
 !["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
 
-* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks ("C" to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton.
+* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton.
 You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.
 
 !["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
@@ -368,7 +369,7 @@ Advanced functionality (i.e. OpenGL support) requires a complete installation of
 
 
 Ol command line is:
-$ ol [[vm-options] [filename]] [arguments]]
+$ ol [vm-options] [filename] [arguments]
 
 * if no filename given all options is ol options, not an olvm
 * if no filename given ol will use stdin as source

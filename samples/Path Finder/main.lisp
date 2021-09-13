@@ -266,40 +266,6 @@
          ; send new
          'old-time new-time))))))
 
-
-;(mail 'opengl (tuple 'set-keyboard (lambda (userdata  key)
-;(call/cc (lambda (return)
-;   ;else
-;   (case key
-;      (32
-;         (mail me (tuple 'update-fov scheme)))
-;
-;      (39
-;         (mail me (tuple 'move +1 0))
-;         (mail me (tuple 'update-fov scheme)))
-;      (37
-;         (mail me (tuple 'move -1 0))
-;         (mail me (tuple 'update-fov scheme)))
-;
-;      ; вверх
-;      (38
-;         (mail me (tuple 'move 0 -1))
-;         (mail me (tuple 'update-fov scheme)))
-;      ; вниз
-;      (40
-;         (mail me (tuple 'move 0 +1))
-;         (mail me (tuple 'update-fov scheme))))
-;
-;   userdata)))))
-;
-;(mail 'opengl (tuple 'set-mouse (lambda (userdata  lbutton rbutton x y)
-;(call/cc (lambda (return)
-;   (if lbutton (begin
-;      (mail me (tuple 'set-location (to-map-from-screen (cons x y))))
-;      (mail me (tuple 'update-fov scheme))
-;      (return (put userdata 'mouse (to-map-from-screen (cons x y))))))
-;   userdata)))))
-
 (gl:set-mouse-handler (lambda (button x y)
    (when (eq? button 1)
       (define px (floor (- (* (/ x (ref gl:window-dimensions 3)) (+ WIDTH 4)) 1)))
