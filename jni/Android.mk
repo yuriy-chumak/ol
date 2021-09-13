@@ -19,12 +19,13 @@ LOCAL_SRC_FILES += oljni.c ../tmp/repl.c
 LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O3 -g0 -Iincludes -DOLVM_NOMAIN
 
 LOCAL_SRC_FILES += ../extensions/ffi.c
-LOCAL_CFLAGS   += -fsigned-char -Ijni/../src -DOLVM_FFI=1
+LOCAL_CFLAGS   += -fsigned-char -Ijni/../src -DOLVM_FFI=0
 
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
 LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"libol.so"' -Wno-unsequenced -Wno-parentheses
 LOCAL_LDLIBS   += -llog -landroid
+
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -38,7 +39,7 @@ LOCAL_SRC_FILES += ../extensions/ffi.c
 LOCAL_SRC_FILES += ../tests/ffi.c
 
 LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O0 -g3 -Iincludes -fsigned-char
-LOCAL_CFLAGS   += -Ijni/../src -DOLVM_FFI=1 -Wno-unsequenced -Wno-parentheses
+LOCAL_CFLAGS   += -Ijni/../src -DOLVM_FFI=0 -Wno-unsequenced -Wno-parentheses
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
 LOCAL_LDLIBS   += -llog -landroid

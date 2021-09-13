@@ -134,7 +134,7 @@
 //	raspbian, arduino: 8
 
 // maximal applicable return type of called functions
-typedef big_t ret_t;
+typedef int64_t ret_t;
 
 #if defined(_WIN32)
 #	define PUBLIC __declspec(dllexport)

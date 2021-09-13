@@ -217,6 +217,8 @@ object_t
 #define inexact_t OLVM_INEXACT_TYPE
 #endif
 
+#include <limits.h>
+
 // http://www.delorie.com/gnu/docs/gcc/gccint_53.html
 #if SIZE_MAX == 0xffffffffffffffffU
 	typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t

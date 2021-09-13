@@ -3,85 +3,28 @@
 #include <android/log.h>
 #include <android/asset_manager_jni.h>
 
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "ol", __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ol", __VA_ARGS__)
+
+// ----------------
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <strings.h>
 
-#include <../extensions/embed.h>
-
 #include <fcntl.h>
 #include <unistd.h>
 
-// #include <zip.h>
-extern unsigned char repl[]; // otus lisp binary
-
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "ol", __VA_ARGS__)
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ol", __VA_ARGS__)
-
-#define OL_HOME "/sdcard/ol"
-// ------------------------------------------------------------------------
-// olvm: todo: make dynamic
-ol_t ol;
-
-// just code simplification, some kind of magic to not manually write 'new_string' and 'make_integer':
-// we automatically call new_string or make_integer dependly on argument type
-// but in general case you should do this manually. or not.
-// C preprocessor trick, some kind of "map":
-// https://github.com/swansontec/map-macro
-
-#define EVAL0(...) __VA_ARGS__
-#define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
-#define EVAL2(...) EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
-#define EVAL3(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
-#define EVAL4(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
-#define EVAL(...)    EVAL4(EVAL4(EVAL4(__VA_ARGS__)))
-
-#define MAP_END(...)
-#define MAP_OUT
-#define MAP_COMMA ,
-
-#define MAP_GET_END2() 0, MAP_END
-#define MAP_GET_END1(...) MAP_GET_END2
-#define MAP_GET_END(...) MAP_GET_END1
-#define MAP_NEXT0(test, next, ...) next MAP_OUT
-#define MAP_NEXT1(test, next) MAP_NEXT0(test, next, 0)
-#define MAP_NEXT(test, next)    MAP_NEXT1(MAP_GET_END test, next)
-
-#define MAP0(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP1)(f, peek, __VA_ARGS__)
-#define MAP1(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP0)(f, peek, __VA_ARGS__)
-
-#define MAP_LIST_NEXT1(test, next) MAP_NEXT0(test, MAP_COMMA next, 0)
-#define MAP_LIST_NEXT(test, next)    MAP_LIST_NEXT1(MAP_GET_END test, next)
-
-#define MAP_LIST0(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST1)(f, peek, __VA_ARGS__)
-#define MAP_LIST1(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST0)(f, peek, __VA_ARGS__)
-
-#define MAP(f, ...) EVAL(MAP1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
-#define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
-//*/    end of C preprocessor trick
-
-#define _Q(x) \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),         new_string(&ol, (char*)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),          new_string(&ol, (char*)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed char),    make_integer((signed)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned char),  make_integer((unsigned)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed short),   make_integer((signed)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned short), make_integer((unsigned)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed int),     make_integer((signed)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned int),   make_integer((unsigned)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),           make_integer((long)(uintptr_t)x), \
-    __builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, IFALSE))))))))))
-
-#define eval(...) embed_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
 // ------------------------------------------------------------------------
 
 static jobject java_asset_manager = NULL;
 static AAssetManager* asset_manager = NULL;
-static AAsset** fds; // file descriptors
-static int fds_size;
+static AAsset** fds = NULL; // descriptors
+static int fds_size = 0;
+
+#define OL_HOME "/sdcard/ol"
 
 int assets_open(const char *filename, int flags, int mode, void* userdata)
 {
@@ -192,13 +135,76 @@ ssize_t assets_write(int fd, void *buf, size_t count, void* userdata)
     return write(fd, buf, count);
 }
 
+
+// ========================================================================
+// #include <zip.h>
+#include <ol/ol.h>
+extern unsigned char repl[]; // otus lisp binary
+
+// ------------------------------------------------------------------------
+// just code simplification, some kind of magic to not manually write 'new_string' and 'make_integer':
+// we automatically call new_string or make_integer dependly on argument type
+// but in general case you should do this manually. or not.
+// C preprocessor trick, some kind of "map":
+// https://github.com/swansontec/map-macro
+/*
+#define EVAL0(...) __VA_ARGS__
+#define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
+#define EVAL2(...) EVAL1(EVAL1(EVAL1(__VA_ARGS__)))
+#define EVAL3(...) EVAL2(EVAL2(EVAL2(__VA_ARGS__)))
+#define EVAL4(...) EVAL3(EVAL3(EVAL3(__VA_ARGS__)))
+#define EVAL(...)  EVAL4(EVAL4(EVAL4(__VA_ARGS__)))
+
+#define MAP_END(...)
+#define MAP_OUT
+#define MAP_COMMA ,
+
+#define MAP_GET_END2() 0, MAP_END
+#define MAP_GET_END1(...) MAP_GET_END2
+#define MAP_GET_END(...) MAP_GET_END1
+#define MAP_NEXT0(test, next, ...) next MAP_OUT
+#define MAP_NEXT1(test, next) MAP_NEXT0(test, next, 0)
+#define MAP_NEXT(test, next)  MAP_NEXT1(MAP_GET_END test, next)
+
+#define MAP0(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP1)(f, peek, __VA_ARGS__)
+#define MAP1(f, x, peek, ...) f(x) MAP_NEXT(peek, MAP0)(f, peek, __VA_ARGS__)
+
+#define MAP_LIST_NEXT1(test, next) MAP_NEXT0(test, MAP_COMMA next, 0)
+#define MAP_LIST_NEXT(test, next)  MAP_LIST_NEXT1(MAP_GET_END test, next)
+
+#define MAP_LIST0(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST1)(f, peek, __VA_ARGS__)
+#define MAP_LIST1(f, x, peek, ...) f(x) MAP_LIST_NEXT(peek, MAP_LIST0)(f, peek, __VA_ARGS__)
+
+#define MAP(f, ...) EVAL(MAP1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+#define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
+//  end of C preprocessor trick
+
+#define _Q(x) \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char[]),   new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), char*),    new_string(&ol, (char*)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed char),    make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned char),  make_integer((unsigned)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed short),   make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned short), make_integer((unsigned)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), signed int),     make_integer((signed)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), unsigned int),   make_integer((unsigned)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), long),     make_integer((long)(uintptr_t)x), \
+	__builtin_choose_expr( __builtin_types_compatible_p (__typeof__(x), uintptr_t),(uintptr_t)x, \
+	IFALSE))))))))))
+
+#define eval(ol,...) OL_eval(ol, MAP_LIST(_Q, __VA_ARGS__), 0)
+//*/
+
 // hmmmmm, is it required?
 // #include <ft2build.h>
 // #include <freetype/freetype.h>
 // ---------------------------------------
+ol_t ol; // TODO: make dynamic
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeNew(JNIEnv* jenv, jobject class)
 {
+	LOGI("> nativeNew()");
+
 	// init:
 	fds_size = 16;
 	fds = (AAsset**) malloc(sizeof(*fds) * fds_size);
@@ -206,53 +212,58 @@ JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeNew(JNIEnv* jenv, j
 	// gl4es init
 	// setenv("LIBGL_NOBANNER", "0", 1);
 
-	// let's start our application
-	ol.vm = OLVM_new(repl);
+	// // ol ini
+	// // ol_t* ol = malloc(sizeof(ol_t));
+
+	OL_new(&ol, repl);
 	OLVM_userdata(ol.vm, &ol);
 
-	char* args[] = { "--embed", "--no-interactive" }; //, "--home=/sdcard/ol" }; // ol execution arguments
-	word r = OLVM_run(ol.vm, sizeof(args) / sizeof(*args), args);
+    // OLVM_set_open(ol.vm, assets_open);
+    // OLVM_set_close(ol.vm, assets_close);
+    // OLVM_set_read(ol.vm, assets_read);
 
-    // well, we have our "smart" script prepared,
-    //  now save both eval and env variables
-    assert (is_enum(r)); // todo: change to is_enump
-    ol.eval = r >> 8;
+	// redirects stdout/stderr to logcat
+    OLVM_set_write(ol.vm, assets_write);
 
-    OLVM_set_open(ol.vm, assets_open);
-    OLVM_set_close(ol.vm, assets_close);
-    OLVM_set_read(ol.vm, assets_read);
-    OLVM_set_write(ol.vm, assets_write); // redirects stdout/atderr to logcat
-
-    return;
+	LOGI("< nativeNew()");
+	return;
 }
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeDelete(JNIEnv* jenv, jobject class)
 {
-    // embed_delete(&ol);
+	LOGI("> nativeDelete()");
+	OL_delete(&ol);
+
     if (java_asset_manager) {
         (*jenv)->DeleteGlobalRef(jenv, java_asset_manager);
         java_asset_manager = NULL;
     }
+	LOGI("< nativeDelete()");
 }
 
 JNIEXPORT void JNICALL Java_name_yuriy_1chumak_ol_Olvm_nativeSetAssetManager(JNIEnv* jenv, jobject jobj, jobject assetManager)
 {
+	LOGI("> nativeSetAssetManager()");
     java_asset_manager = (*jenv)->NewGlobalRef(jenv, assetManager);
     asset_manager = AAssetManager_fromJava(jenv, java_asset_manager);
+	LOGI("< nativeSetAssetManager()");
 }
 
 JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_Olvm_eval(JNIEnv* jenv, jobject jobj, jarray args)
 {
-    jint argc = (*jenv)->GetArrayLength(jenv, args);
-//    LOGI("argumets count: %d", argc);
+	LOGI("> eval()");
 
+    jint argc = (*jenv)->GetArrayLength(jenv, args);
+    LOGI("argumets count: %d", argc);
+
+	// TODO: optimize
     jclass String = (*jenv)->FindClass(jenv, "java/lang/String");
     jclass Integer = (*jenv)->FindClass(jenv, "java/lang/Integer");
 	jclass Float = (*jenv)->FindClass(jenv, "java/lang/Float");
 	jclass Double = (*jenv)->FindClass(jenv, "java/lang/Double");
 
-    uintptr_t* values = __builtin_alloca((argc+1) * sizeof(uintptr_t));
-    values[0] = OLVM_deref(ol.vm, ol.eval);
+	// convert Java arguments into internal Lisp arguments:
+    uintptr_t* values = __builtin_alloca(argc * sizeof(uintptr_t));
     for (int i = 0; i < argc; i++) {
         jobject arg = (*jenv)->GetObjectArrayElement(jenv, args, i);
         // if((*env)->ExceptionOccurred(env)) {
@@ -260,34 +271,52 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_Olvm_eval(JNIEnv* jenv, job
         // }
         if ((*jenv)->IsInstanceOf(jenv, arg, String)) {
             char* value = (char*) (*jenv)->GetStringUTFChars(jenv, arg, 0);
-            values[i+1] = new_string(&ol, value); // no release "value" required?
+            values[i] = new_string(&ol, value); // no release "value" required?
         }
         else
         if ((*jenv)->IsInstanceOf(jenv, arg, Integer)) {
             jmethodID intValue = (*jenv)->GetMethodID(jenv, Integer, "intValue", "()I");
             jint value = (*jenv)->CallIntMethod(jenv, arg, intValue);
 
-            values[i+1] = make_integer(value);
+            values[i] = make_integer(value);
         }
         else
         if ((*jenv)->IsInstanceOf(jenv, arg, Float)) {
             jmethodID floatValue = (*jenv)->GetMethodID(jenv, Float, "floatValue", "()F");
             jint value = (*jenv)->CallFloatMethod(jenv, arg, floatValue);
 
-            values[i+1] = new_rational(&ol, value);
+            values[i] = new_rational(&ol, value);
         }
         else
         if ((*jenv)->IsInstanceOf(jenv, arg, Double)) {
             jmethodID doubleValue = (*jenv)->GetMethodID(jenv, Double, "doubleValue", "()D");
             jint value = (*jenv)->CallDoubleMethod(jenv, arg, doubleValue);
 
-            values[i+1] = new_rational(&ol, value);
+            values[i] = new_rational(&ol, value);
         }
         else
-            values[i+1] = IFALSE;
+            values[i] = IFALSE;
     }
 
-    word r = OLVM_continue(ol.vm, argc+1, (void**)values);
+	// make arguments list:
+	uintptr_t userdata = 0x236; // #null
+	{
+		uintptr_t* fp = ol.vm->fp;
+		for (int i = argc-1; i >= 0; i--, fp += 3) {
+			fp[0] = 0x30006; // TPAIR
+			fp[1] = values[i];
+			fp[2] = userdata;
+			userdata = (uintptr_t) fp;
+		}
+		ol.vm->fp = fp;
+	}
+
+	// eval:
+	uintptr_t r = OLVM_evaluate(ol.vm,
+		OLVM_deref(ol.vm, ol.eval),
+		1, &userdata);
+
+	// process result:
     if (r == ITRUE) {
         jclass Boolean = (*jenv)->FindClass(jenv, "java/lang/Boolean");
         jfieldID TRUE = (*jenv)->GetStaticFieldID(jenv, Boolean, "TRUE", "Ljava/lang/Boolean;");
@@ -315,8 +344,9 @@ JNIEXPORT jobject JNICALL Java_name_yuriy_1chumak_ol_Olvm_eval(JNIEnv* jenv, job
     }
     //    LOGI("arg1: %s", (char*)(*jenv)->GetObjectArrayElement(jenv, args, 1));
 
-    // all other cases: false
+    // other cases: false
     jclass Boolean = (*jenv)->FindClass(jenv, "java/lang/Boolean");
     jfieldID FALSE = (*jenv)->GetStaticFieldID(jenv, Boolean, "FALSE", "Ljava/lang/Boolean;");
+	LOGI("< eval()");
     return (*jenv)->GetStaticObjectField(jenv, Boolean, FALSE);
 }
