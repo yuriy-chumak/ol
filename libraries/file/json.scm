@@ -187,15 +187,6 @@
 
    (define json-parser (object))
 
-   ; sanity check:
-   (assert (car (try-parse json-parser (str-iter "{}") #t))
-      ===> #empty)
-   (assert (car (try-parse json-parser (str-iter "[]") #t))
-      ===> [])
-   (assert (car (try-parse json-parser (str-iter "{'something':[12,23,34],'old':{},'new':true}") #t))
-      ===> { 'something [12 23 34]
-               'old #empty
-               'new #true })
 
    (define (read-json-stream stream)
       (when stream
