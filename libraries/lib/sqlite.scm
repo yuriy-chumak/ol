@@ -19,6 +19,7 @@
 
 (export
     make-sqlite3 make-sqlite3_stmt
+    sqlite3_context*
 
   ; constants/errors
     SQLITE_OK SQLITE_ERROR
@@ -421,7 +422,8 @@
 ;
 ;(define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
 (define sqlite3_result_int (sqlite fft-void "sqlite3_result_int" sqlite3_context* fft-int))
-;
+(define sqlite3_result_text (sqlite fft-void "sqlite3_result_text" sqlite3_context* type-string fft-int fft-void)) ; we do not support destructors
+
 ;
 ;(define sqlite3_column_type  (dlsym % type-enum+   "sqlite3_column_type" sqlite3_stmt* type-enum+))
 
