@@ -320,7 +320,6 @@ olvm.wasm: src/olvm.c tmp/repl.c
 	     tmp/repl.c -DREPL=repl -Os \
 	   -o olvm.html -Iincludes \
 	   -DOLVM_NOMAIN=1 -DHAS_DLOPEN=0 \
-	   -Dbinary_repl_start=repl \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \
 	   -s FORCE_FILESYSTEM=1 \

@@ -4,11 +4,11 @@ ol_t ol;
 
 void ol_eval(char* string)
 {
-   OL_eval(&ol, new_string(&ol, string), 0);
+	OL_eval(&ol, new_string(&ol, string), 0);
 }
 
-extern unsigned char binary_repl_start[];
+extern unsigned char REPL[];
 void ol_init()
 {
-   OL_new(&ol, binary_repl_start);
+	OL_new(&ol, REPL);
 }
