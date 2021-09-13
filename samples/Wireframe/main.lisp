@@ -82,16 +82,17 @@
 
 
 ; generate random field
-(gl:set-userdata
-(fold (lambda (ff v y)
-         (fold (lambda (ff v x)
-                  (if (eq? v #\space) ff (put ff (hash x y) v)))
-            ff v (iota (length v))))
-   #empty (reverse (xpm3 'bitmap)) (iota (length (xpm3 'bitmap)))))
+(import (scheme dynamic-bindings))
+(define userdata (make-parameter
+   (fold (lambda (ff v y)
+            (fold (lambda (ff v x)
+                     (if (eq? v #\space) ff (put ff (hash x y) v)))
+               ff v (iota (length v))))
+      #empty (reverse (xpm3 'bitmap)) (iota (length (xpm3 'bitmap))))))
 
 ; main game loop
 (gl:set-renderer (lambda (mouse)
-(let ((generation (gl:get-userdata)))
+(let ((generation (userdata)))
    (glClear GL_COLOR_BUFFER_BIT)
 
    ; draw the cells
@@ -107,7 +108,7 @@
       ) #f generation)
    (glEnd)
 
-   (gl:set-userdata
+   (userdata
    (ff-fold (lambda (ff k v)
          (case v
             (#\H (put ff k #\T)) ; head -> tail

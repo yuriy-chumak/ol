@@ -127,7 +127,8 @@
       "initial.xpm"))
    #f #f #f))
 
-(gl:set-userdata
+(import (scheme dynamic-bindings))
+(define userdata (make-parameter
    (let ((initial population))
       (fold (lambda (ff row y)
                (fold (lambda (ff col x)
@@ -137,32 +138,32 @@
                   ff row (iota (initial 'width) (/ (- WIDTH (initial 'width)) 2))))
          #empty
          (initial 'bitmap)
-         (iota (initial 'height) (/ (- HEIGHT (initial 'height)) 2)))))
+         (iota (initial 'height) (/ (- HEIGHT (initial 'height)) 2))))))
 
 (define delta-z (<< (<< 1 SHIFT) SHIFT))
-(gl:set-userdata
+(userdata
    (ff-fold (lambda (p key value)
                (put p (+ key delta-z) value))
-      (gl:get-userdata)
-      (gl:get-userdata)))
+      (userdata)
+      (userdata)))
 
 
 ; add some random userdata
 (import (otus random!))
-(gl:set-userdata
+(userdata
    (fold (lambda (ff n)
          (define x (+ -25 (rand! 50) (/ WIDTH 2)))
          (define y (+ -25 (rand! 50) (/ HEIGHT 2)))
          (define z (+ -25 (rand! 50) (/ DEPTH 2)))
          (put ff (hash x y z) 1))
-      (gl:get-userdata)
+      (userdata)
       (iota (* 50 50 50 0.01))))
 
 
 (define angle (box 10))
 
 (gl:set-renderer (lambda (mouse)
-(let ((generation (gl:get-userdata)))
+(let ((generation (userdata)))
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    ;; (print "cells count: "
@@ -232,7 +233,7 @@
             (glPopMatrix)))
       #f generation)
 
-   (gl:set-userdata
+   (userdata
       (ff-fold (lambda (st key value)
          (let ((X (mod key $HASH))
                (Y (mod (>> key SHIFT) $HASH))

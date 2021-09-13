@@ -19,7 +19,6 @@
 
 (export
    gl:set-window-title gl:set-window-size
-   gl:set-userdata gl:get-userdata
    gl:set-renderer
    gl:set-mouse-handler
    gl:set-keyboard-handler
@@ -714,13 +713,6 @@
 (native:create-context "Ol: OpenGL Window")
 
 ; -----------------------------
-(define gl:userdata (make-parameter {}))
-
-(define (gl:set-userdata userdata)
-   (gl:userdata userdata))
-(define (gl:get-userdata)
-   (gl:userdata))
-
 (define (gl:set-renderer renderer)
    (mail 'opengl ['set-renderer renderer]))
 

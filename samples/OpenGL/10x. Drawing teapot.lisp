@@ -110,8 +110,9 @@
 (define teapot (gluNewNurbsRenderer))
 (gluNurbsProperty teapot GLU_DISPLAY_MODE GLU_OUTLINE_POLYGON)
 
-(gl:set-userdata (list
-   1 0.02 3 0.03))
+(import (scheme dynamic-bindings))
+(define userdata (make-parameter
+   '(1 0.02 3 0.03)))
 
 ; draw
 (gl:set-renderer (lambda (mouse)
@@ -150,8 +151,8 @@
       (for-each render Handle:)
       (for-each render Spout:))
 
-   (gl:set-userdata
+   (userdata
       (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
             (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
          (list (+ x nx) nx (+ y ny) ny)))
-) (gl:get-userdata))))
+) (userdata))))

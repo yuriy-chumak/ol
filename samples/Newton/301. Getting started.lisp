@@ -94,12 +94,13 @@
 (glColorMaterial GL_FRONT GL_DIFFUSE)
 
 ; return parameter list:
-(gl:set-userdata
-   (gettimeofday))
+(import (scheme dynamic-bindings))
+(define userdata (make-parameter
+   (gettimeofday)))
 
 ; draw
 (gl:set-renderer (lambda (mouse)
-(let ((oldtime (gl:get-userdata))
+(let ((oldtime (userdata))
       (newtime (gettimeofday)))
    ;; ; обновим мир
    (let ((ms (* (+ (- (car newtime) (car oldtime)) (/ (- (cdr newtime) (cdr oldtime)) 1000000)) 2)))
@@ -128,7 +129,7 @@
       (list body1 body2))
 
    ; return new parameter list:
-   (gl:set-userdata newtime))))
+   (userdata newtime))))
 
 (gl:finish)
 (NewtonDestroy world)

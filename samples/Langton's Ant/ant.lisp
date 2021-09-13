@@ -30,9 +30,10 @@
    (glPointSize (/ width WIDTH))))
 
 ; generate random field
-(gl:set-userdata
+(import (scheme dynamic-bindings))
+(define userdata (make-parameter
    (pairs->ff (map (lambda (i) (let ((x (rand! WIDTH)) (y (rand! HEIGHT)))
-                                 (cons (hash x y) #t))) (iota 1000))))
+                                 (cons (hash x y) #t))) (iota 1000)))))
 
 (define ant (cons
    (rand! WIDTH)
@@ -41,7 +42,7 @@
 
 ; main game loop
 (gl:set-renderer (lambda (mouse)
-(let ((generation (gl:get-userdata)))
+(let ((generation (userdata)))
    (glClear GL_COLOR_BUFFER_BIT)
 
    ; draw the cells
@@ -55,7 +56,7 @@
       (glVertex2f (car ant) (cdr ant))
    (glEnd)
 
-   (gl:set-userdata
+   (userdata
       (let*((x (car ant))
             (y (cdr ant))
             (generation (case (get generation (hash x y) #f)

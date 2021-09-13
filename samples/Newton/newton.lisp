@@ -187,9 +187,10 @@
 (glEnable GL_COLOR_MATERIAL)
 
 ; parameters list
-(let ((oldtime (gettimeofday)))
-   (gl:set-userdata (list
-      oldtime 1 cubes spheres)))
+(import (scheme dynamic-bindings))
+(define userdata (make-parameter
+   (let ((oldtime (gettimeofday)))
+      (list oldtime 1 cubes spheres))))
 
 ; draw
 (gl:set-renderer (lambda (mouse)
@@ -284,7 +285,7 @@
          (glPopMatrix)) spheres))
 
    ; update userdata
-   (gl:set-userdata (list
+   (userdata (list
       newtime (+ i 1) cubes
       (if (and (> i 1000)
                (eq? (mod i 100) 0))
@@ -305,7 +306,7 @@
             (cons sphere spheres))
          ;else
          spheres)))
-)) (gl:get-userdata))))
+)) (userdata))))
 
 ; wait for window closing
 (gl:finish)

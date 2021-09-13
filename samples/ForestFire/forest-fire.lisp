@@ -20,10 +20,12 @@
    (glViewport 0 0 width height)
    (glPointSize (/ width WIDTH))))
 
-(gl:set-userdata (make-vector (map (lambda (-) (make-vector (map (lambda (-) (rand! 2)) (iota WIDTH)))) (iota HEIGHT))))
+(import (scheme dynamic-bindings))
+(define userdata (make-parameter
+   (make-vector (map (lambda (-) (make-vector (map (lambda (-) (rand! 2)) (iota WIDTH)))) (iota HEIGHT)))))
 
 (gl:set-renderer (lambda (mouse)
-   (let ((forest (gl:get-userdata))
+   (let ((forest (userdata))
          (step (make-vector (map (lambda (-) (make-vector (repeat 0 WIDTH))) (iota HEIGHT)))))
       (glClear GL_COLOR_BUFFER_BIT)
 
@@ -53,4 +55,4 @@
                   (iota WIDTH)))
             (iota HEIGHT))
       (glEnd)
-      (gl:set-userdata step))))
+      (userdata step))))
