@@ -115,55 +115,73 @@ R<sup>7</sup>RS DIFFERENCES
 * 2.1. Identifiers
   * `|\t\t|` and `|\x9;\x9;|` are **different** in Ol, but *the same* in Scheme.
   * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
+
 * 4.1.5. Conditionals
   * Ol provides **extended *if*** in forms
   `(if <condition> <then-clause> else <else1-clause>..<elseN-clause>)` and
   `(if <condition> then <then1-clause> <then2-clause> else <else1-clause>..<elseN-clause>)`,
   while Scheme is *not*.
+
 * 4.1.6. Assignments
   * **No** `set!` in Ol.
     - *note: Ol is purely functional language.*
+    - *note 2: But limited support of `set-car!`, `set-cdr!` and `set-ref!` functions is provided.*
+
 * 4.1.7. Inclusion
   * **No** `include` and `include-ci` in Ol.
     - *note: Use libraries (import, define-library, export, etc.) instead. Top level ",load" is available too.*
+
 * 4.2.1. Conditionals
   * Result of the `when` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
   * Result of the `unless` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
+
 * 4.2.5. Delayed evaluation
   * **No** `delay-force`, `promise?` and `make-promise` in Ol.
     - *note: But DELAY and FORCE exists, sure.*
+
 * 4.2.7. Exception handling
   * **No** `guard` and `raise` in Ol.
+
 * 5.5. Record-type definitions
   * **No** `define-record-type` in Ol.
+
 * 6.1. Equivalence predicate `eqv?`
   * `(eqv? +nan.0 +nan.0)` is **#true** in Ol, but *unspecified* in Scheme. The same for `+inf.0` and `-inf.0`.
+
 * 6.2.5. Syntax of numerical constants
   * `Numbers without precision` considered to be **exact** in Ol, but *inexact* in Scheme.
     - *explanation: Inexactness can be disabled by compiler features or/and unsupported by platform. But we should expect the same behavior of the program independently of inexactness support (unless we use inexact numbers, sure).*
+  * **No** `#e` and `#i` prefixes in Ol. Use `exact` and `inexact` functions instead.
+
 * 6.2.6. Numerical operations
   * Just Note: `complex?` is the same as `number?`, like in Scheme.
   * `integer?` for inexact numbers always returns **#false** in Ol, but can be *#true* in Scheme when (= number (round number)).
     - *explanation: Inexactness is an inexactness - we may lose the fractional part and not to be noticed about. So let's be a little paranoid.*
   * `sqrt` is **included** in base library profile while *not included* in Scheme
     - *explanation: due to frequent use.*
+
 * 6.4. Pairs and lists
   * `memq` and `assq` behavior with 'short' numbers (aka 'enumerations') as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
     - *note: those numbers processed by memq and assq as usual elements.*
+
 * 6.6. Characters
   * CHARACTERS in Ol is a **small numbers** (aka 'enumerations'), but a *characters* in Scheme.
     - *explanation: This is for a historical reason. Ol supports two types of numbers - 'small' numbers and 'long' numbers. 'Small' numbers are used as 'glyphs' (or 'runes' in other word) inside strings for better Unicode support. An additional 'character' type with requirements to use the char->integer and integer->char functions every time is too boring and slow. Thanks.*
     - *note: Ol supports full Unicode 12.1.0 (2020 Jun 13) character set.*
     - *note: If you want to print a character in the form of a letter (or a digit, etc.), use a function 'string', i.e. instead of (print #\λ) use (print (string #\λ)), otherwise you will get a number 955.*
+
 * 6.8. Vectors
   * NEGATIVE indices of a vector is **valid** in Ol, but *invalid* in Scheme.
-    - *note: Negative indices of a vector can be used to access to the n-th element from the end of a vector. I mean "-1" is the last vector element, "-2" - before the last element, "-N" - N-th element from the end of a vector.*
+    - *note: Negative vector indices can be used to access the n-th element from the end of the vector. This means that "-1" is the last element of the vector, "-2" is before the last element, "-n" is the n-th element from the end of the vector.*
+
 * 6.11. Exceptions
   * **No** exceptions handling in Ol.
     - *note: Yet.*
+
 * 6.13. Input and output
   * `current-input-port`, `current-output-port`, and `current-error-port` always return **stdin**, **stdout**, and **stderr** in Ol respectively, but *a parameter objects* in Scheme.
     - *note: due to large performance impact.*
+
 * Ol has builtin **regular expressions** while Scheme *not*.
   * *note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` (with optional 'g' suffix) and `c/<pattern>/` as functions to match, change and split the string.*
 
