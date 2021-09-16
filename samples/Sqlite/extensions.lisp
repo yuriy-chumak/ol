@@ -1,4 +1,6 @@
 #!/usr/bin/env ol
+
+(define *features* (cons 'sqlite-log-debug (features))) ; enable sqlite debugging
 (import (lib sqlite))
 (import (otus ffi))
 

@@ -335,27 +335,6 @@
       (begin
          (runtime-error "sqlite3: unknown platform" (uname)))))
 
-; -- utils --
-(begin
-)
-
-; enable sqlite logging
-(cond-expand
-   (sqlite-log-debug
-      (begin
-         (define RED "\e[0;32m")
-         (define GREEN "\e[0;32m")
-         (define END "\e[0;0m")
-
-         (define (log-debug . args)
-            (apply print-to (cons stderr args)))
-   ))
-         ;; (define (runtime-error reason info)
-         ;;    (print RED info END ";"))))
-   (else
-      (begin
-         (define (log-debug . args) #f))))
-
 (begin
    (define (make-void*) (vm:cast 0 type-vptr))
 
@@ -595,24 +574,43 @@
    ;
    ;(define sqlite3_column_type  (dlsym % type-enum+   "sqlite3_column_type" sqlite3_stmt* type-enum+))
 
+)
+; -------------------------------------------------------------------
+; enable sqlite logging
+(begin
+   (define RED "\e[0;31m")
+   (define GREEN "\e[0;32m")
+   (define YELLOW "\e[0;33m")
+   (define MAGENTA "\e[0;35m")
+   (define END "\e[0;0m"))
 
-   ; internal fast function
-   (define (starts-with-ci? string sub)
-      (let loop ((a (str-iter string))
-               (b (str-iter sub)))
-         (cond
-            ((null? a)
-               #false)
-            ((null? b)
-               #true)
-            ((not (char-ci=? (car a) (car b)))
-               #false)
-            (else
-               (loop (force (cdr a)) (force (cdr b)))))))
+(cond-expand
+   (sqlite-log-debug
+      (begin
+         (define-syntax debug
+            (syntax-rules ()
+               ((debug . args)
+                  (begin .args))))
+;                  (print-to stderr "SQLITE: " . args))))
+         (define-syntax error
+            (syntax-rules (list)
+               ((error reason . args)
+                  (begin
+                     (runtime-error (string-append RED reason) (list .args))))))))
+   (else
+      (begin
+         (define-syntax debug
+            (syntax-rules ()
+               ((debug . args)
+                  #false)))
+         (define-syntax error
+            (syntax-rules (list)
+               ((error reason . args)
+                  (begin
+                     (runtime-error reason (list .args)))))))))
 
-   ; ============================================================================
-
-   ; internal function:
+(begin
+   ; * internal function
    (define (get-result-as-row statement)
       (let ((n (sqlite3_column_count statement)))
          ;; (print "n: " n)
@@ -630,17 +628,20 @@
                         (SQLITE_FLOAT   (sqlite3_column_double statement i))
                         (SQLITE_TEXT    (sqlite3_column_text statement i))
                         ; (SQLITE_BLOB    (sqlite3_column_text statement i))
-                        (else (runtime-error "Unsupported column type " i)))
+                        (else (error "Unsupported column type " i)))
                      args)))))))
 
    ; при инвалидном запросе бросает runtime исключение
    ; select multiple values
    (define (sqlite:query database query . args)
-      (print "SQLITE: \e[0;35m" query "\e[0;0m: (" (length args) ")> " args)
+      (debug
+         (print-to stderr MAGENTA query END)
+         (display YELLOW stderr) (write args stderr) (display END)
+         (print-to stderr ", length: " YELLOW (length args) END))
+
       (let ((statement (make-sqlite3_stmt)))
          (unless (eq? 0 (sqlite3_prepare_v2 database query -1 statement #f))
-            (runtime-error "Sqlite query preparation error:" (list
-               query (sqlite3_errmsg database))))
+            (error "sqlite3 query preparation error:" (sqlite3_errmsg database)))
          ; apply arguments:
          (let loop ((n 1) (args args))
             (unless (null? args)
@@ -656,7 +657,7 @@
                         ((null? arg)
                            (sqlite3_bind_null   statement n))
                         (else
-                           (runtime-error "Unsupported parameter type" arg)))
+                           (error "Unsupported parameter type" arg)))
                      (sqlite3_bind_null statement n))
                   (loop (+ n 1) (cdr args)))))
          ; analyze results:
@@ -674,8 +675,8 @@
 
                   ; other errors should throw an error
                   (else
-                     (runtime-error "SQL statement execution error:" (list
-                        code (sqlite3_errmsg database)))
+                     (error "SQL statement execution error:"
+                        code (sqlite3_errmsg database))
                      #false))))))
 
    ; executes the statement and returns just one result
@@ -714,7 +715,7 @@
                            #true)
                         (else
                            (sqlite3_finalize statement)
-                           (runtime-error "Can't execute SQL statement" #t)))))))))
+                           (error "Can't execute SQL statement")))))))))
 
    (define (sqlite:map statement f)
       (case statement
@@ -734,6 +735,6 @@
                               (cons v t))
                            (else
                               (sqlite3_finalize statement)
-                              (runtime-error "Can't execute SQL statement" #t)))))))))))
+                              (error "Can't execute SQL statement")))))))))))
 
 ))
