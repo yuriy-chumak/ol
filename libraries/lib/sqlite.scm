@@ -21,7 +21,7 @@
     make-sqlite3 make-sqlite3_stmt
     sqlite3_context*
 
-  ; constants/errors
+  ; Result Codes
     SQLITE_OK SQLITE_ERROR
 
     SQLITE_INTERNAL SQLITE_PERM SQLITE_ABORT SQLITE_BUSY SQLITE_LOCKED
@@ -35,16 +35,88 @@
 
     SQLITE_STATIC SQLITE_TRANSIENT
     SQLITE_INTEGER SQLITE_FLOAT SQLITE_BLOB SQLITE_NULL SQLITE_TEXT
+  ; Extended Result Codes
+    ; TBD.
+  ; Flags For File Open Operations
+    ; TBD.
+  ; Device Characteristics
+    ; TBD.
+  ; File Locking Levels
+    ; TBD.
+  ; Synchronization Type Flags
+    ; TBD.
+  ; Standard File Control Opcodes
+    ; TBD.
+  ; Flags for the xAccess VFS method
+    ; TBD.
+  ; Flags for the xShmLock VFS method
+    ; TBD.
+  ; Maximum xShmLock index
+    ; TBD.
 
-  ; text encodings
-    SQLITE_UTF8
+  ; Text Encodings
+    SQLITE_UTF8     ; IMP: R-37514-35566
+    SQLITE_UTF16LE  ; IMP: R-03371-37637
+    SQLITE_UTF16BE  ; IMP: R-51971-34154
+    SQLITE_UTF16    ; Use native byte order
+    SQLITE_ANY      ; * deprecated
+    SQLITE_UTF16_ALIGNED ; sqlite3_create_collation onl
 
-   ;sqlite3_version[]
+  ; Configuration Options
+    SQLITE_CONFIG_SINGLETHREAD
+    SQLITE_CONFIG_MULTITHREAD
+    SQLITE_CONFIG_SERIALIZED
+   ;SQLITE_CONFIG_MALLOC
+   ;SQLITE_CONFIG_GETMALLOC
+   ;SQLITE_CONFIG_SCRATCH
+   ;SQLITE_CONFIG_PAGECACHE
+   ;SQLITE_CONFIG_HEAP
+   ;SQLITE_CONFIG_MEMSTATUS
+   ;SQLITE_CONFIG_MUTEX
+   ;SQLITE_CONFIG_GETMUTEX
+   ;SQLITE_CONFIG_LOOKASIDE
+   ;SQLITE_CONFIG_PCACHE
+   ;SQLITE_CONFIG_GETPCACHE
+   ;SQLITE_CONFIG_LOG
+   ;SQLITE_CONFIG_URI
+   ;SQLITE_CONFIG_PCACHE2
+   ;SQLITE_CONFIG_GETPCACHE2
+   ;SQLITE_CONFIG_COVERING_INDEX_SCAN
+   ;SQLITE_CONFIG_SQLLOG
+   ;SQLITE_CONFIG_MMAP_SIZE
+   ;SQLITE_CONFIG_WIN32_HEAPSIZE
+   ;SQLITE_CONFIG_PCACHE_HDRSZ
+   ;SQLITE_CONFIG_PMASZ
+   ;SQLITE_CONFIG_STMTJRNL_SPILL
+   ;SQLITE_CONFIG_SMALL_MALLOC
+   ;SQLITE_CONFIG_SORTERREF_SIZE
+   ;SQLITE_CONFIG_MEMDB_MAXSIZE
+
+
+  ; Run-Time Library Version Numbers
+   ;sqlite3_version[]; is not accessible as external static char[], will enabled in feature
     sqlite3_libversion ; const char* ()
     sqlite3_sourceid ; const char* ()
     sqlite3_libversion_number ; int ()
 
+  ; Test To See If The Library Is Threadsafe
     sqlite3_threadsafe ; int ()
+
+  ; One-Step Query Execution Interface
+   ; https://www.sqlite.org/c3ref/exec.html
+    sqlite3_exec ; int ()
+
+  ; Initialize The SQLite Library
+   ;sqlite3_initialize
+   ;sqlite3_shutdown
+   ;sqlite3_os_init
+   ;sqlite3_os_end
+
+  ; Configuring The SQLite Library
+    sqlite3_config
+
+  ; Configure database connections
+   ;sqlite3_db_config
 
     sqlite3_last_insert_rowid ; sqlite3_int64 (sqlite3*)
     sqlite3_changes ; int (sqlite3*)
@@ -83,8 +155,11 @@
     sqlite3_open ; int (const char* filename, sqlite3**)
    ;sqlite3_open16 ; int (const char* filename, sqlite3**)
    ;sqlite3_open_v2 ; int (const char* filename, sqlite3**, int, const char*)
+
+  ; Closing A Database Connection
     sqlite3_close ; int (sqlite3*)
-   ;sqlite3_close_v2 ; int (sqlite3*)
+    sqlite3_close_v2 ; int (sqlite3*)
+
     sqlite3_db_filename ; const char* (sqlite3*, const char*)
     sqlite3_db_readonly ; int (sqlite3*, const char*)
 
@@ -209,7 +284,7 @@
     sqlite3_result_int
    ;sqlite3_result_int64
    ;sqlite3_result_null
-   ;sqlite3_result_text
+    sqlite3_result_text
    ;sqlite3_result_text64
    ;sqlite3_result_text16
    ;sqlite3_result_text16le
@@ -260,294 +335,377 @@
       (begin
          (runtime-error "sqlite3: unknown platform" (uname)))))
 
+; -- utils --
 (begin
+)
 
-(define (make-void*) (vm:cast 0 type-vptr))
+; enable sqlite logging
+(cond-expand
+   (sqlite-log-debug
+      (begin
+         (define RED "\e[0;32m")
+         (define GREEN "\e[0;32m")
+         (define END "\e[0;0m")
 
-(if (not sqlite)
-   (runtime-error "Not found sqlite3 library. Please download and install one." #null))
+         (define (log-debug . args)
+            (apply print-to (cons stderr args)))
+   ))
+         ;; (define (runtime-error reason info)
+         ;;    (print RED info END ";"))))
+   (else
+      (begin
+         (define (log-debug . args) #f))))
 
+(begin
+   (define (make-void*) (vm:cast 0 type-vptr))
 
-; TEMP:
-(define (runtime-error reason info)
-   (print "\e[0;31m" info "\e[0;0m;"))
+   (if (not sqlite)
+      (runtime-error "Sqlite3 library not found. Please install one." #null))
 
-; --
-; version:
-(define sqlite3_libversion (sqlite type-string "sqlite3_libversion"))
-(define sqlite3_sourceid (sqlite type-string "sqlite3_sourceid"))
-(define sqlite3_libversion_number (sqlite fft-int "sqlite3_libversion_number"))
+   ; Types
+   (define sqlite3*  fft-void*)
+   (define sqlite3** fft-void**)
+   (define sqlite3_stmt*  fft-void*)
+   (define sqlite3_stmt** fft-void**)
+   (define sqlite3_value* fft-void*)
+   (define sqlite3_context* fft-void*)
 
-(define sqlite3_threadsafe (sqlite fft-int "sqlite3_threadsafe"))
+   ; * internal types
+   (define void* fft-void*)
+   (define int fft-int)
+   (define char* type-string)
+   (define char** fft-void**) ;?
+   (define sqlite3_callback type-callable)
 
-; types
-(define sqlite3*  fft-void*)
-(define sqlite3** fft-void**)
-(define sqlite3_stmt*  fft-void*)
-(define sqlite3_stmt** fft-void**)
-(define sqlite3_value* fft-void*)
-(define sqlite3_context* fft-void*)
-(define char** fft-void**) ;?
+   (define sqlite3_value fft-int)
+   (define sqlite3_int64 fft-int64)
+   (define sqlite3_uint64 fft-uint64)
 
-(define sqlite3_value fft-int)
-(define sqlite3_int64 fft-int64)
-(define sqlite3_uint64 fft-uint64)
+   ; Result Codes
+   (define SQLITE_OK 0)
+   (define SQLITE_ERROR 1)
+   (define SQLITE_INTERNAL 2)
+   (define SQLITE_PERM 3)
+   (define SQLITE_ABORT 4)
+   (define SQLITE_BUSY 5)
+   (define SQLITE_LOCKED 6)
+   (define SQLITE_NOMEM 7)
+   (define SQLITE_READONLY 8)
+   (define SQLITE_INTERRUPT 9)
+   (define SQLITE_IOERR 10)
+   (define SQLITE_CORRUPT 11)
+   (define SQLITE_NOTFOUND 12)
+   (define SQLITE_FULL 13)
+   (define SQLITE_CANTOPEN 14)
+   (define SQLITE_PROTOCOL 15)
+   (define SQLITE_EMPTY 16)
+   (define SQLITE_SCHEMA 17)
+   (define SQLITE_TOOBIG 18)
+   (define SQLITE_CONSTRAINT 19)
+   (define SQLITE_MISMATCH 20)
+   (define SQLITE_MISUSE 21)
+   (define SQLITE_NOLFS 22)
+   (define SQLITE_AUTH 23)
+   (define SQLITE_FORMAT 24)
+   (define SQLITE_RANGE 25)
+   (define SQLITE_NOTADB 26)
+   (define SQLITE_NOTICE 27)
+   (define SQLITE_WARNING 28)
 
-; служебные
-(define (make-sqlite3)      (make-void*))
-(define (make-sqlite3_stmt) (make-void*))
+   (define SQLITE_ROW 100)
+   (define SQLITE_DONE 101)
 
-; constants
-(define SQLITE_OK 0)
-(define SQLITE_ERROR 1)
-(define SQLITE_INTERNAL 2)
-(define SQLITE_PERM 3)
-(define SQLITE_ABORT 4)
-(define SQLITE_BUSY 5)
-(define SQLITE_LOCKED 6)
-(define SQLITE_NOMEM 7)
-(define SQLITE_READONLY 8)
-(define SQLITE_INTERRUPT 9)
-(define SQLITE_IOERR 10)
-(define SQLITE_CORRUPT 11)
-(define SQLITE_NOTFOUND 12)
-(define SQLITE_FULL 13)
-(define SQLITE_CANTOPEN 14)
-(define SQLITE_PROTOCOL 15)
-(define SQLITE_EMPTY 16)
-(define SQLITE_SCHEMA 17)
-(define SQLITE_TOOBIG 18)
-(define SQLITE_CONSTRAINT 19)
-(define SQLITE_MISMATCH 20)
-(define SQLITE_MISUSE 21)
-(define SQLITE_NOLFS 22)
-(define SQLITE_AUTH 23)
-(define SQLITE_FORMAT 24)
-(define SQLITE_RANGE 25)
-(define SQLITE_NOTADB 26)
-(define SQLITE_NOTICE 27)
-(define SQLITE_WARNING 28)
+   (define SQLITE_STATIC 0)
+   (define SQLITE_TRANSIENT -1)
 
-(define SQLITE_ROW 100)
-(define SQLITE_DONE 101)
+   (define SQLITE_INTEGER 1)
+   (define SQLITE_FLOAT 2)
+   (define SQLITE_BLOB 4)
+   (define SQLITE_NULL 5)
+   (define SQLITE_TEXT 3)
 
-(define SQLITE_STATIC 0)
-(define SQLITE_TRANSIENT -1)
+   (define SQLITE_MISUSE 21)
 
-(define SQLITE_INTEGER 1)
-(define SQLITE_FLOAT 2)
-(define SQLITE_BLOB 4)
-(define SQLITE_NULL 5)
-(define SQLITE_TEXT 3)
+   ; Extended Result Codes .. Maximum xShmLock index
+   ; TBD.
 
-(define SQLITE_MISUSE 21)
+   ; Text Encodings
+   (define SQLITE_UTF8 1)
+   (define SQLITE_UTF16LE 2)
+   (define SQLITE_UTF16BE 3)
+   (define SQLITE_UTF16 4)
+   (define SQLITE_ANY 5)
+   (define SQLITE_UTF16_ALIGNED 8)
 
-(define SQLITE_UTF8 1)
-
-; --- functions --------------------------------------------------------------
-(define sqlite3_last_insert_rowid (sqlite sqlite3_int64 "sqlite3_last_insert_rowid" sqlite3*))
-(define sqlite3_changes (sqlite fft-int "sqlite3_changes" sqlite3*))
-(define sqlite3_total_changes (sqlite fft-int "sqlite3_total_changes" sqlite3*))
-(define sqlite3_db_filename (sqlite type-string "sqlite3_db_filename" sqlite3* type-string))
-(define sqlite3_db_readonly (sqlite fft-int "sqlite3_db_readonly" sqlite3* type-string))
-
-; https://www.sqlite.org/c3ref/open.html
-; ex: file:data.db?mode=ro&cache=private
-(define sqlite3_open (sqlite fft-int "sqlite3_open" type-string sqlite3**))
-(define sqlite3_close (sqlite fft-int "sqlite3_close" sqlite3*))
-(define sqlite3_errcode (sqlite fft-int "sqlite3_errcode" sqlite3*))
-(define sqlite3_errmsg (sqlite type-string "sqlite3_errmsg" sqlite3*))
-;(define sqlite3_errstr (sqlite type-string "sqlite3_errstr" fft-int))
-
-
-; sqlite3_prepare
-; TODO: проблема с крайним параметром (char**) - надо этот результат сконвертировать снова в строку, новую
-(define sqlite3_prepare_v2 (sqlite fft-int "sqlite3_prepare_v2" sqlite3* type-string fft-int sqlite3_stmt** char**))
-; sqlite3_prepare16
-; sqlite3_prepare16_v2
-
-(define sqlite3_sql (sqlite type-string "sqlite3_sql" sqlite3_stmt*))
-(define sqlite3_stmt_readonly (sqlite fft-int "sqlite3_stmt_readonly" sqlite3_stmt*))
-
-(define sqlite3_step (sqlite fft-int "sqlite3_step" sqlite3_stmt*))
-(define sqlite3_reset (sqlite fft-int "sqlite3_reset" sqlite3_stmt*))
-(define sqlite3_finalize (sqlite fft-int "sqlite3_finalize" sqlite3_stmt*))
-
-; In the SQL statement text input to sqlite3_prepare_v2() and its variants,
-;  literals may be replaced by a parameter that matches one of following templates:
-;    ? ?NNN :VVV @VVV $VVV
-; The values of these parameters (also called "host parameter names" or "SQL parameters")
-; can be set using the sqlite3_bind_*() routines defined here.
-   ;sqlite3_bind_blob
-   ;sqlite3_bind_blob64
-(define sqlite3_bind_double (sqlite fft-int "sqlite3_bind_double" sqlite3_stmt* fft-int fft-double))
-(define sqlite3_bind_int (sqlite fft-int "sqlite3_bind_int" sqlite3_stmt* fft-int fft-int))
-(define sqlite3_bind_int64 (sqlite fft-int "sqlite3_bind_int64" sqlite3_stmt* fft-int sqlite3_int64))
-(define sqlite3_bind_null (sqlite fft-int "sqlite3_bind_null" sqlite3_stmt* fft-int))
-(define sqlite3_bind_text (sqlite fft-int "sqlite3_bind_text" sqlite3_stmt* fft-int type-string fft-int type-callable))
-(define sqlite3_bind_text16 (sqlite fft-int "sqlite3_bind_text16" sqlite3_stmt* fft-int type-string-wide fft-int type-callable))
-   ;sqlite3_bind_text64
-   ;sqlite3_bind_value
-   ;sqlite3_bind_zeroblob
-   ;sqlite3_bind_zeroblob64
-(define sqlite3_bind_parameter_count (sqlite fft-int "sqlite3_bind_parameter_count" sqlite3_stmt*))
-(define sqlite3_bind_parameter_name (sqlite type-string "sqlite3_bind_parameter_name" sqlite3_stmt* fft-int))
-(define sqlite3_bind_parameter_index (sqlite fft-int "sqlite3_bind_parameter_index" sqlite3_stmt* type-string))
-(define sqlite3_clear_bindings (sqlite fft-int "sqlite3_clear_bindings" sqlite3_stmt*))
-
-(define sqlite3_column_count (sqlite fft-int "sqlite3_column_count" sqlite3_stmt*))
-(define sqlite3_column_name (sqlite type-string "sqlite3_column_name" sqlite3_stmt* fft-int))
-
-(define sqlite3_data_count (sqlite fft-int "sqlite3_data_count" sqlite3_stmt*))
-
-;(define sqlite3_column_blob ; (dlsym % type-string "sqlite3_column_blob" sqlite3_stmt* type-enum+))
-;(define sqlite3_column_bytes ;(dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
-;(define sqlite3_column_bytes16 ; (dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
-(define sqlite3_column_double (sqlite fft-double "sqlite3_column_double" sqlite3_stmt* fft-int))
-(define sqlite3_column_int (sqlite fft-int "sqlite3_column_int" sqlite3_stmt* fft-int))
-(define sqlite3_column_int64 (sqlite sqlite3_int64 "sqlite3_column_int" sqlite3_stmt* fft-int))
-(define sqlite3_column_text (sqlite type-string "sqlite3_column_text" sqlite3_stmt* fft-int))
-(define sqlite3_column_text16 (sqlite type-string-wide "sqlite3_column_text16" sqlite3_stmt* fft-int))
-
-(define sqlite3_column_type (sqlite fft-int "sqlite3_column_type" sqlite3_stmt* fft-int))
-(define sqlite3_column_value (sqlite sqlite3_value* "sqlite3_column_value" sqlite3_stmt* fft-int))
-
-(define sqlite3_value_double (sqlite fft-double "sqlite3_value_double" sqlite3_stmt*))
-(define sqlite3_value_int (sqlite fft-int "sqlite3_value_int" sqlite3_stmt*))
-(define sqlite3_value_text (sqlite type-string "sqlite3_value_text" sqlite3_stmt*))
-(define sqlite3_value_type (sqlite fft-int "sqlite3_value_type" sqlite3_stmt*))
-(define sqlite3_value_numeric_type (sqlite fft-int "sqlite3_value_numeric_type" sqlite3_stmt*))
-
-(define sqlite3_create_function_v2 (sqlite fft-int "sqlite3_create_function_v2"   sqlite3* type-string fft-int fft-int fft-void* type-callable type-callable type-callable type-vptr))
-;
-;(define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
-(define sqlite3_result_int (sqlite fft-void "sqlite3_result_int" sqlite3_context* fft-int))
-(define sqlite3_result_text (sqlite fft-void "sqlite3_result_text" sqlite3_context* type-string fft-int fft-void)) ; we do not support destructors
-
-;
-;(define sqlite3_column_type  (dlsym % type-enum+   "sqlite3_column_type" sqlite3_stmt* type-enum+))
+   ; Configuration Options
+   (define SQLITE_CONFIG_SINGLETHREAD   1) ; nil
+   (define SQLITE_CONFIG_MULTITHREAD    2) ; nil
+   (define SQLITE_CONFIG_SERIALIZED     3) ; nil
+   (define SQLITE_CONFIG_MALLOC         4) ; sqlite3_mem_methods*
+   (define SQLITE_CONFIG_GETMALLOC      5) ; sqlite3_mem_methods*
+   (define SQLITE_CONFIG_SCRATCH        6) ; No longer used
+   (define SQLITE_CONFIG_PAGECACHE      7) ; void*, int sz, int N
+   (define SQLITE_CONFIG_HEAP           8) ; void*, int nByte, int min
+   (define SQLITE_CONFIG_MEMSTATUS      9) ; boolean
+   (define SQLITE_CONFIG_MUTEX         10) ; sqlite3_mutex_methods*
+   (define SQLITE_CONFIG_GETMUTEX      11) ; sqlite3_mutex_methods*
+   (define SQLITE_CONFIG_LOOKASIDE     13) ; int int
+   (define SQLITE_CONFIG_PCACHE        14) ; no-op
+   (define SQLITE_CONFIG_GETPCACHE     15) ; no-op
+   (define SQLITE_CONFIG_LOG           16) ; xFunc, void*
+   (define SQLITE_CONFIG_URI           17) ; int
+   (define SQLITE_CONFIG_PCACHE2       18) ; sqlite3_pcache_methods2*
+   (define SQLITE_CONFIG_GETPCACHE2    19) ; sqlite3_pcache_methods2*
+   (define SQLITE_CONFIG_COVERING_INDEX_SCAN  20) ; int
+   (define SQLITE_CONFIG_SQLLOG        21) ; xSqllog, void*
+   (define SQLITE_CONFIG_MMAP_SIZE     22) ; sqlite3_int64, sqlite3_int64
+   (define SQLITE_CONFIG_WIN32_HEAPSIZE       23) ; int nByte
+   (define SQLITE_CONFIG_PCACHE_HDRSZ         24) ; int *psz
+   (define SQLITE_CONFIG_PMASZ                25) ; unsigned int szPma
+   (define SQLITE_CONFIG_STMTJRNL_SPILL       26) ; int nByte
+   (define SQLITE_CONFIG_SMALL_MALLOC         27) ; boolean
+   (define SQLITE_CONFIG_SORTERREF_SIZE       28) ; int nByte
+   (define SQLITE_CONFIG_MEMDB_MAXSIZE        29) ; sqlite3_int64
 
 
-; internal fast function
-(define (starts-with-ci? string sub)
-   (let loop ((a (str-iter string))
-              (b (str-iter sub)))
-      (cond
-         ((null? a)
-            #false)
-         ((null? b)
-            #true)
-         ((not (char-ci=? (car a) (car b)))
-            #false)
+   ; -----------------------------------------------
+
+   ; Run-Time Library Version Numbers
+   (define sqlite3_libversion (sqlite char* "sqlite3_libversion"))
+   (define sqlite3_sourceid (sqlite char* "sqlite3_sourceid"))
+   (define sqlite3_libversion_number (sqlite int "sqlite3_libversion_number"))
+
+   ; Test To See If The Library Is Threadsafe
+   (define sqlite3_threadsafe (sqlite int "sqlite3_threadsafe"))
+
+   ; One-Step Query Execution Interface
+   (define sqlite3_exec (sqlite int "sqlite3_exec" sqlite3* char* sqlite3_callback void* char**))
+
+   ; * internal helpers
+   (define (make-sqlite3)      (make-void*))
+   (define (make-sqlite3_stmt) (make-void*))
+
+   ; Initialize The SQLite Library
+   ;sqlite3_initialize
+   ;sqlite3_shutdown
+   ;sqlite3_os_init
+   ;sqlite3_os_end
+
+   ; Configuring The SQLite Library
+      (setq sqlite3_config_ (sqlite int "sqlite3_config" int))
+   (define (sqlite3_config option . args)
+      (case option
+         (SQLITE_CONFIG_SINGLETHREAD
+            (sqlite3_config_ option))
+         (SQLITE_CONFIG_MULTITHREAD
+            (sqlite3_config_ option))
+         (SQLITE_CONFIG_SERIALIZED
+            (sqlite3_config_ option))
+         ;...
          (else
-            (loop (force (cdr a)) (force (cdr b)))))))
+            (runtime-error "Unknown sqlite3_config option" option))))
 
-; ============================================================================
+   ; Configure database connections
+   ;sqlite3_db_config
 
-; internal function:
-(define (get-result-as-row statement)
-   (let ((n (sqlite3_column_count statement)))
-      ;; (print "n: " n)
-      (if (less? 0 n)
-         (let subloop ((i (- n 1)) (args '()))
-            ;; (print "args: " args)
-            ;; (print "sqlite3_column_type statement i: " (sqlite3_column_type statement i))
-            ;; (print "i: " i)
-            ;; (print "?: " (< i 0))
-            (if (< i 0) args
-               (subloop (- i 1) (cons
-                  (case (sqlite3_column_type statement i)
-                     (SQLITE_NULL    #false) ; should be #false or #null?
-                     (SQLITE_INTEGER (sqlite3_column_int statement i))
-                     (SQLITE_FLOAT   (sqlite3_column_double statement i))
-                     (SQLITE_TEXT    (sqlite3_column_text statement i))
-                     ; (SQLITE_BLOB    (sqlite3_column_text statement i))
-                     (else (runtime-error "Unsupported column type " i)))
-                  args)))))))
+   ; --- functions --------------------------------------------------------------
+   (define sqlite3_last_insert_rowid (sqlite sqlite3_int64 "sqlite3_last_insert_rowid" sqlite3*))
+   (define sqlite3_changes (sqlite int "sqlite3_changes" sqlite3*))
+   (define sqlite3_total_changes (sqlite int "sqlite3_total_changes" sqlite3*))
+   (define sqlite3_db_filename (sqlite type-string "sqlite3_db_filename" sqlite3* type-string))
+   (define sqlite3_db_readonly (sqlite int "sqlite3_db_readonly" sqlite3* type-string))
 
-; при инвалидном запросе бросает runtime исключение
-; select multiple values
-(define (sqlite:query database query . args)
-   ;(print "SQLITE: \e[0;35m" query "\e[0;0m: (" (length args) ")> " args)
-   (let ((statement (make-sqlite3_stmt)))
-      (unless (eq? 0 (sqlite3_prepare_v2 database query -1 statement #f))
-         (runtime-error "error query preparation:" (list
-            query (sqlite3_errmsg database))))
-      ; apply arguments:
-      (let loop ((n 1) (args args))
-         (unless (null? args)
-            (let ((arg (car args)))
-               (if arg
-                  (cond
-                     ((integer? arg)
-                        (sqlite3_bind_int64  statement n arg))
-                     ((rational? arg)
-                        (sqlite3_bind_double statement n arg))
-                     ((string? arg)
-                        (sqlite3_bind_text   statement n arg -1 #f))
-                     ((null? arg)
-                        (sqlite3_bind_null   statement n))
-                     (else
-                        (runtime-error "Unsupported parameter type" arg)))
-                  (sqlite3_bind_null statement n))
-               (loop (+ n 1) (cdr args)))))
-      ; analyze results:
-      (let ((code (sqlite3_step statement)))
-         (case code
-            (SQLITE_ROW ; SELECT
-               statement)
-            (SQLITE_DONE; ...
-               (sqlite3_finalize statement)
-               #true) ; no query results present, but it's ok
-            (SQLITE_CONSTRAINT ; INSERT
-               (print "SQLITE_CONSTRAINT")
-               (sqlite3_finalize statement)
-               #false) ; something wrong, got error
+   ; https://www.sqlite.org/c3ref/open.html
+   ; ex: file:data.db?mode=ro&cache=private
+   (define sqlite3_open (sqlite int "sqlite3_open" type-string sqlite3**))
+
+  ; Closing A Database Connection
+   (define sqlite3_close (sqlite int "sqlite3_close" sqlite3*))
+   (define sqlite3_close_v2 (sqlite int "sqlite3_close_v2" sqlite3*))
+
+   (define sqlite3_errcode (sqlite int "sqlite3_errcode" sqlite3*))
+   (define sqlite3_errmsg (sqlite type-string "sqlite3_errmsg" sqlite3*))
+   ;(define sqlite3_errstr (sqlite type-string "sqlite3_errstr" int))
+
+
+   ; sqlite3_prepare
+   ; TODO: проблема с крайним параметром (char**) - надо этот результат сконвертировать снова в строку, новую
+   (define sqlite3_prepare_v2 (sqlite int "sqlite3_prepare_v2" sqlite3* type-string int sqlite3_stmt** char**))
+   ; sqlite3_prepare16
+   ; sqlite3_prepare16_v2
+
+   (define sqlite3_sql (sqlite type-string "sqlite3_sql" sqlite3_stmt*))
+   (define sqlite3_stmt_readonly (sqlite int "sqlite3_stmt_readonly" sqlite3_stmt*))
+
+   (define sqlite3_step (sqlite int "sqlite3_step" sqlite3_stmt*))
+   (define sqlite3_reset (sqlite int "sqlite3_reset" sqlite3_stmt*))
+   (define sqlite3_finalize (sqlite int "sqlite3_finalize" sqlite3_stmt*))
+
+   ; In the SQL statement text input to sqlite3_prepare_v2() and its variants,
+   ;  literals may be replaced by a parameter that matches one of following templates:
+   ;    ? ?NNN :VVV @VVV $VVV
+   ; The values of these parameters (also called "host parameter names" or "SQL parameters")
+   ; can be set using the sqlite3_bind_*() routines defined here.
+      ;sqlite3_bind_blob
+      ;sqlite3_bind_blob64
+   (define sqlite3_bind_double (sqlite int "sqlite3_bind_double" sqlite3_stmt* int fft-double))
+   (define sqlite3_bind_int (sqlite int "sqlite3_bind_int" sqlite3_stmt* int int))
+   (define sqlite3_bind_int64 (sqlite int "sqlite3_bind_int64" sqlite3_stmt* int sqlite3_int64))
+   (define sqlite3_bind_null (sqlite int "sqlite3_bind_null" sqlite3_stmt* int))
+   (define sqlite3_bind_text (sqlite int "sqlite3_bind_text" sqlite3_stmt* int type-string int type-callable))
+   (define sqlite3_bind_text16 (sqlite int "sqlite3_bind_text16" sqlite3_stmt* int type-string-wide int type-callable))
+      ;sqlite3_bind_text64
+      ;sqlite3_bind_value
+      ;sqlite3_bind_zeroblob
+      ;sqlite3_bind_zeroblob64
+   (define sqlite3_bind_parameter_count (sqlite int "sqlite3_bind_parameter_count" sqlite3_stmt*))
+   (define sqlite3_bind_parameter_name (sqlite type-string "sqlite3_bind_parameter_name" sqlite3_stmt* int))
+   (define sqlite3_bind_parameter_index (sqlite int "sqlite3_bind_parameter_index" sqlite3_stmt* type-string))
+   (define sqlite3_clear_bindings (sqlite int "sqlite3_clear_bindings" sqlite3_stmt*))
+
+   (define sqlite3_column_count (sqlite int "sqlite3_column_count" sqlite3_stmt*))
+   (define sqlite3_column_name (sqlite type-string "sqlite3_column_name" sqlite3_stmt* int))
+
+   (define sqlite3_data_count (sqlite int "sqlite3_data_count" sqlite3_stmt*))
+
+   ;(define sqlite3_column_blob ; (dlsym % type-string "sqlite3_column_blob" sqlite3_stmt* type-enum+))
+   ;(define sqlite3_column_bytes ;(dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
+   ;(define sqlite3_column_bytes16 ; (dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
+   (define sqlite3_column_double (sqlite fft-double "sqlite3_column_double" sqlite3_stmt* int))
+   (define sqlite3_column_int (sqlite int "sqlite3_column_int" sqlite3_stmt* int))
+   (define sqlite3_column_int64 (sqlite sqlite3_int64 "sqlite3_column_int" sqlite3_stmt* int))
+   (define sqlite3_column_text (sqlite type-string "sqlite3_column_text" sqlite3_stmt* int))
+   (define sqlite3_column_text16 (sqlite type-string-wide "sqlite3_column_text16" sqlite3_stmt* int))
+
+   (define sqlite3_column_type (sqlite int "sqlite3_column_type" sqlite3_stmt* int))
+   (define sqlite3_column_value (sqlite sqlite3_value* "sqlite3_column_value" sqlite3_stmt* int))
+
+   (define sqlite3_value_double (sqlite fft-double "sqlite3_value_double" sqlite3_stmt*))
+   (define sqlite3_value_int (sqlite int "sqlite3_value_int" sqlite3_stmt*))
+   (define sqlite3_value_text (sqlite type-string "sqlite3_value_text" sqlite3_stmt*))
+   (define sqlite3_value_type (sqlite int "sqlite3_value_type" sqlite3_stmt*))
+   (define sqlite3_value_numeric_type (sqlite int "sqlite3_value_numeric_type" sqlite3_stmt*))
+
+   (define sqlite3_create_function_v2 (sqlite int "sqlite3_create_function_v2"   sqlite3* type-string int int fft-void* type-callable type-callable type-callable type-vptr))
+   ;
+   ;(define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
+   (define sqlite3_result_int (sqlite fft-void "sqlite3_result_int" sqlite3_context* int))
+   (define sqlite3_result_text (sqlite fft-void "sqlite3_result_text" sqlite3_context* type-string int fft-void)) ; we do not support destructors
+
+   ;
+   ;(define sqlite3_column_type  (dlsym % type-enum+   "sqlite3_column_type" sqlite3_stmt* type-enum+))
+
+
+   ; internal fast function
+   (define (starts-with-ci? string sub)
+      (let loop ((a (str-iter string))
+               (b (str-iter sub)))
+         (cond
+            ((null? a)
+               #false)
+            ((null? b)
+               #true)
+            ((not (char-ci=? (car a) (car b)))
+               #false)
             (else
-              ;(print "Can't execute SQL statement with err: " code)
-               (sqlite3_finalize statement)
-               (runtime-error "Can't execute SQL statement" (list
-                  code (sqlite3_errmsg database))))))))
+               (loop (force (cdr a)) (force (cdr b)))))))
 
-; executes the statement and returns
-; last row id: in case of "insert"
-; updated rows: in case of "update" ?
-(define (sqlite:value database query . args)
-   (let ((statement (apply sqlite:query (cons database (cons query args)))))
+   ; ============================================================================
+
+   ; internal function:
+   (define (get-result-as-row statement)
+      (let ((n (sqlite3_column_count statement)))
+         ;; (print "n: " n)
+         (if (less? 0 n)
+            (let subloop ((i (- n 1)) (args '()))
+               ;; (print "args: " args)
+               ;; (print "sqlite3_column_type statement i: " (sqlite3_column_type statement i))
+               ;; (print "i: " i)
+               ;; (print "?: " (< i 0))
+               (if (< i 0) args
+                  (subloop (- i 1) (cons
+                     (case (sqlite3_column_type statement i)
+                        (SQLITE_NULL    #false) ; should be #false or #null?
+                        (SQLITE_INTEGER (sqlite3_column_int statement i))
+                        (SQLITE_FLOAT   (sqlite3_column_double statement i))
+                        (SQLITE_TEXT    (sqlite3_column_text statement i))
+                        ; (SQLITE_BLOB    (sqlite3_column_text statement i))
+                        (else (runtime-error "Unsupported column type " i)))
+                     args)))))))
+
+   ; при инвалидном запросе бросает runtime исключение
+   ; select multiple values
+   (define (sqlite:query database query . args)
+      (print "SQLITE: \e[0;35m" query "\e[0;0m: (" (length args) ")> " args)
+      (let ((statement (make-sqlite3_stmt)))
+         (unless (eq? 0 (sqlite3_prepare_v2 database query -1 statement #f))
+            (runtime-error "Sqlite query preparation error:" (list
+               query (sqlite3_errmsg database))))
+         ; apply arguments:
+         (let loop ((n 1) (args args))
+            (unless (null? args)
+               (let ((arg (car args)))
+                  (if arg
+                     (cond
+                        ((integer? arg)
+                           (sqlite3_bind_int64  statement n arg))
+                        ((rational? arg)
+                           (sqlite3_bind_double statement n arg))
+                        ((string? arg)
+                           (sqlite3_bind_text   statement n arg -1 #f))
+                        ((null? arg)
+                           (sqlite3_bind_null   statement n))
+                        (else
+                           (runtime-error "Unsupported parameter type" arg)))
+                     (sqlite3_bind_null statement n))
+                  (loop (+ n 1) (cdr args)))))
+         ; analyze results:
+         (let ((code (sqlite3_step statement)))
+            (if (eq? code SQLITE_ROW) ; query returned a dataset
+               statement
+            else
+               (sqlite3_finalize statement)
+               (case code
+                  (SQLITE_DONE #true) ; request successful
+
+                  ; constraint violation is not a critical
+                  ; error, just return #false
+                  (SQLITE_CONSTRAINT #false)
+
+                  ; other errors should throw an error
+                  (else
+                     (runtime-error "SQL statement execution error:" (list
+                        code (sqlite3_errmsg database)))
+                     #false))))))
+
+   ; executes the statement and returns just one result
+   ; if query was "update" or "insert" return a count of updated/inserted rows
+   ; if you want to receive inserted key - use "RETURNING" syntax or
+   ; (sqlite3_last_insert_rowid db) function.
+   (define (sqlite:value database query . args)
+      (let ((statement (apply sqlite:query (cons database (cons query args)))))
+         (case statement
+            (#f #false) ; error
+            (#t         ; ok, but no data returned
+               (let ((changes (sqlite3_changes database)))
+                  (if (less? 0 changes) changes)))
+            (else ; got a values!
+               (let ((result (get-result-as-row statement)))
+                  (sqlite3_finalize statement)
+                  (if result
+                     (if (eq? (cdr result) #null)
+                        (car result)
+                        result)))))))
+
+   (define (sqlite:for-each statement f)
       (case statement
-         (#f #false) ; error :(
-         (#t         ; ok, but no data returned
-            (cond
-               ((starts-with-ci? query "SELECT ")
-                  #false)
-               ((starts-with-ci? query "INSERT ")
-                  (let ((id (sqlite3_last_insert_rowid database)))
-                        (print "id: " id) ; debug output
-                     (if (less? 0 id) id))) ; return inserted row id (usually: the key) or #false
-               ((or (starts-with-ci? query "UPDATE ")
-                    (starts-with-ci? query "DELETE "))
-                  (let ((changes (sqlite3_changes database)))
-                        (print "changes: " changes) ; debug output
-                     (if (less? 0 changes) changes)))
-               (else
-                  #true)))
-         (else ; got a values!
-            (let ((result (get-result-as-row statement)))
-               (sqlite3_finalize statement)
-               (if result
-                  (if (eq? (cdr result) #null)
-                     (car result)
-                     result)))))))
-
-(define (sqlite:for-each statement f)
-   (case statement
-      (#f #false) ; error
-      (#t #true)  ; no data available
-      (else
-         (let loop ()
-            (let ((row (get-result-as-row statement)))
-               (if row
-                  (begin (apply f row)
+         (#f #false) ; error
+         (#t #true)  ; no data available
+         (else
+            (let loop ()
+               (let ((row (get-result-as-row statement)))
+                  (when row
+                     (apply f row)
                      (case (sqlite3_step statement)
                         (SQLITE_ROW
                            (loop))
@@ -556,26 +714,26 @@
                            #true)
                         (else
                            (sqlite3_finalize statement)
-                           (runtime-error "Can't execute SQL statement" #t))))))))))
+                           (runtime-error "Can't execute SQL statement" #t)))))))))
 
-(define (sqlite:map statement f)
-   (case statement
-      (#f #false) ; error
-      (#t #null)  ; no data available
-      (else
-         (reverse
-         (let loop ((t '()))
-            (let ((row (get-result-as-row statement)))
-               (if row
-                  (let ((v (apply f row)))
-                     (case (sqlite3_step statement)
-                        (SQLITE_ROW
-                           (loop (cons v t)))
-                        (SQLITE_DONE
-                           (sqlite3_finalize statement)
-                           (cons v t))
-                        (else
-                           (sqlite3_finalize statement)
-                           (runtime-error "Can't execute SQL statement" #t)))))))))))
+   (define (sqlite:map statement f)
+      (case statement
+         (#f #false) ; error
+         (#t #null)  ; no data available
+         (else
+            (reverse
+            (let loop ((t '()))
+               (let ((row (get-result-as-row statement)))
+                  (if row
+                     (let ((v (apply f row)))
+                        (case (sqlite3_step statement)
+                           (SQLITE_ROW
+                              (loop (cons v t)))
+                           (SQLITE_DONE
+                              (sqlite3_finalize statement)
+                              (cons v t))
+                           (else
+                              (sqlite3_finalize statement)
+                              (runtime-error "Can't execute SQL statement" #t)))))))))))
 
 ))
