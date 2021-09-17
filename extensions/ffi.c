@@ -1292,7 +1292,20 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			else
 			switch (type) {
 				case TANY:
-					D("TODO: TANY processing");
+					switch (reference_type (arg)) {
+						case TSTRING:
+							words += WALIGN(reference_size(arg)) + 1;
+							break;
+						case TSTRINGWIDE:
+							words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
+							break;
+                        case TSTRINGDISPATCH:
+							words += WALIGN(number(ref(arg, 1))) + 1; // todo: process whole string as utf8_len and use FAST_STRING_CALC macro
+							break;
+						default:
+							// D("TODO: TANY processing");
+							break;
+					}
 					break;
 				case TSTRING:
 					switch (reference_type (arg)) {
@@ -1721,8 +1734,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					E("No type conversion selected");
 				break;
 			case TSTRING:
-			case TSTRINGWIDE:
+			case TSTRINGDISPATCH:
 				goto tstring;
+			case TSTRINGWIDE:
+				goto tstringwide;
 			}
 			break;
 		}
