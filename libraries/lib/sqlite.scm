@@ -531,7 +531,6 @@
    (define sqlite3_bind_int (sqlite int "sqlite3_bind_int" sqlite3_stmt* int int))
    (define sqlite3_bind_int64 (sqlite int "sqlite3_bind_int64" sqlite3_stmt* int sqlite3_int64))
    (define sqlite3_bind_null (sqlite int "sqlite3_bind_null" sqlite3_stmt* int))
-   (define sqlite3_bind_text (sqlite int "sqlite3_bind_text" sqlite3_stmt* int type-string int type-callable))
    (define sqlite3_bind_text16 (sqlite int "sqlite3_bind_text16" sqlite3_stmt* int type-string-wide int type-callable))
       ;sqlite3_bind_text64
       ;sqlite3_bind_value
@@ -653,7 +652,7 @@
                         ((rational? arg)
                            (sqlite3_bind_double statement n arg))
                         ((string? arg)
-                           (sqlite3_bind_text   statement n arg -1 #f))
+                           (sqlite3_bind_text   statement n arg -1 SQLITE_TRANSIENT))
                         ((null? arg)
                            (sqlite3_bind_null   statement n))
                         (else
