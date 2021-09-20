@@ -168,7 +168,7 @@
    ;sqlite3_extended_errcode
     sqlite3_errmsg ; const char* (sqlite3*)
    ;sqlite3_errmsg16
-   ;sqlite3_errstr ; const char* (int) ; not existent at large distibs
+    sqlite3_errstr ; const char* (int)
 
   ; Run-time Limits
    ;sqlite3_limit
@@ -183,8 +183,8 @@
    ;sqlite3_stmt_busy
 
   ; Binding Values To Prepared Statements
-   ;sqlite3_bind_blob
-   ;sqlite3_bind_blob64
+    sqlite3_bind_blob
+    sqlite3_bind_blob64
     sqlite3_bind_double
     sqlite3_bind_int
     sqlite3_bind_int64
@@ -224,8 +224,8 @@
     sqlite3_data_count ; int (sqlite3_stmt*)
 
   ; Result Values From A Query
-   ;sqlite3_column_blob
-   ;sqlite3_column_bytes
+    sqlite3_column_blob
+    sqlite3_column_bytes
    ;sqlite3_column_bytes16
     sqlite3_column_double
     sqlite3_column_int
@@ -354,6 +354,8 @@
    (define int fft-int)
    (define char* type-string)
    (define char** fft-void**) ;?
+
+   (define sqlite3_int64 fft-int64)
    (define sqlite3_callback type-callable)
 
    (define sqlite3_value fft-int)
@@ -503,8 +505,8 @@
    (define sqlite3_close_v2 (sqlite int "sqlite3_close_v2" sqlite3*))
 
    (define sqlite3_errcode (sqlite int "sqlite3_errcode" sqlite3*))
-   (define sqlite3_errmsg (sqlite type-string "sqlite3_errmsg" sqlite3*))
-   ;(define sqlite3_errstr (sqlite type-string "sqlite3_errstr" int))
+   (define sqlite3_errmsg (sqlite char* "sqlite3_errmsg" sqlite3*))
+   (define sqlite3_errstr (sqlite char* "sqlite3_errstr" int))
 
 
    ; sqlite3_prepare
@@ -525,12 +527,13 @@
    ;    ? ?NNN :VVV @VVV $VVV
    ; The values of these parameters (also called "host parameter names" or "SQL parameters")
    ; can be set using the sqlite3_bind_*() routines defined here.
-      ;sqlite3_bind_blob
-      ;sqlite3_bind_blob64
+   (define sqlite3_bind_blob (sqlite int "sqlite3_bind_blob" sqlite3_stmt* int void* int fft-any))
+   (define sqlite3_bind_blob64 (sqlite int "sqlite3_bind_blob64" sqlite3_stmt* int void* sqlite3_int64 fft-any))
    (define sqlite3_bind_double (sqlite int "sqlite3_bind_double" sqlite3_stmt* int fft-double))
    (define sqlite3_bind_int (sqlite int "sqlite3_bind_int" sqlite3_stmt* int int))
    (define sqlite3_bind_int64 (sqlite int "sqlite3_bind_int64" sqlite3_stmt* int sqlite3_int64))
    (define sqlite3_bind_null (sqlite int "sqlite3_bind_null" sqlite3_stmt* int))
+   (define sqlite3_bind_text (sqlite int "sqlite3_bind_text" sqlite3_stmt* int type-string int fft-any))
    (define sqlite3_bind_text16 (sqlite int "sqlite3_bind_text16" sqlite3_stmt* int type-string-wide int type-callable))
       ;sqlite3_bind_text64
       ;sqlite3_bind_value
@@ -546,8 +549,8 @@
 
    (define sqlite3_data_count (sqlite int "sqlite3_data_count" sqlite3_stmt*))
 
-   ;(define sqlite3_column_blob ; (dlsym % type-string "sqlite3_column_blob" sqlite3_stmt* type-enum+))
-   ;(define sqlite3_column_bytes ;(dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
+   (define sqlite3_column_blob (sqlite void* "sqlite3_column_blob" sqlite3_stmt* int))
+   (define sqlite3_column_bytes (sqlite int "sqlite3_column_bytes" sqlite3_stmt* int))
    ;(define sqlite3_column_bytes16 ; (dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
    (define sqlite3_column_double (sqlite fft-double "sqlite3_column_double" sqlite3_stmt* int))
    (define sqlite3_column_int (sqlite int "sqlite3_column_int" sqlite3_stmt* int))
@@ -569,9 +572,6 @@
    ;(define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
    (define sqlite3_result_int (sqlite fft-void "sqlite3_result_int" sqlite3_context* int))
    (define sqlite3_result_text (sqlite fft-void "sqlite3_result_text" sqlite3_context* type-string int fft-void)) ; we do not support destructors
-
-   ;
-   ;(define sqlite3_column_type  (dlsym % type-enum+   "sqlite3_column_type" sqlite3_stmt* type-enum+))
 
 )
 ; -------------------------------------------------------------------
@@ -612,13 +612,8 @@
    ; * internal function
    (define (get-result-as-row statement)
       (let ((n (sqlite3_column_count statement)))
-         ;; (print "n: " n)
          (if (less? 0 n)
             (let subloop ((i (- n 1)) (args '()))
-               ;; (print "args: " args)
-               ;; (print "sqlite3_column_type statement i: " (sqlite3_column_type statement i))
-               ;; (print "i: " i)
-               ;; (print "?: " (< i 0))
                (if (< i 0) args
                   (subloop (- i 1) (cons
                      (case (sqlite3_column_type statement i)
@@ -626,7 +621,9 @@
                         (SQLITE_INTEGER (sqlite3_column_int statement i))
                         (SQLITE_FLOAT   (sqlite3_column_double statement i))
                         (SQLITE_TEXT    (sqlite3_column_text statement i))
-                        ; (SQLITE_BLOB    (sqlite3_column_text statement i))
+                        (SQLITE_BLOB    (syscall 9 ; mmap
+                           (sqlite3_column_blob statement i)
+                           (sqlite3_column_bytes statement i) 0))
                         (else (error "Unsupported column type " i)))
                      args)))))))
 
@@ -652,7 +649,9 @@
                         ((rational? arg)
                            (sqlite3_bind_double statement n arg))
                         ((string? arg)
-                           (sqlite3_bind_text   statement n arg -1 SQLITE_TRANSIENT))
+                           (sqlite3_bind_text   statement n arg (string-length arg) SQLITE_TRANSIENT))
+                        ((bytevector? arg)
+                           (sqlite3_bind_blob   statement n arg (size arg) SQLITE_TRANSIENT))
                         ((null? arg)
                            (sqlite3_bind_null   statement n))
                         (else
