@@ -3857,7 +3857,14 @@ loop:;
 				CHECK_NUMBER(2);
 				CHECK_NUMBER_OR_FALSE(3);
 
+				char* address = (char*) car(A1);
+				if (!address)
+					break;
+
 				size_t count = number(A2); // in bytes
+				size_t offset = (argc > 2 && A3 != IFALSE)
+					? number(A3) // in bytes
+					: 0;
 
 				unsigned words = WALIGN(count) + 1; // in words
 				if (fp + words > heap->end) {
@@ -3870,10 +3877,6 @@ loop:;
 
 					ip = (unsigned char*)this + dp;
 				}
-				char* address = (char*) car(A1);
-				size_t offset = (argc > 2 && A3 != IFALSE)
-					? number(A3)
-					: 0;
 
 				r = new_bytevector(count);
 				memcpy(&car(r), address + offset, count);
