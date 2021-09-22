@@ -354,7 +354,7 @@ ol.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
 ol.exe: src/olvm.c extensions/ffi.c tmp/repl.c
 	$(CC) src/olvm.c tmp/repl.c -o $@ \
 	   -DREPL=repl -DOLVM_FFI=1 \
-	   -Iwin32 -Iincludes extensions/ffi.c \
+	   -Iincludes -Iincludes/win32 extensions/ffi.c \
 	   $(MINGWCFLAGS) -lws2_32
 
 # compiling the Ol language
