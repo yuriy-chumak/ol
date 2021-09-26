@@ -314,14 +314,25 @@
                                  (cond
                                     ((null? args)
                                        (values options #null))
+
                                     ;; version manipulation
-                                    ((string-eq? (car args) "--version")
+                                    ((string-eq? (car args) "-v")
                                        (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
                                        (halt 0))
+                                    ((string-eq? (car args) "--version")
+                                       (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
+                                       (print "Copyright (c) 2014-2021 Yuriy Chumak")
+                                       (print "License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>")
+                                       (print "License MIT: <https://en.wikipedia.org/wiki/MIT_License>")
+                                       (print "This is free software: you are free to change and redistribute it.")
+                                       (print "There is NO WARRANTY, to the extent permitted by law.")
+                                       (halt 0))
+
                                     ((starts-with? (car args) "--version=")
                                        (loop (put options 'version
                                                 (substring (car args) 10 (string-length (car args))))
                                              (cdr args)))
+
                                     ;; additional options
                                     ((string-eq? (car args) "--sandbox")
                                        (loop (put options 'sandbox #t) (cdr args)))
@@ -329,9 +340,11 @@
                                        (loop (put options 'interactive #t) (cdr args)))
                                     ((string-eq? (car args) "--no-interactive")
                                        (loop (put options 'interactive #f) (cdr args)))
+
                                     ;; special case - use embed REPL version
                                     ((string-eq? (car args) "--embed")
                                        (loop (put options 'embed #t) (cdr args)))
+
                                     ;; home
                                     ((string-eq? (car args) "--home")
                                        (print "use --home=<path>")
@@ -341,6 +354,7 @@
                                                 (substring (car args) 7 (string-length (car args))))
                                              (cdr args)))
                                        
+                                    ;; end of options and unknown option
                                     ((string-eq? (car args) "--")
                                        (let*((file args (uncons (cdr args) #null)))
                                           (values

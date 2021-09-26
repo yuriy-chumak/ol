@@ -387,15 +387,26 @@ Advanced functionality (i.e. OpenGL support) requires a complete installation of
 
 
 Ol command line is:
-$ ol [vm-options] [filename] [arguments]
+$ ol [options] [filename] [arguments]
 
-* if no filename given all options is ol options, not an olvm
 * if no filename given ol will use stdin as source
-* if you want to use stdin as source but must provide a filename and/or arguments, use "-"
-* if you want to break vm-options scanning and provide filename like option (i.e. '--version'), use "--" as 'end-of-option' flag
+* if you want to use stdin as source but must provide an arguments, use "-" instead
+* if you want to break vm-options scanning and provide filename like option (i.e. '--version' as a real file name), use "--" for 'end-of-option' flag and then a filename
 
-Current olvm command line options available:
-* '--version': print olvm version and exit
+Olvm command line options available:
+* '-v': print olvm version then exit
+* '--version': print olvm version and licensing information then exit
+
+Ol command line options available:
+* '-v': print ol version then exit
+* '--version': print ol version and licensing information then exit
+* '--version=...": overwrite ol version string
+* '--sandbox': enable execution in the sandbox (if OS supports)
+* '--interactive': force REPL interactive mode
+* '--no-interactive': disable REPL interactive mode
+* '--embed': run special reduced REPL for embed usage
+* '--home=...': overwrite path where to search for the ol libraries
+* '--': end-of-options sign
 
 
 Ol can be executed interactively or in the unattended mode.
