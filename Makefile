@@ -202,11 +202,6 @@ ifeq ($(UNAME),OpenBSD)
        -Xlinker --export-dynamic
 endif
 
-# Windows+MinGW
-ifeq ($(UNAME),MINGW32_NT-6.1)
-  L := -lws2_32
-endif
-
 ifeq ($(UNAME),Darwin)
   CFLAGS += -DSYSCALL_SYSINFO=0
   PREFIX ?= /usr/local
@@ -318,16 +313,15 @@ ol:
 # 	   --memory-init-file 0
 
 olvm.wasm: src/olvm.c tmp/repl.c
-	emcc src/olvm.c extensions/wasm.c \
-	     tmp/repl.c -DREPL=repl -Os \
-	   -o olvm.html -Iincludes \
-	   -DOLVM_NOMAIN=1 -DHAS_DLOPEN=0 \
+	emcc src/olvm.c \
+	     tmp/repl.c -DREPL=repl \
+	     -O3 -o olvm.html \
+	   -DHAS_DLOPEN=0 -DHAS_SOCKETS=0 \
+	   -s ASYNCIFY \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \
-	   -s FORCE_FILESYSTEM=1 \
-	   -s WASM=1 \
-	   -s "EXTRA_EXPORTED_RUNTIME_METHODS=['cwrap']"\
-	   -s "EXPORTED_FUNCTIONS=['_ol_init','_ol_eval']"
+	   -s FORCE_FILESYSTEM=0 \
+	   -s WASM=1
 
 # tmp/emscripten.c:
 # 	echo "#include <GL/gl.h>"      > tmp/emscripten.c
