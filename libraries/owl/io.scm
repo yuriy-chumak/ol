@@ -32,7 +32,10 @@
 
       port->bytestream       ;; fd → (byte ...) | thunk
       file->bytestream
+
       write-bytestream
+
+      write-bytevector
 
       stdin stdout stderr
       display-to        ;; port val → bool
@@ -325,18 +328,24 @@
 
 
 
-      (define (write-bytestream port bvec)
+      (define (write-bytevector port bvec)
          (write-really bvec port))
 
       (define (write-bytes port byte-list)
          (printer byte-list 0 null port))
+
+      (define write-bytestream (case-lambda
+         ((bytestream)
+               (write-bytes stdout bytestream))
+         ((bytestream port)
+               (write-bytes port bytestream))))
 
       ;; write each leaf chunk separately (note, no raw type testing here -> can fail)
       ;; (define (write-blob vec port)
       ;;    (let loop ((ll (blob-leaves vec)))
       ;;       (cond
       ;;          ((pair? ll)
-      ;;             (write-bytestream port (car ll))
+      ;;             (write-bytevector port (car ll))
       ;;             (loop (cdr ll)))
       ;;          ((null? ll) #true)
       ;;          (else (loop (ll))))))
