@@ -4225,9 +4225,22 @@ loop:;
 
 		//				ipfull = (ip[0]<<24) | (ip[1]<<16) | (ip[2]<<8) | ip[3];
 		//				addr.sin_addr.s_addr = htonl(ipfull);
-				if (connect(sockfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) >= 0)
+				if (connect(sockfd, (struct sockaddr *) &addr, sizeof(struct sockaddr_in)) < 0)
+					break;
+				// set_blocking(sock, 0):
+#if _WIN32
+				unsigned long mode = 1; // non blocking
+				if (ioctlsocket(sockfd, FIONBIO, &mode) == 0)
+#else
+				int flags = fcntl(sockfd, F_GETFL, 0);
+				if (flags < 0)
+					break;
+				flags = (flags | O_NONBLOCK);
+				if (fcntl(sockfd, F_SETFL, flags) == 0)
+#endif
+
 					r = (word*)ITRUE;
-		//				set_blocking(sock, 0);
+
 				break;
 			}
 
