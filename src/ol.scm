@@ -384,13 +384,9 @@
                            (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
                            (embed? (getf options 'embed))
 
-                           (home (or (getf options 'home)
-                                     (getenv "OL_HOME")
-                                     (let ((uname (ref (syscall 63) 1)))
-                                        (when (and (string? uname)
-                                                   (string-eq? uname "Darwin"))
-                                           "/usr/local/lib/ol"))
-                                     "/usr/lib/ol"))
+                           (home (or (getf options 'home) ; via command line
+                                     (getenv "OL_HOME")   ; guessed by olvm if not exists
+                                     "")) ; standalone?
                            (command-line vm-args)
 
                            (version (cons "OL" (get options 'version (cdr *version*))))
@@ -400,7 +396,7 @@
                                     initial-environment
                                     (list
                                        (cons '*owl-names* initial-names)
-                                       (cons '*path* (list "." home))
+                                       (cons '*path* (cons "." (c/:/ home)))
                                        (cons '*interactive* interactive?)
                                        (cons '*command-line* command-line)
                                        ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead

@@ -280,13 +280,13 @@ android: jni/*.c tmp/repl.c
 vm:
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
-	   $(CFLAGS) $(L)
+	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L)
 	@echo Ok.
 
 ol:
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
-	   $(CFLAGS) $(L) \
+	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L) \
 	   tmp/repl.c -DREPL=repl
 	@echo Ok.
 

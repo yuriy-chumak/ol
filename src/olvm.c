@@ -5273,6 +5273,12 @@ int main(int argc, char** argv)
 	}
 #endif
 
+	// configuring OL_HOME (if not exists):
+#ifndef PREFIX
+#define PREFIX "/usr"
+#endif
+	setenv("OL_HOME", PREFIX "/lib/ol", 0);
+
 	OL* olvm = OLVM_new(bootstrap);
 	if (bootstrap != language) // was previously malloc'ed
 		free(bootstrap);
