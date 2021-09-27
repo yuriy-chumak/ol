@@ -100,6 +100,8 @@ CFLAGS_DEBUG   := -O0 -g2 -Wall
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 #CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
 
+VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
+
 # builtin "sin", "cos", "sqrt", etc. functions support
 # can be disabled using -DOLVM_NO_BUILTIN_FMATH=1
 ifneq ($(OLVM_BUILTIN_FMATH),0)
@@ -360,7 +362,7 @@ ol.exe: src/olvm.c extensions/ffi.c tmp/repl.c
 # compiling the Ol language
 recompile: boot.fasl
 boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
-	@vm repl --version="`git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`" \
+	@vm repl --version="$(VERSION)" \
 	   src/ol.scm
 	@if diff boot.fasl repl>/dev/null;then\
 	   echo '\033[1;32m  `___`  \033[0m' ;\
