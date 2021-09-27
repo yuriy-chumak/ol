@@ -49,7 +49,7 @@ vm64: src/olvm.c includes/ol/vm.h
 # win
 define winbuild
 	$(CC) src/olvm.c -o $1 \
-	   -DOLVM_FFI=1 -Iwin32 -Iincludes \
+	   -DOLVM_FFI=1 -Iincludes/win32 -Iincludes \
 	   extensions/ffi.c \
 	   -std=gnu99 -fno-exceptions -lws2_32 \
 	   -DHAS_DLOPEN=1 -DHAS_SOCKES=1 $2
