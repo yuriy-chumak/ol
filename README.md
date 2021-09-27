@@ -473,6 +473,18 @@ $ ./ol out.bl
 hello !
 ```
 
+:exclamation: Note: Since version 2.2.1 Ol supports "constructors" - functions that are automatically executed when loading the source. This is experimental feature with no name yet, but feature is tested and will be presented as a normal feature in the next build.
+
+Constructors are called in "use" order. The order of independent constructors is undefined. If you want to specify the order of such constructors, create a function that uses them as variables in the correct order.
+
+So, starting from version 2.2.1 you should do:
+```scheme
+(define (main . args)
+   (print "hello !")) ; anything you want to compile
+
+(fasl-save (vm:new 63 main) "out.bl")
+```
+
 
 FILES
 -----
