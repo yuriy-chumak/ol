@@ -1,6 +1,6 @@
 ; http://rosettacode.org/wiki/Letter_frequency#Ol
 
-(define source (bytes->string (file->bytestream "letter_frequency.scm"))) ; utf-8
+(define source (bytes->string (file->bytestream "tests/rosettacode/letter_frequency.scm"))) ; utf-8
 (define dict (lfold (lambda (ff char)
                      (put ff char (+ 1 (get ff char 0))))
                {}
