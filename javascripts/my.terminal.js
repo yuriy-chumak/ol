@@ -34,12 +34,11 @@ $('#terminal').terminal(function(command, terminal) {
    var text = unescape(encodeURIComponent(command));
    ga('send', 'event', 'Console', 'eval', ""+text, {
       nonInteraction: true
-    });
+   });
 
    // todo: check parenthesis
    terminal.set_prompt('');
-   ol_eval(text);
-   terminal.set_prompt('> ');
+	stdInput = stdInput + text;
 }, {
    prompt: 'Please wait, loading library files...',
    name: 'repl',
@@ -65,52 +64,62 @@ $('#terminal').mousewheel(function(event) {
 var Module = {
 //   arguments: ['#', '-', '--embed'],
 //   arguments: ['platform', '-'],
-   dynamicLibraries: [], //, 'olvm.js', 'repl.wasm', 'oljs.wasm'],
+//   dynamicLibraries: [], //, 'olvm.js', 'repl.wasm', 'oljs.wasm'],
    INITIAL_MEMORY: 67108864,
 
-   preRun: function() {
-      console.log("preRun");
-      //LibraryManager.library = Module;
+   preRun: [],
+	// function() {
+   //    console.log("preRun");
+   //    //LibraryManager.library = Module;
 
-      function stdin() {
-         if (stdInput.length == 0) {
-            return undefined;
-         }
+   //    function stdin() {
+	// 		console.log(stdin);
+   //       if (stdInput.length == 0) {
+   //          throw new FS.ErrnoError(6);
+   //       }
 
-         var chr = stdInput.charCodeAt(0);
-         stdInput = stdInput.substring(1);
-         return chr;
-      }
-      var stdout = null;
-      var stderr = null;
-      FS.init(stdin, stdout, stderr);
+   //       var chr = stdInput.charCodeAt(0);
+   //       stdInput = stdInput.substring(1);
+   //       return chr;
+   //    }
+   //    var stdout = null;
+   //    var stderr = null;
+   //    FS.init(stdin, stdout, stderr);
 
-      Libraries.forEach( function(i) {
-         console.log("i: ", i.path + "/" + i.name);
-         if (i.path != "/")
-            FS.createPath("/", i.path, true, true);
-         FS.createDataFile(i.path + "/", i.name, i.data, true, false);
-      });
-   },
-   postRun: function() {
-      ol_init = Module.cwrap('ol_init', 'number', []);
-      ol_eval = Module.cwrap('ol_eval', 'number', ['string']);
+   //    // Libraries.forEach( function(i) {
+   //    //    console.log("i: ", i.path + "/" + i.name);
+   //    //    if (i.path != "/")
+   //    //       FS.createPath("/", i.path, true, true);
+   //    //    FS.createDataFile(i.path + "/", i.name, i.data, true, false);
+   //    // });
+   // },
+   postRun: [
+		function() {
+			// ol_init = Module.cwrap('ol_init', 'number', []);
+			// ol_eval = Module.cwrap('ol_eval', 'number', ['string']);
 
-      ol_init();
-		doit('(print "Welcome to Otus Lisp " (cdr *version*) "\\n")(define *interactive* #t)');
+			// ol_init();
+			// doit('(print "Welcome to Otus Lisp " (cdr *version*) "\\n")(define *interactive* #t)');
 
-      terminal.resume();
-      terminal.set_prompt('> ');
-      terminal.focus();
-   },
+			terminal.resume();
+			terminal.set_prompt('> ');
+			terminal.focus();
+		}
+	],
 
    print: function(text) {
+		// console.log("print:", text);
       if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
 
-		if (text == ";; Defined *interactive*") // Ol became in terminal really started
-			return;
 		if (text.startsWith("> > "))
 			text = text.substring(4);
+		if (text == ";; Defined *interactive*") // Ol became in terminal really started
+			return;
+		if (text == "type ',help' to help, ',quit' to end session.")
+			text = "type ',help' to help";
+
+		if (text.startsWith("> "))
+			text = text.substring(2);
 
 		// first output detected.
 		if (terminal.ready == false) {
@@ -119,9 +128,9 @@ var Module = {
       }
 
       // let's process OL's prompt:
-      terminal.set_prompt('> ');
-      terminal.resume();
       terminal.echo(text);
+      terminal.resume();
+      terminal.set_prompt('> ');
 
       ga('send', 'event', 'Console', 'stdout', text, {
          nonInteraction: true});
@@ -134,11 +143,11 @@ var Module = {
       //   terminal.pause();
    },
    printErr: function(text) {
-      error = (text || "").substring(errorLen);
-      terminal.error(error);
-      errorLen = (text || "").length;
+      terminal.error(text);
+		terminal.resume();
+      terminal.set_prompt('> ');
 
-      ga('send', 'event', 'Console', 'stderr', error, {
+      ga('send', 'event', 'Console', 'stderr', text, {
          nonInteraction: true});
    },
 /*   canvas: (function() {
@@ -189,6 +198,17 @@ window.onerror = function(event) {
    };
 };
 
+window.prompt = function(event) {
+//	console.log("prompt:", stdInput);
+	if (stdInput.length == 0) {
+		return undefined;
+	}
+
+	let string = stdInput;
+	stdInput = "";
+	return string;
+};
+
 // FILE SYSTEM
 var Libraries = [
       //{ path: "/otus", name: "ffi.scm",    file: "https://rawgit.com/yuriy-chumak/ol/master/libraries/otus/ffi.scm" },
@@ -232,7 +252,7 @@ var Downloaded = 0;
          if (++Downloaded == Libraries.length) {*/
             // load olvm
             var script = document.createElement('script');
-            script.src = "olvm.js"; //javascripts/emscripten-1.37.35.js";
+            script.src = "index.js"; //javascripts/emscripten-1.37.35.js";
 
             script.addEventListener('load', function(me) {
                 terminal.set_prompt('');
