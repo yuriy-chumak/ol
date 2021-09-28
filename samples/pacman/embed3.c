@@ -20,7 +20,7 @@ void ol_new_ol()
 	uintptr_t
 	r = OLVM_run(vm, 0, 0);
 	// well, we have our "smart" script prepared,
-	//  now save both eval and env variables
+	//  now save functions for feature use
 	assert (is_vector(r));
 
 	points = ol2int(ref(r, 1));
@@ -50,7 +50,7 @@ void ol_get_blinky(int* x, int* y)
 	uintptr_t xy = OLVM_evaluate(vm,
 		OLVM_deref(vm, get_blinky),
 		0, NULL);
-	assert(is_pair(xy));
+	assert (is_pair(xy));
 
 	*x = ol2int(car(xy));
 	*y = ol2int(cdr(xy));

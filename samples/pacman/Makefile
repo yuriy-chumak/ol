@@ -8,14 +8,14 @@ repl.o: ../../repl
 pacman1: main.c embed1.c texturing.c repl.o
 	gcc $^ -I. -lGL -lglut -lpng \
 	    -I../../includes -DOLVM_NOMAIN \
-	    -D_binary_repl_start=_binary_______repl_start \
+	    -DREPL=_binary_______repl_start \
 	    ../../src/olvm.c -ldl -lm -pthread \
 	    -o $@
 
 pacman2: main.c embed2.c texturing.c repl.o
 	gcc $^ -I. -lGL -lglut -lpng \
 	    -I../../includes -DOLVM_NOMAIN \
-	    -D_binary_repl_start=_binary_______repl_start \
+	    -DREPL=_binary_______repl_start \
 	    ../../src/olvm.c -ldl -lm -pthread \
 	    -o $@
 
