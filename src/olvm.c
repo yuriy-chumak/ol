@@ -3478,8 +3478,12 @@ loop:;
 					r = new_bytevector(read);
 				else if (read == 0)
 					r = (word*) IEOF;
-				else if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
+				else if (err == EAGAIN) { // (may be the same value as EWOULDBLOCK) (POSIX.1)
+					#ifdef __EMSCRIPTEN__
+					emscripten_sleep(500);
+					#endif
 					r = (word*) ITRUE;
+				}
 
 				break;
 			}

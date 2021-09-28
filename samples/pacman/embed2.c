@@ -55,10 +55,10 @@ ol_t ol;
 
 #define eval(...) OL_eval(&ol, MAP_LIST(_Q, __VA_ARGS__), 0)
 
-extern unsigned char _binary_______repl_start[];
+extern unsigned char REPL[];
 void ol_new_ol()
 {
-	OL_new(&ol, _binary_______repl_start);
+	OL_new(&ol, REPL);
 	eval("(import (main)) (born-blinky)");
 }
 
@@ -76,7 +76,7 @@ uintptr_t ol_points()
 void ol_get_blinky(int* x, int* y)
 {
 	uintptr_t xy = eval("(get-blinky)");
-	assert(is_pair(xy));
+	assert (is_pair(xy));
 
 	*x = ol2int(car(xy));
 	*y = ol2int(cdr(xy));

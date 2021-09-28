@@ -3,10 +3,10 @@
 // olvm:
 ol_t ol;
 
-extern unsigned char _binary_______repl_start[];
+extern unsigned char REPL[];
 void ol_new_ol()
 {
-	OL_new(&ol, _binary_______repl_start);
+	OL_new(&ol, REPL);
 	
 	OL_eval(&ol, new_string(&ol, "(import (main))"), 0);
 	OL_eval(&ol, new_string(&ol, "(born-blinky)"), 0);
