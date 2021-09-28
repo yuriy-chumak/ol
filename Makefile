@@ -288,29 +288,7 @@ ol:
 	@echo Ok.
 
 
-# # emscripten version 1.37.40+
-# deprecated repl.js: repl
-# 	xxd --include repl >tmp/repl.c
-# 	emcc tmp/repl.c -Os \
-# 	   -o repl.js -Drepl=binary_repl_start \
-# 	   -s WASM=0 -s SIDE_MODULE=1 \
-# 	   -s NO_EXIT_RUNTIME=1 \
-# 	   --memory-init-file 0
-
-# deprecated oljs.js: extensions/embed.c extensions/embed.h
-# 	emcc extensions/embed.c -Os \
-# 	   -o oljs.js -Iinclude \
-# 	   -s WASM=0 -s SIDE_MODULE=1 \
-# 	   -s NO_EXIT_RUNTIME=1 \
-# 	   --memory-init-file 0
-
-# deprecated olvm.js: src/olvm.c include/ol/vm.h extensions/ffi.c repl.js oljs.js
-# 	emcc src/olvm.c -Os \
-# 	   -DNAKED_VM=1 -DEMBED_VM=1 -DHAS_DLOPEN=1 \
-# 	   -o olvm.js \
-# 	   -s WASM=0 -s SIDE_MODULE=1 \
-# 	   -s NO_EXIT_RUNTIME=1 \
-# 	   --memory-init-file 0
+# emscripten version 1.37.40+
 
 olvm.wasm: src/olvm.c tmp/repl.c
 	emcc src/olvm.c \
@@ -322,18 +300,6 @@ olvm.wasm: src/olvm.c tmp/repl.c
 	   -s ALLOW_MEMORY_GROWTH=1 \
 	   -s FORCE_FILESYSTEM=0 \
 	   -s WASM=1
-
-# tmp/emscripten.c:
-# 	echo "#include <GL/gl.h>"      > tmp/emscripten.c
-# 	echo "int main() { return 0;}" >>tmp/emscripten.c
-# emscripten.js: tmp/emscripten.c
-# 	EMCC_FORCE_STDLIBS=1 \
-# 	emcc tmp/emscripten.c -Os \
-# 	  -o emscripten.js \
-# 	  -s WASM=0 \
-# 	  -s MAIN_MODULE=1 -s LINKABLE=1 -s EXPORT_ALL=1 \
-# 	  -s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
-# 	  --memory-init-file 0
 
 # You can debug ol using "winedbg --gdb ol.exe"
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
