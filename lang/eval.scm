@@ -401,7 +401,7 @@
    ,expand <expr>    - expand macros in the expression
    ,find [regex|sym] - list all defined words matching regex or m/<sym>/
    ,libraries        - show all currently loaded libraries
-   ,l                - || -
+   ,load <path.scm>  - (re)load a file
    ,quit             - exit owl")
 
       (define (repl-op repl op in env)
@@ -418,7 +418,7 @@
                         (repl-load repl op in env))
                      (else
                         (repl-error env (list "Not loadable: " op))))))
-            ((forget-all-but)
+            ((forget-all-but) ; * ol internal
                (lets ((op in (uncons in #false)))
                   (if (and (list? op) (all symbol? op))
                      (let ((nan ['defined ['value 'undefined]]))
@@ -470,7 +470,7 @@
                         (else
                            "I would have preferred a regex or a symbol."))))
                (repl env in))
-            ((libraries libs l)
+            ((libraries libs)
                (prompt env
                   (map car (env-get env '*libraries* null)))
                (repl env in))
