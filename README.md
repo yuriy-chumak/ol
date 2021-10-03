@@ -97,6 +97,7 @@ Some additional libraries can be installed using 'kiss' package manager. Usage i
    * introduced a new object type 63 - "constructor", constructors are automatically executed by olvm during fasl loading process
      * if no constructors are found, the vanilla behavior will be used
      * note: for example, the (owl math) library contains a constructor named `math-constructor` that recalculates a native binary NaN value which is different under different FPU architectures.
+  * restored and adapted REPL command ",save". Can be used to save the current REPL state to be continued after a pause on the same or different PC (even with a different architecture, including bit count and/or byte order).
 
 
 LEARNING

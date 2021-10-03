@@ -303,6 +303,13 @@
                      stdout (decode-value env val))
                   (display "\n")))))
 
+      (define (suspend path)
+         (let ((state (call/cc (λ (cont) (vm:mcp cont 16 #t #t)))))
+            (if (eq? state 'resumed)
+               "Session restored."
+            else
+               (fasl-save state path)
+               'saved)))
 
       (define syntax-error-mark (list 'syntax-error))
 
@@ -402,6 +409,7 @@
    ,find [regex|sym] - list all defined words matching regex or m/<sym>/
    ,libraries        - show all currently loaded libraries
    ,load <path.scm>  - (re)load a file
+   ,save <path.bin>  - save current state, restart with $ ol <path.bin>
    ,quit             - exit owl")
 
       (define (repl-op repl op in env)
@@ -418,6 +426,18 @@
                         (repl-load repl op in env))
                      (else
                         (repl-error env (list "Not loadable: " op))))))
+            ((save)
+               (lets ((path in (uncons in #false)))
+                  (if (string? path)
+                     (begin
+                        ;; this captures a continuation of the system and exits with
+                        ;; "saved" to dumping process and "Welcome back" when the serialized
+                        ;; heap is started in the future
+                        (prompt env (repl-message (suspend path)))
+                        (repl env in))
+                     (begin
+                        (prompt env "Usage: ,save \"file\"")
+                        (repl env in)))))
             ((forget-all-but) ; * ol internal
                (lets ((op in (uncons in #false)))
                   (if (and (list? op) (all symbol? op))

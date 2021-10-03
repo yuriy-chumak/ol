@@ -271,9 +271,9 @@
                ; (system-println "interop 16 - wrap the whole world to a thunk")
                (let
                   ((resume
-                     (λ (args)
+                     (vm:new 63 (λ (args)
                         (tc (cons [id (λ () (cont 'resumed))] todo)
-                           done state))))
+                           done state)))))
                   (tc (cons [id (λ () (cont resume))] todo) done state)))
 
             ; 17, catch or release a running thread (not touching mailbox etc)
