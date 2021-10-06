@@ -898,28 +898,29 @@
                   ((library-definition? exp)
                      ;; evaluate libraries in a blank *src-olvm* env (only primops, specials and define-syntax)
                      ;; include just loaded *libraries* and *include-paths* from the current one to share them
-                     (let*/cc ret
-                        ((exps (map cadr (cdr exp))) ;; drop the quotes
-                        (name exps (uncons exps #false))
-                        (libs (env-get env '*libraries* null))
-                        ;; mark the current library as being loaded for circular dependency detection
-                        (env (env-set env '*libraries* (cons (cons name 'loading) libs)))
-                        (fail
-                           (λ (reason)
-                              (ret (fail (list "Library" name "failed:" reason)))))
-                        (lib-env
-                           (fold
-                              (λ (lib-env key) (env-set lib-env key (env-get env key null)))
-                              *src-olvm* library-exports))
-                        (lib-env (env-set lib-env current-library-key name)))
+                     (let*/cc ret (
+                           (exps (map cadr (cdr exp))) ;; drop the quotes
+                           (name exps (uncons exps #false))
+                           (libs (env-get env '*libraries* null))
+                           ;; mark the current library as being loaded for circular dependency detection
+                           (env (env-set env '*libraries* (cons (cons name 'loading) libs)))
+                           (fail
+                              (λ (reason)
+                                 (ret (fail (list "Library" name "failed:" reason)))))
+                           (lib-env
+                              (fold
+                                 (λ (lib-env key) (env-set lib-env key (env-get env key #null)))
+                                 *src-olvm* library-exports))
+                           (lib-env
+                              (bind-toplevel
+                                 (env-set lib-env current-library-key name))))
                         (case (repl-library exps lib-env repl fail) ;; anything else must be incuded explicitly
                            (['ok library lib-env]
                               ;; get new function names and metadata from lib-env (later to be handled differently)
-                              (lets
-                                 ((names (env-get lib-env name-tag empty))
-                                 (env (env-set env name-tag (ff-union (env-get env name-tag empty) names (λ (old new) new))))
-                                 (meta (env-get lib-env meta-tag empty))
-                                 (env (env-set env meta-tag (ff-union (env-get env meta-tag empty) meta (λ (old new) new)))))
+                              (let*((names (env-get lib-env name-tag empty))
+                                    (env (env-set env name-tag (ff-union (env-get env name-tag empty) names (λ (old new) new))))
+                                    (meta (env-get lib-env meta-tag empty))
+                                    (env (env-set env meta-tag (ff-union (env-get env meta-tag empty) meta (λ (old new) new)))))
                                  (ok
                                     (repl-message
                                        (list->string
@@ -929,10 +930,10 @@
                                        (cons (cons name library)
                                           (keep  ;; drop the loading tag for this library
                                              (λ (x) (not (equal? (car x) name)))
-                                             (env-get lib-env '*libraries* null))))))) ; <- lib-env may also have just loaded dependency libs
+                                             (env-get lib-env '*libraries* #null))))))) ; <- lib-env may also have just loaded dependency libs
                            (['error reason not-env]
                               (fail
-                                 (list "Library" name "failed to load because" reason))))))
+                                 (list "Library" name "failed to load" reason))))))
                   (else
                      (evaluator exp env))))
             (['fail reason]
