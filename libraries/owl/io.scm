@@ -23,19 +23,18 @@
 ;      blocks->port            ;; ll fd → ll' n-bytes-written, don't close fd
 ;      closing-blocks->port    ;; ll fd → ll' n-bytes-written, close fd
 
-      fd->bytevector
       file->bytevector  ;; bytevectors io, may be moved elsewhere later
       bytevector->file
+      write-bytevector
 
       ;; file->blob write-blob
       file->list              ;; list io, may be moved elsewhere later
 
       port->bytestream       ;; fd → (byte ...) | thunk
       file->bytestream
+      bytestream->file
 
       write-bytestream
-
-      write-bytevector
 
       stdin stdout stderr
       display-to        ;; port val → bool
@@ -440,7 +439,7 @@
             (close-port port)))
 
       ; bytevector:
-      (define (fd->bytevector port) ; path -> vec | #false
+      (define (port->bytevector port) ; path -> vec | #false
          (if port
             (let ((stat (syscall 4 port)))
                (if stat
@@ -450,7 +449,7 @@
 
       (define (file->bytevector path) ; path -> vec | #false
          (let*((port (maybe-open-binary-file path))
-               (file (fd->bytevector port)))
+               (file (port->bytevector port)))
             (maybe-close-port port)
             file))
 
@@ -460,6 +459,12 @@
          (let ((port (open-binary-output-file path)))
             (if port
                (let ((outcome (sys:write port vec #false)))
+                  (close-port port)
+                  outcome))))
+      (define (bytestream->file stream path)
+         (let ((port (open-binary-output-file path)))
+            (if port
+               (let ((outcome (write-bytestream stream port)))
                   (close-port port)
                   outcome))))
 
@@ -532,8 +537,8 @@
                (port->bytestream port))))
 
       (define (fasl-save obj path)
-         (bytevector->file
-            (list->bytevector (fasl-encode obj))
+         (bytestream->file
+            (fasl-encode obj)
             path))
 
       (define (fasl-load path fail-val)
