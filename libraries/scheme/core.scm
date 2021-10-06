@@ -20,9 +20,9 @@
       ;     vm:add vm:sub vm:mul vm:div vm:shr vm:shl
       ;   binary:
       ;     vm:and vm:ior vm:xor
-      ; floating-point math (OLVM_INEXACTS required):
-      ;   vm:fp1 (xFE: fsin, xFF: fcos, xFA: fsqrt),
-      ;   vm:fp2 (xD9: <, xC1: +, xE9: -, xC9: *, xF9: /)
+      ; floating-point math (OLVM_INEXACTS and OLVM_BUILTIN_FMATH required):
+      ;   vm:fp1 (fsqrt, fsin, fcos, ftan, fatan, flog, fexp, fasin, facos, ffloor),
+      ;   vm:fp2 (fless?, fadd, fsub, fmul, fdiv, fatan2, flog2, fexpt)
       ; special:
       ;   vm:pin, vm:unpin, vm:deref
       ;   clock, syscall
@@ -42,9 +42,9 @@
       ; quote values lambda setq
       ; let-eval ifeq brae values-apply
 
-      (scheme case-lambda)  ; 4.2.9, srfi-16
-      (scheme srfi-87)   ; <= in cases
-      (scheme srfi-71))  ; (let* ((a b (values..
+      (scheme srfi-16)  ; case-lambda, 4.2.9
+      (scheme srfi-87)  ; <= in cases
+      (scheme srfi-71)) ; (let* ((a b (values..
 
    ; -----------------------------------------------------------------
    ; internal ol staff
@@ -65,8 +65,12 @@
       ;       this is simplified 'assert' that uses 'eq?' before real 'equal?' be
       ;       defined to real implementation in 6.1
       (define-syntax assert
-         (syntax-rules (===> equal?)
+         (syntax-rules (= ===> equal?)
             ((assert expression ===> expectation)
+               (ifeq (equal? ((lambda (x) x) expression) expectation) #true
+                  #true
+                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))
+            ((assert expression = expectation)
                (ifeq (equal? ((lambda (x) x) expression) expectation) #true
                   #true
                   (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))
@@ -1954,7 +1958,7 @@
       ; 4.2.8  Quasiquotation
       quasiquote
       ; 4.2.9  Case-lambda
-      case-lambda ;  * (scheme case-lambda)
+      case-lambda ;  * (scheme srfi-16)
       ; 6.2.1  Numerical types
       type-enum+ type-enum- type-int+ type-int-
       type-rational type-complex type-inexact

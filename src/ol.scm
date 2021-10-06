@@ -31,8 +31,8 @@
 
 ; предварительная загрузка зависимостей scheme core,
 ; (иначе импорт сбойнет)
-(import (src vm))   ;; команды виртуальной машины
-(import (scheme case-lambda)) ;; srfi-16
+(import (src vm))   ;; virtual machine primitives
+(import (scheme srfi-16)) ;; case-lambda
 (import (scheme srfi-87)) ;; "=>" clauses in case
 (import (scheme srfi-71)) ;; extended LET-syntax for multiple values
 (import (scheme core))    ;; базовый языковый ...
