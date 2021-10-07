@@ -12,16 +12,14 @@
 
 (begin
 
-   (define (string->number str base)
-      (list->number (string->list str) base))
+   (define string->number (case-lambda
+      ((str base)
+         (list->number (string->list str) base))
+      ((str)
+         (list->number (string->list str) 10))))
 
    (define (string->integer str)
       (let ((n (string->number str 10)))
-         (cond
-            ((eq? (type n) type-enum+) n)
-            ((eq? (type n) type-enum-) n)
-            ((eq? (type n) type-int+) n)
-            ((eq? (type n) type-int-) n)
-            (else #false))))
+         (and (integer? n) n)))
 
 ))
