@@ -1,9 +1,7 @@
-.PHONY: check tests testing-binaries
+.PHONY: check tests
 
-.PHONY: $(wildcard tests/*.bin)
-.PHONY: $(wildcard tests/*.scm)
-
-check: tests
+.PHONY: testing-binaries
+.PHONY: testing-embed testing-internal testing-ffi
 
 ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
@@ -208,6 +206,7 @@ vm-release-64: bits=64
 vm-release-64: vm-release
 endif
 
+# -- binaries ---------------------
 testing-binaries:
 	@echo "Building test binaries:"
 ifeq ($(UNAME),Linux) # main development platform, try to do a maximal testings
@@ -243,8 +242,11 @@ else
 	@echo "Built."
 endif
 
+# -- embed --------------------------------------------------------
 testing-embed: tests/embed.c src/olvm.c includes/ol/ol.h tmp/repl.c
-	@printf "Testing embed ... "
+	@echo "embed testing"
+	@echo "----------------------------------------"
+	@printf "tests/embed.c ..."
 ifeq ($(UNAME),Linux) # main development platform, try to do a maximal testings
 ifeq ($(HAS_32CDEFS),1)
 	@printf ", debug-32: "
@@ -315,7 +317,46 @@ endif
 	@echo "."
 
 
-define testok
+# -- internal --------------------------------------
+testing-internal:
+	@echo "Internal vm testing"
+	@echo "---------------------------------------"
+ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
+ifeq ($(HAS_32CDEFS),1)
+	@$(MAKE) -s test-vmi-debug-32
+	@$(MAKE) -s test-vmi-release-32
+endif
+ifeq ($(HAS_64CDEFS),1)
+	@$(MAKE) -s test-vmi-debug-64
+	@$(MAKE) -s test-vmi-release-64
+endif
+else
+	@$(MAKE) -s test-vmi-debug
+	@$(MAKE) -s test-vmi-release
+endif
+	@echo " "
+
+testing-ffi:
+	@echo "ffi testing"
+	@echo "----------------------------------------"
+ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
+ifeq ($(HAS_32CDEFS),1)
+	@$(MAKE) -s test-ffi-debug-32
+	@$(MAKE) -s test-ffi-release-32
+endif
+ifeq ($(HAS_64CDEFS),1)
+	@$(MAKE) -s test-ffi-debug-64
+	@$(MAKE) -s test-ffi-release-64
+endif
+else
+	@$(MAKE) -s test-ffi-debug
+	@$(MAKE) -s test-ffi-release
+endif
+	@echo " "
+
+
+# -- scm -------
+define scmtestok
 	@if ([ -f $1 ]); then\
 		printf ", $2: ";\
 		if ([ -f $^.in ] && $3 $1 repl --home=libraries $^ <$^.in || $3 $1 repl --home=libraries $^) | diff --strip-trailing-cr - $^.ok >/dev/null; then\
@@ -329,18 +370,19 @@ endef
 
 %.scm.ok: %.scm
 	@printf "Testing $^ ..."
-	$(call testok,$(vm)d,debug)
-	$(call testok,$(vm)d32,debug-32)
-	$(call testok,$(vm)d64,debug-64)
-	$(call testok,$(vm)r,release)
-	$(call testok,$(vm)r32,release-32)
-	$(call testok,$(vm)r64,release-64)
-	$(call testok,$(vm)32d.exe,win-debug-32,wine)
-	$(call testok,$(vm)32r.exe,win-release-32,wine)
-	$(call testok,$(vm)64d.exe,win-debug-64,wine)
-	$(call testok,$(vm)64r.exe,win-release-64,wine)
+	$(call scmtestok,$(vm)d,debug)
+	$(call scmtestok,$(vm)d32,debug-32)
+	$(call scmtestok,$(vm)d64,debug-64)
+	$(call scmtestok,$(vm)r,release)
+	$(call scmtestok,$(vm)r32,release-32)
+	$(call scmtestok,$(vm)r64,release-64)
+	$(call scmtestok,$(vm)32d.exe,win-debug-32,wine)
+	$(call scmtestok,$(vm)32r.exe,win-release-32,wine)
+	$(call scmtestok,$(vm)64d.exe,win-debug-64,wine)
+	$(call scmtestok,$(vm)64r.exe,win-release-64,wine)
 	@printf ".\n"
 
+# -- bin -------
 define bintestok
 	@if ([ -f $1 ]); then\
 		printf ", $2: ";\
@@ -368,49 +410,18 @@ endef
 	@printf ".\n"
 
 
-
+# -------------------------------------------------
 # -=( tests )=-------------------------------------
-tests: repl includes/ol/vm.h
+check: tests
 tests: testing-binaries
-tests: testing-embed
-tests: $(wildcard tests/*.scm.ok) $(wildcard tests/*.bin.ok)
 	@rm -f $(FAILED)
-	@echo " "
-	@echo "Internal vm testing"
-	@echo "---------------------------------------"
-ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
-ifeq ($(HAS_32CDEFS),1)
-	@$(MAKE) -s test-vmi-debug-32
-	@$(MAKE) -s test-vmi-release-32
-endif
-ifeq ($(HAS_64CDEFS),1)
-	@$(MAKE) -s test-vmi-debug-64
-	@$(MAKE) -s test-vmi-release-64
-endif
-else
-	@$(MAKE) -s test-vmi-debug
-	@$(MAKE) -s test-vmi-release
-endif
-	@echo " "
-	@echo "ffi testing"
-	@echo "----------------------------------------"
-ifeq ($(UNAME),Linux) # special case, try to do maximal testings under main development platform
-ifeq ($(HAS_32CDEFS),1)
-	@$(MAKE) -s test-ffi-debug-32
-	@$(MAKE) -s test-ffi-release-32
-endif
-ifeq ($(HAS_64CDEFS),1)
-	@$(MAKE) -s test-ffi-debug-64
-	@$(MAKE) -s test-ffi-release-64
-endif
-else
-	@$(MAKE) -s test-ffi-debug
-	@$(MAKE) -s test-ffi-release
-endif
+	@make -s testing-internal
+	@make -s testing-ffi
+	@make -s testing-embed
 	@echo " "
 	@echo "common tests"
 	@echo "---------------------------------------"
-	@for F in $(filter-out tests/ffi.scm, $(filter %.scm,$^)) ;do \
+	@for F in $(filter-out tests/ffi.scm, $(wildcard tests/*.scm)) $(wildcard tests/*.bin) ;do \
 	   $(MAKE) -s -B $$F.ok ;\
 	done
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
