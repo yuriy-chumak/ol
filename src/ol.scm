@@ -96,7 +96,7 @@
                   ; the divisor is nonzero.
 
    full-unicode   ; All Unicode characters present in Unicode version 6.0
-                  ; are supported as Scheme characters.
+                  ; are supported as Scheme characters (actually, 14.0.0).
    immutable)))   ; todo: ?
 
 

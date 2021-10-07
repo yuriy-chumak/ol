@@ -176,7 +176,7 @@ R<sup>7</sup>RS DIFFERENCES
   * CHARACTERS in Ol is a **small numbers** (aka 'enumerations'), but a *characters* in Scheme.
     - explanation: This is for a historical reason.
       Ol supports two types of numbers - 'small' numbers (enumerations) and 'long' numbers (just numbers). 'Small' numbers are used as 'glyphs' (or 'runes' in other word) inside strings for Unicode support. An additional 'character' type with requirement to use the char->integer and integer->char functions every time is too boring and slow. Thanks.
-    - note: Ol supports full Unicode 12.1.0 (2020 Jun 13) character set.
+    - note: Ol supports full Unicode 14.0.0 (2021 Sep 14) character set.
     - note: If you want to print a character in the form of a letter (or a digit, etc.), use a function 'string', i.e. instead of `(print #\λ)` use `(print (string #\λ))`, otherwise you will get a number 955.
 
 * 6.8. Vectors

@@ -338,7 +338,7 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm
 # compiling unicode table
 libraries/owl/unicode-char-folds.scm:
 	echo "(define char-folds '(" >libraries/owl/unicode-char-folds.scm
-	curl https://www.unicode.org/Public/12.1.0/ucd/CaseFolding.txt |\
+	curl https://www.unicode.org/Public/14.0.0/ucd/CaseFolding.txt |\
 	   grep "[0-9A-F]* [SFC]; " |\
 	   sed -re 's/ #.*//' -e 's/( [SFC])?;//g' -e 's/^/ /' -e 's/ / #x/g' -e 's/ /(/' -e 's/$$/)/' |\
 	   tr "[A-F]" "[a-f]" >> libraries/owl/unicode-char-folds.scm
