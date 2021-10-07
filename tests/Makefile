@@ -1,5 +1,8 @@
 .PHONY: check tests testing-binaries
 
+.PHONY: $(wildcard tests/*.bin)
+.PHONY: $(wildcard tests/*.scm)
+
 check: tests
 
 ifndef MAKEFILE_MAIN
@@ -338,11 +341,39 @@ endef
 	$(call testok,$(vm)64r.exe,win-release-64,wine)
 	@printf ".\n"
 
+define bintestok
+	@if ([ -f $1 ]); then\
+		printf ", $2: ";\
+		if ([ -f $^.in ] && $3 $1 $^ --home=libraries <$^.in || $3 $1 $^ --home=libraries) | diff --strip-trailing-cr - $^.ok >/dev/null; then\
+			printf $(ok) ;\
+		else \
+			printf $(failed);\
+			touch $(FAILED);\
+		fi;\
+	fi
+endef
+
+%.bin.ok: %.bin
+	@printf "Testing $^ ..."
+	$(call bintestok,$(vm)d,debug)
+	$(call bintestok,$(vm)d32,debug-32)
+	$(call bintestok,$(vm)d64,debug-64)
+	$(call bintestok,$(vm)r,release)
+	$(call bintestok,$(vm)r32,release-32)
+	$(call bintestok,$(vm)r64,release-64)
+	$(call bintestok,$(vm)32d.exe,win-debug-32,wine)
+	$(call bintestok,$(vm)32r.exe,win-release-32,wine)
+	$(call bintestok,$(vm)64d.exe,win-debug-64,wine)
+	$(call bintestok,$(vm)64r.exe,win-release-64,wine)
+	@printf ".\n"
+
+
+
 # -=( tests )=-------------------------------------
 tests: repl includes/ol/vm.h
 tests: testing-binaries
 tests: testing-embed
-tests: $(wildcard tests/*.scm)
+tests: $(wildcard tests/*.scm.ok) $(wildcard tests/*.bin.ok)
 	@rm -f $(FAILED)
 	@echo " "
 	@echo "Internal vm testing"

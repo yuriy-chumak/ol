@@ -4837,8 +4837,6 @@ done:;
 //
 
 // fasl decoding
-// todo: есть неприятный момент - 64-битный код иногда вставляет в fasl последовательность большие числа
-//	а в 32-битном коде это число должно быть другим. что делать? пока х.з.
 static __inline__
 word get_nat(unsigned char** hp)
 	// TODO: assert if overflow
@@ -4892,6 +4890,10 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 					do {
 						ch = *hp++;
 						nat |= (word)(ch & 0x7F) << i;
+						if (!(ch & 0x80) && !(nat >> VBITS))
+							break; // early exit if number fits an 'enum'
+
+						i += 7;
 						if (i > VBITS) {
 							// well, this value is too big. let's produce a number
 							memmove(obj + 3, obj, (fp - obj) * W); fp += 3; // shift object
@@ -4905,21 +4907,21 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 							nat >>= VBITS;
 							i -= VBITS;
 						}
-						i += 7;
 					} while (ch & 0x80);
 
-					if (obj == object) { // мы ничего никуда не сдвигали, значит число оказалось маленьким
+					if (obj == object) { // мы ничего никуда не сдвигали, значит число оказалось маленьким (enum)
 						word val = make_value(type, nat);
 						*fp++ = val;
 					}
 					else { // мы сдвигали, надо сохранить оставшийся кусок числа
-						memmove(obj + 3, obj, (fp - obj) * W); fp += 3; // shift object, move fp
-						object += 3;
+						if (nat != 0) {
+							memmove(obj + 3, obj, (fp - obj) * W); fp += 3; // shift object, move fp
+							object += 3;
 
-						obj[0] = make_header(TPAIR, 3);
-						obj[1] = I(nat); // assert (nat <= VMAX)
-						obj[2] = INULL;
-
+							obj[0] = make_header(TPAIR, 3);
+							obj[1] = I(nat); // assert (nat <= VMAX)
+							obj[2] = INULL;
+						}
 						// а теперь заполним все указатели
 						obj += 3;
 						while (obj < object) {
@@ -5114,7 +5116,7 @@ int main(int argc, char** argv)
 		struct stat st;
 
 		if (stat(file, &st))
-			goto can_not_stat_file;		// не найден файл или он пустой
+			goto can_not_stat_file;		// не найден файл или нет доступа
 #ifndef REPL
 		if (st.st_size == 0)
 			goto invalid_binary_script;
