@@ -118,29 +118,37 @@ R<sup>7</sup>RS DIFFERENCES
   * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
 
 * 4.1.5. Conditionals
-  * Ol provides **extended *if*** in forms
-  `(if <condition> <then-clause> else <else1-clause>..<elseN-clause>)` and
-  `(if <condition> then <then1-clause>..<thenN-clause> else <else1-clause>..<elseN-clause>)`.
+  * Ol provides **extended *if*** with `then` and `else` keywords in forms:
+    * `(if <condition> then <then1-clause>..<thenN-clause>)`,
+    * `(if <condition> <then-clause> else <else1-clause>..<elseN-clause>)`,
+    * `(if <condition> then <then1-clause>..<thenN-clause> else <else1-clause>..<elseN-clause>)`.
 
 * 4.1.6. Assignments
   * **No** `set!` in Ol.
     - explanation: Ol is a purely functional language.
-    - note: Limited support of `set-car!`, `set-cdr!` and `set-ref!` functions is provided.
+    - note: Use `define` instead.
+    - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions is provided.
 
 * 4.1.7. Inclusion
   * **No** `include` and `include-ci` in Ol.
-    - note: Use libraries (import, define-library, export, etc.) instead. Top level ",load" is available too.
+    - note: Use libraries (`import`, `define-library`, `export`, etc.) instead.
+    - note: Top level ",load" REPL command is available.
 
 * 4.2.1. Conditionals
   * Result of the `when` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
   * Result of the `unless` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
+  * Extended form of `case` is available in Ol.
 
 * 4.2.5. Delayed evaluation
   * **No** `delay-force`, `promise?` and `make-promise` in Ol.
-    - note: DELAY and FORCE exists, sure.
+    - note: `delay` and `force` exists, sure.
 
 * 4.2.7. Exception handling
   * **No** `guard` and `raise` in Ol.
+
+* 4.3. Macros
+  * **No** `let-syntax` and `letrec-syntax` in Ol.
+    - note: Use `define-macro` instead.
 
 * 5.5. Record-type definitions
   * **No** `define-record-type` in Ol.
