@@ -156,8 +156,9 @@
          ; косвенные аллокаторы
          (primop 'vm:cast   2 1 (make-bytecode '(22 4 5 6    24 6)))
          (primop 'set-ref   3 1 (make-bytecode '(45 4 5 6 7  24 7)))
-         ; ну и мутатор сюда же добавим
-         (primop 'set-ref!  3 1 (make-bytecode '(10 4 5 6 7  24 7)))
+         ; ну и мутаторы сюда же добавим
+         (primop 'vm:set!   5 1 (make-bytecode '(43 4 5 6 7 8  24 6))) ;; * experimental feature, do not use!
+         (primop 'set-ref!  3 1 (make-bytecode '(10 4 5 6 7    24 7)))
 
          ; описатели
          (primop 'type   1 1 type) ; (make-bytecode '(15 4 5    24 5))  ;; get type bits

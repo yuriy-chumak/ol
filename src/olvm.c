@@ -2374,6 +2374,7 @@ mainloop:;
 	#	define VMMAKE 18    // make a typed object
 	#	define VMMAKEB 19   // make a typed blob (formerly raw object)
 	#	define VMCAST 22
+	#	define VMSETE 43
 
 	#	define VMPIN   35
 	#	define VMUNPIN 60
@@ -2517,12 +2518,11 @@ loop:;
 		}
 		goto apply; // ???
 
-	/*! ##### 43, 48, 62: Unused numbers
+	/*! ##### 48, 62: Unused numbers
 	 * Reserved for feature use.
 	 * 
 	 * Throws "Invalid opcode" error.
 	 */
-	case 43:
 	case 48:
 	case 62:
 		FAIL(op, new_string("Invalid opcode"), ITRUE);
@@ -3009,6 +3009,28 @@ loop:;
 			break;
 		}
 		ip += 3; break;
+	}
+
+	// (vm:set! to at from start end). only binary object
+	// * experimental feature, do not use!
+	case VMSETE: {
+		char *p = (char *)A0;
+		word result = IFALSE;
+
+		char *q = (char *)A2;
+		if (is_rawstream(p) && is_rawstream(q)) {
+			word to = value(A1);    assert(is_enump(A1));
+			word start = value(A3); assert(is_enump(A3));
+			word end = value(A4);   assert(is_enump(A4));
+
+			if (end <= rawstream_size(q) && end - start + to <= rawstream_size(p)) {
+				memcpy(&p[W + to], &q[W + start], end - start);
+				result = (word) p;
+			}
+		}
+
+		A5 = result;
+		ip += 6; break;
 	}
 
 
