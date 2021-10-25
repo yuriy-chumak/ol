@@ -1,7 +1,8 @@
 #!/usr/bin/env ol
 (import (lib gl)
    (lib rlutil)
-   (scheme misc) (otus random!))
+   (scheme misc) (otus random!)
+   (lib keyboard))
 
 (gl:set-window-title "Tetris")
 (import (OpenGL version-1-0))
@@ -180,9 +181,9 @@
          ; todo: проверить есть ли заполненные полоски в стакане, и если есть - удалить
          ; проверить, можно ли фигурку сдвинуть туда, куда хочет юзер
          (if (zero? (mod s2 3)) ; 3 раза в секунду или пробел
-         (let ((left (key-pressed #xff51))
-               (right (key-pressed #xff53))
-               (up (key-pressed #xff52)))
+         (let ((left (key-pressed? #xff51))
+               (right (key-pressed? #xff53))
+               (up (key-pressed? #xff52)))
             (let ((shift
                      (cond
                         (left -1)
@@ -217,7 +218,7 @@
                         (set-ref! цеглинка 3 rotation)))))))
 
          ; 2. проверить, можно ли опустить текущую фигуру вниз, да - опустить
-         (if (or (zero? (mod s2 5)) (key-pressed #x0020)) ; 2 раза в секунду или пробел
+         (if (or (zero? (mod s2 5)) (key-pressed? #x0020)) ; 2 раза в секунду или пробел
          (let ((x (car (ref цеглинка 2)))
                (y (cdr (ref цеглинка 2))))
          (if
