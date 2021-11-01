@@ -399,4 +399,12 @@
 
 
 ; see also: http://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/predef/reference/boost_os_operating_system_macros.html
+)
+
+; notification about ",save":
+(begin
+   (define notification-text (vm:new 63 (lambda (args)
+      (print "You restored session with ffi enabled.")
+      (print "All ffi handles became invalid. Be careful!"))))
+   (define (notification) notification-text)
 ))
