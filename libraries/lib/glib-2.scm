@@ -17,6 +17,7 @@
 
       ;
       GObject*
+      g_object_ref
       g_object_unref
 
       G_CALLBACK
@@ -57,6 +58,7 @@
 (define GIO (load-dynamic-library "libgio-2.0.so"))
 
 (define GObject* fft-void*)
+(define g_object_ref (GOBJECT gpointer "g_object_ref" gpointer))
 (define g_object_unref (GOBJECT void "g_object_unref" gpointer))
 
 (define GError* fft-void*)

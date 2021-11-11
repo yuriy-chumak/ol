@@ -6,4 +6,5 @@
    1. Glade
    1. Properties
 1. How to Deal With Strings
-
+1. Widget Gallery
+   1. AboutDialog

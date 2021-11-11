@@ -42,6 +42,7 @@
       gtk_builder_connect_signals
 
       ; todo: move to (lib gtk label)
+      gtk_label_get_text
       gtk_label_set_text
 
       ; todo: move to (lib gtk glarea)
@@ -80,7 +81,8 @@
       ; 
       GtkTextView*
 
-
+      GtkAboutDialog*
+      gtk_dialog_run
 
    )
    (import
@@ -143,6 +145,7 @@
 
 ; (lib gtk label)
 (define GtkLabel* fft-void*)
+(define gtk_label_get_text (GTK type-string "gtk_label_get_text" GtkLabel*))
 (define gtk_label_set_text (GTK fft-void "gtk_label_set_text" GtkLabel* type-string))
 
 ; (lib gtk glarea)
@@ -182,5 +185,8 @@
 (define gtk_text_buffer_get_end_iter (GTK fft-void "gtk_text_buffer_get_end_iter" GtkTextBuffer* GtkTextIter*))
 
 (define GtkTextView* fft-void*)
+
+(define GtkAboutDialog* fft-void*)
+(define gtk_dialog_run (GTK gint "gtk_dialog_run" GtkAboutDialog*))
 
 ))
