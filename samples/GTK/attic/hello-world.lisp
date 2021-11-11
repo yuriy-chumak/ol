@@ -3,19 +3,19 @@
 (import (otus ffi)
    (lib glib-2)
    (lib gtk-3))
+(import (only (otus syscall) strftime))
 
 (define print_hello (vm:pin (cons
-   (list fft-int GtkWidget* gpointer)
+   (cons fft-int (list GtkWidget* gpointer))
    (lambda (widget userdata)
-      (print "hello")
+      (print (strftime "%F %H:%M:%S\0") " - hello!")
       TRUE
 ))))
 
 (define activate (vm:pin (cons
-   (list fft-int GtkApplication* gpointer)
+   (cons fft-int (list GtkApplication* gpointer))
    (lambda (app userdata)
       (define window (gtk_application_window_new app))
-      (print "window: " window)
       (gtk_window_set_title window "Window")
       (gtk_window_set_default_size window 200 200)
 

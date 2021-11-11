@@ -4,7 +4,7 @@
       gdouble
       gchar* gboolean
 
-      TRUE FALSE
+      TRUE FALSE NULL
 
       G_APPLICATION_FLAGS_NONE
 
@@ -23,6 +23,7 @@
 
       g_signal_connect
       g_application_run
+      g_application_quit
    )
    (import
       (scheme core)
@@ -31,6 +32,7 @@
 (begin
 (define TRUE 1)
 (define FALSE 0)
+(define NULL (vm:make type-vptr 0))
 
 (define G_APPLICATION_FLAGS_NONE 0)
 
@@ -41,6 +43,7 @@
 (define gdouble fft-double)
 (define gchar* type-string)
 (define gboolean gint)
+(define void fft-void)
 
 (define GCallback type-callable) ; void (*GCallback)(void)
 (define GClosureNotify type-callable) ; void (*GClosureNotify)(gpointer, GClosure)
@@ -54,14 +57,15 @@
 (define GIO (load-dynamic-library "libgio-2.0.so"))
 
 (define GObject* fft-void*)
-(define g_object_unref (GOBJECT fft-void "g_object_unref" gpointer))
+(define g_object_unref (GOBJECT void "g_object_unref" gpointer))
 
 (define GError* fft-void*)
-(define g_error_free (GOBJECT fft-void "g_error_free" GError*))
+(define g_error_free (GOBJECT void "g_error_free" GError*))
 
 (define g_signal_connect_data (GOBJECT gulong "g_signal_connect_data" gpointer type-string GCallback gpointer GClosureNotify GConnectFlags))
 (define (g_signal_connect instance detailed_signal c_handler data)
    (g_signal_connect_data instance detailed_signal c_handler data #false 0))
-(define g_application_run (GIO fft-int "g_application_run" GApplication* fft-int fft-void*))
+(define g_application_run (GIO gint "g_application_run" GApplication* gint fft-void*))
+(define g_application_quit (GIO void "g_application_quit" GApplication*))
 
 ))

@@ -10,6 +10,8 @@
       gtk_main
       gtk_main_quit
 
+      gtk_check_version
+
       gtk_application_new
       gtk_application_window_new
       gtk_window_set_title
@@ -89,6 +91,8 @@
 
 (begin
 
+   (setq guint fft-unsigned-int)
+
 (define GtkWidget* type-vptr)
 (define GtkApplication* type-vptr)
 (define GApplicationFlags fft-int)
@@ -101,6 +105,8 @@
 (define gtk_init (GTK fft-void "gtk_init" fft-int& (fft& (fft* type-string))))
 (define gtk_main (GTK fft-void "gtk_main"))
 (define gtk_main_quit  (GTK fft-void "gtk_main_quit"))
+
+(define gtk_check_version (GTK type-string "gtk_check_version" guint guint guint))
 
 (define gtk_application_new (GTK GtkApplication* "gtk_application_new" type-string GApplicationFlags))
 (define gtk_application_window_new (GTK GtkWidget* "gtk_application_window_new" GtkApplication*))

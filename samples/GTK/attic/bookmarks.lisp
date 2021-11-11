@@ -6,21 +6,21 @@
 
 ; let's read config:
 (import (file json)
-   (otus syscall))
+   (only (otus syscall) strftime))
 
 (define config (or
    (read-json-file "config.json")
    { ;default config:
-      'timestamp (strftime "%F %x:%S\0")
+      'timestamp (strftime "%F %H:%M:%S\0")
    }))
 
 (print config)
 
 
 (define print_hello (vm:pin (cons
-   (list fft-int GtkWidget* gpointer)
+   (cons fft-int (list GtkWidget* gpointer))
    (lambda (widget userdata)
-      (gtk_label_set_text userdata (strftime "%F %x:%S\0"))
+      (gtk_label_set_text userdata (strftime "%F %H:%M:%S\0"))
       TRUE
 ))))
 
@@ -37,7 +37,6 @@
 
 
 (define something (gtk_builder_get_object builder "something"))
-(print "something: " something)
 
 (define label (gtk_builder_get_object builder "label1"))
 
