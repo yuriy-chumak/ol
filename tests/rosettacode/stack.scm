@@ -64,9 +64,9 @@
 (define (push value)
    (mail 'stack ['push value]))
 (define (pop)
-   (interact 'stack ['pop]))
+   (await (mail 'stack ['pop])))
 (define (empty)
-   (interact 'stack ['empty]))
+   (await (mail 'stack ['empty])))
 
 (for-each (lambda (n)
       (print "pushing " n)

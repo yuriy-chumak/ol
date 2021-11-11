@@ -192,11 +192,11 @@
 
    ; ходим не чаше ? раз в секунду
    (let*((new-time _ (clock))
-         (step (interact hero ['A* x y])))
+         (step (await (mail hero ['A* x y]))))
 
       ; нарисуем карту, которую "помнит" создание
       (if #t
-      (let ((map (interact hero ['get-fov])))
+      (let ((map (await (mail hero ['get-fov]))))
          (glEnable GL_TEXTURE_2D)
          (glBegin GL_QUADS)
          (ff-fold (lambda (_ key value)
@@ -229,7 +229,7 @@
       (glEnable GL_TEXTURE_2D)
       (glColor3f 1 1 1)
       (glBegin GL_QUADS)
-      (let ((xy (interact hero ['get-location])))
+      (let ((xy (await (mail hero ['get-location]))))
          (if (and (= (car xy) x) (= (cdr xy) y))
             (quadT x y 7/8 1/8)
             (begin

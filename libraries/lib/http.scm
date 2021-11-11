@@ -28,7 +28,7 @@
    (mail sender id)
    (this (+ id 1))))))
 (define (generate-unique-id)
-   (interact 'IDs #f))
+   (await (mail 'IDs #f)))
 
 
 
@@ -175,8 +175,8 @@
                      (call/cc (lambda (close)
                         (let ((Request (ref request 1))
                               (Headers (ref request 2)))
-                           (print-to stderr id ": Request: \e[0;34m" Request "\e[0;0m")
-                           (print-to stderr id ": Headers: " Headers)
+                           ;(print-to stderr id ": Request: \e[0;34m" Request "\e[0;0m")
+                           ;(print-to stderr id ": Headers: " Headers)
                            (if (null? Request)
                               (send "HTTP/1.0 400 Bad Request" "\r\n"
                                     "Conneciton: close"        "\r\n"
@@ -215,7 +215,7 @@
    ; accept loop
    (let loop ()
       (if (syscall 23 socket
-            (if (null? (running-threads)) 1000000 1)) ; wait a 30 second if no running threads detected
+            (if (null? (running-threads)) 30000000 1)) ; wait a 30 second if no running threads detected (100000 for tests)
          (let ((fd (syscall 43 socket))) ; accept
             (fork (on-accept (generate-unique-id) fd onRequest)))
          (set-ticker-value 0)) ; else just switch context

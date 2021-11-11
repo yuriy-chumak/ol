@@ -373,7 +373,7 @@
                   (this itself)))))))
 
    (define (create-window x y width height)
-      (interact 'windows ['create x y width height]))
+      (await (mail 'windows ['create x y width height])))
    (define (destroy-window window)
       (mail 'windows ['destroy window]))
 
@@ -392,8 +392,8 @@
       (mail 'windows ['set-window-border id color]))
 
    (define (render-windows)
-      (interact 'windows ['draw]))
+      (await (mail 'windows ['draw])))
 
    (define (windows-make-selection x y)
-      (interact 'windows ['make-selection x y]))
+      (await (mail 'windows ['make-selection x y])))
 ))

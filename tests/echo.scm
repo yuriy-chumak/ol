@@ -14,6 +14,6 @@
 
 (let loop ((n 1))
    (cond
-      ((not (eq? n (interact echo n))) (print "error"))
+      ((not (eq? n (await (mail echo n)))) (print "error"))
       ((= n 100) (print n))
       (else (loop (+ n 1)))))

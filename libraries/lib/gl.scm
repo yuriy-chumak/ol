@@ -460,7 +460,7 @@
                   (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
                ;(gl:MakeCurrent #f #f)
                   (mail 'opengl ['set-context [hDC hRC window]])
-                  (interact 'opengl ['get-context]) ; синхронизация
+                  (await (mail 'opengl ['get-context])) ; синхронизация
 
                   (ShowWindow window 5)
                   [hDC hRC window])))
@@ -541,13 +541,9 @@
       (begin (runtime-error "Unknown platform OS" *uname*))))
 
 (begin
-
-; internal function
-
-
-(define (gl:hide-cursor)
-   (gl:HideCursor (interact 'opengl ['get 'context])))
-
+   ; internal function
+   (define (gl:hide-cursor)
+      (gl:HideCursor (await (mail 'opengl ['get 'context]))))
 )
 
 ; -=( opengl coroutine )=------------------------------------
@@ -723,7 +719,7 @@
    (mail 'opengl ['set-window-size width height]))
 
 (define (gl:finish)
-   (interact 'opengl ['finish]))
+   (await (mail 'opengl ['finish])))
 
 (define hook:exit (lambda args (gl:finish)))
 

@@ -152,13 +152,13 @@
       ; mail, but it blocks the thread until the desired response
       ; arrives. Messages are of the form #(<sender-id> <message>).
 
-      (define (interact whom message)
-         (mail whom message)
-         (ref (accept-mail (λ (env) (eq? (ref env 1) whom))) 2))
-
+      ; example: (await (mail 'who ['a 'message]))
       (define (await sentmail)
          (if sentmail
             (ref (accept-mail (λ (env) (eq? (ref env 1) sentmail))) 2)))
 
-      ; example: (await (mail 'who ['a 'message]))
+      (define (interact whom message)
+         (mail whom message)
+         (ref (accept-mail (λ (env) (eq? (ref env 1) whom))) 2))
+
 ))

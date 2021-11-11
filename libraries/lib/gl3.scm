@@ -23,7 +23,7 @@
       (import (OpenGL GLX ARB create_context))
       (begin
          (define (gl:set-context-version major minor)
-            (let*((context (interact 'opengl ['get-context])) ;#(display screen window cx)
+            (let*((context (await (mail 'opengl ['get-context]))) ;#(display screen window cx)
                   (display screen window cx context)
                   ; this functions requires GLX 1.3+
                   (glXChooseFBConfig (GL_LIBRARY fft-void* "glXChooseFBConfig" fft-void* fft-int fft-int* fft-int&)))

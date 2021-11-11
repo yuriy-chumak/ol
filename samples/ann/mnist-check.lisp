@@ -27,7 +27,7 @@
       '((0 . 0) (1 . 0) (1 . 1) (0 . 1)))
 (glEnd)
 (glDisable GL_TEXTURE_2D)
-(gl:SwapBuffers (interact 'opengl ['get 'context])) ; todo: make a function
+(gl:SwapBuffers (await (mail 'opengl ['get 'context]))) ; todo: make a function
 (glDeleteTextures 1 (list id)) ; и спокойно удалим сплеш текстуру
 
 (define numbers
@@ -323,7 +323,7 @@
 (let this ()
 (let* ((envelope (wait-mail))
        (sender msg envelope))
-   (define i (rand! images-count))
+   (define i (+ (rand! (/ images-count 2)) (/ images-count 2)))
 
    (define image (lref (images 'images) i))
    (define label (lref (labels 'labels) i))

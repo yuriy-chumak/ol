@@ -1307,7 +1307,7 @@
    (define (glBegin mode)
       (mail 'opengl-compat ['glBegin mode]))
    (define (glEnd)
-      (interact 'opengl-compat ['glEnd]))
+      (await (mail 'opengl-compat ['glEnd])))
 
    (define (glVertex2f x y)
       (mail 'opengl-compat ['glVertex x y 0]))
