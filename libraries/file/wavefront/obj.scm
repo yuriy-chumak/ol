@@ -46,6 +46,11 @@
          (skip (get-word "s " #t))
          (group get-rest-of-line))
       group))
+(define get-l
+   (let-parses(
+         (skip (get-word "l " #t))
+         (group get-rest-of-line))
+      group))
 (define get-v
    (let-parses(
          (skip (get-word "v " #t))
@@ -101,10 +106,11 @@
       [a b c]))
 
 (define facegroup-parser
-   (let-parses(
+   (let-parses (
          (usemtl get-usemtl)
          (skip (get-greedy* get-s))
-         (faces (get-greedy+ get-f)))
+         (faces (get-greedy+ get-f))
+         (skip (get-greedy* get-l)))
       (cons
          (bytes->string usemtl)
          faces)))
@@ -114,18 +120,25 @@
    (let-parses (
          (comments (get-greedy* get-comment))
          (mtllib get-mtllib)
-         (name (get-either get-g get-o))
-         (v (get-greedy+ get-v))
-         (vt (get-greedy+ get-vt))
-         (vn (get-greedy+ get-vn))
-         (facegroups (get-greedy+ facegroup-parser)))
+         (objects (greedy+ (let-parses (
+               (name (get-either get-g get-o))
+               (v (get-greedy+ get-v))
+               (vt (get-greedy+ get-vt))
+               (vn (get-greedy+ get-vn))
+               (facegroups (get-greedy+ facegroup-parser)))
+            {
+               'name  (bytes->string name)
+               'v  v
+               'vt vt
+               'vn vn
+               'facegroups facegroups
+            }))))
       {
          'mtllib  (bytes->string mtllib)
-         'name  (bytes->string name)
-         'v  v
-         'vt vt
-         'vn vn
-         'facegroups facegroups}
-      ))
+         'v  (foldr append '() (map (lambda (o) (o 'v  '())) objects))
+         'vt (foldr append '() (map (lambda (o) (o 'vt '())) objects))
+         'vn (foldr append '() (map (lambda (o) (o 'vn '())) objects))
+         'o objects
+      }))
 
 ))

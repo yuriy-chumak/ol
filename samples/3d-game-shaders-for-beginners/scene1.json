@@ -1,0 +1,58 @@
+[
+   {
+      "location" : [
+         -3.82744932174683,
+         2.20721244812012,
+         7.62939453125e-05
+      ],
+      "model" : "Mill_Cube.128",
+      "name" : "Mill_Cube.128",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -3.82744932174683,
+         2.20721244812012,
+         7.62939453125e-05
+      ],
+      "model" : "Mill_Blades_Cube.007",
+      "name" : "Mill_Blades_Cube.007",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         0,
+         0,
+         0
+      ],
+      "model" : "Mill_Cube.128",
+      "name" : "Mill_Cube.001",
+      "rotation" : [
+         0,
+         0,
+         -54.7429997258846
+      ]
+   },
+   {
+      "location" : [
+         0,
+         0,
+         0
+      ],
+      "model" : "Mill_Blades_Cube.007",
+      "name" : "Mill_Blades_Cube.001",
+      "rotation" : [
+         0,
+         0,
+         -54.7429997258846
+      ]
+   }
+]
