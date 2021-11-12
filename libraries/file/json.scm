@@ -123,7 +123,7 @@
       (let-parse* (
             (signer (any-of
                   (word "+" (lambda (x) x))
-                  (word "-" (lambda (x) (- x)))
+                  (word "-" (lambda (x) (negate x)))
                   (epsilon  (lambda (x) x))))
             (int natural)
             (frac (either
@@ -137,10 +137,10 @@
                         (e (imm #\e))
                         (signer (any-of
                            (word "+" (lambda (x) x))
-                           (word "-" (lambda (x) (- x)))
+                           (word "-" (lambda (x) (negate x)))
                            (epsilon  (lambda (x) x))))
                         (exp (greedy+ (rune-if (lambda (rune) (<= #\0 rune #\9))))))
-                     (signer (expt 10 (list->number exp 10))))
+                     (expt 10 (signer (list->number exp 10))))
                   (epsilon 1))))
          (* (signer (+ int frac)) exponent)))
 
