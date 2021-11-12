@@ -80,16 +80,13 @@
             (obj 'o)))
             
    {}
-   '("Mill" )))
+   '("Mill")))
 (print models)
 
 ;; load a scene
 (import (file json))
 (define scene (read-json-file "scene1.json"))
-(print scene)
-(print "Ok.")
 
-(print models)
 ;; draw
 
 (import (lib math))
@@ -154,7 +151,7 @@
       0 0 2
       0 0 1)
 
-   ; show lighting point
+   ; set and show lighting point
    (glDisable GL_LIGHTING)
    (let*((ss ms (clock))
          (x (* 5 (sin (+ ss (/ ms 1000)))))
@@ -169,12 +166,5 @@
       (glLightfv GL_LIGHT0 GL_POSITION (list x y z 1)))
    (glEnable GL_LIGHTING)
       
-
-   ;; ; show model
-   ;; (for-each (lambda (o)
-   ;;       (let ((diffuse-color (get (cdr o) 'kd #f)))
-   ;;          (glLightfv GL_LIGHT0 GL_DIFFUSE diffuse-color))
-   ;;       (glCallList (car o)))
-   ;;    obj)))
    (draw-scene)
 ))

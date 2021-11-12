@@ -1,0 +1,36 @@
+# 3D Game Shaders For Beginners
+
+## GLSL
+
+Please read the full article at [lettier/3d-game-shaders-for-beginners](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/glsl.md).
+
+## Otus Lisp notes
+
+[5.glsl.lisp](../5.glsl.lisp):
+```bash
+$ ./5.glsl.lisp
+```
+
+![5.glsl.lisp screenshot](https://i.imgur.com/LDWrH0a.gif)
+
+```scheme
+(define vertex-shader "#version 120 // OpenGL 2.1
+   void main() {
+   	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+   }")
+(define fragment-shader "#version 120 // OpenGL 2.1
+   void main() {
+   	gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+   }")
+
+(define po (gl:CreateProgram vertex-shader fragment-shader))
+```
+
+Create, compile and link a vertex and fragment glsl shaders into one shader program.
+
+
+```scheme
+   (glUseProgram po)
+```
+
+Apply a shader program. This disables fixed pipline and you see a green geometry independently of enabled light and geometry materials.

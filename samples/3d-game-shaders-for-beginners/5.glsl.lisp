@@ -2,7 +2,7 @@
 
 ;; initialize OpenGL
 (import (lib gl))
-(gl:set-window-title "main.lisp")
+(gl:set-window-title "4. reference-frames.lisp")
 (import (OpenGL version-2-1))
 ; todo: splash screen
 
@@ -80,15 +80,25 @@
             (obj 'o)))
             
    {}
-   '("Mill" )))
+   '("Mill")))
+(print models)
 
 ;; load a scene
 (import (file json))
 (define scene (read-json-file "scene1.json"))
-(print scene)
-(print "Ok.")
 
-(print models)
+;; shaders
+(define vertex-shader "#version 120 // OpenGL 2.1
+   void main() {
+   	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+   }")
+(define fragment-shader "#version 120 // OpenGL 2.1
+   void main() {
+   	gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+   }")
+
+(define po (gl:CreateProgram vertex-shader fragment-shader))
+
 ;; draw
 
 (import (lib math))
@@ -146,6 +156,7 @@
 ; draw
 (gl:set-renderer (lambda (mouse)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+   (glUseProgram po)
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
@@ -153,7 +164,7 @@
       0 0 2
       0 0 1)
 
-   ; show lighting point
+   ; set and show lighting point
    (glDisable GL_LIGHTING)
    (let*((ss ms (clock))
          (x (* 5 (sin (+ ss (/ ms 1000)))))
@@ -168,12 +179,5 @@
       (glLightfv GL_LIGHT0 GL_POSITION (list x y z 1)))
    (glEnable GL_LIGHTING)
       
-
-   ;; ; show model
-   ;; (for-each (lambda (o)
-   ;;       (let ((diffuse-color (get (cdr o) 'kd #f)))
-   ;;          (glLightfv GL_LIGHT0 GL_DIFFUSE diffuse-color))
-   ;;       (glCallList (car o)))
-   ;;    obj)))
    (draw-scene)
 ))

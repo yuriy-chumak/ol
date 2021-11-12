@@ -6,7 +6,7 @@ Please read the full article at [lettier/3d-game-shaders-for-beginners](https://
 
 ## Otus Lisp notes
 
-[4.reference-frames.lisp](4.reference-frames.lisp):
+[4.reference-frames.lisp](../4.reference-frames.lisp):
 ```bash
 $ ./4.reference-frames.lisp
 ```
