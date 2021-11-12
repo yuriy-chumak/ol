@@ -1,0 +1,40 @@
+# 3D Game Shaders For Beginners
+
+## Running The Demo
+
+Just run a selected sample file from '3d-game-shaders-for-beginners" sample folder.
+
+For example,
+```bash
+$ ./4.reference-frames.lisp
+OpenGL version: 4.6.0 NVIDIA 470.74
+OpenGL vendor: NVIDIA Corporation
+OpenGL renderer: NVIDIA GeForce GTX 960M/PCIe/SSE2
+Checking GL_ARB_transpose_matrix support... ok.
+Loading object file resources/Medieval Village Pack - Dec 2020/Buildings/OBJ/Mill.obj...
+Loading materials file resources/Medieval Village Pack - Dec 2020/Buildings/OBJ/Mill.mtl...
+  Found material Green
+  Found material Plaster.003
+  Found material RoofTiles.003
+  Found material Stone.003
+  Found material Stone_Dark.006
+  Found material Stone_Light.006
+  Found material Windows.005
+  Found material Wood.006
+  Found material Wood_Light.005
+  Found material Wood_Side.005
+  Found object Mill_Cube.128
+  Found object Mill_Blades_Cube.007
+#(#ff((name . Mill_Cube.128) (location . #(-382744932174683/100000000000000 55180311203003/25000000000000 -48828125/64)) (model . Mill_Cube.128) (rotation . #(0 0 0))) #ff((name . Mill_Blades_Cube.007) (location . #(-382744932174683/100000000000000 55180311203003/25000000000000 -48828125/64)) (model . Mill_Blades_Cube.007) (rotation . #(0 0 0))) #ff((name . Mill_Cube.001) (location . #(0 0 0)) (model . Mill_Cube.128) (rotation . #(0 0 -273714998629423/5000000000000))) #ff((name . Mill_Blades_Cube.001) (location . #(0 0 0)) (model . Mill_Blades_Cube.007) (rotation . #(0 0 -273714998629423/5000000000000))))
+Ok.
+#ff((Mill_Cube.128 1 2 3 4 5 6 7 8 9 10) (Mill_Blades_Cube.007 11 12 13 14))
+
+```
+![Window example](https://i.imgur.com/gT2o8vm.gif)
+
+### Demo Controls
+... TBD ...
+#### Mouse
+... TBD ...
+#### Keyboard
+... TBD ...
