@@ -1,7 +1,7 @@
 3D Game Shaders For Beginners
 =============================
 
-This is a try to translate a [lettier/3d-game-shaders-for-beginners](https://github.com/lettier/3d-game-shaders-for-beginners) to the Otus Lisp.
+This is a try to translate a [lettier/3d-game-shaders-for-beginners](https://github.com/lettier/3d-game-shaders-for-beginners) to the Ol (Otus Lisp).
 
 Interested in adding
 textures,
@@ -18,19 +18,19 @@ Below is a collection of shading techniques that will take your game visuals to 
 I've explained each technique in such a way that you can take what you learn here and apply/port it to
 whatever stack you use—be it Godot, Unity, Unreal, or something else.
 For the glue in between the shaders,
-I've chosen the fabulous Panda3D game engine and the OpenGL Shading Language (GLSL).
+I've chosen the fabulous Panda3D game engine [own Otus Lisp code - YC] and the OpenGL Shading Language (GLSL).
 So if that is your stack, then you'll also get the benefit of learning how to use these
 shading techniques with Panda3D and OpenGL specifically.
 
 ## Table Of Contents
 
-- :heavy_check_mark: [Setup](sections/setup.md)
-- :heavy_check_mark: [Dependencies](sections/dependencies.md)
-- :heavy_check_mark: [Running The Demo](sections/running-the-demo.md)
+- :heavy_check_mark: [Setup](sections/1.setup.md)
+- :heavy_check_mark: [Dependencies](sections/2.dependencies.md)
+- :heavy_check_mark: [Running The Demo](sections/3.running-the-demo.md)
 - :heavy_check_mark: [Reference Frames](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/reference-frames.md)
-  - :heavy_check_mark: [note](sections/reference-frames.md)
+  - :heavy_check_mark: [Ol related notes](sections/4.reference-frames.md)
 - :heavy_check_mark: [GLSL](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/glsl.md)
-  - :heavy_check_mark: [note](sections/glsl.md)
+  - :heavy_check_mark: [Ol related notes](sections/5.glsl.md)
 - :heavy_multiplication_x: [Render To Texture](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/render-to-texture.md)
 - :heavy_multiplication_x: [Texturing](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/texturing.md)
 - :heavy_multiplication_x: [Lighting](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/lighting.md)
