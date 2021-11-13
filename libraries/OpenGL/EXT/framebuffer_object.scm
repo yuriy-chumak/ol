@@ -29,30 +29,30 @@
 ; --------------------------------------------------------------------------
 ; New Procedures and Functions
    glIsRenderbuffer ;boolean (uint renderbuffer);
-   ;; glBindRenderbuffer ;void (enum target, uint renderbuffer);
-   ;; glDeleteRenderbuffers ;void (sizei n, const uint *renderbuffers);
-   ;; glGenRenderbuffers ;void (sizei n, uint *renderbuffers);
+   glBindRenderbuffer ;void (enum target, uint renderbuffer);
+   glDeleteRenderbuffers ;void (sizei n, const uint *renderbuffers);
+   glGenRenderbuffers ;void (sizei n, uint *renderbuffers);
 
-   ;; glRenderbufferStorage ;void (enum target, enum internalformat, sizei width, sizei height);
+   glRenderbufferStorage ;void (enum target, enum internalformat, sizei width, sizei height);
 
-   ;; glGetRenderbufferParameteriv ;void (enum target, enum pname, int *params);
+   glGetRenderbufferParameteriv ;void (enum target, enum pname, int *params);
 
-   ;; glIsFramebuffer ;boolean (uint framebuffer);
-   ;; glBindFramebuffer ;void (enum target, uint framebuffer);
-   ;; glDeleteFramebuffers ;void (sizei n, const uint *framebuffers);
-   ;; glGenFramebuffers ;void (sizei n, uint *framebuffers);
+   glIsFramebuffer ;boolean (uint framebuffer);
+   glBindFramebuffer ;void (enum target, uint framebuffer);
+   glDeleteFramebuffers ;void (sizei n, const uint *framebuffers);
+   glGenFramebuffers ;void (sizei n, uint *framebuffers);
 
-   ;; glCheckFramebufferStatus ;enum (enum target);
+   glCheckFramebufferStatus ;enum (enum target);
 
-   ;; glFramebufferTexture1D ;void (enum target, enum attachment, enum textarget, uint texture, int level);
-   ;; glFramebufferTexture2D ;void (enum target, enum attachment, enum textarget, uint texture, int level);
-   ;; glFramebufferTexture3D ;void (enum target, enum attachment, enum textarget, uint texture, int level, int zoffset);
+   glFramebufferTexture1D ;void (enum target, enum attachment, enum textarget, uint texture, int level);
+   glFramebufferTexture2D ;void (enum target, enum attachment, enum textarget, uint texture, int level);
+   glFramebufferTexture3D ;void (enum target, enum attachment, enum textarget, uint texture, int level, int zoffset);
 
-   ;; glFramebufferRenderbuffer ;void (enum target, enum attachment, enum renderbuffertarget, uint renderbuffer);
+   glFramebufferRenderbuffer ;void (enum target, enum attachment, enum renderbuffertarget, uint renderbuffer);
 
-   ;; glGetFramebufferAttachmentParameteriv ;void (enum target, enum attachment, enum pname, int *params);
+   glGetFramebufferAttachmentParameteriv ;void (enum target, enum attachment, enum pname, int *params);
 
-   ;; glGenerateMipmap ;void (enum target);
+   glGenerateMipmap ;void (enum target);
 
 ; --------------------------------------------------------------------------
 ; New Tokens
@@ -154,7 +154,7 @@
    (define glIsRenderbuffer (GL GLboolean "glIsRenderbufferEXT" GLuint))
    (define glBindRenderbuffer (GL GLvoid "glBindRenderbufferEXT" GLenum GLuint))
    (define glDeleteRenderbuffers (GL GLvoid "glDeleteRenderbuffersEXT" GLsizei GLuint*))
-   (define glGenRenderbuffers (GL GLvoid "glGenRenderbuffersEXT" GLsizei GLuint*))
+   (define glGenRenderbuffers (GL GLvoid "glGenRenderbuffersEXT" GLsizei GLuint&))
 
    (define glRenderbufferStorage (GL GLvoid "glRenderbufferStorageEXT" GLenum GLenum GLsizei GLsizei))
    (define glGetRenderbufferParameteriv (GL GLvoid "glGetRenderbufferParameterivEXT" GLenum GLenum GLint*))
@@ -162,7 +162,7 @@
    (define glIsFramebuffer (GL GLboolean "glIsFramebufferEXT" GLuint))
    (define glBindFramebuffer (GL GLvoid "glBindFramebufferEXT" GLenum GLuint))
    (define glDeleteFramebuffers (GL GLvoid "glDeleteFramebuffersEXT" GLsizei GLuint*))
-   (define glGenFramebuffers (GL GLvoid "glGenFramebuffersEXT" GLsizei GLuint*))
+   (define glGenFramebuffers (GL GLvoid "glGenFramebuffersEXT" GLsizei GLuint&))
 
    (define glCheckFramebufferStatus (GL GLvoid "glCheckFramebufferStatusEXT" GLenum GLenum))
 
