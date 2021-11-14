@@ -123,8 +123,8 @@
          (objects (greedy+ (let-parses (
                (name (get-either get-g get-o))
                (v (get-greedy+ get-v))
-               (vt (get-greedy+ get-vt))
-               (vn (get-greedy+ get-vn))
+               (vt (get-greedy* get-vt))
+               (vn (get-greedy* get-vn))
                (facegroups (get-greedy+ facegroup-parser)))
             {
                'name  (bytes->string name)
@@ -138,7 +138,10 @@
          'v  (foldr append '() (map (lambda (o) (o 'v  '())) objects))
          'vt (foldr append '() (map (lambda (o) (o 'vt '())) objects))
          'vn (foldr append '() (map (lambda (o) (o 'vn '())) objects))
-         'o objects
+         'o (map (lambda (o) {
+                  'name (o 'name)
+                  'facegroups (o 'facegroups) })
+               objects)
       }))
 
 ))
