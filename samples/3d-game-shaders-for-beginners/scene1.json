@@ -1,30 +1,1640 @@
 [
    {
       "location" : [
-         0,
-         0,
+         5,
+         1,
          0
       ],
-      "model" : "Mill_Cube.128",
-      "name" : "Mill_Cube.001",
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.000",
       "rotation" : [
          0,
          0,
-         -54.7429997258846
+         0
+      ]
+   },
+   {
+      "location" : [
+         3,
+         3,
+         0
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         -269.770888817726
+      ]
+   },
+   {
+      "location" : [
+         5,
+         3,
+         0
+      ],
+      "model" : "FloorTile_InnerCorner_Plane.228",
+      "name" : "FloorTile_InnerCorner_Plane.228",
+      "rotation" : [
+         0,
+         0,
+         89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         1,
+         3,
+         0
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         -269.770888817726
+      ]
+   },
+   {
+      "location" : [
+         -1,
+         3,
+         0
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         -269.770888817726
+      ]
+   },
+   {
+      "location" : [
+         -3,
+         3,
+         0
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         -269.770888817726
+      ]
+   },
+   {
+      "location" : [
+         5,
+         5,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.046",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         7,
+         3,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         -5,
+         5,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         3,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -5,
+         3,
+         0
+      ],
+      "model" : "FloorTile_InnerCorner_Plane.228",
+      "name" : "FloorTile_InnerCorner_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         5,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.250",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         7,
+         5,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         5,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_InnerCorner_Plane.228",
+      "name" : "FloorTile_InnerCorner_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         5,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Basic2_Plane.018",
+      "name" : "FloorTile_Basic2_Plane.018",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         3,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Basic2_Plane.018",
+      "name" : "FloorTile_Basic2_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         3,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         1,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         1,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.005",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         1,
+         -5,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         3,
+         -5,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.006",
+      "rotation" : [
+         0,
+         0,
+         89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         5,
+         -5,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.007",
+      "rotation" : [
+         0,
+         0,
+         89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         7,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.008",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         7,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.009",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         7,
+         -5,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         8,
+         -4,
+         0
+      ],
+      "model" : "Wall_4_Plane.112",
+      "name" : "Wall_4_Plane.112",
+      "rotation" : [
+         0,
+         0,
+         270.000000683245
+      ]
+   },
+   {
+      "location" : [
+         8,
+         0,
+         0
+      ],
+      "model" : "Wall_4_Plane.112",
+      "name" : "Wall_4_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         270.000000683245
+      ]
+   },
+   {
+      "location" : [
+         8,
+         4,
+         0
+      ],
+      "model" : "Window_Wall_SideB_Plane.013",
+      "name" : "Window_Wall_SideB_Plane.013",
+      "rotation" : [
+         0,
+         0,
+         270.000000683245
+      ]
+   },
+   {
+      "location" : [
+         -6,
+         6,
+         0
+      ],
+      "model" : "Wall_4_Plane.112",
+      "name" : "Wall_4_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         360.000010017913
+      ]
+   },
+   {
+      "location" : [
+         -8,
+         4,
+         0
+      ],
+      "model" : "Wall_4_Plane.112",
+      "name" : "Wall_4_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         450.00001935258
+      ]
+   },
+   {
+      "location" : [
+         8,
+         6,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.057",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -8,
+         6,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -8,
+         2,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -12,
+         2,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -2,
+         6,
+         0
+      ],
+      "model" : "Wall_2_Plane.050",
+      "name" : "Wall_2_Plane.050",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         2,
+         6,
+         0
+      ],
+      "model" : "Wall_2_Plane.050",
+      "name" : "Wall_2_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         6,
+         6,
+         0
+      ],
+      "model" : "Wall_1_Plane.063",
+      "name" : "Wall_1_Plane.063",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -10,
+         2,
+         0
+      ],
+      "model" : "ThreeWindows_Wall_SideB_Plane.036",
+      "name" : "ThreeWindows_Wall_SideB_Plane.036",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         1,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.010",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -5,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.011",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         -5,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.012",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Basic2_Plane.018",
+      "name" : "FloorTile_Basic2_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Basic2_Plane.018",
+      "name" : "FloorTile_Basic2_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -9,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Basic2_Plane.018",
+      "name" : "FloorTile_Basic2_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -9,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Basic2_Plane.018",
+      "name" : "FloorTile_Basic2_Plane.005",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -9,
+         -5,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.013",
+      "rotation" : [
+         0,
+         0,
+         -270.000000683245
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         -5,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.014",
+      "rotation" : [
+         0,
+         0,
+         -270.000000683245
+      ]
+   },
+   {
+      "location" : [
+         -5,
+         -5,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.005",
+      "rotation" : [
+         0,
+         0,
+         -180.000018669335
+      ]
+   },
+   {
+      "location" : [
+         -11,
+         -3,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.015",
+      "rotation" : [
+         0,
+         0,
+         -359.999982697156
+      ]
+   },
+   {
+      "location" : [
+         -11,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.016",
+      "rotation" : [
+         0,
+         0,
+         -359.999982697156
+      ]
+   },
+   {
+      "location" : [
+         -11,
+         -5,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.006",
+      "rotation" : [
+         0,
+         0,
+         89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -11,
+         1,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.007",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -9,
+         1,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.017",
+      "rotation" : [
+         0,
+         0,
+         -449.999992031823
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         1,
+         0
+      ],
+      "model" : "FloorTile_InnerCorner_Plane.228",
+      "name" : "FloorTile_InnerCorner_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -5,
+         1,
+         0
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.018",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         6,
+         -7,
+         0
+      ],
+      "model" : "DoorDouble_Wall_SideA_Plane.312",
+      "name" : "DoorDouble_Wall_SideA_Plane.312",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         6,
+         -6,
+         0
+      ],
+      "model" : "DoorDouble_Wall_SideB_Plane.025",
+      "name" : "DoorDouble_Wall_SideB_Plane.025",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         4,
+         -7,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         4,
+         -6,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.005",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         8,
+         -6,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.006",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         8,
+         -7,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.007",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -6,
+         -7,
+         0
+      ],
+      "model" : "DoorDouble_Wall_SideA_Plane.312",
+      "name" : "DoorDouble_Wall_SideA_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -6,
+         -6,
+         0
+      ],
+      "model" : "DoorDouble_Wall_SideB_Plane.025",
+      "name" : "DoorDouble_Wall_SideB_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         -4,
+         -6,
+         0
+      ],
+      "model" : "Column_2_Plane.269",
+      "name" : "Column_2_Plane.269",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -4,
+         -7,
+         0
+      ],
+      "model" : "Column_2_Plane.269",
+      "name" : "Column_2_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -8,
+         -7,
+         0
+      ],
+      "model" : "Column_2_Plane.269",
+      "name" : "Column_2_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -8,
+         -6,
+         0
+      ],
+      "model" : "Column_2_Plane.269",
+      "name" : "Column_2_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -12,
+         0,
+         0
+      ],
+      "model" : "DoorDouble_Wall_SideA_Plane.312",
+      "name" : "DoorDouble_Wall_SideA_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -13,
+         0,
+         0
+      ],
+      "model" : "DoorDouble_Wall_SideB_Plane.025",
+      "name" : "DoorDouble_Wall_SideB_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -13,
+         2,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.008",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -15,
+         2,
+         0
+      ],
+      "model" : "Wall_4_Plane.112",
+      "name" : "Wall_4_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         360.000010017913
+      ]
+   },
+   {
+      "location" : [
+         -14,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.008",
+      "rotation" : [
+         0,
+         0,
+         -180.000018669335
+      ]
+   },
+   {
+      "location" : [
+         -16,
+         -1,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.009",
+      "rotation" : [
+         0,
+         0,
+         89.9999820139107
+      ]
+   },
+   {
+      "location" : [
+         -16,
+         1,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.010",
+      "rotation" : [
+         0,
+         0,
+         -360.000010017913
+      ]
+   },
+   {
+      "location" : [
+         -14,
+         1,
+         0
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.011",
+      "rotation" : [
+         0,
+         0,
+         -450.00001935258
+      ]
+   },
+   {
+      "location" : [
+         -8,
+         -2,
+         0
+      ],
+      "model" : "Props_Base_Cylinder",
+      "name" : "Props_Base_Cylinder",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         6,
+         -7,
+         0
+      ],
+      "model" : "Staircase_Plane.319",
+      "name" : "Staircase_Plane.319",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -6,
+         -7,
+         0
+      ],
+      "model" : "Staircase_Plane.319",
+      "name" : "Staircase_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         5,
+         -10,
+         -1
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.005",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         5,
+         -12,
+         -1
+      ],
+      "model" : "FloorTile_InnerCorner_Plane.228",
+      "name" : "FloorTile_InnerCorner_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         7,
+         -12,
+         -1
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.019",
+      "rotation" : [
+         0,
+         0,
+         -179.999991348578
+      ]
+   },
+   {
+      "location" : [
+         3,
+         -12,
+         -1
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.006",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         5,
+         -14,
+         -1
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.020",
+      "rotation" : [
+         0,
+         0,
+         -270.000000683245
+      ]
+   },
+   {
+      "location" : [
+         7,
+         -14,
+         -1
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.012",
+      "rotation" : [
+         0,
+         0,
+         -180.000018669335
+      ]
+   },
+   {
+      "location" : [
+         -1,
+         -12,
+         -1
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.007",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -3,
+         -12,
+         -1
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.008",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         -10,
+         -1
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.009",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -5,
+         -12,
+         -1
+      ],
+      "model" : "FloorTile_InnerCorner_Plane.228",
+      "name" : "FloorTile_InnerCorner_Plane.005",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -5,
+         -14,
+         -1
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.021",
+      "rotation" : [
+         0,
+         0,
+         -270.000000683245
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         -12,
+         -1
+      ],
+      "model" : "FloorTile_Side_Plane.046",
+      "name" : "FloorTile_Side_Plane.022",
+      "rotation" : [
+         0,
+         0,
+         -360.000010017913
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         -14,
+         -1
+      ],
+      "model" : "FloorTile_Corner_Plane.250",
+      "name" : "FloorTile_Corner_Plane.013",
+      "rotation" : [
+         0,
+         0,
+         -270.000028004002
+      ]
+   },
+   {
+      "location" : [
+         6.83967161178589,
+         -13.5433168411255,
+         -1
+      ],
+      "model" : "Props_Teleporter_1_Cylinder.011",
+      "name" : "Props_Teleporter_1_Cylinder.011",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -15.6997261047363,
+         -1.04488229751587,
+         0
+      ],
+      "model" : "Props_Shelf_Cube.001",
+      "name" : "Props_Shelf_Cube.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -15.5266561508179,
+         1.08232069015503,
+         0
+      ],
+      "model" : "Props_Shelf_Tall_Cube.005",
+      "name" : "Props_Shelf_Tall_Cube.005",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         6.83535861968994,
+         4.91767930984497,
+         0
+      ],
+      "model" : "Props_Crate_Cube",
+      "name" : "Props_Crate_Cube",
+      "rotation" : [
+         0,
+         0,
+         -22.2523430894568
+      ]
+   },
+   {
+      "location" : [
+         5.94713306427002,
+         4.41767930984497,
+         0
+      ],
+      "model" : "Props_Crate_Cube",
+      "name" : "Props_Crate_Cube.001",
+      "rotation" : [
+         -0.421627604145314,
+         2.03863068067921,
+         -37.1155074970377
+      ]
+   },
+   {
+      "location" : [
+         6.68947553634644,
+         4.07560157775879,
+         0.0819601193070412
+      ],
+      "model" : "Props_Crate_Cube",
+      "name" : "Props_Crate_Cube.002",
+      "rotation" : [
+         1.01906379727908,
+         5.12822384960876,
+         -25.6832768831484
+      ]
+   },
+   {
+      "location" : [
+         8,
+         2,
+         0
+      ],
+      "model" : "Column_Slim_Plane.044",
+      "name" : "Column_Slim_Plane.044",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
       ]
    },
    {
       "location" : [
          0,
-         0,
+         6,
          0
       ],
-      "model" : "Mill_Blades_Cube.007",
-      "name" : "Mill_Blades_Cube.001",
+      "model" : "Column_Slim_Plane.044",
+      "name" : "Column_Slim_Plane.001",
       "rotation" : [
          0,
          0,
-         -54.7429997258846
+         0
+      ]
+   },
+   {
+      "location" : [
+         4,
+         6,
+         0
+      ],
+      "model" : "Column_Slim_Plane.044",
+      "name" : "Column_Slim_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         8,
+         -2,
+         0
+      ],
+      "model" : "Column_Slim_Plane.044",
+      "name" : "Column_Slim_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -4,
+         6,
+         0
+      ],
+      "model" : "Column_3_Plane.057",
+      "name" : "Column_3_Plane.009",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -2,
+         5,
+         0
+      ],
+      "model" : "Props_Computer_Cube.028",
+      "name" : "Props_Computer_Cube.028",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         0,
+         5,
+         0
+      ],
+      "model" : "Props_Computer_Cube.028",
+      "name" : "Props_Computer_Cube.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         2,
+         5,
+         0
+      ],
+      "model" : "Props_Computer_Cube.028",
+      "name" : "Props_Computer_Cube.002",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -4,
+         -11,
+         -1
+      ],
+      "model" : "Column_2_Plane.269",
+      "name" : "Column_2_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -7,
+         -8,
+         -1
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.011",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         5,
+         -8,
+         -1
+      ],
+      "model" : "FloorTile_Double_Plane.000",
+      "name" : "FloorTile_Double_Plane.012",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         -4,
+         -9,
+         -1
+      ],
+      "model" : "LongWindow_Wall_SideB_Plane.041",
+      "name" : "LongWindow_Wall_SideB_Plane.041",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -2,
+         -11,
+         -1
+      ],
+      "model" : "LongWindow_Wall_SideB_Plane.041",
+      "name" : "LongWindow_Wall_SideB_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         2,
+         -13,
+         -1
+      ],
+      "model" : "DoorDouble_Wall_SideB_Plane.025",
+      "name" : "DoorDouble_Wall_SideB_Plane.003",
+      "rotation" : [
+         0,
+         0,
+         -270.000000683245
+      ]
+   },
+   {
+      "location" : [
+         0,
+         -13,
+         -1
+      ],
+      "model" : "DoorSingleLong_Wall_SideA_Plane.313",
+      "name" : "DoorSingleLong_Wall_SideA_Plane.313",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         0,
+         -11,
+         -1
+      ],
+      "model" : "Column_2_Plane.269",
+      "name" : "Column_2_Plane.005",
+      "rotation" : [
+         0,
+         0,
+         0
+      ]
+   },
+   {
+      "location" : [
+         8,
+         -11,
+         -1
+      ],
+      "model" : "Column_Slim_Plane.044",
+      "name" : "Column_Slim_Plane.004",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         8,
+         -9,
+         -1
+      ],
+      "model" : "ThreeWindows_Wall_SideB_Plane.036",
+      "name" : "ThreeWindows_Wall_SideB_Plane.001",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         8,
+         -13,
+         -1
+      ],
+      "model" : "ThreeWindows_Wall_SideB_Plane.036",
+      "name" : "ThreeWindows_Wall_SideB_Plane.002",
+      "rotation" : [
+         0,
+         0,
+         -89.999995674289
+      ]
+   },
+   {
+      "location" : [
+         -2,
+         -11,
+         -1
+      ],
+      "model" : "Pipes_CUBezierCurve.002",
+      "name" : "Pipes_CUBezierCurve.002",
+      "rotation" : [
+         0,
+         0,
+         0
       ]
    }
 ]

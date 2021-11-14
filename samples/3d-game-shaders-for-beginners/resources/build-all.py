@@ -13,7 +13,7 @@ for collection in bpy.data.collections:
 	bpy.data.collections.remove(collection)
 
 # Model directory/files
-model_dir = 'Medieval Village Pack - Dec 2020/Buildings/OBJ/'
+model_dir = 'Ultimate Modular Sci-Fi - Feb 2021/OBJ/'
 model_files = glob.glob(model_dir + "*.obj")
 
 # Import obj files into scene

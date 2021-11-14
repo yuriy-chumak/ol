@@ -14,7 +14,7 @@ for collection in bpy.data.collections:
 	bpy.data.collections.remove(collection)
 
 # Model directory/files
-model_dir = 'Medieval Village Pack - Dec 2020/Buildings/OBJ/'
+model_dir = 'Ultimate Modular Sci-Fi - Feb 2021/OBJ/'
 model_files = glob.glob(model_dir + "*.obj")
 
 # Reprocess obj files
@@ -30,6 +30,8 @@ for f in model_files:
 
 	bpy.ops.export_scene.obj(filepath=f
 		,use_triangles=True
+		,use_vertex_groups=False
+		,use_blen_objects=True
 		,axis_forward='Y', axis_up='Z')
 	for item in bpy.data.objects:
 		bpy.data.objects.remove(item)
