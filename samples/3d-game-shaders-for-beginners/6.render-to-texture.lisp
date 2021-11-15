@@ -49,10 +49,15 @@
 (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA 1024 1024 0 GL_RGBA GL_UNSIGNED_BYTE 0)
 (glBindTexture GL_TEXTURE_2D 0)
 
-; if we eant to have a depth buffer, then TODO:
-
 (glBindFramebuffer GL_FRAMEBUFFER (car framebuffer))
 (glFramebufferTexture2D GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 GL_TEXTURE_2D (car texture) 0)
+
+; if we eant to have a depth buffer, then TODO:
+(define depthrenderbuffer '(0))
+(glGenRenderbuffers (length depthrenderbuffer) depthrenderbuffer)
+(glBindRenderbuffer GL_RENDERBUFFER (car depthrenderbuffer))
+(glRenderbufferStorage GL_RENDERBUFFER GL_DEPTH_COMPONENT 1024 1024)
+(glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (car depthrenderbuffer))
 
 ;; draw
 
