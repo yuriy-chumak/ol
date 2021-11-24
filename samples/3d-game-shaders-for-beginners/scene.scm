@@ -62,8 +62,12 @@
                                     (glNewList i GL_COMPILE)
                                     (glBegin GL_TRIANGLES)
 
+                                    ;; (glEnable GL_COLOR_MATERIAL)
+                                    ;; (glColorMaterial GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE)
+
                                     ; https://compgraphics.info/OpenGL/lighting/materials.php
-                                    (glMaterialfv GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE (ref material 2))
+                                    ;(glMaterialfv GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE (ref material 2)) ; diffuse
+                                    (glColor4fv (ref material 2))
                                     (for-each (lambda (face)
                                           (let ((a (ref (ref face 1) 1)) ; vertices
                                                 (b (ref (ref face 2) 1))
@@ -190,6 +194,7 @@
 ;;    filenames))
 
 (define (draw-geometry scene models)
+   (glMatrixMode GL_MODELVIEW)
    (for-each (lambda (entity)
          (define model (entity 'model))
 
@@ -206,15 +211,29 @@
             (glRotatef (ref ypr 2) 0 1 0)
             (glRotatef (ref ypr 3) 0 0 1))
 
-         (when (starts-with? model "Mill_Blades_Cube.")
-            (glTranslatef 0 0 +3.1247)
-            (let*((ss ms (uncons (syscall 96) #f))
-                  (r (/ (mod (floor (* (+ ss (/ ms 1000000)) 700)) 36000) 100)))
-               (glRotatef r 0 1 0))
-            (glTranslatef 0 0 -3.1247))
+         ;; when we need to draw geometry with light source:
+         (glActiveTexture GL_TEXTURE0)
+         (glMatrixMode GL_TEXTURE)
+         (glPushMatrix)
+         (let ((xyz (entity 'location)))
+            (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
+         (let ((ypr (entity 'rotation))) ; blender rotation mode is "XYZ": yaw, pitch, roll (рыскание, тангаж, крен)
+            (glRotatef (ref ypr 1) 1 0 0)
+            (glRotatef (ref ypr 2) 0 1 0)
+            (glRotatef (ref ypr 3) 0 0 1))
+
+
+         ;; (when (starts-with? model "Mill_Blades_Cube.")
+         ;;    (glTranslatef 0 0 +3.1247)
+         ;;    (let*((ss ms (uncons (syscall 96) #f))
+         ;;          (r (/ (mod (floor (* (+ ss (/ ms 1000000)) 700)) 36000) 100)))
+         ;;       (glRotatef r 0 1 0))
+         ;;    (glTranslatef 0 0 -3.1247))
 
          (for-each glCallList
             (models (string->symbol model)))
+         (glPopMatrix)
+         (glMatrixMode GL_MODELVIEW)
          (glPopMatrix))
       scene))
 

@@ -18,15 +18,16 @@
 
 ;; shaders
 (define vertex-shader "#version 120 // OpenGL 2.1
+   varying vec3 n;
    varying float z;
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-      z = (gl_Position.z / 42);
+      n = gl_Normal * 0.5 + vec3(0.5, 0.5, 0.5);
    }")
 (define fragment-shader "#version 120 // OpenGL 2.1
-   varying float z;
+   varying vec3 n;
    void main() {
-      gl_FragColor = vec4(z, z, z, 1.0);
+      gl_FragColor = vec4(n, 1.0);
    }")
 
 (define po (gl:CreateProgram vertex-shader fragment-shader))
@@ -84,12 +85,19 @@
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
-   (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 0.1 1000)
+   (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 0.1 50.1)
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
-   (gluLookAt -14 -21 15
-      0 0 -5
-      0 0 1)
+   (let*((ss ms (clock))
+         (x (* -17 (sin (+ ss (/ ms 1000)))))
+         (y (* -17 (cos (+ ss (/ ms 1000)))))
+         (z 15))
+      (gluLookAt x y z
+         0 0 -5
+         0 0 1))
+   ;; (gluLookAt -17 -17 15
+   ;;    0 0 -5
+   ;;    0 0 1)
 
    ; set and show lighting point
    (glDisable GL_LIGHTING)

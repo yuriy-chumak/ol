@@ -19,6 +19,7 @@
 ;; shaders
 (define vertex-shader "#version 120 // OpenGL 2.1
    void main() {
+      // gl_NormalMatrix is transpose(inverse(gl_ModelViewMatrix))
    	gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
    }")
 (define fragment-shader "#version 120 // OpenGL 2.1
@@ -51,12 +52,16 @@
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
-   (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 0.1 1000)
+   (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 0.1 100)
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
-   (gluLookAt -14 -21 15
-      0 0 -5
-      0 0 1)
+   (let*((ss ms (clock))
+         (x (* -17 (sin (+ ss (/ ms 1000)))))
+         (y (* -17 (cos (+ ss (/ ms 1000)))))
+         (z 15))
+      (gluLookAt x y z
+         0 0 -5
+         0 0 1))
 
    ; set and show lighting point
    (glDisable GL_LIGHTING)
