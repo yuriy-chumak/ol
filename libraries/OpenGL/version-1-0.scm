@@ -1,15 +1,14 @@
 ; OpenGL 1.0 (1 Jul 1994)
-
 ; OpenGL base profile implementation
 (define-library (OpenGL version-1-0)
 (export
 
    GL_VERSION_1_0
 
-   GL_TRUE GL_FALSE           ;= 1, 0
+   GL_TRUE GL_FALSE           ; 1, 0
 
    ;; 2.5 GL Errors
-   glGetError ; GLenum GetError () +
+   glGetError ; GLenum () +
       GL_NO_ERROR
       GL_INVALID_ENUM
       GL_INVALID_VALUE
@@ -339,9 +338,9 @@
       GL_LIGHT_MODEL_TWO_SIDE|#
 
     ; param
-   ;WINGDIAPI void APIENTRY glLightModelfv (GLenum pname, const GLfloat *params); +
-   ;WINGDIAPI void APIENTRY glLightModeli (GLenum pname, GLint param); +
-   ;WINGDIAPI void APIENTRY glLightModeliv (GLenum pname, const GLint *params); +
+   glLightModelfv ; void (GLenum pname, const GLfloat *params); +
+   glLightModeli ; void glLightModeli (GLenum pname, GLint param); +
+   glLightModeliv ; void glLightModeliv (GLenum pname, const GLint *params); +
 
    glColorMaterial                     ; void (GLenum face, GLenum mode) +
     #|; face
@@ -2713,9 +2712,9 @@
 ;WINGDIAPI void APIENTRY glInitNames (void);
 ;WINGDIAPI GLboolean APIENTRY glIsList (GLuint list);
    (define glLightModelf (GL GLvoid "glLightModelf" GLenum GLfloat))
-;WINGDIAPI void APIENTRY glLightModelfv (GLenum pname, const GLfloat *params);
-;WINGDIAPI void APIENTRY glLightModeli (GLenum pname, GLint param);
-;WINGDIAPI void APIENTRY glLightModeliv (GLenum pname, const GLint *params);
+   (define glLightModelfv (GL GLvoid "glLightModelfv" GLenum GLfloat*))
+   (define glLightModeli (GL GLvoid "glLightModeli" GLenum GLint))
+   (define glLightModeliv (GL GLvoid "glLightModeliv" GLenum GLint*))
 ;WINGDIAPI void APIENTRY glLightf (GLenum light, GLenum pname, GLfloat param);
    (define glLightfv (GL GLvoid "glLightfv" GLenum GLenum GLfloat*))
 ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param);

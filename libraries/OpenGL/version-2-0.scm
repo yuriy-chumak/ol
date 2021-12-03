@@ -1,7 +1,16 @@
 ; OpenGL 2.0 (7 Sep 2004)
-
 (define-library (OpenGL version-2-0)
 (export
+      (exports (OpenGL version-1-5))
+   ; + ARB_shader_objects, heavily modified
+   ; + ARB_vertex_shader, heavily modified
+   ; + ARB_fragment_shader, heavily modified
+   ; + ARB_shading_language_100, heavily modified
+   ; + ARB_draw_buffers
+   ; + ARB_texture_non_power_of_two
+   ; + ARB_point_sprite
+   ; + ATI_separate_stencil
+   ; + EXT_stencil_two_side
 
    GL_VERSION_2_0
 
@@ -39,7 +48,9 @@ glVertexAttribPointer
 GL_FLOAT
 glDrawArrays
 
-   (exports (OpenGL version-1-5)))
+GL_CURRENT_PROGRAM
+
+   )
 
    (import (scheme core)
       (owl string) (owl io)
@@ -80,13 +91,14 @@ glDrawArrays
     (define glUniform2f     (gl:GetProcAddress GLvoid "glUniform2f" GLint GLfloat GLfloat))
     (define glUniform3f     (gl:GetProcAddress GLvoid "glUniform3f" GLint GLfloat GLfloat GLfloat))
     (define glUniform4f     (gl:GetProcAddress GLvoid "glUniform4f" GLint GLfloat GLfloat GLfloat GLfloat))
-    (define glUniform1fv    (gl:GetProcAddress GLvoid "glUniform1fv" GLint GLsizei GLvoid*)) ; TEMP from GLfloat*
-    (define glUniformMatrix4fv (gl:GetProcAddress GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLvoid*)) ; TEMPORARY RENAMED FROM GLfloat*
+    (define glUniform1fv    (gl:GetProcAddress GLvoid "glUniform1fv" GLint GLsizei GLfloat*)) ; TEMP from GLfloat*
+    (define glUniformMatrix4fv (gl:GetProcAddress GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLfloat*)) ; TEMPORARY RENAMED FROM GLfloat*
   (define glEnableVertexAttribArray (gl:GetProcAddress GLvoid "glEnableVertexAttribArray" GLuint))
   (define glVertexAttribPointer (gl:GetProcAddress GLvoid "glVertexAttribPointer" GLuint GLint GLenum GLboolean GLsizei void*))
     (define GL_FLOAT #x1406)
   (define glDrawArrays         (gl:GetProcAddress GLvoid "glDrawArrays" GLenum GLint GLsizei))
 
+   (define GL_CURRENT_PROGRAM #x8B8D)
 
 (define (gl:GetVersion)
    (cons 2 0))

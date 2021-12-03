@@ -1,8 +1,16 @@
 ; OpenGL 1.1 (4 Mar 1997)
-; в комментариях указаны расширения, которые были интегрированы в этот выпуск
+;   OpenGL 1.0
+; + EXT_vertex_array
+; + EXT_polygon_offset
+; + EXT_blend_logic_op
+; + EXT_texture
+; + EXT_copy_texture
+; + EXT_subtexture
+; + EXT_texture_object
 ; ===========================================================================
 (define-library (OpenGL version-1-1)
 (export
+      (exports (OpenGL version-1-0))
 
    GL_VERSION_1_1
 
@@ -186,8 +194,7 @@
 ;  TEXTURE_3D_BINDING ; excluded by 1.1
 
    GLU_VERSION_1_2
-
-   (exports (OpenGL version-1-0)))
+   )
 
 ; ============================================================================
 ; == implementation ==========================================================

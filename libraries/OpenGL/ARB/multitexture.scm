@@ -96,6 +96,8 @@
 (begin
    (define ARB_multitexture (gl:QueryExtension "GL_ARB_multitexture"))
 
+   (setq GL GL_LIBRARY)
+
 	(define GL_TEXTURE0_ARB  #x84C0)
 	(define GL_TEXTURE1_ARB  #x84C1)
 	(define GL_TEXTURE2_ARB  #x84C2)
