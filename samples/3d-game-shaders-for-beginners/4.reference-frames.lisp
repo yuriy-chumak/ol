@@ -32,6 +32,10 @@
 (glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
 (glEnable GL_LIGHT0)
 
+(glEnable GL_CULL_FACE)
+(glCullFace GL_BACK)
+
+
 ; draw
 (gl:set-renderer (lambda (mouse)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))

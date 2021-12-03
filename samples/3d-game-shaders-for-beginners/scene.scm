@@ -4,9 +4,11 @@
    (owl parse)
    (file wavefront obj)
    (file wavefront mtl)
+   (otus blobs)
    (OpenGL version-2-1))
 
 (export
+   file->string
    prepare-models
    draw-geometry)
 (begin
@@ -194,35 +196,50 @@
 ;;    filenames))
 
 (define (draw-geometry scene models)
-   (glMatrixMode GL_MODELVIEW)
+   ;; (define program '(0))
+   ;; (glGetIntegerv GL_CURRENT_PROGRAM program)
+   ;; (define my_WorldMatrix (map inexact (iota 16)))
+   ;; (define my_WorldMatrixLocation (glGetUniformLocation (car program) "my_WorldMatrix"))
+
    (for-each (lambda (entity)
          (define model (entity 'model))
 
-         (glPushMatrix)
-         ; special case - rotate a blades of
-         (define (starts-with? string prefix)
-            (and (<= (string-length prefix) (string-length string))
-                  (string-eq? prefix (substring string 0 (string-length prefix)))))
-
-         (let ((xyz (entity 'location)))
-            (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
-         (let ((ypr (entity 'rotation))) ; blender rotation mode is "XYZ": yaw, pitch, roll (рыскание, тангаж, крен)
-            (glRotatef (ref ypr 1) 1 0 0)
-            (glRotatef (ref ypr 2) 0 1 0)
-            (glRotatef (ref ypr 3) 0 0 1))
-
-         ;; when we need to draw geometry with light source:
-         (glActiveTexture GL_TEXTURE0)
+         (glActiveTexture GL_TEXTURE0) ; temporary buffer for matrix math
          (glMatrixMode GL_TEXTURE)
-         (glPushMatrix)
+         (glLoadIdentity) ; let's prepare my_WorldMatrix
          (let ((xyz (entity 'location)))
             (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
          (let ((ypr (entity 'rotation))) ; blender rotation mode is "XYZ": yaw, pitch, roll (рыскание, тангаж, крен)
             (glRotatef (ref ypr 1) 1 0 0)
             (glRotatef (ref ypr 2) 0 1 0)
             (glRotatef (ref ypr 3) 0 0 1))
+         ;; (glGetFloatv GL_TEXTURE_MATRIX my_WorldMatrix)
+         ;; (glUniformMatrix4fv my_WorldMatrixLocation 1 GL_FALSE my_WorldMatrix)
 
+         ; for each shadow:
+         ;(glLoadIdentity)
+         ;; (let ((xyz (entity 'location)))
+         ;;    (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
+         ;; (let ((ypr (entity 'rotation))) ; blender rotation mode is "XYZ": yaw, pitch, roll (рыскание, тангаж, крен)
+         ;;    (glRotatef (ref ypr 1) 1 0 0)
+         ;;    (glRotatef (ref ypr 2) 0 1 0)
+         ;;    (glRotatef (ref ypr 3) 0 0 1))
 
+         ;; ; ...
+         ;; (glMatrixMode GL_MODELVIEW)
+         ;; (glPushMatrix)
+
+         ;; (let ((xyz (entity 'location)))
+         ;;    (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
+         ;; (let ((ypr (entity 'rotation))) ; blender rotation mode is "XYZ": yaw, pitch, roll (рыскание, тангаж, крен)
+         ;;    (glRotatef (ref ypr 1) 1 0 0)
+         ;;    (glRotatef (ref ypr 2) 0 1 0)
+         ;;    (glRotatef (ref ypr 3) 0 0 1))
+
+         ;; ; special case - rotate a blades of
+         ;; (define (starts-with? string prefix)
+         ;;    (and (<= (string-length prefix) (string-length string))
+         ;;          (string-eq? prefix (substring string 0 (string-length prefix)))))
          ;; (when (starts-with? model "Mill_Blades_Cube.")
          ;;    (glTranslatef 0 0 +3.1247)
          ;;    (let*((ss ms (uncons (syscall 96) #f))
@@ -232,9 +249,14 @@
 
          (for-each glCallList
             (models (string->symbol model)))
-         (glPopMatrix)
-         (glMatrixMode GL_MODELVIEW)
          (glPopMatrix))
-      scene))
+      (scene 'Objects)))
+
+(define (file->string path)
+   (bytes->string
+      (blob-iter
+         (let ((vec (file->bytevector path)))
+            (if vec vec
+               (error "Unable to load: " path))))))
 
 ))

@@ -17,81 +17,30 @@
 (define scene (read-json-file "scene1.json"))
 
 ;; shaders
-(define vertex-shader "#version 120 // OpenGL 2.1
+(define po (gl:CreateProgram
+"#version 120 // OpenGL 2.1
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-   }")
-(define fragment-shader "#version 120 // OpenGL 2.1
+   }"
+"#version 120 // OpenGL 2.1
    void main() {
       // nothing to do
-   }")
-
-(define po (gl:CreateProgram vertex-shader fragment-shader))
+   }"))
 
 ;; -----------------------
 ; https://learnopengl.com/Getting-started/Coordinate-Systems
-(define shadowed (gl:CreateProgram
-"#version 120 // OpenGL 2.1
-   varying vec4 FragPosLightSpace;
-   uniform mat4 my_matrix;
-   varying float diffuseIntensity;
-   varying float specularIntensity;
-   void main() {
-      gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-
-      vec4 vertexPosition = gl_ModelViewMatrix * gl_Vertex;
-      vec3 lightDirection = gl_LightSource[0].position.xyz - vertexPosition.xyz * gl_LightSource[0].position.w;
-
-      vec3 normal = normalize(gl_Normal);
-
-      vec3 unitLightDirection = normalize(lightDirection);
-      vec3 eyeDirection       = normalize(-vertexPosition.xyz);
-      vec3 reflectedDirection = normalize(-reflect(unitLightDirection, normal));
-
-      diffuseIntensity  = dot(normal, unitLightDirection);
-      specularIntensity = max(dot(reflectedDirection, eyeDirection), 0);
-
-      // seen from light:
-      FragPosLightSpace = gl_TextureMatrix[0] * vec4(gl_Vertex.xyz, 1.0);
-
-      gl_FrontColor = gl_Color;
-   }"
-"#version 120 // OpenGL 2.1
-   uniform sampler2D shadow;
-   varying vec4 FragPosLightSpace;
-   varying float diffuseIntensity;
-   varying float specularIntensity;
-   void main() {
-      vec3 projCoords = FragPosLightSpace.xyz / FragPosLightSpace.w;
-      projCoords = projCoords * 0.5 + 0.5;
-      float currentDepth = projCoords.z;
-      float closestDepth = texture2D(shadow, projCoords.st).r;
-
-      float bias = 0.005;
-//      // float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-//      float shdw = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
-
-      float shdw = 0.0;
-      vec2 texelSize = 1.0 / vec2(1024, 1024); //textureSize(shadow, 0);
-      for (int x = -1; x <= 1; ++x)
-      {
-         for (int y = -1; y <= 1; ++y)
-         {
-            float pcfDepth = texture2D(shadow, projCoords.st + vec2(x, y) * texelSize).r;
-            shdw += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
-         }
-      }
-      shdw /= 9.0;
-
-      gl_FragColor = vec4(gl_Color.rgb * diffuseIntensity + gl_Color.rgb * (1 - shdw) * (diffuseIntensity + specularIntensity), 1.0);
-   }"))
+(define shadowed (gl:CreateProgram ; todo: add "#define" to the shaders aas part of language
+   ;; (file->string "light.vs")
+   ;; (file->string "light.fs")))
+   (file->string "shaders/8.lighting.vs")
+   (file->string "shaders/8.lighting.fs")))
 
 (define justdraw (gl:CreateProgram
 "#version 120 // OpenGL 2.1
    varying 
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-      gl_TexCoord[0]=gl_MultiTexCoord0;
+      gl_TexCoord[0] = gl_MultiTexCoord0;
    }"
 "#version 120 // OpenGL 2.1
    uniform sampler2D shadow;
@@ -132,100 +81,130 @@
 (glClearColor 0.2 0.2 0.2 1)
 
 (glEnable GL_DEPTH_TEST)
+
 ;(glEnable GL_NORMALIZE)
 ;; (glEnable GL_COLOR_MATERIAL)
 ;; (glColorMaterial GL_FRONT_AND_BACK GL_DIFFUSE)
 
-;; (glEnable GL_LIGHTING)
 ;; (glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
-;; (glEnable GL_LIGHT0)
+
+;; освещение сцены
+(glEnable GL_LIGHTING)
+
+(define lights (vector->list (scene 'Lights)))
+(print "lights: " lights)
+
+(glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
+; set lights specular colors
+(for-each (lambda (i)
+      (glEnable (+ GL_LIGHT0 i))
+      (glLightfv (+ GL_LIGHT0 i) GL_AMBIENT '(1.0 1.0 1.0 1))
+      (glLightfv (+ GL_LIGHT0 i) GL_DIFFUSE '(1.0 1.0 1.0 1))
+      (glLightfv (+ GL_LIGHT0 i) GL_SPECULAR '(1.0 1.0 1.0 1))
+      ; GL_EMISSION
+      ; GL_SHININESS
+      ; 
+      )
+   (iota (length lights)))
+
 
 ; draw
 (gl:set-renderer (lambda (mouse)
 (let*((ss ms (clock))
       (ticks (/ (+ ss (/ ms 1000)) 2)))
 
-   (define x (* 15 (sin ticks)))
-   (define y (* 15 (cos ticks)))
-   (define z 8)
+   '(begin ; calculate the shadow texture
+      (glViewport 0 0 1024 1024)
+      (glBindFramebuffer GL_FRAMEBUFFER (car depth-fbo))
+      (glClear GL_DEPTH_BUFFER_BIT)
+      (glUseProgram po)
 
-   ;; (define x 15)
-   ;; (define y 15)
-   ;; (define z 15)
+      (glMatrixMode GL_PROJECTION)
+      (glLoadIdentity)
+      ; lightSpaceMatrix is a (lightProjection * lightView) matrix
+      (glOrtho -20 20 -20 20 0 50) ; gl_Projection is a light projection matrix
+      ;(gluPerspective 45 1.0 0.1 100)
+      (glMatrixMode GL_MODELVIEW)
+      (glLoadIdentity)
+      (vector-apply ((cadr lights) 'position)
+         (lambda (x y z w)
+            (gluLookAt x y z ; gl_ModelView is a light space matrix
+               0 0 0
+               0 0 1)))
 
-   (glViewport 0 0 1024 1024)
-   (glBindFramebuffer GL_FRAMEBUFFER (car depth-fbo))
-   (glClear GL_DEPTH_BUFFER_BIT)
-   (glUseProgram po)
-
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   ; lightSpaceMatrix is a (lightProjection * lightView) matrix
-   (glOrtho -20 20 -20 20 0 50) ; gl_Projection is a light projection matrix
-   ;(gluPerspective 45 1.0 0.1 100)
-   (glMatrixMode GL_MODELVIEW)
-   (glLoadIdentity)
-   (gluLookAt x y z ; gl_ModelView is a light space matrix
-      0 0 0
-      0 0 1)
-
-   (glLightfv GL_LIGHT0 GL_POSITION (list x y z 1)) ; не надо
-
-   (glCullFace GL_FRONT)
-   (draw-geometry scene models)
-   (glCullFace GL_BACK)
-   (glBindFramebuffer GL_FRAMEBUFFER 0)
+      (glCullFace GL_FRONT)
+      (draw-geometry scene models)
+      (glCullFace GL_BACK)
+      (glBindFramebuffer GL_FRAMEBUFFER 0))
 
    ;; let's draw a scene
+   (glCullFace GL_BACK)
    (when #true
       (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
       (glClearColor 0 0 0 1)
-      (glClear GL_DEPTH_BUFFER_BIT)
+      ;(glClear GL_DEPTH_BUFFER_BIT)
       (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
       (glUseProgram shadowed)
 
-      ;; prepare shadow matrix:
-      (begin
-         (glLightfv GL_LIGHT0 GL_POSITION (list x y z 1))
-         ; let's generate light transform matrix into texture matrix
-         (glActiveTexture GL_TEXTURE0)
-         (glMatrixMode GL_TEXTURE)
-         (glLoadIdentity)
-         (glOrtho -20 20 -20 20 0 50) ; gl_Projection is a light projection matrix
-         ;(gluPerspective 45 1.0 0.1 100)
-         (gluLookAt x y z ; gl_ModelView is a light space matrix
-            0 0 0
-            0 0 1))
+      ;; prepare shadow matrices (and define light positions)
+      (glEnable GL_LIGHTING)
+      (for-each (lambda (light i)
+         (vector-apply (light 'position)
+            (lambda (x y z w)
+               ; let's generate light transform matrix into texture matrix
+               ;; (glActiveTexture (+ GL_TEXTURE0 i))
+               ;; (glMatrixMode GL_TEXTURE)
+               ;; (glLoadIdentity)
+               ;; (glOrtho -20 20 -20 20 0 50) ; gl_Projection is a light projection matrix
+               ;; (gluLookAt x y z ; gl_ModelView is a light space matrix
+               ;;    0 0 0
+               ;;    0 0 1)
+
+               ;(glEnable (+ GL_LIGHT0 i))
+               (glLightfv (+ GL_LIGHT0 i) GL_POSITION (list x y z w)))))
+         lights
+         (iota (length lights)))
+
+      ; Камера
+      (define camera (ref (scene 'Cameras) 1))
 
       (glMatrixMode GL_PROJECTION)
       (glLoadIdentity)
-      ;(glOrtho -20 20 -20 20 0 50) ; gl_Projection is a light projection matrix
-      (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 0.1 100)
+      (gluPerspective (camera 'angle) (/ (gl:get-window-width) (gl:get-window-height)) 0.1 100) ; (camera 'clip_start) (camera 'clip_end)
 
-      (glMatrixMode GL_MODELVIEW)
-      (glLoadIdentity)
-      (gluLookAt -17 -17 15
-         0 0 0
-         0 0 1)
+      ; setup a camera
+      (begin
+         (define location (camera 'location))
+         (define target (camera 'target))
+         ;; (define location [0 21.2 15.6])
+         ;; (define target [0 0 0])
 
-      (glEnable GL_TEXTURE_2D)
-      (glActiveTexture GL_TEXTURE0)
-      (glBindTexture GL_TEXTURE_2D (car depth-fbo))
-      (glUniform1i (glGetUniformLocation shadowed "shadow") 0) ; 0-th texture unit
+         (glMatrixMode GL_MODELVIEW)
+         (glLoadIdentity)
+         (gluLookAt
+            (ref location 1) (ref location 2) (ref location 3)
+            (ref target 1) (ref target 2) (ref target 3)
+            0 0 1))
 
-      (draw-geometry scene models)
+      ;; setup shadow textures:
+      ;; (glEnable GL_TEXTURE_2D)
+      ;; (glActiveTexture GL_TEXTURE0)
+      ;; (glBindTexture GL_TEXTURE_2D (car depth-fbo))
+      ;; (glUniform1i (glGetUniformLocation shadowed "shadow") 0) ; 0-th texture unit
+
+      (draw-geometry scene models))
       
-      (glUseProgram 0)
-      (glPointSize 5)
-      (glBegin GL_POINTS)
-         (glColor3f #xff/255 #xbf/255 0)
-         (glVertex3f x y z)
-      (glEnd)
-      (glBegin GL_LINES)
-         (glVertex3f x y z)
-         (glVertex3f x y 0)
-      (glEnd) )
+      ;; (glUseProgram 0)
+      ;; (glPointSize 5)
+      ;; (glBegin GL_POINTS)
+      ;;    (glColor3f #xff/255 #xbf/255 0)
+      ;;    (glVertex3f x y z)
+      ;; (glEnd)
+      ;; (glBegin GL_LINES)
+      ;;    (glVertex3f x y z)
+      ;;    (glVertex3f x y 0)
+      ;; (glEnd)
 
    (when #false
       (glViewport 0 0 (/ (gl:get-window-width) 2) (/ (gl:get-window-height) 2))
@@ -245,7 +224,7 @@
       ;;    (glVertex3f x y z)
       ;;    (glEnd)
          
-      ;;    (glLightfv GL_LIGHT0 GL_POSITION (list x y z 1)))
+      ;;    (glLightfv GL_LIGHT0 GL_POSITION (list x y z w)))
       ;; (glEnable GL_LIGHTING)
       ;; (glDisable GL_LIGHTING)
 

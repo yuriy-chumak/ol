@@ -7,6 +7,7 @@ https://docs.blender.org/api/current/bpy.types.BlendData.html
 
 import bpy
 import math
+import mathutils
 import sys
 
 print()
@@ -62,35 +63,62 @@ def put(array, collection):
 			print("found subcollection:", sub)
 			put(array, sub)
 
-objects = []
+data = {}
+
+# geometry
+data["Objects"] = []
 for collection in bpy.data.collections:
 	if not get_collection_parent(collection) and not collection.hide_viewport:
 		print (collection.name)
 		# objects[collection.name] = []
-		put(objects, collection) #[collection.name]
+		put(data["Objects"], collection) #[collection.name]
 
-# #     data["Lights"] = [];
-# #     for light in bpy.data.lights:
-# #         object = bpy.data.objects[light.name]
-# #         data["Lights"].append({
-# #             "type": light.type,
-# #             "location": [ object.location.x, object.location.y, object.location.z ]
-# #         })
+# other objects
+data["Cameras"] = [];
+for camera in bpy.data.cameras:
+	object = bpy.data.objects[camera.name]
+	target = object.matrix_world @ mathutils.Vector((0, 0, -10))
+	data["Cameras"].append({
+		"name": camera.type,
+		"location": [ object.location.x, object.location.y, object.location.z ],
+		"target": [ target.x, target.y, target.z ],
+		# "rotation": [
+		# 	math.degrees(object.rotation_euler[0]),
+		# 	math.degrees(object.rotation_euler[1]),
+		# 	math.degrees(object.rotation_euler[2]) ],
+		"angle": math.degrees(camera.angle),
+		"clip_start": camera.clip_start,
+		"clip_end": camera.clip_end,
+	})
 
-# #     data["Cameras"] = [];
-# #     for camera in bpy.data.cameras:
-# #         object = bpy.data.objects[camera.name]
-# #         data["Cameras"].append({
-# #             "name": camera.type,
-# #             "location": [ object.location.x, object.location.y, object.location.z ],
-# #             "rotation": [
-# #                 math.degrees(object.rotation_euler[0]),
-# #                 math.degrees(object.rotation_euler[1]),
-# #                 math.degrees(object.rotation_euler[2]) ],
-# #             "angle": camera.angle,
-# #             "clip_start": camera.clip_start,
-# #             "clip_end": camera.clip_end,
-# #         })
+
+data["Lights"] = [];
+for light in bpy.data.lights:
+	object = bpy.data.objects[light.name]
+	if light.type == "SUN":
+		target = object.matrix_world @ mathutils.Vector((0, 0, 1))
+		data["Lights"].append({
+			"type": light.type,
+			"color": [ light.color.r, light.color.g, light.color.b ],
+			# "angle": light.angle,
+			# shadow_color, Color of shadows cast by the light
+			# направление на "солнце"
+			"position": [
+				target.x - object.location.x,
+				target.y - object.location.y,
+				target.z - object.location.z,
+				0.0 ] # обязательный 0, так как "направление"
+		})
+	else:
+		data["Lights"].append({
+			"type": light.type,
+			"color": [ light.color.r, light.color.g, light.color.b ],
+			"position": [
+				object.location.x,
+				object.location.y,
+				object.location.z,
+				1.0 ] # обязательная 1, так как "позиция"
+		})
 
 # objects = []
 # Collection = bpy.data.collections["Collection"]
@@ -108,7 +136,6 @@ for collection in bpy.data.collections:
 
 
 print("json:\n")
-json.dump(objects, sys.stdout)
 with open('scene1.json', 'w') as out:
-	json.dump(objects, out)
+	json.dump(data, out)
 print("\ndone")
