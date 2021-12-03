@@ -186,12 +186,13 @@
                   (values #false lst)))))
 
       ;; bs default-codepoint -> unicode-code-points | #false if error and no default-codepoint
+      ;; works with bytestream
       (define (decoder lst out default)
          (cond
             ((null? lst)
                (reverse out))
             ((pair? lst)
-               (lets ((val lst (decode-char lst)))
+               (let* ((val lst (decode-char lst)))
                   (cond
                      (val ;; code point taken successfully
                         (decoder lst (cons val out) default))
@@ -200,7 +201,12 @@
                      (else ;; return #false for broken UTF-8 when no replacing symbol is given
                         #false))))
             (else
-               (decoder (lst) out default))))
+               (let reverse* ((old out)
+                              (new (lambda ()
+                                 (decoder (force lst) '() default))))
+                  (if (null? old)
+                     new
+                     (reverse* (cdr old) (cons (car old) new)))))))
 
       ; ll -> lst' | #false
       (define (utf8-decode lst)

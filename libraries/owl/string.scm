@@ -5,8 +5,8 @@
 (define-library (owl string)
 
    (export
-      runes->string      ; code point list (ints) -> string
-      bytes->string      ; UTF-8 encoded byte list -> string
+      runes->string      ; code point byte stream (ints) -> string
+      bytes->string      ; UTF-8 encoded rune stream -> string
       string->bytes      ; string -> list of UTF-8 bytes
       string->runes      ; string -> list of unicode code points
 
@@ -72,8 +72,6 @@
             (type-string-dispatch #true)
             (else #false)))
 
-
-      (define o (λ (f g) (λ (x) (f (g x)))))
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
@@ -258,8 +256,9 @@
       (define (runes->string lst)
          (stringify lst null 0 #true null))
 
-      (define bytes->string
-         (o runes->string utf8-decode))
+      (define (bytes->string stream)
+         (runes->string (utf8-decode stream)))
+
 
       ;;; temps
 
