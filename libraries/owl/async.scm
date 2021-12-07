@@ -5,6 +5,8 @@
       fork-linked fork-server
       fork-linked-server
 
+      async coroutine
+
       accept-mail wait-mail check-mail
       mail await
       return-mails poll-mail-from
@@ -32,9 +34,11 @@
       (define (fork-named name thunk)
          (mcp 4 (list name) thunk))
 
+      ; forker wants to receive any issues the thread runs into
       (define (fork-linked name thunk)
          (mcp 4 (list name 'link) thunk))
 
+      ; the thread should have a mailbox for communication in state
       (define (fork-server name handler)
          (mcp 4 (list name 'mailbox) handler))
 
@@ -141,12 +145,6 @@
                   (loop (check-mail) (cons envp spam) rounds)))))
 
 
-      (define (fork thunk)
-         ; the vector is fresh and therefore a proper although rather
-         ; nondescriptive thread name
-         (fork-named ['anonimas] thunk))
-
-
       ; Message passing (aka mailing) is asynchronous, and at least
       ; in a one-core environment order-preserving. interact is like
       ; mail, but it blocks the thread until the desired response
@@ -157,8 +155,18 @@
          (if sentmail
             (ref (accept-mail (λ (env) (eq? (ref env 1) sentmail))) 2)))
 
-      (define (interact whom message)
+      (define (interact whom message) ; deprecated
          (mail whom message)
          (ref (accept-mail (λ (env) (eq? (ref env 1) whom))) 2))
 
+
+      (define (fork thunk)
+         ; the vector is fresh and therefore a proper although rather
+         ; nondescriptive thread name
+         (fork-named ['anonimas] thunk))
+
+
+      ; nicer naming:
+      (define async fork)
+      (define coroutine fork-server)
 ))

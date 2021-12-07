@@ -1,0 +1,4 @@
+Starting 100000 threads.
+Sending a first message.
+  coroutine 1 got 'start', let's go!
+Thread 1: coroutine named '100000' sent me an 'pass this around'
