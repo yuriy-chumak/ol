@@ -6,8 +6,7 @@
     http:parse-url)
   (import (scheme base) (scheme srfi-1)
       (owl parse)
-      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl async)
-      (otus vm))
+      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl async))
 
 (begin
    (define (upper-case? x) (<= #\A x #\Z))
@@ -218,7 +217,7 @@
             (if (null? (running-threads)) 30000000 1)) ; wait a 30 second if no running threads detected (100000 for tests)
          (let ((fd (syscall 43 socket))) ; accept
             (fork (on-accept (generate-unique-id) fd onRequest)))
-         (set-ticker-value 0)) ; else just switch context
+         (sleep 0)) ; else just switch context
       (loop)) )))
 
 ; -=( parse url )=-------------------------------------

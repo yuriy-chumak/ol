@@ -1,6 +1,5 @@
 ; http://www.rosettacode.org/wiki/Chat_server#Ol
 
-(import (otus vm))
 (define (timestamp) (syscall 201 "%c"))
 
 (fork-server 'chat-room (lambda ()
@@ -65,7 +64,7 @@
          (let ((fd (syscall 43 socket))) ; accept
             ;(print "\n# " (timestamp) ": new request from " (syscall 51 fd))
             (fork (on-accept (syscall 51 fd) fd))))
-      (set-ticker-value 0)
+      (sleep 0)
       (loop))))
 
 (run 8080)

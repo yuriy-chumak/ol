@@ -1,5 +1,3 @@
-(import (otus vm))
-
 (define (iter-ret n r)
    (if (= n 0)
       r
@@ -31,7 +29,7 @@
    (if (= n 0)
       r
       (begin
-         (set-ticker-value 0) ;; thread context switch in next function call (-)
+         (sleep 0) ;; thread context switch in next function call (-)
          (iter-ret-step (- n 1) r))))
 
 (print "Por termination order: "

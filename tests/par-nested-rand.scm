@@ -1,5 +1,4 @@
 (import (owl random))
-(import (otus vm))
 (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
 (define (small-range? lo hi)
@@ -20,10 +19,8 @@
           (rsp (seed->rands seed)))
          (por
             (begin
-               (set-ticker-value a)
                (seek rs lo mid n))
             (begin
-               (set-ticker-value b)
                (seek rsp mid hi n))))))
 
 (define seed (time-ms))

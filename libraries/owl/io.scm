@@ -65,7 +65,6 @@
       (otus fasl)
       (owl lazy)
       (scheme bytevector)
-      (otus vm)
       (only (otus blobs) merge-chunks blob-leaves))
 
    (begin

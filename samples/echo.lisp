@@ -1,6 +1,6 @@
-; echo server
+#!/usr/bin/env ol
 
-(import (otus vm))
+; echo server
 
 (define (create-socket) (syscall 41))
 (define (bind socket port) (syscall 49 socket port))
@@ -31,7 +31,7 @@
          (let ((fd (accept socket))) ; accept
             (print "\n# " (timestamp) ": new request from " (syscall 51 fd))
             (fork (on-accept fd))))
-      (set-ticker-value 0)
+      (sleep 0)
       (loop))))
 
 (echo:run 12321)

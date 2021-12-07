@@ -1,5 +1,4 @@
 (import (owl random))
-(import (otus vm))
 
 ;; check that threads which return a given value after n context switches return them
 ;; when computed via par in the same order as if the values were sorted by n.
@@ -8,7 +7,7 @@
    (if (eq? n 0)
       r
       (begin
-         (set-ticker-value 0) ;; force thread switch
+         (sleep 0) ;; force thread switch
          (step-down r (- n 1)))))
 
 (define (stepper r n) 

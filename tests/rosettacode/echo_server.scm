@@ -1,6 +1,5 @@
-; http://www.rosettacode.org/wiki/Chat_server#Ol
+; http://www.rosettacode.org/wiki/Echo_server#Ol
 
-(import (otus vm))
 (define (timestamp) (syscall 201 "%c"))
 
 (define (on-accept name fd)
@@ -39,7 +38,7 @@
       (if (syscall 23 socket) ; select
          (let ((fd (syscall 43 socket))) ; accept
             (fork (on-accept (syscall 51 fd) fd))))
-      (set-ticker-value 0)
+      (sleep 0)
       (loop))))
 
 (run 12321)

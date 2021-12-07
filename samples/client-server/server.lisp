@@ -1,7 +1,5 @@
 #!/usr/bin/env ol
 
-(import (only (otus vm) set-ticker-value))
-
 ; commands
 (define MOVE 1001)
 (define GET 1002)
@@ -72,7 +70,7 @@
          (if (null? (running-threads)) 3000000 1)) ; wait a 3 seconds if no running threads detected
       (let ((fd (syscall 43 socket))) ; accept
          (fork (on-accept fd)))
-      (set-ticker-value 0)) ; else just switch context
+      (sleep 0)) ; else just switch context
    (loop)) )))
 
 
