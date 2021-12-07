@@ -12,7 +12,7 @@
          (loop (sort-step i)))))
 
 (print 
-   (bubble-sort (list 1 3 5 9 8 6 4 2) >))
+   (bubble-sort (list 1 3 5 9 8 6 4 3 2) >))
 (print 
    (bubble-sort (iota 100) >))
 (print 

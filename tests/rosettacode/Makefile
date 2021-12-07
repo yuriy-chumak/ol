@@ -9,7 +9,7 @@ else
 # tests without ^.ok file are legal but can't be used in batch mode
 
 rosettacode: testing-binaries
-rosettacode: $(wildcard tests/rosettacode/*.scm)
+rosettacode: $(wildcard tests/rosettacode/*.scm) $(wildcard tests/rosettacode/sorting_algorithms/*.scm)
 	@echo "*** rosettacode.org Ol samples"
 	@for F in $(filter %.scm,$^) ;do \
 	   if [ -e $$F.ok ] ;then $(MAKE) -s -B $$F.ok ;fi ;\
