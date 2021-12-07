@@ -47,7 +47,7 @@
             (case in
                (#f #null) ; port error
                (#t ; input not ready
-                  (await (mail 'io 5))
+                  (sleep 5)
                   (non-buffered-input-stream-n n))
                (#eof ; end-of-file
                   (close-port port)

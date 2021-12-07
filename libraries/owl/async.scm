@@ -6,6 +6,7 @@
       fork-linked-server
 
       async coroutine
+      sleep
 
       accept-mail wait-mail check-mail
       mail await
@@ -169,4 +170,22 @@
       ; nicer naming:
       (define async fork)
       (define coroutine fork-server)
+
+      ; sleep
+
+      ; number of microseconds to sleep for real at a time when no threads are running but
+      ; they want to sleep, typically waiting for input or output
+      (define us-per-round 10000) ; 10 ms
+      (define (set-ticker-value n) (syscall 1022 n))
+
+      (define (sleep rounds)
+         (set-ticker-value 0)
+         (if (eq? rounds 0)
+            rounds
+         else
+            (if (single-thread?)
+               (syscall 35 us-per-round)) ; syscall 'sleep'
+            (let* ((rounds _ (vm:sub rounds 1)))
+               (sleep rounds))))
+
 ))

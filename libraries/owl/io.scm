@@ -4,9 +4,7 @@
 
 (define-library (owl io)
 
-  (export
-      sleep                   ;; sleep a thread n rounds
-
+   (export
       current-input-port
       current-output-port
       current-error-port
@@ -51,8 +49,6 @@
       system-print system-println system-stderr
       fasl-save         ;; obj path → done?
       fasl-load         ;; path default → done?
-
-      io:init
    )
 
    (import
@@ -97,87 +93,6 @@
          (syscall 3 fd))
 
 
-      ;;; -----------------------------------------------------------
-      ;;; Sleeper thread
-
-      ;; todo: later probably sleeper thread and convert it to a interop
-
-      ;; run thread scheduler for n rounds between possibly calling vm sleep()
-      ;(define sleep-check-rounds 10)
-
-      ;; number of microseconds to sleep for real at a time when no threads are running but
-      ;; they want to sleep, typically waiting for input or output
-      (define us-per-round 10000) ; 10 ms
-
-      ;; IO is closely tied to sleeping in owl now, because instead of the poll there are
-      ;; several threads doing their own IO with their own fds. the ability to sleep well
-      ;; is critical, so the global sleeping thread is also in lib-io.
-
-      (define (find-bed ls id n)
-         (if (null? ls)
-            (list (cons n id)) ;; last bed, select alarm
-            (let ((this (caar ls)))
-               (if (< n this) ;; add before someone to be waked later
-                  (cons*
-                     (cons n id)
-                     (cons (- this n) (cdr (car ls)))
-                     (cdr ls))
-                  (cons (car ls)
-                     (find-bed ls id (- n this))))))) ;; wake some time after this one
-
-      (define (add-sleeper ls envelope)
-         (let*((from n envelope))
-            (if (eq? (type n) type-enum+)
-               (find-bed ls from n)
-               (find-bed ls from 10))))   ;; silent fix
-
-      ;; note: might make sense to _sleep a round even when rounds=0 if single-thread? and did not _sleep any of the prior rounds, because otherwise we might end up having cases where many file descriptors keep ol running because at least one fd thread is always up and running. another solution would be to always wake up just one thread, which would as usual suspend during the round when inactive. needs testing.
-
-      ;; suspend execution for <rounds> thread scheduler rounds (for current thread) and also suspend the vm if no other threads are running
-      (define (sleep-for rounds)
-         (cond
-            ((eq? rounds 0)
-               rounds)
-            ((single-thread?)
-               ;; note: could make this check every n rounds or ms
-               (if (syscall 35 (* us-per-round rounds)) ;; sleep really for a while
-                  ;; stop execution if breaked to enter mcp
-                  (set-ticker-value 0))) ; fixme: maybe better to move this up, before syscall?
-            (else
-               (set-ticker-value 0)
-               (let* ((rounds _ (vm:sub rounds 1)))
-                  (sleep-for rounds)))))
-
-      (define (wake-neighbours l)
-         (cond
-            ((null? l) l)
-            ((eq? 0 (caar l))
-               (mail (cdar l) 'rise-n-shine)
-               (wake-neighbours (cdr l)))
-            (else l)))
-
-      ;; start a global sleeper thread
-      (define (start-io-sleeper-thread)
-         (fork-server 'io
-            (λ ()
-               (let sleeper ((ls '())) ;; ls = queue of ((rounds . id) ...), sorted and only storing deltas
-                  (cond
-                     ((null? ls) ; очередь пуста? спим до появления первого сообщения
-                        (sleeper (add-sleeper ls (wait-mail))))
-                     ((check-mail) =>
-                        (λ (envelope) ; '(thread n-times)
-                           (sleeper (add-sleeper ls envelope))))
-                     (else
-                        (sleep-for (caar ls))
-                        (mail (cdar ls) 'awake) ;; 'awake have no meaning, this is simply "wake up" the thread ((n . id) ...)
-                        (sleeper (wake-neighbours (cdr ls))))))))) ;; wake up all the ((0 . id) ...) after it, if any
-;         (sleep 1)) ; is it required?
-
-      (define (sleep n) (await (mail 'io n)))
-
-
-
-
       ;;; Writing
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
@@ -197,7 +112,7 @@
                      (cond
                         ((eq? wrote end) #true) ;; ok, wrote the whole chunk
                         ((eq? wrote 0) ;; 0 = EWOULDBLOCK
-                           (await (mail 'io 2)) ;; fixme: adjustable delay rounds
+                           (sleep 2) ;; fixme: adjustable delay rounds
                            (loop))
                         (wrote ;; partial write
                            (write-really (bvec-tail bvec wrote) fd))
@@ -224,7 +139,7 @@
             (if (eq? res #true) ;; would block
                (if block?
                   (begin
-                     (await (mail 'io 5))
+                     (sleep 5)
                      (try-get-block fd block-size #true))
                   res)
                res))) ;; is #false, eof or bvec
@@ -546,8 +461,4 @@
             (if bs
                (fasl-decode bs fail-val)
                fail-val)))
-
-      ; global io subsystem initializer
-      (define (io:init)
-         (start-io-sleeper-thread))
 ))

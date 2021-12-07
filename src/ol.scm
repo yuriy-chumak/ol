@@ -295,12 +295,9 @@
             (list ;1 thread
                ['init
                   (λ ()
-                     ;; get i/o running
-                     (io:init)
-
                      ;; repl needs symbols interning, which is handled by this thread
                      (fork-symbol-interner symbols)
-                     ;; and bytecode duplication avoider, is handled by this thread
+                     ;; and bytecode duplication avoider, which is handled by this thread
                      (fork-bytecode-interner codes)
 
                      (define (starts-with? string prefix)
