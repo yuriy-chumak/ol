@@ -7,7 +7,7 @@
 
    (export 
       set-ticker-value
-      wait
+      wait ; deprecated
       set-memory-limit
       get-memory-limit)
 
@@ -17,7 +17,7 @@
    (begin
       ;; make thread sleep for a few thread scheduler rounds
       (define (set-ticker-value n) (syscall 1022 n))
-      (define (wait n) ; is it required?
+      (define (wait n) ; is it required? todo: deprecated
          (if (eq? n 0)
             0
             (let* ((n _ (vm:sub n 1)))
