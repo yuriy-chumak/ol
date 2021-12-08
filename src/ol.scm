@@ -413,6 +413,10 @@
                                                                                     (append *features* '(middle-endian)))
                                                                                  (else
                                                                                     *features*))))
+                                                               (*features* (let ((features (vm:features)))
+                                                                              (if (not (eq? (band features #o1000000) 0))
+                                                                                 (append *features* '(posix))
+                                                                                 *features*)))
                                                                (*features* (let ((uname (syscall 63)))
                                                                               (if uname
                                                                                  (append *features* (list

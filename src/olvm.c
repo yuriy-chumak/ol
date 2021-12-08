@@ -1126,7 +1126,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 # endif
 #endif
 
-
 #ifndef OLVM_BUILTIN_FMATH // builtin olvm math functions (vm:fp1)
 #define OLVM_BUILTIN_FMATH 1
 #endif
@@ -1157,7 +1156,14 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 #	endif
 #endif
 
+// assume we compile for posix
+#ifndef HAVE_UNISTD_H
+#define HAVE_UNISTD_H 1
+#endif
+
+#if HAVE_UNISTD_H
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
+#endif
 
 #ifdef __linux__
 #include <features.h>
@@ -3273,6 +3279,9 @@ loop:;
 		#endif
 		#if HAS_SENDFILE
 			| 000400000
+		#endif
+		#if HAVE_UNISTD_H
+			| 001000000
 		#endif
 		);
 		ip += 1; break;
