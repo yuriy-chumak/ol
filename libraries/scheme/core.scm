@@ -386,20 +386,20 @@
 
       ; syntax:  (begin <expression1> <expression2> ...)
       (define-syntax begin
-         (syntax-rules (define letrec)
+         (syntax-rules (define define-values letrec)
             ((begin) #false) ; empty 
             ((begin exp) exp)
-            ((begin (define . a) (define . b) ... . rest)
+
+            ; define
+            ((begin (define . a) (define . b) ... . rest) ; ??
                (begin 42 () (define . a) (define . b) ... . rest))
-            ;; ((begin (define-values (val ...) . body) . rest)
-            ;;    (let*-values (((val ...) (begin . body))) . rest))
-            ((begin 42 done (define ((op . args1) . args2) . body) . rest)
+            ((begin 42 done (define ((op . args1) . args2) . body) . rest) ; list of variables
                (begin 42 done (define (op . args1) (lambda args2 . body)) . rest))
-            ((begin 42 done (define (var . args) . body) . rest)
+            ((begin 42 done (define (var . args) . body) . rest) ; function
                (begin 42 done (define var (lambda args . body)) . rest))
-            ((begin 42 done (define var exp1 exp2 . expn) . rest)
+            ((begin 42 done (define var exp1 exp2 . expn) . rest) ; simple define
                (begin 42 done (define var (begin exp1 exp2 . expn)) . rest))
-            ((begin 42 done (define var val) . rest)
+            ((begin 42 done (define var val) . rest) ; simplest define
                (begin 42 ((var val) . done) . rest))
             ((begin 42 done . exps)
                (begin 43 done () exps))
@@ -407,6 +407,11 @@
                (begin 43 b (a . c) exps))
             ((begin 43 () bindings exps)
                (letrec bindings (begin . exps)))
+
+            ; define-values
+            ((begin (define-values (var ...) gen) . rest)
+               (values-apply gen (lambda (var ...) . rest)))
+
             ((begin first . rest)
                ((lambda (free) (begin . rest))  first))))
 
