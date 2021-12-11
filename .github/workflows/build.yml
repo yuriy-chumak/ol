@@ -6,17 +6,32 @@ on:
       - master
 
 jobs:
-  build:
+  linux-build:
     strategy:
       matrix:
-        os: [ ubuntu-20.04, ubuntu-18.04, macos-10.15, macos-11.0 ]
+        os: [ ubuntu-20.04, ubuntu-18.04 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install 32-bit libraries
+      run: 'sudo apt install gcc-multilib -y'
+
+    - name: Build with CI build script
+      run: 'make describe check'
+
+  macos-build:
+    strategy:
+      matrix:
+        os: [ macos-10.15, macos-11.0 ]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
     - name: Build with CI build script
-      run: 'make describe tests rosettacode'
+      run: 'make describe check'
 
   win-build:
     runs-on: ubuntu-20.04
@@ -25,7 +40,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Install MinGW toolchain
-      run: sudo apt-get install gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev
+      run: 'sudo apt install gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev -y'
 
     - name: Build with CI build script
       run: 'make ol64.exe'
