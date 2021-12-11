@@ -18,7 +18,7 @@
    (import
       (scheme core)
       (owl string)
-      (owl async)
+      (otus async)
       (owl list)
       (owl math)
       (owl io)
@@ -118,7 +118,7 @@
       ; call before
       (define (fork-symbol-interner symbols)
          (let ((codes (fold put-symbol empty-symbol-tree symbols)))
-            (fork-server 'intern (lambda ()
+            (coroutine 'intern (lambda ()
                (let loop ((codes codes))
                   (let*((envelope (wait-mail))
                         (sender msg envelope)  ; assert (string? msg)

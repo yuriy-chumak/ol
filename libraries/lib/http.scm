@@ -6,7 +6,7 @@
     http:parse-url)
   (import (scheme base) (scheme srfi-1)
       (owl parse)
-      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (owl async))
+      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (otus async))
 
 (begin
    (define (upper-case? x) (<= #\A x #\Z))
@@ -20,14 +20,16 @@
           (= x 127)))
 
 ; unique session id:
-(fork-server 'IDs (lambda ()
+(setq coname '[http-session-ids])
+
+(coroutine coname (lambda ()
 (let this ((id 1))
 (let*((envelope (wait-mail))
       (sender msg envelope))
    (mail sender id)
    (this (+ id 1))))))
 (define (generate-unique-id)
-   (await (mail 'IDs #f)))
+   (await (mail coname #f)))
 
 
 
@@ -216,7 +218,7 @@
       (if (syscall 23 socket
             (if (null? (running-threads)) 30000000 1)) ; wait a 30 second if no running threads detected (100000 for tests)
          (let ((fd (syscall 43 socket))) ; accept
-            (fork (on-accept (generate-unique-id) fd onRequest)))
+            (async (on-accept (generate-unique-id) fd onRequest)))
          (sleep 0)) ; else just switch context
       (loop)) )))
 

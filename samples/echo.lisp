@@ -30,7 +30,7 @@
       (if (select socket) ; select
          (let ((fd (accept socket))) ; accept
             (print "\n# " (timestamp) ": new request from " (syscall 51 fd))
-            (fork (on-accept fd))))
+            (async (on-accept fd))))
       (sleep 0)
       (loop))))
 

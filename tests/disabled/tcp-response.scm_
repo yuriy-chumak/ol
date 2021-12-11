@@ -16,7 +16,7 @@
 
 (define message (render "hello there" null))
 
-(fork-server 'socket-thread
+(coroutine 'socket-thread
    (lambda ()
       (let ((cli (interact sock 'accept)))
          (mail cli message)

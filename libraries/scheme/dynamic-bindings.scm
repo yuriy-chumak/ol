@@ -5,10 +5,10 @@
    parameterize)
 (import
    (scheme core)
-   (owl ff) (owl async))
+   (owl ff) (otus async))
 (begin
-   (setq server '|4.2.6 Dynamic bindings|)
-   (fork-server server (lambda ()
+   (setq coname '|4.2.6 Dynamic bindings|)
+   (coroutine coname (lambda ()
       (let loop ((bindings #empty))
          (let*((envelope (wait-mail))
                (sender msg envelope))
@@ -36,14 +36,14 @@
       (define (return index)
          (case-lambda
             ((); just return value
-               (await (mail server [index])))
+               (await (mail coname [index])))
             ((new)
-               (await (mail server [index new])))))
+               (await (mail coname [index new])))))
       (case-lambda
          ((init)
-            (return (await (mail server [#false init]))))
+            (return (await (mail coname [#false init]))))
          ((init converter)
-            (return (await (mail server [#false (converter init) converter])))))))
+            (return (await (mail coname [#false (converter init) converter])))))))
 
    (define-syntax parameterize
       (syntax-rules ()

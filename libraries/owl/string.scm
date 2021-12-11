@@ -59,7 +59,7 @@
    (import (owl list-extra))
    (import (owl lazy))
    (import (owl math))
-   (import (only (owl async) await mail)) ; used by string->symbol
+   (import (only (otus async) await mail)) ; used by string->symbol
 
    (include "owl/unicode-char-folds.scm")
 

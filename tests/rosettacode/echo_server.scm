@@ -37,7 +37,7 @@
    (let loop ()
       (if (syscall 23 socket) ; select
          (let ((fd (syscall 43 socket))) ; accept
-            (fork (on-accept (syscall 51 fd) fd))))
+            (async (on-accept (syscall 51 fd) fd))))
       (sleep 0)
       (loop))))
 

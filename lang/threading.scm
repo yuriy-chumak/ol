@@ -20,7 +20,7 @@
       (scheme core)
       (only (src vm) vm:run)
       (owl queue)
-      (owl async)
+      (otus async)
       (owl ff)
       (owl list)
       (owl math)

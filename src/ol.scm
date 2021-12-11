@@ -467,7 +467,7 @@
                                  (halt (vm:pin evaluate)))
                            else
                               ; regular repl:
-                              (fork-server ['repl] (lambda ()
+                              (coroutine ['repl] (lambda ()
                                  ;; repl
                                  (exit-thread
                                     (repl-trampoline env file)))))))])))))

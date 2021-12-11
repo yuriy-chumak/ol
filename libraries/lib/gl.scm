@@ -550,7 +550,7 @@
 (cond-expand
    ((or Android Emscripten)
       (begin
-         (fork-server 'opengl (lambda ()
+         (coroutine 'opengl (lambda ()
          (let this ((dictionary {
                'resize-handler (lambda (w h) (glViewport 0 0 w h))}))
             (let*((envelope (wait-mail))
@@ -584,7 +584,7 @@
       (begin
          ; =============================================
          ; automation
-         (fork-server 'opengl (lambda ()
+         (coroutine 'opengl (lambda ()
          (let this ((dictionary {
                'resize-handler (lambda (w h) (glViewport 0 0 w h))}))
          (cond

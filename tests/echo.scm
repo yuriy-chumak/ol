@@ -10,7 +10,7 @@
       (mail from msg)
       (echoer)))
 
-(fork-server echo echoer)
+(coroutine echo echoer)
 
 (let loop ((n 1))
    (cond

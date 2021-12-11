@@ -32,7 +32,7 @@
       (owl string)
       (owl math)
       (owl io)
-      (owl async)
+      (otus async)
       (owl list))
 
    (begin

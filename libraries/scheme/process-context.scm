@@ -12,7 +12,7 @@
 
    (import
       (scheme core)
-      (owl async)
+      (otus async)
       (owl string))
 
    (begin

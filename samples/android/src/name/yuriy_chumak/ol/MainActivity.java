@@ -64,7 +64,7 @@ public class MainActivity extends Activity
 
 	public void onDrawFrame(GL10 unused) {
 		Log.i(TAG, "onDrawFrame()");
-		Olvm.eval("(let ((renderer (interact 'opengl ['get 'renderer]))) (if renderer (renderer #false)))");
+		Olvm.eval("(let ((renderer (await (mail 'opengl ['get 'renderer])))) (if renderer (renderer #false)))");
 	}
 	public void onMouseTouch(float x, float y)
 	{

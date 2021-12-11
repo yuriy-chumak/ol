@@ -5,14 +5,13 @@
 (import (otus fasl))
 
 (fasl-save (vm:new 63 (lambda (args)
-      ; well, our code use messages (fork-server, mail, interact)
-      ; so we should start a thread controller.
-      ; in simplest case we can just return a vector of pinned functions
+      ; our code use coroutines, so we should start a thread controller.
       (start-thread-controller
          (list ;1 thread
             ['just-a-name
                (lambda ()
                   (born-blinky)
+                  ; in simplest case we can just return a vector of pinned functions
                   (halt [
                      (vm:pin (lambda () points))
                      (vm:pin get-blinky)

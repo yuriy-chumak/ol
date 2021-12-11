@@ -1,9 +1,7 @@
 #!/usr/bin/env ol
 
-; coroutines used by "fork-server", "mail", "wait-mail" and "interact" functions
-
 ; all strings are collected in this coroutine in "strings" ff
-(fork-server 'strings (lambda ()
+(coroutine 'strings (lambda ()
 (let this ((strings #empty))
 (let* ((envelope (wait-mail))
        (sender msg envelope))

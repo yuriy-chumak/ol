@@ -53,7 +53,7 @@
 
    (import
       (scheme core)
-      (owl async)
+      (otus async)
       (owl queue)
       (owl string)
       (owl list-extra)

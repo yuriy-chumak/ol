@@ -4,7 +4,7 @@
 (define MOVE 1001)
 (define GET 1002)
 
-(fork-server 'hero (lambda ()
+(coroutine 'hero (lambda ()
 (let loop ((this {
                   'x 10
                   'y 7
@@ -69,7 +69,7 @@
    (if (syscall 23 socket
          (if (null? (running-threads)) 3000000 1)) ; wait a 3 seconds if no running threads detected
       (let ((fd (syscall 43 socket))) ; accept
-         (fork (on-accept fd)))
+         (async (on-accept fd)))
       (sleep 0)) ; else just switch context
    (loop)) )))
 

@@ -4,7 +4,7 @@
 
 (import
    (scheme core)
-   (owl async) (owl io)
+   (otus async) (owl io)
    (scheme vector)
    (only (lang sexp) sexp))
 
@@ -18,8 +18,8 @@
       (values-apply (vm:shl n x) (lambda (overflow n) n)))
 
    (define (read-impl port)
-      (define server ['read])
-      (fork-server server (lambda ()
+      (define coname ['read])
+      (coroutine coname (lambda ()
          (let this ((cache (make-bytevector 14)) (pos 0))
             (let*((envelope (wait-mail))
                   (sender msg envelope))
@@ -43,7 +43,7 @@
 
       (define (non-buffered-input-stream-n n)
          (lambda ()
-            (define in (await (mail server n)))
+            (define in (await (mail coname n)))
             (case in
                (#f #null) ; port error
                (#t ; input not ready
@@ -60,7 +60,7 @@
          (non-buffered-input-stream-n 0)
          0
          (λ (left data-tail pos val) ; ok
-            (mail server #false)
+            (mail coname #false)
             val)))
 
    ; public function

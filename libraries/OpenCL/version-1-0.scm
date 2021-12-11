@@ -177,7 +177,7 @@
 ; == implementation ==========================================================
    (import
       (scheme core) (owl io)
-      (owl math) (owl async)
+      (owl math) (otus async)
       (owl string)
       (otus ffi)
       (owl list))

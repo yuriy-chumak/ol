@@ -12,7 +12,7 @@
       (scheme core)
       (owl math)
       (owl list)
-      (owl async)) ;?
+      (otus async)) ;?
 
    (begin
       (define lref list-ref)

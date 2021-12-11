@@ -73,7 +73,7 @@
 
 (define (new-creature)
 (let* ((id (generate-unique-id))
-       (creature (fork-server id (lambda ()
+       (creature (coroutine id (lambda ()
    ; x, y - положение AI
    (let this ((fov {}) (x 1) (y 1)) ; пустое, очень одинокое место...
    (let* ((envelope (wait-mail))

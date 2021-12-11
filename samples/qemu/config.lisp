@@ -1,5 +1,5 @@
 ; окошко с регистрами. обновляет, добывает, рисует
-(fork-server 'config (lambda ()
+(coroutine 'config (lambda ()
 (let loop ((ff #empty))
 (let*((envelope (wait-mail))
       (sender msg envelope))

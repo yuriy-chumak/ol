@@ -2,7 +2,7 @@
 
 (define (timestamp) (syscall 201 "%c"))
 
-(fork-server 'chat-room (lambda ()
+(coroutine 'chat-room (lambda ()
 (let this ((visitors #empty))
 (let* ((envelope (wait-mail))
        (sender msg envelope))
@@ -63,7 +63,7 @@
       (if (syscall 23 socket) ; select
          (let ((fd (syscall 43 socket))) ; accept
             ;(print "\n# " (timestamp) ": new request from " (syscall 51 fd))
-            (fork (on-accept (syscall 51 fd) fd))))
+            (async (on-accept (syscall 51 fd) fd))))
       (sleep 0)
       (loop))))
 

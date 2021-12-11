@@ -319,7 +319,7 @@
 (read-matrix! (get-layer ann 2) "syn1")
 
 ; обучение сети
-(fork-server 'ann (lambda ()
+(coroutine 'ann (lambda ()
 (let this ()
 (let* ((envelope (wait-mail))
        (sender msg envelope))

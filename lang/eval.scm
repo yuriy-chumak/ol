@@ -37,7 +37,7 @@
       (lang fixedpoint)
       (lang ast)
       (lang env)
-      (owl async)
+      (otus async)
       (owl time) ;; for testing metadata
       (otus blobs)
       (owl io)
@@ -137,7 +137,7 @@
 
       ; run the code in its own thread
       (define (evaluate-as exp env name)
-         (fork-linked name
+         (async-linked name
             (λ ()
                (evaluate exp env)))
          (case (ref (accept-mail (λ (env) (eq? (ref env 1) name))) 2)
@@ -179,7 +179,7 @@
                ((not chunk) ;; read error in port
                   (values rchunks #true))
                ((eq? chunk #true) ;; would block
-                  (sleep 5) ;; interact with sleeper thread to let cpu sleep
+                  (sleep 5)
                   (values rchunks #false))
                ((eof? chunk) ;; normal end if input, no need to call me again
                   (values rchunks #true))

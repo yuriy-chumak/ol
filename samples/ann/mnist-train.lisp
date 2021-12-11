@@ -323,7 +323,7 @@
 (read-matrix! (get-layer ann 2) "syn1")
 
 ; обучение сети
-(fork-server 'ann (lambda ()
+(coroutine 'ann (lambda ()
    (print "запуcкаю обучение сети")
    (let this ((n 0))
       (let*((i (rand! images-count))

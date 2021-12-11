@@ -142,7 +142,7 @@
 
 ; функция, возвращающая текущее значение регистра
 (define (% reg)
-   (interact 'config ['get reg]))
+   (await (mail 'config ['get reg])))
 
 ; селектор
 (define (selector-value selector)
@@ -195,7 +195,7 @@
       ; тоже синтаксический сахар
       ; но надо помнить, что в функциях их использовать нельзя
       (for-each (lambda (i)
-            (interact 'evaluator (list 'setq (car i) (cdr i))))
+            (await (mail 'evaluator (list 'setq (car i) (cdr i)))))
          `(
             (%eax . ,eax) (%ebx . ,ebx) (%ecx . ,ecx) (%edx . ,edx)
             (%esp . ,esp) (%ebp . ,ebp) (%esi . ,esi) (%edi . ,edi)
@@ -248,7 +248,7 @@
 
 
 
-(fork-server 'registers (lambda ()
+(coroutine 'registers (lambda ()
 (let loop ((ff #empty))
 (let*((envelope (wait-mail))
       (sender msg envelope))

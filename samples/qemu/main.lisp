@@ -221,7 +221,7 @@
 ; =============================================================================================
 ; ==
 (define (fork name . arguments)
-(fork-server name (lambda ()
+(coroutine name (lambda ()
    (define In (syscall 22)) ; create input/output pipes: '(read-pipe . write-pipe)
    (define Out (syscall 22))
    (define Pid
@@ -260,7 +260,7 @@
 ; gdb instance
 (fork 'gdb "/usr/bin/gdb")
 (define (gdb . args)
-   (interact 'gdb args))
+   (await (mail 'gdb args)))
 (print (bytes->string
 (gdb gdb-greeting-parser))) ; wait for gdb
 
@@ -274,11 +274,11 @@
 ; прерыватель gdb "по требованию" (отправляет Ctrl+C)
 ; любое сообщение этой сопрограмме заканчивает ее
 (define (run-gdb-breaker)
-   (fork-server 'gdb-breaker (lambda ()
+   (coroutine 'gdb-breaker (lambda ()
       (let this ((unused #f))
          (unless (check-mail)
             (if (key-pressed #xffbf) ; f2
-               (syscall 62 (interact 'config (tuple 'get 'gdb)) 2)) ; SIGINT
+               (syscall 62 (await (mail 'config (tuple 'get 'gdb))) 2)) ; SIGINT
             (this (sleep 1)))))))
 
 ; ================================================================
@@ -439,7 +439,7 @@
 
 ; ================================
 ; code window
-(fork-server 'code (lambda ()
+(coroutine 'code (lambda ()
 (let loop ((ff #empty))
 (let*((envelope (wait-mail))
       (sender msg envelope))
@@ -498,7 +498,7 @@
 ; ============================================
 ; запустим вычислитель, это надо сделать здесь
 ; чтобы захватить все предыдущие дефайны
-(fork-server 'evaluator (lambda ()
+(coroutine 'evaluator (lambda ()
 (let loop ((env *toplevel*))
 (let*((envelope (wait-mail))
       (sender msg envelope))
@@ -519,10 +519,10 @@
    (display (string (ref progressbar (mod progress (size progressbar)))))
 
    (if dirty (begin
-      (interact 'code 'show)
+      (await (mail 'code 'show))
 
       (info-registers) ; обновим регистры
-      (interact 'registers 'show)
+      (await (mail 'registers 'show))
       
       (locate 1 20) (set-color GREY) (display ">                                                                 ")))
    (locate 3 20) (set-color DARKGREY)
@@ -570,7 +570,7 @@
 
          (let ((command (read)))
             (print "eval: "
-               (interact 'evaluator command)))
+               (await (mail 'evaluator command))))
          (main #true 0))
 
       (else

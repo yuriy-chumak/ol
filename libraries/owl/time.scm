@@ -10,7 +10,7 @@
 
    (import
       (scheme core)
-      (owl math) (owl async)
+      (owl math) (otus async)
       (owl io))
 
    (begin

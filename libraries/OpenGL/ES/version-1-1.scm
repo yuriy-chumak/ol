@@ -672,7 +672,7 @@
    (import
       (scheme core) (otus ffi); (owl io)
       (OpenGL ES platform)
-      (owl string) (owl async))
+      (owl string) (otus async))
 
 (begin
    (define GL_VERSION_ES_CM_1_0 1)
@@ -1194,7 +1194,7 @@
 
    (define fft-float* (fft* fft-float))
 
-   (fork-server 'opengl-compat (lambda ()
+   (coroutine 'opengl-compat (lambda ()
       ; some internal staff
       (define default-color '(1 1 1 1))
 

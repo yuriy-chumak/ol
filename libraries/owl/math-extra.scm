@@ -25,7 +25,7 @@
       (owl list)
       (owl list-extra)
       (owl sort)
-      (only (owl async) por por*)
+      (only (otus async) por por*)
       (owl ff))
 
    (begin
