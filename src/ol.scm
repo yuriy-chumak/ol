@@ -392,8 +392,8 @@
                                        (env-set env (car defn) (cdr defn)))
                                     initial-environment
                                     (list
-                                       (cons '*owl-names* initial-names)
-                                       (cons '*path* (cons "." (c/:/ home)))
+                                       (cons '*owl-names* initial-names)                                       ; windows workaround below:
+                                       (cons '*path* (cons "." ((if (string-ci=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home)))
                                        (cons '*interactive* interactive?)
                                        (cons '*command-line* command-line)
                                        ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead
