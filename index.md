@@ -6,6 +6,8 @@ categories: index
 > Any sufficiently complicated program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of some Lisp dialect.
 > <br/> <span style="float: right;">Greenspun's tenth rule</span>
 
+We have a Twitter! Follow us [@otus_lisp](https://twitter.com/otus_lisp).
+
 
 **Otus Lisp** (Ol in short) is a purely[\*](#pure) functional dialect of Lisp.
 

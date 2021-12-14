@@ -6,11 +6,12 @@ categories: en
 > Any sufficiently complicated program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of some Lisp dialect.
 > <br/> <span style="float: right;">Greenspun's tenth rule</span>
 
+We have a Twitter! Follow us [@otus_lisp](https://twitter.com/otus_lisp).
+
 
 **Otus Lisp** (Ol in short) is a purely[\*](#pure) functional dialect of Lisp.
 
 It implements an extended subset of [R<sup>7</sup>RS](https://www.r7rs.org) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/)s. It's small, embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on GNU/Linux, Windows, different Unixes, kinds of BSDs, Android, webOS, macOS, Minoca and many other operation systems with various architectures (i.e. x86/x86_64, arm/aarch64, mips, ppc, ...) and platforms (ODroid, LattePanda, etc.).
-
 
 ### Downloads
 
