@@ -64,9 +64,6 @@
                                     (glNewList i GL_COMPILE)
                                     (glBegin GL_TRIANGLES)
 
-                                    ;; (glEnable GL_COLOR_MATERIAL)
-                                    ;; (glColorMaterial GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE)
-
                                     ; https://compgraphics.info/OpenGL/lighting/materials.php
                                     ;(glMaterialfv GL_FRONT_AND_BACK GL_AMBIENT_AND_DIFFUSE (ref material 2)) ; diffuse
                                     (glColor4fv (ref material 2))
