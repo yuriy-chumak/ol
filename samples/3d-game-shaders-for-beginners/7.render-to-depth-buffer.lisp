@@ -16,20 +16,58 @@
 (import (file json))
 (define scene (read-json-file "scene1.json"))
 
+;; let's find a sun
+(define sun (car (filter (lambda (light) (string-ci=? (light 'type) "SUN"))
+   (vector->list (scene 'Lights)))))
+(print "sun:" sun)
+
 ;; shaders
-(define vertex-shader "#version 120 // OpenGL 2.1
+(define just-depth (gl:CreateProgram
+"#version 120 // OpenGL 2.1
+   #define gl_WorldMatrix gl_TextureMatrix[7]
    void main() {
-      gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;
-   }")
-(define fragment-shader "#version 120 // OpenGL 2.1
+      gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_WorldMatrix * gl_Vertex;
+   }"
+"#version 120 // OpenGL 2.1
    void main() {
       // nothing to do
-   }")
+   }"))
 
-(define po (gl:CreateProgram vertex-shader fragment-shader))
+(define aprogram (gl:CreateProgram
+"#version 120 // OpenGL 2.1
+   #define gl_WorldMatrix gl_TextureMatrix[7]
+   varying vec4 fragPosLightSpace;
+   void main() {
+      gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_WorldMatrix * gl_Vertex;
+      gl_FrontColor = gl_Color;
+
+      fragPosLightSpace = gl_TextureMatrix[0] * gl_WorldMatrix * gl_Vertex; // position from the sun view point
+   }"
+"#version 120 // OpenGL 2.1
+   uniform sampler2D shadow;
+   varying vec4 fragPosLightSpace;
+   void main() {
+      // perform perspective divide
+      vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+      // transform to [0,1] range
+      projCoords = projCoords * 0.5 + 0.5;
+      // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+      float closestDepth = texture2D(shadow, projCoords.xy).r;
+      // get depth of current fragment from light's perspective
+      float currentDepth = projCoords.z;
+      // check whether current frag pos is in shadow
+      float bias = 0.005;
+      float shadow = (currentDepth - bias) > closestDepth ? 0.4 : 1.0;
+
+      gl_FragColor = vec4(gl_Color.rgb * shadow, 1.0);
+   }"))
+
 
 ;; render buffer
 (import (OpenGL EXT framebuffer_object))
+
+(define TEXW 1024)
+(define TEXH 1024)
 
 (define depth-map '(0))
 (glGenTextures (length depth-map) depth-map)
@@ -39,7 +77,7 @@
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_REPEAT)
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
-(glTexImage2D GL_TEXTURE_2D 0 GL_DEPTH_COMPONENT 1024 1024 0 GL_DEPTH_COMPONENT GL_FLOAT 0)
+(glTexImage2D GL_TEXTURE_2D 0 GL_DEPTH_COMPONENT TEXW TEXH 0 GL_DEPTH_COMPONENT GL_FLOAT 0)
 (glBindTexture GL_TEXTURE_2D 0)
 
 (define depth-fbo '(0))
@@ -51,79 +89,110 @@
 (glReadBuffer GL_NONE)
 (glBindFramebuffer GL_FRAMEBUFFER 0)
 
-;; draw
+;; init
 
-(import (lib math))
-(import (owl math fp))
-
-; настройки
 (glShadeModel GL_SMOOTH)
-(glClearColor 0.2 0.2 0.2 1)
-
 (glEnable GL_DEPTH_TEST)
-;(glEnable GL_NORMALIZE)
 
 ; draw
 (gl:set-renderer (lambda (mouse)
-(let*((ss ms (clock))
-      (ticks (/ (+ ss (/ ms 1000)) 2)))
-
-   (define x (* 15 (sin ticks)))
-   (define y (* 15 (cos ticks)))
-   (define z 8)
-
-   ;; (define x 15)
-   ;; (define y 15)
-   ;; (define z 15)
-
-   (glViewport 0 0 1024 1024)
+   (glViewport 0 0 TEXW TEXH)
    (glBindFramebuffer GL_FRAMEBUFFER (car depth-fbo))
+
+   (glClearColor 0 0 0 1)
    (glClear GL_DEPTH_BUFFER_BIT)
-   (glUseProgram po)
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
-   (glOrtho -20 20 -20 20 0 50) ; gl_Projection is a light projection matrix
+   (glOrtho -20 20 -20 20 -20 20)
+
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
-   (gluLookAt x y z ; gl_ModelView is a light space matrix
-      0 0 0
-      0 0 1)
+   (gluLookAt
+      (ref (sun 'position) 1) ; x
+      (ref (sun 'position) 2) ; y
+      (ref (sun 'position) 3) ; z
+      0 0 0 ; sun is directed light
+      0 0 1) ; up is 'z'
 
-   (glLightfv GL_LIGHT0 GL_POSITION (list x y z 1)) ; не надо
-
-   (glCullFace GL_FRONT)
+   (glUseProgram just-depth)
+   (glDisable GL_CULL_FACE)
    (draw-geometry scene models)
-   (glCullFace GL_BACK)
-   (glBindFramebuffer GL_FRAMEBUFFER 0)
 
-   ;; draw a texture
    (glBindFramebuffer GL_FRAMEBUFFER 0)
-   (glUseProgram 0)
-
    (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
-   (glClearColor 0 0 0 1)
+   (glClearColor 0.2 0.2 0.2 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (glMatrixMode GL_MODELVIEW)
-   (glLoadIdentity)
-   (glOrtho 0 1 0 1 0 1)
+   (glUseProgram aprogram)
+   (glEnable GL_CULL_FACE)
 
-   (glEnable GL_TEXTURE_2D)
-   (glBindTexture GL_TEXTURE_2D (car depth-fbo))
+   (if #T
+   then
+      ; Camera setup
+      (begin
+         (define camera (ref (scene 'Cameras) 1))
 
-   (glBegin GL_QUADS)
-      (glColor3f 1 1 1)
+         (define angle (camera 'angle))
+         (define location (camera 'location))
+         (define target (camera 'target))
 
-      (glTexCoord2f 0 0)
-      (glVertex2f 0 0)
-      (glTexCoord2f 1 0)
-      (glVertex2f 1 0)
-      (glTexCoord2f 1 1)
-      (glVertex2f 1 1)
-      (glTexCoord2f 0 1)
-      (glVertex2f 0 1)
-   (glEnd)
-)))
+         (glMatrixMode GL_PROJECTION)
+         (glLoadIdentity)
+         (gluPerspective angle (/ (gl:get-window-width) (gl:get-window-height)) 0.1 100) ; (camera 'clip_start) (camera 'clip_end)
+
+         (glMatrixMode GL_MODELVIEW)
+         (glLoadIdentity)
+         (gluLookAt
+            (ref location 1) (ref location 2) (ref location 3)
+            (ref target 1) (ref target 2) (ref target 3)
+            0 0 1))
+
+      (glActiveTexture GL_TEXTURE0) ;light matrix from the step above:
+      (glMatrixMode GL_TEXTURE)
+      (glLoadIdentity) ; let's prepare my_WorldMatrix
+      (glOrtho -20 20 -20 20 -20 20)
+      (gluLookAt
+         (ref (sun 'position) 1) ; x
+         (ref (sun 'position) 2) ; y
+         (ref (sun 'position) 3) ; z
+         0 0 0 ; sun is directed light
+         0 0 1) ; up is 'z'
+      
+      (glBindTexture GL_TEXTURE_2D (car depth-fbo))
+
+      ; Draw a geometry with colors
+      (draw-geometry scene models)
+
+   else
+      (glBindFramebuffer GL_FRAMEBUFFER 0)
+      (glUseProgram 0)
+
+      (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
+      (glClearColor 0 0 0 1)
+      (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
+      (glMatrixMode GL_PROJECTION)
+      (glLoadIdentity)
+      (glMatrixMode GL_MODELVIEW)
+      (glLoadIdentity)
+      (glOrtho 0 1 0 1 0 1)
+
+      (glEnable GL_TEXTURE_2D)
+      (glActiveTexture GL_TEXTURE0)
+      (glBindTexture GL_TEXTURE_2D (car depth-fbo))
+
+      (glBegin GL_QUADS)
+         (glColor3f 1 1 1)
+
+         (glTexCoord2f 0 0)
+         (glVertex2f 0 0)
+         (glTexCoord2f 1 0)
+         (glVertex2f 1 0)
+         (glTexCoord2f 1 1)
+         (glVertex2f 1 1)
+         (glTexCoord2f 0 1)
+         (glVertex2f 0 1)
+      (glEnd))
+
+))

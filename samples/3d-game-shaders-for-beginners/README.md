@@ -28,7 +28,6 @@ shading techniques with Panda3D and OpenGL specifically.
 - :heavy_check_mark: [Dependencies](sections/2.dependencies.md)
 - :heavy_check_mark: [Running The Demo](sections/3.running-the-demo.md)
 - :heavy_check_mark: [Reference Frames](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/reference-frames.md)
-  - :heavy_check_mark: [Ol related notes](sections/4.reference-frames.md)
 - :heavy_check_mark: [GLSL](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/glsl.md)
   - :heavy_check_mark: [Ol related notes](sections/5.glsl.md)
 - :heavy_check_mark: [Render To Texture](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/render-to-texture.md)

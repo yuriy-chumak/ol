@@ -201,7 +201,7 @@
    (for-each (lambda (entity)
          (define model (entity 'model))
 
-         (glActiveTexture GL_TEXTURE0) ; temporary buffer for matrix math
+         (glActiveTexture GL_TEXTURE7) ; temporary buffer for matrix math
          (glMatrixMode GL_TEXTURE)
          (glLoadIdentity) ; let's prepare my_WorldMatrix
          (let ((xyz (entity 'location)))

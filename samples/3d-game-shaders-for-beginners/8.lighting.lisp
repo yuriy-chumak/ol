@@ -4,7 +4,6 @@
 (import (lib gl))
 (gl:set-window-title "8. Lighting")
 (import (OpenGL version-2-1))
-; todo: splash screen
 
 (import (scene))
 
@@ -19,8 +18,9 @@
 ;; shaders
 (define po (gl:CreateProgram
 "#version 120 // OpenGL 2.1
+   #define gl_WorldMatrix gl_TextureMatrix[7]
    void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+      gl_Position = gl_ModelViewProjectionMatrix * gl_WorldMatrix * gl_Vertex;
    }"
 "#version 120 // OpenGL 2.1
    void main() {
@@ -37,7 +37,6 @@
 
 (define justdraw (gl:CreateProgram
 "#version 120 // OpenGL 2.1
-   varying 
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
       gl_TexCoord[0] = gl_MultiTexCoord0;

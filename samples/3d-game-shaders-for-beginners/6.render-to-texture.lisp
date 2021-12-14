@@ -16,21 +16,24 @@
 (import (file json))
 (define scene (read-json-file "scene1.json"))
 
-;; shaders
-(define vertex-shader "#version 120 // OpenGL 2.1
-   varying vec3 n;
-   varying float z;
+(define normals (gl:CreateProgram
+"#version 120 // OpenGL 2.1
+   #define gl_WorldMatrix gl_TextureMatrix[7]
+   varying vec3 normal;
    void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-      n = gl_Normal * 0.5 + vec3(0.5, 0.5, 0.5);
-   }")
-(define fragment-shader "#version 120 // OpenGL 2.1
-   varying vec3 n;
+      gl_Position = gl_ModelViewProjectionMatrix * gl_WorldMatrix * gl_Vertex;
+      normal = gl_Normal * 0.5 + vec3(0.5, 0.5, 0.5);
+   }"
+"#version 120 // OpenGL 2.1
+   varying vec3 normal;
    void main() {
-      gl_FragColor = vec4(n, 1.0);
-   }")
+      gl_FragColor = vec4(normalize(normal), 1.0);
+   }"))
 
-(define po (gl:CreateProgram vertex-shader fragment-shader))
+;; let's find a sun
+(define sun (car (filter (lambda (light) (string-ci=? (light 'type) "SUN"))
+   (vector->list (scene 'Lights)))))
+(print "sun:" sun)
 
 ;; render buffer
 (import (OpenGL EXT framebuffer_object))
@@ -42,85 +45,64 @@
 (define texture '(0))
 (glGenTextures (length texture) texture)
 (print "texture: " texture)
+
+(define TEXW 1024)
+(define TEXH 1024)
+
 (glBindTexture GL_TEXTURE_2D (car texture))
-(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_REPEAT)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_REPEAT)
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
-(glTexImage2D GL_TEXTURE_2D 0 GL_RGBA 1024 1024 0 GL_RGBA GL_UNSIGNED_BYTE 0)
+(glTexImage2D GL_TEXTURE_2D 0 GL_RGBA TEXW TEXH 0 GL_RGBA GL_UNSIGNED_BYTE 0)
 (glBindTexture GL_TEXTURE_2D 0)
 
 (glBindFramebuffer GL_FRAMEBUFFER (car framebuffer))
 (glFramebufferTexture2D GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 GL_TEXTURE_2D (car texture) 0)
 
-; if we eant to have a depth buffer, then TODO:
+; we have to create depth buffer if we want to use a depth
 (define depthrenderbuffer '(0))
 (glGenRenderbuffers (length depthrenderbuffer) depthrenderbuffer)
 (glBindRenderbuffer GL_RENDERBUFFER (car depthrenderbuffer))
-(glRenderbufferStorage GL_RENDERBUFFER GL_DEPTH_COMPONENT 1024 1024)
+(glRenderbufferStorage GL_RENDERBUFFER GL_DEPTH_COMPONENT TEXW TEXH)
 (glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (car depthrenderbuffer))
 
-;; draw
-
-(import (lib math))
-(import (owl math fp))
-
-; настройки
+; init
 (glShadeModel GL_SMOOTH)
-(glClearColor 0.2 0.2 0.2 1)
-
 (glEnable GL_DEPTH_TEST)
-(glEnable GL_NORMALIZE)
-
-(glEnable GL_LIGHTING)
-(glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
-(glEnable GL_LIGHT0)
 
 ; draw
 (gl:set-renderer (lambda (mouse)
+   (glViewport 0 0 TEXW TEXH)
    (glBindFramebuffer GL_FRAMEBUFFER (car framebuffer))
-   (glViewport 0 0 1024 1024)
+
+   (glClearColor 0 0 0 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-   (glUseProgram po)
+   (glUseProgram normals)
 
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
-   (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 0.1 50.1)
+   (glOrtho -20 20 -20 20 -20 20)
+
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
-   (let*((ss ms (clock))
-         (x (* -17 (sin (+ ss (/ ms 1000)))))
-         (y (* -17 (cos (+ ss (/ ms 1000)))))
-         (z 15))
-      (gluLookAt x y z
-         0 0 -5
-         0 0 1))
-   ;; (gluLookAt -17 -17 15
-   ;;    0 0 -5
-   ;;    0 0 1)
+   (gluLookAt
+      (ref (sun 'position) 1) ; x
+      (ref (sun 'position) 2) ; y
+      (ref (sun 'position) 3) ; z
+      0 0 0 ; sun is directed light
+      0 0 1) ; up is 'z'
 
    ; set and show lighting point
-   (glDisable GL_LIGHTING)
-   (let*((ss ms (clock))
-         (x (- (* 7 (sin (+ ss (/ ms 1000)))) 3))
-         (y (- (* 7 (cos (+ ss (/ ms 1000)))) 3))
-         (z 5))
-      (glPointSize 5)
-      (glBegin GL_POINTS)
-      (glColor3f #xff/255 #xbf/255 0)
-      (glVertex3f x y z)
-      (glEnd)
-      
-      (glLightfv GL_LIGHT0 GL_POSITION (list x y z 1)))
-   (glEnable GL_LIGHTING)
-      
    (draw-geometry scene models)
 
    (glBindFramebuffer GL_FRAMEBUFFER 0)
    (glUseProgram 0)
-   (glDisable GL_LIGHTING)
 
    (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
+   (glClearColor 0 0 0 1)
+   (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
    (glMatrixMode GL_PROJECTION)
    (glLoadIdentity)
    (glMatrixMode GL_MODELVIEW)
@@ -129,8 +111,6 @@
 
    (glEnable GL_TEXTURE_2D)
    (glBindTexture GL_TEXTURE_2D (car texture))
-   (glClearColor 0 0 0 1)
-   (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glBegin GL_QUADS)
       (glColor3f 1 1 1)
