@@ -1728,8 +1728,10 @@ static
 word gc(heap_t *heap, int query, word regs)
 {
 	word *fp;
-	if (query == 0) // do the full gc?
+	if (query == -1) { // do the full gc?
+		query = 0;
 		heap->genstart = heap->begin; // reset generations
+	}
 
 	fp = heap->fp;
 	{
@@ -1751,17 +1753,22 @@ word gc(heap_t *heap, int query, word regs)
 
 		// todo: add diagnostic callback "if (heap->oncb) heap->oncb(heap, deltatime)"
 		#if DEBUG_GC
-		if (heap->genstart == heap->begin) {
+		static int tick = 0;
+		typedef long long int lld;
+		// show only full garbage collecting
+		if ((heap->genstart == heap->begin) || (tick++ > 999)) {
 			gctime += (1000 * clock()) / CLOCKS_PER_SEC;
 			struct tm tm = *localtime(&(time_t){time(NULL)});
 			char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
 			fprintf(stderr,
-					"%s, GC done in %d ms (use: %ld from %ld bytes - %ld%%): (%6d) / %lld objects.\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
-					buff/*asctime(&tm)*/, (int)gctime,
-					((regs - (word)heap->begin)),        (sizeof(word) * (heap->end - heap->begin)),
-					((regs - (word)heap->begin) * 100) / (sizeof(word) * (heap->end - heap->begin)),
-					(unsigned)((word) heap->end - regs), (long long int)marked
+					"[%s], %sGC done in %d ms, used %2ld%% (%ld from %ld words), %lld live %s objects.\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
+					buff/*asctime(&tm)*/,
+					heap->genstart == heap->begin ? "full " : "     ", (int)gctime,
+					((fp - (word*) heap->begin) * 100)/((heap->end - heap->begin)),
+					((fp - (word*) heap->begin)),      ((heap->end - heap->begin)),
+					(lld)marked, heap->genstart == heap->begin ? "total" : "young"
 				);
+			tick = 0;
 		}
 		#endif
 	}
@@ -2288,7 +2295,7 @@ apply:;
 		//	мы их складываем в память во временный объект.
 		if (fp >= heap->end) {
 			heap->fp = fp; ol->this = this;
-			heap->gc(ol, 1);
+			heap->gc(ol, 0);
 			fp = heap->fp; this = ol->this;
 
 			// temporary removed:
@@ -4611,7 +4618,7 @@ loop:;
 				dp = ip - (unsigned char*)this;
 
 				heap->fp = fp; ol->this = this;
-				heap->gc(ol, 0); // full gc
+				heap->gc(ol, -1); // full gc
 				fp = heap->fp; this = ol->this;
 
 				ip = (unsigned char*)this + dp;
