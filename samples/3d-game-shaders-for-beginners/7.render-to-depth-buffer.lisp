@@ -33,6 +33,19 @@
       // nothing to do
    }"))
 
+(define justdraw (gl:CreateProgram
+"#version 120 // OpenGL 2.1
+   void main() {
+      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+      gl_TexCoord[0] = gl_MultiTexCoord0;
+   }"
+"#version 120 // OpenGL 2.1
+   uniform sampler2D shadowMap;
+   void main() {
+      gl_FragColor = texture2D(shadowMap, gl_TexCoord[0].st);
+   }"))
+
+
 (define aprogram (gl:CreateProgram
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
@@ -125,7 +138,7 @@
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glUseProgram aprogram)
-   (glEnable GL_CULL_FACE)
+   ;(glEnable GL_CULL_FACE)
 
    (if #T
    then
@@ -166,7 +179,7 @@
 
    else
       (glBindFramebuffer GL_FRAMEBUFFER 0)
-      (glUseProgram 0)
+      (glUseProgram justdraw)
 
       (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
       (glClearColor 0 0 0 1)

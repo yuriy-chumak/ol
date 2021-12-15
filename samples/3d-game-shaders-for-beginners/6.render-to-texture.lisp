@@ -30,6 +30,19 @@
       gl_FragColor = vec4(normalize(normal), 1.0);
    }"))
 
+(define justdraw (gl:CreateProgram
+"#version 120 // OpenGL 2.1
+   void main() {
+      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+      gl_TexCoord[0] = gl_MultiTexCoord0;
+   }"
+"#version 120 // OpenGL 2.1
+   uniform sampler2D tex0;
+   void main() {
+      gl_FragColor = texture2D(tex0, gl_TexCoord[0].st);
+   }"))
+
+
 ;; let's find a sun
 (define sun (car (filter (lambda (light) (string-ci=? (light 'type) "SUN"))
    (vector->list (scene 'Lights)))))
@@ -97,7 +110,7 @@
    (draw-geometry scene models)
 
    (glBindFramebuffer GL_FRAMEBUFFER 0)
-   (glUseProgram 0)
+   (glUseProgram justdraw)
 
    (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
    (glClearColor 0 0 0 1)
@@ -110,6 +123,7 @@
    (glOrtho 0 1 0 1 0 1)
 
    (glEnable GL_TEXTURE_2D)
+   (glActiveTexture GL_TEXTURE0)
    (glBindTexture GL_TEXTURE_2D (car texture))
 
    (glBegin GL_QUADS)
