@@ -422,6 +422,13 @@
          (setq ChoosePixelFormat(gdi32  fft-int "ChoosePixelFormat" fft-void* fft-void*))
          (setq SetPixelFormat   (gdi32  fft-int "SetPixelFormat" fft-void* fft-int fft-void*))
 
+         (setq SetWindowLong    (user32 fft-void* "SetWindowLongW" fft-void* fft-int type-callable))
+         (setq GetWindowLongPtr (user32 fft-void* "GetWindowLongPtrW" fft-void* fft-int))
+         (setq SetWindowLongPtr (user32 fft-void* "SetWindowLongPtrW" fft-void* fft-int type-callable))
+         (setq DefWindowProc    (user32 fft-long "DefWindowProcW" fft-void* fft-unsigned-int fft-void* fft-void*))
+
+         (setq GetWindowRect    (user32 fft-int "GetWindowRect"    fft-void* (fft& fft-int)))
+
          (define (native:create-context title)
             (let*((window (CreateWindowEx
                      #x00040100 "#32770" title ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
@@ -451,6 +458,26 @@
                         )))
                   (hDC (GetDC window))
                   (PixelFormat (ChoosePixelFormat hDC pfd)))
+
+               ; we need to capture WM_SIZE messages to be processed by opengl coroutine
+               (define OldProc (GetWindowLongPtr window -4))
+               (define WndProc (vm:pin (cons
+                     (cons fft-long (list fft-void* fft-unsigned-int fft-void* fft-void*))
+                     (lambda (hWnd Msg wParam lParam)
+                        (case Msg
+                           (5 ;WM_SIZE
+                              (define rect '(0 0 0 0))
+                              (GetWindowRect hWnd rect)
+                              (mail 'opengl ['resize (lref rect 2) (lref rect 3)]))
+                           (else
+                              #false)) ; nothing
+                        ; pass trough to the original handler
+                        (ffi OldProc
+                           (cons fft-void* (list fft-void* fft-unsigned-int fft-void* fft-void*))
+                           (list hWnd Msg wParam lParam))))))
+;                        (DefWindowProc hWnd Msg wParam lParam)))))
+
+               (SetWindowLongPtr window -4 (make-callback WndProc))
 
                (SetPixelFormat hDC PixelFormat pfd)
                (let ((hRC (gl:CreateContext hDC)))
@@ -483,16 +510,19 @@
             (let loop ()
                (if (= 1 (PeekMessage MSG #f 0 0 1))
                   (let*((w (size nullptr))
-                        (message (+ (<< (ref MSG (+ 0 (* w 1)))  0)      ; 4 for x32
-                                    (<< (ref MSG (+ 1 (* w 1)))  8)
-                                    (<< (ref MSG (+ 2 (* w 1))) 16)
-                                    (<< (ref MSG (+ 3 (* w 1))) 24))))
-                     ;(print message ": " MSG)
+                        (message (bytevector->int32 MSG w)))      ; 4 for x32
+                     ;(print message ": " message)
                      (cond
                         ((and (eq? message 273) ; WM_COMMAND
                               (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
-                                    (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam, IDCANCEL
+                                      (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam, IDCANCEL
                            (handler ['quit])) ; EXIT
+                        ;; ((eq? message 15) ; WM_PAINT
+                        ;;    (define rect '(0 0 0 0))
+                        ;;    (define window (bytevector->void* MSG 0))
+                        ;;    (GetWindowRect window rect))
+                           ;(print "WM_PAINT: " rect)
+
                         ;; ((and (eq? message 256) ; WM_KEYDOWN
                         ;;       (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
                         ;;               (<< (ref MSG (+ 1 (* w 2))) 8)) #x51)) ; Q key
@@ -510,7 +540,6 @@
                (SetWindowText window title)))
 
          ; ---
-         (setq GetWindowRect (user32 fft-int "MoveWindow" fft-void* (fft& fft-int)))
          (setq MoveWindow (user32 fft-int "MoveWindow" fft-void* fft-int fft-int fft-int fft-int fft-int))
 
          (define (gl:SetWindowSize context width height)
@@ -645,6 +674,17 @@
                            (resize-handler (ref STATE 3) (ref STATE 4)))
                         (this (put dictionary 'resize-handler resize-handler)))
 
+                     ; events
+                     (['resize width height]
+                        (set-ref! STATE 1 0) ; save current window dimensions
+                        (set-ref! STATE 2 0)
+                        (set-ref! STATE 3 width)
+                        (set-ref! STATE 4 height)
+
+                        (let ((resize-handler (get dictionary 'resize-handler #f)))
+                           (if resize-handler (resize-handler width height)))
+                        (this dictionary))
+
                      (else
                         (print-to stderr "Unknown opengl server command " msg)
                         (this dictionary))))))
@@ -660,22 +700,13 @@
                               ((get dictionary 'keyboard-handler (lambda (key) #f)) key))
                            (['mouse button x y]
                               ((get dictionary 'mouse-handler (lambda (b x y) #f)) button x y))
-                           (['resize width height]
-                              (set-ref! STATE 1 0) ; save current window dimensions
-                              (set-ref! STATE 2 0)
-                              (set-ref! STATE 3 width)
-                              (set-ref! STATE 4 height)
-
-                              (let ((resize-handler (get dictionary 'resize-handler #f)))
-                                 (if resize-handler (resize-handler width height))))
+                           (['resize width height] ; post resize event
+                              (mail 'opengl ['resize width height]))
                            (else
                               (print "unknown event: " event)))))))
                ; проделаем все действия
                (let ((renderer (get dictionary 'renderer #f)))
                   (if renderer (begin
-                     ;; (print "renderer: " renderer)
-                     ;; (print "context: " (get dictionary 'context #f))
-                     ;; (print "mouse: " (gl:GetMousePos (ref (get dictionary 'context #f) 3)))
                      (renderer (gl:GetMousePos (get dictionary 'context #f)))
                      (gl:SwapBuffers (get dictionary 'context #f)))))
                ;; (let*((dictionary
