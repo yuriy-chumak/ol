@@ -11,10 +11,9 @@
 
 ;--------------------------------
 ; General
-
-; General
   !include LogicLib.nsh
-  !in
+  !include x64.nsh
+
   ;Name and file
   Name "Otus Lisp 2.2"
   OutFile "ol-2.2.setup.exe"
@@ -68,13 +67,12 @@
 Section "Otus Lisp" SecOL
 
   SetOutPath "$INSTDIR"
-er Sections
-
-Section "Otus Lisp" SecOL
-
-  SetOutPath "$INSTDIR"
   ${If} ${RunningX64}
-    File /oname=ol.
+    File /oname=ol.exe "ol64.exe"
+  ${Else}
+    File /oname=ol.exe "ol32.exe"
+  ${EndIf}
+
   SetOutPath "$INSTDIR\lang"
   File /r lang\*.scm
   SetOutPath "$INSTDIR\libraries"

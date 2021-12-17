@@ -30,14 +30,13 @@ ol: extensions/ffi.c
 ol: tmp/repl.c
 
 # win/wine
-ol.exe: src/olvm.c
-ol.exe: extensions/ffi.c
-ol.exe: tmp/repl.c
+ol%.exe: src/olvm.c
+ol%.exe: extensions/ffi.c
+ol%.exe: tmp/repl.c
 
 # sources
 extensions/ffi.c: CFLAGS += -Iincludes
 
-# 
 extensions/ffi.c: includes/ol/vm.h
 includes/ol/vm.h: src/olvm.c
 	sed -n '/__OLVM_C__/q;p' $^ >$@
@@ -52,6 +51,8 @@ tmp/repl.c: repl
 #	   -e 's/^/unsigned char repl[] = {/' \
 #	   -e 's/$$/};/'> $@
 
+ol32.exe: CC=i686-w64-mingw32-gcc
+ol64.exe: CC=x86_64-w64-mingw32-gcc
 
 ## 'configure' part:
 # check the library and/or function
@@ -301,19 +302,13 @@ olvm.wasm: src/olvm.c tmp/repl.c
 	   -s FORCE_FILESYSTEM=0 \
 	   -s WASM=1
 
-# You can debug ol using "winedbg --gdb ol.exe"
+# You can debug ol.exe using "winedbg --gdb ol.exe"
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
-ol32.exe: CC=i686-w64-mingw32-gcc
-ol32.exe: ol.exe
-
-ol64.exe: CC=x86_64-w64-mingw32-gcc
-ol64.exe: ol.exe
-
-ol.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
-ol.exe: MINGWCFLAGS += -DHAS_DLOPEN=1
-ol.exe: MINGWCFLAGS += -DHAS_SOCKES=1
-ol.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
-ol.exe: src/olvm.c extensions/ffi.c tmp/repl.c
+%.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
+%.exe: MINGWCFLAGS += -DHAS_DLOPEN=1
+%.exe: MINGWCFLAGS += -DHAS_SOCKES=1
+%.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
+%.exe: src/olvm.c extensions/ffi.c tmp/repl.c
 	$(CC) src/olvm.c tmp/repl.c -o $@ \
 	   -DREPL=repl -DOLVM_FFI=1 \
 	   -Iincludes -Iincludes/win32 extensions/ffi.c \
