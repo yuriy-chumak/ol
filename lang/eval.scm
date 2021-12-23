@@ -453,7 +453,7 @@
                         ;(20 ())
 
                         (11 (DIS 4 "JAF" src out))
-                        ;(12 (DIS 3 "JAFX"))
+                        (12 (DIS 4 "JAFX" src out))
                         (14 (DIS 3 "LD" src out))
                         (24 (DIS 2 "RET" src out))
 
@@ -463,7 +463,7 @@
                         (205 (DIS 2 "LDF" src out))
 
                         (1  (DIS 4 "REFI" src out))
-                        (5  (DIS 4 "MOV2" src out))
+                        (5  (DIS 5 "MOV2" src out))
                         (9  (DIS 3 "MOVE" src out))
 
                         (38 (DIS 5 "ADDITION" src out))
