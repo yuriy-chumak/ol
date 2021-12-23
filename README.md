@@ -186,6 +186,10 @@ R<sup>7</sup>RS DIFFERENCES
   * NEGATIVE indices of a vector is **valid** in Ol, but *invalid* in Scheme.
     - note: Negative vector indices can be used to access the n-th element from the end of the vector. This means that "-1" is the last element of the vector, "-2" is before the last element, "-n" is the n-th element from the end of the vector.
 
+* 6.10. Control features
+  * `apply` arguments count is **limited to 256** in Ol, but *unlimited* in Scheme.
+    - note: Use `fold` instead, like `(apply + '(1 2 3))` -> `(fold + 0 '(1 2 3))`.
+
 * 6.11. Exceptions
   * **No** exceptions handling in Ol.
     - note: Yet.
