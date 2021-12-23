@@ -67,6 +67,7 @@ Table of Contents
 1. [R<sup>7</sup>RS Differences](#r7rs-differences)
 1. [Deprecations](#deprecations)
 1. [Build](#build)
+1. [Debugging](#debugging)
 1. [Samples](#samples)
 1. [Customization](#customization)
 1. [Running](#running)
@@ -311,6 +312,38 @@ to machine /bin.
 Now you cat execute ol under webos command line or other way you
 would like.
 
+
+DEBUGGING
+---------
+
+Ol contains builin tools for inspect the Otus Lisp language.
+
+You can use the REPL ",expand" command to expand high-level Ol instructions into low-level (core) Otus Lisp.
+```scheme
+> ,expand (assert (+ 1 2) = 3)
+(ifeq (equal? ((lambda (g1) g1) (+ 1 2)) 3) #true #true (runtime-error assertion error: (cons (quote (+ 1 2)) (cons must be (cons (quote 3) ())))))
+```
+
+You can use the REPL ",disassembly" (or ",dis", or ",d") command to disassemble Otus Lisp functions in the Ol virtual machine instructions.
+```scheme
+> ,dis (lambda () 1)
+type: bytecode
+code: (11 1 0 5 14 1 4 24 4 17)
+disassembly `(length command args)`:
+(4 JAF 1 0 5)
+(3 LD 1 4)
+(2 RET 4)
+(1 ARITY-ERROR)
+
+> ,dis (lambda (x y) (+ x y))
+type: procedure
+code: (11 3 0 7 1 1 2 6 2 6 3 17)
+disassembly `(length command args)`:
+(4 JAF 3 0 7)
+(4 REFI 1 2 6)
+(3 GOTO 6 3)
+(1 ARITY-ERROR)
+```
 
 SAMPLES
 -------
