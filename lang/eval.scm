@@ -48,6 +48,7 @@
       (owl parse) (lang sexp)
       (owl string)
       (scheme misc)
+      (scheme bytevector)
       (owl lazy)
       (lang macro)
       (lang intern)
@@ -401,6 +402,83 @@
                (thing->rex (symbol->string thing)))
             (else #false)))
 
+      (define (disassembly func)
+         (define output
+            (case (type func)
+               (type-bytecode ; 16, direct bytecode - (lambda (x y) (cons x y))
+                  {
+                     'type 'bytecode ; (bytecode ...)
+                     'source func
+                     'code (bytevector->list func)
+                  })
+               (type-procedure ; 17, bytecode with external dependency - (lambda (x y) (+ x y))
+                  {
+                     'type 'procedure ; (ref bytecode, ref external1, ref external2, ref external3, ...)
+                     'source func
+                     'code (bytevector->list (ref func 1))
+                  })
+               (type-closure ; 18, (define (make x) (lambda (y) (+ x y))), (make 7) is a closure
+                  {
+                     'type 'closure
+                     'source func
+                     'code (bytevector->list (ref (ref func 1) 1))
+                  })))
+         (if output
+            (put output 'disassembly
+               (let loop ((src (output 'code #null)) (out #null))
+                  (define (DIS len name src out)
+                     (loop (drop src len)
+                           (cons
+                              (append (list len name) (cdr (take src len)))
+                              out)))
+
+                  (if (null? src)
+                     (reverse out)
+                  else
+                     (case (car src)
+                        (0  (DIS 1 "ERROR" src out))
+                        (48 (DIS 1 "INVALID" src out))
+                        (62 (DIS 1 "INVALID" src out))
+
+                        (17 (DIS 1 "ARITY-ERROR" src out))
+                        (21 (DIS 1 "NOP" src out))
+
+                        (51 (DIS 4 "CONS" src out))
+
+                        (2  (DIS 3 "GOTO" src out))
+                        ;; (3  (DIS 1 "OCLOSE(TCLOS)" src out))
+                        ;; (4  (DIS 1 "OCLOSE(TPROC)" src out))
+                        ;; (6  (DIS 1 "CLOSE1(TCLOS)" src out))
+                        ;; (7  (DIS 1 "CLOSE1(TPROC)" src out))
+                        ;(20 ())
+
+                        (11 (DIS 4 "JAF" src out))
+                        ;(12 (DIS 3 "JAFX"))
+                        (14 (DIS 3 "LD" src out))
+                        (24 (DIS 2 "RET" src out))
+
+                        ( 13 (DIS 2 "LDI" src out))
+                        ( 77 (DIS 2 "LDN" src out))
+                        (141 (DIS 2 "LDT" src out))
+                        (205 (DIS 2 "LDF" src out))
+
+                        (1  (DIS 4 "REFI" src out))
+                        (5  (DIS 4 "MOV2" src out))
+                        (9  (DIS 3 "MOVE" src out))
+
+                        (38 (DIS 5 "ADDITION" src out))
+                        (40 (DIS 5 "SUBTRACTION" src out))
+                        (26 (DIS 5 "DIVISION" src out))
+                        (39 (DIS 5 "MULTIPLICATION" src out))
+                        (55 (DIS 4 "AND" src out))
+                        (56 (DIS 4 "IOR" src out))
+                        (57 (DIS 4 "XOR" src out))
+
+                        (else
+                           (loop (cdr src)
+                                 (cons (car src) out)))))))))
+
+
       (define repl-ops-help
 "Commands:
    ,help             - show this
@@ -408,6 +486,7 @@
    ,expand <expr>    - expand macros in the expression
    ,find [regex|sym] - list all defined words matching regex or m/<sym>/
    ,libraries        - show all currently loaded libraries
+   ,disassembly func - show disassembled function binary code
    ,load <path.scm>  - (re)load a file
    ,save <path.bin>  - save current state, restart with $ ol <path.bin>
    ,quit             - exit owl")
@@ -494,6 +573,29 @@
                (prompt env
                   (map car (env-get env '*libraries* null)))
                (repl env in))
+            ((disassembly dis d)
+               (let*((op in (uncons in #false))
+                     (func (evaluate op env)))
+                  (case func
+                     (['ok value env]
+                        (if (function? value)
+                        then
+                           (define dis (disassembly value))
+                           (if dis
+                           then
+                              (print "type: " (dis 'type))
+                              (print "code: " (dis 'code))
+                              (print "disassembly `(length command args)`:")
+                              (for-each print (dis 'disassembly))
+                           else
+                              (print "can't disassembly " op))
+                        else
+                           (print op " is not function")))
+                     (['fail reason]
+                        (print reason))
+                     (else
+                        (print "Disassembly failed: " op)))
+                  (repl env in)))
             ((expand)
                (let*((exp in (uncons in #false)))
                   (case (macro-expand exp env)
