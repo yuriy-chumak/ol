@@ -2372,6 +2372,10 @@ mainloop:;
 	#	define JAF   11
 	#	define JAFX  12
 	#	define LDI   13      // LDE (13), LDN (77), LDT (141), LDF (205)
+	#	  define LDE (LDI + 0*64)
+	#	  define LDN (LDI + 1*64)
+	#	  define LDT (LDI + 2*64)
+	#	  define LDF (LDI + 3*64)
 	#	define LD    14
 
 	#	define REFI   1      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
@@ -2677,7 +2681,7 @@ loop:;
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
 	case LD: // (5%)
-		A1 = I(ip[0]); // R[ip[1]]
+		A1 = I(ip[0]); // I(ip[0]) -> R[ip[1]]
 		ip += 2; break;
 
 
