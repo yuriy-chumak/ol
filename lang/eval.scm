@@ -454,10 +454,11 @@
                         (11 (DIS 4 "JAF"))
                         (12 (DIS 4 "JAFX"))
 
-                        (3  (DIS (+ (cadr src) 3) "CLOS0"))
-                        (4  (DIS (+ (cadr src) 3) "CLOC0"))
+                        (3  (DIS (+ (cadr src) 3) "CLOS0(deprecated)"))
+                        (4  (DIS (+ (cadr src) 3) "CLOC0(deprecated)"))
                         (6  (DIS (+ (cadr src) 3) "CLOS1(deprecated)"))
                         (7  (DIS (+ (cadr src) 3) "CLOC1(deprecated)"))
+                        (48 (DIS (+ (cadr src) 4) "CLOS"))
 
                         (54 (DIS 4 "EQQ"))
                         (44 (DIS 4 "LESSQ"))

@@ -2355,6 +2355,7 @@ mainloop:;
 
 	// безусловный переход
 	#	define GOTO   2       // jmp a, nargs
+	#	define CLOS  48       // todo: move to 3
 
 	// управляющие команды
 	#	define NOP   21
@@ -2540,7 +2541,7 @@ loop:;
 	 * 
 	 * Throws "Invalid opcode" error.
 	 */
-	case 48:
+//	case 48:
 	case 62:
 		FAIL(op, new_string("Invalid opcode"), ITRUE);
 		break;
@@ -2756,7 +2757,7 @@ loop:;
 		ip += 3; break;
 	}
 
-	// todo: check this! I'm not sure about new (proctype, size)
+	// DEPRECATED >
 	#define OCLOSE(proctype)            { \
 		word size = *ip++, tmp; word *T = new (proctype, size-1); \
 		tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
@@ -2768,8 +2769,24 @@ loop:;
 
 	case 3: OCLOSE(TCLOS); break; //continue; (2%)
 	case 4: OCLOSE(TPROC); break; //continue; (1%)
-	case 6: CLOSE1(TCLOS); break; // DEPRECATED! // TODO: remove
-	case 7: CLOSE1(TPROC); break; // DEPRECATED! // TODO: remove
+	case 6: CLOSE1(TCLOS); break; //continue; (2%)
+	case 7: CLOSE1(TPROC); break; //continue; (1%)
+	// < DEPRECATED
+
+	case CLOS:
+	{	// CLOS type size r i a1 a2 a3 a4 ...
+		word type = *ip++;
+		word size = *ip++;
+		word *T = new (type, size-1);
+
+		word vec = R[*ip++];
+		T[1] = ((word *) vec)[*ip++]; // (ref R[r] i)
+
+		for (size_t i = 2; i < size; )
+			T[i++] = R[*ip++];
+		R[*ip++] = (word) T; // R[ret] = T
+		break;
+	}
 
 	// others: 1,2,3 %%)
 

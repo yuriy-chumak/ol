@@ -22,7 +22,7 @@
       ; low level (assembly) commands
       GOTO RET ARITY-ERROR  ; used by (lang assemply) etc.
       JEQ JZ JE JN JF JAF JAFX
-      CLOS0 CLOC0 CLOS1 CLOC1
+      CLOS
       LD LDE LDN LDT LDF
       MOVE REFI MOVE2
 
@@ -115,11 +115,8 @@
       (setq LDT 141)  ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
       (setq LDF 205)  ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
 
-      ;
-      (setq CLOS0 3) ; clos lp, o, nenv, e0 ... en, t:
-      (setq CLOC0 4) ; cloc lp, o, nenv, e0 ... en, t:
-      (setq CLOS1 6)
-      (setq CLOC1 7)
+      ; procedure/closure support
+      (setq CLOS 48) ; clos type, size, o, nenv, e0 ... en, t:
 
       ; conditional jumps
       (setq JEQ   8)  ; jeq a b o1 o2

@@ -180,17 +180,17 @@
                         (fail (list "Bad opcode arity for " (primop-name op) (length args) (length to)))))
                   (else
                      (fail (list "Bad case of primop in assemble: " (primop-name op))))))
-            ;; fixme: closures should have just one RTL node instead of separate ones for clos-proc and clos-code
+
             (['cons-close closure? lpos offset env to more]
-               ;; make a 2-level closure
-               (cons (if closure? CLOS0 CLOC0)
-                  (cons (+ 2 (length env))
-                     ;; size of object (hdr code e0 ... en)
-                     (cons (reg lpos)
-                        (cons offset
-                           (append (map reg env)
-                              (cons (reg to)
-                                 (assemble more fail))))))))
+               ; make a 2-level closure
+               (cons* CLOS
+                  (if closure? type-closure type-procedure) ;; type of object
+                  (+ 2 (length env)) ;; size of object (hdr code e0 ... en)
+                  (reg lpos) offset  ;; env (reg, index)
+                  (append (map reg env) ;; e0 ... en
+                     (cons (reg to)
+                           (assemble more fail)))))
+
             (['ld val to cont]
                (cond
                   ;; todo: add implicit load values to free bits of the instruction
