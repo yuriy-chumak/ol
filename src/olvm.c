@@ -2768,8 +2768,8 @@ loop:;
 
 	case 3: OCLOSE(TCLOS); break; //continue; (2%)
 	case 4: OCLOSE(TPROC); break; //continue; (1%)
-	case 6: CLOSE1(TCLOS); break; //continue; (2%)
-	case 7: CLOSE1(TPROC); break; //continue; (1%)
+	case 6: CLOSE1(TCLOS); break; // DEPRECATED! // TODO: remove
+	case 7: CLOSE1(TPROC); break; // DEPRECATED! // TODO: remove
 
 	// others: 1,2,3 %%)
 
