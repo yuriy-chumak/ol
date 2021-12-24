@@ -426,7 +426,7 @@
          (if output
             (put output 'disassembly
                (let loop ((src (output 'code #null)) (out #null))
-                  (define (DIS len name src out)
+                  (define (DIS len name)
                      (loop (drop src len)
                            (cons
                               (append (list len name) (cdr (take src len)))
@@ -436,43 +436,75 @@
                      (reverse out)
                   else
                      (case (car src)
-                        (0  (DIS 1 "ERROR" src out))
-                        (48 (DIS 1 "INVALID" src out))
-                        (62 (DIS 1 "INVALID" src out))
+                        (0  (DIS 1 "ERROR"))
+                        (48 (DIS 1 "INVALID"))
+                        (62 (DIS 1 "INVALID"))
 
-                        (17 (DIS 1 "ARITY-ERROR" src out))
-                        (21 (DIS 1 "NOP" src out))
+                        (21 (DIS 1 "NOP"))
+                        (17 (DIS 1 "ARITY-ERROR"))
+                        (24 (DIS 2 "RET"))
 
-                        (51 (DIS 4 "CONS" src out))
+                        (51 (DIS 4 "CONS"))
+                        (15 (DIS 3 "TYPE"))
+                        (36 (DIS 3 "SIZE"))
 
-                        (2  (DIS 3 "GOTO" src out))
-                        ;; (3  (DIS 1 "OCLOSE(TCLOS)" src out))
-                        ;; (4  (DIS 1 "OCLOSE(TPROC)" src out))
-                        ;; (6  (DIS 1 "CLOSE1(TCLOS)" src out))
-                        ;; (7  (DIS 1 "CLOSE1(TPROC)" src out))
-                        ;(20 ())
+                        (2  (DIS 3 "GOTO"))
+                        (8  (DIS 5 "JEQ"))
+                        (16 (DIS 4 "JP"))
+                        (11 (DIS 4 "JAF"))
+                        (12 (DIS 4 "JAFX"))
 
-                        (11 (DIS 4 "JAF" src out))
-                        (12 (DIS 4 "JAFX" src out))
-                        (14 (DIS 3 "LD" src out))
-                        (24 (DIS 2 "RET" src out))
+                        (3  (DIS (+ (cadr src) 3) "OCLOSE(TCLOS)"))
+                        (4  (DIS (+ (cadr src) 3) "OCLOSE(TPROC)"))
+                        (6  (DIS (+ (cadr src) 3) "CLOSE1(TCLOS)"))
+                        (7  (DIS (+ (cadr src) 3) "CLOSE1(TPROC)"))
 
-                        ( 13 (DIS 2 "LDI" src out))
-                        ( 77 (DIS 2 "LDN" src out))
-                        (141 (DIS 2 "LDT" src out))
-                        (205 (DIS 2 "LDF" src out))
+                        (54 (DIS 4 "EQQ"))
+                        (44 (DIS 4 "LESSQ"))
 
-                        (1  (DIS 4 "REFI" src out))
-                        (5  (DIS 5 "MOV2" src out))
-                        (9  (DIS 3 "MOVE" src out))
+                        (14 (DIS 3 "LD"))
 
-                        (38 (DIS 5 "ADDITION" src out))
-                        (40 (DIS 5 "SUBTRACTION" src out))
-                        (26 (DIS 5 "DIVISION" src out))
-                        (39 (DIS 5 "MULTIPLICATION" src out))
-                        (55 (DIS 4 "AND" src out))
-                        (56 (DIS 4 "IOR" src out))
-                        (57 (DIS 4 "XOR" src out))
+                        (13  (DIS 2 "LDI"))
+                        (77  (DIS 2 "LDN"))
+                        (141 (DIS 2 "LDT"))
+                        (205 (DIS 2 "LDF"))
+
+                        (52 (DIS 3 "CAR"))
+                        (53 (DIS 3 "CDR"))
+                        (47 (DIS 4 "REF"))
+
+                        (1  (DIS 4 "REFI"))
+                        (9  (DIS 3 "MOVE"))
+                        (5  (DIS 5 "MOV2"))
+
+                        (22 (DIS 4 "VMCAST"))
+                        (43 (DIS 7 "VMSETE"))
+                        (45 (DIS 5 "SETREF"))
+                        (10 (DIS 5 "SETREFE"))
+
+                        (23 (DIS (+ (caddr src) 5) "VMNEW"))
+                        (18 (DIS (+ (cadr src) 3) "VMMAKE"))
+                        (19 (DIS (+ (cadr src) 3) "VMMAKEB"))
+
+                        (38 (DIS 5 "ADDITION"))
+                        (40 (DIS 5 "SUBTRACTION"))
+                        (26 (DIS 5 "DIVISION"))
+                        (39 (DIS 5 "MULTIPLICATION"))
+
+                        (55 (DIS 4 "AND"))
+                        (56 (DIS 4 "IOR"))
+                        (57 (DIS 4 "XOR"))
+                        (58 (DIS 5 "SHIFT_RIGHT"))
+                        (59 (DIS 5 "SHIFT_LEFT"))
+
+                        (49 (DIS 6 "FFAPPLY"))
+                        (42 (DIS 6 "FFLEAF"))
+                        (46 (DIS 3 "FFTOGGLE"))
+                        (41 (DIS 3 "FFREDQ"))
+
+                        (61 (DIS 3 "CLOCK"))
+
+                        (63 (DIS (+ (cadr src) 3) "SYSCALL"))
 
                         (else
                            (loop (cdr src)
