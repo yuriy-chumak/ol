@@ -268,7 +268,7 @@
          (call/cc (lambda (return)
             (let loop ((kvs (ff-iter env)))
                (cond
-                  ((null? kvs) (return "#<function>"))
+                  ((null? kvs) (return "lambda"))
                   ((pair? kvs)
                      (let ((k (caar kvs))
                            (v (cdar kvs)))
@@ -288,6 +288,8 @@
                (string-append "#<" (function->name env l) ">"))
             ((list? l)
                (map (lambda (r) (if (not (function? r)) r (decode-value env r))) l))
+            ((vector? l)
+               (vector-map (lambda (r) (if (not (function? r)) r (decode-value env r))) l))
             (else l)))
 
       ;; render the value if isatty?, and print as such (or not at all) if it is a repl-message
@@ -408,24 +410,35 @@
                (type-bytecode ; 16, direct bytecode - (lambda (x y) (cons x y))
                   {
                      'type 'bytecode ; (bytecode ...)
-                     'source func
                      'code (bytevector->list func)
+                     'bytecode (bytevector->list func)
                   })
                (type-procedure ; 17, bytecode with external dependency - (lambda (x y) (+ x y))
+                  (define procedure func)
+                  (define bytecode (ref procedure 1))
                   {
                      'type 'procedure ; (ref bytecode, ref external1, ref external2, ref external3, ...)
-                     'source func
-                     'code (bytevector->list (ref func 1))
+                     'code (list->vector (cons
+                              (bytevector->list bytecode)
+                              (cdr (vector->list (vm:cast procedure type-vector)))))
+                     'bytecode (bytevector->list bytecode)
                   })
                (type-closure ; 18, (define (make x) (lambda (y) (+ x y))), (make 7) is a closure
+                  (define closure func)
+                  (define procedure (ref closure 1))
+                  (define bytecode (ref procedure 1))
                   {
                      'type 'closure
-                     'source func
-                     'code (bytevector->list (ref (ref func 1) 1))
+                     'code (list->vector (cons
+                              (list->vector (cons
+                                 (bytevector->list bytecode)
+                                 (cdr (vector->list (vm:cast procedure type-vector)))))
+                              (cdr (vector->list closure))))
+                     'bytecode (bytevector->list bytecode)
                   })))
          (if output
             (put output 'disassembly
-               (let loop ((src (output 'code #null)) (out #null))
+               (let loop ((src (output 'bytecode #null)) (out #null))
                   (define (DIS len name)
                      (loop (drop src len)
                            (cons
@@ -616,8 +629,8 @@
                            (if dis
                            then
                               (print "type: " (dis 'type))
-                              (print "code: " (dis 'code))
-                              (print "disassembly `(length command args)`:")
+                              (print "code: " (decode-value env (dis 'code)))
+                              (print "disassembly '(length command . args):")
                               (for-each print (dis 'disassembly))
                            else
                               (print "can't disassembly " op))
