@@ -2381,7 +2381,7 @@ mainloop:;
 
 	#	define REFI   1      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
 	#	define MOVE   9      //
-	#	define MOV2   5      //
+	#	define MOV2   5      // optimization for MOVE + MOVE
 
 	#	define JEQ    8      // jeq
 	#	define JP    16      // JZ (16), JN (80), JT (144), JF (208)

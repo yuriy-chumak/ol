@@ -1273,11 +1273,12 @@
                (cons a (list . b)))))
 
       ; question:
-      ;  why macro, not a function?
+      ;  why list is a macro, not a procedure?
       ; answer:
       ;  the function unwraps to LD/LD/LD/LD/LD/MOV2/MOV2/MOV2/GOTO/JAFX 
       ;  sequnce, but macro unwraps to LD/CONS/LD/CONS/LD/CONS.
-      ;  So, we have a good speedup yeah?
+      ;  So, we have a good speedup, yeah?
+
 
       ; procedure:  (length list)
       ;  olvm notes: always returning fixnum, so can be checked by eq?, not only =
