@@ -437,7 +437,6 @@
                   else
                      (case (car src)
                         (0  (DIS 1 "ERROR"))
-                        (48 (DIS 1 "INVALID"))
                         (62 (DIS 1 "INVALID"))
 
                         (21 (DIS 1 "NOP"))
@@ -458,7 +457,7 @@
                         (4  (DIS (+ (cadr src) 3) "CLOC0(deprecated)"))
                         (6  (DIS (+ (cadr src) 3) "CLOS1(deprecated)"))
                         (7  (DIS (+ (cadr src) 3) "CLOC1(deprecated)"))
-                        (48 (DIS (+ (cadr src) 4) "CLOS"))
+                        (48 (DIS (+ (caddr src) 4) "CLOS"))
 
                         (54 (DIS 4 "EQQ"))
                         (44 (DIS 4 "LESSQ"))

@@ -2687,7 +2687,7 @@ loop:;
 
 
 	/*! ##### REFI a p t
-	 * Rt = Ra[p], p is unsinged
+	 * Rt = (ref R[a] R[p]), p is unsinged
 	 */
 	case REFI: { // (24%)
 		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
