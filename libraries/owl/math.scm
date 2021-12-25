@@ -112,21 +112,11 @@
       (setq *big-zero* (cons 0 #null))
 
       ;
-      (define (copy! to from)  ; * internal helper
-         (define start 0)
-         (define end (size to))
-         (let loop ((p start))
-            (when (less? p end)
-               (set-ref! to p (ref from p))
-               (loop (++ p)))))
-
       ; создадим библиотечный конструктор (экспериментальная фича)
       (define math-constructor!
          (vm:new 63 (lambda (args)
-
                ; (platform-dependent floating point constants)
-               (copy! +nan.0 (fsqrt -1))
-
+               (vm:set! +nan.0 0 (fsqrt -1) 0 (size +nan.0))
             #T)))
       (math-constructor! "let's recalculate basic math constants")
 

@@ -3044,7 +3044,7 @@ loop:;
 		ip += 3; break;
 	}
 
-	// (vm:set! to at from start end). only binary object
+	// todo: reference objects (with check for 'less?')
 	// * experimental feature, do not use!
 	case VMSETE: {
 		char *p = (char *)A0;
@@ -5040,7 +5040,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			return 0;
 		}
 		// если мы декодировали конструктор, надо его добавить в цепочку
-		if (type == 63) // special case: constructor
+		if (type == TCONSTRUCTOR) // special case: constructor
 			constructor = new_pair(ptrs[id], constructor);
 	}
 	// return construction list

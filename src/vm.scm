@@ -148,9 +148,9 @@
       ; note: uncomment 'make-bytecode' if you want to change a primop bytecode
       (setq *primops* (list
          ; прямые аллокаторы
-         (primop 'vm:new   'any 1 (make-bytecode '(23 0 0 0 0))) ;; make new object, simplest and fastest allocator
-         (primop 'vm:make  'any 1 (make-bytecode '(18 0 0))) ;; make object, slower but smarter allocator
-         (primop 'vm:makeb 'any 1 (make-bytecode '(19 0 0 0))) ;; make binary (raw) object = (bytestream)
+         (primop 'vm:new   'any 1 vm:new)   ; (make-bytecode '(23 0 0 0 0))) ;; make new object, simplest and fastest allocator
+         (primop 'vm:make  'any 1 vm:make)  ; (make-bytecode '(18 0 0))) ;; make object, slower but smarter allocator
+         (primop 'vm:makeb 'any 1 vm:makeb) ; (make-bytecode '(19 0 0 0))) ;; make binary (raw) object = (bytestream)
          ; косвенные аллокаторы
          (primop 'vm:cast   2 1 vm:cast) ; (make-bytecode '(22 4 5 6    24 6)))
          (primop 'set-ref   3 1 set-ref) ; (make-bytecode '(45 4 5 6 7  24 7)))
@@ -195,10 +195,10 @@
          ; системный таймер  (deprecated, но остается как пример операции не принимающей параметров м возвращающей values)
          (primop 'clock    0 2 clock)  ; (make-bytecode '(61 4 5))) ; clock, todo: удалить
          ; системные вызовы
-         (primop 'syscall 'any 1 (make-bytecode '(63 0 0))) ;; 63, system call
+         (primop 'syscall 'any 1 syscall) ; (make-bytecode '(63 0 0))) ;; 63, system call
          ; additional apply'es
-         (primop 'vector-apply 1 #f (make-bytecode '(32 0 0)))
-         (primop 'ff-apply     1 #f (make-bytecode '(49 0 0 0 0 0)))
+         (primop 'vector-apply 1 #f vector-apply) ; (make-bytecode '(32 0 0)))
+         (primop 'ff-apply     1 #f ff-apply) ; (make-bytecode '(49 0 0 0 0 0)))
 
          ; associative array
          (primop 'ff:black  4 1 ff:black)  ; (make-bytecode '(42  4 5 6 7  8  24 8)))

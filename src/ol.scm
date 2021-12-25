@@ -240,193 +240,192 @@
 ;; say hi if interactive mode and fail if cannot do so (the rest are done using
 ;; repl-prompt. this should too, actually)
 (define (make-main-entry symbols codes)
-   (let*((initial-names {}))
-      ; main: / entry point of the compiled image
-      (λ (vm-args)
+   ; main: / entry point of the compiled image
+   (λ (vm-args)
 
-         ;; now we're running in the new repl
-         (start-thread-controller
-            (list ;1 thread
-               ['init
-                  (λ ()
-                     ;; repl needs symbols interning, which is handled by this thread
-                     (fork-symbol-interner symbols)
-                     ;; and bytecode duplication avoider, which is handled by this thread
-                     (fork-bytecode-interner codes)
+      ;; now we're running in the new repl
+      (start-thread-controller
+         (list ;1 thread
+            ['init
+               (λ ()
+                  ;; repl needs symbols interning, which is handled by this thread
+                  (fork-symbol-interner symbols)
+                  ;; and bytecode duplication avoider, which is handled by this thread
+                  (fork-bytecode-interner codes)
 
-                     (define (starts-with? string prefix)
-                        (and (<= (string-length prefix) (string-length string))
-                             (string-eq? prefix (substring string 0 (string-length prefix)))))
+                  (define (starts-with? string prefix)
+                     (and (<= (string-length prefix) (string-length string))
+                           (string-eq? prefix (substring string 0 (string-length prefix)))))
 
-                     ;; (print "vm-args: " vm-args)
+                  ;; (print "vm-args: " vm-args)
 
-                     (let*((options vm-args
-                              (let loop ((options #empty) (args vm-args))
-                                 (cond
-                                    ((null? args)
-                                       (values options #null))
+                  (let*((options vm-args
+                           (let loop ((options #empty) (args vm-args))
+                              (cond
+                                 ((null? args)
+                                    (values options #null))
 
-                                    ;; version manipulation
-                                    ((string-eq? (car args) "-v")
-                                       (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
-                                       (halt 0))
-                                    ((string-eq? (car args) "--version")
-                                       (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
-                                       (print "Copyright (c) 2014-2021 Yuriy Chumak")
-                                       (print "License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>")
-                                       (print "License MIT: <https://en.wikipedia.org/wiki/MIT_License>")
-                                       (print "This is free software: you are free to change and redistribute it.")
-                                       (print "There is NO WARRANTY, to the extent permitted by law.")
-                                       (halt 0))
+                                 ;; version manipulation
+                                 ((string-eq? (car args) "-v")
+                                    (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
+                                    (halt 0))
+                                 ((string-eq? (car args) "--version")
+                                    (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
+                                    (print "Copyright (c) 2014-2021 Yuriy Chumak")
+                                    (print "License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>")
+                                    (print "License MIT: <https://en.wikipedia.org/wiki/MIT_License>")
+                                    (print "This is free software: you are free to change and redistribute it.")
+                                    (print "There is NO WARRANTY, to the extent permitted by law.")
+                                    (halt 0))
 
-                                    ((starts-with? (car args) "--version=")
-                                       (loop (put options 'version
-                                                (substring (car args) 10 (string-length (car args))))
-                                             (cdr args)))
+                                 ((starts-with? (car args) "--version=")
+                                    (loop (put options 'version
+                                             (substring (car args) 10 (string-length (car args))))
+                                          (cdr args)))
 
-                                    ;; additional options
-                                    ((string-eq? (car args) "--sandbox")
-                                       (loop (put options 'sandbox #t) (cdr args)))
-                                    ((string-eq? (car args) "--interactive")
-                                       (loop (put options 'interactive #t) (cdr args)))
-                                    ((string-eq? (car args) "--no-interactive")
-                                       (loop (put options 'interactive #f) (cdr args)))
+                                 ;; additional options
+                                 ((string-eq? (car args) "--sandbox")
+                                    (loop (put options 'sandbox #t) (cdr args)))
+                                 ((string-eq? (car args) "--interactive")
+                                    (loop (put options 'interactive #t) (cdr args)))
+                                 ((string-eq? (car args) "--no-interactive")
+                                    (loop (put options 'interactive #f) (cdr args)))
 
-                                    ;; special case - use embed REPL version
-                                    ((string-eq? (car args) "--embed")
-                                       (loop (put options 'embed #t) (cdr args)))
+                                 ;; special case - use embed REPL version
+                                 ((string-eq? (car args) "--embed")
+                                    (loop (put options 'embed #t) (cdr args)))
 
-                                    ;; home
-                                    ((string-eq? (car args) "--home")
-                                       (print "use --home=<path>")
-                                       (halt 1))
-                                    ((starts-with? (car args) "--home=")
-                                       (loop (put options 'home
-                                                (substring (car args) 7 (string-length (car args))))
-                                             (cdr args)))
-                                       
-                                    ;; end of options and unknown option
-                                    ((string-eq? (car args) "--")
-                                       (let*((file args (uncons (cdr args) #null)))
-                                          (values
-                                             (put options 'file file)
-                                             args)))
-                                    ((starts-with? (car args) "--")
-                                       (print "unknown command line option '" (car args) "'")
-                                       (halt 0))
-
-                                    (else
+                                 ;; home
+                                 ((string-eq? (car args) "--home")
+                                    (print "use --home=<path>")
+                                    (halt 1))
+                                 ((starts-with? (car args) "--home=")
+                                    (loop (put options 'home
+                                             (substring (car args) 7 (string-length (car args))))
+                                          (cdr args)))
+                                    
+                                 ;; end of options and unknown option
+                                 ((string-eq? (car args) "--")
+                                    (let*((file args (uncons (cdr args) #null)))
                                        (values
-                                          (put options 'file (car args))
-                                          (cdr args))))))
+                                          (put options 'file file)
+                                          args)))
+                                 ((starts-with? (car args) "--")
+                                    (print "unknown command line option '" (car args) "'")
+                                    (halt 0))
 
-                           (file (getf options 'file))
-                           (file (when (string? file)
-                                    (unless (string-eq? file "-")
-                                       (let ((port (open-input-file file)))
-                                          (unless port
-                                             (print "error: can't open file '" file "'")
-                                             (halt 3))
-                                          port))))
-                           (file (or file stdin))
+                                 (else
+                                    (values
+                                       (put options 'file (car args))
+                                       (cdr args))))))
+
+                        (file (getf options 'file))
+                        (file (when (string? file)
+                                 (unless (string-eq? file "-")
+                                    (let ((port (open-input-file file)))
+                                       (unless port
+                                          (print "error: can't open file '" file "'")
+                                          (halt 3))
+                                       port))))
+                        (file (or file stdin))
 
 
-                           (sandbox? (getf options 'sandbox))
-                           (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
-                           (embed? (getf options 'embed))
+                        (sandbox? (getf options 'sandbox))
+                        (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
+                        (embed? (getf options 'embed))
 
-                           (home (or (getf options 'home) ; via command line
-                                     (getenv "OL_HOME")   ; guessed by olvm if not exists
-                                     "")) ; standalone?
-                           (command-line vm-args)
+                        (home (or (getf options 'home) ; via command line
+                                    (getenv "OL_HOME")   ; guessed by olvm if not exists
+                                    "")) ; standalone?
+                        (command-line vm-args)
 
-                           (version (cons "OL" (get options 'version (cdr *version*))))
-                           (env (fold
-                                    (λ (env defn)
-                                       (env-set env (car defn) (cdr defn)))
-                                    initial-environment
-                                    (list
-                                       ;(cons '*owl-names* initial-names)                                       ; windows workaround below:
-                                       (cons '*path* (cons "." ((if (string-ci=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home)))
-                                       (cons '*interactive* interactive?)
-                                       (cons '*command-line* command-line)
-                                       ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead
-                                       (cons '*vm-args* vm-args) ; deprecated
-                                       (cons '*version* version)
-                                       ; 
-                                       (cons '*features* (let*((*features* (cons*
-                                                                              (string->symbol (string-append "ol-" (cdr version)))
-                                                                              (string->symbol (string-append "otus-lisp-" (cdr version)))
-                                                                              *features*))
-                                                               (*features* (let ((one (vm:cast 1 type-vptr)))
-                                                                              (cond
-                                                                                 ((eq? (ref one 0) 1)
-                                                                                    (append *features* '(little-endian)))
-                                                                                 ((eq? (ref one (- (size one) 1)) 1)
-                                                                                    (append *features* '(big-endian)))
-                                                                                 ((eq? (ref one 1) 1)
-                                                                                    (append *features* '(middle-endian)))
-                                                                                 (else
-                                                                                    *features*))))
-                                                               (*features* (let ((features (vm:features)))
-                                                                              (if (not (eq? (band features #o1000000) 0))
-                                                                                 (append *features* '(posix))
-                                                                              else
-                                                                                 *features*)))
-                                                               (*features* (let ((uname (syscall 63)))
-                                                                              (if uname
-                                                                                 (append *features* (list
-                                                                                       (string->symbol (ref uname 1))  ; OS
-                                                                                       (string->symbol (ref uname 5)))) ; Platform
+                        (version (cons "OL" (get options 'version (cdr *version*))))
+                        (env (fold
+                                 (λ (env defn)
+                                    (env-set env (car defn) (cdr defn)))
+                                 initial-environment
+                                 (list
+                                    ;(cons '*owl-names* initial-names)                                       ; windows workaround below:
+                                    (cons '*path* (cons "." ((if (string-ci=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home)))
+                                    (cons '*interactive* interactive?)
+                                    (cons '*command-line* command-line)
+                                    ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead
+                                    (cons '*vm-args* vm-args) ; deprecated
+                                    (cons '*version* version)
+                                    ; 
+                                    (cons '*features* (let*((*features* (cons*
+                                                                           (string->symbol (string-append "ol-" (cdr version)))
+                                                                           (string->symbol (string-append "otus-lisp-" (cdr version)))
+                                                                           *features*))
+                                                            (*features* (let ((one (vm:cast 1 type-vptr)))
+                                                                           (cond
+                                                                              ((eq? (ref one 0) 1)
+                                                                                 (append *features* '(little-endian)))
+                                                                              ((eq? (ref one (- (size one) 1)) 1)
+                                                                                 (append *features* '(big-endian)))
+                                                                              ((eq? (ref one 1) 1)
+                                                                                 (append *features* '(middle-endian)))
+                                                                              (else
                                                                                  *features*))))
-                                                            *features*))
-                                       (cons 'describe-vm-error verbose-vm-error)
-                                       ;(cons '*scheme* 'r7rs)
-                                       (cons '*sandbox* sandbox?)))))
-                           ; go:
-                           (if sandbox?
-                              (sandbox 1)) ;todo: (sandbox megs) - check is memory enough
+                                                            (*features* (let ((features (vm:features)))
+                                                                           (if (not (eq? (band features #o1000000) 0))
+                                                                              (append *features* '(posix))
+                                                                           else
+                                                                              *features*)))
+                                                            (*features* (let ((uname (syscall 63)))
+                                                                           (if uname
+                                                                              (append *features* (list
+                                                                                    (string->symbol (ref uname 1))  ; OS
+                                                                                    (string->symbol (ref uname 5)))) ; Platform
+                                                                              *features*))))
+                                                         *features*))
+                                    (cons 'describe-vm-error verbose-vm-error)
+                                    ;(cons '*scheme* 'r7rs)
+                                    (cons '*sandbox* sandbox?)))))
+                        ; go:
+                        (if sandbox?
+                           (sandbox 1)) ;todo: (sandbox megs) - check is memory enough
 
-                           ; ohai:
-                           (if interactive?
-                              (print "Welcome to Otus Lisp " (cdr version)
-                                 (if sandbox? ", you feel restricted" "")
-                                 "\n"
-                                 (if embed? "" "type ',help' to help, ',quit' to end session.")))
+                        ; ohai:
+                        (if interactive?
+                           (print "Welcome to Otus Lisp " (cdr version)
+                              (if sandbox? ", you feel restricted" "")
+                              "\n"
+                              (if embed? "" "type ',help' to help, ',quit' to end session.")))
 
-                           (if embed?
-                              (let*((this (cons (vm:pin env) 0))
-                                    (eval (lambda (exp args)
-                                             (case exp
-                                                (['ok value env]
-                                                   (vm:unpin (car this))
-                                                   (set-car! this (vm:pin env))
-                                                   (if (null? args)
-                                                      value
-                                                      (apply value args)))
-                                                (else is error
-                                                   (print-to stderr "error: " (ref error 2))
-                                                   #false))))
-                                    (evaluate (lambda (expression)
-                                             (halt
-                                                (let*((env (vm:deref (car this)))
-                                                      (exp args (uncons expression #f)))
-                                                   (case (type exp)
-                                                      (type-string
-                                                         (eval (eval-string env exp) args))
-                                                      (type-string-wide
-                                                         (eval (eval-string env exp) args))
-                                                      (type-enum+
-                                                         (eval (eval-repl (vm:deref exp) env #f evaluate) args))
-                                                      (type-bytevector
-                                                         (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (car this)) #f evaluate) args))))))))
-                                 (halt (vm:pin evaluate)))
-                           else
-                              ; regular repl:
-                              (coroutine ['repl] (lambda ()
-                                 ;; repl
-                                 (exit-thread
-                                    (repl-trampoline env file)))))))])))))
+                        (if embed?
+                           (let*((this (cons (vm:pin env) 0))
+                                 (eval (lambda (exp args)
+                                          (case exp
+                                             (['ok value env]
+                                                (vm:unpin (car this))
+                                                (set-car! this (vm:pin env))
+                                                (if (null? args)
+                                                   value
+                                                   (apply value args)))
+                                             (else is error
+                                                (print-to stderr "error: " (ref error 2))
+                                                #false))))
+                                 (evaluate (lambda (expression)
+                                          (halt
+                                             (let*((env (vm:deref (car this)))
+                                                   (exp args (uncons expression #f)))
+                                                (case (type exp)
+                                                   (type-string
+                                                      (eval (eval-string env exp) args))
+                                                   (type-string-wide
+                                                      (eval (eval-string env exp) args))
+                                                   (type-enum+
+                                                      (eval (eval-repl (vm:deref exp) env #f evaluate) args))
+                                                   (type-bytevector
+                                                      (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (car this)) #f evaluate) args))))))))
+                              (halt (vm:pin evaluate)))
+                        else
+                           ; regular repl:
+                           (coroutine ['repl] (lambda ()
+                              ;; repl
+                              (exit-thread
+                                 (repl-trampoline env file)))))))]))))
 
 ;;;
 ;;; Dump the new repl
