@@ -21,31 +21,33 @@
 (print "Loading code...")
 (define build-start (time-ms))
 
-; forget all other libraries to have them be reloaded and rebuilt
-; виртуальная (src olvm) содержит список базовых элементов языка
+; drop all libraries except (src olvm) which is
+; a virtual olvm language primitives library.
 (define *libraries*
    (keep
       (λ (lib)
          (equal? (car lib) '(src olvm)))
       *libraries*))
 
+; reimport core language:
+
 ; предварительная загрузка зависимостей scheme core,
 ; (иначе импорт сбойнет)
-(import (src vm))   ;; virtual machine primitives
+(import (src vm))         ;; olvm high level interface
 (import (scheme srfi-16)) ;; case-lambda
 (import (scheme srfi-87)) ;; "=>" clauses in case
 (import (scheme srfi-71)) ;; extended LET-syntax for multiple values
-(import (scheme core))    ;; базовый языковый ...
-(import (scheme base))    ;; ... набор Scheme
+(import (scheme core))    ;; core Scheme functions and primitives
 
-;; forget everhything except these and core values (later list also them explicitly)
-,forget-all-but (*libraries* *primops* *version* stdin stdout stderr build-start) ;set-ticker-value
+;; todo: вообще-то тут надо бы интернер очистить ??
 
-;;;
-;;; Time for a new REPL
-;;;
-(import (src olvm))     ;; vm primitives and basic special forms
-(import (scheme core))  ;; core scheme functions and primitives
+;; forget everything except these and core values (later list also them explicitly)
+,forget-all-but (*libraries* *version* *path* stdin stdout stderr build-start)
+
+(import (src olvm))     ;; olvm and core ol primitives
+(import (scheme core))  ;; базовый языковый ...
+(import (scheme base))  ;; ... набор Scheme
+(import (otus lisp))    ;; а теперь загрузим ВСЕ, чтобы успешно отработал bytecode-interner (и сократил размер образа)
 
 (define *features* '( ;; implementation features, used by cond-expand
    r7rs
@@ -55,21 +57,11 @@
    otus-lisp ; scheme-compliant naming
    |otus-lisp-2.2|))
 
-(define *path* '("." "libraries")) ;; now we can do (import <libname>) and have them be autoloaded to current repl
-(define *owl-names* #empty)
 (define *loaded* '())   ;; can be removed soon, used by old ,load and ,require
 
-(import (otus lisp))
+; let's prepare a new Ol compiler
 (import (lang intern))
 (import (lang threading))
-
-
-;; shared parameters, librarize later or remove if possible
-
-(define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
-(define max-object-size #xffff)  ; todo: change as dependent of word size
-
-;(import (owl parse))
 
 (import (lang gensym))
 (import (lang env))
@@ -84,7 +76,19 @@
 (import (lang assemble))
 (import (lang rtl))
 
+(import (lang eval))
 
+; replace old (src olvm) to the new one - (only (lang eval) *src-olvm*)
+(define *libraries* ; заменим старую (src olvm) на новую из (lang eval)
+   (cons
+      (cons '(src olvm) *src-olvm*)
+      (keep
+         (λ (x)
+            (not (equal? (car x) '(src olvm))))
+         *libraries*)))
+
+;
+; features
 (define *features* (append *features* `(
    ; math:
    exact-closed   ; The algebraic operations +, -, *, and expt where the
@@ -99,45 +103,19 @@
                   ; are supported as Scheme characters (actually, 14.0.0).
    immutable)))   ; todo: ?
 
+(define *features* (append *features* '(srfi-0))) ; cond-expand
 
-;; (define error-tag "err")
-;; (define (error? x)
-;;    (and (vector? x)
-;;       (eq? (ref x 1) error-tag)))
+;; -------------
 
-(import (owl time))
 
-;; fixme: should sleep one round to get a timing, and then use avg of the last one(s) to make an educated guess
-;(define (sleep ms)
-;   (lets ((end (+ ms (time-ms))))
-;      (let loop ()
-;         ;(print (interop 18 1 1))
-;         (let ((now (time-ms)))
-;            (if (> now end)
-;               now
-;               (begin (interact sleeper-id 50) (loop)))))))
-
-; -> mcp gets <cont> 5 reason info
-; (run <mcp-cont> thunk quantum) -> result
+;(import (owl time))
 
 ;(define input-chunk-size  1024)
 ;(define output-chunk-size 4096)
 
-(define-syntax share-bindings
-   (syntax-rules (defined)
-      ((share-bindings) null)
-      ((share-bindings this . rest)
-         (cons
-            (cons 'this
-               ['defined (mkval this)])
-            (share-bindings . rest)))))
-
-(define (share-modules mods)
-   (for null mods
-      (λ (envl mod)
-         (append (ff->alist mod) envl))))
-
 (import (owl sys))
+
+(import (only (owl io) system-stderr))
 
 ;;;
 ;;; Entering sandbox
@@ -169,6 +147,9 @@
 ;         ;; leave it as garbage
 ;         #true)))
 ;
+
+(define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
+
 ;; enter sandbox with at least n-megs of free space in heap, or stop the world (including all other threads and io)
 (define (sandbox n-megs)
    ;; grow some heap space work working, which is usually necessary given that we can't
@@ -181,29 +162,25 @@
          (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
          (halt exit-seccomp-failed))))
 
-(import (lang eval))
-(define *features* (append *features* '(srfi-0))) ; cond-expand
-
-;; push it to libraries for sharing, replacing the old one
-(define *libraries* ; заменим старую (src olvm) на новую
-   (cons
-      (cons '(src olvm) *src-olvm*)
-      (keep (λ (x) (not (equal? (car x) '(src olvm)))) *libraries*)))
-
-;; todo: share the modules instead later
-(define shared-misc
-   (share-bindings
-      *features*
-      *path*
-      *libraries*))      ;; all currently loaded libraries
-
 (print "Code loaded at " (- (time-ms) build-start) " ms.")
 
 ;;;
 ;;; MCP, master control program and the thread controller
 ;;;
 
-(define shared-bindings shared-misc)
+;; todo: share the modules instead later
+(define-syntax share-bindings
+   (syntax-rules (defined)
+      ((share-bindings) null)
+      ((share-bindings this . rest)
+         (cons
+            (cons 'this
+               ['defined (mkval this)])
+            (share-bindings . rest)))))
+
+(define shared-bindings (share-bindings
+   *features*
+   *libraries*))      ;; all currently loaded libraries
 
 (define initial-environment-sans-macros
    (fold
@@ -286,7 +263,7 @@
 ;; say hi if interactive mode and fail if cannot do so (the rest are done using
 ;; repl-prompt. this should too, actually)
 (define (make-main-entry symbols codes)
-   (let*((initial-names *owl-names*))
+   (let*((initial-names {}))
       ; main: / entry point of the compiled image
       (λ (vm-args)
 
@@ -392,7 +369,7 @@
                                        (env-set env (car defn) (cdr defn)))
                                     initial-environment
                                     (list
-                                       (cons '*owl-names* initial-names)                                       ; windows workaround below:
+                                       ;(cons '*owl-names* initial-names)                                       ; windows workaround below:
                                        (cons '*path* (cons "." ((if (string-ci=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home)))
                                        (cons '*interactive* interactive?)
                                        (cons '*command-line* command-line)

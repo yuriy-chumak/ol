@@ -317,7 +317,7 @@ olvm.wasm: src/olvm.c tmp/repl.c
 # compiling the Ol language
 recompile: boot.fasl
 boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
-	@vm repl --version="$(VERSION)" \
+	@vm repl --version="$(VERSION)" --home=.:libraries \
 	   src/ol.scm
 	@if diff boot.fasl repl>/dev/null;then\
 	   echo '\033[1;32m  `___`  \033[0m' ;\
