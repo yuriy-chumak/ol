@@ -449,9 +449,12 @@
                         (0  (DIS 1 "ERROR"))
                         (62 (DIS 1 "INVALID"))
 
-                        (21 (DIS 1 "NOP"))
                         (17 (DIS 1 "ARITY-ERROR"))
                         (24 (DIS 2 "RET"))
+                        
+                        (21 (DIS 1 "NOP"))
+                        (27 (DIS 6 "MCP"))
+                        (50 (DIS 3 "RUN"))
 
                         (51 (DIS 4 "CONS"))
                         (15 (DIS 3 "TYPE"))
@@ -497,9 +500,11 @@
                         (43 (DIS 7 "VMSETE"))
                         (10 (DIS 5 "SETREFE"))
 
-                        (23 (DIS (+ (caddr src) 5) "VMNEW"))
-                        (18 (DIS (+ (cadr src) 3) "VMMAKE"))
-                        (19 (DIS (+ (cadr src) 3) "VMMAKEB"))
+                        (23 (DIS (+ (caddr src) 5) "NEW"))
+                        (18 (DIS (+ (cadr src) 3) "MAKE"))
+                        (19 (DIS (+ (cadr src) 3) "MAKEB"))
+
+                        (32 (DIS (+ (caddr src) 3) "VECTORAPPLY"))
 
                         (38 (DIS 5 "ADDITION"))
                         (40 (DIS 5 "SUBTRACTION"))
@@ -512,9 +517,13 @@
                         (58 (DIS 5 "SHIFT_RIGHT"))
                         (59 (DIS 5 "SHIFT_LEFT"))
 
+                        (33 (DIS 4 "FP1"))
+                        (34 (DIS 5 "FP2"))
+
                         (49 (DIS 6 "FFAPPLY"))
                         (42 (DIS 6 "FFBLACK"))
                         (106(DIS 6 "FFRED"))
+                        (105(DIS 3 "FFRIGHT?"))
                         (46 (DIS 3 "FFTOGGLE"))
                         (41 (DIS 3 "FFREDQ"))
 
@@ -638,11 +647,14 @@
                      (['ok op env]
                         (case (evaluate op env)
                            (['ok value env]
-                              (if (function? value)
+                              (if (or
+                                    (function? value)
+                                    (eq? (type value) 63)) ; constructor
                               then
                                  (define dis (disassembly value))
                                  (if dis
                                  then
+                                    (print "name: " (decode-value env value))
                                     (print "type: " (dis 'type))
                                     (print "code: " (decode-value env (dis 'code)))
                                     (print "disassembly '(length command . args):")
