@@ -2534,7 +2534,7 @@ loop:;
 		default:
 			FAIL(262, I(op), ITRUE);
 		}
-		goto apply; // ???
+		break;
 
 	/*! ##### 48, 62: Unused numbers
 	 * Reserved for feature use.
@@ -2551,6 +2551,14 @@ loop:;
 	case GOTO: // (10%)
 		this = A0;
 		acc = ip[1];
+		goto apply;
+
+	/*! ##### RET
+	 */
+	case RET: // (3%) return value
+		this = R[3];
+		R[3] = A0;
+		acc = 1;
 		goto apply;
 
 	/*! ##### NOP
@@ -2600,15 +2608,6 @@ loop:;
 
 		goto apply;
 	}
-
-	/*! ##### RET
-	 */
-	case RET: // (3%) return value
-		this = R[3];
-		R[3] = A0;
-		acc = 1;
-
-		goto apply;
 
 	/*! ##### SYS
 	 */

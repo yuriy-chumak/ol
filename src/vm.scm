@@ -145,80 +145,81 @@
 
       ; Список примитивных операций виртуальной машины:
       ;  эти операции не надо экспортировать из модуля, они как бы "вшиты" в базовый язык
+      ; note: uncomment 'make-bytecode' if you want to change a primop bytecode
       (setq *primops* (list
          ; прямые аллокаторы
-         (primop 'vm:new   'any 1 "\x17;") ;; 23, make new object, simplest and fastest allocator
-         (primop 'vm:make  'any 1 "\x12;") ;; 18, make object, slower but smarter allocator
-         (primop 'vm:makeb 'any 1 "\x13;") ;; 19, make binary (raw) object = (bytestream)
+         (primop 'vm:new   'any 1 vm:new)  ; (make-bytecode '(23))) ;; make new object, simplest and fastest allocator
+         (primop 'vm:make  'any 1 vm:make) ; (make-bytecode '(18))) ;; make object, slower but smarter allocator
+         (primop 'vm:makeb 'any 1 vm:makeb); (make-bytecode '(19))) ;; make binary (raw) object = (bytestream)
          ; косвенные аллокаторы
-         (primop 'vm:cast   2 1 (make-bytecode '(22 4 5 6    24 6)))
-         (primop 'set-ref   3 1 (make-bytecode '(45 4 5 6 7  24 7)))
+         (primop 'vm:cast   2 1 vm:cast) ; (make-bytecode '(22 4 5 6    24 6)))
+         (primop 'set-ref   3 1 set-ref) ; (make-bytecode '(45 4 5 6 7  24 7)))
          ; ну и мутаторы сюда же добавим
-         (primop 'vm:set!   5 1 (make-bytecode '(43 4 5 6 7 8  24 6))) ;; * experimental feature, do not use!
-         (primop 'set-ref!  3 1 (make-bytecode '(10 4 5 6 7    24 7)))
+         (primop 'vm:set!   5 1 vm:set!) ; (make-bytecode '(43 4 5 6 7 8 9  24 9))) ;; * experimental feature, do not use!
+         (primop 'set-ref!  3 1 set-ref!); (make-bytecode '(10 4 5 6 7      24 7)))
 
          ; описатели
-         (primop 'type   1 1 type) ; (make-bytecode '(15 4 5    24 5))  ;; get type bits
-         (primop 'size   1 1 size) ; (make-bytecode '(36 4 5    24 5))  ;; get object size (without header)
+         (primop 'type   1 1 type) ; (make-bytecode '(15 4 5    24 5)))  ;; get type bits
+         (primop 'size   1 1 size) ; (make-bytecode '(36 4 5    24 5)))  ;; get object size (without header)
 
          ; конструкторы
-         (primop 'cons   2 1 cons) ; (make-bytecode '(51 4 5 6  24 6))
+         (primop 'cons   2 1 cons) ; (make-bytecode '(51 4 5 6  24 6)))
 
          ; геттеры
-         (primop 'ref    2 1 ref)  ; (make-bytecode '(47 4 5 6  24 6))
-         (primop 'car    1 1 car)  ; (make-bytecode '(52 4 5    24 5))  ;; speedup for (ref o 1)
-         (primop 'cdr    1 1 cdr)  ; (make-bytecode '(53 4 5    24 5))  ;; speedup for (ref o 2)
+         (primop 'ref    2 1 ref) ; (make-bytecode '(47 4 5 6  24 6)))
+         (primop 'car    1 1 car) ; (make-bytecode '(52 4 5    24 5)))  ;; speedup for (ref o 1)
+         (primop 'cdr    1 1 cdr) ; (make-bytecode '(53 4 5    24 5)))  ;; speedup for (ref o 2)
 
          ; компараторы
-         (primop 'eq?    2 1 eq?)  ; (make-bytecode '(54 4 5 6  24 6))
-         (primop 'less?  2 1 less?); (make-bytecode '(44 4 5 6  24 6))
+         (primop 'eq?    2 1 eq?)   ; (make-bytecode '(54 4 5 6  24 6)))
+         (primop 'less?  2 1 less?) ; (make-bytecode '(44 4 5 6  24 6)))
 
          ; базовая арифметика
          ; арифметические операции, которые возвращают пару(тройку) значений, использовать через let*/values-apply
-         (primop 'vm:add   2 2 (make-bytecode '(38 4 5     6 7)))
-         (primop 'vm:mul   2 2 (make-bytecode '(39 4 5     6 7)))
-         (primop 'vm:sub   2 2 (make-bytecode '(40 4 5     6 7)))
-         (primop 'vm:div   3 3 (make-bytecode '(26 4 5 6   7 8 9)))
+         (primop 'vm:add   2 2 vm:add) ; (make-bytecode '(38 4 5     6 7)))
+         (primop 'vm:mul   2 2 vm:mul) ; (make-bytecode '(39 4 5     6 7)))
+         (primop 'vm:sub   2 2 vm:sub) ; (make-bytecode '(40 4 5     6 7)))
+         (primop 'vm:div   3 3 vm:div) ; (make-bytecode '(26 4 5 6   7 8 9)))
          ; сдвиги
-         (primop 'vm:shr   2 2 (make-bytecode '(58 4 5     6 7)))
-         (primop 'vm:shl   2 2 (make-bytecode '(59 4 5     6 7)))
+         (primop 'vm:shr   2 2 vm:shr) ; (make-bytecode '(58 4 5     6 7)))
+         (primop 'vm:shl   2 2 vm:shl) ; (make-bytecode '(59 4 5     6 7)))
          ; бинарная арифметика
-         (primop 'vm:and   2 1 (make-bytecode '(55 4 5 6      24 6))) ;; 
-         (primop 'vm:ior   2 1 (make-bytecode '(56 4 5 6      24 6))) ;; inclusive OR
-         (primop 'vm:xor   2 1 (make-bytecode '(57 4 5 6      24 6))) ;; exclusive OR
+         (primop 'vm:and   2 1 vm:and) ; (make-bytecode '(55 4 5 6      24 6))) ;; 
+         (primop 'vm:ior   2 1 vm:ior) ; (make-bytecode '(56 4 5 6      24 6))) ;; inclusive OR
+         (primop 'vm:xor   2 1 vm:xor) ; (make-bytecode '(57 4 5 6      24 6))) ;; exclusive OR
 
          ; инструкции поддержки арифметики с плавающей точкой (inexact math)
-         (primop 'vm:fp1   2 1 (make-bytecode '(33 4 5 6      24 6)))
-         (primop 'vm:fp2   3 1 (make-bytecode '(34 4 5 6 7    24 7)))
+         (primop 'vm:fp1   2 1 vm:fp1) ; (make-bytecode '(33 4 5 6      24 6)))
+         (primop 'vm:fp2   3 1 vm:fp2) ; (make-bytecode '(34 4 5 6 7    24 7)))
 
          ; системный таймер  (deprecated, но остается как пример операции не принимающей параметров м возвращающей values)
-         (primop 'clock    0 2 (make-bytecode '(61 4 5))) ; clock, todo: удалить
+         (primop 'clock    0 2 clock)  ; (make-bytecode '(61 4 5))) ; clock, todo: удалить
          ; системные вызовы
-         (primop 'syscall 'any 1 "\x3F;") ;; 63, system call
-
-         (primop 'vector-apply 1 #f (make-bytecode '(32 4)))
-         (primop 'ff-apply     1 #f (make-bytecode '(49 4)))
+         (primop 'syscall 'any 1 syscall) ; (make-bytecode '(63))) ;; 63, system call
+         ; additional apply'es
+         (primop 'vector-apply 1 #f vector-apply) ; (make-bytecode '(32 4)))
+         (primop 'ff-apply     1 #f ff-apply)     ; (make-bytecode '(49 4)))
 
          ; associative array
-         (primop 'ff:black  4 1 (make-bytecode '(42  4 5 6 7  8  24 8)))
-         (primop 'ff:red    4 1 (make-bytecode '(106 4 5 6 7  8  24 8))) ; 106 = 42+(1<<6)
-         (primop 'ff:toggle 1 1 (make-bytecode '(46  4        5  24 5)))
-         (primop 'ff:red?   1 1 (make-bytecode '(41  4        5  24 5)))
-         (primop 'ff:right? 1 1 (make-bytecode '(105 4        5  24 5))) ; 105 = 41+(1<<6)
+         (primop 'ff:black  4 1 ff:black)  ; (make-bytecode '(42  4 5 6 7  8  24 8)))
+         (primop 'ff:red    4 1 ff:red)    ; (make-bytecode '(106 4 5 6 7  8  24 8))) ; 106 = 42+(1<<6)
+         (primop 'ff:toggle 1 1 ff:toggle) ; (make-bytecode '(46  4        5  24 5)))
+         (primop 'ff:red?   1 1 ff:red?)   ; (make-bytecode '(41  4        5  24 5)))
+         (primop 'ff:right? 1 1 ff:right?) ; (make-bytecode '(105 4        5  24 5))) ; 105 = 41+(1<<6)
 
          ; vm-specific constants
-         (primop 'vm:maxvalue   0 1 (make-bytecode '(30 4)))
-         (primop 'vm:valuewidth 0 1 (make-bytecode '(31 4)))
-         (primop 'vm:version    0 1 (make-bytecode '(28 4)))
-         (primop 'vm:features   0 1 (make-bytecode '(29 4)))
+         (primop 'vm:maxvalue   0 1 vm:maxvalue)  ; (make-bytecode '(30 4)))
+         (primop 'vm:valuewidth 0 1 vm:valuewidth); (make-bytecode '(31 4)))
+         (primop 'vm:version    0 1 vm:version)   ; (make-bytecode '(28 4)))
+         (primop 'vm:features   0 1 vm:features)  ; (make-bytecode '(29 4)))
 
          ; pinned objects
-         (primop 'vm:pin    1 1 (make-bytecode '(35 4 5  24 5)))
-         (primop 'vm:unpin  1 1 (make-bytecode '(60 4 5  24 5)))
-         (primop 'vm:deref  1 1 (make-bytecode '(25 4 5  24 5)))
+         (primop 'vm:pin    1 1 vm:pin)   ; (make-bytecode '(35 4 5  24 5)))
+         (primop 'vm:unpin  1 1 vm:unpin) ; (make-bytecode '(60 4 5  24 5)))
+         (primop 'vm:deref  1 1 vm:deref) ; (make-bytecode '(25 4 5  24 5)))
 
          ; stop
-         (primop 'vm:exit   1 1 (make-bytecode '(37 4 5  24 5)))
+         (primop 'vm:exit   1 1 vm:exit)  ; (make-bytecode '(37 4 5  24 5)))
       ))
 
       ; additional
