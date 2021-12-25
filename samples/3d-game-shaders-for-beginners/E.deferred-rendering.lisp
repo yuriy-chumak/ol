@@ -226,7 +226,7 @@
    (begin
       (glBindFramebuffer GL_FRAMEBUFFER (car forward-fbo))
       (glViewport 0 0 TEXW TEXH)
-      (glClearColor 1 0 0 1)
+      (glClearColor 0 0 0 1)
       (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
       (glUseProgram forward-program)
