@@ -146,49 +146,49 @@ int main(int argc, char** argv)
     assert (r != IFALSE);
 
 
-	// Ok. What about precompiled core? For example ..... some naive cryptography?
-	// assume, that I have a function, named caesar, that decripts some text.
-	// and this is compiled function:
-	char causar[] = {2, 16, 26, 11, 1, 0, 21, 1, 1, 3, 4, 1, 1, 2, 5, 5, 5, 8, 4, 5, 5, 3, 4, 8, 3, 2, 5, 3, 17, 2, 16,
-	                 16, 11, 1, 0, 11, 1, 1, 3, 4, 1, 1, 2, 3, 2, 4, 1, 17, 2, 16, 35, 11, 1, 0, 30, 1, 1, 2, 4, 1, 1,
-	                 3, 5, 1, 1, 4, 6, 4, 4, 2, 2, 5, 6, 7, 9, 4, 5, 5, 3, 4, 7, 3, 2, 5, 3, 17, 2, 16, 30, 11, 2, 0,
-	                 10, 14, 19, 5, 19, 2, 5, 4, 6, 24, 6, 11, 3, 0, 11, 14, 19, 6, 19, 3, 6, 4, 5, 7, 24, 7, 17, 2, 16,
-	                 12, 11, 3, 0, 7, 40, 4, 5, 6, 7, 24, 6, 17, 1, 17, 2, 3, 4, 2, 16, 61, 11, 1, 0, 56, 1, 1, 2, 4, 1,
-	                 1, 3, 5, 10, 4, 5, 3, 6, 16, 5, 30, 0, 1, 2, 2, 7, 1, 1, 4, 8, 1, 1, 5, 9, 4, 4, 2, 3, 8, 9, 3, 14,
-	                 1, 11, 5, 5, 4, 11, 5, 2, 7, 3, 1, 1, 4, 7, 205, 3, 2, 7, 1, 17, 1, 17, 3, 1, 3, 7, 2, 16, 40, 11,
-	                 3, 0, 35, 1, 1, 2, 6, 47, 6, 4, 7, 1, 2, 2, 8, 1, 1, 4, 9, 3, 6, 2, 3, 9, 4, 3, 5, 3, 1, 1, 3, 5,
-	                 9, 7, 4, 2, 8, 3, 17, 1, 17, 3, 1, 5, 2, 2, 16, 46, 11, 1, 0, 41, 1, 1, 3, 4, 1, 1, 4, 5, 3, 5, 2,
-	                 4, 4, 5, 3, 6, 36, 4, 4, 1, 2, 2, 8, 1, 1, 2, 9, 3, 5, 2, 3, 6, 3, 9, 3, 14, 1, 5, 2, 8, 3, 17, 1,
-	                 17, 4, 1, 7, 6, 2, 2, 16, 25, 11, 3, 0, 20, 36, 4, 6, 1, 1, 2, 7, 6, 5, 3, 3, 4, 5, 3, 9, 6, 4, 2,
-	                 7, 2, 17, 1, 17, 3, 1, 10, 2, 0};
-	// and we have a message
-	char message[] = { 68, 111, 108, 102, 104, 35, 100, 113, 103,  35,  69, 114, 101,  35, 122, 100, 113, 119,  35, 119, 114,
-	                   35, 105, 111, 108, 115, 35, 100,  35, 102, 114, 108, 113,  35, 101, 124,  35, 119, 104, 111, 104, 115,
-	                  107, 114, 113, 104,  49};
-
-	// let's execute one
-	r = OL_eval(&ol, new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])),
-	                 new_bytevector(&ol, message, sizeof(message)/sizeof(message[0])),
-	                 make_integer(3),
-					 0);
-	assert (is_bytevector(r));
-	assert (bytevector_length(r) == 47);
-	assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", 47) == 0);
-
-	// wow, it works! But if we want frequently use causar function, let's decode, compile and 'pin' it into olvm memory
-	    eval("(import (scheme bytevector))");
-	r = eval("(define (compile bytecode) (vm:pin (fasl-decode (bytevector->list bytecode) #f)))");
-	assert (r != IFALSE);
-	r = eval("compile", new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])));
-	assert (r != IFALSE);
-
-	// now we have a pinned 'causar' function and can call it everywhere and everytime
-	uintptr_t causar_pinned = r;
-
-	r = eval(causar_pinned, new_bytevector(&ol, message, sizeof(message)/sizeof(message[0])), 3);
-	assert (is_bytevector(r));
-	assert (bytevector_length(r) == 47);
-	assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", 47) == 0);
+//	// Ok. What about precompiled core? For example ..... some naive cryptography?
+//	// assume, that I have a function, named caesar, that decripts some text.
+//	// and this is compiled function:
+//	char causar[] = {2, 16, 26, 11, 1, 0, 21, 1, 1, 3, 4, 1, 1, 2, 5, 5, 5, 8, 4, 5, 5, 3, 4, 8, 3, 2, 5, 3, 17, 2, 16,
+//	                 16, 11, 1, 0, 11, 1, 1, 3, 4, 1, 1, 2, 3, 2, 4, 1, 17, 2, 16, 35, 11, 1, 0, 30, 1, 1, 2, 4, 1, 1,
+//	                 3, 5, 1, 1, 4, 6, 4, 4, 2, 2, 5, 6, 7, 9, 4, 5, 5, 3, 4, 7, 3, 2, 5, 3, 17, 2, 16, 30, 11, 2, 0,
+//	                 10, 14, 19, 5, 19, 2, 5, 4, 6, 24, 6, 11, 3, 0, 11, 14, 19, 6, 19, 3, 6, 4, 5, 7, 24, 7, 17, 2, 16,
+//	                 12, 11, 3, 0, 7, 40, 4, 5, 6, 7, 24, 6, 17, 1, 17, 2, 3, 4, 2, 16, 61, 11, 1, 0, 56, 1, 1, 2, 4, 1,
+//	                 1, 3, 5, 10, 4, 5, 3, 6, 16, 5, 30, 0, 1, 2, 2, 7, 1, 1, 4, 8, 1, 1, 5, 9, 4, 4, 2, 3, 8, 9, 3, 14,
+//	                 1, 11, 5, 5, 4, 11, 5, 2, 7, 3, 1, 1, 4, 7, 205, 3, 2, 7, 1, 17, 1, 17, 3, 1, 3, 7, 2, 16, 40, 11,
+//	                 3, 0, 35, 1, 1, 2, 6, 47, 6, 4, 7, 1, 2, 2, 8, 1, 1, 4, 9, 3, 6, 2, 3, 9, 4, 3, 5, 3, 1, 1, 3, 5,
+//	                 9, 7, 4, 2, 8, 3, 17, 1, 17, 3, 1, 5, 2, 2, 16, 46, 11, 1, 0, 41, 1, 1, 3, 4, 1, 1, 4, 5, 3, 5, 2,
+//	                 4, 4, 5, 3, 6, 36, 4, 4, 1, 2, 2, 8, 1, 1, 2, 9, 3, 5, 2, 3, 6, 3, 9, 3, 14, 1, 5, 2, 8, 3, 17, 1,
+//	                 17, 4, 1, 7, 6, 2, 2, 16, 25, 11, 3, 0, 20, 36, 4, 6, 1, 1, 2, 7, 6, 5, 3, 3, 4, 5, 3, 9, 6, 4, 2,
+//	                 7, 2, 17, 1, 17, 3, 1, 10, 2, 0};
+//	// and we have a message
+//	char message[] = { 68, 111, 108, 102, 104, 35, 100, 113, 103,  35,  69, 114, 101,  35, 122, 100, 113, 119,  35, 119, 114,
+//	                   35, 105, 111, 108, 115, 35, 100,  35, 102, 114, 108, 113,  35, 101, 124,  35, 119, 104, 111, 104, 115,
+//	                  107, 114, 113, 104,  49};
+//
+//	// let's execute one
+//	r = OL_eval(&ol, new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])),
+//	                 new_bytevector(&ol, message, sizeof(message)/sizeof(message[0])),
+//	                 make_integer(3),
+//					 0);
+//	assert (is_bytevector(r));
+//	assert (bytevector_length(r) == 47);
+//	assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", 47) == 0);
+//
+//	// wow, it works! But if we want frequently use causar function, let's decode, compile and 'pin' it into olvm memory
+//	    eval("(import (scheme bytevector))");
+//	r = eval("(define (compile bytecode) (vm:pin (fasl-decode (bytevector->list bytecode) #f)))");
+//	assert (r != IFALSE);
+//	r = eval("compile", new_bytevector(&ol, causar, sizeof(causar)/sizeof(causar[0])));
+//	assert (r != IFALSE);
+//
+//	// now we have a pinned 'causar' function and can call it everywhere and everytime
+//	uintptr_t causar_pinned = r;
+//
+//	r = eval(causar_pinned, new_bytevector(&ol, message, sizeof(message)/sizeof(message[0])), 3);
+//	assert (is_bytevector(r));
+//	assert (bytevector_length(r) == 47);
+//	assert (strncmp(bytevector_value(r), "Alice and Bob want to flip a coin by telephone.", 47) == 0);
 
 	printf("ok.\n");
 	return 0;
