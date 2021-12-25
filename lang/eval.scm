@@ -408,33 +408,30 @@
          (define output
             (case (type func)
                (type-bytecode ; 16, direct bytecode - (lambda (x y) (cons x y))
+                  (define bytecode (bytevector->list func))
                   {
                      'type 'bytecode ; (bytecode ...)
-                     'code (bytevector->list func)
-                     'bytecode (bytevector->list func)
+                     'code bytecode
+                     'bytecode bytecode
                   })
                (type-procedure ; 17, bytecode with external dependency - (lambda (x y) (+ x y))
                   (define procedure func)
-                  (define bytecode (ref procedure 1))
+                  (define bytecode (bytevector->list (ref procedure 1)))
                   {
                      'type 'procedure ; (ref bytecode, ref external1, ref external2, ref external3, ...)
-                     'code (list->vector (cons
-                              (bytevector->list bytecode)
-                              (cdr (vector->list (vm:cast procedure type-vector)))))
-                     'bytecode (bytevector->list bytecode)
+                     'code (vm:cast (set-ref procedure 1 bytecode) type-vector)
+                     'bytecode bytecode
                   })
                (type-closure ; 18, (define (make x) (lambda (y) (+ x y))), (make 7) is a closure
                   (define closure func)
                   (define procedure (ref closure 1))
-                  (define bytecode (ref procedure 1))
+                  (define bytecode (bytevector->list (ref procedure 1)))
                   {
                      'type 'closure
-                     'code (list->vector (cons
-                              (list->vector (cons
-                                 (bytevector->list bytecode)
-                                 (cdr (vector->list (vm:cast procedure type-vector)))))
-                              (cdr (vector->list closure))))
-                     'bytecode (bytevector->list bytecode)
+                     'code (vm:cast (set-ref closure 1
+                                       (vm:cast (set-ref procedure 1 bytecode) type-vector))
+                              type-vector)
+                     'bytecode bytecode
                   })))
          (if output
             (put output 'disassembly
@@ -461,8 +458,13 @@
                         (36 (DIS 3 "SIZE"))
 
                         (2  (DIS 3 "GOTO"))
+
+                        (16 (DIS 4 "JZ"))
+                        (80 (DIS 4 "JN"))
+                        (144(DIS 4 "JE"))
+                        (208(DIS 4 "JF"))
+
                         (8  (DIS 5 "JEQ"))
-                        (16 (DIS 4 "JP"))
                         (11 (DIS 4 "JAF"))
                         (12 (DIS 4 "JAFX"))
 
@@ -491,8 +493,8 @@
                         (5  (DIS 5 "MOV2"))
 
                         (22 (DIS 4 "VMCAST"))
-                        (43 (DIS 7 "VMSETE"))
                         (45 (DIS 5 "SETREF"))
+                        (43 (DIS 7 "VMSETE"))
                         (10 (DIS 5 "SETREFE"))
 
                         (23 (DIS (+ (caddr src) 5) "VMNEW"))
@@ -501,7 +503,7 @@
 
                         (38 (DIS 5 "ADDITION"))
                         (40 (DIS 5 "SUBTRACTION"))
-                        (26 (DIS 5 "DIVISION"))
+                        (26 (DIS 7 "DIVISION"))
                         (39 (DIS 5 "MULTIPLICATION"))
 
                         (55 (DIS 4 "AND"))
@@ -511,7 +513,8 @@
                         (59 (DIS 5 "SHIFT_LEFT"))
 
                         (49 (DIS 6 "FFAPPLY"))
-                        (42 (DIS 6 "FFLEAF"))
+                        (42 (DIS 6 "FFBLACK"))
+                        (106(DIS 6 "FFRED"))
                         (46 (DIS 3 "FFTOGGLE"))
                         (41 (DIS 3 "FFREDQ"))
 
@@ -519,9 +522,19 @@
 
                         (63 (DIS (+ (cadr src) 3) "SYSCALL"))
 
+                        (30 (DIS 2 "vm:maxvalue"))
+                        (31 (DIS 2 "vm:valuewidth"))
+                        (28 (DIS 2 "vm:version"))
+                        (29 (DIS 2 "vm:features"))
+
+                        (35 (DIS 3 "PIN"))
+                        (60 (DIS 3 "UNPIN"))
+                        (25 (DIS 3 "DEREF"))
+
+                        (37 (DIS 3 "EXIT"))
+
                         (else
-                           (loop (cdr src)
-                                 (cons (car src) out)))))))))
+                           (DIS 1 "?"))))))))
 
 
       (define repl-ops-help
@@ -620,26 +633,30 @@
                (repl env in))
             ((disassembly dis d)
                (let*((op in (uncons in #false))
-                     (func (evaluate op env)))
-                  (case func
-                     (['ok value env]
-                        (if (function? value)
-                        then
-                           (define dis (disassembly value))
-                           (if dis
-                           then
-                              (print "type: " (dis 'type))
-                              (print "code: " (decode-value env (dis 'code)))
-                              (print "disassembly '(length command . args):")
-                              (for-each print (dis 'disassembly))
-                           else
-                              (print "can't disassembly " op))
-                        else
-                           (print op " is not function")))
+                     (exp (macro-expand op env)))
+                  (case exp
+                     (['ok op env]
+                        (case (evaluate op env)
+                           (['ok value env]
+                              (if (function? value)
+                              then
+                                 (define dis (disassembly value))
+                                 (if dis
+                                 then
+                                    (print "type: " (dis 'type))
+                                    (print "code: " (decode-value env (dis 'code)))
+                                    (print "disassembly '(length command . args):")
+                                    (for-each print (dis 'disassembly))
+                                 else
+                                    (print "can't disassembly " op))
+                              else
+                                 (print op " is not function")))
+                           (['fail reason]
+                              (print reason))
+                           (else
+                              (print "Disassembly failed: " op))))
                      (['fail reason]
-                        (print reason))
-                     (else
-                        (print "Disassembly failed: " op)))
+                        (print "Macro expansion failed: " reason)))
                   (repl env in)))
             ((expand)
                (let*((exp in (uncons in #false)))
