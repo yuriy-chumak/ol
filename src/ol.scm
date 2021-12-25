@@ -1,22 +1,9 @@
-;;;
-;;; ol.scm: an Otus Lisp read-eval-print loop (REPL) binary image compiler.
-;;;
-
-#| Copyright(c) 2012 Aki Helin
- | Copyright(c) 2014 - 2021 Yuriy Chumak
- |
- | This program is free software;  you can redistribute it and/or
- | modify it under the terms of the GNU General Public License as
- | published by the Free Software Foundation; either version 2 of
- | the License, or (at your option) any later version.
- |
- | This program is distributed in the hope that it will be useful,
- | but WITHOUT ANY WARRANTY; without even the implied warranty of
- | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- |
- | You should have received a copy of the GNU GPL along with this
- | program.           If not, see <http://www.gnu.org/licenses/>.
- |#
+;; Copyright(c) 2012 Aki Helin
+;; Copyright(c) 2014 - 2021 Yuriy Chumak
+;;
+;; Otus Lisp is available under 2 licenses:
+;; 'MIT License' or 'GNU LGPLv3 License'.
+;;
 
 (print "Loading code...")
 (define build-start (time-ms))
@@ -49,13 +36,13 @@
 (import (scheme base))  ;; ... набор Scheme
 (import (otus lisp))    ;; а теперь загрузим ВСЕ, чтобы успешно отработал bytecode-interner (и сократил размер образа)
 
-(define *features* '( ;; implementation features, used by cond-expand
+;; core implementation features, used by cond-expand
+(define *features* '(
    r7rs
    srfi-16 ; case-lambda
    srfi-87 ; <= in cases
    srfi-71 ; extended LET-syntax for multiple values
-   otus-lisp ; scheme-compliant naming
-   |otus-lisp-2.2|))
+   otus-lisp)) ; scheme-compliant naming
 
 (define *loaded* '())   ;; can be removed soon, used by old ,load and ,require
 
@@ -107,15 +94,10 @@
 
 ;; -------------
 
-
-;(import (owl time))
-
-;(define input-chunk-size  1024)
-;(define output-chunk-size 4096)
-
-(import (owl sys))
-
+(import (only (owl sys) getenv))
 (import (only (owl io) system-stderr))
+
+(print "Code loaded at " (- (time-ms) build-start) " ms.")
 
 ;;;
 ;;; Entering sandbox
@@ -162,11 +144,6 @@
          (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
          (halt exit-seccomp-failed))))
 
-(print "Code loaded at " (- (time-ms) build-start) " ms.")
-
-;;;
-;;; MCP, master control program and the thread controller
-;;;
 
 ;; todo: share the modules instead later
 (define-syntax share-bindings
@@ -377,8 +354,9 @@
                                        (cons '*vm-args* vm-args) ; deprecated
                                        (cons '*version* version)
                                        ; 
-                                       (cons '*features* (let*((*features* (cons
+                                       (cons '*features* (let*((*features* (cons*
                                                                               (string->symbol (string-append "ol-" (cdr version)))
+                                                                              (string->symbol (string-append "otus-lisp-" (cdr version)))
                                                                               *features*))
                                                                (*features* (let ((one (vm:cast 1 type-vptr)))
                                                                               (cond
@@ -393,6 +371,7 @@
                                                                (*features* (let ((features (vm:features)))
                                                                               (if (not (eq? (band features #o1000000) 0))
                                                                                  (append *features* '(posix))
+                                                                              else
                                                                                  *features*)))
                                                                (*features* (let ((uname (syscall 63)))
                                                                               (if uname
