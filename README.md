@@ -88,6 +88,37 @@ DOWNLOAD / INSTALLATION
 
 Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
 
+### Otus Lisp, Version 2.3 RC1
+
+2.3 changelog:
+ * Ol got it's own [twitter account](https://twitter.com/otus_lisp)
+ * vm opcodes 3,4,6,7 (OCLOS, CLOS1) is deprecated, will be removed soon
+ * new opcode 48 (universal CLOS) is introduced (will be changed to 3 after deprecations remove)
+ * new 'vm:set!' vm command, should speedup internal bytevector manipulations
+ * integrated disassembler introduced (use ",dis" repl command)
+   * try ',dis +' to view the '+' function disassembly
+ * ',save' repl feature returned; still experimental due to ffi
+   * you can ',save' a current session in the binary file and return to saved state by starting new Ol session with this file
+ * Unicode support updated to version 14.0.0
+ * big numbers vm loader fix
+ * windows setup update
+ * GC tune (reduced full gc count)
+ * more samples and tests
+   * more gtk
+   * 3d game shaders for beginners
+   * convey's life
+   * etc.
+ * windows command line support multiple path in "--home=...;..."
+ * (define-values) can be used inside lambdas, begin, etc.
+ * (otus async) async/await/coroutine/sleep functions: new old otus feature
+   * 'interact' is deprecated, use (await (mail ...)) instead
+ * more r7rs compatibility: (features) got 'posix' symbol
+ * i/o speedup (removed sleeper thread)
+ * utf8-decode became a lazy, file reading speedup
+ * json file reading: exponent issue fixed
+ * 'string->number' became r7rs compliant
+ * etc.
+
 ### Otus Lisp, Version 2.2.1
 
 2.2.1 changelog:
