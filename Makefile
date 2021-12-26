@@ -291,16 +291,45 @@ ol:
 
 # emscripten version 1.37.40+
 
-olvm.wasm: src/olvm.c tmp/repl.c
+ol.wasm: src/olvm.c tmp/repl.c
 	emcc src/olvm.c \
 	     tmp/repl.c -DREPL=repl \
-	     -O3 -o olvm.html \
+	     -O3 -o ol.html \
 	   -DHAS_DLOPEN=0 -DHAS_SOCKETS=0 \
 	   -s ASYNCIFY \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \
 	   -s FORCE_FILESYSTEM=0 \
 	   -s WASM=1
+# important note: fix for emscripten to asyncify stdin:
+# @@ -755,6 +755,7 @@ var TTY = {
+#                                         throw new FS.ErrnoError(29)
+#                                 }
+#                                 if (result === undefined && bytesRead === 0) {
+# +                                       bytesRead = -1;
+#                                         throw new FS.ErrnoError(6)
+#                                 }
+#                                 if (result === null || result === undefined) break;
+# @@ -804,7 +805,7 @@ var TTY = {
+#                                         }
+#                                 } else if (typeof window != "undefined" && typeof window.prompt == "function") {
+#                                         result = window.prompt("Input: ");
+# -                                       if (result !== null) {
+# +                                       if (result !== null && result !== undefined) {
+#                                                 result += "\n"
+#                                         }
+#                                 } else if (typeof readline == "function") {
+# @@ -814,7 +815,7 @@ var TTY = {
+#                                         }
+#                                 }
+#                                 if (!result) {
+# -                                       return null
+# +                                       return result
+#                                 }
+#                                 tty.input = intArrayFromString(result, true)
+#                         }
+
+# windows
 
 # You can debug ol.exe using "winedbg --gdb ol.exe"
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
