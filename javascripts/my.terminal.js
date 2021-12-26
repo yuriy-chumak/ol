@@ -252,7 +252,7 @@ var Downloaded = 0;
          if (++Downloaded == Libraries.length) {*/
             // load olvm
             var script = document.createElement('script');
-            script.src = "index.js"; //javascripts/emscripten-1.37.35.js";
+            script.src = "ol.js"; //javascripts/emscripten-1.37.35.js";
 
             script.addEventListener('load', function(me) {
                 terminal.set_prompt('');
