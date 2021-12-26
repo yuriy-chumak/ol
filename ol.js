@@ -755,6 +755,7 @@ var TTY = {
 					throw new FS.ErrnoError(29)
 				}
 				if (result === undefined && bytesRead === 0) {
+					bytesRead = -1;
 					throw new FS.ErrnoError(6)
 				}
 				if (result === null || result === undefined) break;
@@ -804,7 +805,7 @@ var TTY = {
 					}
 				} else if (typeof window != "undefined" && typeof window.prompt == "function") {
 					result = window.prompt("Input: ");
-					if (result !== null) {
+					if (result !== null && result !== undefined) {
 						result += "\n"
 					}
 				} else if (typeof readline == "function") {
@@ -814,7 +815,7 @@ var TTY = {
 					}
 				}
 				if (!result) {
-					return null
+					return result
 				}
 				tty.input = intArrayFromString(result, true)
 			}
