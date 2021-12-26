@@ -6,7 +6,7 @@ categories: en
 > Any sufficiently complicated program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of some Lisp dialect.
 > <br/> <span style="float: right;">Greenspun's tenth rule</span>
 
-We have a Twitter! Follow us [@otus_lisp](https://twitter.com/otus_lisp).
+**We have a Twitter! Follow us [@otus_lisp](https://twitter.com/otus_lisp).**
 
 
 **Otus Lisp** (Ol in short) is a purely[\*](#pure) functional dialect of Lisp.
@@ -15,7 +15,38 @@ It implements an extended subset of [R<sup>7</sup>RS](https://www.r7rs.org) Sche
 
 ### Downloads
 
-:boom:
+Preparing **2.3**.
+
+2.3 RC1 changelog:
+ * Ol got it's own [twitter account](https://twitter.com/otus_lisp)
+ * vm opcodes 3,4,6,7 (OCLOS, CLOS1) is deprecated, will be removed soon
+ * new opcode 48 (universal CLOS) is introduced (will be changed to 3 after deprecations remove)
+ * new 'vm:set!' vm command, should speedup internal bytevector manipulations
+ * integrated disassembler introduced (use ",dis" repl command)
+   * try ',dis +' to view the '+' function disassembly
+ * ',save' repl feature returned; still experimental due to ffi
+   * you can ',save' a current session in the binary file and return to saved state by starting new Ol session with this file
+ * Unicode support updated to version 14.0.0
+ * big numbers vm loader fix
+ * windows setup update
+ * GC tune (reduced full gc count)
+ * more samples and tests
+   * more gtk
+   * 3d game shaders for beginners
+   * convey's life
+   * etc.
+ * windows command line support multiple path in "--home=...;..."
+ * (define-values) can be used inside lambdas, begin, etc.
+ * (otus async) async/await/coroutine/sleep functions: new old otus feature
+   * 'interact' is deprecated, use (await (mail ...)) instead
+ * more r7rs compatibility: (features) got 'posix' symbol
+ * i/o speedup (removed sleeper thread)
+ * utf8-decode became a lazy, file reading speedup
+ * json file reading: exponent issue fixed
+ * 'string->number' became r7rs compliant
+ * etc.
+
+
 Release **2.2** is prepared.
 
 Major changes:
