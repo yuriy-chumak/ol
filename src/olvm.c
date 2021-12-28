@@ -1585,19 +1585,6 @@ static int unsafesp = 1;
 #define is_flagged(x) (((word)(x)) & 1)  // mark for GC
 
 
-// возвращается по цепочке "flagged" указателей назад
-static __inline__
-word* chase(word* pos) {
-	//	assert(pos IS flagged)
-	word* p_pos;
-	while (1) {
-		p_pos = *(word**) ((word)pos & ~1);      // p_pos = *pos; ~ = bitwise NOT, (корректное разименование указателя, без учета бита mark)
-		if (!is_reference(p_pos) || !is_flagged(p_pos)) // p_pos & 0x3 == 0x1
-			return (word*)((word)pos & ~1);
-		pos = p_pos;
-	}
-}
-
 // cells - новый размер кучи (в словах)
 static
 ptrdiff_t resize_heap(heap_t *heap, int cells)
@@ -1652,6 +1639,19 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 #if DEBUG_GC
 big_t marked;
 #endif
+
+// возвращается по цепочке "flagged" указателей назад
+static __inline__
+word* chase(word* pos) {
+	//	assert(pos IS flagged)
+	word* p_pos;
+	while (1) {
+		p_pos = *(word**) ((word)pos & ~1);      // p_pos = *pos; ~ = bitwise NOT, (корректное разименование указателя, без учета бита mark)
+		if (!is_reference(p_pos) || !is_flagged(p_pos)) // p_pos & 0x3 == 0x1
+			return (word*)((word)pos & ~1);
+		pos = p_pos;
+	}
+}
 
 // todo: ввести третий generation
 // просматривает список справа налево
