@@ -955,6 +955,16 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2021 Yuriy Chumak";
 # endif
 #endif
 
+#ifndef offsetof
+# if GCC_VERSION < 40503
+#	define offsetof(st, m) \
+        ((size_t)((char *)&((st *)0)->m - (char *)0))
+# else
+#	define offsetof __builtin_offsetof
+# endif
+#endif
+
+
 #if GCC_VERSION < 40500
 #	define __builtin_unreachable() do { \
 		char s[] = "I saw a dragon!\n"; \
@@ -1675,14 +1685,7 @@ void mark(word *pos, word *end, heap_t* heap)
 	}
 }
 
-// TODO: вот здесь можно провести очень неплохую оптимизацию
-//       а именно - проверить обратные функции (R[128+], которые
-//       лежат в памяти по адресу root+128 - если данные в регистре
-//       не изменились, значит больше нету никого, кто ссылается на
-//       тот же элемент данных (обратный вызов), а значит его можно
-//       просто удалить!
-
-// на самом деле compact & sweep
+// compact & sweep
 static
 word *sweep(word* end, heap_t* heap)
 {
@@ -1747,7 +1750,6 @@ word gc(heap_t *heap, int query, word regs)
 		// непосредственно сам процесс сборки
 		root[0] = regs;
 		mark(root, fp, heap);        // assert (root > fp)
-		// todo: проверить и очистить callables перед sweep
 		fp = sweep(fp, heap);
 		regs = root[0];
 
@@ -1874,8 +1876,8 @@ struct olvm_t
 	heap_t heap; // MUST be first (!)
 	// word max_heap_size; // max heap size in MiB
 
-	jmp_buf fail;	 // аварийный выход из любого места olvm
-	void* userdata; // user data
+	jmp_buf fail;   // аварийный выход из любого места olvm
+	void* userdata;	// user data
 
 	// i/o polymorphism
 	open_t*  open;
@@ -1887,7 +1889,7 @@ struct olvm_t
 	// callback when OL task ready to switch
 	idle_t* idle;
 
-	// 0 - mcp, 1 - clos, 2 - env, 3 - a0, often cont
+	// 0 - mcp, 1 - this, 2 - sub-this, 3 - a0, often cont
 	// todo: перенести R в конец кучи, а сам R в heap
 	word R[NR + CR];   // регистры виртуальной машины
 	// pinned objects support
@@ -1898,6 +1900,7 @@ struct olvm_t
 	long arity;
 };
 
+static_assert(offsetof(olvm_t, heap) == 0, "heap_t must be first field of olvm_t!");
 // -=( ol ffi )--------------------------------------
 
 // =================================================================
