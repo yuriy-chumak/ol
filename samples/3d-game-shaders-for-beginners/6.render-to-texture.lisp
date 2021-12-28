@@ -2,20 +2,26 @@
 
 ;; initialize OpenGL
 (import (lib gl))
-(gl:set-window-title "6. render-to-texture")
+(gl:set-window-title "6.render-to-texture.lisp")
 (import (OpenGL version-2-1))
-; todo: splash screen
 
 (import (scene))
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
-(print "compiled models:\n" models)
 
 ;; load a scene
 (import (file json))
 (define scene (read-json-file "scene1.json"))
 
+;; init
+(glShadeModel GL_SMOOTH)
+(glEnable GL_DEPTH_TEST)
+
+;(glEnable GL_CULL_FACE)
+;(glCullFace GL_BACK)
+
+; create glsl shader program
 (define normals (gl:CreateProgram
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
@@ -30,7 +36,7 @@
       gl_FragColor = vec4(normalize(normal), 1.0);
    }"))
 
-(define justdraw (gl:CreateProgram
+(define draw-texture (gl:CreateProgram
 "#version 120 // OpenGL 2.1
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
@@ -42,11 +48,6 @@
       gl_FragColor = texture2D(tex0, gl_TexCoord[0].st);
    }"))
 
-
-;; let's find a sun
-(define sun (car (filter (lambda (light) (string-ci=? (light 'type) "SUN"))
-   (vector->list (scene 'Lights)))))
-(print "sun:" sun)
 
 ;; render buffer
 (import (OpenGL EXT framebuffer_object))
@@ -80,10 +81,6 @@
 (glRenderbufferStorage GL_RENDERBUFFER GL_DEPTH_COMPONENT TEXW TEXH)
 (glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (car depthrenderbuffer))
 
-; init
-(glShadeModel GL_SMOOTH)
-(glEnable GL_DEPTH_TEST)
-
 ; draw
 (gl:set-renderer (lambda (mouse)
    (glViewport 0 0 TEXW TEXH)
@@ -93,24 +90,31 @@
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
    (glUseProgram normals)
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (glOrtho -20 20 -20 20 -20 20)
+   ; Camera setup
+   (begin
+      (define camera (ref (scene 'Cameras) 1))
 
-   (glMatrixMode GL_MODELVIEW)
-   (glLoadIdentity)
-   (gluLookAt
-      (ref (sun 'position) 1) ; x
-      (ref (sun 'position) 2) ; y
-      (ref (sun 'position) 3) ; z
-      0 0 0 ; sun is directed light
-      0 0 1) ; up is 'z'
+      (define angle (camera 'angle))
+      (define location (camera 'location))
+      (define target (camera 'target))
 
-   ; set and show lighting point
+      (glMatrixMode GL_PROJECTION)
+      (glLoadIdentity)
+      (gluPerspective angle (/ (gl:get-window-width) (gl:get-window-height)) 0.1 100) ; (camera 'clip_start) (camera 'clip_end)
+
+      (glMatrixMode GL_MODELVIEW)
+      (glLoadIdentity)
+      (gluLookAt
+         (ref location 1) (ref location 2) (ref location 3)
+         (ref target 1) (ref target 2) (ref target 3)
+         0 0 1))
+
+   ; draw a geometry
    (draw-geometry scene models)
 
+   ; draw a texture:
    (glBindFramebuffer GL_FRAMEBUFFER 0)
-   (glUseProgram justdraw)
+   (glUseProgram draw-texture)
 
    (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
    (glClearColor 0 0 0 1)
