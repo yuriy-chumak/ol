@@ -25,17 +25,27 @@ shading techniques with Panda3D and OpenGL specifically.
 ## Table Of Contents
 
 - :heavy_check_mark: [Setup](sections/1.setup.md)
+    ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/setup.md))
 - :heavy_check_mark: [Dependencies](sections/2.dependencies.md)
+    ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/building-the-demo.md))
 - :heavy_check_mark: [Running The Demo](sections/3.running-the-demo.md)
-- :heavy_check_mark: [Reference Frames](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/reference-frames.md)
+    ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/running-the-demo.md))
+
+- :heavy_check_mark: [Reference Frames](sections/4.reference-frames.md)
+    ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/reference-frames.md))
+
 - :heavy_check_mark: [GLSL](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/glsl.md)
   - :heavy_check_mark: [Ol related notes](sections/5.glsl.md)
+
 - :heavy_check_mark: [Render To Texture](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/render-to-texture.md)
   - :heavy_check_mark: [Ol related notes](sections/6.render-to-texture.md)
+
 - :heavy_check_mark: [Texturing](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/texturing.md)
   - :heavy_check_mark: [Ol related notes](sections/7.render-to-depth-buffer.md)
+
 - :heavy_check_mark: [Lighting](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/lighting.md)
   - :heavy_check_mark: [Ol related notes](sections/8.lighting.md)
+
 - :heavy_multiplication_x: [Blinn-Phong](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/blinn-phong.md)
 - :heavy_multiplication_x: [Fresnel Factor](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/fresnel-factor.md)
 - :heavy_multiplication_x: [Rim Lighting](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/rim-lighting.md)
