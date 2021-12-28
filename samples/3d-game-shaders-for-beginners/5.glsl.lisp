@@ -9,24 +9,10 @@
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
-(print "compiled models:\n" models)
 
 ;; load a scene
 (import (file json))
 (define scene (read-json-file "scene1.json"))
-
-(define colored (gl:CreateProgram
-"#version 120 // OpenGL 2.1
-   #define gl_WorldMatrix gl_TextureMatrix[7]
-   void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_WorldMatrix * gl_Vertex;
-      gl_FrontColor = gl_Color;
-   }"
-"#version 120 // OpenGL 2.1
-   void main() {
-      gl_FragColor = gl_Color;
-   }"))
-
 
 ;; init
 (glShadeModel GL_SMOOTH)
@@ -35,12 +21,24 @@
 (glEnable GL_CULL_FACE)
 (glCullFace GL_BACK)
 
+; create glsl shader program
+(define greeny (gl:CreateProgram
+"#version 120 // OpenGL 2.1
+   #define gl_WorldMatrix gl_TextureMatrix[7]
+   void main() {
+      gl_Position = gl_ModelViewProjectionMatrix * gl_WorldMatrix * gl_Vertex;
+   }"
+"#version 120 // OpenGL 2.1
+   void main() {
+      gl_FragColor = vec4(0, 1, 0, 1);
+   }"))
+
 ; draw
 (gl:set-renderer (lambda (mouse)
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
-   (glUseProgram colored)
+   (glUseProgram greeny)
 
    ; Camera setup
    (begin
@@ -61,6 +59,6 @@
          (ref target 1) (ref target 2) (ref target 3)
          0 0 1))
 
-   ; Draw a geometry with colors
+   ; draw a geometry
    (draw-geometry scene models)
 ))
