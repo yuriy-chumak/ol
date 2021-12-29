@@ -89,11 +89,7 @@
 
    ; internal helpers
    (define (copy! to at from start end)  ; * internal helper
-      (let loop ((start start) (p at))
-         (when (less? start end)
-            (set-ref! to p (ref from start))
-            (loop (++ start) (++ p))))
-      to)
+      (vm:set! to at from start end))
    (define (copy from start end)  ; * internal helper
       (define out (make-bytevector (- end start)))
       (copy! out 0 from start end))

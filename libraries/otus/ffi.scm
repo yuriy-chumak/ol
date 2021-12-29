@@ -193,10 +193,7 @@
 (define (fft& type)
    (vm:ior type #x20000))
 
-; ? для результата, что превышает x00FFFFFF надо использовать type-handle
-; ? 44 - is socket but will be free
-; ? (define type-handle 45)
-; ? todo: (vm:cast type-constant) and start from number 1?
+
 (define type-callable 61)
 
 (define fft-float   46)
@@ -365,11 +362,7 @@
 
    (define (bytevector->void* bvec offset)
       (let ((void* (make-vptr)))
-         (map (lambda (i j) ; for-each
-               (set-ref! void* i (ref bvec j)))
-            (iota (size void*) 0)
-            (iota (size void*) offset))
-         void*))
+         (vm:set! void* 0 bvec offset (size void*))))
 
    (define (vptr->bytevector vptr sizeof)
       (syscall 9 vptr sizeof))
