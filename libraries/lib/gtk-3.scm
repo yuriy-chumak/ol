@@ -17,7 +17,7 @@
       gtk_window_set_title
       gtk_window_set_default_size
       gtk_widget_show_all
-      gtk_widget_show_all
+      gtk_widget_hide
 
 
       GtkContainer*
@@ -117,6 +117,7 @@
 (define gtk_window_set_default_size (GTK fft-void "gtk_window_set_default_size" GtkWindow* gint gint))
 
 (define gtk_widget_show_all (GTK fft-void "gtk_widget_show_all" GtkWidget*))
+(define gtk_widget_hide (GTK fft-void "gtk_widget_hide" GtkWidget*))
 
 (define gtk_container_add (GTK fft-void "gtk_container_add" GtkContainer* GtkWidget*))
 (define gtk_container_foreach (GTK fft-void "gtk_container_foreach" GtkContainer* GtkCallback gpointer))

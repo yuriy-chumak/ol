@@ -18,6 +18,13 @@
 
 ; about dialog
 (define about (gtk_builder_get_object builder "about"))
+(define response (vm:pin (cons
+   (cons gint (list GtkWidget* gint))
+   (lambda (widget userdata)
+      (print "aqbout dialog response: " gint)
+      TRUE)
+)))
+(g_signal_connect about "response" (G_CALLBACK response) NULL)
 
 ; get a button from template
 (define button (gtk_builder_get_object builder "a_button"))
@@ -25,6 +32,7 @@
    (cons gint (list GtkWidget* gpointer))
    (lambda (widget userdata)
       (gtk_dialog_run about)
+      (gtk_widget_hide about) ; do not close, just hide
       TRUE)
 )))
 (g_signal_connect button "clicked" (G_CALLBACK click) NULL)
