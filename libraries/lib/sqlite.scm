@@ -649,7 +649,7 @@
                         ((rational? arg)
                            (sqlite3_bind_double statement n arg))
                         ((string? arg)
-                           (sqlite3_bind_text   statement n arg (string-length arg) SQLITE_TRANSIENT))
+                           (sqlite3_bind_text   statement n arg -1 SQLITE_TRANSIENT))
                         ((bytevector? arg)
                            (sqlite3_bind_blob   statement n arg (size arg) SQLITE_TRANSIENT))
                         ((null? arg)
