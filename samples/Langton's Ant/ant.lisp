@@ -18,7 +18,7 @@
 ))
 
 ; ---------------
-(import (lib gl2))
+(import (lib gl-2))
 (gl:set-window-title "Langton's Ant")
 
 (glShadeModel GL_SMOOTH)

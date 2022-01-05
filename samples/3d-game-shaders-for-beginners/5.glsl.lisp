@@ -1,7 +1,7 @@
 #!/usr/bin/env ol
 
-;; initialize OpenGL
-(import (lib gl2))
+; initialize OpenGL
+(import (lib gl-2))
 (gl:set-window-title "5.glsl.lisp")
 
 (import (scene))

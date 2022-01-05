@@ -53,7 +53,7 @@
       (if (eq? n 3)
          #true)))))
 
-(import (lib gl2))
+(import (lib gl-2))
 (gl:set-window-title "Convey's The game of Life")
 (import (OpenGL EXT geometry_shader4))
 

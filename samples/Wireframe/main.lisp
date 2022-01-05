@@ -69,7 +69,7 @@
    (+ (* y MAX) x)))
 
 ; ---------------
-(import (lib gl2))
+(import (lib gl-2))
 (gl:set-window-title "Wireworld")
 
 (glShadeModel GL_SMOOTH)

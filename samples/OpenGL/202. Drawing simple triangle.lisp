@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (lib gl2))
+(import (lib gl-2))
 (gl:set-window-title "2. Drawing simple triangle")
 
 ; init

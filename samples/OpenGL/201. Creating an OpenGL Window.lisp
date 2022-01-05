@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (lib gl2))
+(import (lib gl-2))
 (gl:set-window-title "1. Creating an OpenGL 2.1 Window")
 
 ; init

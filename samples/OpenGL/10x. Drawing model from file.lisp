@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 
-(import (lib gl2))
+(import (lib gl-2))
 (import (otus ffi))
 (gl:set-window-title "3. Drawing model from file")
 

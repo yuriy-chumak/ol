@@ -100,5 +100,5 @@ GL_CURRENT_PROGRAM
 
    (define (gl:CreateProgram . args)
       (print-to stderr "gl:CreateProgram is deprecated.")
-      (print-to stderr "  Use (import (lib gl2)) and (gl:create-program . args) instead."))
+      (print-to stderr "  Use (import (lib gl-2)) and (gl:create-program . args) instead."))
 ))

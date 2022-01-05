@@ -3,7 +3,7 @@
 (import (otus ann))
 
 ; =================================================
-(import (lib gl2))
+(import (lib gl-2))
 
 (gl:set-window-title "Sample ANN (mnist database)")
 (glShadeModel GL_SMOOTH)
