@@ -38,7 +38,7 @@
 
 ; -------------------------------------------
 ; создадим шейдер превращения точек в квадратики
-(define po (gl:create-program GL_POINT GL_TRIANGLE_STRIP 4
+(define po (gl:create-program GL_POINTS GL_TRIANGLE_STRIP 4
 "#version 120
    #extension GL_EXT_geometry_shader4 : enable
 
