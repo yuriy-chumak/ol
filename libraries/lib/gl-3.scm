@@ -1,15 +1,15 @@
-(define-library (lib gl3)
+(define-library (lib gl-3)
 (import
    (scheme base)
    (owl math) (otus async)
    (lib gl config)
-   (lib gl2) (OpenGL version-3-0))
+   (lib gl-2)
+   (OpenGL version-3-0))
 (export
-   (exports (lib gl2))
-   (exports (OpenGL version-3-0))
-
    gl:set-context-version ; recreate OpenGL with version
-)
+
+   (exports (lib gl-2))
+   (exports (OpenGL version-3-0)))
 
 ; -=( 3.0+ )=-------------------------
 ; Higher OpenGL versions support
@@ -72,7 +72,4 @@
 )
 
 (begin
-   (import (owl io))
-   (print-to stderr "(lib gl3) is deprecated. Use (lib gl-3) instead!")
-
    #true))

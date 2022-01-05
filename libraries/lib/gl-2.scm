@@ -1,8 +1,10 @@
-(define-library (lib gl2)
+(define-library (lib gl-2)
 (import
    (scheme core)
    (scheme bytevector)
-   (lib gl) (OpenGL version-2-1))
+   (lib gl config)
+   (lib gl)
+   (OpenGL version-2-1))
 (export
    gl:create-program
 
@@ -10,8 +12,6 @@
    (exports (OpenGL version-2-1)))
    
 (begin
-   (import (owl io))
-   (print-to stderr "(lib gl2) is deprecated. Use (lib gl-2) instead!")
 
    (define (compile shader source)
       (glShaderSource shader 1 (list source) #false)
