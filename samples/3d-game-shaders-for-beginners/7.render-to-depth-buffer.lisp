@@ -1,9 +1,8 @@
 #!/usr/bin/env ol
 
 ;; initialize OpenGL
-(import (lib gl))
+(import (lib gl2))
 (gl:set-window-title "7. Render to the Depth Buffer")
-(import (OpenGL version-2-1))
 ; todo: splash screen
 
 (import (scene))
@@ -22,7 +21,7 @@
 (print "sun:" sun)
 
 ;; shaders
-(define just-depth (gl:CreateProgram
+(define just-depth (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
    void main() {
@@ -33,7 +32,7 @@
       // nothing to do
    }"))
 
-(define justdraw (gl:CreateProgram
+(define justdraw (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
@@ -46,7 +45,7 @@
    }"))
 
 
-(define aprogram (gl:CreateProgram
+(define aprogram (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
    varying vec4 fragPosLightSpace;

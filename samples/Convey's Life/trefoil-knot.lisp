@@ -1,7 +1,6 @@
 #!/usr/bin/env ol
 
-(import (lib gl))
-(import (OpenGL version-2-1))
+(import (lib gl2))
 (import (scheme inexact))
 
 (gl:set-window-title "Convey's The game of Life on the Trefoil Knot")

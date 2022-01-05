@@ -1,8 +1,6 @@
 #!/usr/bin/env ol
-(import (lib gl))
+(import (lib gl2))
 (gl:set-window-title "1. Creating an OpenGL 2.1 Window")
-
-(import (OpenGL version-2-1))
 
 ; init
 (glShadeModel GL_SMOOTH)

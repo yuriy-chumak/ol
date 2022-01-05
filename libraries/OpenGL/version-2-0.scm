@@ -14,9 +14,6 @@
 
    GL_VERSION_2_0
 
-   gl:GetVersion
-   gl:CreateProgram
-
 glCreateShader
 GL_VERTEX_SHADER
 GL_FRAGMENT_SHADER
@@ -50,7 +47,7 @@ glDrawArrays
 
 GL_CURRENT_PROGRAM
 
-   )
+   gl:CreateProgram)
 
    (import (scheme core)
       (owl string) (owl io)
@@ -100,69 +97,8 @@ GL_CURRENT_PROGRAM
 
    (define GL_CURRENT_PROGRAM #x8B8D)
 
-(define (gl:GetVersion)
-   (cons 2 0))
 
-
-(define (compile shader source)
-   (glShaderSource shader 1 (list source) #false)
-   (glCompileShader shader)
-   (let ((isCompiled (box 0)))
-      (glGetShaderiv shader GL_COMPILE_STATUS isCompiled)
-
-      (if (eq? (unbox isCompiled) 0)
-         (let*((maxLength (box 0))
-               (_ (glGetShaderiv shader GL_INFO_LOG_LENGTH maxLength))
-               (maxLengthValue (unbox maxLength))
-               (errorLog (make-bytevector maxLengthValue 0))
-               (_ (glGetShaderInfoLog shader maxLengthValue maxLength errorLog)))
-            (runtime-error (utf8->string errorLog) shader)))))
-
-(define (link program . shaders)
-   (for-each (lambda (shader)
-         (glAttachShader program shader))
-      shaders)
-
-   (glLinkProgram program)
-   (let ((isLinked (box 0)))
-      (glGetProgramiv program GL_LINK_STATUS isLinked)
-      (if (eq? (unbox isLinked) 0)
-         (let*((maxLength (box 0))
-               (_ (glGetProgramiv program GL_INFO_LOG_LENGTH maxLength))
-               (maxLengthValue (unbox maxLength))
-               (errorLog (make-bytevector maxLengthValue 0))
-               (_ (glGetProgramInfoLog program maxLengthValue maxLength errorLog)))
-            (runtime-error (utf8->string errorLog) program))))
-
-   (for-each (lambda (shader)
-         (glDetachShader program shader))
-      shaders))
-
-(define gl:CreateProgram (case-lambda
-   ((vstext fstext)
-            (let ((po (glCreateProgram))
-                  (vs (glCreateShader GL_VERTEX_SHADER))
-                  (fs (glCreateShader GL_FRAGMENT_SHADER)))
-               (if (eq? po 0)
-                  (runtime-error "Can't create shader program." #f))
-
-               (compile vs vstext)
-               (compile fs fstext)
-
-               (link po vs fs)
-               po))
-   ((gstext vstext fstext)
-            (let ((po (glCreateProgram))
-                  (gs (glCreateShader #|GL_GEOMETRY_SHADER|# #x8DD9)) ; (OpenGL EXT geometry_shader4)
-                  (vs (glCreateShader GL_VERTEX_SHADER))
-                  (fs (glCreateShader GL_FRAGMENT_SHADER)))
-               (if (eq? po 0)
-                  (runtime-error "Can't create shader program." #f))
-
-               (compile gs gstext)
-               (compile vs vstext)
-               (compile fs fstext)
-
-               (link po gs vs fs)
-               po))))
+   (define (gl:CreateProgram . args)
+      (print-to stderr "gl:CreateProgram is deprecated.")
+      (print-to stderr "  Use (import (lib gl2)) and (gl:create-program . args) instead."))
 ))

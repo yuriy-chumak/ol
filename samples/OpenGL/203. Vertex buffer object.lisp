@@ -1,14 +1,12 @@
 #!/usr/bin/env ol
-(import (lib gl))
+(import (lib gl2))
 (gl:set-window-title "3. VBO")
-
-(import (OpenGL version-2-1))
 
 ; init
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
-(define po (gl:CreateProgram
+(define po (gl:create-program
 "#version 120 // OpenGL 2.1
 	void main() {
 		gl_Position = gl_Vertex;

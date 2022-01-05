@@ -12,7 +12,7 @@
 (glClearColor 0.11 0.11 0.11 1)
 
 
-(define po (gl:CreateProgram
+(define po (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
       gl_Position = gl_Vertex;

@@ -1,5 +1,4 @@
 #!/usr/bin/env ol
-(import (lib gl))
 (import (otus random!))
 (import (scheme dynamic-bindings))
 
@@ -7,11 +6,17 @@
 (import (owl parse))
 (import (file xpm))
 
-(define population (parse xpm-parser (file->bytestream
+(define population (try-parse xpm-parser (file->bytestream
    (or
       (and (pair? (command-line)) (car (command-line)))
       "initial.xpm"))
-   #f #f #f))
+   #true))
+
+(unless population
+   (print "invalid input file")
+   (exit 1))
+
+(define population (car population))
 
 ; the size of world
 (define WIDTH  (* 2 (population 'width)))
@@ -48,8 +53,8 @@
       (if (eq? n 3)
          #true)))))
 
+(import (lib gl2))
 (gl:set-window-title "Convey's The game of Life")
-(import (OpenGL version-2-1))
 (import (OpenGL EXT geometry_shader4))
 
 (glShadeModel GL_SMOOTH)
@@ -57,25 +62,11 @@
 (glOrtho 0 WIDTH 0 HEIGHT -1 1)
 
 ; создадим шейдер превращения точек в квадратики
-(define po (glCreateProgram))
-(define vs (glCreateShader GL_VERTEX_SHADER))
-(define gs (glCreateShader GL_GEOMETRY_SHADER))
-(define fs (glCreateShader GL_FRAGMENT_SHADER))
-
-(glShaderSource vs 1 (list "
-   #version 120 // OpenGL 2.1
-   void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-      gl_FrontColor = gl_Color;
-   }") #false)
-(glCompileShader vs)
-(glAttachShader po vs)
-
-; more info: https://www.khronos.org/opengl/wiki/Geometry_Shader_Examples
-(glShaderSource gs 1 (list "
-   #version 120
+(define po (gl:create-program GL_POINTS GL_TRIANGLE_STRIP 4
+"#version 120
    #extension GL_EXT_geometry_shader4 : enable
 
+   // more info: https://www.khronos.org/opengl/wiki/Geometry_Shader_Examples
    void main()
    {
       gl_Position = gl_PositionIn[0];
@@ -93,33 +84,22 @@
       gl_Position = gl_PositionIn[0] + gl_ModelViewProjectionMatrix * vec4(1.0, 1.0, 0.0, 0.0);
       gl_FrontColor = gl_FrontColorIn[0];
       EmitVertex();
-   }") #false)
-(glCompileShader gs)
-(glAttachShader po gs)
-(glProgramParameteri po GL_GEOMETRY_INPUT_TYPE GL_POINTS)
-(glProgramParameteri po GL_GEOMETRY_OUTPUT_TYPE GL_TRIANGLE_STRIP) ; only POINTS, LINE_STRIP and TRIANGLE_STRIP is allowed
-(glProgramParameteri po GL_GEOMETRY_VERTICES_OUT 4)
-
-(glShaderSource fs 1 (list "
-   #version 120 // OpenGL 2.1
+   }"
+"#version 120 // OpenGL 2.1
+   void main() {
+      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+      gl_FrontColor = gl_Color;
+   }"
+"#version 120 // OpenGL 2.1
    void main(void) {
       gl_FragColor = gl_Color;
    }
-") #false)
-(glCompileShader fs)
-(glAttachShader po fs)
-
-(glLinkProgram po)
-
-(glDetachShader po fs)
-(glDetachShader po gs)
-(glDetachShader po vs)
+"))
 
 ; shaders done
 (gl:set-resize-handler (lambda (width height)
    (glViewport 0 0 width height)
    (glPointSize (/ width WIDTH))))
-
 
 (define userdata (make-parameter
    (let ((initial population))
@@ -128,10 +108,10 @@
                         (if (eq? col #\space)
                            ff
                            (put ff (hash x y) 1)))
-                  ff row (iota (initial 'width) (/ (- WIDTH (initial 'width)) 2))))
+                  ff row (iota (initial 'width) (div (- WIDTH (initial 'width)) 2))))
          #empty
          (initial 'bitmap)
-         (iota (initial 'height) (/ (- HEIGHT (initial 'height)) 2))))))
+         (iota (initial 'height) (div (- HEIGHT (initial 'height)) 2))))))
 
 
 (gl:set-renderer (lambda (mouse)
@@ -174,4 +154,5 @@
             (if (alive generation key)
                (put st key (+ value 1))
                st))
-         #empty new-generation)))))
+         #empty new-generation))
+         )))

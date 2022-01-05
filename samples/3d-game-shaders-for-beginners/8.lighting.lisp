@@ -1,9 +1,8 @@
 #!/usr/bin/env ol
 
 ;; initialize OpenGL
-(import (lib gl))
+(import (lib gl2))
 (gl:set-window-title "8. Lighting")
-(import (OpenGL version-2-1))
 
 (import (scene))
 
@@ -16,7 +15,7 @@
 (define scene (read-json-file "scene1.json"))
 
 ;; shaders
-(define po (gl:CreateProgram
+(define po (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
    void main() {
@@ -29,13 +28,13 @@
 
 ;; -----------------------
 ; https://learnopengl.com/Getting-started/Coordinate-Systems
-(define shadowed (gl:CreateProgram ; todo: add "#define" to the shaders aas part of language
-   ;; (file->string "light.vs")
-   ;; (file->string "light.fs")))
+; модели освещения: http://steps3d.narod.ru/tutorials/lighting-tutorial.html
+
+(define shadowed (gl:create-program ; todo: add "#define" to the shaders aas part of language
    (file->string "shaders/8.lighting.vs")
    (file->string "shaders/8.lighting.fs")))
 
-(define justdraw (gl:CreateProgram
+(define justdraw (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;

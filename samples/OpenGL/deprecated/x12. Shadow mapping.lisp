@@ -100,7 +100,7 @@
 (define knots '(0 0 0 0 1 1 1 1))
 
 (define (compile-shader)
-(let ((po (gl:CreateProgram
+(let ((po (gl:create-program
 "#version 120 // OpenGL 2.1
    varying vec2 xy;
    void main() {

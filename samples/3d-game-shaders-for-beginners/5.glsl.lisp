@@ -1,9 +1,8 @@
 #!/usr/bin/env ol
 
 ;; initialize OpenGL
-(import (lib gl))
+(import (lib gl2))
 (gl:set-window-title "5.glsl.lisp")
-(import (OpenGL version-2-1))
 
 (import (scene))
 
@@ -22,7 +21,7 @@
 (glCullFace GL_BACK)
 
 ; create glsl shader program
-(define greeny (gl:CreateProgram
+(define greeny (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
    void main() {

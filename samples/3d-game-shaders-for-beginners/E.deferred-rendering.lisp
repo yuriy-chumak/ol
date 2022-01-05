@@ -1,9 +1,8 @@
 #!/usr/bin/env ol
 
 ;; initialize OpenGL
-(import (lib gl))
+(import (lib gl2))
 (gl:set-window-title "E. Deferred Rendering")
-(import (OpenGL version-2-1))
 
 (import (scene))
 
@@ -21,7 +20,7 @@
 (print "sun:" sun)
 
 ;; shaders
-(define just-depth (gl:CreateProgram
+(define just-depth (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
    void main() {
@@ -34,11 +33,11 @@
 
 ;; -----------------------
 ; https://learnopengl.com/Getting-started/Coordinate-Systems
-(define forward-program (gl:CreateProgram
+(define forward-program (gl:create-program
    (file->string "shaders/E.deferred-rendering.vs")
    (file->string "shaders/E.deferred-rendering.fs")))
 
-(define justdraw (gl:CreateProgram
+(define justdraw (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
@@ -50,7 +49,7 @@
       gl_FragColor = texture2D(shadowMap, gl_TexCoord[0].st);
    }"))
 
-(define deferred-shadow (gl:CreateProgram
+(define deferred-shadow (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;

@@ -1,9 +1,8 @@
 #!/usr/bin/env ol
 
 ;; initialize OpenGL
-(import (lib gl))
+(import (lib gl2))
 (gl:set-window-title "6.render-to-texture.lisp")
-(import (OpenGL version-2-1))
 
 (import (scene))
 
@@ -22,7 +21,7 @@
 ;(glCullFace GL_BACK)
 
 ; create glsl shader program
-(define normals (gl:CreateProgram
+(define normals (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
    varying vec3 normal;
@@ -36,7 +35,7 @@
       gl_FragColor = vec4(normalize(normal), 1.0);
    }"))
 
-(define draw-texture (gl:CreateProgram
+(define draw-texture (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
       gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;

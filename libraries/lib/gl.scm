@@ -33,36 +33,26 @@
    native:enable-context native:disable-context
    hook:exit)
 
+; notes:
+;  WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
+;  GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
+
 (begin
    (setq x32? (eq? (size nullptr) 4))
-
-
-   ; WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
-   ; GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
 
    (define WIDTH  (get config 'width  854))
    (define HEIGHT (get config 'height 480))
 
-;; (define CONFIG (pairs->ff '( ; todo: move to config
-;;    (red   .  8)
-;;    (green .  8)
-;;    (blue  .  8)
-;;    (depth . 24)
-;;    ;
-;;    ; alpha
-;;    ; stencil
-;;    ; version?
-;; )))
-
 ; assume that window size can not be large than 16777215 for x32 build
 ;                                  and 72057594037927935 for x64 build.
-   (define gl:window-dimensions [0 0 WIDTH HEIGHT]); x y width height
-   (define STATE gl:window-dimensions) ;[0 0 WIDTH HEIGHT]) ; current window state
+   (define STATE [0 0 WIDTH HEIGHT]) ; x y width height, current window state
 
    (define (gl:get-window-width)
       (ref STATE 3))
    (define (gl:get-window-height)
       (ref STATE 4))
+
+   (define gl:window-dimensions STATE)
 )
 
 ; ===================================================

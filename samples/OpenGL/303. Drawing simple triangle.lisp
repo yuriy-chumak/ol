@@ -28,7 +28,7 @@
 (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) 3 (length Vertices)) (cons fft-float* (apply append Vertices)) GL_STATIC_DRAW) ; 3 for x,y,z
 (glEnableVertexAttribArray 0)
 
-(define po (gl:CreateProgram
+(define po (gl:create-program
 "#version 130
 	in vec3 position;
 	void main() {

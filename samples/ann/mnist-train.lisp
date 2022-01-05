@@ -4,7 +4,6 @@
 
 ; =================================================
 (import (lib gl2))
-(import (OpenGL EXT geometry_shader4))
 
 (gl:set-window-title "Sample ANN (mnist database)")
 (glShadeModel GL_SMOOTH)
@@ -37,23 +36,8 @@
    (iota 10)))
 
 ; создадим шейдер превращения точек в квадратики
-(define po (glCreateProgram))
-(define vs (glCreateShader GL_VERTEX_SHADER))
-(define gs (glCreateShader GL_GEOMETRY_SHADER))
-(define fs (glCreateShader GL_FRAGMENT_SHADER))
-
-(glShaderSource vs 1 (list "
-   #version 120 // OpenGL 2.1
-   void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-      gl_FrontColor = gl_Color;
-   }") #false)
-(glCompileShader vs)
-(glAttachShader po vs)
-
-; more info: https://www.khronos.org/opengl/wiki/Geometry_Shader_Examples
-(glShaderSource gs 1 (list "
-   #version 120
+(define po (gl:create-program GL_POINTS GL_TRIANGLE_STRIP 4
+"#version 120
    #extension GL_EXT_geometry_shader4 : enable
 
    void main()
@@ -73,30 +57,19 @@
       gl_Position = gl_PositionIn[0] + gl_ModelViewProjectionMatrix * vec4(1.0, 1.0, 0.0, 0.0);
       gl_FrontColor = gl_FrontColorIn[0];
       EmitVertex();
-   }") #false)
-(glCompileShader gs)
-(glAttachShader po gs)
-(glProgramParameteri po GL_GEOMETRY_INPUT_TYPE GL_POINTS)
-(glProgramParameteri po GL_GEOMETRY_OUTPUT_TYPE GL_TRIANGLE_STRIP) ; only POINTS, LINE_STRIP and TRIANGLE_STRIP is allowed
-(glProgramParameteri po GL_GEOMETRY_VERTICES_OUT 4)
-
-(glShaderSource fs 1 (list "
-   #version 120 // OpenGL 2.1
+   }"
+"#version 120 // OpenGL 2.1
+   void main() {
+      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+      gl_FrontColor = gl_Color;
+   }"
+"#version 120 // OpenGL 2.1
    void main(void) {
       gl_FragColor = gl_Color;
    }
-") #false)
-(glCompileShader fs)
-(glAttachShader po fs)
+"))
 
-(glLinkProgram po)
-
-(glDetachShader po fs)
-(glDetachShader po gs)
-(glDetachShader po vs)
-
-
-(print "Please wait while loading a training database")
+(print "Please wait while loading a training database...")
 
 ; --= mnist data =----------
 (import (file gzip))
