@@ -2904,7 +2904,7 @@
 (cond-expand
    (Linux
       (begin
-         (define GLU_LIBRARY (load-dynamic-library "libGLU.so.1"))))
+         (define GLU_LIBRARY (load-dynamic-library "libGLU.so"))))
    (Windows
       (begin
          (define GLU_LIBRARY (load-dynamic-library "glu32.dll"))))
