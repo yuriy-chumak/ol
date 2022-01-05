@@ -3926,10 +3926,16 @@ loop:;
 				if (!address)
 					break;
 
-				size_t count = number(A2); // in bytes
+				ssize_t count = number(A2); // in bytes
 				size_t offset = (argc > 2 && A3 != IFALSE)
 					? number(A3) // in bytes
 					: 0;
+
+				if (count == -1) {
+					char* p = address + offset;
+					while (*p++);
+					count = p - address;
+				}
 
 				unsigned words = WALIGN(count) + 1; // in words
 				if (fp + words > heap->end) {
