@@ -1,5 +1,5 @@
 ; ===========================================================================
-; EXT_geometry_shader4                               (included in OpenGL 3.0)
+; EXT_geometry_shader4                               (included in OpenGL 3.2)
 ;
 ;    A new shader type available to be run on the GPU, called a geometry shader.
 ;
@@ -43,9 +43,9 @@
 ; New Procedures and Functions
 
    glProgramParameteri ;(uint program, enum pname, int value);
-   ;; glFramebufferTextureEXT ;(enum target, enum attachment, uint texture, int level);
-   ;; glFramebufferTextureLayerEXT ;(enum target, enum attachment, uint texture, int level, int layer);
-   ;; glFramebufferTextureFaceEXT ;(enum target, enum attachment, uint texture, int level, enum face);
+   glFramebufferTexture ;(enum target, enum attachment, uint texture, int level);
+   glFramebufferTextureLayer ;(enum target, enum attachment, uint texture, int level, int layer);
+   glFramebufferTextureFace ;(enum target, enum attachment, uint texture, int level, enum face);
 
 ; ---------------------------------------------------------------------------
 ; New Tokens
@@ -108,12 +108,9 @@
    (setq GL GL_LIBRARY)
    
    (define glProgramParameteri (GL fft-void "glProgramParameteri" GLuint GLenum GLint))
-   ;;  void FramebufferTextureEXT(enum target, enum attachment, 
-   ;;                             uint texture, int level);
-   ;;  void FramebufferTextureLayerEXT(enum target, enum attachment, 
-   ;;                                  uint texture, int level, int layer);
-   ;;  void FramebufferTextureFaceEXT(enum target, enum attachment,
-   ;;                                 uint texture, int level, enum face);
+   (define glFramebufferTexture (GL GLvoid "glFramebufferTextureEXT" GLenum GLenum GLuint GLint))
+   (define glFramebufferTextureLayer (GL GLvoid "glFramebufferTextureLayer" GLenum GLenum GLuint GLint GLint))
+   (define glFramebufferTextureFace (GL GLvoid "glFramebufferTextureFace" GLenum GLenum GLuint GLint GLenum))
 
         (define GL_GEOMETRY_SHADER                              #x8DD9)
 
