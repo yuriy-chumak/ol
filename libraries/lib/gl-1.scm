@@ -1,4 +1,4 @@
-(define-library (lib gl1)
+(define-library (lib gl-1)
 (import
    (scheme core)
    (lib gl) (OpenGL version-1-4))
