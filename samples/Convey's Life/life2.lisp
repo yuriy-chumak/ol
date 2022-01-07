@@ -62,7 +62,14 @@
 (glOrtho 0 WIDTH 0 HEIGHT -1 1)
 
 ; создадим шейдер превращения точек в квадратики
-(define po (gl:create-program GL_POINTS GL_TRIANGLE_STRIP 4
+(define po (gl:create-program
+"#version 120 // OpenGL 2.1
+   void main() {
+      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+      gl_FrontColor = gl_Color;
+   }"
+
+GL_POINTS GL_TRIANGLE_STRIP 4
 "#version 120
    #extension GL_EXT_geometry_shader4 : enable
 
@@ -85,11 +92,7 @@
       gl_FrontColor = gl_FrontColorIn[0];
       EmitVertex();
    }"
-"#version 120 // OpenGL 2.1
-   void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-      gl_FrontColor = gl_Color;
-   }"
+
 "#version 120 // OpenGL 2.1
    void main(void) {
       gl_FragColor = gl_Color;

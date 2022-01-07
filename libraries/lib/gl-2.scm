@@ -61,8 +61,9 @@
 
                   (link po vs fs)
                   po))
-      ((inputType outputType outputCount
-        gstext vstext fstext)
+      ((vstext
+        inputType outputType outputCount gstext
+        fstext)
                (let ((program (glCreateProgram))
                      (gs (glCreateShader GL_GEOMETRY_SHADER)) ; (OpenGL EXT geometry_shader4)
                      (vs (glCreateShader GL_VERTEX_SHADER))
