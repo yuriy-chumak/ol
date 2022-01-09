@@ -8,7 +8,7 @@
     <property name="type_hint">dialog</property>
     <property name="program_name">GTK Samples in Lisp</property>
     <property name="version">1.0</property>
-    <property name="copyright" translatable="yes">(c) 2021 Yuriy Chumak</property>
+    <property name="copyright" translatable="yes">(c) 2022 Yuriy Chumak</property>
     <property name="comments" translatable="yes">This is GTK samples written in pure Lisp.
 Otus Lisp.</property>
     <property name="website">https://github.com/otus-lisp/ol/tree/master/samples/GTK</property>

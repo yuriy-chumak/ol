@@ -35,10 +35,6 @@
       gtk_builder_add_callback_symbol
       gtk_builder_connect_signals
 
-      ; todo: move to (lib gtk label)
-      gtk_label_get_text
-      gtk_label_set_text
-
       ; todo: move to (lib gtk glarea)
       GtkGLArea*
       GdkGLContext*
@@ -86,6 +82,7 @@
 
       (exports (lib gtk-3 widget))
       (exports (lib gtk-3 window))
+      (exports (lib gtk-3 label))
       (exports (lib gtk-3 filechooser))
       (exports (lib gtk-3 filechooserdialog))
       (exports (lib gtk-3 gtk)))
@@ -97,6 +94,7 @@
 
       (lib gtk-3 widget)
       (lib gtk-3 window)
+      (lib gtk-3 label)
       (lib gtk-3 filechooser)
       (lib gtk-3 filechooserdialog)
 
@@ -144,11 +142,6 @@
    (define gtk_button_box_new (GTK3 GtkWidget* "gtk_button_box_new" GtkOrientation))
    (define gtk_button_new_with_label (GTK3 GtkWidget* "gtk_button_new_with_label" type-string))
    (define gtk_button_get_label (GTK3 type-string "gtk_button_get_label" GtkButton*))
-
-   ; (lib gtk label)
-   (define GtkLabel* fft-void*)
-   (define gtk_label_get_text (GTK3 type-string "gtk_label_get_text" GtkLabel*))
-   (define gtk_label_set_text (GTK3 fft-void "gtk_label_set_text" GtkLabel* type-string))
 
    ; (lib gtk glarea)
    (define GtkGLArea* fft-void*)

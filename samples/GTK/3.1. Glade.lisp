@@ -23,14 +23,13 @@
 (g_object_unref builder)
 
 ; close button processor
-(define quit (vm:pin (cons
-   (cons gint (list GtkWidget* gpointer))
-   (lambda (widget userdata)
+(define quit
+   (GTK_CALLBACK (widget userdata)
       (print "Close pressed. Bye-bye.")
       ; when we do a gtk_main we should call a (gtk_main_quit)
       ; not a (g_application_quit)
-      (gtk_main_quit))
-)))
+      (gtk_main_quit)))
+
 (g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
 
 ; show window and run

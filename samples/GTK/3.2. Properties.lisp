@@ -6,12 +6,10 @@
 (import (only (otus syscall) strftime))
 
 ; button handler, set label text to current date and time
-(define print_datetime (vm:pin (cons
-   (cons gint (list GtkWidget* gpointer))
-   (lambda (widget userdata)
+(define print_datetime
+   (GTK_CALLBACK (widget userdata)
       (gtk_label_set_text userdata (strftime "%F %H:%M:%S\0"))
-      TRUE)
-)))
+      TRUE))
 
 (gtk_init '(0) #f)
 
@@ -28,11 +26,10 @@
 
 (g_object_unref builder)
 
-(define quit (vm:pin (cons
-   (cons gint (list GtkWidget* gpointer))
-   (lambda (widget userdata)
+(define quit
+   (GTK_CALLBACK (widget userdata)
       (print "Close pressed. Bye-bye.")
-      (gtk_main_quit))
-)))
+      (gtk_main_quit)))
+
 (g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
 (gtk_main)

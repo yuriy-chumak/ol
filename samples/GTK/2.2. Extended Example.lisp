@@ -17,26 +17,21 @@
 (define app (gtk_application_new "org.gtk.example" G_APPLICATION_FLAGS_NONE))
 
 ; button handler
-(define clicked (vm:pin (cons
-   (cons gint (list GtkWidget* gpointer))
-   (lambda (widget userdata)
+(define clicked
+   (GTK_CALLBACK (widget userdata)
       (print "Button clicked at " (strftime "%F %H:%M:%S\0"))
-      TRUE)
-)))
+      TRUE))
 
 ; close processor
-(define quit (vm:pin (cons
-   (cons gint (list GtkWidget* gpointer))
-   (lambda (widget userdata)
+(define quit
+   (GTK_CALLBACK (widget userdata)
       (print "Close pressed. Bye-bye.")
       (g_application_quit app)
-      TRUE)
-)))
+      TRUE))
 
 ; init
-(define activate (vm:pin (cons
-   (cons gint (list GtkApplication* gpointer))
-   (lambda (app userdata)
+(define activate
+   (GTK_CALLBACK (app userdata)
       ; create an empty window
       (define window (gtk_application_window_new app))
       (gtk_window_set_title window "2.2. Extended Example")
@@ -54,8 +49,8 @@
       (g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
 
       ; display the window
-      (gtk_widget_show_all window))
-)))
+      (gtk_widget_show_all window)))
+
 (g_signal_connect app "activate" (G_CALLBACK activate) NULL)
 
 ; run

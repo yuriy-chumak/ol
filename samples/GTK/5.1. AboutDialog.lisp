@@ -18,35 +18,29 @@
 
 ; about dialog
 (define about (gtk_builder_get_object builder "about"))
-(define response (vm:pin (cons
-   (cons gint (list GtkWidget* gint))
-   (lambda (widget userdata)
+(define response
+   (GTK_CALLBACK (widget userdata)
       (print "aqbout dialog response: " gint)
-      TRUE)
-)))
+      TRUE))
 (g_signal_connect about "response" (G_CALLBACK response) NULL)
 
 ; get a button from template
 (define button (gtk_builder_get_object builder "a_button"))
-(define click (vm:pin (cons
-   (cons gint (list GtkWidget* gpointer))
-   (lambda (widget userdata)
+(define click
+   (GTK_CALLBACK (widget userdata)
       (gtk_dialog_run about)
       (gtk_widget_hide about) ; do not close, just hide
-      TRUE)
-)))
+      TRUE))
 (g_signal_connect button "clicked" (G_CALLBACK click) NULL)
 
 ; builder is no more required, let's free a system resource
 (g_object_unref builder)
 
 ; close button processor
-(define quit (vm:pin (cons
-   (cons gint (list GtkWidget* gpointer))
-   (lambda (widget userdata)
+(define quit
+   (GTK_CALLBACK (widget userdata)
       (print "Close pressed. Bye-bye.")
-      (gtk_main_quit))
-)))
+      (gtk_main_quit)))
 (g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
 
 ; show window and run
