@@ -3,10 +3,13 @@
 (define-library (lib http)
   (export
     http:run
-    http:parse-url)
+    http:parse-url
+    
+    http-parser)
   (import (scheme base) (scheme srfi-1)
       (owl parse)
-      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (otus async))
+      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (otus async)
+      (lang sexp))
 
 (begin
    (define (upper-case? x) (<= #\A x #\Z))
@@ -53,12 +56,14 @@
    (<= #\a x #\z))
 (define (A-Z? x)
    (<= #\A x #\Z))
+(define (digit? x)
+   (<= #\0 x #\9))
 (define (uri? x)
    (or (<= #\a x #\z)
-         (<= #\A x #\Z)
-         (<= #\0 x #\9)
-         (has? '(#\- #\. #\_ #\~ #\: #\/ #\? #\# #\@ #\! #\$ #\& #\' #\( #\) #\* #\+ #\, #\; #\= #\. #\%) x)
-         (has? '(#\{ #\} #\| #\\ #\^ #\[ #\] #\`) x))) ;unwise characters are allowed but may cause problems
+       (<= #\A x #\Z)
+       (<= #\0 x #\9)
+       (has? '(#\- #\. #\_ #\~ #\: #\/ #\? #\# #\@ #\! #\$ #\& #\' #\( #\) #\* #\+ #\, #\; #\= #\. #\%) x)
+       (has? '(#\{ #\} #\| #\\ #\^ #\[ #\] #\`) x))) ;unwise characters are allowed but may cause problems
 (define (xml? x)
    (or (<= #\0 x #\9)
          (<= #\A x #\Z)
@@ -102,13 +107,13 @@
 
 (define get-rest-of-line
    (let-parses
-      ((chars (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\newline))))))
-         (skip (get-imm #\newline))) ;; <- note that this won't match if line ends to eof
+      ((chars (get-greedy* (get-byte-if (lambda (x) (not (eq? x #\return))))))
+         (skip (get-imm #\return)) (skip (get-imm #\newline))) ;; <- note that this won't match if line ends to eof
       chars))
 (define get-a-whitespace
    (get-any-of
       ;get-hashbang   ;; actually probably better to make it a symbol as above
-      (get-byte-if (lambda (x) (has? '(#\space #\tab #\newline #\return) x)))
+      (get-byte-if (lambda (x) (has? '(#\space #\tab #\return) x)))
       (let-parses
          ((skip (get-imm #\;))
             (skip get-rest-of-line))
@@ -122,11 +127,23 @@
          (uri     (get-greedy+ (get-rune-if uri?))) ; URI
          (-          (get-imm #\space))
          (version (get-greedy+ (get-rune-if uri?))) ; HTTP/x.x
-         (-          (get-imm #\return)) (skip (get-imm #\newline))) ; end of request line
+         (- (imm CR)) (- (imm LF))) ; CRLF, end of request line
       (vector
          (runes->string method)
          (runes->string uri)
          (runes->string version))))
+
+(define get-response-line
+   (let-parse* (
+         (version    (get-greedy+ (get-rune-if uri?))) ; HTTP/x.x
+         (-          (get-imm #\space))
+         (code       (get-greedy+ (get-rune-if digit?))) ; 200
+         (-          (get-imm #\space))
+         (description get-rest-of-line)) ; OK
+      (vector
+         (runes->string version)
+         (list->number code 10)
+         (runes->string description))))
 
 (define get-header-line
    (let-parse* (
@@ -144,11 +161,14 @@
 
 
 (define http-parser
-   (let-parses ((request-line get-request-line)
-                  (headers-array (get-greedy* get-header-line))
-                  (- (get-imm CR)) (- (get-imm LF)))   ; final CRLF
+   (let-parses (
+         (headline (either
+               get-request-line
+               get-response-line))
+         (headers-array (get-greedy* get-header-line))
+         (- (imm CR)) (- (imm LF)))   ; final CRLF
       (vector
-         request-line (pairs->ff headers-array))))
+         headline (pairs->ff headers-array))))
 ;)
 
 ; ----
