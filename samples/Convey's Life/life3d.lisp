@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (lib gl))
+(import (lib gl-2))
 (import (otus random!))
 (import (scheme inexact))
 
@@ -47,75 +47,22 @@
          (<= 5 n 5)))) ; dead, should resurrect?
 
 
-(gl:set-window-title "Convey's The game of Life")
-(import (OpenGL version-1-0))
+(gl:set-window-title "Convey's The game of Life (3D)")
 
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
 (glEnable GL_DEPTH_TEST)
-(glDisable GL_CULL_FACE)
+(glEnable GL_CULL_FACE)
+;; (glCullFace GL_BACK)
+;; (glFrontFace GL_CW)
 
-(glEnable GL_LIGHTING)
-(glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
-;; (glEnable GL_NORMALIZE)
+;; (gl:set-resize-handler (lambda (width height)
+;;    (glViewport 0 0 width height)
 
-(glEnable GL_LIGHT0)
-(glLightfv GL_LIGHT0 GL_POSITION '(50 50 50 0))
-;; (glLightfv GL_LIGHT0 GL_DIFFUSE '(1 1 1))
-;; (glLightfv GL_LIGHT0 GL_SPECULAR '(1.0 1.0 1.0  1))
-;; (glLightfv GL_LIGHT0 GL_AMBIENT  '(0.6 0.6 0.6  1))
-
-(define cube (glGenLists 1))
-(glNewList cube GL_COMPILE)
-   (glBegin GL_QUADS)
-      ; нижняя
-      (glNormal3f 0 0 -1)
-      (glVertex3f -0.5 -0.5 -0.5)
-      (glVertex3f -0.5 +0.5 -0.5)
-      (glVertex3f +0.5 +0.5 -0.5)
-      (glVertex3f +0.5 -0.5 -0.5)
-      ; верхняя
-      (glNormal3f 0 0 +1)
-      (glVertex3f -0.5 -0.5 +0.5)
-      (glVertex3f -0.5 +0.5 +0.5)
-      (glVertex3f +0.5 +0.5 +0.5)
-      (glVertex3f +0.5 -0.5 +0.5)
-
-      ; левая
-      (glNormal3f -1 0 0)
-      (glVertex3f -0.5 -0.5 -0.5)
-      (glVertex3f -0.5 -0.5 +0.5)
-      (glVertex3f +0.5 -0.5 +0.5)
-      (glVertex3f +0.5 -0.5 -0.5)
-      ; правая
-      (glNormal3f +1 0 0)
-      (glVertex3f -0.5 +0.5 -0.5)
-      (glVertex3f -0.5 +0.5 +0.5)
-      (glVertex3f +0.5 +0.5 +0.5)
-      (glVertex3f +0.5 +0.5 -0.5)
-
-      ; задняя
-      (glNormal3f 0 -1 0)
-      (glVertex3f -0.5 -0.5 -0.5)
-      (glVertex3f -0.5 -0.5 +0.5)
-      (glVertex3f -0.5 +0.5 +0.5)
-      (glVertex3f -0.5 +0.5 -0.5)
-      ; передняя
-      (glNormal3f 0 +1 0)
-      (glVertex3f +0.5 -0.5 -0.5)
-      (glVertex3f +0.5 -0.5 +0.5)
-      (glVertex3f +0.5 +0.5 +0.5)
-      (glVertex3f +0.5 +0.5 -0.5)
-   (glEnd)
-(glEndList)
-
-(gl:set-resize-handler (lambda (width height)
-   (glViewport 0 0 width height)
-
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (gluPerspective 45 (/ width height) 1 10000)))
+;;    (glMatrixMode GL_PROJECTION)
+;;    (glLoadIdentity)
+;;    (gluPerspective 45 (/ width height) 1 10000)))
 
 ; read initial population
 (import (owl parse))
@@ -148,6 +95,56 @@
       (userdata)))
 
 
+; создадим шейдер превращения точек в кубики
+(define po (gl:create-program
+"#version 120 // OpenGL 2.1
+   varying vec4 vertexPosition;
+   varying vec4 vertexNormal;
+
+   void main() {
+      vertexPosition = gl_ModelViewMatrix * gl_Vertex; // vertex position in the modelview space (not just in world space)
+      vertexNormal   = gl_ModelViewMatrix * vec4(gl_Normal, 0.0);
+
+      gl_Position = gl_ProjectionMatrix * vertexPosition;
+      gl_FrontColor = gl_Color;
+   }"
+GL_POINTS GL_TRIANGLE_STRIP 14
+"#version 120
+   #extension GL_EXT_geometry_shader4 : enable
+
+   // more info: https://www.khronos.org/opengl/wiki/Geometry_Shader_Examples
+   void emit(float dx, float dy, float dz)
+   {
+      gl_Position = gl_PositionIn[0] + gl_ModelViewProjectionMatrix * vec4(dx, dy, dz, 0.0);
+      gl_FrontColor = gl_FrontColorIn[0];
+      EmitVertex();
+   }
+   void main()
+   {
+      float D = 0.46;
+      emit(-D, D,-D); // Front-top-left
+      emit( D, D,-D); // Front-top-right
+      emit(-D,-D,-D); // Front-bottom-left
+      emit( D,-D,-D); // Front-bottom-right
+      emit( D,-D, D); // Back-bottom-right
+      emit( D, D,-D); // Front-top-right
+      emit( D, D, D); // Back-top-right
+      emit(-D, D,-D); // Front-top-left
+      emit(-D, D, D); // Back-top-left
+      emit(-D,-D,-D); // Front-bottom-left
+      emit(-D,-D, D); // Back-bottom-left
+      emit( D,-D, D); // Back-bottom-right
+      emit(-D, D, D); // Back-top-left
+      emit( D, D, D); // Back-top-right
+   }"
+
+"#version 120 // OpenGL 2.1
+   void main(void) {
+      gl_FragColor = gl_Color;
+   }
+"))
+
+
 ; add some random userdata
 (import (otus random!))
 (userdata
@@ -160,11 +157,20 @@
       (iota (* 50 50 50 0.01))))
 
 
+
 (define angle (box 10))
 
 (gl:set-renderer (lambda (mouse)
 (let ((generation (userdata)))
+   (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
+   (glEnable GL_LIGHT0)
+   (glLightfv GL_LIGHT0 GL_POSITION '(0 0 -50 0))
+
+   (glMatrixMode GL_PROJECTION)
+   (glLoadIdentity)
+   (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 1 1000)
 
    ;; (print "cells count: "
    ;; (ff-fold (lambda (st key value)
@@ -179,59 +185,45 @@
    (define eyeX (* A (sin (/ (unbox angle) 360))))
    (define eyeY (* A (cos (/ (unbox angle) 360))))
 
-   (gluLookAt eyeX eyeY 180
+   (gluLookAt 150 150 150
+      ;eyeX eyeY 180
       ; to:
-      (/ WIDTH 2) (/ HEIGHT 2) (/ DEPTH 2)
+      ;(/ WIDTH 2) (/ HEIGHT 2) (/ DEPTH 2)
+      0 0 0
       ; head up:
-      0 0 1)
+      0 1 0)
 
-   (glDisable GL_LIGHTING)
-   ;; (glDisable GL_COLOR_MATERIAL)
+   (glUseProgram 0)
 
-   (glColor3f 0 0 0.7)
    (define W WIDTH)
    (define H HEIGHT)
    (define D DEPTH)
 
-   (glBegin GL_LINE_STRIP)
-      (glVertex3f 0 0 0)
-      (glVertex3f 0 H 0)
-      (glVertex3f W H 0)
-      (glVertex3f W 0 0)
-      (glVertex3f 0 0 0)
-   (glEnd)
-   (glBegin GL_LINE_STRIP)
-      (glVertex3f 0 0 D)
-      (glVertex3f 0 H D)
-      (glVertex3f W H D)
-      (glVertex3f W 0 D)
-      (glVertex3f 0 0 D)
-   (glEnd)
+   ; draw axis
    (glBegin GL_LINES)
-      (glVertex3f 0 0 0)
-      (glVertex3f 0 0 D)
-      (glVertex3f 0 H 0)
-      (glVertex3f 0 H D)
-      (glVertex3f W H 0)
-      (glVertex3f W H D)
-      (glVertex3f W 0 0)
-      (glVertex3f W 0 D)
+   (glColor3f 1 0 0)
+   (glVertex3f 0 0 0)
+   (glVertex3f W 0 0)
+   (glColor3f 0 1 0)
+   (glVertex3f 0 0 0)
+   (glVertex3f 0 H 0)
+   (glColor3f 0 0 1)
+   (glVertex3f 0 0 0)
+   (glVertex3f 0 0 D)
    (glEnd)
 
-
-   (glEnable GL_LIGHTING)
+   ; ...
+   (glUseProgram po)
    (glColor3f 1 1 1)
+   (glBegin GL_POINTS)
    (ff-fold (lambda (st key value)
-         ;; (apply glColor3f (color value))
-         (glMaterialfv GL_FRONT_AND_BACK GL_SPECULAR (color value))
+         (glColor3fv (color value))
          (let ((x (mod key $HASH))
                (y (mod (>> key SHIFT) $HASH))
                (z (>> key (+ SHIFT SHIFT))))
-            (glPushMatrix)
-            (glTranslatef x y z)
-            (glCallList cube)
-            (glPopMatrix)))
+            (glVertex3f x y z)))
       #f generation)
+   (glEnd)
 
    (userdata
       (ff-fold (lambda (st key value)
