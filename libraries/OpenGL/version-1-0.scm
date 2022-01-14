@@ -2911,9 +2911,12 @@
    (Android
       (begin
          (define GLU_LIBRARY (load-dynamic-library "libGLU.so"))))
+   (Darwin
+      (begin
+         (define GLU_LIBRARY (load-dynamic-library "/System/Library/Frameworks/OpenGL.framework/Libraries/libGLU.dylib"))))
+
 ;;       ;"HP-UX"
 ;;       ;"SunOS"
-;;       ;"Darwin"
 ;;       ;"FreeBSD"
 ;;       ;"CYGWIN_NT-5.2-WOW64"
 ;;       ;"MINGW32_NT-5.2"
