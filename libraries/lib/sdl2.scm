@@ -194,6 +194,19 @@
    IMG_Load
    )
 
+(cond-expand
+   (Windows
+      (begin
+         (define sdl2 (load-dynamic-library "SDL2.dll"))))
+   (Linux
+      (begin
+         (define sdl2 (load-dynamic-library "libSDL2-2.0.so.0"))))
+   (Darwin
+      (begin
+         (define sdl2 (load-dynamic-library "libSDL2-2.0.0.dylib"))))
+   (else
+      (runtime-error "nsupported platform" (uname))))
+
 (begin
 (define uname (uname))
 
@@ -202,12 +215,6 @@
 
 ;(define WIDTH 1280)
 ;(define HEIGHT 920)
-
-(define sdl2 (load-dynamic-library (cond
-   (win32? "SDL2.dll")
-   (linux? "libSDL2-2.0.so.0") ;libSDL2-2.0.so.0 
-   (else
-      (runtime-error "sdl2: unknown platform" uname)))))
 
 (if (not sdl2)
    (runtime-error "Can't load sdl2 library." (cond
@@ -387,11 +394,20 @@
 
 ; ========================
 ; SDL_image
-(define sdl2-image (load-dynamic-library (cond
-   (win32? "SDL2_image.dll")
-   (linux? "libSDL2_image-2.0.so.0")
+)
+(cond-expand
+   (Windows
+      (begin
+         (define sdl2-image (load-dynamic-library "SDL2_image.dll"))))
+   (Linux
+      (begin
+         (define sdl2-image (load-dynamic-library "libSDL2_image-2.0.so.0"))))
+   (Darwin
+      (begin
+         (define sdl2-image (load-dynamic-library "libSDL2_image-2.0.0.dylib"))))
    (else
-      (runtime-error "sdl20-image: unknown platform" uname)))))
+      (runtime-error "nsupported platform" (uname))))
+(begin
 
 (if (not sdl2-image)
    (runtime-error "Can't load sdl2 image library." (cond
