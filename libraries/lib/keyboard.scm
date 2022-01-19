@@ -56,8 +56,8 @@
          (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35)
          (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
          (define KEY_MINUS #xBD) (define KEY_EQUAL #xBB) (define KEY_BACKSPACE #x08) (define KEY_TAB #x09)
-         )) 
-   (else
+         ))
+   (Linux
       (begin
          ; https://wiki.archlinux.org/index.php/Keyboard_input
          (setq x11 (or (load-dynamic-library "libX11.so")
@@ -89,7 +89,20 @@
          ;; (define vkA 38) (define vkS 39) (define vkD 40) (define vkF 41) (define vkG 42) (define vkH 43) (define vkJ 44)(define vkK 45) (define vkL 46)
          ;; (define vkZ 52) (define vkX 53) (define vkC 54) (define vkV 55) (define vkB 56) (define vkN 57) (define vkM 58)
          ;; (define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
-      )))
+      ))
+   (Darwin
+      (begin
+         (define (key-pressed? key)
+            #false)
 
-(begin
-   #true))
+         (define KEY_ENTER #f) (define KEY_ESC #f)
+         (define KEY_LEFTCTRL #f) (define KEY_LEFTALT #f) (define KEY_LEFTSHIFT #f)
+         (define KEY_UP #f) (define KEY_DOWN #f) (define KEY_LEFT #f) (define KEY_RIGHT #f)
+         (define KEY_1 #f) (define KEY_2 #f) (define KEY_3 #f) (define KEY_4 #f) (define KEY_5 #f) (define KEY_6 #f) (define KEY_7 #f) (define KEY_8 #f) (define KEY_9 #f) (define KEY_0 #f)
+         (define KEY_MINUS #f) (define KEY_EQUAL #f) (define KEY_BACKSPACE #f) (define KEY_TAB #f)
+
+      ))
+   (else
+      (begin
+         (runtime-error "Unsupported platform" (syscall 63)))))
+))
