@@ -104,5 +104,4 @@
       ))
    (else
       (begin
-         (runtime-error "Unsupported platform" (syscall 63)))))
-))
+         (runtime-error "Unsupported platform" (syscall 63))))))

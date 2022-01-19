@@ -53,8 +53,8 @@
 
  ; C.1 EXT_vertex_array, except that static array data
    ; are not supported (because they complicated the interface, and were not
-   ; being used), and the pre-dened congurations are added (both to reduce
-   ; subroutine count even further, and to allow for ecient transfer of array
+   ; being used), and the pre-defined configurations are added (both to reduce
+   ; subroutine count even further, and to allow for efficient transfer of array
    ; data)
    GL_DOUBLE
 
