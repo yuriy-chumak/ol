@@ -73,7 +73,9 @@
    ; -=( Linux )=--------------------------------------
    (Linux
       (begin
-         (define GL_LIBRARY (load-dynamic-library "libGL.so.1"))
+         (define GL_LIBRARY (or
+            (load-dynamic-library "libGL.so")
+            (load-dynamic-library "libGL.so.1")))
 
          (setq GLX GL_LIBRARY)
          (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string))
