@@ -135,9 +135,10 @@
          (define (gl:SwapBuffers . args) #false)
    ))
    ; -=( Android )=-----------
-   ; it means that we trying to use OpenGL under undroid
-   ; and at this moment OpenGL context already created and activated through gl4es
-   (Android ; through gl4es
+   ; This means that we are trying to use OpenGL on the Android
+   ; and at the moment the OpenGL context has already been created and
+   ; activated via gl4es.
+   (Android
       (begin
          (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
 

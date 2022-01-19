@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 ANDROID_SDK_ROOT=/opt/android/sdk
-export PATH=$PATH:/opt/android/sdk/platform-tools
+export PATH=$PATH:$ANDROID_SDK_ROOT/platform-tools
+
+APK_BASENAME=wnd
 
 # A Simple Script to build a simple APK without ant/gradle
 # Copyright 2016 Wanghong Lin
@@ -40,7 +42,6 @@ make -C ../.. android
 # and the oldest platform version for compatibility
 _BUILD_TOOLS_VERSION=$(ls $ANDROID_SDK_ROOT/build-tools | sort -n |tail -1)
 _PLATORM=$(ls $ANDROID_SDK_ROOT/platforms | sort -nr |tail -1)
-APK_BASENAME=wnd
 _ANDROID_CP=$ANDROID_SDK_ROOT/platforms/$_PLATORM/android.jar
 _AAPT=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/aapt
 _DX=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/dx
@@ -80,8 +81,8 @@ rm -f ${APK_BASENAME}-debug.apk
 $_AAPT package -f -M AndroidManifest.xml -S res -I $_ANDROID_CP -F ${APK_BASENAME}.apk.unaligned
 
 $_AAPT add ${APK_BASENAME}.apk.unaligned classes.dex
-$_AAPT add ${APK_BASENAME}.apk.unaligned `find assets/ -type f \( ! -name "* *" \)`
-$_AAPT add ${APK_BASENAME}.apk.unaligned `find lib/ -type f`
+$_AAPT add ${APK_BASENAME}.apk.unaligned `find -L assets/ -type f \( ! -name "* *" \)`
+$_AAPT add ${APK_BASENAME}.apk.unaligned `find -L lib/ -type f`
 
 # creating debug keystore:
 # ? keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000

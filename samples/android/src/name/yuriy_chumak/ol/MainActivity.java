@@ -23,7 +23,7 @@ public class MainActivity extends Activity
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		Log.i(TAG, "onCreate()");
+		Log.d(TAG, "onCreate()");
 
 		requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
 		super.onCreate(savedInstanceState);
@@ -31,6 +31,7 @@ public class MainActivity extends Activity
 		getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 		Olvm.nativeSetAssetManager(getApplication().getAssets());
+		Olvm.eval("(define *path* (cons \"libraries\" *path*))");
 
 		glView = new GLSurfaceView(this);
 		glView.setEGLContextClientVersion(2);
@@ -58,17 +59,17 @@ public class MainActivity extends Activity
 
 	// GLSurfaceView.Renderer
 	public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-		Log.i(TAG, "onSurfaceCreated()");
+		Log.d(TAG, "onSurfaceCreated()");
 		Olvm.load("main.lisp");
 	}
 
 	public void onDrawFrame(GL10 unused) {
-		Log.i(TAG, "onDrawFrame()");
+		Log.d(TAG, "onDrawFrame()");
 		Olvm.eval("(let ((renderer (await (mail 'opengl ['get 'renderer])))) (if renderer (renderer #false)))");
 	}
 	public void onMouseTouch(float x, float y)
 	{
-		Log.i(TAG, "onMouseTouch(" + x + "," + y + ")");
+		Log.d(TAG, "onMouseTouch(" + x + "," + y + ")");
 
 		// eval("(define (p x) (print (inexact x)))");
 		// eval("p", x);
@@ -77,7 +78,7 @@ public class MainActivity extends Activity
 	}
 
 	public void onSurfaceChanged(GL10 unused, int width, int height) {
-		Log.i(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
+		Log.d(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
 
 	// 	GLES20.glViewport(0, 0, width, height); // temp
 	// 	//eval("print", "todo: call /resize event/ with ", width, " ", height);

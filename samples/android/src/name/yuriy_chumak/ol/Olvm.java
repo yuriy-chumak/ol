@@ -12,10 +12,13 @@ public class Olvm
 		eval(",load " + "\"" + filename + "\"");
 	}
 
+	// new/delete
 	public static native void nativeNew();
+	public static native void nativeDelete();
+
 	public static native void nativeSetAssetManager(AssetManager am);
 
-	// public static native void nativeDelete();
+	// auto new
 	static {
 		System.loadLibrary("ol");
 		nativeNew();
