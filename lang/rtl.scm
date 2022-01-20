@@ -564,7 +564,7 @@
                         tail)))
                   ;(print-to stderr " exec: (" (size exec) ") - " (vm:cast exec type-bytevector))
                   (if (null? literals)
-                     exec ; #<bytecode>
+                     exec ; #bytecode
                      (list->procedure (cons exec literals)))))
             (else
                (runtime-error "rtl-plain-lambda: bad node " exp))))

@@ -79,7 +79,7 @@
                   ;;          (lrange (size obj) -1 1)))))
 
                ((function? obj)
-                  (render "#<function>" tl))
+                  (render "#function" tl))
                   ;; anonimas
                   ;(let ((symp (interact 'intern ['get-name obj])))
                   ;   (if symp
@@ -111,9 +111,11 @@
 
                ((eq? (type obj) type-const)
                   (render-number (vm:cast obj type-enum+) tl 16))
+               ((eq? (type obj) type-vptr)
+                  (append (string->list "#vptr") tl))
 
                (else
-                  (append (string->list "#<WTF>") tl)))) ;; What This Format?
+                  (append (string->list "#wtf?") tl)))) ;; What This Format?
          render)
 
       (define render
@@ -222,7 +224,12 @@
                ;; render name is one is known, just function otherwise
                ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
                ((function? obj)
-                  (foldr render (delay (k sh)) (list "#<" (get names obj "function") ">")))
+                  (let ((name (get names obj #f)))
+                     (foldr render (delay (k sh))
+                        (if name
+                           (list "#<" name ">")
+                        else
+                           (list "#function")))))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
                   (cons* #\# #\r (ser sh (rlist->list obj) k)))
@@ -236,15 +243,18 @@
                ((port? obj)   (render obj (λ () (k sh))))
                ((eof? obj)    (render obj (λ () (k sh))))
 
+               ((eq? (type obj) type-vptr)
+                  (cons* #\# #\v #\p #\t #\r (delay (k sh))))
+
                (else
-                  (append (string->list "#<WTF>") (delay (k sh))))))
+                  (append (string->list "#wtf?") (delay (k sh))))))
          ser)
 
       (define (self-quoting? val)
          (or  ; note, all immediates are
             (number? val) (string? val) (boolean? val) (function? val)
             (port? val) (vector? val) (bytevector? val) (null? val)
-            (rlist? val) (empty? val)))
+            (rlist? val) (empty? val) (eq? (type val) type-vptr)))
 
       ;; could drop val earlier to possibly gc it while rendering
       (define (maybe-quote val lst)
