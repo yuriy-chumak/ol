@@ -33,9 +33,11 @@
    (export
       encode2              ; obj -> (lazy) fasl list
       fasl-encode          ; obj -> (byte ... 0) ; TODO: rename to serialize
+      serialize
 
       decode2              ; (lazy) fasl list -> obj
-      fasl-decode)         ; (byte ...) -> obj ; TODO: rename to deserialize
+      fasl-decode          ; (byte ...) -> obj ; TODO: rename to deserialize
+      deserialize)
 
    (import
       (scheme core)
@@ -44,7 +46,8 @@
       (owl ff)
       (owl lazy)
       (owl list)
-      (owl rlist))
+      (owl rlist)
+      (otus async))
 
    (begin
 
@@ -227,6 +230,8 @@
       (define (fasl-encode obj)
          (force-ll (encode2 obj)))
 
+      (define serialize fasl-encode)
+
       ;; ;;;
       ;; ;;; Decoder
       ;; ;;;
@@ -358,4 +363,41 @@
             else ob)))
 
       (define fasl-decode decode2)
+
+      ; deserialize
+      (define type-constructor 63)
+      (define (procedure? o)
+         (case (type o)
+            (type-procedure #true)
+            (type-closure #true)
+            (type-constructor #true)))
+
+      (define (deserialize ll fail)
+         (define obj (fasl-decode ll fail))
+         (if (eq? obj fail)
+            fail
+         else
+            (let loop ((obj obj))
+               (if (reference? obj)
+               then
+                  (cond
+                     ((symbol? obj)
+                        (await (mail 'intern (ref obj 1))))
+                     ((pair? obj)
+                        (cons
+                           (loop (car obj))
+                           (loop (cdr obj))))
+                     ((or (vector? obj)
+                          (procedure? obj))
+                        (vm:make (type obj)
+                           (let subloop ((pos (size obj)) (tail #null))
+                              (if (eq? pos 0)
+                                 tail
+                                 (subloop (-- pos) (cons (loop (ref obj pos)) tail))))))
+                     ((ff? obj)
+                        (alist->ff (loop (ff->alist obj))))
+                     (else
+                        obj))
+               else
+                  obj))))
 ))

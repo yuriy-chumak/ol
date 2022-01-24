@@ -3054,6 +3054,7 @@ loop:;
 		word result = IFALSE;
 
 		char *q = (char *)A2;
+		if (is_reference(p) && is_reference(q))
 		if (is_rawstream(p) && is_rawstream(q)) {
 			word to = value(A1);    assert(is_enump(A1));
 			word start = value(A3); assert(is_enump(A3));
