@@ -30,6 +30,7 @@
 
       port->bytestream       ;; fd → (byte ...) | thunk
       file->bytestream
+      bytestream->port
       bytestream->file
 
       write-bytestream
@@ -375,12 +376,6 @@
                (let ((outcome (sys:write port vec #false)))
                   (close-port port)
                   outcome))))
-      (define (bytestream->file stream path)
-         (let ((port (open-binary-output-file path)))
-            (if port
-               (let ((outcome (write-bytestream stream port)))
-                  (close-port port)
-                  outcome))))
 
 
       ; BLOB:
@@ -423,6 +418,20 @@
                      (stream-chunk buff (- (size buff) 1)
                         (port->bytestream fd)))))))
 
+      (define (bytestream->port stream port)
+         (cond
+            ((null? stream)
+               #true)
+            ((pair? stream)
+               (case (sys:write port (bytevector (car stream)) 1)
+                  (0 ; busy
+                     (sleep 1)
+                     (bytestream->port stream port))
+                  (else
+                     (bytestream->port (cdr stream) port))))
+            (else
+               (bytestream->port (force stream) port))))
+
       (define (lines fd)
          (let loop ((ll (port->bytestream fd)) (out null))
             (cond
@@ -449,6 +458,13 @@
          (let ((port (maybe-open-binary-file path)))
             (if port
                (port->bytestream port))))
+
+      (define (bytestream->file stream path)
+         (let ((port (open-binary-output-file path)))
+            (if port
+               (let ((outcome (bytestream->port stream port)))
+                  (close-port port)
+                  outcome))))
 
       (define (fasl-save obj path)
          (bytestream->file
