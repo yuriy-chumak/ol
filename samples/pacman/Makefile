@@ -1,4 +1,7 @@
 all: pacman1 pacman2 pacman3
+clean:
+	rm -f pacman1 pacman2 pacman3 \
+	      tmp.bin binf.c repl.o
 
 repl.o: ../../repl
 	ld -r -b binary -o repl.o ../../repl

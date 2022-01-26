@@ -16,12 +16,13 @@ and more to your 3D game?
 Great!
 Below is a collection of shading techniques that will take your game visuals to new heights.
 I've explained each technique in such a way that you can take what you learn here and apply/port it to
-whatever stack you use—be it Godot, Unity, Unreal, or something else.
+whatever stack you use be it Godot, Unity, Unreal, or something else.
 For the glue in between the shaders,
 I've chosen the fabulous Panda3D game engine [own Otus Lisp code - YC] and the OpenGL Shading Language (GLSL).
 So if that is your stack, then you'll also get the benefit of learning how to use these
-shading techniques with Panda3D and OpenGL specifically.
+shading techniques with ~~Panda3D~~ Ol and OpenGL specifically.
 
+![](https://i.imgur.com/Ck7qf3D.png)
 ## Table Of Contents
 
 - :heavy_check_mark: 1. [Setup](sections/1.setup.md)
