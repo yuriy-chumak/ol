@@ -1,9 +1,9 @@
 3D Game Shaders For Beginners
 =============================
 
-This is a try to translate a [lettier/3d-game-shaders-for-beginners](https://github.com/lettier/3d-game-shaders-for-beginners) to the Ol (Otus Lisp).
+This is a try to translate and extend an [lettier/3d-game-shaders-for-beginners](https://github.com/lettier/3d-game-shaders-for-beginners) articles to the Ol (Otus Lisp).
 
-Interested in adding
+*"Interested in adding
 textures,
 lighting,
 shadows,
@@ -18,11 +18,12 @@ Below is a collection of shading techniques that will take your game visuals to 
 I've explained each technique in such a way that you can take what you learn here and apply/port it to
 whatever stack you use be it Godot, Unity, Unreal, or something else.
 For the glue in between the shaders,
-I've chosen the fabulous Panda3D game engine [own Otus Lisp code - YC] and the OpenGL Shading Language (GLSL).
+I've chosen the fabulous ~~Panda3D game engine~~ Otus Lisp and the OpenGL Shading Language (GLSL).
 So if that is your stack, then you'll also get the benefit of learning how to use these
-shading techniques with ~~Panda3D~~ Ol and OpenGL specifically.
+shading techniques with ~~Panda3D~~ Ol and OpenGL specifically."*
 
 ![](https://i.imgur.com/Ck7qf3D.png)
+
 ## Table Of Contents
 
 - :heavy_check_mark: 1. [Setup](sections/1.setup.md)
@@ -68,16 +69,10 @@ shading techniques with ~~Panda3D~~ Ol and OpenGL specifically.
 - :heavy_multiplication_x: [Lookup Table (LUT)](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/lookup-table.md)
 - :heavy_multiplication_x: [Gamma Correction](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/gamma-correction.md)
 
-## License
-
-The included license applies only to the software portion of 3D Game Shaders For Beginners —
-specifically the `.lisp`, `.vert`, and `.frag` source code files.
-No other portion of 3D Game Shaders For Beginners has been licensed for use.
-
-[The included media](https://opengameart.org/content/lowpoly-medieval-village-pack) is licensed under Public Domain (CC0).
-
 ## Copyright
 
-3D Game Shaders For Beginners (c) 2019 David Lettier ([lettier.com](https://www.lettier.com))
-<br>
-Otus Lisp examples source code (c) 2021 Yuriy Chumak
+* Original articles "3D Game Shaders For Beginners" is (C) 2019 [David Lettier](https://github.com/lettier/3d-game-shaders-for-beginners).
+  No any part of these articles is included.
+* "LowPoly Modular Sci-Fi Environments" 3d-models (c) [quaternius, OpenGameArt](https://opengameart.org/content/lowpoly-modular-sci-fi-environments), CC0 Public Domain.
+  Models are not included, but can be automatically downloaded and processed using the 'make' tool.
+* These articles and source code are (c) me - Y.C., [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
