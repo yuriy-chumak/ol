@@ -136,7 +136,8 @@
 
    ; procedure:  (list->vector list)
 
-   (define list->vector make-vector)
+   (define (list->vector l)
+      (vm:make type-vector l))
 
    (assert (list->vector '())              ===> #())
    (assert (list->vector '(1 2 3 4 #t))    ===> #(1 2 3 4 #t))
