@@ -84,7 +84,6 @@
             (if (null? subs)
                (begin
                   ;; no threads were waiting for something that is being removed, so tell stderr about it
-                  ;; (runtime-error a . b)
                   (if (eq? (ref (ref msg 2) 1) 'error)
                      (vector-apply (ref msg 2)
                         (lambda (state continuation reason clarification)
@@ -459,6 +458,7 @@
                (halt-thread-controller state)  ;; nothing left to run, TODO: use last one code if no "shutdown" code
             else
                (thread-controller done null state))    ;; new scheduler round
+         else
             (lets
                ((this todo todo)
                 (id st this))
