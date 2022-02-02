@@ -168,8 +168,8 @@
    quasiquote
    quote
    quotient
-      ;; raise
-      ;; raise-continuable
+   raise
+   raise-continuable
    rational?
       ;; rationalize
       ;; read-bytevector

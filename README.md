@@ -88,7 +88,7 @@ DOWNLOAD / INSTALLATION
 
 Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
 
-### Otus Lisp, Version 2.3 RC1
+### Otus Lisp, Version 2.3 RC2
 
 2.3 changelog:
  * Ol got it's own [twitter account](https://twitter.com/otus_lisp)
@@ -117,6 +117,7 @@ Some additional libraries can be installed using 'kiss' package manager. Usage i
  * utf8-decode became a lazy, file reading speedup
  * json file reading: exponent issue fixed
  * 'string->number' became r7rs compliant
+ * 'raise' and 'raise-continuable' introduced
  * etc.
 
 ### Otus Lisp, Version 2.2.1
@@ -178,7 +179,7 @@ R<sup>7</sup>RS DIFFERENCES
     - note: `delay` and `force` exists, sure.
 
 * 4.2.7. Exception handling
-  * **No** `guard` and `raise` in Ol.
+  * **No** `guard` in Ol.
 
 * 4.3. Macros
   * **No** `let-syntax` and `letrec-syntax` in Ol.

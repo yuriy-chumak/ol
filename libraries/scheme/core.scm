@@ -822,7 +822,7 @@
 
       ; 4.2.7. Exception handling
       ; todo: * declared in (scheme exceptions)
-      ; todo: guard, raise
+      ; todo: guard
 
       ; 4.2.8. Quasiquotation
       ;
@@ -1744,6 +1744,27 @@
       ; procedure:  (dynamic-wind before thunk after) ; todo
       ;
 
+      ; 6.11  Exceptions
+
+      ; procedure:  (with-exception-handler handler thunk) * not implemented
+      (define (with-exception-handler handler thunk)
+         (runtime-error "No with-exception-handler is implemented." #null))
+
+      ; procedure:  (raise obj)
+      (define (raise obj)
+         (call-with-current-continuation
+            (lambda (resume)
+               (vm:mcp resume 5 "runtime-error:" obj)))) ; (mcp 5 reason info)
+      ; procedure:  (raise-continuable obj)
+      (define raise-continuable raise) ; * temporary is equal to 'raise'
+
+      ; procedure:  (error message obj ...)
+      ; procedure:  (error-object? obj)
+      ; procedure:  (error-object-message error-object)
+      ; procedure:  (error-object-irritants error-object)
+      ; procedure:  (read-error? obj)
+      ; procedure:  (file-error? obj)
+
       ; -- i'm here ----------------------
 
 
@@ -2016,6 +2037,16 @@
       call-with-current-continuation call/cc
       call-with-values
       
+      ; 6.11  Exceptions
+      with-exception-handler
+      raise raise-continuable
+      ; error
+      ; error-object?
+      ; error-object-message
+      ; error-object-irritants
+      ; read-error?
+      ; file-error?
+
       ; ----------------------------
       list length append reverse
       cons*
