@@ -369,8 +369,8 @@ libraries/owl/unicode-char-folds.scm:
 	echo '))' >>libraries/owl/unicode-char-folds.scm
 
 # compiling infix math notation
-libraries/owl/math/infix.scm: make-math-infix.scm vm
-	./vm repl make-math-infix.scm >$@
+libraries/owl/math/infix.scm: tools/make-math-infix.scm vm
+	./vm repl tools/make-math-infix.scm >$@
 
 
 # computing native x11 variables
