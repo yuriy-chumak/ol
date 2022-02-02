@@ -26,7 +26,7 @@
       (owl math)
       (owl string)
       (owl render)
-      (lang env)
+      (lang env) (lang eval)
       (owl io))
 
    (begin
@@ -84,7 +84,12 @@
             (if (null? subs)
                (begin
                   ;; no threads were waiting for something that is being removed, so tell stderr about it
-                  ;(print-to stderr "VM: thread " id " exited due to " msg)
+                  ;; (runtime-error a . b)
+                  (if (eq? (ref (ref msg 2) 1) 'error)
+                     (vector-apply (ref msg 2)
+                        (lambda (state continuation reason clarification)
+                           (print-repl-error (list reason clarification)))))
+                     
                   (tc todo done (del state id)))
                (deliver-messages todo done
                   (del (fupd state link-tag (del (get state link-tag empty) id)) id)

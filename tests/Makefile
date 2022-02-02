@@ -359,7 +359,7 @@ endif
 define scmtestok
 	@if ([ -f $1 ]); then\
 		printf ", $2: ";\
-		if ([ -f $^.in ] && $3 $1 repl --home=libraries $^ <$^.in || $3 $1 repl --home=libraries $^) | diff --strip-trailing-cr - $^.ok >/dev/null; then\
+		if ([ -f $^.in ] && $3 $1 repl --home=libraries $^ <$^.in 2>&1 || $3 $1 repl --home=libraries $^ 2>&1) | diff --strip-trailing-cr - $^.ok >/dev/null; then\
 			printf $(ok) ;\
 		else \
 			printf $(failed);\
