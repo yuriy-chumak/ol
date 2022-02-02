@@ -237,8 +237,9 @@ R<sup>7</sup>RS DIFFERENCES
 DEPRECATIONS
 ------------
 
-* `(ilist ...)` is deprecated, use `(cons* ...)` instead.
+* `(ilist ...)` is deprecated. Use `(cons* ...)` instead.
 * `(interact ...)` from (owl ~~interop~~ async) is deprecated. Use `(await (mail ...))` instead.
+* `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async-named ...)`, `(coroutine ...)` instead.
 
 
 BUILD
