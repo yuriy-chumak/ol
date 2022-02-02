@@ -1,0 +1,9 @@
+18
+condition: 'an-error
+something went wrong
+3
+exception: equal
+29
+exception 2: equal
+exception 1: equal
+done.

@@ -13,6 +13,7 @@
 
       ;(exports (scheme read))
       (exports (scheme misc)) ; string->number
+      (exports (scheme exceptions))
 
       (exports (owl list))
       (exports (owl rlist))
@@ -63,6 +64,7 @@
       (scheme vector)
       (scheme bytevector)
       (scheme misc)
+      (scheme exceptions)
    )
 
 (begin

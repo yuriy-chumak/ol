@@ -241,7 +241,7 @@
    vector-set!
    vector?
    when
-      ;; with-exception-handler
+;  with-exception-handler  * (scheme exceptions)
    write-bytevector
    write-char
    write-string
