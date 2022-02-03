@@ -25,7 +25,7 @@ but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
 to call code written in another language.
 
-You can use Ol on Linux, Windows, macOS, Android, BSD (and its
+You can use Ol in Linux, Windows, macOS, Android, BSD (and its
 descendants), webOS, Solaris and other operating systems based
 on various hardware architectures (intel, arm, ppc, mips, etc).
 
@@ -40,6 +40,7 @@ LICENSE
 Otus Lisp is available under 2 licenses:
 [MIT License](LICENSE) and
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
+You can choose one of them - MIT **or** LGPL.
 
 Copyright (c) 2011-2014 Aki Helin                         <br/>
 Copyright (c) 2014-2021 Yuriy Chumak                      <br/>
