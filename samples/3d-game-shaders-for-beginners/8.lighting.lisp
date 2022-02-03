@@ -89,8 +89,8 @@
 ;; освещение сцены
 (glEnable GL_LIGHTING)
 
-(define lights (vector->list (scene 'Lights)))
-(print "lights: " lights)
+(define Lights (vector->list (scene 'Lights)))
+(print "Lights: " Lights)
 
 (glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
 ; set lights specular colors
@@ -103,13 +103,26 @@
       ; GL_SHININESS
       ; 
       )
-   (iota (length lights)))
+   (iota (length Lights)))
 
+(glPolygonMode GL_FRONT_AND_BACK GL_FILL)
+(define quadric (gluNewQuadric))
 
 ; draw
 (gl:set-renderer (lambda (mouse)
 (let*((ss ms (clock))
       (ticks (/ (+ ss (/ ms 1000)) 2)))
+
+      (define lights (append Lights (list
+         {
+            'type "POINT"
+            'color [1 1 1]
+            'position [
+               (* 5 (sin (/ ticks 20)))
+               (* 5 (cos (/ ticks 20)))
+               1
+               1]
+         })))
 
    '(begin ; calculate the shadow texture
       (glViewport 0 0 1024 1024)
@@ -191,7 +204,24 @@
       ;; (glBindTexture GL_TEXTURE_2D (car depth-fbo))
       ;; (glUniform1i (glGetUniformLocation shadowed "shadow") 0) ; 0-th texture unit
 
-      (draw-geometry scene models))
+      (draw-geometry scene models)
+      
+      ; а теперь добавим наши лампочки на сцену
+      (glUseProgram 0)
+      (glMatrixMode GL_MODELVIEW)
+      (glDisable GL_LIGHTING)
+      (for-each (lambda (light i)
+            ; рисуем только "точечные" источники света:
+            (when (eq? (ref (light 'position) 4) 1)
+               (glColor3fv (light 'color))
+               (glPushMatrix)
+               (glTranslatef (ref (light 'position) 1)
+                             (ref (light 'position) 2)
+                             (ref (light 'position) 3))
+               (gluSphere quadric 0.2 32 10)
+               (glPopMatrix)))
+         lights
+         (iota (length lights))))
       
       ;; (glUseProgram 0)
       ;; (glPointSize 5)
@@ -204,7 +234,7 @@
       ;;    (glVertex3f x y 0)
       ;; (glEnd)
 
-   (when #false
+   '(begin
       (glViewport 0 0 (/ (gl:get-window-width) 2) (/ (gl:get-window-height) 2))
       (glClearColor 1 0 0 1)
       ;(glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
