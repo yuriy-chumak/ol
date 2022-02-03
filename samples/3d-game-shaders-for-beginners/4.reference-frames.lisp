@@ -14,6 +14,22 @@
 (import (file json))
 (define scene (read-json-file "scene1.json"))
 
+;; scene lighting
+;; (glEnable GL_LIGHTING)
+
+(define Lights (vector->list (scene 'Lights)))
+(print "Lights: " Lights)
+
+(glEnable GL_COLOR_MATERIAL)
+(glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
+; set lights specular colors
+(for-each (lambda (i)
+      (glEnable (+ GL_LIGHT0 i)))
+   (iota (length Lights)))
+
+(glPolygonMode GL_FRONT_AND_BACK GL_FILL)
+(define quadric (gluNewQuadric))
+
 ;; init
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
@@ -25,6 +41,16 @@
 (gl:set-renderer (lambda (mouse)
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
+   ;; lighting
+   (glEnable GL_LIGHTING)
+   (for-each (lambda (light i)
+      (vector-apply (light 'position)
+         (lambda (x y z w)
+            (glEnable (+ GL_LIGHT0 i))
+            (glLightfv (+ GL_LIGHT0 i) GL_POSITION (list x y z w)))))
+      Lights
+      (iota (length Lights)))
 
    ; Camera setup
    (begin
@@ -62,4 +88,21 @@
             (models (string->symbol model)))
          (glPopMatrix))
       (scene 'Objects))
+
+      ; draw a light bulbs
+      (glMatrixMode GL_MODELVIEW)
+      (glDisable GL_LIGHTING)
+      (for-each (lambda (light i)
+            ; show only "point" light sources
+            (when (eq? (ref (light 'position) 4) 1)
+               (glColor3fv (light 'color))
+               (glPushMatrix)
+               (glTranslatef (ref (light 'position) 1)
+                             (ref (light 'position) 2)
+                             (ref (light 'position) 3))
+               (gluSphere quadric 0.2 32 10)
+               (glPopMatrix)))
+         Lights
+         (iota (length Lights)))
+
 ))
