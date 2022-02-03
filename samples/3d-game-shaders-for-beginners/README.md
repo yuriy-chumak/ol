@@ -32,6 +32,7 @@ shading techniques with ~~Panda3D~~ Ol and OpenGL specifically."*
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/building-the-demo.md))
 - :heavy_check_mark: 3. [Running The Demo](sections/3.running-the-demo.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/running-the-demo.md))
+  - 3.1 [Changing The Scene](sections/3.1.changing-the-scene.md)
 
 - :heavy_check_mark: 4. [Reference Frames](sections/4.reference-frames.md)
     ([Original topic](https://github.com/lettier/3d-game-shaders-for-beginners/blob/master/sections/reference-frames.md))
