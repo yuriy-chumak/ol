@@ -20,8 +20,10 @@ GL_FRAGMENT_SHADER
 glShaderSource
 glCompileShader
 glCreateProgram
+glDeleteProgram
 glAttachShader
 glDetachShader
+glDeleteShader
 glLinkProgram
 glUseProgram
 glGetShaderiv
@@ -70,8 +72,10 @@ GL_CURRENT_PROGRAM
   (define glShaderSource    (gl:GetProcAddress GLvoid "glShaderSource" GLuint GLsizei GLchar** GLint*))
   (define glCompileShader   (gl:GetProcAddress GLvoid "glCompileShader" GLuint))
   (define glCreateProgram   (gl:GetProcAddress GLuint "glCreateProgram"))
+  (define glDeleteProgram   (gl:GetProcAddress GLvoid "glDeleteProgram" GLuint))
   (define glAttachShader    (gl:GetProcAddress GLvoid "glAttachShader" GLuint GLuint))
   (define glDetachShader    (gl:GetProcAddress GLvoid "glDetachShader" GLuint GLuint))
+  (define glDeleteShader    (gl:GetProcAddress GLvoid "glDeleteShader" GLuint))
   (define glLinkProgram     (gl:GetProcAddress GLvoid "glLinkProgram" GLuint))
   (define glUseProgram      (gl:GetProcAddress GLvoid "glUseProgram" GLuint))
   (define glGetShaderiv     (gl:GetProcAddress GLvoid "glGetShaderiv" GLuint GLenum GLint&))
