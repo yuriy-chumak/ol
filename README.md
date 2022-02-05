@@ -78,12 +78,9 @@ Table of Contents
 1. [Build / Install](#build--install) ([Advanced](doc/BUILD.md))
 1. [Changelog](doc/CHANGELOG.md)
 1. [Support](#support)
-
 1. [R<sup>7</sup>RS Differences](#r7rs-differences)
 1. [Deprecations](#deprecations)
-
 1. [Learning](#learning)
-
 1. [Running](#running)
 1. [Binary Scripts](#binary-scripts)
 1. [Files](#files)

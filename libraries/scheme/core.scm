@@ -1819,26 +1819,6 @@
             ((features)
                *features*)))
 
-
-
-      ;; note, no let-values yet, so using let*-values in define-values
-; .......................
-; .......................
-; .......................
-; .......................
-
-
-
-
-
-
-
-
-
-
-
-
-
       ; 4.1.1  Variable references
 
 
