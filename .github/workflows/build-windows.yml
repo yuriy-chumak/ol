@@ -1,0 +1,24 @@
+name: build windows
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  win-build:
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install MinGW toolchain
+      run: 'sudo apt install gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev -y'
+
+    - name: Build with CI build script
+      run: 'make ol64.exe'
+
+# todo: add 32-bit build

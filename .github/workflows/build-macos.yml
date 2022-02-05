@@ -1,0 +1,19 @@
+name: build macos
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  macos-build:
+    strategy:
+      matrix:
+        os: [ macos-10.15, macos-11.0 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Build with CI build script
+      run: 'make describe check'

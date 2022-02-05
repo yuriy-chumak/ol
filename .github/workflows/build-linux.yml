@@ -1,0 +1,22 @@
+name: build linux
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  linux-build:
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, ubuntu-18.04 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install 32-bit libraries
+      run: 'sudo apt install gcc-multilib -y'
+
+    - name: Build with CI build script
+      run: 'make describe check'
