@@ -43,6 +43,11 @@ Q/A
 1. Q. You reference to licenses MIT and LGPL. Can I freely choose between these two licenses?<br/>
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
+Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
+Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus_lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus_lisp) web-client) channel is available (the previous Freenode channel is closed).
+
+[The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
+
 
 BUILD / INSTALL
 ---------------
@@ -51,17 +56,34 @@ BUILD / INSTALL
 
 GCC 3.2+ or CLANG 3.5+, GNU make
 
+
 #### BUILD
+
 ```
-$ make; make install
+$ make
+$ ./ol
+Welcome to Otus Lisp 2.3
+type ',help' to help, ',quit' to end session.
+>
 ```
 
-#### ADVANCED
+The Ol binary includes a rich set of features (lists, vectors and byte vectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, asyncs and coroutines, etc.) and can be used as a completely standalone.
 
 Advanced build instructions for Windows / Linux / macOS / Android / Web / etc.:
 [doc/BUILD.md](doc/BUILD.md)
 
-### INSTALL
+
+#### Install (*/usr/bin* and */usr/lib/* by default)
+```
+$ sudo make install
+```
+
+#### Uninstall
+```
+$ sudo make uninstall
+```
+
+### PACKAGING
 
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
@@ -77,30 +99,52 @@ Table of Contents
 -----------------
 1. [Build / Install](#build--install) ([Advanced](doc/BUILD.md))
 1. [Changelog](doc/CHANGELOG.md)
-1. [Support](#support)
+1. [Learning](#learning)
 1. [R<sup>7</sup>RS Differences](#r7rs-differences)
 1. [Deprecations](#deprecations)
-1. [Learning](#learning)
 1. [Running](#running)
 1. [Binary Scripts](#binary-scripts)
 1. [Files](#files)
 1. [Embedding](#embedding-ol)
 1. [Docs](#documentation)
-1. [License(s)](#license)
+1. [License](#license)
 
 
 CHANGELOG
 ---------
 
 [doc/CHANGELOG.md](doc/CHANGELOG.md)
+<a href="https://twitter.com/otus_lisp"><img align="right"
+src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20the%20%40otus_lisp%20development%20process%20on%20Twitter"
+alt="Follow the @otus_lisp development process on Twitter."></a>
 
 
-SUPPORT
--------
+LEARNING
+--------
 
-Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://badges.gitter.im/otus-lisp/Lobby.svg)](https://gitter.im/otus-lisp/Lobby). Additionally, the [Libera.Chat](https://web.libera.chat/) *#otus-lisp* channel is available (the previous Freenode channel is closed).
+The Otus Lisp language is based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with minor changes and useful extensions.
 
-Submit bug reports and issues on [the Issues](https://github.com/yuriy-chumak/ol/issues) page.
+You can find Ol samples at:
+* [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
+* [Samples](samples/) and [Tests](tests/) repository folders.
+* Embed usage sample available as toy [pacman game](samples/pacman/) sample.
+* Android sample available at [android](samples/android/) sample.
+
+
+For example:
+
+* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
+
+!["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
+
+* "Digital rain" sample demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix
+
+!["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
+
+* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton.
+You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.
+
+!["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
 
 
 R<sup>7</sup>RS DIFFERENCES
@@ -201,34 +245,6 @@ DEPRECATIONS
 * `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async-named ...)`, `(coroutine ...)` instead.
 
 
-LEARNING
---------
-
-The Otus Lisp language is based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with minor changes and useful extensions.
-
-You can find Ol samples at:
-* [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
-* [Samples](samples/) and [Tests](tests/) repository folders.
-* Embed usage sample available as toy [pacman game](samples/pacman/) sample.
-* Android sample available at [android](samples/android/) sample.
-
-
-For example:
-
-* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
-
-!["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
-
-* "Digital rain" sample demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix
-
-!["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
-
-* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton.
-You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.
-
-!["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
-
-
 ### DISASSEMBLY
 
 Ol 2.3 contains built-in tool for inspecting the Otus Lisp language.
@@ -239,7 +255,7 @@ You can use the REPL ",expand" command to expand high-level Ol instructions into
 (ifeq (equal? ((lambda (g1) g1) (+ 1 2)) 3) #true #true (runtime-error assertion error: (cons (quote (+ 1 2)) (cons must be (cons (quote 3) ())))))
 ```
 
-You can use the REPL ",disassembly" (or ",dis", or ",d") command to disassemble Otus Lisp functions in the Ol virtual machine instructions.
+You can use the REPL ",disassembly" (or ",dis", or ",d") command to disassemble Otus Lisp functions to the Ol virtual machine instructions.
 ```scheme
 > ,dis (lambda () 1)
 type: bytecode
