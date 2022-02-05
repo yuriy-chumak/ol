@@ -15,7 +15,7 @@
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a>
 
 
-Otus Lisp, Version 2.2
+Otus Lisp, Version 2.3
 ======================
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
@@ -34,16 +34,68 @@ used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
 Luakit, Iceape, etc.
 
 
-LICENSE
--------
+Q/A
+---
 
-Otus Lisp is available under 2 licenses:
-[MIT License](LICENSE) and
-[GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
-You can choose one of them - MIT **or** LGPL.
+1. Q. Why no arrow keys processing and a history in Ol command line?<br/>
+   A. For the simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool: `$ rlwrap ol` .
 
-Copyright (c) 2011-2014 Aki Helin                         <br/>
-Copyright (c) 2014-2021 Yuriy Chumak                      <br/>
+1. Q. You reference to licenses MIT and LGPL. Can I freely choose between these two licenses?<br/>
+   A. Yes, you are free to choose an MIT **or** LGPL license.
+
+
+BUILD / INSTALL
+---------------
+
+#### BUILD REQUIREMENTS
+
+GCC 3.2+ or CLANG 3.5+, GNU make
+
+#### BUILD
+```
+$ make; make install
+```
+
+#### ADVANCED
+
+Advanced build instructions for Windows / Linux / macOS / Android / Web / etc.:
+[doc/BUILD.md](doc/BUILD.md)
+
+### INSTALL
+
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
+[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
+[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
+
+**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).
+
+Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
+
+
+Table of Contents
+-----------------
+1. [Build / Install](#build--install) ([Advanced](doc/BUILD.md))
+1. [Changelog](doc/CHANGELOG.md)
+1. [Support](#support)
+
+1. [R<sup>7</sup>RS Differences](#r7rs-differences)
+1. [Deprecations](#deprecations)
+
+1. [Learning](#learning)
+
+1. [Running](#running)
+1. [Binary Scripts](#binary-scripts)
+1. [Files](#files)
+1. [Embedding](#embedding-ol)
+1. [Docs](#documentation)
+1. [License(s)](#license)
+
+
+CHANGELOG
+---------
+
+[doc/CHANGELOG.md](doc/CHANGELOG.md)
 
 
 SUPPORT
@@ -54,100 +106,9 @@ Join the online [![Join the chat at https://gitter.im/otus-lisp/Lobby](https://b
 Submit bug reports and issues on [the Issues](https://github.com/yuriy-chumak/ol/issues) page.
 
 
-Q/A
----
-
-1. Q. Why no arrow keys processing and a history in Ol command line?<br/>
-   A. For the simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool: `$ rlwrap ol` .
-
-
-Table of Contents
------------------
-1. [Download / Installation](#download--installation)
-1. [Learhing](#learning)
-1. [R<sup>7</sup>RS Differences](#r7rs-differences)
-1. [Deprecations](#deprecations)
-1. [Build](#build)
-1. [Debugging](#debugging)
-1. [Samples](#samples)
-1. [Customization](#customization)
-1. [Running](#running)
-1. [Binary Scripts](#binary-scripts)
-1. [Files](#files)
-1. [Embedding](#embedding)
-1. [Docs](#documentation)
-1. [Related](#related)
-
-
-DOWNLOAD / INSTALLATION
------------------------
-[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
-[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
-[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
-
-**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).
-
-Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [ol-packages repository](https://github.com/yuriy-chumak/ol-packages).
-
-### Otus Lisp, Version 2.3 RC2
-
-2.3 changelog:
- * Ol got it's own [twitter account](https://twitter.com/otus_lisp)
- * vm opcodes 3,4,6,7 (OCLOS, CLOS1) is deprecated, will be removed soon
- * new opcode 48 (universal CLOS) is introduced (will be changed to 3 after deprecations remove)
- * new 'vm:set!' vm command, should speedup internal bytevector manipulations
- * integrated disassembler introduced (use ",dis" repl command)
-   * try ',dis +' to view the '+' function disassembly
- * ',save' repl feature returned; still experimental due to ffi
-   * you can ',save' a current session in the binary file and return to saved state by starting new Ol session with this file
- * Unicode support updated to version 14.0.0
- * big numbers vm loader fix
- * windows setup update
- * GC tune (reduced full gc count)
- * more samples and tests
-   * more gtk
-   * 3d game shaders for beginners
-   * convey's life
-   * etc.
- * windows command line support multiple path in "--home=...;..."
- * (define-values) can be used inside lambdas, begin, etc.
- * (otus async) async/await/coroutine/sleep functions: new old otus feature
-   * 'interact' is deprecated, use (await (mail ...)) instead
- * more r7rs compatibility: (features) got 'posix' symbol
- * i/o speedup (removed sleeper thread)
- * utf8-decode became a lazy, file reading speedup
- * json file reading: exponent issue fixed
- * 'string->number' became r7rs compliant
- * 'raise' and 'raise-continuable' introduced
- * etc.
-
-### Otus Lisp, Version 2.2.1
-
-2.2.1 changelog:
- * the build command line changed. See the "BUILD" section.
- * fasl format updated:
-   * fasl is fully 32/64 bit independent (32-bit machines can execute 64-bit fasl and vice versa),
-   * numbers encoded as numbers, not as objects,
-   * big endian numbers order changed to little-endian
-   * introduced a new object type 63 - "constructor", constructors are automatically executed by olvm during fasl loading process
-     * if no constructors are found, the vanilla behavior will be used
-     * note: for example, the (owl math) library contains a constructor named `math-constructor` that recalculates a native binary NaN value which is different under different FPU architectures.
-  * restored and adapted REPL command ",save". Can be used to save the current REPL state to be continued after a pause on the same or different PC (even with a different architecture, including bit count and/or byte order).
-
-
-LEARNING
---------
-
-Otus Lisp language based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with little changes and extensions.
-
-You can find Ol samples at:
-* [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
-* [Samples](https://github.com/yuriy-chumak/ol/tree/master/samples) and [Tests](https://github.com/yuriy-chumak/ol/tree/master/tests) repository folders.
-* Embed usage available as toy [pacman game](https://github.com/yuriy-chumak/ol/tree/master/samples/pacman) sample.
-
-
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
+
 * 2.1. Identifiers
   * `|\t\t|` and `|\x9;\x9;|` are **different** in Ol, but *the same* in Scheme.
   * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
@@ -243,118 +204,37 @@ DEPRECATIONS
 * `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async-named ...)`, `(coroutine ...)` instead.
 
 
-BUILD
------
+LEARNING
+--------
 
-> Note: Since version 2.2.1, the build command line has been changed.
-> The variable NAKED_VM is no longer supported. Instead, a new REPL build variable is provided.
+The Otus Lisp language is based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with minor changes and useful extensions.
 
-### BUILD REQUIREMENTS
-
-You should have gnu make installed.
-You should have GCC 3.2+ (with gcc-multilib and binutils) or CLANG 3.5+ installed.
-
-MacOS users should have xcode-tools installed.
-
-Windows support requires MinGW installed. Wine cross-compilation is also supported.
-
-WebAssembly binary compilation requires Emscripten 1.37.40+.
-
-### BUILD IN SIMPLEST WAY
-
-```bash
-$ make; make install
-```
-* Note: use *gmake* for unix clients
-* Note: use *make uninstall* to completely uninstall Ol.
-
-### BUILD IN REGULAR WAY
-
-#### GNU/Linux:
-
-##### Build olvm (ol virtual machine):
-
-```bash
-$ cc src/olvm.c  -std=gnu99 -O2  -lm -ldl  -o vm
-```
-
-##### Build ol (with integrated REPL):
-
-```bash
-$ xxd --include repl >tmp/repl.c
-OR
-$ echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl >tmp/repl.c
-THEN
-$ cc src/olvm.c tmp/repl.c  -DREPL=repl  -std=gnu99 -O2  -lm -ldl  -o ol
-```
-
-Note: for some platforms, build can be done without using the `xxd` tool or vm itself.
-```bash
-$ ld -r -b binary -o repl.o repl
-$ cc src/olvm.c -DREPL=_binary_repl_start  repl.o  -std=gnu99 -O2  -lm -ldl  -o ol
-```
-
-##### Build WebAssembly Binaries (in wasm form):
-
-```bash
-$ source {your-emsdk-path}/emsdk_env.sh
-$ make olvm.wasm
-```
-
-This should create olvm.wasm and olvm.js - web assembly ol representation.
-An example usage of Ol as a built-in web application you can check at the official [project page](https://yuriy-chumak.github.io/ol/).
-
-#### Windows:
-
-##### Build olvm (ol virtual machine):
-```cmd
-> set PATH=%PATH%;C:\MinGW\bin
-> gcc.exe src\olvm.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
-```
-##### Build ol (with integrated REPL):
-```cmd
-> set PATH=%PATH%;C:\MinGW\bin
-> ld -r -b binary -o tmp/repl.o repl
-> gcc.exe src\olvm.c tmp\repl.o -DREPL=repl -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
-```
-
-#### \*BSDs:
-
-You should include "c" library instead of "dl":
-
-##### Build only olvm (ol virtual machine):
-```bash
-$ cc src/olvm.c  -std=gnu99 -O2  -lc -lm  -o vm
-```
-##### Build ol (with integrated REPL):
-```bash
-$ ld -r -b binary -o tmp/repl.o repl
-$ cc src/olvm.c tmp/repl.o  -std=gnu99 -O2  -lc -lm  -o ol -DREPL=_binary_repl_start
-```
-
-#### Android:
-
-```bash
-$ ndk-build
-```
-
-#### Open webOS:
-
-Put toolchain/ol.bb bitbake recipe into any place of open webOs
-recipes folder (i.e. ./meta-oe/) and run "make ol" from root
-open webOs folder.
-
-Upload ol executable from BUILD/work/<build-name>/ol/<version>/build
-to machine /bin.
-
-Now you cat execute ol under webos command line or other way you
-would like.
+You can find Ol samples at:
+* [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
+* [Samples](samples/) and [Tests](tests/) repository folders.
+* Embed usage sample available as toy [pacman game](samples/pacman/) sample.
+* Android sample available at [android](samples/android/) sample.
 
 
-DEBUGGING
----------
+For example:
 
-Ol contains builin tools for inspect the Otus Lisp language.
+* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
+
+!["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
+
+* "Digital rain" sample demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix
+
+!["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
+
+* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton.
+You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.
+
+!["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
+
+
+### DISASSEMBLY
+
+Ol 2.3 contains built-in tool for inspecting the Otus Lisp language.
 
 You can use the REPL ",expand" command to expand high-level Ol instructions into low-level (core) Otus Lisp.
 ```scheme
@@ -382,79 +262,6 @@ disassembly `(length command args)`:
 (3 GOTO 6 3)
 (1 ARITY-ERROR)
 ```
-
-SAMPLES
--------
-
-You can check some [sample](https://github.com/yuriy-chumak/ol/tree/master/samples) lisp programs.
-For example:
-
-* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
-
-!["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
-
-* "Digital rain" sample demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)) - https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix
-
-!["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
-
-* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton.
-You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.
-
-!["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
-
-
-CUSTOMIZATION
--------------
-
-If you want to enable/disable some olvm features you can use -Dxxx or -Dxxx=y gcc syntax. This is a list of currently accessible customizations:
-
-|Variable      |Value            |Meaning |
-|--------------|-----------------|--------|
-|REPL          | undefined       |Which source code binary data is a REPL|
-|OLVM_NOMAIN   | 1\|0, default 0 |Disable 'main' function, make olvm embed|
-|OLVM_FFI      | 1\|0, default 1 |Enable FFI support|
-|OLVM_CALLABLES| 1\|0, default 1 |Enable FFI callbacks support|
-|OLVM_INEXACTS | 1\|0, default 1 |Enable inexact math support|
-|OLVM_BUILTIN_FMATH| 1\|0, default 1 |Enable builtin vm floating-point math|
-|CAR_CHECK     | 1\|0, default 1 |Enable car arguments check|
-|CDR_CHECK     | 1\|0, default 1 |Enable cdr arguments check|
-
-This variables are automatically set by the Makefile (like `configure` script). You can override those values, sure:
-
-|Variable      |Value            |Meaning |
-|--------------|-----------------|--------|
-|HAS_SOCKETS   | 1\|0, default 1 |Enable sockets support (bind, listen, socket, etc.)|
-|HAS_DLOPEN    | 1\|0, default 1 |Enable dlopen/dlsym functions support|
-|HAS_UNSAFES   | 1\|0, default 1 |Enable "unsafe" external and internal functions|
-|HAS_SANDBOX   | 1\|0, default 0 |Enable internal sandbox support (depends on OS kernel)|
-|HAS_STRFTIME  | 1\|0, default 1 |Enable strftime function support|
-
-Please note that external libraries (like opengl, sqlite, etc.) support require HAS_DLOPEN and OLVM_FFI enabled.
-
-Additionally you can disable the following olvm features by setting the variables to 0 (-Dxxx=0):
-
-|Variable         |Meaning |
-|-----------------|--------|
-|SYSCALL_SYSINFO  | sysinfo() function usage |
-|SYSCALL_PIPE     | pipe() function usage |
-|SYSCALL_GETRLIMIT| getrlimit() function usage |
-|SYSCALL_GETRUSAGE| getrusage() function usage |
-
-
-CHANGING THE LANGUAGE
----------------------
-
-You can change the Otus Lisp language as a language (yes, you can) by editing the sources in lang/ and libraries/ subfolders.
-Additionally, you can change the virtual machine itself by editing the src/vm.scm and src/olvm.c source files.
-
-To build the Otus Lisp language (not olvm) named REPL do:
-
-```bash
-$ make recompile
-```
-
-This will create a new (in successful way) REPL binary `./repl` containing the compiled ol code.
-
 
 RUNNING
 -------
@@ -586,25 +393,6 @@ FILES
 * tests/rosettacode/*.scm - additional automation tests (in Lisp) that described at the [Rosetta Code](http://rosettacode.org/) programming chrestomathy site.
 
 
-SOME NOTES
-----------
-
-Register interpreter in the linux: start you script with
-
-```
-#!/usr/bin/env ol
-```
-
-Register interpreter in the ms windows:
-
-```
-assoc .ol=OLisp.File
-ftype OLisp.File=ol "%1" %*
-assoc .bl=OLisp.Binary.File
-ftype OLisp.Binary.File=ol "%1" %*
-```
-
-
 EMBEDDING OL
 ------------
 
@@ -618,11 +406,18 @@ Please refer to the [project page](https://yuriy-chumak.github.io/ol/)
 or check the source codes - libraries/scheme/core.scm
 
 
-RELATED
-----------------------------------------------------------------------
+LICENSE
+-------
 
-<br>Copyright (c) 2014 Aki Helin
-<br>Copyright (c) 2014 - 2021 Yuriy Chumak
+Otus Lisp is available under 2 licenses:
+[MIT License](LICENSE) and
+[GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
+
+Copyright (c) 2011-2014 Aki Helin                         <br/>
+Copyright (c) 2014-2021 Yuriy Chumak                      <br/>
+
+
+----------------------------------------------------------------------
 
 Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
 
