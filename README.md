@@ -74,7 +74,7 @@ Advanced build instructions for Windows / Linux / macOS / Android / Web / etc.:
 [doc/BUILD.md](doc/BUILD.md)
 
 
-#### Install (*/usr/bin* and */usr/lib/* by default)
+#### Install (*/usr/bin/ol* and */usr/lib/ol/* by default)
 ```
 $ sudo make install
 ```
@@ -224,7 +224,7 @@ R<sup>7</sup>RS DIFFERENCES
 
 * 6.10. Control features
   * `apply` arguments count is **limited to 256** in Ol, but *unlimited* in Scheme.
-    - note: Use `fold` instead, like `(apply + '(1 2 3))` -> `(fold + 0 '(1 2 3))`.
+    - note: Use `fold` instead, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
 
 * 6.11. Exceptions
   * **No** exceptions handling in Ol.
@@ -261,7 +261,7 @@ You can use the REPL ",disassembly" (or ",dis", or ",d") command to disassemble 
 > ,dis (lambda () 1)
 type: bytecode
 code: (11 1 0 5 14 1 4 24 4 17)
-disassembly `(length command args)`:
+disassembly '(length command . args):
 (4 JAF 1 0 5)
 (3 LD 1 4)
 (2 RET 4)
@@ -270,7 +270,7 @@ disassembly `(length command args)`:
 > ,dis (lambda (x y) (+ x y))
 type: procedure
 code: (11 3 0 7 1 1 2 6 2 6 3 17)
-disassembly `(length command args)`:
+disassembly '(length command . args):
 (4 JAF 3 0 7)
 (4 REFI 1 2 6)
 (3 GOTO 6 3)
