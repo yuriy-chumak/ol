@@ -2200,8 +2200,8 @@
                (lets ((real imag num))
                   (render-number real
                      (cond
-                        ((eq? imag 1) (ilist #\+ #\i tl))
-                        ((eq? imag -1) (ilist #\- #\i tl))
+                        ((eq? imag 1) (cons* #\+ #\i tl))
+                        ((eq? imag -1) (cons* #\- #\i tl))
                         ((< imag 0) ;; already has sign
                            (render-number imag (cons #\i tl) base))
                         (else
@@ -2211,10 +2211,10 @@
             ((eq? (type num) type-inexact)
                (cond ; for inf and nan should use equal?, because
                      ;  this numbers can be returned from ffi
-                  ((equal? num i-zero) (ilist #\0 #\. #\0 tl))
-                  ((equal? num +inf.0) (ilist #\+ #\i #\n #\f #\. #\0 tl))
-                  ((equal? num -inf.0) (ilist #\- #\i #\n #\f #\. #\0 tl))
-                  ((equal? num +nan.0) (ilist #\+ #\n #\a #\n #\. #\0 tl))
+                  ((equal? num i-zero) (cons* #\0 #\. #\0 tl))
+                  ((equal? num +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 tl))
+                  ((equal? num -inf.0) (cons* #\- #\i #\n #\f #\. #\0 tl))
+                  ((equal? num +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 tl))
                   (else
                      (let*((- sub) (* mul)
                            (sign num (if (fless? num 0)
@@ -2222,10 +2222,10 @@
                               (values #f (exact num)))))
                      (cond
                         ((< 1000000000 num)
-                           (let ((number (ilist #\B #\I #\G #\. tl)))
+                           (let ((number (cons* #\B #\I #\G #\. tl)))
                               (if sign (cons #\- number) number)))
                         ((< num 0.00000001)
-                           (let ((number (ilist #\. #\0 #\0 #\0 #\0 #\0 #\0 #\0 #\0 #\0 tl)))
+                           (let ((number (cons* #\. #\0 #\0 #\0 #\0 #\0 #\0 #\0 #\0 #\0 tl)))
                               (if sign (cons #\- number) number)))
                         (else
                            (let*((int (floor num))

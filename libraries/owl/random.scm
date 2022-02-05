@@ -191,7 +191,7 @@
              (digit _ (vm:shr digit 8))
              (mid (vm:and digit #xff))
              (hi _ (vm:shr digit 8)))
-            (ilist lo mid hi
+            (cons* lo mid hi
                (λ () (rands->bytes rs)))))
 
       ;; eww, don't try this at home. to be fixed pretty soon. passed dieharder tests pretty well though.

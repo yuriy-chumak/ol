@@ -2030,7 +2030,6 @@
       ; ----------------------------
       list length append reverse
       cons*
-      ilist ; deprecated
       define-library
 
       port?  eof?

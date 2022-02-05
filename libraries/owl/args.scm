@@ -164,7 +164,7 @@
                   ((eq? op 'plural)    (cl-rule (put node 'plural #true) lst))
                   ((eq? op 'terminal)  (cl-rule (put node op #true) lst))
                   ((eq? op 'has-arg) ;; short for cook id
-                     (cl-rule node (ilist 'cook self lst)))
+                     (cl-rule node (cons* 'cook self lst)))
                   ((eq? op 'cook)
                      (if (and (pair? lst) (function? (car lst)))
                         (cl-rule (put node 'cook (car lst)) (cdr lst))

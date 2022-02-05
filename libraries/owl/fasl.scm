@@ -171,7 +171,7 @@
                      ;; (because different word size may require more/less padding)
                      ((t (type val))
                       (bs (size val)))
-                     (ilist 2 t
+                     (cons* 2 t
                         (send-number bs
                            (copy-bytes out val (- bs 1)))))
                   (lets
@@ -180,7 +180,7 @@
                      ; options for optimization
                      ;  t and s fit in 6 bits -> pack (seems to be only about 1/20 compression)
                      ;  t fits in 6 bits -> (+ (<< t 2) 3) (ditto)
-                     (ilist 1 t
+                     (cons* 1 t
                         (send-number s
                            (render-fields out (vector->list val) pos clos))))))))
 
