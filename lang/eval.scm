@@ -662,7 +662,7 @@
                                  else
                                     (print "can't disassembly " op))
                               else
-                                 (print op " is not function")))
+                                 (print op " is not a function")))
                            (['fail reason]
                               (print reason))
                            (else
