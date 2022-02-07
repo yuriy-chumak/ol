@@ -338,7 +338,7 @@
                   ((low (car ll))                  ;; first leaf data, places 0-255
                    (fields (cdr ll))    ;; fill in the length of the vector at dispatch position 0
                    (subtrees (merge-levels fields))) ;; construct the subtrees
-                  (vm:make type-vector-dispatch (ilist low len subtrees))))))
+                  (vm:make type-vector-dispatch (cons* low len subtrees))))))
 
 
       (define (list->blob l)

@@ -10,8 +10,8 @@
    (syscall 9 ptr size)))
 
 (import (otus ffi))
-(define write (vm:pin (ilist
-   (list fft-int fft-void* fft-int fft-int fft-void*)
+(define write (vm:pin (cons
+   (cons fft-int (list fft-void* fft-int fft-int fft-void*))
    (lambda (ptr sz nmemb userdata)
       (write-bytevector (mmap ptr (* sz nmemb)) file)
       (* sz nmemb)))))
