@@ -68,7 +68,7 @@
       else
          (step level) (print "can't disassembly " value))
    else
-      (step level) (print value " is not function")))
+      (step level) (print value " is not a function")))
 
 (define (dump func level)
    (step level) (print level ":")
