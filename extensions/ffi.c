@@ -1613,7 +1613,6 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			#endif
 			break;
 		case TFLOAT + FFT_REF:
-		tfloatref:
 			has_wb = 1;
 			//no break
 		case TFLOAT + FFT_PTR:
@@ -1705,21 +1704,32 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				if (is_enump(car(arg))) // should be positive enum number
 				switch (value(car(arg))) {
 					// (cons fft-int8 '(...))
+					case TINT8 + FFT_REF:
+					case TUINT8 + FFT_REF:
+						has_wb = 1;
 					case TINT8 + FFT_PTR:
 					case TUINT8 + FFT_PTR:
 						arg = cdr(arg);
 						goto tint8ptr;
 					// (cons fft-int16 '(...))
+					case TINT16 + FFT_REF:
+					case TUINT16 + FFT_REF:
+						has_wb = 1;
 					case TINT16 + FFT_PTR:
 					case TUINT16 + FFT_PTR:
 						arg = cdr(arg);
 						goto tint16ptr;
 					// (cons fft-int32 '(...))
+					case TINT32 + FFT_REF:
+					case TUINT32 + FFT_REF:
+						has_wb = 1;
 					case TINT32 + FFT_PTR:
 					case TUINT32 + FFT_PTR:
 						arg = cdr(arg);
 						goto tint32ptr;
 					// (cons fft-float '(...))
+					case TFLOAT + FFT_REF:
+						has_wb = 1;
 					case TFLOAT + FFT_PTR:
 						arg = cdr(arg);
 						goto tfloatptr;
@@ -1728,7 +1738,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					// pushing structures
 					// case TPAIR: ...
 					default:
-						E("unsupported list types for void*");
+						E("unsupported list types for fft-any");
 				}
 				else
 					E("No type conversion selected");
@@ -2073,6 +2083,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 			// simplest cases - all shorts are fits as value
 			case TINT8 + FFT_REF: {
+			tint8ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				signed char* f = (signed char*)args[i];
@@ -2088,6 +2099,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			}
 			case TUINT8 + FFT_REF: {
+			tuint8ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				unsigned char* f = (unsigned char*)args[i];
@@ -2104,6 +2116,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 
 			case TINT16 + FFT_REF: {
+			tint16ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				signed short* f = (signed short*)args[i];
@@ -2119,6 +2132,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			}
 			case TUINT16 + FFT_REF: {
+			tuint16ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				unsigned short* f = (unsigned short*)args[i];
@@ -2135,6 +2149,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 
 			case TINT32 + FFT_REF: {
+			tint32ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				int* f = (int*)args[i];
@@ -2169,6 +2184,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 
 			case TUINT32 + FFT_REF: {
+			tuint32ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
 				unsigned int* f = (unsigned int*)args[i];
@@ -2199,6 +2215,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 
 			case TFLOAT + FFT_REF: {
+			tfloatref:;
 				// todo: перепроверить!
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -2233,6 +2250,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			}
 			case TDOUBLE + FFT_REF: {
+			tdoubleref:;
 				// todo: перепроверить!
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -2282,6 +2300,53 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					*(void**)&car(num) = value;
 
 					l = cdr(l);
+				}
+				break;
+			}
+			
+			case TANY: {
+				switch (reference_type(arg)) {
+				case TPAIR: // sending type override
+					assert (is_enump(car(arg))); // should be positive enum number, already tested
+					switch (value(car(arg))) {
+						case TINT8 + FFT_REF:
+							arg = cdr(arg);
+							goto tint8ref;
+						case TUINT8 + FFT_REF:
+							arg = cdr(arg);
+							goto tuint8ref;
+						case TINT16 + FFT_REF:
+							arg = cdr(arg);
+							goto tint16ref;
+						case TUINT16 + FFT_REF:
+							arg = cdr(arg);
+							goto tuint16ref;
+						case TINT32 + FFT_REF:
+							arg = cdr(arg);
+							goto tint32ref;
+						case TUINT32 + FFT_REF:
+							arg = cdr(arg);
+							goto tuint32ref;
+						// case TINT64 + FFT_REF:
+						// 	goto tint64ref;
+						// case TUINT64 + FFT_REF:
+						// 	goto tuint64ref;
+						case TFLOAT + FFT_REF:
+							arg = cdr(arg);
+							goto tfloatref;
+						case TDOUBLE + FFT_REF:
+							arg = cdr(arg);
+							goto tdoubleref;
+						// TBD.
+						default:
+							E("unsupported list types for fft-any&");
+					}
+					break;
+				// case TSTRING:
+				// case TSTRINGDISPATCH:
+				// 	goto tstring;
+				// case TSTRINGWIDE:
+				// 	goto tstringwide;
 				}
 				break;
 			} }
