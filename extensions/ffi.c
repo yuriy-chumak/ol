@@ -559,36 +559,36 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"mov x8, #8",
 
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
-	"cbz x3, 0f",  // is x3 == 0 goto no_more_floats
+	"cbz x3, 0f",  // is x3 == 0 goto Lno_more_floats
 	"ldr d0, [x1]",
 	"ldr d1, [x1, #8]",
 	"ldr d2, [x1, #16]",
 	"ldr d3, [x1, #24]",
 
 	"cmp x3, #4", // question: is this a speedup or better just copy regs without jump?
-	"ble 0f",
+	"ble 0f", // goto Lno_more_floats
 	"ldr d4, [x1, #32]",
 	"ldr d5, [x1, #40]",
 	"ldr d6, [x1, #48]",
 	"ldr d7, [x1, #56]",
 
-"0:",
+"0:", // Lno_more_floats
 	"cmp x2, x8",
-	"bge 1f",
+	"bge 1f", // goto Ltest
 	"cmp x3, x8",
-	"bge 1f",
-	"b 4f",
+	"bge 1f", // goto Ltest
+	"b 4f",   // goto Lgo
 
-"1:"
+"1:" // Ltest
 	// теперь посчитаем сколько нам нужно закидывать в стек
 	"sub x12, x2, #8",
 	"cmp x12, #0",
-	"bgt 2f",
+	"bgt 2f", // goto L_a
 	"mov x12, #0", "2:",
 
 	"sub x13, x3, #8",
 	"cmp x13, #0",
-	"bgt 3f",
+	"bgt 3f", // goto L_b
 	"mov x13, #0", "3:",
 
 	"add x15, x12, x13", // total x15 - count of arguments to be pushed to stack
@@ -610,48 +610,48 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"madd x11, x3, x8, x1",
 	"sub x11, x11, x8", // x1 = x1 + x3*8 (- 8)
 
-"6:",
+"6:", // Lpush
 	"orr x5, x12, x13", // больше нечего пушить
-	"cbz x5, 4f",
+	"cbz x5, 4f", // goto Lgo
 //	"tbz x4, #1, 5f", }
 	"tst x4, #1",
 	"lsr x4, x4, #1", // давай посмотрим - инт или флоат
-	"beq 5f", // == bc set
-".Lfloat:",
-	"cbz x13, 6b",
+	"beq 5f", // == bc set, goto Lint
+"9:", // Lfloat
+	"cbz x13, 6b", // goto Lpush
 	"ldr x5, [x11], #-8",
 	"sub x13, x13, #1",
 	"str x5, [x15, -8]!",
-	"b 6b",
+	"b 6b", // goto Lpush
 "5:",
-	"cbz x12, 6b",
+	"cbz x12, 6b", // goto Lpush
 	"ldr x5, [x10], #-8",
 	"sub x12, x12, #1",
 	"str x5, [x15, -8]!",
-	"b 6b",
+	"b 6b", // goto Lpush
 
 // done. go
-"4:"
+"4:", // Lgo
 	// assert (x15 == sp)
 	// а теперь целочисленные аргументы
-	"cbz x2, 7f",
+	"cbz x2, 7f", // Lcall
 	"cmp x2, #4",
-	"ble 8f",
+	"ble 8f", // Lless2
 	"ldr x7, [x0, #56]",
 	"ldr x6, [x0, #48]",
 	"ldr x5, [x0, #40]",
 	"ldr x4, [x0, #32]",
-"8:",
+"8:", // Lless2
 	"ldr x2, [x0, #16]",
 	"ldr x3, [x0, #24]",
 	"ldr x1, [x0, #8]",
 	"ldr x0, [x0]",
 
-"7:",
+"7:", // Lcall
 	"blr x9", // SP mod 16 = 0.  The stack must be quad-word aligned.
 
 	"mov sp, x29",
-	"ldp  x29, x30, [sp], 16",
+	"ldp x29, x30, [sp], 16",
 	"ret");
 
 
