@@ -559,41 +559,41 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"mov x8, #8",
 
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
-	"cbz x3, .Lno_more_floats",  // is x3 == 0 goto no_more_floats
+	"cbz x3, 0f",  // is x3 == 0 goto no_more_floats
 	"ldr d0, [x1]",
 	"ldr d1, [x1, #8]",
 	"ldr d2, [x1, #16]",
 	"ldr d3, [x1, #24]",
 
 	"cmp x3, #4", // question: is this a speedup or better just copy regs without jump?
-	"ble .Lno_more_floats",
+	"ble 0f",
 	"ldr d4, [x1, #32]",
 	"ldr d5, [x1, #40]",
 	"ldr d6, [x1, #48]",
 	"ldr d7, [x1, #56]",
 
-".Lno_more_floats:",
+"0:",
 	"cmp x2, x8",
-	"bge .Ltest",
+	"bge 1f",
 	"cmp x3, x8",
-	"bge .Ltest",
-	"b .Lgo",
+	"bge 1f",
+	"b 4f",
 
-".Ltest:"
+"1:"
 	// теперь посчитаем сколько нам нужно закидывать в стек
 	"sub x12, x2, #8",
 	"cmp x12, #0",
-	"bgt .L_a",
-	"mov x12, #0", ".L_a:",
+	"bgt 2f",
+	"mov x12, #0", "2:",
 
 	"sub x13, x3, #8",
 	"cmp x13, #0",
-	"bgt .L_b",
-	"mov x13, #0", ".L_b:",
+	"bgt 3f",
+	"mov x13, #0", "3:",
 
 	"add x15, x12, x13", // total x15 - count of arguments to be pushed to stack
 	// "cmp x15, #0", // эта проверка не нужна - мы уже проверили выше на две восьмерки
-	// "ble .Lgo",
+	// "ble 4f",
 
 	// выравняем стек
 	"orr x10, x15, #1",
@@ -610,44 +610,44 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"madd x11, x3, x8, x1",
 	"sub x11, x11, x8", // x1 = x1 + x3*8 (- 8)
 
-".Lpush:",
+"6:",
 	"orr x5, x12, x13", // больше нечего пушить
-	"cbz x5, .Lgo",
-//	"tbz x4, #1, .Lint", }
+	"cbz x5, 4f",
+//	"tbz x4, #1, 5f", }
 	"tst x4, #1",
 	"lsr x4, x4, #1", // давай посмотрим - инт или флоат
-	"beq .Lint", // == bc set
+	"beq 5f", // == bc set
 ".Lfloat:",
-	"cbz x13, .Lpush",
+	"cbz x13, 6b",
 	"ldr x5, [x11], #-8",
 	"sub x13, x13, #1",
 	"str x5, [x15, -8]!",
-	"b .Lpush",
-".Lint:",
-	"cbz x12, .Lpush",
+	"b 6b",
+"5:",
+	"cbz x12, 6b",
 	"ldr x5, [x10], #-8",
 	"sub x12, x12, #1",
 	"str x5, [x15, -8]!",
-	"b .Lpush",
+	"b 6b",
 
 // done. go
-".Lgo:"
+"4:"
 	// assert (x15 == sp)
 	// а теперь целочисленные аргументы
-	"cbz x2, .Lcall",
+	"cbz x2, 7f",
 	"cmp x2, #4",
-	"ble .Lless2",
+	"ble 8f",
 	"ldr x7, [x0, #56]",
 	"ldr x6, [x0, #48]",
 	"ldr x5, [x0, #40]",
 	"ldr x4, [x0, #32]",
-".Lless2:",
+"8:",
 	"ldr x2, [x0, #16]",
 	"ldr x3, [x0, #24]",
 	"ldr x1, [x0, #8]",
 	"ldr x0, [x0]",
 
-".Lcall:",
+"7:",
 	"blr x9", // SP mod 16 = 0.  The stack must be quad-word aligned.
 
 	"mov sp, x29",
