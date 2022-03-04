@@ -1239,7 +1239,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		int type = is_value(car(t)) ? value(car(t)) : reference_type(car(t));
 		word arg = (word)car(p);
 
-//		again:
+		again:
 		if (is_reference(arg)) {
 			if (type & (FFT_PTR|FFT_REF)) {
                 int cnt =
@@ -1277,36 +1277,26 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
                     l + cnt*W; // size for array + size of all strings
                 }) : cnt;
 
-				words += WALIGN(len *
-					atype == TINT8 || atype == TUINT8   ? sizeof(int8_t) :
-					atype == TINT16 || atype == TUINT16 ? sizeof(int16_t) :
-					atype == TINT32 || atype == TUINT32 ? sizeof(int32_t) :
-					atype == TINT64 || atype == TUINT64 ? sizeof(int64_t) :
-					atype == TFLOAT                     ? sizeof(float) :
-					atype == TDOUBLE                    ? sizeof(double) :
-					atype == TVPTR                      ? sizeof(void*) : // removed "&& !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) " just for speedup
-                    atype == TSTRING                    ? sizeof(char) :
-					atype == TSTRINGWIDE                ? sizeof(widechar) :
-					0) + 1;
+				words += WALIGN(len * (
+					( atype == TINT8  || atype == TUINT8  ) ? sizeof(int8_t) :
+					( atype == TINT16 || atype == TUINT16 ) ? sizeof(int16_t) :
+					( atype == TINT32 || atype == TUINT32 ) ? sizeof(int32_t) :
+					( atype == TINT64 || atype == TUINT64 ) ? sizeof(int64_t) :
+					( atype == TFLOAT                     ) ? sizeof(float) :
+					( atype == TDOUBLE                    ) ? sizeof(double) :
+					( atype == TVPTR                      ) ? sizeof(void*) : // removed "&& !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) " just for speedup
+                    ( atype == TSTRING                    ) ? sizeof(char) :
+					( atype == TSTRINGWIDE                ) ? sizeof(widechar) :
+					0)) + 1;
 			}
 			else
 			switch (type) {
 				case TANY:
-					switch (reference_type (arg)) {
-						case TSTRING:
-							words += WALIGN(reference_size(arg)) + 1;
-							break;
-						case TSTRINGWIDE:
-							words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
-							break;
-                        case TSTRINGDISPATCH:
-							words += WALIGN(number(ref(arg, 1))) + 1; // todo: process whole string as utf8_len and use FAST_STRING_CALC macro
-							break;
-						default:
-							// D("TODO: TANY processing");
-							break;
+					type = reference_type (arg);
+					if (type == TPAIR) {
+						type = value(ref(arg, 1)); arg = ref(arg, 2);
 					}
-					break;
+					goto again;
 				case TSTRING:
 					switch (reference_type (arg)) {
 						case TSTRING:
