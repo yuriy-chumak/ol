@@ -4024,7 +4024,7 @@ loop:;
 					Sleep(ms); // in ms
 					r = (word*) ITRUE;
 				#endif
-				#ifdef __unix__ // Linux, *BSD, MacOS, etc.
+				#if defined(__unix__) || defined(__APPLE__) // Linux, *BSD, MacOS, etc.
 					struct timespec ts = { us / 1000000, (us % 1000000) * 1000 };
 					struct timespec rem;
 					if (nanosleep(&ts, &rem) != 0)
@@ -4044,7 +4044,7 @@ loop:;
 					char* command = string(A1);
 					word b = A2;
 					word c = A3;
-					#ifdef __unix__
+					#if defined(__unix__) || defined(__APPLE__)
 					# ifdef __EMSCRIPTEN__
 						emscripten_run_script(command);
 						r = (word*) ITRUE;
