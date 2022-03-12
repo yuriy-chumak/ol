@@ -1,8 +1,8 @@
 all: src/ol.c tmp.bin
 	kodev run
 
-tmp.bin: integers.scm
-	ol integers.scm
+tmp.bin: json.scm
+	ol json.scm
 src/ol.c: tmp.bin
 	@xxd --include tmp.bin >src/ol.c
 	@echo '#define OLVM_NOMAIN 1'

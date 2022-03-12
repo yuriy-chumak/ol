@@ -61,7 +61,4 @@
 
    KORE_RESULT_OK)
 
-(fasl-save (vm:new 63 (lambda (args)
-      kore-constructor!
-      (vm:pin page)))
-   "tmp.bin")
+(fasl-save (make-kore-page page) "tmp.bin")
