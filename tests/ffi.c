@@ -254,6 +254,31 @@ p2v(Q, "%lld", signed long long)
 p2v(f, "%f", float)
 p2v(d, "%f", double)
 
+// extended (fft* type)->type mirroring functions
+#define p2v3(index, p, type) PUBLIC \
+type rp##index##2##index##3(type* x) { \
+	printf(" [" p ", " p ", " p " => ", x[0], x[1], x[2]); \
+	x[2] = x[0] + x[1]; \
+	printf(p "] ", x[2]); \
+	fflush(stdout); \
+	return x[2]; \
+}
+
+p2v3(c, "%u", unsigned char)
+p2v3(C, "%d", signed char)
+p2v3(s, "%u", unsigned short)
+p2v3(S, "%d", signed short)
+p2v3(i, "%u", unsigned int)
+p2v3(I, "%d", signed int)
+p2v3(l, "%lu", unsigned long)
+p2v3(L, "%ld", signed long)
+#ifndef __ARM_EABI__
+p2v3(q, "%llu", unsigned long long)
+p2v3(Q, "%lld", signed long long)
+#endif
+p2v3(f, "%f", float)
+p2v3(d, "%f", double)
+
 
 #ifdef SELFTEST
 int main() {

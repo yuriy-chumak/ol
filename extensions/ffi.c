@@ -1227,6 +1227,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #endif
 
 
+	// ----------------------------------------------------------
 	// 1. do memory precalculations and count number of arguments
 	unsigned words = 0;
 	int i = 0;     // актуальное количество аргументов
@@ -1292,11 +1293,13 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			else
 			switch (type) {
 				case TANY:
-					type = reference_type (arg);
-					if (type == TPAIR) {
-						type = value(ref(arg, 1)); arg = ref(arg, 2);
+					type = car(arg);
+					if (is_enump(type)) {
+						type = value(type);
+						arg = cdr(arg);
+						goto again;
 					}
-					goto again;
+					break;
 				case TSTRING:
 					switch (reference_type (arg)) {
 						case TSTRING:
@@ -1362,7 +1365,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		words += WALIGN(value(cdar(B))) + 1;
 	}
 
-	// ensure that all arguments will fit in heap
+	// ----------------------------------------------
+	// 1.1 ensure that all arguments will fit in heap
 	heap_t* heap = (heap_t*)this;
 	if (heap->fp + words > heap->end) {
         size_t a = OLVM_pin(this, A);
@@ -1380,6 +1384,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	int_t* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(int_t)); // minimum - 16 words for arguments
 	i = 0;
 
+	// ----------------------------
 	// 2. prepare arguments to push
 	p = (word*)C;   // ol arguments
 	t = (word*)cdr (B); // rtty
@@ -1428,6 +1433,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
+		any:
 		if (arg == IFALSE) // #false is universal "0" value
 		switch (type) {
 #if UINT64_MAX > UINTPTR_MAX
@@ -1514,6 +1520,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
+			assert (is_reference(arg));
 
 			int c = llen(arg); // todo: remove this precounting
 			char* p = (char*) &new_bytevector(c * sizeof(char))[1];
@@ -1535,6 +1542,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
+			assert (is_reference(arg));
 
 			int c = llen(arg);
 			short* p = (short*) &new_bytevector(c * sizeof(short))[1];
@@ -1556,6 +1564,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
+			assert (is_reference(arg));
 
 			int c = llen(arg);
 			int* p = (int*) &new_bytevector(c * sizeof(int))[1];
@@ -1577,6 +1586,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
+			assert (is_reference(arg));
 
 			int c = llen(arg);
 			int64_t* p = (int64_t*) &new_bytevector(c * sizeof(int64_t))[1];
@@ -1609,6 +1619,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		tfloatptr: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
+			assert (is_reference(arg));
 
 			switch (reference_type(arg)) {
 				case TPAIR: {
@@ -1659,6 +1670,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		tdoubleptr: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
+			assert (is_reference(arg));
 
 			int c = llen(arg);
 			double* p = (double*) &new_bytevector(c * sizeof(double))[1];
@@ -1690,45 +1702,13 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			case TBYTEVECTOR: // address of bytevector data (no copying to stack)
 				args[i] = (word) &car(arg);
 				break;
+			// (cons fft-xxx '(...))
 			case TPAIR: // sending type override
-				if (is_enump(car(arg))) // should be positive enum number
-				switch (value(car(arg))) {
-					// (cons fft-int8 '(...))
-					case TINT8 + FFT_REF:
-					case TUINT8 + FFT_REF:
-						has_wb = 1;
-					case TINT8 + FFT_PTR:
-					case TUINT8 + FFT_PTR:
-						arg = cdr(arg);
-						goto tint8ptr;
-					// (cons fft-int16 '(...))
-					case TINT16 + FFT_REF:
-					case TUINT16 + FFT_REF:
-						has_wb = 1;
-					case TINT16 + FFT_PTR:
-					case TUINT16 + FFT_PTR:
-						arg = cdr(arg);
-						goto tint16ptr;
-					// (cons fft-int32 '(...))
-					case TINT32 + FFT_REF:
-					case TUINT32 + FFT_REF:
-						has_wb = 1;
-					case TINT32 + FFT_PTR:
-					case TUINT32 + FFT_PTR:
-						arg = cdr(arg);
-						goto tint32ptr;
-					// (cons fft-float '(...))
-					case TFLOAT + FFT_REF:
-						has_wb = 1;
-					case TFLOAT + FFT_PTR:
-						arg = cdr(arg);
-						goto tfloatptr;
-					// TBD.
-					// todo: add list with custom types and a function with
-					// pushing structures
-					// case TPAIR: ...
-					default:
-						E("unsupported list types for fft-any");
+				type = car(arg);
+				if (is_enump(type)) {
+					type = value(type);
+					arg = cdr(arg);
+					goto any;
 				}
 				else
 					E("No type conversion selected");
@@ -2067,8 +2047,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			int type = value(car(t));
 			word arg = (word) car(p);
 
+
 			// destination type
 			//if (arg != IFALSE) - излишен
+			wbagain: // writeback again
 			switch (type) {
 
 			// simplest cases - all shorts are fits as value
@@ -2297,39 +2279,11 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			case TANY: {
 				switch (reference_type(arg)) {
 				case TPAIR: // sending type override
-					assert (is_enump(car(arg))); // should be positive enum number, already tested
-					switch (value(car(arg))) {
-						case TINT8 + FFT_REF:
-							arg = cdr(arg);
-							goto tint8ref;
-						case TUINT8 + FFT_REF:
-							arg = cdr(arg);
-							goto tuint8ref;
-						case TINT16 + FFT_REF:
-							arg = cdr(arg);
-							goto tint16ref;
-						case TUINT16 + FFT_REF:
-							arg = cdr(arg);
-							goto tuint16ref;
-						case TINT32 + FFT_REF:
-							arg = cdr(arg);
-							goto tint32ref;
-						case TUINT32 + FFT_REF:
-							arg = cdr(arg);
-							goto tuint32ref;
-						// case TINT64 + FFT_REF:
-						// 	goto tint64ref;
-						// case TUINT64 + FFT_REF:
-						// 	goto tuint64ref;
-						case TFLOAT + FFT_REF:
-							arg = cdr(arg);
-							goto tfloatref;
-						case TDOUBLE + FFT_REF:
-							arg = cdr(arg);
-							goto tdoubleref;
-						// TBD.
-						default:
-							E("unsupported list types for fft-any&");
+					type = car(arg);
+					if (is_enump(type)) {
+						type = value(type);
+						arg = cdr(arg);
+						goto wbagain;
 					}
 					break;
 				// case TSTRING:
