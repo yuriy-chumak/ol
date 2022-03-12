@@ -1187,6 +1187,11 @@ char* not_a_string(char* ptr, word string)
 	return ptr;
 }
 
+// ffi helper "Identity" function
+PUBLIC __attribute__((used)) word OLVM_idf(word x) {
+	return x;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
 PUBLIC

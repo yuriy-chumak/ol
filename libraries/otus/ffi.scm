@@ -90,7 +90,9 @@
       box unbox; execve
 
       ; fft data manipulation helpers
-      vptr->bytevector ;vptr->string
+      vptr->string
+
+      vptr->bytevector
       bytevector->void*
       bytevector->int32
       bytevector->int64
@@ -356,6 +358,13 @@
 ;;       ))
 
 (begin
+
+   (define ffi:idf (dlsym (dlopen) "OLVM_idf"))
+   (define (cast x t) ; cast vptr to the type t
+      (ffi ffi:idf (list t type-vptr) (list x)))
+
+   (define (vptr->string vptr)
+      (cast vptr type-string))
 
    (define (bytevector->float bvec offset)
       (vm:cast (bytevector-copy bvec offset (+ offset 4)) type-inexact))
