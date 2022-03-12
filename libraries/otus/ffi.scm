@@ -371,7 +371,7 @@
 
    (define (bytevector->void* bvec offset)
       (let ((void* (make-vptr)))
-         (vm:set! void* 0 bvec offset (size void*))))
+         (vm:set! void* 0 bvec offset (+ offset (size void*)))))
 
    (define (vptr->bytevector vptr sizeof)
       (syscall 9 vptr sizeof))
