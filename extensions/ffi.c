@@ -1754,12 +1754,37 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				args[i] = (word) &car(arg);
 			else {
 				int c = llen(arg);
-				void** p = (void**) __builtin_alloca(c * sizeof(void*));
+				void** p = (void**) __builtin_alloca(c * sizeof(void*)); // todo: change to heap allocation
 				args[i] = (word)p;
 
 				word l = arg;
-				while (c--) // todo: add type check
-					*p++ = (void*)car(l), l = cdr(l);
+				while (c--) {
+					if (car(l) == INULL)
+						*p++ = 0;
+					else
+					if (is_reference(car(l)))
+					switch (reference_type(car(l))) {
+						case TVPTR:
+							*p++ = (void*)car(l);
+							break;
+						case TSTRING:
+						case TSTRINGWIDE:
+						case TSTRINGDISPATCH: {
+							char* ptr = (char*)(*p++ = &fp[1]);
+							new_bytevector(string2ol(ptr, car(l),
+								stype == TSTRING ? chars2ol :
+								stype == TSTRINGWIDE ? wchars2utf8 :
+								stype == TSTRINGDISPATCH ? stringleaf2ol :
+								not_a_string));
+							break;
+						}
+						default:
+							E("invalid parameter type (requested vptr*)");
+					}
+					else
+						E("invalid parameter type (requested vptr*)");
+					l = cdr(l);
+				}
 			}
 			break;
 		}

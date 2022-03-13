@@ -54,8 +54,12 @@
 (define G_CALLBACK make-callback)
 
 (define GLIB (load-dynamic-library "libglib-2.0.so"))
-(define GOBJECT (load-dynamic-library "libgobject-2.0.so"))
-(define GIO (load-dynamic-library "libgio-2.0.so"))
+(define GOBJECT (or
+   (load-dynamic-library "libgobject-2.0.so")
+   (load-dynamic-library "libgobject-2.0.so.0")))
+(define GIO (or
+   (load-dynamic-library "libgio-2.0.so")
+   (load-dynamic-library "libgio-2.0.so.0")))
 
 (define GObject* fft-void*)
 (define g_object_ref (GOBJECT gpointer "g_object_ref" gpointer))
@@ -67,7 +71,7 @@
 (define g_signal_connect_data (GOBJECT gulong "g_signal_connect_data" gpointer type-string GCallback gpointer GClosureNotify GConnectFlags))
 (define (g_signal_connect instance detailed_signal c_handler data)
    (g_signal_connect_data instance detailed_signal c_handler data #false 0))
-(define g_application_run (GIO gint "g_application_run" GApplication* gint fft-void*))
+(define g_application_run (GIO gint "g_application_run" GApplication* gint (fft* fft-void*)))
 (define g_application_quit (GIO void "g_application_quit" GApplication*))
 
 ))
