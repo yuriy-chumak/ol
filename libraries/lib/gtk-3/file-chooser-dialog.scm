@@ -1,4 +1,4 @@
-(define-library (lib gtk-3 filechooserdialog)
+(define-library (lib gtk-3 file-chooser-dialog)
    (export
       GtkFileChooserDialog*
 
@@ -6,14 +6,14 @@
       gtk_file_chooser_dialog_new_with_backend
 
       (exports (lib gtk-3 window))
-      (exports (lib gtk-3 filechooser))
+      (exports (lib gtk-3 file-chooser))
    )
    (import
       (scheme core)
       (otus ffi)
       (lib gtk-3 window)
       (lib gtk-3 widget)
-      (lib gtk-3 filechooser)
+      (lib gtk-3 file-chooser)
       (lib gtk-3 gtk))
 
 (begin

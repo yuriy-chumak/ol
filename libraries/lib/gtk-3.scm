@@ -13,7 +13,6 @@
       gtk_application_new
       gtk_application_window_new
 
-
       GtkContainer*
       gtk_container_add
       gtk_container_foreach
@@ -71,9 +70,6 @@
       ; 
       GtkTextView*
 
-      GtkAboutDialog*
-      gtk_dialog_run
-
       ;
       GTK_STOCK_CANCEL
       GTK_RESPONSE_CANCEL
@@ -83,8 +79,8 @@
       (exports (lib gtk-3 widget))
       (exports (lib gtk-3 window))
       (exports (lib gtk-3 label))
-      (exports (lib gtk-3 filechooser))
-      (exports (lib gtk-3 filechooserdialog))
+      (exports (lib gtk-3 file-chooser))
+      (exports (lib gtk-3 file-chooser-dialog))
       (exports (lib gtk-3 gtk)))
    (import
       (scheme core)
@@ -95,8 +91,8 @@
       (lib gtk-3 widget)
       (lib gtk-3 window)
       (lib gtk-3 label)
-      (lib gtk-3 filechooser)
-      (lib gtk-3 filechooserdialog)
+      (lib gtk-3 file-chooser)
+      (lib gtk-3 file-chooser-dialog)
 
       (lib gtk-3 gtk))
 
@@ -180,9 +176,6 @@
    (define gtk_text_buffer_get_end_iter (GTK3 fft-void "gtk_text_buffer_get_end_iter" GtkTextBuffer* GtkTextIter*))
 
    (define GtkTextView* fft-void*)
-
-   (define GtkAboutDialog* fft-void*)
-   (define gtk_dialog_run (GTK3 gint "gtk_dialog_run" GtkAboutDialog*))
 
    (define GTK_STOCK_CANCEL    "gtk-cancel")
    (define GTK_RESPONSE_CANCEL -6)

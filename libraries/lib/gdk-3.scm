@@ -2,6 +2,7 @@
    (export
       GSourceFunc
       gdk_threads_add_idle
+      gdk_threads_add_timeout
    )
    (import
       (scheme core)
@@ -9,11 +10,11 @@
       (lib glib-2))
 
 (begin
+   (define GDK (load-dynamic-library "libgdk-3.so"))
 
-(define GDK (load-dynamic-library "libgdk-3.so"))
+   (define GSourceFunc type-callable)
 
-(define GSourceFunc type-callable)
-
-(define gdk_threads_add_idle (GDK guint "gdk_threads_add_idle" GSourceFunc gpointer))
+   (define gdk_threads_add_idle (GDK guint "gdk_threads_add_idle" GSourceFunc gpointer))
+   (define gdk_threads_add_timeout (GDK guint "gdk_threads_add_timeout" guint GSourceFunc gpointer))
 
 ))

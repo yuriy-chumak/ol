@@ -5,6 +5,8 @@
    (lib gtk-3))
 (import (only (otus syscall) strftime))
 
+(import (lib gtk-3 about-dialog))
+
 ; main:
 (gtk_init '(0) #f)
 
@@ -20,7 +22,7 @@
 (define about (gtk_builder_get_object builder "about"))
 (define response
    (GTK_CALLBACK (widget userdata)
-      (print "aqbout dialog response: " gint)
+      (print "about dialog response: " gint)
       TRUE))
 (g_signal_connect about "response" (G_CALLBACK response) NULL)
 

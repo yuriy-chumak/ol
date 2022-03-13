@@ -1,5 +1,6 @@
 (define-library (lib glib-2)
    (export
+      void
       gint guint gulong gpointer
       gdouble
       gchar* gboolean

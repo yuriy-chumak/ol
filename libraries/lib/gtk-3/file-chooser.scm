@@ -1,4 +1,4 @@
-(define-library (lib gtk-3 filechooser)
+(define-library (lib gtk-3 file-chooser)
    (export
       GtkFileChooserAction
       GTK_FILE_CHOOSER_ACTION_OPEN

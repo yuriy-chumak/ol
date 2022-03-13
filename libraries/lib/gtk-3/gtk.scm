@@ -14,6 +14,11 @@
 
    (define-syntax GTK_CALLBACK
       (syntax-rules ()
+         ((GTK_CALLBACK (userdata) . rest)
+            (vm:pin (cons
+               (cons gint (list gpointer))
+               (lambda (userdata)
+                  .rest))))
          ((GTK_CALLBACK (app userdata) . rest)
             (vm:pin (cons
                (cons gint (list GObject* gpointer))
