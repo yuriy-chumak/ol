@@ -1771,6 +1771,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						case TSTRINGWIDE:
 						case TSTRINGDISPATCH: {
 							char* ptr = (char*)(*p++ = &fp[1]);
+							int stype = reference_type(car(l));
 							new_bytevector(string2ol(ptr, car(l),
 								stype == TSTRING ? chars2ol :
 								stype == TSTRINGWIDE ? wchars2utf8 :
