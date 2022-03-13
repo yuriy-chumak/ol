@@ -16,7 +16,7 @@
    (define gtk_label_get_text (GTK3 type-string "gtk_label_get_text" GtkLabel*))
    (define gtk_label_set_text (GTK3 void "gtk_label_set_text" GtkLabel* type-string))
 
-   (define (Gtk:Label props)
+   (define (GtkLabel props)
       ;...
-      #true)
+      #false)
 ))

@@ -19,20 +19,6 @@
 
       ; todo: move next to (lib gtk bbox)
       gtk_button_box_new
-      GTK_ORIENTATION_HORIZONTAL
-      GTK_ORIENTATION_VERTICAL
-      gtk_button_new_with_label
-      gtk_button_get_label
-
-      ; todo: move to the (lib gtk container)
-      GtkBuilder*
-      gtk_builder_new
-      gtk_builder_new_from_file
-      gtk_builder_add_from_file
-      gtk_builder_get_object
-
-      gtk_builder_add_callback_symbol
-      gtk_builder_connect_signals
 
       ; todo: move to (lib gtk glarea)
       GtkGLArea*
@@ -57,16 +43,6 @@
       make-GtkTextIter
       GtkTextIter*
 
-      ; todo: move to (lib gtk textbuffer)
-      ; https://developer.gnome.org/gtk3/stable/GtkTextBuffer.html
-      GtkTextBuffer*
-      gtk_text_buffer_insert_at_cursor
-      gtk_text_buffer_set_text
-      gtk_text_buffer_get_text
-
-      gtk_text_buffer_get_start_iter
-      gtk_text_buffer_get_end_iter
-
       ; 
       GtkTextView*
 
@@ -76,25 +52,31 @@
       GTK_STOCK_OPEN
       GTK_RESPONSE_ACCEPT
 
+      (exports (lib gtk-3 gtk))
+
       (exports (lib gtk-3 widget))
       (exports (lib gtk-3 window))
       (exports (lib gtk-3 label))
+      (exports (lib gtk-3 button))
       (exports (lib gtk-3 file-chooser))
       (exports (lib gtk-3 file-chooser-dialog))
-      (exports (lib gtk-3 gtk)))
+      (exports (lib gtk-3 builder)))
+
    (import
       (scheme core)
       (otus ffi)
       (lib glib-2)
       (lib cairo)
 
+      (lib gtk-3 gtk)
+
       (lib gtk-3 widget)
       (lib gtk-3 window)
       (lib gtk-3 label)
+      (lib gtk-3 button)
       (lib gtk-3 file-chooser)
       (lib gtk-3 file-chooser-dialog)
-
-      (lib gtk-3 gtk))
+      (lib gtk-3 builder))
 
 (begin
 
@@ -103,7 +85,6 @@
    (define GtkApplication* type-vptr)
    (define GApplicationFlags fft-int)
    (define GtkContainer* type-vptr)
-   (define GtkCallback type-callable)
 
    (define gtk_init (GTK3 fft-void "gtk_init" fft-int& (fft& (fft* type-string))))
    (define gtk_main (GTK3 fft-void "gtk_main"))
@@ -117,27 +98,8 @@
    (define gtk_container_add (GTK3 fft-void "gtk_container_add" GtkContainer* GtkWidget*))
    (define gtk_container_foreach (GTK3 fft-void "gtk_container_foreach" GtkContainer* GtkCallback gpointer))
 
-
-   ; (lib gtk builder)
-   (define GtkBuilder* type-vptr)
-   (define gtk_builder_new (GTK3 GtkBuilder* "gtk_builder_new"))
-   (define gtk_builder_new_from_file (GTK3 GtkBuilder* "gtk_builder_new_from_file" type-string))
-   (define gtk_builder_add_from_file (GTK3 guint "gtk_builder_add_from_file" GtkBuilder* gchar* (fft& GError*)))
-   (define gtk_builder_get_object (GTK3 GObject* "gtk_builder_get_object" GtkBuilder* type-string))
-
-   (define GtkBuilderConnectFunc GtkCallback) ; void (*GtkBuilderConnectFunc)(GtkBuilder *builder, GObject *object, const gchar *signal_name, const gchar *handler_name, GObject *connect_object, GConnectFlags flags, gpointer user_data)
-   (define gtk_builder_add_callback_symbol (GTK3 fft-void "gtk_builder_add_callback_symbol" GtkBuilder* gchar* GCallback))
-   (define gtk_builder_connect_signals (GTK3 fft-void "gtk_builder_connect_signals" GtkBuilder* gpointer))
-
    ; (lib gtk bbox)
-   (define GtkButton* type-vptr)
-   (define GtkOrientation fft-int) ; enum
-   (define GTK_ORIENTATION_HORIZONTAL 0)
-   (define GTK_ORIENTATION_VERTICAL 1)
-
    (define gtk_button_box_new (GTK3 GtkWidget* "gtk_button_box_new" GtkOrientation))
-   (define gtk_button_new_with_label (GTK3 GtkWidget* "gtk_button_new_with_label" type-string))
-   (define gtk_button_get_label (GTK3 type-string "gtk_button_get_label" GtkButton*))
 
    ; (lib gtk glarea)
    (define GtkGLArea* fft-void*)
@@ -164,16 +126,6 @@
    (define (make-GtkTextIter)
       (make-bytevector |sizeof GtkTextIter| 0))
    (define GtkTextIter* fft-void*)
-
-   ; (lib gtk textbuffer)
-   (define GtkTextBuffer* fft-void*)
-
-   (define gtk_text_buffer_insert_at_cursor (GTK3 fft-void "gtk_text_buffer_insert_at_cursor" GtkTextBuffer* type-string gint))
-   (define gtk_text_buffer_set_text (GTK3 fft-void "gtk_text_buffer_set_text" GtkTextBuffer* type-string gint))
-   (define gtk_text_buffer_get_text (GTK3 type-string "gtk_text_buffer_get_text" GtkTextBuffer* GtkTextIter* GtkTextIter* gboolean))
-
-   (define gtk_text_buffer_get_start_iter (GTK3 fft-void "gtk_text_buffer_get_start_iter" GtkTextBuffer* GtkTextIter*))
-   (define gtk_text_buffer_get_end_iter (GTK3 fft-void "gtk_text_buffer_get_end_iter" GtkTextBuffer* GtkTextIter*))
 
    (define GtkTextView* fft-void*)
 

@@ -1,7 +1,14 @@
 (define-library (lib gtk-3 gtk)
    (export
       GTK3
+
+      GtkCallback
       GTK_CALLBACK
+
+      ; 
+      GtkOrientation
+      GTK_ORIENTATION_HORIZONTAL
+      GTK_ORIENTATION_VERTICAL
 
       (exports (lib glib-2)))
    (import
@@ -12,6 +19,11 @@
 (begin
    (define GTK3 (load-dynamic-library "libgtk-3.so"))
 
+   (define GtkOrientation fft-int)
+   (define GTK_ORIENTATION_HORIZONTAL 0)
+   (define GTK_ORIENTATION_VERTICAL 1)
+
+   (define GtkCallback type-callable)
    (define-syntax GTK_CALLBACK
       (syntax-rules ()
          ((GTK_CALLBACK (userdata) . rest)
