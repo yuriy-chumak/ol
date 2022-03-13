@@ -34,6 +34,7 @@
    (Android
       (begin
          (define libsoil (or (load-dynamic-library "libSOIL.so")
+                             (load-dynamic-library "libSOIL.so.1")
                              (runtime-error "Can't load libsoil"
                                       "try to rebuild apk")))))
    (else
