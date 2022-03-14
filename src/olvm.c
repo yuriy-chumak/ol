@@ -338,9 +338,6 @@ object_t
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
-#define is_port(ob)                 (\
-									(is_value(ob)     && value_type (ob) == TPORT) || \
-									(is_reference(ob) && reference_type (ob) == TPORT))
 #define is_enump(ob)                (is_value(ob)     && value_type (ob) == TENUMP)
 #define is_enumn(ob)                (is_value(ob)     && value_type (ob) == TENUMN)
 #define is_enum(ob)                 (is_enump(ob) || is_enumn(ob))
@@ -462,8 +459,10 @@ word*_b = NEW (size);\
 //	Kernel object handles are process specific. That is, a process must
 //	either create the object or open an existing object to obtain a kernel
 //	object handle. The per-process limit on kernel handles is 2^24.
+#define is_port(ob)  ((is_value(ob)     && value_type(ob)     == TPORT) ||\
+                      (is_reference(ob) && reference_type(ob) == TPORT))
 #define make_port(a) ({ word _p = (word)a; assert (((word)_p << IPOS) >> IPOS == (word)_p); make_value(TPORT, _p); })
-#define port(o)      ({ word _p = (word)o; is_value(_p) ? value(_p) : car(_p); })
+#define port(o)      ({ word _p = (word)o; is_port(_p) ? value(_p) : car(_p); })
 
 #define new_port(arg1) ({ \
 	word _arg1 = (word) (arg1);\
@@ -4052,12 +4051,17 @@ loop:;
 						// todo: add case (cons program environment)
 						int child = fork();
 						if (child == 0) {
-							D("forking %s", command);
+							D("forked %s", command);
 							if (is_pair (c)) {
 								const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
-								for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++)
-									if (is_port(car(c)))
-										dup2(port(car(c)), in[i]), c = cdr (c);
+								for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++) {
+									if (is_port(car(c))) {
+										dup2(port(car(c)), in[i]);
+										close(port(car(c)));
+										
+										c = cdr (c);
+									}
+								}
 							}
 
 							char** args = NULL;
