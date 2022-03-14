@@ -17,6 +17,8 @@
       GTK_MESSAGE_ERROR
       GTK_MESSAGE_OTHER
 
+      GType
+
 
       (exports (lib glib-2)))
    (import
@@ -37,6 +39,8 @@
    (define GTK_MESSAGE_QUESTION 2)
    (define GTK_MESSAGE_ERROR 3)
    (define GTK_MESSAGE_OTHER 4)
+
+   (define GType gint)
 
    (define GtkCallback type-callable)
    (define-syntax GTK_CALLBACK
