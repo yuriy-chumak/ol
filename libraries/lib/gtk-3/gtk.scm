@@ -10,6 +10,14 @@
       GTK_ORIENTATION_HORIZONTAL
       GTK_ORIENTATION_VERTICAL
 
+      GtkMessageType
+      GTK_MESSAGE_INFO
+      GTK_MESSAGE_WARNING
+      GTK_MESSAGE_QUESTION
+      GTK_MESSAGE_ERROR
+      GTK_MESSAGE_OTHER
+
+
       (exports (lib glib-2)))
    (import
       (scheme core)
@@ -19,9 +27,16 @@
 (begin
    (define GTK3 (load-dynamic-library "libgtk-3.so"))
 
-   (define GtkOrientation fft-int)
+   (define GtkOrientation gint)
    (define GTK_ORIENTATION_HORIZONTAL 0)
    (define GTK_ORIENTATION_VERTICAL 1)
+
+   (define GtkMessageType gint)
+   (define GTK_MESSAGE_INFO 0)
+   (define GTK_MESSAGE_WARNING 1)
+   (define GTK_MESSAGE_QUESTION 2)
+   (define GTK_MESSAGE_ERROR 3)
+   (define GTK_MESSAGE_OTHER 4)
 
    (define GtkCallback type-callable)
    (define-syntax GTK_CALLBACK
