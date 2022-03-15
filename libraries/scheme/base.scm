@@ -201,7 +201,7 @@
       ;; string-fill!
       ;; string-for-each
    string-length
-      ;; string-map
+   string-map
    string-ref
       ;; string-set!
    string<=?
@@ -252,6 +252,7 @@
       (scheme core) (src vm)
       (scheme vector)
       (scheme bytevector)
+      (scheme string)
       ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (coroutines required)
       (owl io) (owl math) (owl math-extra)
       (scheme inexact)
