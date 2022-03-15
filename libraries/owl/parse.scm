@@ -61,7 +61,7 @@
    (import
       (scheme base)
       (owl unicode)
-   )
+      (owl lazy))
 
    (begin
 
@@ -333,15 +333,6 @@
          (values l r p v))
 
 
-      ; todo: move to (owl lazy)
-      (define (lpair? ll)
-         (cond
-            ((null? ll) #false)
-            ((pair? ll) ll)
-            (else (lpair? (ll)))))
-
-
-
       ;; (define (parse-head parser ll def)
       ;;    (let* ((l r p val (parser #n ll 0 parser-succ)))
       ;;       (if l (cons val r) def)))
@@ -390,7 +381,7 @@
       ;;       (let* ((lp r p val (parser #n ll 0 parser-succ)))
       ;;          (cond
       ;;             (lp ;; something parsed successfully
-      ;;                (pair val (byte-stream->exp-stream r parser fail)))
+      ;;                (lcons val (byte-stream->exp-stream r parser fail)))
       ;;             ((null? r) ;; end of input
       ;;                ;; typically there is whitespace, so this does not happen
       ;;                #n)

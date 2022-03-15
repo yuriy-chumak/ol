@@ -82,8 +82,8 @@
       (define (lcg-rands seed)
          (let ((seed (band (+ (* seed 1664525) 1013904223) #xffffffff)))
             (if (eq? (type seed) type-enum+)
-               (pair seed (lcg-rands seed))
-               (pair (ncar seed) (lcg-rands seed)))))
+               (lcons seed (lcg-rands seed))
+               (lcons (ncar seed) (lcg-rands seed)))))
 
       ;;; Xorshift (by George Marsaglia, period 2^128 - 1, based on example from Wikipedia)
       ;;; http://www.jstatsoft.org/v08/i14/paper
@@ -169,7 +169,7 @@
 
       (define (adhoc-seed->rands rst)
          (let ((rst (rand-succ rst)))
-            (pair (ncar (ref rst 2)) (adhoc-seed->rands rst))))
+            (lcons (ncar (ref rst 2)) (adhoc-seed->rands rst))))
 
       (define (bit x n)
          (if (eq? 0 (vm:and x n)) 0 1))

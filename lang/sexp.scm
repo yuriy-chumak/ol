@@ -563,7 +563,7 @@
             (let*((lp r p val (parser #null ll 0 parser-succ)))
                (cond
                   (lp ;; something parsed successfully
-                     (pair val (bytestream->exp-stream r parser fail)))
+                     (lcons val (bytestream->exp-stream r parser fail)))
                   ((null? r) ;; end of input
                      #null)
                   ((function? fail) ; (fail cont r reason)

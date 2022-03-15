@@ -389,7 +389,7 @@
       (define (iter-leaf-range v p n t)
          (if (eq? n 0)
             t
-            (pair (blob-ref v p)
+            (lcons (blob-ref v p)
                (iter-leaf-range v (+ p 1) (- n 1) t))))
 
       (define (iter-range-really v p n)
@@ -512,7 +512,7 @@
             (let loop ((pos 0))
                (if (< pos end)
                   (let ((data (leaf-data (blob-leaf-of vec pos))))
-                     (pair data (loop (+ pos *blob-leaf-size*))))
+                     (lcons data (loop (+ pos *blob-leaf-size*))))
                   null))))
 
       ;; fixme: temporary vector append!

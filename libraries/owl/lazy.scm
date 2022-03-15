@@ -8,13 +8,15 @@
 (define-library (owl lazy)
 
    (export
+      lcons lcar lcdr
       lfold lfoldr lmap lappend    ; main usage patterns
       lfor liota liter lnums
-      lzip ltake llast llen
-      lcar lcdr ledit
+      lzip ltake llast llen ; todo: remove lzip (change to lfold like fold)
+      ledit
       ldrop llref
       lfor-each
-      pair tail uncons
+      lpair?
+      tail uncons
       force-ll                ; ll -> list
       subsets permutations    ; usual applications
       lunfold
@@ -30,24 +32,45 @@
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
-      ;; possibly delay construction of tail
-      (define-syntax pair
+      ;; delay construction of tail
+      (define-syntax lcons
          (syntax-rules ()
-            ((pair a b) (cons a (delay b)))))
+            ((lcons a b) (cons a (delay b)))))
+
+      (define (lpair? ll)
+         (cond
+            ((null? ll) #false)
+            ((pair? ll) ll)
+            (else
+               (lpair? (ll)))))
+
+      (define (lcar ll)
+         (if (pair? ll)
+            (car ll)
+            (lcar (ll))))
+
+      (define (lcdr ll)
+         (if (pair? ll)
+            (cdr ll)
+            (lcdr (ll))))
 
       (define (tail l)
          (cond
             ((pair? l) (cdr l))
-            ((null? l) (runtime-error "tail: null stream " l))
-            (else (tail (l)))))
+            ((null? l)
+               (runtime-error "tail: null stream " l))
+            (else
+               (tail (l)))))
 
       (define (llast l)
          (cond
             ((pair? l)
                (let ((tl (cdr l)))
                   (if (null? tl) (car l) (llast tl))))
-            ((null? l) (runtime-error "llast: empty list: " l))
-            (else (llast (l)))))
+            ((null? l)
+               (runtime-error "llast: empty list: " l))
+            (else
+               (llast (l)))))
 
       ;; l → hd l' | error
       (define (uncons l d)
@@ -100,7 +123,7 @@
          (if (end? st)
             null
             (lets ((this st (op st)))
-               (pair this
+               (lcons this
                   (lunfold op st end?)))))
 
       (define (ltail) null)
@@ -117,7 +140,7 @@
       ;;; numbers (integers)
 
       (define (lnums-other n)
-         (pair n (lnums-other (+ n 1))))
+         (lcons n (lnums-other (+ n 1))))
 
       (define (lnums-fix a)
          (if (less? a #xfff0)
@@ -138,7 +161,7 @@
       (define (liota-walk st step end)
          (if (= st end)
             null
-            (pair st (liota-walk (+ st step) step end))))
+            (lcons st (liota-walk (+ st step) step end))))
 
       (define liota-steps 8)
 
@@ -149,7 +172,7 @@
                (let ((st (+ st 1)))
                   (if (= st end)
                      null
-                     (pair st (liota-walk-one (+ st 1) end)))))))
+                     (lcons st (liota-walk-one (+ st 1) end)))))))
 
       ; fixnum range lrange making 2 cells at a time. this is actually a bit
       ; faster than a corresponding (ugly) local loop.
@@ -159,7 +182,7 @@
             (lets ((posp u (vm:add pos 1)))
                (if (less? posp end)
                   (lets ((next o (vm:add posp 1)))
-                     (cons pos (pair posp (liota-fix next end))))
+                     (cons pos (lcons posp (liota-fix next end))))
                   (list pos)))
             null))
 
@@ -185,7 +208,7 @@
                   (ledit op (l))))))
 
       (define (liter op st)
-         (pair st (liter op (op st))))
+         (lcons st (liter op (op st))))
 
       ; take n elements of lazy stream l
       (define (ltake l n)
@@ -225,7 +248,7 @@
             ((null? b) null)
             ((pair? a)
                (if (pair? b)
-                  (pair (op (car a) (car b))
+                  (lcons (op (car a) (car b))
                      (lzip op (cdr a) (cdr b)))
                   (lzip op a (b))))
             (else
@@ -275,7 +298,7 @@
       (define (subs l)
          (if (null? l)
             '(())
-            (pair null
+            (lcons null
                (let ((end (+ (length l) 1)))
                   (let loop ((n 1))
                      (if (= n end)
@@ -307,9 +330,5 @@
                   (loop (cdr ll) (+ sum (car ll)) (+ len 1)))
                (else
                   (loop (ll) sum len)))))
-
-      (define (lcar ll) (if (pair? ll) (car ll) (lcar (ll))))
-
-      (define (lcdr ll) (if (pair? ll) (cdr ll) (lcdr (ll))))
 
 ))

@@ -438,7 +438,7 @@
                ((pair? ll)
                   (lets ((byte ll ll))
                      (if (eq? byte #\newline)
-                        (pair
+                        (lcons
                            (list->string
                               (reverse
                                  (if (and (pair? out) (eq? #\return (car out)))

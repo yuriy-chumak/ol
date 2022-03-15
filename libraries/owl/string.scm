@@ -87,14 +87,14 @@
       (define (str-iter-leaf str tl pos end)
          (if (eq? pos end)
             tl
-            (pair (ref str pos)
+            (lcons (ref str pos)
                (lets ((pos u (vm:add pos 1)))
                   (str-iter-leaf str tl pos end)))))
 
       (define (str-iter-wide-leaf str tl pos)
          (if (eq? pos (size str))
             (cons (ref str pos) tl)
-            (pair (ref str pos)
+            (lcons (ref str pos)
                (lets ((pos o (vm:add pos 1)))
                   (str-iter-wide-leaf str tl pos)))))
 
@@ -131,14 +131,14 @@
       (define (str-iterr-leaf str tl pos)
          (if (eq? pos 0)
             (cons (ref str pos) tl)
-            (pair (ref str pos)
+            (lcons (ref str pos)
                (lets ((pos u (vm:sub pos 1)))
                   (str-iterr-leaf str tl pos)))))
 
       (define (str-iterr-wide-leaf str tl pos)
          (if (eq? pos 1)
             (cons (ref str pos) tl)
-            (pair (ref str pos)
+            (lcons (ref str pos)
                (lets ((pos u (vm:sub pos 1)))
                   (str-iterr-wide-leaf str tl pos)))))
 
@@ -417,7 +417,7 @@
                (let ((cp (char-upcase cp)))
                   (if (pair? cp)
                      (append cp (upcase ll))
-                     (pair cp (upcase ll))))
+                     (lcons cp (upcase ll))))
                null)))
 
       ; fixme: incomplete, added because needed for ascii range elsewhere

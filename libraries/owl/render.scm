@@ -136,7 +136,7 @@
                ;((getf sh obj) =>
                ;   (λ (id)
                ;      (if (< id 0) ;; already written, just refer
-               ;         (cons* #\# (render (abs id) (pair #\# (k sh))))
+               ;         (cons* #\# (render (abs id) (lcons #\# (k sh))))
                ;         (cons* #\#
                ;            (render id
                ;               (cons* #\# #\=
@@ -154,7 +154,7 @@
                ((string? obj)
                   (cons #\" ;"
                      (render-quoted-string obj  ;; <- all eager now
-                        (pair #\" (k sh))))) ;"
+                        (lcons #\" (k sh))))) ;"
 
                ((pair? obj)
                   (cons #\(
@@ -162,18 +162,18 @@
                         (cond
                            ((null? obj)
                               ;; run of the mill list end
-                              (pair #\) (k sh)))
+                              (lcons #\) (k sh)))
                            ;((getf sh obj) =>
                            ;   (λ (id)
                            ;      (cons* #\. #\space #\#
                            ;         (render (abs id)
                            ;            (cons #\#
                            ;               (if (< id 0)
-                           ;                  (pair 41 (k sh))
-                           ;                  (pair #\=
+                           ;                  (lcons 41 (k sh))
+                           ;                  (lcons #\=
                            ;                     (ser (del sh obj) obj
                            ;                        (λ (sh)
-                           ;                           (pair 41
+                           ;                           (lcons 41
                            ;                              (k
                            ;                                 (put sh obj
                            ;                                    (- 0 id)))))))))))))
@@ -189,7 +189,7 @@
                               ;; improper list
                               (cons* #\. #\space
                                  (ser sh obj
-                                    (λ (sh) (pair 41 (k sh))))))))))
+                                    (λ (sh) (lcons 41 (k sh))))))))))
 
                ((boolean? obj)
                   (append
@@ -212,7 +212,7 @@
                      (let loop ((sh sh) (n 1))
                         (cond
                            ((less? (size obj) n)
-                              (pair #\) (k sh)))
+                              (lcons #\) (k sh)))
                            (else
                               (ser sh (ref obj n) ; render car, then cdr
                                  (λ (sh)

@@ -366,7 +366,7 @@
                (lets ((ll ob (decode-or ll (λ (why) failed))))
                   (if (eq? ob failed)
                      (list err)
-                     (pair ob (decode-stream ll err)))))
+                     (lcons ob (decode-stream ll err)))))
             ((null? ll) null)
             (else (decode-stream (ll) err))))
 
