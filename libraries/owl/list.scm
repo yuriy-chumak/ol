@@ -40,19 +40,31 @@
             st
             (for (op st (car l)) (cdr l) op)))
 
-      (define fold (case-lambda
-         ((f state a)     (let loop ((state state) (a a))
-                             (if (null? a)
-                                state
-                                (loop (f state (car a)) (cdr a)))))
-         ((f state a b)   (let loop ((state state) (a a) (b b))
-                             (if (null? a)
-                                state
-                                (loop (f state (car a) (car b)) (cdr a) (cdr b)))))
-         ((f state a b c) (let loop ((state state) (a a) (b b) (c c))
-                             (if (null? a)
-                                state
-                                (loop (f state (car a) (car b) (car c)) (cdr a) (cdr b) (cdr c)))))))
+      (define fold
+         (define fold (lambda (f state a)
+            (let loop ((state state) (a a))
+               (if (null? a)
+                  state
+                  (loop (f state (car a)) (cdr a))))))
+         (case-lambda
+            ((f state a)      (fold f state a))
+            ((f state a b)    (let loop ((state state) (a a) (b b)) ; fold2
+                                 (if (null? a)
+                                    state
+                                    (loop (f state (car a) (car b)) (cdr a) (cdr b)))))
+            ((f state a b . c); foldN
+                              (let loop ((state state) (args (cons a (cons b c))))
+                                 (if (null? (car args)) ; закончились
+                                    state
+                                    (loop (apply f (cons state (map car args))) (map cdr args)))))
+            ((f state) state)))
+
+      ;(assert (fold + 0)                              ===>  0)
+      ;(assert (fold + 0 '(1 2))                       ===>  3)
+      ;(assert (fold + 0 '(1 2) '(3 4))                ===> 10)
+      ;(assert (fold + 0 '(1 2) '(3 4) '(5 6))         ===> 21)
+      ;(assert (fold + 0 '(1 2) '(3 4) '(5 6) '(7 8))  ===> 36)
+
 
       (define (unfold op st end?)
          (if (end? st)
