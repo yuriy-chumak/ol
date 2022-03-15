@@ -252,7 +252,7 @@
       ; add fresh symbol list -> ((pattern fresh template) ...)
 
       (define (make-pattern-list literals patterns templates unbound?)
-         (zip
+         (map
             (λ (pattern template)
                (lets
                   ((pattern-symbols (symbols-of pattern))

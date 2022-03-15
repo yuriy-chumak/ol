@@ -353,7 +353,7 @@
 
       theorem zip-map
          ∀ l ∊ List
-            l = (map car (zip cons l l))
+            l = (map car (map cons l l))
 
 ;FIXME!
 ;      theorem ncr-def
@@ -479,7 +479,7 @@
 
       theorem lazy-2
          ∀ n ∊ Byte
-            (zip cons (lrange 0 1 n) (lrange n -1 0))
+            (map cons (lrange 0 1 n) (lrange n -1 0))
                = (force-ll (lzip cons (liota 0 1 n) (liota n -1 0)))
 
       theorem lazy-3

@@ -191,7 +191,7 @@
 
       (define (create-aliases regs names positions)
          (fold (λ (regs alias) (create-alias regs (car alias) (cdr alias)))
-            regs (zip cons names positions)))
+            regs (map cons names positions)))
 
       (define (rtl-arguments one?)
 
@@ -281,7 +281,7 @@
 
       ;;; (from ...) -> ((from . to) ...)
       (define (rtl-add-targets args)
-         (zip cons args
+         (map cons args
             (lrange a0 1 (+ (length args) a0))))
 
       (define (rtl-safe-registers n call)
@@ -299,7 +299,7 @@
 
       ;;; -> replace the to-save registers in call
       (define (apply-saves to-save safes call)
-         (let ((new (zip cons to-save safes)))
+         (let ((new (map cons to-save safes)))
             (map
                (λ (reg)
                   (let ((node (getq new reg)))
@@ -332,7 +332,7 @@
              (ok-moves (rtl-check-moves perms 1)))
             (if ok-moves
                (rtl-make-moves
-                  (append (zip cons saves free) ok-moves)
+                  (append (map cons saves free) ok-moves)
                   rest)
                #false)))
 

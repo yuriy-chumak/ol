@@ -3,7 +3,7 @@
    ; todo: move fold to srfi-1
    (export
       null
-      zip for fold foldr
+      for fold foldr
       has? getq last drop-while
       mem
       fold-map foldr-map
@@ -31,14 +31,6 @@
          (syntax-rules ()
             ((withcc name proc)
                (call/cc (λ (name) proc)))))
-
-      (define (zip op a b)
-         (cond
-            ((null? a) null)
-            ((null? b) null)
-            (else
-               (let ((hd (op (car a) (car b))))
-                  (cons hd (zip op (cdr a) (cdr b)))))))
 
       ; (for st l op) == (fold op st l)
       ; just usually less indentation clutter

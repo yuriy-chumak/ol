@@ -100,9 +100,9 @@
 
 (define hex-table
    (pairs->ff (fold append '() (list
-      (zip cons (iota 10 #\0) (iota 10 0))     ; 0-9
-      (zip cons (iota  6 #\a) (iota 6 10))     ; a-f
-      (zip cons (iota  6 #\A) (iota 6 10)))))) ; A-F
+      (map cons (iota 10 #\0) (iota 10 0))     ; 0-9
+      (map cons (iota  6 #\a) (iota 6 10))     ; a-f
+      (map cons (iota  6 #\A) (iota 6 10)))))) ; A-F
 
 
 (define get-rest-of-line

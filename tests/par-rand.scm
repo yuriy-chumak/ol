@@ -23,9 +23,9 @@
 
 (define-values (rs steps) (random-permutation rs (lrange 0 1 n)))
 
-(define step-order (map car (sort (λ (a b) (< (cdr a) (cdr b))) (zip cons nums steps))))
+(define step-order (map car (sort (λ (a b) (< (cdr a) (cdr b))) (map cons nums steps))))
 
-(define par-order (force-ll (par* (zip stepper nums steps))))
+(define par-order (force-ll (par* (map stepper nums steps))))
 
 (if (equal? step-order par-order)
    (print "good")

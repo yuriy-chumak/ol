@@ -1062,7 +1062,7 @@
                                        (λ (env pair)
                                           (env-set env (car pair) (cdr pair)))
                                        env
-                                       (zip cons names value)))
+                                       (map cons names value)))
                                  (fail
                                     (list "Didn't get expected values for definition of " names)))))
                         (['fail reason]

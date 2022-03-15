@@ -394,7 +394,7 @@
                      (values (map handle values))
                      (body (handle body)))
                   (generate-bindings
-                     (dependency-closure (zip
+                     (dependency-closure (map
                         (lambda (name value)
                            [name value
                               (intersect names
