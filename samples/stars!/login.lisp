@@ -1,15 +1,15 @@
 (define login-dialog (gtk_builder_get_object builder "login-dialog"))
 
-; -- fields -----
+; -- fields ----
 (define b_login (gtk_builder_get_object builder "b_login"))
 (define b_cancel (gtk_builder_get_object builder "b_cancel"))
 
-(define e_login (gtk_builder_get_object builder "e_login"))
-(define e_password (gtk_builder_get_object builder "e_password"))
-(define w_spinner (gtk_builder_get_object builder "w_spinner"))
-
-
+; -- handlers --
 (define b_login_clicked
+   (define e_login (gtk_builder_get_object builder "e_login"))
+   (define e_password (gtk_builder_get_object builder "e_password"))
+   (define w_spinner (gtk_builder_get_object builder "w_spinner"))
+
    (GTK_CALLBACK (widget userdata)
       (gtk_widget_set_sensitive b_login 0)
       (gtk_spinner_start w_spinner)
@@ -28,6 +28,7 @@
                ; ok!
                (print (GET "/api/races"))
                (gtk_widget_hide login-dialog)
+               (set-status "Список всех ваших рас и игр в которые вы играете")
                ; (mail 'main 'logged-in!)
             else ; error
                (GtkMessageDialog window {
