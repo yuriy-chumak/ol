@@ -15,7 +15,7 @@
 (begin
    (define (with-exception-handler handler thunk)
       (define name ['with-exception-handler]) ; anonymous
-      (coroutine-linked name thunk)
+      (actor-linked name thunk)
 
       (case (await name)
          ;; ok

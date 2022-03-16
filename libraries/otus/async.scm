@@ -2,11 +2,12 @@
 
    (export
       async async-named ; just run as a thread
-      coroutine ; always named, can receive and send a messages
+      coroutine actor ; always named, can receive and send a messages
 
       ; 'linked' means sends to owner a message with a final status of a thread
       async-linked
       coroutine-linked
+      actor-linked
 
       sleep
 
@@ -46,7 +47,7 @@
       ; the thread should have a mailbox for communication in state
       (define (coroutine name handler)
          (mcp 4 (list name 'mailbox) handler))
-
+      
       (define (coroutine-linked name handler)
          (mcp 4 (list name 'mailbox 'link) handler))
 
@@ -160,8 +161,13 @@
          (if sentmail
             (ref (accept-mail (λ (env) (eq? (ref env 1) sentmail))) 2)))
 
-      (define (async thunk)
-         (async-named [] thunk))
+      (define async (case-lambda
+         ((thunk) (async-named [] thunk))
+         ((name thunk)
+                  (async-named name thunk))))
+
+      (define actor coroutine)
+      (define actor-linked coroutine-linked)
 
       ; sleep
 

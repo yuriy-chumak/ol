@@ -95,7 +95,7 @@
                         (λ (codes pair)
                            (insert-code codes (car pair) (cdr pair)))
                         #false bytecodes)))
-            (coroutine bytecode-server (lambda ()
+            (actor bytecode-server (lambda ()
                (let loop ((codes codes))
                   (let*((envelope (wait-mail))
                         (sender msg envelope)
