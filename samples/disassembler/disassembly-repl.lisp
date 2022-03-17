@@ -80,7 +80,7 @@
    else
       (step level) (print "NEW ONE --" (cdr seen) "--")
       (case (type func)
-         (63 ; constructor
+         (type-constructor
             (step level) (print "CONSTRUCTOR")
             (define constructor (ref func 1))
             (dump constructor level)

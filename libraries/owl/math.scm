@@ -112,13 +112,13 @@
       (setq *big-zero* (cons 0 #null))
 
       ;
-      ; создадим библиотечный конструктор (экспериментальная фича)
+      ; let's recalculate platform dependent math constants:
       (define math-constructor!
-         (vm:new 63 (lambda (args)
-               ; (platform-dependent floating point constants)
+         (vm:new type-constructor (lambda (args)
+               ; platform-dependent floating point constants
                (vm:set! +nan.0 0 (fsqrt -1) 0 (size +nan.0))
             #T)))
-      (math-constructor! "let's recalculate basic math constants")
+      (math-constructor! #null)
 
       ; ==========================================================
       ; procedure:  (zero? z)

@@ -649,7 +649,7 @@
                            (['ok value env]
                               (if (or
                                     (function? value)
-                                    (eq? (type value) 63)) ; constructor
+                                    (eq? (type value) type-constructor)) ; constructor
                               then
                                  (define dis (disassembly value))
                                  (if dis

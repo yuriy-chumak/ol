@@ -32,7 +32,7 @@
       TENUM+ TENUM- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
       TPAIR TSYMBOL TVECTOR TBYTEVECTOR
       TSTRING TSTRINGWIDE
-      TBYTECODE TPROCEDURE TCLOSURE
+      TBYTECODE TPROCEDURE TCLOSURE TCONSTRUCTOR
       TVPTR TCALLABLE)
 
    (begin
@@ -70,6 +70,7 @@
       (setq TBYTECODE         16) ; reference, a bytecode
       (setq TPROCEDURE        17) ; reference, pure function
       (setq TCLOSURE          18) ; reference, function with closures
+      (setq TCONSTRUCTOR      63) ; reference, autorun function(constructor)
 
       (setq TBYTEVECTOR       19) ; reference, raw
       ; 20

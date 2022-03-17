@@ -4,7 +4,7 @@
 (import (lang threading))
 (import (otus fasl))
 
-(fasl-save (vm:new 63 (lambda (args)
+(fasl-save (vm:new type-constructor (lambda (args)
       ; our code use coroutines, so we should start a thread controller.
       (start-thread-controller
          (list ;1 thread

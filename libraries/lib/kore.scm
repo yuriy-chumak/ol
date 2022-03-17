@@ -164,7 +164,7 @@
 
    ; -----
    (define kore-constructor!
-      (vm:new 63 (lambda (args)
+      (vm:new type-constructor (lambda (args)
          (define kore (dlopen #false))
          (define svptr (size nullptr))
 
@@ -184,7 +184,7 @@
          #T)))
 
    (define (make-kore-page page)
-      (vm:new 63 (make-entry
+      (vm:new type-constructor (make-entry
          (lambda (args)
             (halt (vm:pin page))
             kore-constructor!))))

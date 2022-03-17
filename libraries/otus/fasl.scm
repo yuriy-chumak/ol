@@ -365,7 +365,6 @@
       (define fasl-decode decode2)
 
       ; deserialize
-      (define type-constructor 63)
       (define (procedure? o)
          (case (type o)
             (type-procedure #true)
