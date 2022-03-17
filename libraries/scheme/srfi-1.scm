@@ -21,15 +21,15 @@
 
 (begin
    ; cons a d -> pair   *[r5rs]
-   ;(cons 'a '())        => (a))
-   ;(cons '(a) '(b c d)) => ((a) b c d)
-   ;(cons "a" '(b c))    => ("a" b c)
-   ;(cons 'a 3)          => (a . 3)
-   ;(cons '(a b) 'c)     => ((a b) . c)
+   (assert (cons 'a '())        ===> '(a))
+   (assert (cons '(a) '(b c d)) ===> '((a) b c d))
+   (assert (cons "a" '(b c))    ===> '("a" b c))
+   (assert (cons 'a 3)          ===> '(a . 3))
+   (assert (cons '(a b) 'c)     ===> '((a b) . c))
 
    ; list object ... -> list   *[r5rs]
-   ;(list 'a (+ 3 4) 'c) =>  (a 7 c)
-   ;(list)               =>  ()
+   (assert (list 'a (+ 3 4) 'c) ===>  '(a 7 c))
+   (assert (list)               ===>  '())
 
    ; xcons d a -> pair
    ;;; Occasionally useful as a value to be passed to a fold or other
@@ -60,19 +60,20 @@
 
 
    (define iota
-      (let ((iota (lambda (count start step)
+      (define (iota count start step)
          (let loop ((i 0) (n start) (r '()))
             (if (eq? i count)
                (reverse r)
                (values-apply (vm:add i 1) (lambda (i carry)
-                  (loop i (+ n step) (cons n r)))))))))
+                  (loop i (+ n step) (cons n r)))))))
+
       (case-lambda
          ((count)
             (iota count 0 1))
          ((count start)
             (iota count start 1))
          ((count start step)
-            (iota count start step)))))
+            (iota count start step))))
 
    ;; filter pred list -> list
    ; Return all the elements of list that satisfy predicate pred.
