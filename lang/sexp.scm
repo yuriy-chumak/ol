@@ -35,7 +35,6 @@
       (owl io) ; testing
       (owl unicode)
       (only (lang intern) string->uninterned-symbol)
-      (scheme char)
       (only (owl regex) get-sexp-regex))
 
    (begin
@@ -47,6 +46,23 @@
 
       (define (left a b) a)
       (define (putT a) (cons a #T))
+
+
+      (define uppercase-chars (alist->ff
+         (map putT (iota (- #\Z #\A -1) #\A)) ))
+      (define lowercase-chars (alist->ff
+         (map putT (iota (- #\z #\a -1) #\a)) ))
+
+      (define alphabetic-chars (ff-union #false
+         uppercase-chars
+         lowercase-chars)) ; will not intersect
+
+      (define numeric-chars (alist->ff
+         (map putT (iota (- #\9 #\0 -1) #\0)) ))
+
+      (define whitespace-chars (alist->ff
+         (map putT (list #\tab #\newline #\space #\return)) ))
+
 
       (define symbol-lead-chars (ff-union #false
          alphabetic-chars
@@ -267,6 +283,9 @@
       ;; )))
       ;; (setq whitespaces (fold putt spaces
       ;;    '(#\tab #\newline #\return)))
+
+      (define (char-whitespace? ch)
+         (whitespace-chars ch #false))
 
       (define whitespace
          (byte-if char-whitespace?))

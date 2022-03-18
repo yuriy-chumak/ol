@@ -32,6 +32,7 @@
       str-app            ; a ++ b, temp
       ; later: str-len str-ref str-set str-append...
       str-replace        ; str pat value -> str' ;; todo: drop str-replace, we have regexen now
+      str-compare        ;
       str-map            ; op str → str'
       str-rev
       string             ; (string char ...) → str
@@ -43,15 +44,9 @@
       string>?           ; str str → bool
       string<=?          ; str str → bool
       string>=?          ; str str → bool
-      string-ci=?        ; str str → bool
-      string-ci<?        ; str str → bool
-      string-ci>?        ; str str → bool
-      string-ci<=?       ; str str → bool
-      string-ci>=?       ; str str → bool
       make-string)        ; n char → str
 
    (import (scheme core))
-   (import (scheme char))
 
    (import (owl iff))
    (import (owl unicode))
@@ -60,8 +55,6 @@
    (import (owl lazy))
    (import (owl math))
    (import (only (otus async) await mail)) ; used by string->symbol
-
-   (include "owl/unicode-char-folds.scm")
 
    ; ------------------------------------
    (begin
@@ -399,47 +392,26 @@
                   ((eq? a b) (loop la lb))
                   (else 3)))))
 
-      (define (unicode-fold-char codepoint tail)
-         (let ((mapping (char-upcase codepoint)))
-            (if (pair? mapping) ;; mapped to a list
-               (append mapping tail)
-               (cons mapping tail)))) ;; self or changed
+      ;; (define (unicode-fold-char codepoint tail)
+      ;;    (let ((mapping (char-upcase codepoint)))
+      ;;       (if (pair? mapping) ;; mapped to a list
+      ;;          (append mapping tail)
+      ;;          (cons mapping tail)))) ;; self or changed
 
 
       ;; fixme: O(n) temp string-ref! walk the tree later
       (define (string-ref str p)
          (llref (str-iter str) p))
 
-      (define (upcase ll)
-         (lets
-            ((cp ll (uncons ll #false)))
-            (if cp
-               (let ((cp (char-upcase cp)))
-                  (if (pair? cp)
-                     (append cp (upcase ll))
-                     (lcons cp (upcase ll))))
-               null)))
-
       ; fixme: incomplete, added because needed for ascii range elsewhere
       (define string=? string-eq?)
-      (define (string-ci=? a b) (eq? 2 (str-compare upcase a b)))
 
       (define (string<? a b)       (eq? 1 (str-compare i a b)))
       (define (string<=? a b) (not (eq? 3 (str-compare i a b))))
       (define (string>? a b)       (eq? 3 (str-compare i a b)))
       (define (string>=? a b) (not (eq? 1 (str-compare i a b))))
 
-      (define (string-ci<? a b)       (eq? 1 (str-compare upcase a b)))
-      (define (string-ci<=? a b) (not (eq? 3 (str-compare upcase a b))))
-      (define (string-ci>? a b)       (eq? 3 (str-compare upcase a b)))
-      (define (string-ci>=? a b) (not (eq? 1 (str-compare upcase a b))))
-
       (define (make-string n char)
          (list->string (repeat char n)))
-
-      (assert (string-ci=? "abc" "aBc")   ===> #true)
-      (assert (string-ci=? "abc" "cBa")   ===> #false)
-
-
 
 ))

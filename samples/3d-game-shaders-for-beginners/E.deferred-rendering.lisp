@@ -5,6 +5,7 @@
 (gl:set-window-title "E. Deferred Rendering")
 
 (import (scene))
+(import (scheme char))
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))

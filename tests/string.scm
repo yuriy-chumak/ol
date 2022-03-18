@@ -1,3 +1,5 @@
+(import (scheme char))
+
 (define-syntax check
    (syntax-rules ()
       ((check (op a b) res)

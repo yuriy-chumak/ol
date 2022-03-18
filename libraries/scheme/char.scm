@@ -8,32 +8,33 @@
    ;;    char-downcase
    ;;    char-foldcase
 
-   ;;    char-alphabetic?
-   ;;    char-numeric?
+      char-alphabetic?
+      char-numeric?
       char-whitespace?
    ;;    char-upper-case?
    ;;    char-lower-case?
 
       char-upcase
    ;;    digit-value
-   ;;    string-ci<=?  * (owl string)
-   ;;    string-ci<?   * (owl string)
-   ;;    string-ci=?   * (owl string)
-   ;;    string-ci>=?  * (owl string)
-   ;;    string-ci>?   * (owl string)
    ;;    string-downcase
    ;;    string-foldcase
    ;;    string-upcase
-      alphabetic-chars
-      numeric-chars
-      whitespace-chars
+
+      string-ci<=?       ; str str → bool
+      string-ci<?        ; str str → bool
+      string-ci=?        ; str str → bool
+      string-ci>?        ; str str → bool
+      string-ci>=?       ; str str → bool
+
    )
 
    (import
       (scheme core)
       (owl list)
       (scheme srfi-1)
+      (owl lazy)
       (owl math)
+      (owl string)
       (owl ff) (owl iff))
    (include "owl/unicode-char-folds.scm")
 
@@ -57,6 +58,12 @@
       (define whitespace-chars (alist->ff
          (map putT (list #\tab #\newline #\space #\return)) ))
 
+
+      (define (char-alphabetic? ch)
+         (alphabetic-chars ch #false)) ; any unicode char is an alphabetic
+
+      (define (char-numeric? ch)
+         (numeric-chars ch #false))
 
       (define (char-whitespace? ch)
          (whitespace-chars ch #false))
@@ -148,5 +155,28 @@
       ; procedure:  (char-upcase char)
       (define (char-upcase char)
          (iget char-fold-iff char char))
+
+      ; ci
+      (define (upcase ll)
+         (let*((cp ll (uncons ll #false)))
+            (if cp
+               (let ((cp (char-upcase cp)))
+                  (if (pair? cp)
+                     (append cp (upcase ll))
+                     (lcons cp (upcase ll))))
+               null)))
+
+      ; ---------------------------------------------------------------
+      ; string-ci*
+
+      (define (string-ci<=? a b) (not (eq? 3 (str-compare upcase a b))))
+      (define (string-ci<? a b)       (eq? 1 (str-compare upcase a b)))
+      (define (string-ci=? a b)       (eq? 2 (str-compare upcase a b)))
+      (define (string-ci>? a b)       (eq? 3 (str-compare upcase a b)))
+      (define (string-ci>=? a b) (not (eq? 1 (str-compare upcase a b))))
+
+      ; tests
+      (assert (string-ci=? "abc" "aBc")   ===> #true)
+      (assert (string-ci=? "abc" "cBa")   ===> #false)
 
 ))
