@@ -1772,15 +1772,7 @@
 (begin
    (define GL_VERSION_1_0 1)
 
-   ;; ; https://en.wikipedia.org/wiki/Uname
-   ;; (define OS (ref (uname) 1))
-
-   ;; (define win32? (string-ci=? OS "Windows"))
-   ;; (define linux? (string-ci=? OS "Linux"))
-   ;; (define apple? (string-ci=? OS "Darwin"))
-
    (setq GL GL_LIBRARY)
-
    ; -------------------------------------------------------------------------
    ; constants
 

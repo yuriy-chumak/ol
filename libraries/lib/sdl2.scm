@@ -197,31 +197,26 @@
 (cond-expand
    (Windows
       (begin
-         (define sdl2 (load-dynamic-library "SDL2.dll"))))
+         (define sdl2 (load-dynamic-library "SDL2.dll"))
+         (define err "Download dll from https://www.libsdl.org/download-2.0.php")))
    (Linux
       (begin
-         (define sdl2 (load-dynamic-library "libSDL2-2.0.so.0"))))
+         (define sdl2 (load-dynamic-library "libSDL2-2.0.so.0"))
+         (define sdl2-err "Use, for example, sudo apt install libsdl2-2.0")))
    (Darwin
       (begin
-         (define sdl2 (load-dynamic-library "libSDL2-2.0.0.dylib"))))
+         (define sdl2 (load-dynamic-library "libSDL2-2.0.0.dylib"))
+         (define sdl2-err "")))
    (else
       (runtime-error "nsupported platform" (uname))))
 
 (begin
-(define uname (uname))
-
-(define win32? (string-ci=? (ref uname 1) "Windows"))
-(define linux? (string-ci=? (ref uname 1) "Linux"))
 
 ;(define WIDTH 1280)
 ;(define HEIGHT 920)
 
 (if (not sdl2)
-   (runtime-error "Can't load sdl2 library." (cond
-      (win32?
-         "Download dll from https://www.libsdl.org/download-2.0.php")
-      (linux?
-         "Use, for example, sudo apt install libsdl2-2.0"))))
+   (runtime-error "Can't load sdl2 library." sdl2-err))
 
 ; ===================================================
 ; helper function
@@ -398,23 +393,22 @@
 (cond-expand
    (Windows
       (begin
-         (define sdl2-image (load-dynamic-library "SDL2_image.dll"))))
+         (define sdl2-image (load-dynamic-library "SDL2_image.dll"))
+         (define sdl2image-err "Download dll from https://www.libsdl.org/projects/SDL_image/")))
    (Linux
       (begin
-         (define sdl2-image (load-dynamic-library "libSDL2_image-2.0.so.0"))))
+         (define sdl2-image (load-dynamic-library "libSDL2_image-2.0.so.0"))
+         (define sdl2image-err "Use, for example, sudo apt install libsdl2-image-2.0-0")))
    (Darwin
       (begin
-         (define sdl2-image (load-dynamic-library "libSDL2_image-2.0.0.dylib"))))
+         (define sdl2-image (load-dynamic-library "libSDL2_image-2.0.0.dylib"))
+         (define sdl2image-err "")))
    (else
       (runtime-error "nsupported platform" (uname))))
 (begin
 
 (if (not sdl2-image)
-   (runtime-error "Can't load sdl2 image library." (cond
-      (win32?
-         "Download dll from https://www.libsdl.org/projects/SDL_image/")
-      (linux?
-         "Use, for example, sudo apt install libsdl2-image-2.0"))))
+   (runtime-error "Can't load sdl2 image library." sdl2image-err))
 
 (define IMG_Init (sdl2-image fft-int "IMG_Init" fft-int))
    (define IMG_INIT_JPG #x00000001)
