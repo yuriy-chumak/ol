@@ -74,7 +74,7 @@
             (apply print msg)))
 
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
-      (define *src-olvm* ; TODO: rename to *special-forms*
+      (define *src-olvm*
          (fold
             (λ (env thing)
                (env-set env (ref thing 1) (ref thing 5))) ; add primitives to the end of list

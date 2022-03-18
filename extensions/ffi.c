@@ -1864,7 +1864,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TSTRING + FFT_PTR: {
 			int size = llen(arg);
 
-			// TODO: check the available memory and gun GC if necessary
+			// TODO: check the available memory and run GC if necessary
+			// todo2: move to precalculation step (already done?)
 			word* p = new (TBYTEVECTOR, size); // yes, size - because this vector will store the raw system words
 			args[i] = (word) ++p;
 
@@ -2216,6 +2217,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				}
 				break;
 			}
+			// TODO:
+			// case TUINT64 + FFT_REF: {
 
 			case TFLOAT + FFT_REF: {
 			tfloatref:;

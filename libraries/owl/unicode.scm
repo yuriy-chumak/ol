@@ -252,8 +252,9 @@
          (bor (<< (vm:and a #x1f) 6) (vm:and b #x3f)))
 
       (define (three-byte-point a b c)
-         (bor (bor (<< (vm:and a #x0f) 12) (<< (vm:and b #x3f) 6))
-            (vm:and c #x3f)))
+         (bor
+            (bor (<< (vm:and a #x0f) 12) (<< (vm:and b #x3f)  6))
+                                             (vm:and c #x3f)))
 
       (define (four-byte-point a b c d)
          (bor

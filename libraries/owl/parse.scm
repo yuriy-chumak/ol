@@ -392,8 +392,6 @@
       ;;             (else
       ;;                #n)))))
 
-      ;; ;; this api is kind of ugly, simplify
-      ;; ;; this is badly named when prefixed as usual. parse?
       (define (try-parse parser data show-error)
          (let* ((l r p val (parser #null data 0 parser-succ)))
             (unless (not l)

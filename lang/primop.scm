@@ -18,10 +18,6 @@
          (for empty *primops*
             (λ (ff node)
                (put ff (ref node 5) (ref node 2)))))
-;      (define opcode->wrapper
-;         (for empty primops
-;            (λ (ff node)
-;               (put ff (ref node 2) (ref node 5)))))
 
       ;; later check type, get first opcode and compare to primop wrapper
       (define (primop-of val)
@@ -35,7 +31,6 @@
          (let ((pop (vm:and pop #x3F))) ; ignore top bits which sometimes have further data
             (if (eq? pop 17)
                'arity-error ;; non-primop instruction that can report errors
-               ;else
                (let loop ((primops *primops*))
                   (cond
                      ((null? primops) pop)
@@ -99,6 +94,7 @@
          'ifeq   ['special 'ifeq]
          'brae   ['special 'brae]
 
-         'values-apply ['special 'values-apply]})
+         'values-apply ['special 'values-apply]
+      })
 
 ))

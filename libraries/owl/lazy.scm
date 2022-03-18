@@ -39,10 +39,10 @@
 
       (define (lpair? ll)
          (cond
-            ((null? ll) #false)
+            ((null? ll) #f)
             ((pair? ll) ll)
             (else
-               (lpair? (ll)))))
+               (lpair? (force ll)))))
 
       (define (lcar ll)
          (if (pair? ll)

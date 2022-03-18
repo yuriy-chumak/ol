@@ -285,7 +285,7 @@
 
       ; todo: check this and opcode-arity-ok-2? - maybe should merge this entities?
       ; todo: dynamically generate based on *primops*
-      (setq variable-input-arity-primops (list ; todo: move to other module
+      (setq variable-input-arity-primops (list
          (opcode 'vm:new)
          (opcode 'vm:make)
          (opcode 'vm:makeb)
