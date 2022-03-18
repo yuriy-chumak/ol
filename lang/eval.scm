@@ -1094,9 +1094,9 @@
                            (['ok library lib-env]
                               ;; get new function names and metadata from lib-env (later to be handled differently)
                               (let*((names (env-get lib-env name-tag empty))
-                                    (env (env-set env name-tag (ff-union (env-get env name-tag empty) names (λ (old new) new))))
+                                    (env (env-set env name-tag (ff-union (λ (old new) new) (env-get env name-tag empty) names)))
                                     (meta (env-get lib-env meta-tag empty))
-                                    (env (env-set env meta-tag (ff-union (env-get env meta-tag empty) meta (λ (old new) new)))))
+                                    (env (env-set env meta-tag (ff-union (λ (old new) new) (env-get env meta-tag empty) meta))))
                                  (ok
                                     (repl-message
                                        (list->string

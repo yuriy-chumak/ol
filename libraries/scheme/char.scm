@@ -1,6 +1,5 @@
 (define-library (scheme char)
    (export 
-   ;;    char-alphabetic?
       char-ci=?
       char-ci<?
       char-ci>?
@@ -8,11 +7,14 @@
       char-ci>=?
    ;;    char-downcase
    ;;    char-foldcase
-   ;;    char-lower-case?
+
+   ;;    char-alphabetic?
    ;;    char-numeric?
-      char-upcase
+      char-whitespace?
    ;;    char-upper-case?
-   ;;    char-whitespace?
+   ;;    char-lower-case?
+
+      char-upcase
    ;;    digit-value
    ;;    string-ci<=?  * (owl string)
    ;;    string-ci<?   * (owl string)
@@ -22,15 +24,42 @@
    ;;    string-downcase
    ;;    string-foldcase
    ;;    string-upcase
+      alphabetic-chars
+      numeric-chars
+      whitespace-chars
    )
 
    (import
       (scheme core)
       (owl list)
-      (owl iff))
+      (scheme srfi-1)
+      (owl math)
+      (owl ff) (owl iff))
    (include "owl/unicode-char-folds.scm")
 
    (begin
+
+      (define (left a b) a)
+      (define (putT a) (cons a #T))
+
+      (define uppercase-chars (alist->ff
+         (map putT (iota (- #\Z #\A -1) #\A)) ))
+      (define lowercase-chars (alist->ff
+         (map putT (iota (- #\z #\a -1) #\a)) ))
+
+      (define alphabetic-chars (ff-union #false
+         uppercase-chars
+         lowercase-chars)) ; will not intersect
+
+      (define numeric-chars (alist->ff
+         (map putT (iota (- #\9 #\0 -1) #\0)) ))
+
+      (define whitespace-chars (alist->ff
+         (map putT (list #\tab #\newline #\space #\return)) ))
+
+
+      (define (char-whitespace? ch)
+         (whitespace-chars ch #false))
 
       ; * internal staff
       ; large table 'char => uppercase char'

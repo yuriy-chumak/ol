@@ -95,7 +95,7 @@
    ;; speedup:
    ;; 1. select all possible points
    (define new-generation
-      (ff-union
+      (ff-union (lambda (a b) b)
          (ff-fold
             (lambda (st key value)
                (let ((x (mod key 65536))
@@ -106,7 +106,7 @@
                      '(-1  0 +1  -1 +1  -1  0 +1)
                      '(-1 -1 -1   0  0  +1 +1 +1))))
             {} generation)
-         generation (lambda (a b) b))) ; save the current point age
+         generation)) ; save the current point age
 
    (userdata
       (ff-fold (lambda (st key value)

@@ -567,14 +567,27 @@
       ;;;
 
       ;; todo: placeholder ff-union
-      (define (ff-union a b collide)
-         (ff-fold
-            (λ (a bk bv)
-               (let ((av (get a bk #false)))
-                  (if av ;; <- BUG, does not imply bk is not set
-                     (put a bk (collide av bv))
-                     (put a bk bv))))
-            a b))
+      (define ff-union
+         (define (ff-union collide a b)
+            (ff-fold (λ (a bk bv)
+                        (define av (get a bk #false))
+                        (put a bk
+                           (if av ;; <- BUG, does not imply bk is not set
+                              (collide av bv)
+                              bv)))
+               a b))
+
+         (case-lambda
+            ((collide a)
+               a)
+            ((collide a b)
+               (ff-union collide a b))
+            ((collide a b . c)
+               (let loop ((a a) (b b) (c c))
+                  (ff-union collide a
+                     (if (null? c)
+                        b
+                        (loop b (car c) (cdr c))))))))
 
       ;; todo: placeholder ff-diff
       (define (ff-diff a b)

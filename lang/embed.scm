@@ -58,7 +58,7 @@
                   (values (put seen obj here) here)
                   (let* ((seen this (code-refs seen (car lst))))
                      (loop seen (cdr lst)
-                        (ff-union this here +))))))))
+                        (ff-union + this here))))))))
    (define (codes-of ob)
       (let* ((refs this (code-refs empty ob)))
          (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))

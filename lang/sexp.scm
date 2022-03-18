@@ -35,6 +35,7 @@
       (owl io) ; testing
       (owl unicode)
       (only (lang intern) string->uninterned-symbol)
+      (scheme char)
       (only (owl regex) get-sexp-regex))
 
    (begin
@@ -44,21 +45,21 @@
             (or (less? lo x) (eq? lo x))
             (or (less? x hi) (eq? x hi))))
 
-      ;; 
-      (define symbol-lead-chars (alist->ff
-         (foldr append #null
-            (list
-               (map (lambda (char) (cons char #true)) (iota (- #\Z #\A -1) #\A))  ;; A - Z
-               (map (lambda (char) (cons char #true)) (iota (- #\z #\a -1) #\a))  ;; a - z
-               (map (lambda (char) (cons char #true)) (string->runes "!$%&*+-/:<=>?@^_~"))))))
+      (define (left a b) a)
+      (define (putT a) (cons a #T))
 
-      (define symbol-chars (ff-union (alist->ff
-         (foldr append #null
-            (list
-               (map (lambda (char) (cons char #true)) (iota (- #\9 #\0 -1) #\0))  ;; 0 - 9
-               (map (lambda (char) (cons char #true)) (string->runes "'")))))     ;; we can use ' as part of symbol names
+      (define symbol-lead-chars (ff-union #false
+         alphabetic-chars
+         (alist->ff
+            (map putT (string->runes "!$%&*+-/:<=>?@^_~"))
+      )))
+
+      (define symbol-chars (ff-union left
          symbol-lead-chars
-         (lambda (a b) a)))
+         numeric-chars
+         (alist->ff
+            (map putT (string->runes "'"))  ;; we can use ' as part of symbol names
+      )))
 
       (define (symbol-lead-char? n)
          (symbol-lead-chars n (less? 126 n)))
@@ -80,12 +81,11 @@
 
       ;; 
       (define digit-values (alist->ff
-         (foldr append #null
-            (list
-               (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
-               (map (lambda (d i) (cons d i)) (iota  6 #\A) (iota 6 10))  ;; A-F
-               (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
-               ))))
+         (append
+            (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
+            (map (lambda (d i) (cons d i)) (iota  6 #\A) (iota 6 10))  ;; A-F
+            (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
+      )))
 
       (define bases {
          #\b   2
@@ -269,8 +269,7 @@
       ;;    '(#\tab #\newline #\return)))
 
       (define whitespace
-         (byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
-         ;; (byte-if (lambda (x) (getf whitespaces x))))
+         (byte-if char-whitespace?))
 
       (define whitespace-or-comment
          (any-of

@@ -16,4 +16,4 @@
 (print "a2: " a2)
 
 (define (collide a b) b) ; will use new key value
-(print "merged a1 a2: " (ff-union a1 a2 collide))
+(print "merged a1 a2: " (ff-union collide a1 a2))
