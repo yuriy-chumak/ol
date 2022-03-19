@@ -549,19 +549,20 @@
       (define repl-ops-help
 "Commands:
    ,help             - show this
-   ,words            - list all current definitions
+   ,words            - list all current definitions (,w)
    ,expand <expr>    - expand macros in the expression
    ,find [regex|sym] - list all defined words matching regex or m/<sym>/
    ,libraries        - show all currently loaded libraries
-   ,disassembly func - show disassembled function binary code
+   ,disassembly func - show disassembled function binary code (,d ,dis)
    ,load <path.scm>  - (re)load a file
    ,save <path.bin>  - save current state, restart with $ ol <path.bin>
-   ,quit             - exit owl")
+   ,quit             - exit ol
+")
 
       (define (repl-op repl op in env)
          (case op
             ((help)
-               (prompt env repl-ops-help)
+               (display repl-ops-help)
                (repl env in))
             ((load)
                (let* ((op in (uncons in #false)))
@@ -627,15 +628,15 @@
                                     (env-keys env))))))))
                (repl env in))
             ((find)
-               (prompt env
-                  (let*((thing in (uncons in #false))
-                        (rex (thing->rex thing)))
+               (let*((thing in (uncons in #false))
+                     (rex (thing->rex thing)))
+                  (prompt env
                      (cond
                         ((function? rex)
                            (keep (λ (sym) (rex (symbol->string sym))) (env-keys env)))
                         (else
-                           "I would have preferred a regex or a symbol."))))
-               (repl env in))
+                           "I would have preferred a regex or a symbol.")))
+                  (repl env in)))
             ((libraries libs)
                (prompt env
                   (map car (env-get env '*libraries* null)))
