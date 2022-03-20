@@ -1,4 +1,5 @@
 ; http://www.rosettacode.org/wiki/Sort_an_array_of_composite_structures#Ol
+(import (scheme char))
 
 (define (comp a b)
    (string-ci<? (a 'name #f) (b 'name #f)))

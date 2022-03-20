@@ -1,4 +1,5 @@
 (import (lang eval))
+(import (scheme repl))
 
 ;; normal sexp
 (print (eval '(+ 1 2) (interaction-environment)))

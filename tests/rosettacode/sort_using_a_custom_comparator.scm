@@ -1,4 +1,5 @@
 ; http://www.rosettacode.org/wiki/Sort_using_a_custom_comparator#Ol
+(import (scheme char))
 
 (define (comp a b)
    (let ((la (string-length a))

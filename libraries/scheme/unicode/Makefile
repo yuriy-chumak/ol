@@ -7,7 +7,6 @@ tmp/PropList.txt:
 tmp/UnicodeData.txt:
 	curl $(UNICODE_SERVER)/$(UNICODE_VERSION)/ucd/UnicodeData.txt -o $@
 
-.PHONY: unicode
 unicode: libraries/scheme/unicode/numeric-chars.scm \
          libraries/scheme/unicode/alphabetic-chars.scm \
          libraries/scheme/unicode/whitespace-chars.scm
