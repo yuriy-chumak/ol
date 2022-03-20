@@ -5,7 +5,7 @@ export OL_HOME=libraries
 .PHONY: all debug release check slim config recompile install uninstall clean android
 .PHONY: describe
 
-all: release unicode
+all: release
 describe: all
 	./vm --version
 	./ol --version
@@ -358,9 +358,6 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm
 	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
 	   cp -b $@ repl ;make $@ ;\
 	fi
-
-# compiling unicode table
--include libraries/scheme/unicode/Makefile
 
 libraries/owl/unicode-char-folds.scm:
 	echo "(define char-folds '(" >libraries/owl/unicode/char-folds.scm
