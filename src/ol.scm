@@ -346,8 +346,8 @@
                      (cons '*version* version)
                      ; 
                      (cons '*features* (let*((*features* (cons*
-                                                            (string->symbol (string-append "ol-" (cdr version)))
-                                                            (string->symbol (string-append "otus-lisp-" (cdr version)))
+                                                            (string->symbol "otus-lisp")
+                                                            (string->symbol (string-append "ol-" (car (c/-/ (cdr version)))))
                                                             *features*))
                                              (*features* (let ((one (vm:cast 1 type-vptr)))
                                                             (cond
