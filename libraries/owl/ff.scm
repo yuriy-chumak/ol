@@ -334,7 +334,7 @@
       (define fupd ff-update)
 
       ;; TODO: benchmark fupd+ins, get->fupd\/ins vs put with real programs
-      (define tag "foo")
+      (define tag []) ; unique empty vector
 
       (define (put ff key val)
          (let ((res (ff key tag)))    ;; check if the key is already in ff

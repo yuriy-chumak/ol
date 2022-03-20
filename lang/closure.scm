@@ -45,32 +45,30 @@
                 (tail used (closurize-list closurize (cdr exps) used)))
                (values (cons this tail) used))))
 
-       (define (closurize-call closurize rator rands used)
+      (define (closurize-call closurize rator rands used)
          (let ((op (value-primop rator)))
             (if op
-               (begin
-                  ;(print " no clos for " rator)
-                  (case (car rands)
-                     (['lambda-var fixed? formals body]
-                        (let*((cont used (closurize (car rands) used #false))
-                              (rands used (closurize-list closurize (cdr rands) used)))
-                           (values (mkcall rator (cons cont rands)) used)))
-                     (['var name]
-                        (let
-                           ((dummy-cont
-                              ;;; FIXME, should check arity & gensym
-                              ;;; used only once and called immediately
-                              (mklambda (list '_foo)
-                                 (mkcall (mkvar name)
-                                    (list (mkvar '_foo))))))
-                           (closurize-call closurize rator
-                              (cons dummy-cont (cdr rands))
-                              used)))
-                     (else
-                        (runtime-error "Bad primitive continuation:" (car rands)))))
-               (lets
-                  ((rator used (closurize rator used #false))
-                   (rands used (closurize-list closurize rands used)))
+            then
+               (case (car rands)
+                  (['lambda-var fixed? formals body]
+                     (let*((cont used (closurize (car rands) used #false))
+                           (rands used (closurize-list closurize (cdr rands) used)))
+                        (values (mkcall rator (cons cont rands)) used)))
+                  (['var name]
+                     (let
+                        ((dummy-cont
+                           ;;; used only once and called immediately
+                           (mklambda (list '| |); mock argument name
+                              (mkcall (mkvar name)
+                                 (list (mkvar '| |))))))
+                        (closurize-call closurize rator
+                           (cons dummy-cont (cdr rands))
+                           used)))
+                  (else
+                     (runtime-error "Bad primitive continuation:" (car rands))))
+            else
+               (let*((rator used (closurize rator used #false))
+                     (rands used (closurize-list closurize rands used)))
                   (values (mkcall rator rands) used)))))
 
       (define (closurize exp used close?)

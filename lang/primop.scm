@@ -82,7 +82,6 @@
                (or (eq? in n) (eq? in 'any)))))
 
       ;; only special forms supported by the compiler, no primops etc
-      ;; fixme: should use distinct identifiers like #:foo for these, since these can unintentionally clash with formals
       (define *special-forms* {
          'quote  ['special 'quote]
          'values ['special 'values]
