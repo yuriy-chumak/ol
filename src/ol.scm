@@ -417,7 +417,7 @@
             (coroutine ['repl] (lambda ()
                ;; repl
                (exit-thread
-                  (repl-trampoline env file)))))))
+                  (repl-loop env file)))))))
 
 ;;;
 ;;; Dump the new repl

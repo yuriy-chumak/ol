@@ -296,14 +296,14 @@
       (define (prompt env val)
          (if (interactive? env)
             (if (repl-message? val)
-               (begin
-                  (if (cdr val)
-                     (print (decode-value env (cdr val)))))
-               (begin
-                  (maybe-show-metadata env val)
-                  ((writer-to (env-get env name-tag empty))
-                     stdout (decode-value env val))
-                  (display "\n")))))
+            then
+               (if (cdr val)
+                  (print (decode-value env (cdr val))))
+            else
+               (maybe-show-metadata env val)
+               ((writer-to (env-get env name-tag empty))
+                  stdout (decode-value env val))
+               (display "\n"))))
 
       (define (suspend path)
          (let ((state (call/cc (λ (cont) (vm:mcp cont 16 #t #t)))))
@@ -548,11 +548,11 @@
       (define repl-ops-help
 "Commands:
    ,help             - show this
-   ,words            - list all current definitions (,w)
-   ,expand <expr>    - expand macros in the expression
+   ,words            - list all current definitions                 (,w)
    ,find [regex|sym] - list all defined words matching regex or m/<sym>/
-   ,libraries        - show all currently loaded libraries
-   ,disassembly func - show disassembled function binary code (,d ,dis)
+   ,expand <expr>    - expand macros in the expression
+   ,disassembly func - show disassembled function binary code  (,d ,dis)
+   ,libraries        - show all currently loaded libraries       (,libs)
    ,load <path.scm>  - (re)load a file
    ,save <path.bin>  - save current state, restart with $ ol <path.bin>
    ,quit             - exit ol
@@ -584,36 +584,6 @@
                      (begin
                         (prompt env "Usage: ,save \"file\"")
                         (repl env in)))))
-            ((forget-all-but) ; * ol internal
-               (lets ((op in (uncons in #false)))
-                  (if (and (list? op) (all symbol? op))
-                     (let ((nan ['defined ['value 'undefined]]))
-                        (repl
-                           (env-keep env
-                              (λ (name)
-                                 (if (or (primop-of name) (has? op name))
-                                    name
-                                    #false)))
-                           ;(ff-fold
-                           ;   (λ (env name val)
-                           ;      (tuple-case val
-                           ;         ((defined x)
-                           ;            (cond
-                           ;               ((or (primop-of (ref x 2))
-                           ;                  (has? op name))
-                           ;                  ;(print " + keeping " name)
-                           ;                  env)
-                           ;               (else
-                           ;                  ;(print " - forgetting " name)
-                           ;                  (env-del env name))))
-                           ;         ;((macro x)
-                           ;         ;   (if (has? op name)
-                           ;         ;      env
-                           ;         ;      (env-del env name)))
-                           ;         (else env)))
-                           ;   env env)
-                           in))
-                     (repl-error env (list "bad word list: " op)))))
             ((words w)
                (prompt env
                   (repl-message
@@ -679,8 +649,21 @@
                         (print "Macro expansion failed: " reason)))
                   (repl env in)))
             ((quit)
-               ; this goes to repl-trampoline
+               ; this goes to repl-loop
                ['ok #true env])
+
+            ((forget-all-but) ; * ol internal
+               (lets ((op in (uncons in #false)))
+                  (if (and (list? op) (all symbol? op))
+                     (let ((nan ['defined ['value 'undefined]]))
+                        (repl
+                           (env-keep env
+                              (λ (name)
+                                 (if (or (primop-of name) (has? op name))
+                                    name
+                                    #false)))
+                           in))
+                     (repl-error env (list "bad word list: " op)))))
             (else
                (print "unknown repl op: " op)
                ;(prompt env (repl-message #f))
@@ -1053,11 +1036,12 @@
                               (if (and (list? value)
                                     (eq? (length value) (length names)))
                                  (ok (repl-message ";; All defined")
-                                    (fold
-                                       (λ (env pair)
-                                          (env-set env (car pair) (cdr pair)))
-                                       env
-                                       (map cons names value)))
+                                    (bind-toplevel
+                                       (fold
+                                          (λ (env pair)
+                                             (env-set env (car pair) (cdr pair)))
+                                          env
+                                          (map cons names value))))
                                  (fail
                                     (list "Didn't get expected values for definition of " names)))))
                         (['fail reason]
@@ -1165,7 +1149,7 @@
                (repl-error env "not parseable"))))
 
       ;; run the repl on a fresh input stream, report errors and catch exit
-      (define (repl-trampoline env in) ; TODO: rename to repl-loop or something similar
+      (define (repl-loop env in)
          (let boing ((env env))
             ;; (let ((env (bind-toplevel env)))
                (case (repl-port env in)
@@ -1176,7 +1160,7 @@
                            (hook:exit result)))
 
                      (if (interactive? env)
-                        (print "bye-bye :/"))
+                        (print "bye-bye."))
                      result); returning value
 
                   ; something wrong
