@@ -5,6 +5,8 @@
       char-ci>?
       char-ci<=?
       char-ci>=?
+
+      char-upcase
    ;;    char-downcase
    ;;    char-foldcase
 
@@ -14,7 +16,6 @@
    ;;    char-upper-case?
    ;;    char-lower-case?
 
-      char-upcase
    ;;    digit-value
    ;;    string-downcase
    ;;    string-foldcase
@@ -37,26 +38,19 @@
       (owl string)
       (owl ff) (owl iff))
    (include "owl/unicode-char-folds.scm")
+   (include "scheme/unicode/alphabetic-chars.scm")
+   (include "scheme/unicode/numeric-chars.scm")
+   (include "scheme/unicode/whitespace-chars.scm")
 
    (begin
 
       (define (left a b) a)
       (define (putT a) (cons a #T))
 
-      (define uppercase-chars (alist->ff
-         (map putT (iota (- #\Z #\A -1) #\A)) ))
-      (define lowercase-chars (alist->ff
-         (map putT (iota (- #\z #\a -1) #\a)) ))
-
-      (define alphabetic-chars (ff-union #false
-         uppercase-chars
-         lowercase-chars)) ; will not intersect
-
-      (define numeric-chars (alist->ff
-         (map putT (iota (- #\9 #\0 -1) #\0)) ))
-
-      (define whitespace-chars (alist->ff
-         (map putT (list #\tab #\newline #\space #\return)) ))
+      ; unicode symbols
+      (define alphabetic-chars (alist->ff alphabetic-chars-alist))
+      (define numeric-chars (alist->ff numeric-chars-alist))
+      (define whitespace-chars (alist->ff whitespace-chars-alist))
 
 
       (define (char-alphabetic? ch)

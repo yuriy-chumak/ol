@@ -5,7 +5,7 @@ export OL_HOME=libraries
 .PHONY: all debug release check slim config recompile install uninstall clean android
 .PHONY: describe
 
-all: release
+all: release unicode
 describe: all
 	./vm --version
 	./ol --version
@@ -363,12 +363,12 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm
 -include libraries/scheme/unicode/Makefile
 
 libraries/owl/unicode-char-folds.scm:
-	echo "(define char-folds '(" >libraries/owl/unicode-char-folds.scm
+	echo "(define char-folds '(" >libraries/owl/unicode/char-folds.scm
 	curl https://www.unicode.org/Public/14.0.0/ucd/CaseFolding.txt |\
 	   grep "[0-9A-F]* [SFC]; " |\
 	   sed -re 's/ #.*//' -e 's/( [SFC])?;//g' -e 's/^/ /' -e 's/ / #x/g' -e 's/ /(/' -e 's/$$/)/' |\
-	   tr "[A-F]" "[a-f]" >> libraries/owl/unicode-char-folds.scm
-	echo '))' >>libraries/owl/unicode-char-folds.scm
+	   tr "[A-F]" "[a-f]" >> libraries/owl/unicode/char-folds.scm
+	echo '))' >>libraries/owl/unicode/char-folds.scm
 
 # compiling infix math notation
 libraries/owl/math/infix.scm: tools/make-math-infix.scm vm

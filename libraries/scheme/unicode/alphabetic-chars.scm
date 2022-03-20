@@ -1,4 +1,5 @@
 (define alphabetic-chars-alist '(
+; Lu + Ll + Lt + Lm + Lo + Nl + Other_Alphabetic
 (#x0041 #T)
 (#x0042 #T)
 (#x0043 #T)
@@ -21843,7 +21844,6 @@
 (#x2FA1D #T)
 (#x30000 #T)
 (#x3134A #T)
-; Other_Alphabetic
 (#x0345 #T)
 (#x5b0 #T)(#x5b1 #T)(#x5b2 #T)(#x5b3 #T)(#x5b4 #T)(#x5b5 #T)(#x5b6 #T)(#x5b7 #T)(#x5b8 #T)(#x5b9 #T)(#x5ba #T)(#x5bb #T)(#x5bc #T)(#x5bd #T)
 (#x05BF #T)
