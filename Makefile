@@ -360,6 +360,8 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm
 	fi
 
 # compiling unicode table
+-include libraries/scheme/unicode/Makefile
+
 libraries/owl/unicode-char-folds.scm:
 	echo "(define char-folds '(" >libraries/owl/unicode-char-folds.scm
 	curl https://www.unicode.org/Public/14.0.0/ucd/CaseFolding.txt |\
