@@ -6,8 +6,7 @@
       sin cos tan
       asin acos atan
 
-      sqrt
-   )
+      sqrt)
 
    (import
       (scheme core)
@@ -20,9 +19,9 @@
    ;;    (print-to stderr "Warning: OL built without OLVM_BUILTIN_FMATH support. SQRT and other math functions will return #false."))
 
    (define (nan-or-inf? z)
-      (or (equal? z +inf.0)
-          (equal? z -inf.0)
-          (equal? z +nan.0)))
+      (or (equal? z +nan.0)
+          (equal? z +inf.0)
+          (equal? z -inf.0)))
 
 
    (define (nan? z)

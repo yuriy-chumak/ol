@@ -67,7 +67,7 @@ type ',help' to help, ',quit' to end session.
 >
 ```
 
-The Ol binary includes a rich set of features (lists, vectors and byte vectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, asyncs and coroutines, etc.) and can be used as a completely standalone.
+The Ol binary includes a rich set of features (lists, vectors and byte vectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, asyncs and actors, etc.) and can be used as a completely standalone.
 
 Advanced build instructions for Windows / Linux / macOS / Android / Web / etc.:
 [doc/BUILD.md](doc/BUILD.md)
@@ -242,7 +242,7 @@ DEPRECATIONS
 
 * `(ilist ...)` is deprecated. Use `(cons* ...)` instead.
 * `(interact ...)` from (owl ~~interop~~ async) is deprecated. Use `(await (mail ...))` instead.
-* `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async-named ...)`, `(coroutine ...)` instead.
+* `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async 'name ...)`, `(actor ...)` instead.
 
 
 ### DISASSEMBLY
@@ -281,7 +281,7 @@ RUNNING
 
 You can use basic Ol functionality without any installation - just copy the `ol` (`ol.exe` for Windows) binary to any user-accessible path.
 
-Basic functionality includes a rich set of features: lists, vectors and bytevectors, numbers math with unlimited accuracy, strings, associative arrays (named `ff`), i/o streams and files, lazy calculations, regular expressions, coroutines, etc.
+Basic functionality includes a rich set of features: lists, vectors and bytevectors, numbers math with unlimited accuracy, strings, associative arrays (named `ff`), i/o streams and files, lazy calculations, regular expressions, asyncs and actors, etc.
 
 Advanced functionality (i.e. OpenGL support) requires a complete installation of the Ol package:
   * You can use precompiled binaries and/or installation packages that can be found at the [Releases](https://github.com/yuriy-chumak/ol/releases) announcement page.
