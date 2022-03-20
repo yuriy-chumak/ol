@@ -5,28 +5,23 @@
 (import
    (scheme core)
    (otus async) (owl io)
+   (owl math)
    (scheme vector)
    (only (lang sexp) sexp))
 
 (begin
-; --------------------------
 
-   ; math + simplification (hope we not use larger than max number of bytes files?)
-   (define (+ n x)
-      (values-apply (vm:add n x) (lambda (n carry) n)))
-   (define (<< n x)
-      (values-apply (vm:shl n x) (lambda (overflow n) n)))
-
+   ; * internal function
    (define (read-impl port)
       (define coname ['read])
-      (coroutine coname (lambda ()
+      (actor coname (lambda ()
          (let this ((cache (make-bytevector 14)) (pos 0))
             (let*((envelope (wait-mail))
                   (sender msg envelope))
-               (if msg ; #false to stop the thread, else - number of character
+               (if msg ; #false to stop the thread, else - number of characters
                   (let loop ((cache cache) (pos pos))
                      (cond
-                        ((eq? pos (size cache)) ; надо ли увеличить размер кеша?
+                        ((eq? pos (size cache)) ; do we need to increase cache size?
                            (let ((cache (vm:makeb type-bytevector (vector->list cache) (<< (size cache) 1))))
                               (loop cache pos)))
                         ((less? msg pos)
@@ -36,9 +31,9 @@
                            (define char (syscall 0 port 1))
                            (if (memq char '(#f #t #eof))
                               (mail sender char)
-                              (begin
-                                 (set-ref! cache pos (ref char 0))
-                                 (loop cache (+ pos 1))))))
+                           else
+                              (set-ref! cache pos (ref char 0))
+                              (loop cache (+ pos 1)))))
                      (this cache pos)))))))
 
       (define (non-buffered-input-stream-n n)
@@ -46,22 +41,23 @@
             (define in (await (mail coname n)))
             (case in
                (#f #null) ; port error
-               (#t ; input not ready
+               (#t   ; input not ready
                   (sleep 5)
                   (non-buffered-input-stream-n n))
-               (#eof ; end-of-file
+               (#eof     ; end-of-file
                   (close-port port)
                   #null)
                (else
                   (cons in (non-buffered-input-stream-n (+ n 1)))))))
 
-      ((sexp)
-         #null
-         (non-buffered-input-stream-n 0)
-         0
-         (λ (left data-tail pos val) ; ok
-            (mail coname #false)
-            val)))
+      (let* ((l r p val ((sexp)
+                           #null ; no left part of stream
+                           (non-buffered-input-stream-n 0)
+                           0 ; start position in stream
+                           (λ (l r p v) ; ok
+                              (mail coname #false)
+                              (values l r p v)))))
+         val))
 
    ; public function
    (define read (case-lambda
