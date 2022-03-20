@@ -9,7 +9,7 @@
       repl-file
       repl-port
       eval-string
-      repl-trampoline
+      repl-loop
       repl
       print-repl-error
       bind-toplevel
@@ -17,9 +17,8 @@
       *src-olvm*
       ; 6.5 Eval
       eval eval-repl
-      evaluate disassembly
+      evaluate disassembly)
       ;scheme-report-environment null-environment
-      interaction-environment)
 
    (import
       (scheme base)
@@ -768,11 +767,6 @@
 ;                     #false)))
 ;            ((eval (exp))
 ;               (eval exp *toplevel*))))
-
-      (define-syntax interaction-environment
-         (syntax-rules (*toplevel*)
-            ((interaction-environment)
-               *toplevel*)))
 
       (define (bind-toplevel env)
          (env-set env '*toplevel*

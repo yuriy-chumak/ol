@@ -1,10 +1,23 @@
 (define-library (scheme repl)
    (export 
-      (exports (scheme core)) )
+      interaction-environment
+      defined?
+      env-get) ; env-get from (lang env)
 
    (import
-      (scheme core))
+      (scheme core)
+      (lang env))
 
-   (begin
-      #true
+(begin
+
+   (define-syntax interaction-environment
+      (syntax-rules (*toplevel*)
+         ((interaction-environment)
+            *toplevel*)))
+
+   (define-syntax defined?
+      (syntax-rules (interaction-environment)
+         ((defined? symbol)
+            (env-get (interaction-environment) symbol #false))))
+
 ))
