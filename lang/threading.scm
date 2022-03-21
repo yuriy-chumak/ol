@@ -13,8 +13,7 @@
 (define-library (lang threading)
 
    (export
-      start-thread-controller
-      thread-controller)
+      start-thread-controller)
 
    (import
       (scheme core)
