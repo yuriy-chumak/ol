@@ -36,7 +36,8 @@
       str-map            ; op str → str'
       str-rev
       string             ; (string char ...) → str
-      substring          ; str start end → str'
+      substring          ; str start end → str', equivalent to calling string-copy with the same arguments, but is
+                         ;                        provided for backward compatibility and stylistic flexibility.
       string-ref         ; str pos → char | error
       string?
       string=?           ; str str → bool
@@ -44,7 +45,10 @@
       string>?           ; str str → bool
       string<=?          ; str str → bool
       string>=?          ; str str → bool
-      make-string)        ; n char → str
+      make-string        ; n char → str
+
+      string-copy
+   )
 
    (import (scheme core))
 
@@ -413,5 +417,12 @@
 
       (define (make-string n char)
          (list->string (repeat char n)))
+
+
+      ;; strings
+      (define string-copy (case-lambda
+         ((str)           (runes->string (string->runes str)))
+         ((str start)     (runes->string (drop (string->runes str) start)))
+         ((str start end) (runes->string (take (drop (string->runes str) start) (- end start))))))
 
 ))

@@ -456,12 +456,6 @@
          ((ss port start)      (write-bytevector (string->utf8 ss) port start))
          ((ss port start end)  (write-bytevector (string->utf8 ss) port start end))))
 
-      ;; ;; strings
-      ;; (define string-copy (case-lambda
-      ;;    ((str) (runes->string (string->runes str)))
-      ;;    ((str start) (runes->string (drop (string->runes str) start)))
-      ;;    ((str start end) (runes->string (take (drop (string->runes str) start) (- end start))))))
-
       (define newline (case-lambda
          (() (print))
          ((port) (print-to port))))
