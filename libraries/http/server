@@ -1,0 +1,206 @@
+#!/usr/bin/env ol
+
+;;
+;; This is the simple HTTP server
+;; 
+;; Requirements:
+;;  ls
+;;
+;; Usage:
+;;  $ echo ,load http/server| ol
+;;   or
+;;  $ echo ,load http/server| ol - --port 80
+;;
+
+(import (lib http))
+(import (owl parse))
+(import (otus ffi))
+
+(define (yield) (syscall 1022 0))
+(define (time format seconds) (syscall 201 format seconds))
+(define uname (syscall 63))
+(define split c/"/) ;"
+
+(define OK "\e[0;32mOK\e[0;0m")
+(define FAIL "\e[0;31mFAIL\e[0;0m")
+
+; some constants for uptime
+(define M 60)
+(define H (* M 60))
+(define D (* H 24))
+
+; show footer
+(define (send-uptime send)
+   (send "<hr>")
+   (send "<pre><small>")
+   (let*((sysinfo (syscall 99))
+         (rusage  (syscall 98))
+         (utime (ref rusage 1))
+         (stime (ref rusage 2))
+         (uptime (ref sysinfo 1))
+         (allocated (* (size nullptr) (ref (syscall 1117) 3))))
+      (send
+            "<div style='float:left'>"
+            (time "%c" #false) "<br>"
+            "rusage: "
+                     (div      (car utime) D   ) " days, "
+                     (div (rem (car utime) D) H) " hr, "
+                     (div (rem (car utime) H) M) " min, "
+                     (     rem (car utime) M   ) " sec."
+                  " / "
+                     (div      (car stime) D   ) " days, "
+                     (div (rem (car stime) D) H) " hr, "
+                     (div (rem (car stime) H) M) " min, "
+                     (     rem (car stime) M   ) " sec."
+            "<br>"
+            "uptime: "
+                     (div      uptime D   ) " days, "
+                     (div (rem uptime D) H) " hr, "
+                     (div (rem uptime H) M) " min, "
+                     (     rem uptime M   ) " sec."
+            "</div>")
+      (send "<div style='float:right'>"
+            (car *version*) "/" (cdr *version*)
+            ", "
+            (ref uname 1) " " (ref uname 5)
+            "<br>"
+            "Bytes allocated: " allocated
+            "</div>")
+      (send "<div style='clear: both'></div></small></pre>")))
+
+
+(define (starts-with string sub)
+   (if (> (string-length sub) (string-length string))
+      #false
+      (string-eq? (substring string 0 (string-length sub)) sub)))
+
+(define (str-find str char)
+   (let loop ((string (str-iter str)) (n 0))
+      (if (null? string)
+         -1
+         (if (char=? (car string) char)
+            n
+            (loop (force (cdr string)) (+ n 1))))))
+
+(define port
+   (if (and
+            (> (length *command-line*) 1)
+            (string-eq? (car *command-line*) "--port"))
+         (string->number (cadr *command-line*) 10)
+   else
+      4000))
+
+(http:run port (lambda (fd request headers body close)
+   (define (send . args)
+      (for-each (lambda (arg)
+         (display-to fd arg)) args))
+
+   ; send file to output stream
+   (define (sendfile filename)
+      (for-each display (list "Sending '\e[0;33m" filename "\e[0;0m'... "))
+      (define stat (syscall 4 (if (string? filename) (c-string filename))))
+
+      (if stat
+      (cond
+         ; folder?
+         ((not (zero? (band (ref stat 3) #o0040000)))
+            (display "<folder> ")
+            ; list folder:
+            (define In (syscall 22))
+            (define Out (syscall 22))
+            (define Pid (syscall 59 (c-string "/bin/bash")
+                           (map c-string (list
+                              "/bin/bash" "-c" (string-append "ls -lahQ --full-time " filename)))
+                           (list (car In) (cdr Out))))
+            (for-each close-port (list
+               (car In) (cdr Out) (cdr In)))
+            
+            (define get-line
+               (let-parse* (
+                     (bytes (greedy+ (byte-if (lambda (x) (not (eq? x #\newline))))))
+                     (endl (imm #\newline)))
+                  (bytes->string bytes)))
+
+            (send "HTTP/1.0 200 OK\n"
+               "Connection: close\n"
+               "Content-Type: " "text/html" "\n"
+               "Server: " (car *version*) "/" (cdr *version*) "\n"
+               "\n")
+            (send "<pre>\n")
+            (send "<h3>" filename "</h3>")
+            ; skip first line "total ..."
+            (define line (try-parse get-line (port->bytestream (car Out)) #false))
+
+            ; ls -la
+            (let loop ((stream (try-parse get-line (cdr line) #false)))
+               (when stream
+                  (define line (car stream))
+                  (define lines (split line))
+                  (send (car lines))
+                  (send
+                     "<a href='"
+                        (cond
+                           ((string-eq? (cadr lines) ".")
+                              (string-append "/" filename))
+                           (else
+                              (string-append "/" filename "/" (cadr lines))))
+                     "'>"
+                     (cadr lines)
+                     "</a>")
+                  (for-each send (cddr lines))
+                  (send "<br/>")
+
+                  (loop (try-parse get-line (cdr stream) #false))))
+            (send "</pre>\n")
+            (send-uptime send)
+            (close-port (car Out))
+            (print OK)
+            (close #t))
+         ; regular file?
+         ((not (zero? (band (ref stat 3) #o0100000)))
+            (display "<file> ") ; TODO: get mimetypes
+            (define file (open-input-file filename))
+            (if file
+            then
+               (send "HTTP/1.0 200 OK\n"
+                  "Connection: close\n"
+                  "Content-Type: " "application/octet-stream" "\n"
+                  "Content-Length: " (ref stat 8) "\n"
+                  "Server: " (car *version*) "/" (cdr *version*) "\n"
+                  "\n")
+               (syscall 40 fd file 0 (ref stat 8)) ; sendfile
+               (close-port file)
+               (print OK)
+               (close #t)
+            else
+               (send "HTTP/1.0 500 Internal Server Error\n"
+                     "Connection: close\n"
+                     "\n")
+               (print FAIL)
+               (close #t)))
+         (else
+            (send "HTTP/1.0 500 Internal Server Error\n"
+                  "Connection: close\n"
+                  "\n")
+            (close #t))))
+      (send "HTTP/1.0 404 Not Found\n"
+            "Connection: close\n"
+            "\n")
+      (close #t))
+
+   (print "fd: " fd ", request: " request)
+
+   (when (port? fd)
+      (define peer (syscall 51 fd))
+      (print "Peer: " peer)
+      (cond
+         ((and (eq? (size request) 3)
+               (string-eq? (ref request 1) "GET"))
+            (define filename (ref request 2))
+            (sendfile (if (string-eq? filename "/") "."
+               (substring filename 1 (string-length filename))))) ; without leading "/"
+         (else
+            (sendfile 404))))
+   (send "HTTP/1.0 404 Not Found\n"
+         "\n")
+   (close #t)))
