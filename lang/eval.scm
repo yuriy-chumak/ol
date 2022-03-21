@@ -545,25 +545,29 @@
                            (DIS 1 "?"))))))))
 
 
-      (define repl-ops-help
-"Commands:
+      (define repl-ops-help (symbol->string '
+|Commands:
    ,help             - show this
    ,words            - list all current definitions                 (,w)
-   ,find [regex|sym] - list all defined words matching regex or m/<sym>/
+   ,find [regex/sym] - list all defined words matching regex or m/<sym>/
    ,expand <expr>    - expand macros in the expression
    ,disassembly func - show disassembled function binary code  (,d ,dis)
    ,libraries        - show all currently loaded libraries       (,libs)
-   ,load <path.scm>  - (re)load a file
-   ,save <path.bin>  - save current state, restart with $ ol <path.bin>
+   ,load "sexp-file" - (re)load a text ol file             (,l ,include)
+   ,save "file-name" - save current state, restart with $ ol <file-name>
    ,quit             - exit ol
-")
+|))
+      (define save-ops-help (symbol->string '
+|Usage:
+   ,save "filename"
+|))
 
       (define (repl-op repl op in env)
          (case op
             ((help)
                (display repl-ops-help)
                (repl env in))
-            ((load)
+            ((load l include)
                (let* ((op in (uncons in #false)))
                   (cond
                      ((symbol? op)
@@ -582,7 +586,7 @@
                         (prompt env (repl-message (suspend path)))
                         (repl env in))
                      (begin
-                        (prompt env "Usage: ,save \"file\"")
+                        (display save-ops-help)
                         (repl env in)))))
             ((words w)
                (prompt env
