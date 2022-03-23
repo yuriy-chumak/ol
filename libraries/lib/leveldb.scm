@@ -132,7 +132,12 @@
    ; utility
    leveldb_free
    leveldb_major_version
-   leveldb_minor_version)
+   leveldb_minor_version
+   
+   ; smart interface
+   leveldb:get
+   leveldb:delete
+   leveldb:put)
 
 ; ============================================================================
 (import
@@ -279,4 +284,59 @@
    ;; leveldb_env_destroy
 
    ;; leveldb_env_get_test_directory
+)
+
+;; High-level Interface
+(begin
+   (define (encode-arg arg)
+      (cond
+         ((integer? arg)
+            (if (> arg #xFFFFFFFF)
+               (runtime-error "Too big numeric key" arg))
+            (list (cons (fft* fft-long-long) (box arg)) 8))
+         ((string? arg)
+            (define len (+ (string-length arg) 1)) ; +1 for ending '\0'
+            (list (cons type-string arg) len))
+         (else
+            (runtime-error "Unsupported key type" arg))))
+
+   (define (leveldb:put database key value)
+      (define err (make-vptr))
+      (apply leveldb_put (append
+         (list database (leveldb_writeoptions_create))
+         (encode-arg key)
+         (encode-arg value)
+         (list err)))
+      (define ok (equal? err NULL))
+      (leveldb_free err)
+      ok)
+
+   (define (leveldb:delete database key)
+      (define err (make-vptr))
+      (apply leveldb_delete (append
+         (list database (leveldb_writeoptions_create))
+         (encode-arg key)
+         (list err)))
+      (define ok (equal? err NULL))
+      (leveldb_free err)
+      ok)
+
+   (define (leveldb:get database key key-type)
+      (define err (make-vptr))
+      (define len (box 0))
+      (define out
+      (apply leveldb_get (append
+         (list database (leveldb_readoptions_create))
+         (encode-arg key)
+         (list len err))))
+      (define ok
+         (if (equal? err NULL)
+            (case key-type
+               (string?   ; ignore string length, we assume that string is null-terminated
+                  (vptr->string out))
+               (integer?
+                  (bytevector->int64 (vptr->bytevector out 8) 0)))))
+
+      (leveldb_free err)
+      ok)
 ))
