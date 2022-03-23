@@ -62,6 +62,7 @@
       fft-int32 fft-int32* fft-int32& ; signed 32-bit value
       fft-int64 fft-int64* fft-int64& ; signed 64-bit value
 
+      fft-uint8  fft-uint8*  fft-uint8&
       fft-uint16 fft-uint16* fft-uint16& ; unsigned 16-bit value
       fft-uint32 fft-uint32* fft-uint32& ; unsigned 32-bit value
       fft-uint64 fft-uint64* fft-uint64& ; unsigned 64-bit value
@@ -75,6 +76,7 @@
 
       fft-long  fft-signed-long  fft-unsigned-long
       fft-long-long fft-signed-long-long fft-unsigned-long-long
+      fft-size-t
 
       fft-enum
 
@@ -229,6 +231,7 @@
    (setq |int| 3)
    (setq |long| 4)
    (setq |long long| 5)
+   (setq |size_t| 6)
 
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-uint8)
@@ -262,6 +265,11 @@
 (define fft-long-long fft-signed-long-long) (assert (ffi:sizeof |long long|) ===> 8)
 
 (define fft-enum fft-int)
+
+(define fft-size-t (case (ffi:sizeof |size_t|)
+   (4 fft-int32)
+   (8 fft-int64)
+   (else (runtime-error "assertion error: unsupported native 'long' type size"))))
 
 ; ...
 (define fft-int* (fft* fft-int))

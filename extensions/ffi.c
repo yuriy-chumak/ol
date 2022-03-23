@@ -2518,8 +2518,9 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
  * 2 - short (signed, unsigned)
  * 3 - int (signed, unsigned)
  * 4 - long (signed, unsigned)
+ * 5 - long long (signed, unsigned)
+ * 6 - size_t
  * ...
- * 9 - long
  * 10 - float, 11 - double
  * 20 - void*
  */
@@ -2534,6 +2535,7 @@ word OLVM_sizeof(olvm_t* self, word* arguments)
 		case 3: return I(sizeof(int));
 		case 4: return I(sizeof(long));
 		case 5: return I(sizeof(long long));
+		case 6: return I(sizeof(size_t));
 
 		// floating point types
 		case 10: return I(sizeof(float));
