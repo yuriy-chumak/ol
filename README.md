@@ -43,6 +43,10 @@ Q/A
 1. Q. You reference to licenses MIT and LGPL. Can I freely choose between these two licenses?<br/>
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
+1. Q. Anything else interesting?<br/>
+   A. Yes, Ol provides simplest HTTP web-server for sharig a local folder over an inter/intra-net.
+      Just type `$ echo ,l http/server| ol`.
+
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus_lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus_lisp) web-client) channel is available (the previous Freenode channel is closed).
 
@@ -249,13 +253,13 @@ DEPRECATIONS
 
 Ol 2.3 contains built-in tool for inspecting the Otus Lisp language.
 
-You can use the REPL ",expand" command to expand high-level Ol instructions into low-level (core) Otus Lisp.
+You can use the REPL `,expand` command to expand high-level Ol instructions into low-level (core) Otus Lisp.
 ```scheme
 > ,expand (assert (+ 1 2) = 3)
 (ifeq (equal? ((lambda (g1) g1) (+ 1 2)) 3) #true #true (runtime-error assertion error: (cons (quote (+ 1 2)) (cons must be (cons (quote 3) ())))))
 ```
 
-You can use the REPL ",disassembly" (or ",dis", or ",d") command to disassemble Otus Lisp functions to the Ol virtual machine instructions.
+You can use the REPL `,disassembly` (or `,dis`, or `,d`) command to disassemble Otus Lisp functions to the Ol virtual machine instructions.
 ```scheme
 > ,dis (lambda () 1)
 type: bytecode

@@ -15,8 +15,7 @@ If you want to import some functions from the system library, follow this steps:
 1. Import ol ffi library: `(import (otus ffi))`
 1. Load a system dynamic library: `(define libm (load-dynamic-library "libm.so.6"))`
 1. Declare external function: `(define asin (libm fft-double "asin" fft-double))`
-1. Call external function: `(define igot (asin 0.5))`
-1. Use result if any: `(print igot)`
+1. Use external function as a regular: `(print (asin 0.5))`
 
 Easy, huh?
 
@@ -32,9 +31,7 @@ type ',help' to help, ',quit' to end session.
 ;; Defined libm
 > (define asin (libm fft-double "asin" fft-double))
 ;; Defined asin
-> (define igot (asin 0.5))
-;; Defined igot
-> (print igot)
+> (print (asin 0.5))
 0.523598775
 #true
 > ,quit
