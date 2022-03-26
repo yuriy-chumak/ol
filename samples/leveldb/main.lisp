@@ -2,58 +2,40 @@
 (import (otus ffi))
 (import (lib leveldb))
 
-(print "leveldb_major_version: " (leveldb_major_version))
-(print "leveldb_minor_version: " (leveldb_minor_version))
+(print "leveldb version: " (leveldb_major_version) "." (leveldb_minor_version))
 
 ;; OPEN
-(define options (leveldb_options_create))
-(leveldb_options_set_create_if_missing options 1)
-(define err (make-vptr))
-(define db (leveldb_open options "testdb" err))
-(unless (equal? err NULL)
-   (runtime-error "Open fail." err))
+(define db (leveldb:open "testdb"))
 
-;; reset error var
-(leveldb_free err)
+;; SMART WRITE
+(display "writing string value... ")
+(if (leveldb:put db "a-string-key" "a-string-value")
+   (print "ok."))
 
-;; WRITE
-(define woptions (leveldb_writeoptions_create))
-(leveldb_put db woptions
-   (cons type-string "the-key") 7
-   (cons type-string "some-value") 11 err) ; 11 with completive '\0'
-(unless (equal? err NULL)
-   (runtime-error "Write fail." err))
-(leveldb_free err)
+(display "writing integer value... ")
+(if (leveldb:put db 1234567 7654321)
+   (print "ok."))
 
-;; READ
-(define roptions (leveldb_readoptions_create))
-(define read_len (box 0))
-(define read (leveldb_get db roptions 
-   (cons type-string "the-key") 7
-   read_len err))
-(unless (equal? err NULL)
-   (runtime-error "Read fail." err))
-(leveldb_free err)
+(display "writing internal object (a '+' function)... ")
+(if (leveldb:put db "+" +)
+   (print "ok."))
 
-(print "value: " (vptr->string read))
+;; SMART READ
+(display "reading string value... ")
+(define sread (leveldb:get db "a-string-key" string?))
+(print "string value: " sread)
 
+(display "reading integer value... ")
+(define iread (leveldb:get db 1234567 integer?))
+(print "integer value: " iread)
 
-;; DELETE
-(leveldb_delete db woptions
-   (cons type-string "the-key") 7
-   err)
-(unless (equal? err NULL)
-   (runtime-error "Read fail." err))
-(leveldb_free err)
+(display "reading internal object... ")
+(define oread (leveldb:get db "+"))
+(print "internal object: " oread)
+(print "try to use loaded object: (oread 1 2 3): " (oread 1 2 3))
 
 ;; CLOSE
 (leveldb_close db)
-
-;; DESTROY
-(leveldb_destroy_db options "testdb" err)
-(unless (equal? err NULL)
-   (runtime-error "Read fail." err))
-(leveldb_free err)
 
 ; done.
 (print "Ok.")

@@ -20,6 +20,9 @@
    (license MIT/LGPL3)
    (description "otus-lisp leveldb interface")
 
+   ; Limitations:
+   ;  * leveldb_get supports only 32-bit length data. todo.
+
 (export
    make-void*
    ;;  make-sqlite3 make-sqlite3_stmt
@@ -135,9 +138,13 @@
    leveldb_minor_version
    
    ; smart interface
+   leveldb:open
+   leveldb:close
+
    leveldb:get
    leveldb:delete
-   leveldb:put)
+   leveldb:put
+)
 
 ; ============================================================================
 (import
@@ -202,7 +209,7 @@
    (define leveldb_put (leveldb void "leveldb_put" leveldb_t* leveldb_writeoptions_t* fft-any size_t fft-any size_t char**))
    (define leveldb_delete (leveldb void "leveldb_delete" leveldb_t* leveldb_writeoptions_t* fft-any size_t char**))
    (define leveldb_write (leveldb void "leveldb_write" leveldb_t* leveldb_writeoptions_t* leveldb_writebatch_t* char**))
-   (define leveldb_get (leveldb fft-void* "leveldb_get" leveldb_t* leveldb_readoptions_t* fft-any size_t (fft* size_t) char**))
+   (define leveldb_get (leveldb fft-void* "leveldb_get" leveldb_t* leveldb_readoptions_t* fft-any size_t (fft& fft-uint32) char**)) ; (fft& size_t)
 
    ;; leveldb_create_iterator
    ;; leveldb_create_snapshot
@@ -288,18 +295,41 @@
 
 ;; High-level Interface
 (begin
+
+   (define (leveldb:open filename) ; todo: options
+      (define options (leveldb_options_create))
+      (leveldb_options_set_create_if_missing options 1)
+      (define err (make-vptr))
+      (define database (leveldb_open options "testdb" err))
+      (if (equal? err NULL)
+         database
+      else
+         (print-to stderr "leveldb open error: " (vptr->string err))
+         (leveldb_free err)
+         #false))
+
+   (define (leveldb:close database)
+      (leveldb_close database)
+      #true)
+
+
+   ; * internal
    (define (encode-arg arg)
       (cond
-         ((integer? arg)
-            (if (> arg #xFFFFFFFF)
-               (runtime-error "Too big numeric key" arg))
-            (list (cons (fft* fft-long-long) (box arg)) 8))
+         ((and (integer? arg) (< arg #x10000000000000000)) ; 64-bit
+            (list (cons (fft* fft-long-long) (box arg)) (sizeof fft-long-long)))
          ((string? arg)
             (define len (+ (string-length arg) 1)) ; +1 for ending '\0'
             (list (cons type-string arg) len))
+         ((bytevector? arg)
+            (define len (size arg))
+            (list (cons fft-void* arg) len))
          (else
-            (runtime-error "Unsupported key type" arg))))
+            (define bin (fasl-encode arg))
+            (define len (length bin))
+            (list (cons (fft* fft-char) bin) len))))
 
+   ; put
    (define (leveldb:put database key value)
       (define err (make-vptr))
       (apply leveldb_put (append
@@ -307,36 +337,50 @@
          (encode-arg key)
          (encode-arg value)
          (list err)))
-      (define ok (equal? err NULL))
-      (leveldb_free err)
-      ok)
+      (if (equal? err NULL)
+         #true
+      else
+         (print-to stderr "leveldb put error: " (vptr->string err))
+         (leveldb_free err)
+         #false))
 
+   ; delete
    (define (leveldb:delete database key)
       (define err (make-vptr))
       (apply leveldb_delete (append
          (list database (leveldb_writeoptions_create))
          (encode-arg key)
          (list err)))
-      (define ok (equal? err NULL))
-      (leveldb_free err)
-      ok)
+      (if (equal? err NULL)
+         #true
+      else
+         (print-to stderr "leveldb delete error: " (vptr->string err))
+         (leveldb_free err)
+         #false))
 
-   (define (leveldb:get database key key-type)
+   ; get
+   (define (leveldb:get database key . key-type)
       (define err (make-vptr))
       (define len (box 0))
       (define out
-      (apply leveldb_get (append
-         (list database (leveldb_readoptions_create))
-         (encode-arg key)
-         (list len err))))
-      (define ok
-         (if (equal? err NULL)
-            (case key-type
+         (apply leveldb_get (append
+            (list database (leveldb_readoptions_create))
+            (encode-arg key)
+            (list len err))))
+      (if (equal? err NULL)
+         (if (> (unbox len) 0)
+         then
+            (case (unless (null? key-type) (car key-type))
                (string?   ; ignore string length, we assume that string is null-terminated
                   (vptr->string out))
                (integer?
-                  (bytevector->int64 (vptr->bytevector out 8) 0)))))
+                  (assert (eq? (car len) 8))
+                  (bytevector->int64 (vptr->bytevector out 8) 0))
+               (else
+                  (fasl-decode (bytevector->list (vptr->bytevector out (car len))) #false))))
+      else
+         (print-to stderr "leveldb get error: " (vptr->string err))
+         (leveldb_free err)
+         #false))
 
-      (leveldb_free err)
-      ok)
 ))

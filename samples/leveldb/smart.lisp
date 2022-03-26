@@ -11,7 +11,7 @@
 (define err (make-vptr))
 (define db (leveldb_open options "testdb" err))
 (unless (equal? err NULL)
-   (runtime-error "Open fail." err))
+   (runtime-error "Open fail." (vptr->string err)))
 
 ;; reset error var
 (leveldb_free err)
