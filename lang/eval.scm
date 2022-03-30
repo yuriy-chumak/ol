@@ -12,6 +12,7 @@
       repl-loop
       repl
       print-repl-error
+      verbose-vm-error
       bind-toplevel
       library-import                ; env exps fail-cont → env' | (fail-cont <reason>)
       *src-olvm*
@@ -140,7 +141,8 @@
          (async-linked name
             (λ ()
                (evaluate exp env)))
-         (case (ref (accept-mail (λ (env) (eq? (ref env 1) name))) 2)
+         (define answer (accept-mail (λ (env) (eq? (ref env 1) name))))
+         (case (ref answer 2)
             ;; evaluated, typical behavior (ok, fail)
             (['finished result]
                ;; (print-to stderr "finished with " (ref result 1))
@@ -232,6 +234,60 @@
                (else (render lst '( #\newline )))))
          (write-bytes error-port
             (format-error lst 0)))
+
+      (define (verbose-vm-error opcode a b)
+      (list "error" opcode "->"
+         (case opcode
+            (ARITY-ERROR  ;; arity error, could be variable
+               `(function ,a did not accept ,(- b 1) arguments))
+            (52 ; (car not-a-pair)
+               `("trying to get `car` of a non-pair" ,a))
+            (53 ; (cdr not-a-pair)
+               `("trying to get `cdr` of a non-pair" ,a))
+
+            ((261 258) ; (not-an-executable-object)
+               `("illegal invocation of" ,a))
+            (259 ; (ff)
+               `(,a "is not a procedure"))
+            (260 ; (ff not-existent-key)
+               `("key" ,b "not found in" ,a))
+
+            ; ------------------------------------------------------------
+            ; syscall errors:
+            (62000
+               `(too ,(if (> a b) 'many 'few) arguments given to syscall))
+
+            (62001
+               `(syscall argument ,a is not a port))
+            (62002
+               `(syscall argument ,a is not a number))
+            (62003
+               `(syscall argument ,a is not a reference))
+            (62004
+               `(syscall argument ,a is not a binary sequence))
+            (62005
+               `(syscall argument ,a is not a string))
+            (62006
+               `(syscall argument ,a is not a string or port))
+            (62006
+               `(syscall argument ,a is not a positive number))
+
+
+            ;; (62000 ; syscall number is not a number
+            ;;    `(syscall "> " ,a is not a number))
+            ;; ;; 0, read
+            ;; (62001 ; too few/many arguments given to
+            ;;    `(syscall "> " too ,(if (> a b) 'many 'few) arguments given to))
+            ;; (62002 ;
+            ;;    `(syscall "> " ,a is not a port))
+            (else
+               (if (less? opcode 256)
+                  `(,(primop-name opcode) reported error ": " ,a " " ,b)
+                  `(,opcode " .. " ,a " " ,b))))))
+      ;   ;((eq? opcode 52)
+      ;   ;   `(trying to get car of a non-pair ,a))
+      ;   (else
+      ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
 
       ; -> (ok value env), (error reason env)
 

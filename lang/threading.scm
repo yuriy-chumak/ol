@@ -81,14 +81,22 @@
       (define (drop-delivering todo done state id msg tc)
          (let ((subs (subscribers-of state id)))
             (if (null? subs)
-               (begin
-                  ;; no threads were waiting for something that is being removed, so tell stderr about it
-                  (if (eq? (ref (ref msg 2) 1) 'error)
+            then
+               ;; no threads were waiting for something that is being removed, so tell stderr about it
+               (case (ref (ref msg 2) 1)
+                  ; (runtime-error ...)
+                  ('error
                      (vector-apply (ref msg 2)
                         (lambda (state continuation reason clarification)
                            (print-repl-error (list reason clarification)))))
+                  ; vm error
+                  ('crashed
+                     (vector-apply (ref msg 2)
+                        (lambda (state opcode a b)
+                           (print-repl-error (verbose-vm-error opcode a b))))))
                      
-                  (tc todo done (del state id)))
+               (tc todo done (del state id))
+            else
                (deliver-messages todo done
                   (del (fupd state link-tag (del (get state link-tag empty) id)) id)
                   subs msg tc))))
@@ -176,7 +184,7 @@
 
             ; 5, user thrown error. (runtime-error ...)
             (λ (id a b c todo done state tc)
-               ; (system-println "mcp: interop 5 -- user poof")
+               ; (system-println "mcp: interop 5 -- (runtime-error ...)")
                (drop-delivering todo done state id
                   [id ['error a b c]] tc))
 
