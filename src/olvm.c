@@ -2411,7 +2411,7 @@ mainloop:;
 
 		// ?
 	#	define SETREF 45
-	#	define SETREFE 10
+	#	  define SETREFE (SETREF + 1*64) // set-ref!
 
 		// ?
 	#	define EQQ   54
@@ -3116,16 +3116,22 @@ loop:;
 	}
 
 	// if position out of bounds will return unchanged object
-	case SETREF: { // (set-ref object position value), position starts from 1 to objects and 0 to blobs
+	case SETREF: {  // (set-ref object position value), position starts from 1 to objects and 0 to blobs
+					// (set-ref! object position value), position starts from 1 to objects and 0 to blobs
 		word *p = (word *)A0;
 		word result = IFALSE;
 
 		if (is_reference(p) && is_enum(A1)) {
 			word hdr = *p;
 			word size = header_size (hdr) - 1; // -1 for header
-			word *newobj = new (size);
-			for (ptrdiff_t i = 0; i <= size; i++)
-				newobj[i] = p[i];
+			word *newobj;
+			if (op == SETREF) { // __builtin_expect((x),1)
+				newobj = new (size);
+				for (ptrdiff_t i = 0; i <= size; i++)
+					newobj[i] = p[i];
+			}
+			else
+				newobj = p;
 			result = (word)newobj;
 
 			if (is_rawstream(p)) {

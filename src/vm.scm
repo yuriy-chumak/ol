@@ -156,8 +156,8 @@
          (primop 'vm:cast   2 1 vm:cast) ; (make-bytecode '(22 4 5 6    24 6)))
          (primop 'set-ref   3 1 set-ref) ; (make-bytecode '(45 4 5 6 7  24 7)))
          ; ну и мутаторы сюда же добавим
-         (primop 'vm:set!   5 1 vm:set!) ; (make-bytecode '(43 4 5 6 7 8 9  24 9))) ;; * experimental feature, do not use!
-         (primop 'set-ref!  3 1 set-ref!); (make-bytecode '(10 4 5 6 7      24 7)))
+         (primop 'vm:set!   5 1 vm:set!) ; (make-bytecode '( 43 4 5 6 7 8 9  24 9))) ;; * experimental feature, do not use!
+         (primop 'set-ref!  3 1 set-ref!); (make-bytecode '(109 4 5 6 7      24 7)))
 
          ; описатели
          (primop 'type   1 1 type) ; (make-bytecode '(15 4 5    24 5)))  ;; get type bits
