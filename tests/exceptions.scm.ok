@@ -6,4 +6,5 @@ exception: equal
 29
 exception 2: equal
 exception 1: equal
+exception: (error 261 -> (illegal invocation of 42))
 done.

@@ -10,7 +10,8 @@
 
    (import
       (scheme core)
-      (otus async))
+      (otus async)
+      (only (lang eval) verbose-vm-error))
 
 (begin
    (define (with-exception-handler handler thunk)
@@ -24,8 +25,7 @@
 
          ; (VM::FAIL ...), vm pushed an error
          (['crashed opcode a b]
-            (runtime-error "vm exception"
-               (list opcode a b)))
+            (handler (verbose-vm-error opcode a b)))
 
          ; (raise info)
          ; note, these could easily be made resumable by storing cont
