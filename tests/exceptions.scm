@@ -56,11 +56,4 @@
             (print (test 17 12))
             (print (test 77 77))))))
 
-; vm exception
-(with-exception-handler
-   (lambda (x)
-      (print "exception: " x))
-   (lambda ()
-      (42)))
-
 (print "done.")

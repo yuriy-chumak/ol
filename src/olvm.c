@@ -5,7 +5,7 @@
  *  Copyright(c) 2014 - 2022 Yuriy Chumak        (O,O)
  *                                               (  /(
  *                                           - ---"-"--- -
- *      Version 2.2
+ *      Version 2.3.1
  </pre>
  * - - -
  * #### LICENSE
@@ -2509,16 +2509,18 @@ mainloop:;
 loop:;
 	/*! #### OLVM Codes
 	 * TODO: check this
-	 * |   #  | o0        | o1        | o2     | o3   | o4       | o5     | o6     | o7    |
-	 * |:-----|:---------:|:---------:|:------:|:----:|:--------:|:------:|:------:|:-----:|
-	 * |**0o**| JIT       |    REFI   |  GOTO  |OCL-C |OCL-P     | MOV2   |CL1-C   |CL1-P  |
-	 * |**1o**| JEQ       |    MOVE   |set-ref!|      |          | LDI    | LD     | type  |
-	 * |**2o**| JP        |ARITY-ERROR|        |      | apply    |        | cast   | NEW   |
-	 * |**3o**| RET       |    JAF    | DIV    | SYS  |endianness|wordsize|fxmax   |xmbits |
-	 * |**4o**|tuple-apply|           |        |unreel| size     |FFRIGHTQ| ADD    | MUL   |
-	 * |**5o**| SUB       | FFREDQ    |MKBLACK |MKRED | less?    |set-ref |FFTOGGLE| ref   |
-	 * |**6o**| raw?      | ff-apply  | RUN    | cons | car      |cdr     | EQ     | AND   |
-	 * |**7o**| LOR       |    XOR    | SHR    | SHL  | RAW      |clock   |version |syscall|
+	 * |   #  | o0         | o1        | o2     | o3    | o4       | o5     | o6     | o7    |
+	 * |:-----|:----------:|:---------:|:------:|:-----:|:--------:|:------:|:------:|:-----:|
+	 * |**0o**| JIT        | REFI      | GOTO   | OCL-C | OCL-P    | MOV2   |CL1-C   |CL1-P  |
+	 * |**1o**| JEQ        | MOVE      | --     | JAF   | JAFX     | LDI    | LD     | type  |
+	 * |**2o**| JP         |ARITY-ERROR|        |       | apply    |        | cast   | NEW   |
+	 * |**3o**| RET        | JAF       | DIV    | SYS   |endianness|wordsize|fxmax   |xmbits |
+	 * |**4o**|vector-apply|           |        | unreel| size     |FFRIGHTQ| ADD    | MUL   |
+	 * |**5o**| SUB        | FFREDQ    | MKBLACK| MKRED | less?    |set-ref+|FFTOGGLE| ref   |
+	 * |**6o**| raw?       | ff-apply  | RUN    | cons | car      |cdr     | EQ     | AND   |
+	 * |**7o**| LOR        | XOR       | SHR    | SHL  | RAW      |clock   |   --   |syscall|
+	 * 
+	 * * set-ref+: `set-ref`, `set-ref!`
 	 */
 	switch ((op = *ip++) & 0x3F) {
 	/*! ##### JIT
@@ -3252,7 +3254,7 @@ loop:;
 		A3 = I(r & VMAX);
 		ip += 4; break; }
 	case SHIFT_LEFT: { // vm:shl a b hi lo
-		big_t r = ((big_t) value(A0)) << (value(A1));
+		big_t r = ((big_t) value(A0)) << (        value(A1));
 		A2 = I(r>>VBITS);
 		A3 = I(r & VMAX);
 		ip += 4; break; }
@@ -3260,8 +3262,8 @@ loop:;
 
 	case 28: // (vm:version)
 		A0 = (word) new_pair(TPAIR,
-				new_string(__OLVM_NAME__,    sizeof(__OLVM_NAME__)   -1),
-				new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__)-1));
+				new_string(__OLVM_NAME__,    sizeof(__OLVM_NAME__) - 1),
+				new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__) - 1));
 		ip += 1; break;
 	case 29: // (vm:features)
 		A0 = I(0
@@ -3424,10 +3426,7 @@ loop:;
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
 			node = *(word*)node;
-		if ((value_type (node) & (0x3C | t)) == (t|TFF))
-			A1 = ITRUE;
-		else
-			A1 = IFALSE;
+		A1 = ((value_type (node) & (0x3C | t)) == (t|TFF)) ? ITRUE : IFALSE;
 		ip += 2; break;
 	}
 
