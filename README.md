@@ -58,7 +58,9 @@ BUILD / INSTALL
 
 #### BUILD REQUIREMENTS
 
-GCC 3.2+ or CLANG 3.5+, GNU make
+* GCC 3.2+ / CLANG 3.5+
+* GNU MAKE
+* XXD for a full build ("xxd" is usually part of "vim" package), not required for olvm.
 
 
 #### BUILD
