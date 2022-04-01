@@ -2392,7 +2392,6 @@ mainloop:;
 	#	define VMNEW 23     // make a typed object (fast and simple)
 	#	define VMMAKE 18    // make a typed object (slow, but smart)
 	#		define VMALLOC (VMMAKE + 1*64)  // alloc a memory region
-	#	define VMMAKEB 19   // make a typed blob (formerly raw object)
 	#	define VMCAST 22
 	#	define VMSETE 43
 
@@ -2546,7 +2545,7 @@ loop:;
 	 * 
 	 * Throws "Invalid opcode" error.
 	 */
-	case 10:
+	case 19:
 	case 62:
 		FAIL(op, new_string("Unused opcode"), ITRUE);
 		break;
@@ -2835,10 +2834,16 @@ loop:;
 				word list = value;
 				if (is_numberp(value))
 					len = numberp(value);
-				else
-				while (is_pair(list)) {
-					++len;
-					list = cdr(list);
+				else {
+					while (is_pair(list)) {
+						++len;
+						list = cdr(list);
+					}
+					// we don't support improper lists
+					if (list != INULL) {
+						FAIL(op, this, I(size));
+						break;
+					}
 				}
 
 				// эта проверка необходима, так как действительно можно
@@ -2863,16 +2868,16 @@ loop:;
 
 				if (is_numberp(value)) { // no list, just
 					if (op == VMMAKE) {
-						word* wp = ptr;
+						word* wp = &ptr[1];
 						for (int i = 0; i < len; i++)
-							*++wp = el;
+							*wp++ = el;
 					}
 					else { // VMALLOC
 						unsigned char* wp = (unsigned char*)&ptr[1];
 						for (int i = 0; i < len; i++)
 							*wp++ = (unsigned char) elnum;
-						// clear the padding bytes, don't remove!
-						// actually not required, but sometimes very useful!
+						// clear the padding bytes:
+						// actually not required, but sometimes is very useful
 						while ((word)wp % sizeof(word))
 							*wp++ = 0;
 					}
@@ -2880,20 +2885,20 @@ loop:;
 				else
 				if ((is_pair(value)) || (value == INULL)) {
 					if (op == VMMAKE) {
-						word* wp = ptr;
+						word* wp = &ptr[1];
 						while (value != INULL) {
-							*++wp = car (value);
+							*wp++ = car (value);
 							value = cdr (value);
 						}
 					}
 					else { // VMALLOC
 						unsigned char* wp = (unsigned char*)&ptr[1];
-						while (is_pair(value) && len--) {
+						while (value != INULL) {
 							*wp++ = value(car(value)) & 255;
 							value = cdr (value);
 						}
-						// clear the padding bytes, don't remove!
-						while (len-- > 0) *wp++ = 0;
+						// clear the padding bytes:
+						// actually not required, but sometimes is very useful.
 						while ((word)wp % sizeof(word))
 							*wp++ = 0;
 					}
@@ -2911,7 +2916,6 @@ loop:;
 
 	 	ip += size + 1; break;
 	}
-
 
 	// операции посложнее
 	case CONS:   // cons a b -> r : Rr = (cons Ra Rb)
