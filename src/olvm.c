@@ -2899,7 +2899,7 @@ loop:;
 					assert (value == INULL);
 				}
 				else {
-					assert (0);
+					// invalid parameters
 					R[ip[size]] = IFALSE;
 				}
 				break;
