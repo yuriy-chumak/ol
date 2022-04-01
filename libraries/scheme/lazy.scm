@@ -1,10 +1,12 @@
 (define-library (scheme lazy)
-   (export 
-      (exports (scheme core)) )
+   (export
+      make-promise)
 
    (import
       (scheme core))
 
-   (begin
-      #true
+(begin
+
+   (define (make-promise obj)
+      (λ () obj))
 ))

@@ -184,8 +184,9 @@ R<sup>7</sup>RS DIFFERENCES
   * Extended form of `case` is available in Ol.
 
 * 4.2.5. Delayed evaluation
-  * **No** `delay-force`, `promise?` and `make-promise` in Ol.
+  * **No** `delay-force`, `promise?` in Ol.
     - note: `delay` and `force` exists, sure.
+    - note: `make-promise` exist too.
 
 * 4.2.7. Exception handling
   * **No** `guard` in Ol.
