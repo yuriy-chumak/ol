@@ -222,7 +222,7 @@
          (let ((vals (reverse rvals)))
             (if raw?
                ;; the leaf contains only fixnums 0-255, so make a compact leaf
-               (vm:makeb type-bytevector vals) ;; make node and reverse
+               (vm:alloc type-bytevector vals) ;; make node and reverse
                ;; the leaf contains other values, so need full 4/8-byte descriptors
                (vm:make type-vector-leaf vals))))
 

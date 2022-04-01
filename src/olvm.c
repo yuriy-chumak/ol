@@ -449,6 +449,15 @@ word*_b = NEW (size);\
 #define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
 #define new(...) NEW_MACRO(__VA_ARGS__, NEW_BLOB, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
 
+// allocate raw memory block
+#define new_alloc(type, length) ({\
+	int _size = (length);\
+	int _words = WALIGN(_size);\
+	int _pads = (_words * W - _size);\
+	\
+word* p = new (type, _words, _pads);\
+	/*return*/ p;\
+})
 
 // -= ports =-------------------------------------------
 // создает порт, НЕ аллоцирует память
@@ -820,21 +829,12 @@ word*p = new (TVECTOR, 13);\
 
 // -= остальные аллокаторы =----------------------------
 
-#define new_rawstream(type, length) ({\
-	int _size = (length);\
-	int _words = WALIGN(_size);\
-	int _pads = (_words * W - _size);\
-	\
-word* p = new (type, _words, _pads);\
-	/*return*/ p;\
-})
-
-#define new_bytevector(length) new_rawstream(TBYTEVECTOR, length)
+#define new_bytevector(length) new_alloc(TBYTEVECTOR, length)
 
 #define NEW_STRING2(string, length) ({\
 	char* _str = string;\
 	int _strln = length;\
-word* p = new_rawstream(TSTRING, _strln);\
+word* p = new_alloc(TSTRING, _strln);\
 	char* ptr = (char*)&p[1];\
 	while (_strln--)\
 		*ptr++ = *_str++;\
@@ -874,7 +874,7 @@ word _data = (word) a;\
 #ifdef OLVM_INEXACTS
 #define new_inexact(a) ({\
 inexact_t f = (inexact_t) a;\
-	word* me = new_rawstream (TINEXACT, sizeof(f));\
+	word* me = new_alloc (TINEXACT, sizeof(f));\
 	*(inexact_t*)&me[1] = f;\
 	/*return*/me;\
 })
@@ -2389,10 +2389,9 @@ mainloop:;
 	#	define JP    16      // JZ (16), JN (80), JT (144), JF (208)
 
 	// примитивы языка:
-	// todo: rename vm:new to vm:make or vm:mk ?
-	#	define VMNEW 23     // fast make a small object
-	#	define VMMAKE 18    // make a typed object
-	#	define VMMAKEB 19   // make a typed blob (formerly raw object)
+	#	define VMNEW 23     // make a typed object (fast and simple)
+	#	define VMMAKE 18    // make a typed object (slow, but smart)
+	#		define VMALLOC (VMMAKE + 1*64)  // alloc a memory region
 	#	define VMCAST 22
 	#	define VMSETE 43
 
@@ -2513,7 +2512,7 @@ loop:;
 	 * |:-----|:----------:|:---------:|:------:|:-----:|:--------:|:------:|:------:|:-----:|
 	 * |**0o**| JIT        | REFI      | GOTO   | OCL-C | OCL-P    | MOV2   |CL1-C   |CL1-P  |
 	 * |**1o**| JEQ        | MOVE      | --     | JAF   | JAFX     | LDI    | LD     | type  |
-	 * |**2o**| JP         |ARITY-ERROR|        |       | apply    |        | cast   | NEW   |
+	 * |**2o**| JP         |ARITY-ERROR|vm:make+|       | apply    |        | cast   | NEW   |
 	 * |**3o**| RET        | JAF       | DIV    | SYS   |endianness|wordsize|fxmax   |xmbits |
 	 * |**4o**|vector-apply|           |        | unreel| size     |FFRIGHTQ| ADD    | MUL   |
 	 * |**5o**| SUB        | FFREDQ    | MKBLACK| MKRED | less?    |set-ref+|FFTOGGLE| ref   |
@@ -2521,6 +2520,7 @@ loop:;
 	 * |**7o**| LOR        | XOR       | SHR    | SHL  | RAW      |clock   |   --   |syscall|
 	 * 
 	 * * set-ref+: `set-ref`, `set-ref!`
+	 * * vm:make+: `vm:make`, `vm:alloc`
 	 */
 	switch ((op = *ip++) & 0x3F) {
 	/*! ##### JIT
@@ -2545,9 +2545,9 @@ loop:;
 	 * 
 	 * Throws "Invalid opcode" error.
 	 */
-//	case 48:
+	case 19:
 	case 62:
-		FAIL(op, new_string("Invalid opcode"), ITRUE);
+		FAIL(op, new_string("Unused opcode"), ITRUE);
 		break;
 
 	/*! ##### GOTO
@@ -2823,9 +2823,11 @@ loop:;
 		word value = A1;
 
 		word el = IFALSE;
+		size_t elnum = 0;
 		switch (size) {
 			case 3:
 				el = A2;
+				elnum = (size_t) value(A2);
 				//no break
 			case 2: {
 				unsigned len = 0;
@@ -2840,7 +2842,8 @@ loop:;
 
 				// эта проверка необходима, так как действительно можно
 				//	выйти за пределы кучи (репродюсится стабильно)
-				if (fp + len > heap->end) {
+				int mult = (op == VMALLOC) ? sizeof(word) : 1;
+				if (fp + (len / mult) > heap->end) {
 					ptrdiff_t dp;
 					dp = ip - (unsigned char*)this;
 
@@ -2849,108 +2852,65 @@ loop:;
 					fp = heap->fp; this = ol->this;
 
 					ip = (unsigned char*)this + dp;
-					value = A1; // update value to actual
+					value = A1, el = A2; // reload values after possible gc
 				}
 
-				word *ptr = fp;
-				R[ip[size]] = (word)ptr; // result register
+				word *ptr = (op == VMMAKE)
+					? new (type, len)
+					: new_alloc(type, len);
+				R[ip[size]] = (word)ptr;
 
 				if (is_numberp(value)) { // no list, just
-					for (int i = 0; i < len; i++)
-						*++fp = el;
-					*ptr = make_header(type, ++fp - ptr);
-				}
-				else
-				if ((is_pair(value) && list == INULL) || (value == INULL)) { // proper list?
-					while (value != INULL) {
-						*++fp = car (value);
-						value = cdr (value);
+					if (op == VMMAKE) {
+						word* wp = ptr;
+						for (int i = 0; i < len; i++)
+							*++wp = el;
 					}
-					*ptr = make_header(type, ++fp - ptr);
+					else { // VMALLOC
+						unsigned char* wp = (unsigned char*)&ptr[1];
+						for (int i = 0; i < len; i++)
+							*wp++ = (unsigned char) elnum;
+						// clear the padding bytes, don't remove!
+						// actually not required, but sometimes very useful!
+						while ((word)wp % sizeof(word))
+							*wp++ = 0;
+					}
 				}
 				else
+				if ((is_pair(value)) || (value == INULL)) {
+					if (op == VMMAKE) {
+						word* wp = ptr;
+						while (value != INULL) {
+							*++wp = car (value);
+							value = cdr (value);
+						}
+					}
+					else { // VMALLOC
+						unsigned char* wp = (unsigned char*)&ptr[1];
+						while (is_pair(value) && len--) {
+							*wp++ = value(car(value)) & 255;
+							value = cdr (value);
+						}
+						// clear the padding bytes, don't remove!
+						while (len-- > 0) *wp++ = 0;
+						while ((word)wp % sizeof(word))
+							*wp++ = 0;
+					}
+					assert (value == INULL);
+				}
+				else {
+					assert (0);
 					R[ip[size]] = IFALSE;
+				}
 				break;
 			}
 			default:
-				FAIL(VMMAKE, this, I(size));
+				FAIL(op, this, I(size));
 		}
 
 	 	ip += size + 1; break;
 	}
 
-	// make raw reference object
-	case VMMAKEB: { // (vm:makeb type list|size {default})
-		word size = *ip++; // arguments count
-		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
-		word value = A1;
-
-		size_t el = 0;  // default is 0
-		switch (size) {
-			case 3:
-				el = (size_t) value(A2);
-				// no break
-			case 2: {
-				unsigned len = el;
-				if (is_numberp(value))
-					len = numberp(value);
-				else
-				if (!el) {
-					word list = value;
-					while (is_pair(list)) {
-						++len;
-						list = cdr(list);
-					}
-				}
-
-				// эта проверка необходима, так как действительно можно
-				//	выйти за пределы кучи (репродюсится стабильно)
-				if (fp + len / sizeof(word) > heap->end) {
-					ptrdiff_t dp;
-					dp = ip - (unsigned char*)this;
-
-					heap->fp = fp; ol->this = this;
-					heap->gc(ol, len);
-					fp = heap->fp; this = ol->this;
-
-					ip = (unsigned char*)this + dp;
-					value = A1; // update value to actual
-				}
-
-				word *ptr = new_rawstream(type, len);
-				R[ip[size]] = (word)ptr; // result
-
-				if (is_numberp(value)) {
-					unsigned char* wp = (unsigned char*)&ptr[1];
-					for (int i = 0; i < len; i++)
-						*wp++ = (unsigned char) el;
-					// clear the padding bytes, don't remove!
-					// actually not required, but sometimes very useful!
-					while ((word)wp % sizeof(word))
-						*wp++ = 0;
-				}
-				else
-				if (is_pair(value) || value == INULL) {
-					unsigned char* wp = (unsigned char*)&ptr[1];
-					while (is_pair(value) && len--) {
-						*wp++ = value(car(value)) & 255;
-						value = cdr (value);
-					}
-					// clear the padding bytes, don't remove!
-					while (len-- > 0) *wp++ = 0;
-					while ((word)wp % sizeof(word))
-						*wp++ = 0;
-				}
-				else
-					R[ip[size]] = IFALSE;
-				break;
-			}
-			default:
-				FAIL(VMMAKEB, this, I(size));
-		}
-
-	 	ip += size + 1; break;
-	}
 
 	// операции посложнее
 	case CONS:   // cons a b -> r : Rr = (cons Ra Rb)
@@ -3050,6 +3010,7 @@ loop:;
 
 	// todo: reference objects (with check for 'less?')
 	// * experimental feature, do not use!
+	// (vm:set! dst from src from to)
 	case VMSETE: {
 		char *p = (char *)A0;
 		word result = IFALSE;
@@ -3155,7 +3116,8 @@ loop:;
 			A3 = IFALSE;
 		ip += 4; break; }
 
-	case SETREFE: { // (set-ref! variable position value)
+	// deprecated:
+	case 10: { // (set-ref! variable position value)
 		word *p = (word *)A0;
 		word result = IFALSE;
 
@@ -4255,7 +4217,7 @@ loop:;
 							(char*) &fp[1],
 							(size_t) (heap->end - fp - 1) * sizeof(word),
 							string (A), timeinfo);
-					r = new_rawstream(TSTRING, len);
+					r = new_alloc(TSTRING, len);
 				}
 				else
 #endif
@@ -4759,7 +4721,7 @@ loop:;
 		word fn = value (A0);
 		inexact_t a = ol2f(A1);
 
-		A2 = (word) new_rawstream(TINEXACT, sizeof(inexact_t));
+		A2 = (word) new_alloc(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xFA: // fsqrt
 			*(inexact_t*)&car(A2) = __builtin_sqrt(a);
@@ -4810,7 +4772,7 @@ loop:;
 		inexact_t a = ol2f(A1);
 		inexact_t b = ol2f(A2);
 
-		A3 = (word) new_rawstream(TINEXACT, sizeof(inexact_t));
+		A3 = (word) new_alloc(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xD9: // fless?
 			A3 = (a < b) ? ITRUE : IFALSE;
@@ -5520,7 +5482,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 			int length = pos - (char*)(fp + 1);
 			// todo: check the memory!
 			if (length > 0) // если есть что добавить
-				userdata = (word) new_pair (new_rawstream(TSTRING, length), userdata);
+				userdata = (word) new_pair (new_alloc(TSTRING, length), userdata);
 		}
 
 		ol->heap.fp = fp;
