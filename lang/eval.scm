@@ -551,13 +551,13 @@
                         (5  (DIS 5 "MOV2"))
 
                         (22 (DIS 4 "VMCAST"))
-                        (45 (DIS 5 "SETREF"))
                         (43 (DIS 7 "VMSETE"))
-                        (10 (DIS 5 "SETREFE"))
+                        (45 (DIS 5 "SETREF"))
+                        (109 (DIS 5 "SETREFE"))
 
                         (23 (DIS (+ (caddr src) 5) "NEW"))
                         (18 (DIS (+ (cadr src) 3) "MAKE"))
-                        (19 (DIS (+ (cadr src) 3) "MAKEB"))
+                        (82 (DIS (+ (cadr src) 3) "ALLOC"))
 
                         (32 (DIS (+ (caddr src) 3) "VECTORAPPLY"))
 

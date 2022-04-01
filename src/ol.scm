@@ -377,7 +377,7 @@
          (open-output-file path))
 
       (bytes ;; encode entry as "autorun" function
-         (fasl-encode (vm:new type-constructor (make-entry main)))))
+         (fasl-encode (make-entry main))))
    (if (not port)
    then
       (print "Could not open " path " for writing")

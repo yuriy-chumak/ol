@@ -184,8 +184,8 @@
          #T)))
 
    (define (make-kore-page page)
-      (vm:new type-constructor (make-entry
+      (make-entry
          (lambda (args)
             (halt (vm:pin page))
-            kore-constructor!))))
+            kore-constructor!)))
 ))

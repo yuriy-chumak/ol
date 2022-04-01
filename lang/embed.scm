@@ -67,13 +67,14 @@
 (define (make-entry main)
    (let ((symbols (symbols-of main))
          (codes   (codes-of   main)))
-      (λ (vm-args)
-         (start-thread-controller
-            (list ; just 1 thread
-               ['main
-                  (λ ()
-                     (fork-symbol-interner symbols)
-                     (fork-bytecode-interner codes)
-                     (main vm-args))] )))))
+      (vm:new type-constructor
+         (λ (vm-args)
+            (start-thread-controller
+               (list ; just 1 thread
+                  ['main
+                     (λ ()
+                        (fork-symbol-interner symbols)
+                        (fork-bytecode-interner codes)
+                        (main vm-args))] ))))))
 
 ))
