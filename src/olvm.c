@@ -3171,19 +3171,19 @@ loop:;
 	// АЛУ (арифметическо-логическое устройство)
 	case ADDITION: { // vm:add a b  r o, types prechecked, signs ignored, assume fixnumbits+1 fits to machine word
 		word r = value(A0) + value(A1);
-		A2 = I(r & VMAX);
-		A3 = (r & HIGHBIT) ? ITRUE : IFALSE; // overflow?
+		A2 = I(r & VMAX); // speedup: A2 = I(r);
+		A3 = (r & HIGHBIT) ? ITRUE : IFALSE;
 		ip += 4; break; }
 	case SUBTRACTION: { // vm:sub a b  r u, args prechecked, signs ignored
 		word r = (value(A0) | HIGHBIT) - value(A1);
-		A2 = I(r & VMAX);
-		A3 = (r & HIGHBIT) ? IFALSE : ITRUE; // unsigned?
+		A2 = I(r & VMAX); // speedup: A2 = I(r);
+		A3 = (r & HIGHBIT) ? IFALSE : ITRUE;
 		ip += 4; break; }
 
 	case MULTIPLICATION: { // vm:mul a b l h
 		big_t r = (big_t) value(A0) * (big_t) value(A1);
 		A2 = I(r & VMAX);
-		A3 = I(r>>VBITS); //  & VMAX)
+		A3 = I(r>>VBITS);
 		ip += 4; break; }
 	case DIVISION: { // vm:div ah al b  qh ql r, b != 0, int64(32) / int32(16) -> int64(32), as enums
 		big_t a = (big_t) value(A1) | (((big_t) value(A0)) << VBITS);
