@@ -313,7 +313,7 @@
                         (let*((ll type (grab ll fail))
                               (ll size (get-number ll fail))
                               (ll rbytes (get-bytes ll size fail null))
-                              (obj (vm:makeb type ((if (eq? type type-inexact) copybytes reverse) rbytes))))
+                              (obj (vm:alloc type ((if (eq? type type-inexact) copybytes reverse) rbytes))))
                            (decode-object ll (rcons obj index) fail copybytes)))
                      ;; fasl stream end marker
                      ((eq? kind 0)

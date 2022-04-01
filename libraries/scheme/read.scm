@@ -22,8 +22,9 @@
                   (let loop ((cache cache) (pos pos))
                      (cond
                         ((eq? pos (size cache)) ; do we need to increase cache size?
-                           (let ((cache (vm:makeb type-bytevector (vector->list cache) (<< (size cache) 1))))
-                              (loop cache pos)))
+                           (let ((new-cache (vm:alloc type-bytevector (<< (size cache) 1))))
+                              (vm:set! new-cache 0 cache 0 (size cache))
+                              (loop new-cache pos)))
                         ((less? msg pos)
                            (mail sender (ref cache msg)))
                         (else

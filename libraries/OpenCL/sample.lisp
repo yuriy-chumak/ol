@@ -49,7 +49,7 @@
    (let*((length (make-bytevector '(0 0 0 0)))
          (_ (check (clGetPlatformInfo platform name 0 null length)))
          (length (->int length))
-         (info (vm:makeb type-string (repeat 0 length)))
+         (info (vm:alloc type-string (repeat 0 length)))
          (_ (check (clGetPlatformInfo platform name length info null))))
       info))
 
@@ -77,7 +77,7 @@
    (let*((length (make-bytevector '(0 0 0 0)))
          (_ (check (clGetDeviceInfo device name 0 null length)))
          (length (->int length))
-         (info (vm:makeb type-string (repeat 0 length)))
+         (info (vm:alloc type-string (repeat 0 length)))
          (_ (check (clGetDeviceInfo device name length info null))))
       info))
 
@@ -113,7 +113,7 @@
 ;(if (not (eq? CL_SUCCESS built))
 ;   (begin
 ;      (define sizeof-log 256)
-;      (define log (vm:makeb type-string (repeat 0 sizeof-log)))
+;      (define log (vm:alloc type-string (repeat 0 sizeof-log)))
 ;      (clGetProgramBuildInfo program device CL_PROGRAM_BUILD_LOG sizeof-log log null)
 ;      (print "CL Compilation failed: " log)))
 

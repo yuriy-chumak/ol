@@ -107,7 +107,7 @@
       ;; make bytecode and intern it
       (define (bytes->bytecode bytes)
          (await (mail bytecode-server
-            (vm:makeb type-bytecode bytes))))
+            (vm:alloc type-bytecode bytes))))
 
 
       (define (reg a)

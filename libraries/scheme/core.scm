@@ -11,7 +11,7 @@
       ; that do not need to be exported by libraries:
       ;
       ; object creation/modification:
-      ;   vm:new vm:make vm:makeb vm:cast
+      ;   vm:new vm:make vm:alloc vm:cast
       ;   cons set-ref set-ref!
       ; other object manipulations:
       ;   car cdr ref type size eq? less?
@@ -1472,7 +1472,7 @@
       ; procedure:  (make-string k char)
 ;      (define make-string
 ;         (case-lambda
-;            ((k) (vm:vm:makeb type-string k))
+;            ((k) (vm:vm:alloc type-string k))
 ;            ((k char) (app a (app b (appl cs appl) app) app))
 ;            ((a) a)
 ;            (() '()))))
@@ -1615,13 +1615,13 @@
       (define make-bytevector
          (case-lambda
             ((k)
-               (vm:makeb type-bytevector k))
+               (vm:alloc type-bytevector k))
             ((k byte)
-               (vm:makeb type-bytevector k byte))))
+               (vm:alloc type-bytevector k byte))))
 
       ; procedure: (bytevector byte ...)
       (define (bytevector . bytes)
-         (vm:makeb type-bytevector bytes))
+         (vm:alloc type-bytevector bytes))
 
       ; * extra bytevector staff implemented in (scheme bytevector)
       ; procedure: (bytevector-length bytevector)           * (scheme bytevector)

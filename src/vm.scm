@@ -136,7 +136,7 @@
       (setq primop (lambda (name in out code)
          (vm:new TVECTOR name (ref code 0) in out code))) ; * makes primop record
       (setq make-bytecode (lambda (bytecode)
-         (vm:makeb TBYTECODE bytecode))) ; * makes bytecode from list
+         (vm:alloc TBYTECODE bytecode))) ; * makes bytecode from list
       (setq list (lambda args args))
 
       ; -----------------------------------------------------------------------
@@ -149,9 +149,9 @@
       ; note: uncomment 'make-bytecode' if you want to change a primop bytecode
       (setq *primops* (list
          ; прямые аллокаторы
-         (primop 'vm:new   'any 1 vm:new)   ; (make-bytecode '(23 0 0 0 0))) ;; make new object, simplest and fastest allocator
-         (primop 'vm:make  'any 1 vm:make)  ; (make-bytecode '(18 0 0))) ;; make object, slower but smarter allocator
-         (primop 'vm:makeb 'any 1 vm:makeb) ; (make-bytecode '(19 0 0 0))) ;; make binary (raw) object = (bytestream)
+         (primop 'vm:new   'any 1 vm:new)   ; (make-bytecode '(23))) ;; make new object, simplest and fastest allocator
+         (primop 'vm:make  'any 1 vm:make)  ; (make-bytecode '(18))) ;; make object, slower but smarter allocator
+         (primop 'vm:alloc 'any 1 vm:alloc) ; (make-bytecode '(82))) ;; make binary (raw) object = (bytestream)
          ; косвенные аллокаторы
          (primop 'vm:cast   2 1 vm:cast) ; (make-bytecode '(22 4 5 6    24 6)))
          (primop 'set-ref   3 1 set-ref) ; (make-bytecode '(45 4 5 6 7  24 7)))
@@ -247,8 +247,8 @@
 
       ; notes:
       ;  vm:new - simplest and fastest allocator, creates only objects, can't create objects with more than 256 elements
-      ;  vm:make - smarter allocator, can create objects with size and default element
-      ;  vm:makeb - same as vm:make, but for binary (raw, blob) objects
+      ;  vm:make - smarter allocator, can create sized objects with default element
+      ;  vm:alloc - like vm:make, but for binary (raw, blob) objects
       (setq NEW (opcode 'vm:new))        ; no real (vm:new) command required, check rtl-primitive in (lang rtl)
 
       ; The origins of the names for CAR and CDR, on the other hand, are esoteric: CAR is an acronym from
@@ -288,7 +288,7 @@
       (setq variable-input-arity-primops (list
          (opcode 'vm:new)
          (opcode 'vm:make)
-         (opcode 'vm:makeb)
+         (opcode 'vm:alloc)
          (opcode 'syscall)))
 
       (setq special-bind-primops (list

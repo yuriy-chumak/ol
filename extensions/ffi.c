@@ -2436,7 +2436,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 				// ansi
 				if (!utf8q) { // likely
-					result = new_rawstream(TSTRING, len);
+					result = new_alloc(TSTRING, len);
 					char* str = (char*) &car(result);
 					memcpy(str, (char*)(word)got, len);
 				}
