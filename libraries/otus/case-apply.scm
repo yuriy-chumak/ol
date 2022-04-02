@@ -1,0 +1,34 @@
+(define-library (otus case-apply)
+   (export
+      case-apply)
+   (import
+      (src vm)
+      (scheme core))
+(begin
+
+   (define (get-arity func)
+      (case (type func)
+         (type-bytecode
+            (case (ref func 0)
+               (11 ; JAF
+                  (-- (ref func 1)))
+               (else
+                  #false)))
+         (type-procedure
+            (get-arity (ref func 1)))
+         (type-closure
+            (get-arity (ref func 1)))
+         (else
+            #false)))
+
+   (define (case-apply f . args)
+      (define arity (get-arity f))
+      (if arity
+         (let loop ((args args))
+            (unless (null? args)
+               (define arg (car args))
+               (if (and (pair? arg) (eq? arity (car arg)))
+                  (apply f (cdr arg))
+                  (loop (cdr args)))))))
+
+))
