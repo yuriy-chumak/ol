@@ -37,15 +37,18 @@ Luakit, Iceape, etc.
 Q/A
 ---
 
-1. Q. Why no arrow keys processing and a history in Ol command line?<br/>
+1. Q. Why no **arrow keys** processing and a history in Ol command line?<br/>
    A. For the simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool: `$ rlwrap ol` .
 
-1. Q. You reference to licenses MIT and LGPL. Can I freely choose between these two licenses?<br/>
+1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?<br/>
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
 1. Q. Anything else interesting?<br/>
-   A. Yes, Ol provides simplest HTTP web-server for sharig a local folder over an inter/intra-net.
+   A. Yes, Ol provides **simplest HTTP web-server** for sharig a local folder over an inter/intra-net.
       Just type `$ echo ,l http/server| ol`.
+
+1. Q. Anything else interesting?<br/>
+   A. Yes, Ol works on a **Chromebook** (thx to [@the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) for the test).
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus_lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus_lisp) web-client) channel is available (the previous Freenode channel is closed).
