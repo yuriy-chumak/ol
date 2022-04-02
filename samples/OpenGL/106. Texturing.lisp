@@ -16,7 +16,7 @@
    (SOIL_load_OGL_texture "media/background.png" SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0))
 
 ; draw
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glEnable GL_TEXTURE_2D)

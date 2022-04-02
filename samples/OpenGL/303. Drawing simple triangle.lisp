@@ -43,7 +43,7 @@
 
 
 ; draw loop
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glBindBuffer GL_ARRAY_BUFFER VBO)

@@ -34,5 +34,5 @@
 (print "   GL_POINT_SPRITE: " GL_POINT_SPRITE)
 
 ; draw loop
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)))

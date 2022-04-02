@@ -5,6 +5,7 @@
 (import
    (otus lisp) (otus ffi)
    (scheme dynamic-bindings)
+   (otus case-apply)
    (lib gl config)
    (lib keyboard))
 
@@ -696,9 +697,11 @@
                               (print "unknown event: " event)))))))
                ; проделаем все действия
                (let ((renderer (get dictionary 'renderer #f)))
-                  (if renderer (begin
-                     (renderer (gl:GetMousePos (get dictionary 'context #f)))
-                     (gl:SwapBuffers (get dictionary 'context #f)))))
+                  (when renderer
+                     (case-apply renderer
+                        (list 0)
+                        (list 1 (gl:GetMousePos (get dictionary 'context #f))))
+                     (gl:SwapBuffers (get dictionary 'context #f))))
                ;; (let*((dictionary
                ;;       ; 1. draw (if renderer exists)
                ;;       (or (call/cc (lambda (return)

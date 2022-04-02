@@ -18,5 +18,5 @@
 (glClearColor 0.3 0.3 0.3 1)
 
 ; draw loop
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)))

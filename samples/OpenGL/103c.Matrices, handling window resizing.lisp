@@ -15,7 +15,7 @@
 (define started (let*((ss ms (clock))) (cons ss ms)))
 
 ; draw
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
    (define now (let*((ss ms (clock))) (cons ss ms)))

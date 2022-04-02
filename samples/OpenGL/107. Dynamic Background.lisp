@@ -44,7 +44,7 @@
    (print WHITE "Press [left arrow] or [right arrow] to move the picture.")
 ))
 ; draw
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
    (glLoadIdentity)
    (glOrtho 0 1 0 1 0 1)
