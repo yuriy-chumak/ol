@@ -290,17 +290,27 @@ ol:
 
 
 # emscripten version 1.37.40+
-
 ol.wasm: src/olvm.c tmp/repl.c
 	emcc src/olvm.c \
 	     tmp/repl.c -DREPL=repl \
 	     -O3 -o ol.html \
-	   -DHAS_DLOPEN=0 -DHAS_SOCKETS=0 \
+	         -Iincludes \
+	   -DHAS_DLOPEN=0 -DHAS_SOCKETS=0\
 	   -s ASYNCIFY \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \
 	   -s FORCE_FILESYSTEM=0 \
-	   -s WASM=1
+	   -s WASM=1 && \
+	sed -i -r -e 's/(if\(result===undefined&&bytesRead===0\)\{)(throw)/\1bytesRead=-1;\2/g' \
+	          -e 's/(Input: "\);if\(result!==null)/\1\&\&result!==undefined/' \
+	          -e 's/(if\(!result\)\{return )null/\1result/' \
+	    ol.js
+
+#	          -e 's/(symbol=)(UTF8ToString\(symbol\))/\1"_"+\2/' ol.js
+#	   extensions/ffi.c
+#	   -s MAIN_MODULE \
+#	   -s EXPORTED_FUNCTIONS=['_main','_OLVM_ffi','_OLVM_idf','_OLVM_sizeof','_OLVM_mkcb'] \
+
 # important note: fix for emscripten to asyncify stdin:
 # @@ -755,6 +755,7 @@ var TTY = {
 #                                         throw new FS.ErrnoError(29)
