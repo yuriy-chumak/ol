@@ -1297,19 +1297,19 @@
 
       ; procedure:  (append list ...)
       (define append
-         (let*((app (lambda (a b app)
-                  (if (null? a)
-                     b
-                     (cons (car a) (app (cdr a) b app)))))
-               (appl (lambda (l appl)
-                  (if (null? (cdr l))
-                     (car l)
-                     (app (car l) (appl (cdr l) appl) app)))))
-         (case-lambda
-            ((a b) (app a b app))
-            ((a b . cs) (app a (app b (appl cs appl) app) app))
-            ((a) a)
-            (() '()))))
+         (letrec ((app (lambda (a b)
+                     (if (null? a)
+                        b
+                        (cons (car a) (app (cdr a) b)))))
+                  (appl (lambda (l)
+                     (if (null? (cdr l))
+                        (car l)
+                        (app (car l) (appl (cdr l)))))))
+            (case-lambda
+               ((a b) (app a b))
+               ((a b . cs) (app a (app b (appl cs))))
+               ((a) a)
+               (() '()))))
       ; todo: asserts!
       ;; (append ’(x) ’(y))
       ;; (append ’(a) ’(b c d))
