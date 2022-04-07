@@ -487,4 +487,13 @@
       ("rpd2d3" . ,fft-double)))
 
 ; ============
+; vararg support
+(define format (this fft-int "format" type-string))
+(format "[%i %f %i %f]\n"
+   (cons fft-int 42)
+   (cons fft-double 43.34)
+   (cons fft-int 44)
+   (cons fft-double 45.54))
+
+;=============
 (print "done.")

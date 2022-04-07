@@ -591,3 +591,40 @@ item20 iistruct202struct20(int x, int y, item20 z)
 	printf(" = { %d, %d, %d, %d, %d, %d, %d}\n", i.x, i.y, z.x, z.y, z.z, z.w1, z.w2); fflush(stdout);
 	return i;
 }
+
+// -----------------------------------------------------------------------------------
+#include <stdarg.h>
+
+int format(const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+
+	size_t len = strlen(format);
+    for (int i = 0; i < len; i++) {
+		if (format[i] == '%') {
+			char ch = format[++i];
+			switch (ch) {
+				case 'i': {
+					int x = va_arg(ap, int);
+					printf("%d", x);
+					break;
+				}
+				case 'f': {
+					double x = va_arg(ap, double);
+					printf("%f", x);
+					break;
+				}
+				default:
+					printf("%c", ch);
+					break;
+			}
+
+		}
+		else
+			printf("%c", format[i]);
+	}
+    va_end(ap);
+	fflush(stdout);
+    return 0;
+}

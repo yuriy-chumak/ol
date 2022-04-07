@@ -378,8 +378,13 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
-	"pushq %r9",
-	"andq  $-16, %rsp",
+	"movq  %rcx, %rax", // vararg support (rbp-8)
+	"addq  %rdx, %rax",
+	"pushq %rax",
+
+	"pushq %r9", // function (rbp-16)
+	"andq  $-16, %rsp", // stack align
+
 	// 1. если есть флоаты, то заполним их
 "1:",
 	"testq %rcx, %rcx",
@@ -449,7 +454,8 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 	"movq   8(%rdi), %rsi",
 	"movq   0(%rdi), %rdi",
 
-	"callq *-8(%rbp)",
+	"movq  -8(%rbp), %rax",
+	"callq *-16(%rbp)",
 
 	// вернем результат
 	"cmpl $46, 16(%rbp)", // TFLOAT
@@ -1240,9 +1246,13 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	word* p = (word*)C;   // ol arguments
 	word* t = (word*)cdr (B); // rtty
 
-	while ((word)p != INULL && (word)t != INULL) { // пока есть аргументы
+	while ((word)p != INULL) { // пока есть аргументы
 		//int type = value(car(t)); // destination type
-		int type = is_value(car(t)) ? value(car(t)) : reference_type(car(t));
+		int type = (t == RNULL)
+			 ? TANY
+			 : is_value(car(t))
+			 	? value(car(t))
+				: reference_type(car(t));
 		word arg = (word)car(p);
 
 		again:
@@ -1347,9 +1357,9 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			i++;
 #endif
 		p = (word*)cdr(p); // (cdr p)
-		t = (word*)cdr(t); // (cdr t)
+		t = (t == RNULL) ? RNULL : (word*)cdr(t); // (cdr t)
 	}
-	if ((word)t != INULL || (word)p != INULL) {
+	if (t != RNULL || p != RNULL) {
 		E("Arguments count mismatch", 0);
 		return (word*)IFALSE;
 	}
@@ -1415,10 +1425,14 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 	while ((word)p != INULL) { // пока есть аргументы
 		assert (reference_type(p) == TPAIR); // assert(list)
-		assert (reference_type(t) == TPAIR); // assert(list)
+		assert (t == RNULL || reference_type(t) == TPAIR); // assert(list)
 
-//		int type = value(car(t)); // destination type
-		int type = is_value(car(t)) ? value(car(t)) : reference_type(car(t));
+		int type = (t == RNULL) // destination type
+			 ? TANY
+			 : is_value(car(t))
+			 	? value(car(t))
+				: reference_type(car(t));
+
 		word arg = (word) car(p);
 
 /*		// todo: add argument overriding as PAIR as argument value
@@ -1441,13 +1455,13 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		any:
 		if (arg == IFALSE) // #false is universal "0" value
 		switch (type) {
-#if UINT64_MAX > UINTPTR_MAX
+#if UINT64_MAX > UINTPTR_MAX // 32-bits
 		case TINT64:
 		case TUINT64:
 		case TDOUBLE:
-			args[++i] = 0; 	// for 32-bits: double and longlong fills two words
+			args[++i] = 0; 	// double and longlong fills two words
 			break;
-#endif
+#endif // 64-bit
 #if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
 		case TFLOAT:
 		case TDOUBLE:
@@ -1658,11 +1672,11 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
 				*(double*)&ad[d++] = OL2D(arg); --i;
 				floatsmask|=1;
-			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
+			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?) // todo: check varargs
 				*(double*)&af[f++] = OL2D(arg); --i; f++;
 			#else
 				*(double*)&args[i] = OL2D(arg);
-			# if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__ // UINT64_MAX > SIZE_MAX // sizeof(double) > sizeof(float) //__LP64__
+			# if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__ // sizeof(double) > sizeof(float)
 				++i; 	// for 32-bits: double fills two words
 			# endif
 			#endif
@@ -1982,7 +1996,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		i++;
 		p = (word*)cdr(p); // (cdr p)
-		t = (word*)cdr(t); // (cdr t)
+		t = (t == RNULL) ? RNULL : (word*)cdr(t); // (cdr t)
 	}
 #ifdef __EMSCRIPTEN__
 	fmask |= 1 << i;

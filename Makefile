@@ -260,7 +260,7 @@ slim: CFLAGS += -DHAS_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
 slim: release
 
 ffi: CFLAGS += $(CFLAGS_DEBUG)
-ffi: src/olvm.c extensions/ffi.c
+ffi: src/olvm.c extensions/ffi.c tests/ffi.c
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
 	   tests/ffi.c \
