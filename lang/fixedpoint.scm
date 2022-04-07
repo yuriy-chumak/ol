@@ -153,6 +153,8 @@
                      ['lambda-var fixed? formals (walk body)]))
                (['ifeq a b then else]
                   ['ifeq (walk a) (walk b) (walk then) (walk else)])
+               (['brae fn else]
+                  ['brae (walk fn) (walk else)])
                (['values vals]
                   ['values (map walk vals)])
                (['values-apply op fn]
