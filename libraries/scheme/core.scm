@@ -1257,16 +1257,16 @@
       ; Otherwise the initial contents of each element is unspeci-
       ; fied.
       (define make-list
-         (let ((make (lambda (n fill)
-                        (let loop ((n n) (out '()))
-                           (if (eq? n 0)
-                              out
-                              (loop (-- n) (cons fill out)))))))
+         (define make (lambda (n fill)
+            (let loop ((n n) (out '()))
+               (if (eq? n 0)
+                  out
+                  (loop (-- n) (cons fill out))))))
          (case-lambda
             ((k)
                (make k #false))
             ((k fill)
-               (make k fill)))))
+               (make k fill))))
 
       ; procedure:  (list obj ...)
       (define-syntax list
@@ -1310,18 +1310,12 @@
                ((a b . cs) (app a (app b (appl cs))))
                ((a) a)
                (() '()))))
-      ; todo: asserts!
-      ;; (append ’(x) ’(y))
-      ;; (append ’(a) ’(b c d))
-      ;; (append ’(a (b)) ’((c))) =⇒
-      ;; =⇒
-      ;; =⇒ (x y)
-      ;; (a b c d)
-      ;; (a (b) (c))
-      ;; (append ’(a b) ’(c . d))
-      ;; (append ’() ’a) =⇒
-      ;; =⇒ (a b c . d)
-      ;; a
+
+      (assert (append '(x) '(y))       ===> '(x y))
+      (assert (append '(a) '(b c d))   ===> '(a b c d))
+      (assert (append '(a (b)) '((c))) ===> '(a (b) (c)))
+      (assert (append '(a b) '(c . d)) ===> '(a b c . d))
+      (assert (append '() 'a)          ===> 'a)
 
       ; procedure:  (reverse list)
       (define (reverse list)
