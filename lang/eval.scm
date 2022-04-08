@@ -532,8 +532,8 @@
                         (7  (DIS (+ (cadr src) 3) "CLOC1(deprecated)"))
                         (48 (DIS (+ (caddr src) 4) "CLOS"))
 
-                        (54 (DIS 4 "EQQ"))
-                        (44 (DIS 4 "LESSQ"))
+                        (54 (DIS 4 "EQ?"))
+                        (44 (DIS 4 "LESS?"))
 
                         (14 (DIS 3 "LD"))
 
@@ -550,46 +550,47 @@
                         (9  (DIS 3 "MOVE"))
                         (5  (DIS 5 "MOV2"))
 
-                        (22 (DIS 4 "VMCAST"))
-                        (43 (DIS 7 "VMSETE"))
-                        (45 (DIS 5 "SETREF"))
-                        (109 (DIS 5 "SETREFE"))
+                        (22 (DIS 4 "CAST"))
+                        (43 (DIS 7 "SET!"))
+
+                        (10 (DIS 5 "SETREF"))
+                        (74 (DIS 5 "SETREF!"))
 
                         (23 (DIS (+ (caddr src) 5) "NEW"))
                         (18 (DIS (+ (cadr src) 3) "MAKE"))
                         (82 (DIS (+ (cadr src) 3) "ALLOC"))
 
-                        (32 (DIS (+ (caddr src) 3) "VECTORAPPLY"))
+                        (32 (DIS (+ (caddr src) 3) "VECTOR-APPLY"))
 
-                        (38 (DIS 5 "ADDITION"))
-                        (40 (DIS 5 "SUBTRACTION"))
-                        (26 (DIS 7 "DIVISION"))
-                        (39 (DIS 5 "MULTIPLICATION"))
+                        (38 (DIS 5 "ADD"))
+                        (40 (DIS 5 "SUB"))
+                        (26 (DIS 7 "DIV"))
+                        (39 (DIS 5 "MUL"))
 
                         (55 (DIS 4 "AND"))
                         (56 (DIS 4 "IOR"))
                         (57 (DIS 4 "XOR"))
-                        (58 (DIS 5 "SHIFT_RIGHT"))
-                        (59 (DIS 5 "SHIFT_LEFT"))
+                        (58 (DIS 5 "SHR"))
+                        (59 (DIS 5 "SHL"))
 
                         (33 (DIS 4 "FP1"))
                         (34 (DIS 5 "FP2"))
 
-                        (49 (DIS 6 "FFAPPLY"))
-                        (42 (DIS 6 "FFBLACK"))
-                        (106(DIS 6 "FFRED"))
-                        (105(DIS 3 "FFRIGHT?"))
-                        (46 (DIS 3 "FFTOGGLE"))
-                        (41 (DIS 3 "FFREDQ"))
+                        (49 (DIS 6 "FF-APPLY"))
+                        (42 (DIS 6 "FF:BLACK"))
+                        (106(DIS 6 "FF:RED"))
+                        (46 (DIS 3 "FF:TOGGLE"))
+                        (41 (DIS 3 "FF:RED?"))
+                        (105(DIS 3 "FF:RIGHT?"))
 
                         (61 (DIS 3 "CLOCK"))
 
                         (63 (DIS (+ (cadr src) 3) "SYSCALL"))
 
-                        (30 (DIS 2 "vm:maxvalue"))
-                        (31 (DIS 2 "vm:valuewidth"))
-                        (28 (DIS 2 "vm:version"))
-                        (29 (DIS 2 "vm:features"))
+                        (28 (DIS 2 "VERSION"))
+                        (29 (DIS 2 "FEATURES"))
+                        (30 (DIS 2 "VMAX"))
+                        (31 (DIS 2 "VSIZE"))
 
                         (35 (DIS 3 "PIN"))
                         (60 (DIS 3 "UNPIN"))
