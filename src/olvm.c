@@ -2511,7 +2511,7 @@ loop:;
 	 * TODO: check this
 	 * |   #  | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
 	 * |:-----|:----------:|:---------:|:-------:|:-----:|:-------:|:-------:|:--------:|:------:|
-	 * |**0o**| JIT        | REFI      | GOTO    | OCL-C | OCL-P   | MOV2    | CL1-C    | CL1-P  |
+	 * |**0o**| JIT        | REFI      | GOTO    |  ---  |  -----  | MOV2    |  ------  |  ----  |
 	 * |**1o**| JEQ        | MOVE      | set-ref+| JAF   | JAFX    | LD+     | LD       | TYPE   |
 	 * |**2o**| JP         |ARITY-ERROR| vm:make+|  ---  | APPLY   | NOP     | CAST     | NEW    |
 	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION | FEATURES| VMAX     | VSIZE  |
@@ -2771,10 +2771,10 @@ loop:;
 		tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
 		while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
 
-	case 3: OCLOSE(TCLOS); break; //continue; (2%)
-	case 4: OCLOSE(TPROC); break; //continue; (1%)
-	case 6: CLOSE1(TCLOS); break; //continue; (2%)
-	case 7: CLOSE1(TPROC); break; //continue; (1%)
+//	case 3: OCLOSE(TCLOS); break; //continue; (2%)
+//	case 4: OCLOSE(TPROC); break; //continue; (1%)
+//	case 6: CLOSE1(TCLOS); break; //continue; (2%)
+//	case 7: CLOSE1(TPROC); break; //continue; (1%)
 	// < DEPRECATED
 
 	case CLOS:
