@@ -2367,7 +2367,7 @@ mainloop:;
 	#	define ARITY_ERROR 17
 	#	define VMEXIT 37
 
-	#	define SYS   27
+	#	define MCP   27
 
 	// 3, 4: OCLOSE
 	// 6, 7: CLOSE1
@@ -2409,7 +2409,7 @@ mainloop:;
 	#	define REF   47
 
 		// ?
-	#	define SETREF 45
+	#	define SETREF 10
 	#	  define SETREFE (SETREF + 1*64) // set-ref!
 
 		// ?
@@ -2613,10 +2613,10 @@ loop:;
 		goto apply;
 	}
 
-	/*! ##### SYS
+	/*! ##### MCP
 	 */
 	// do mcp operation with continuation
-	case SYS: // (1%) sys continuation op arg1 arg2
+	case MCP: // (1%) sys continuation op arg1 arg2
 		this = R[0];
 		R[0] = IFALSE; // let's call mcp
 		R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
