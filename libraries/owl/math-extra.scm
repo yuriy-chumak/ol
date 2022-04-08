@@ -52,7 +52,7 @@
                (let ((tl (cdr n)))
                   (if (null? tl)
                      (nbits (car n) f)
-                     (nbits tl (add f (vm:valuewidth))))))))
+                     (nbits tl (add f (vm:vsize))))))))
 
       ; приблизительное значение корня "для затравки"
       (define (isqrt-init n)

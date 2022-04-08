@@ -88,7 +88,7 @@
       ; biggest enum value (that can be stored as a value)
       (define-syntax max-enum-value
          (syntax-rules ()
-            ((max-enum-value) (vm:maxvalue))))
+            ((max-enum-value) (vm:vmax))))
 
       ; biggest before highest bit is set (needed in some bignum ops)
       (define-syntax max-enum-value/2
@@ -100,7 +100,7 @@
       ; the width of a value in bits
       (define-syntax enum-bit-width
          (syntax-rules ()
-            ((enum-bit-width) (vm:valuewidth))))
+            ((enum-bit-width) (vm:vsize))))
 
 
       ; --------------------------------------------------
@@ -1239,7 +1239,7 @@
                   (cond
                      ((null? dr) (values tl dr)) ; failed below
                      (dr
-                        (let ((d (subi d 1))) ; int- (of was -vm:maxvalue), fix- or fix+
+                        (let ((d (subi d 1))) ; int- (of was -vm:vmax), fix- or fix+
                            (if (negative? d)
                               (values (ncons (addi d *first-bignum*) tl) #true) ; borrow
                               (values (ncons d tl) #false))))
@@ -1323,7 +1323,7 @@
             (lets ((rb (nrev b)))
                (if (less? #b000000111111111111111111 (ncar rb))
                   ; scale them to get a more fitting head for b
-                  ; and also get rid of the special case where it is vm:maxvalue
+                  ; and also get rid of the special case where it is vm:vmax
                   (>> (nat-rem-reverse (<< a 12) (<< b 12)) 12)
                   (let ((r (rrem (nrev a) rb)))
                      (cond

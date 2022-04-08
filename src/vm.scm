@@ -209,10 +209,10 @@
          (primop 'ff:right? 1 1 ff:right?) ; (make-bytecode '(105 4        5  24 5))) ; 105 = 41+(1<<6)
 
          ; vm-specific constants
-         (primop 'vm:maxvalue   0 1 vm:maxvalue)  ; (make-bytecode '(30 4)))
-         (primop 'vm:valuewidth 0 1 vm:valuewidth); (make-bytecode '(31 4)))
-         (primop 'vm:version    0 1 vm:version)   ; (make-bytecode '(28 4)))
-         (primop 'vm:features   0 1 vm:features)  ; (make-bytecode '(29 4)))
+         (primop 'vm:version  0 1 vm:version)  ; (make-bytecode '(28 4)))
+         (primop 'vm:features 0 1 vm:features) ; (make-bytecode '(29 4)))
+         (primop 'vm:vmax     0 1 vm:vmax)     ; (make-bytecode '(30 4)))
+         (primop 'vm:vsize    0 1 vm:vsize)    ; (make-bytecode '(31 4)))
 
          ; pinned objects
          (primop 'vm:pin    1 1 vm:pin)   ; (make-bytecode '(35 4 5  24 5)))

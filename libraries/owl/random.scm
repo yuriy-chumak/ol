@@ -235,7 +235,7 @@
       (define (bitmask num)
          (if (eq? num 0)
             1
-            (let loop ((n (vm:maxvalue)))
+            (let loop ((n (vm:vmax)))
                (lets ((np _ (vm:shr n 1)))
                   (if (less? np num) ;; we lost the high bit
                      n

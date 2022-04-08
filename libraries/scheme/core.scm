@@ -27,7 +27,7 @@
       ;   vm:pin, vm:unpin, vm:deref
       ;   clock, syscall
       ; info:
-      ;   vm:version vm:maxvalue vm:valuewidth vm:features
+      ;   vm:version vm:vmax vm:vsize vm:features
       ; associative arrays (fixed functions) support:
       ;   ff:red ff:black ff:toggle ff:red? ff:right?
       ; execution flow manipulation:
