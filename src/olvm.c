@@ -109,23 +109,23 @@ void*OLVM_allocate (olvm_t* ol, unsigned words);
 
 // -----------------------------------------------------
 // descriptor format
-// заголовок объекта, то, что лежит у него в ob[0] (*ob):
-//  [... ssssssss ????rppp tttttt10] // bit "immediate" у заголовков всегда(!) выставлен в 1 (почему?, а для GC!)
-//   '----------| '--||'-| '----|
-//              |    ||  |      '-----> object type
-//              |    ||  '------------> number of padding (unused) bytes at end of object if raw (0-(wordsize-1))
-//              |    |'---------------> rawness bit (raw objects have no descriptors(pointers) in them)
-//              |    '----------------> your tags here! e.g. tag for closing file descriptors in gc, etc.
-//              '---------------------> object size in words
+// заголовок объекта, находится по адресу 0 (ob[0], *ob):
+//  [s...sss ????rppp tttttt10] // bit 2 у заголовков всегда(!) выставлен в 1 (для GC!)
+//   '-----| '--||'-| '----|
+//         |    ||  |      '-----> tttttt,  object type
+//         |    ||  '------------> ppp,     number of padding (unused) bytes at the end of object, if raw (0-(wordsize-1))
+//         |    |'---------------> r,       rawness bit (raw objects have no descriptors(pointers) in them)
+//         |    '----------------> ????,    your tags here! e.g. tag for closing file descriptors in gc, etc. not used for now
+//         '---------------------> s...sss, object size in words
 //
-// а это то, что лежит в объектах - либо непосредственное значение, либо указатель на другой объект:
-//                       .------------> payload if immediate
-//                       |      .-----> type tag if immediate
-//                       |      |.----> immediateness
-//   .-------------------| .----||.---> mark bit (can only be 1 during gc, removable?)
-//  [... pppppppp pppppppp tttttti0]
+// а это то, что лежит в объектах - либо непосредственные значения, либо указатели на другие объекты:
+//                       .------------> value, if 'v' is set
+//                       |      .-----> type, if 'v' is set
+//                       |      |.----> 'v' bit
+//   .-------------------| .----||.---> mark bit (can be 1 only during gc process)
+//  [... pppppppp pppppppp ttttttv0]
 //   '----------------------------|
-//                                '-----> word aligned pointer if not immediate (4- or 8-byte)
+//                                '-----> word aligned pointer if not a value ('v' cleared) (4- or 8-byte)
 //      младшие 2 нулевые бита для указателя (mark бит снимается при работе) позволяют работать только с выравненными
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
@@ -134,10 +134,9 @@ void*OLVM_allocate (olvm_t* ol, unsigned words);
 //; to the right of them, so all types must be <32 until they can be slid to right
 //; position.
 
-// todo: вот те 4 бита можно использовать для кастомных типов - в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
-//	и ptr на функцию, что делает финализацию.
-// todo: один бит из них я заберу на индикатор "неперемещенных" заголовков во время GC
-//	(идея: просто останавливаться на таких объектах, как на generation линии?)
+// todo: вот те 4 бита можно использовать для кастомных типов,
+// например, в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
+//	         и ptr на функцию, что делает финализацию.
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
 #define IPOS      8  // === bits offset of (struct value_t, payload)
@@ -258,6 +257,10 @@ object_t
 #define W                           (sizeof (word)) // todo: change to WSIZE
 #define WALIGN(x)                   (((x) + W - 1) / W)
 
+// makes positive olvm integer value from int
+// I() is a deprecated name
+#define I(val) \
+		(make_value(TENUMP, val))  // === (value << VPOS) | 2
 // makes olvm reference from system pointer (and just do sanity check in DEBUG)
 #define R(v) ({\
 		word _reference = (word)(v);\
@@ -318,23 +321,6 @@ object_t
 #define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
 #define TDLSYM                      (62) // type-dlsym, temp name
 
-// constants:
-#define IFALSE                      make_value(TCONST, 0)
-#define ITRUE                       make_value(TCONST, 1)
-#define INULL                       make_value(TCONST, 2)
-#define IEMPTY                      make_value(TCONST, 3) // empty ff
-#define IEOF                        make_value(TCONST, 4)
-#define IHALT                       INULL // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
-#define IRETURN                     make_value(TCONST, 6)
-
-#define RFALSE  ((word*)IFALSE)
-#define RTRUE   ((word*)ITRUE)
-#define RNULL   ((word*)INULL)
-#define REMPTY  ((word*)IEMPTY)
-#define REOF    ((word*)IEOF)
-#define RHALT   ((word*)IHALT)
-#define RRETURN ((word*)IRETURN)
-
 //#define likely(x)                   __builtin_expect((x), 1)
 //#define unlikely(x)                 __builtin_expect((x), 0)
 
@@ -359,10 +345,6 @@ object_t
 #define is_numbern(ob)              (is_enumn(ob) || is_npairn(ob))
 #define is_number(ob)               (is_numberp(ob) || is_numbern(ob))
 
-// makes positive olvm integer value from int
-#define I(val) \
-		(make_value(TENUMP, val))  // === (value << IPOS) | 2
-
 // взять значение аргумента:
 #define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
 #define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
@@ -376,6 +358,25 @@ object_t
 #define cdar(o)                     cdr(car(o))
 #define cddr(o)                     cdr(cdr(o))
 
+// constants:
+// #define I(val)
+// 		(make_value(TENUMP, val))  // === (value << VPOS) | 2, deprecated name
+#define IFALSE                      make_value(TCONST, 0) // I(0)
+#define ITRUE                       make_value(TCONST, 1)
+#define INULL                       make_value(TCONST, 2)
+#define IEMPTY                      make_value(TCONST, 3) // empty ff
+#define IEOF                        make_value(TCONST, 4)
+//#define IHALT                       INULL // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
+#define IHALT                       make_value(TCONST, 5) // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
+#define IRETURN                     make_value(TCONST, 6)
+
+#define RFALSE  ((word*)IFALSE)
+#define RTRUE   ((word*)ITRUE)
+#define RNULL   ((word*)INULL)
+#define REMPTY  ((word*)IEMPTY)
+#define REOF    ((word*)IEOF)
+#define RHALT   ((word*)IHALT)
+#define RRETURN ((word*)IRETURN)
 
 // ------- service functions ------------------
 void E(char* format, ...);
@@ -2357,7 +2358,7 @@ mainloop:;
 
 	// безусловный переход
 	#	define GOTO   2       // jmp a, nargs
-	#	define CLOS  48       // todo: move to 3
+	#	define CLOS  48       // todo: move to 3?
 
 	// управляющие команды
 	#	define NOP   21
@@ -2418,6 +2419,28 @@ mainloop:;
 
 	#	define FP1 33
 	#	define FP2 34
+
+		// tuples, trees
+	#	define VECTORAPPLY 32
+	#	define FFAPPLY 49
+
+	#	define FFLEAF    42 // make ff leaf
+	#	define FFBLACK   FFLEAF
+	#	define FFRED    (FFLEAF + (1<<6))
+	#	define FFTOGGLE  46 // toggle ff leaf color
+	#	define FFREDQ    41 // is ff leaf read?
+	#	define FFRIGHTQ (FFREDQ + (1<<6)) // if ff leaf right?
+
+		// ALU
+	#	define ADDITION       38
+	#	define DIVISION       26
+	#	define MULTIPLICATION 39
+	#	define SUBTRACTION    40
+	#	define BINARY_AND     55
+	#	define BINARY_IOR     56
+	#	define BINARY_XOR     57
+	#	define SHIFT_RIGHT    58
+	#	define SHIFT_LEFT     59
 
 	#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 
@@ -2481,43 +2504,21 @@ mainloop:;
 	#		define SYSCALL_DLSYM 177
 	#		define SYSCALL_DLERROR 178
 
-		// tuples, trees
-	#	define VECTORAPPLY 32
-	#	define FFAPPLY 49
-
-	#	define FFLEAF    42 // make ff leaf
-	#	define FFBLACK   FFLEAF
-	#	define FFRED    (FFLEAF + (1<<6))
-	#	define FFTOGGLE  46 // toggle ff leaf color
-	#	define FFREDQ    41 // is ff leaf read?
-	#	define FFRIGHTQ (FFREDQ + (1<<6)) // if ff leaf right?
-
-		// ALU
-	#	define ADDITION       38
-	#	define DIVISION       26
-	#	define MULTIPLICATION 39
-	#	define SUBTRACTION    40
-	#	define BINARY_AND     55
-	#	define BINARY_IOR     56
-	#	define BINARY_XOR     57
-	#	define SHIFT_RIGHT    58
-	#	define SHIFT_LEFT     59
-
 	// ENTRY LOOP POINT
 	int op; //operation to execute
 loop:;
 	/*! #### OLVM Codes
 	 * TODO: check this
-	 * |   #  | o0         | o1        | o2     | o3    | o4       | o5     | o6     | o7    |
-	 * |:-----|:----------:|:---------:|:------:|:-----:|:--------:|:------:|:------:|:-----:|
-	 * |**0o**| JIT        | REFI      | GOTO   | OCL-C | OCL-P    | MOV2   |CL1-C   |CL1-P  |
-	 * |**1o**| JEQ        | MOVE      | --     | JAF   | JAFX     | LDI    | LD     | type  |
-	 * |**2o**| JP         |ARITY-ERROR|vm:make+|       | apply    |        | cast   | NEW   |
-	 * |**3o**| RET        | JAF       | DIV    | SYS   |endianness|wordsize|fxmax   |xmbits |
-	 * |**4o**|vector-apply|           |        | unreel| size     |FFRIGHTQ| ADD    | MUL   |
-	 * |**5o**| SUB        | FFREDQ    | MKBLACK| MKRED | less?    |set-ref+|FFTOGGLE| ref   |
-	 * |**6o**| raw?       | ff-apply  | RUN    | cons | car      |cdr     | EQ     | AND   |
-	 * |**7o**| LOR        | XOR       | SHR    | SHL  | RAW      |clock   |   --   |syscall|
+	 * |   #  | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
+	 * |:-----|:----------:|:---------:|:-------:|:-----:|:-------:|:-------:|:--------:|:------:|
+	 * |**0o**| JIT        | REFI      | GOTO    | OCL-C | OCL-P   | MOV2    | CL1-C    | CL1-P  |
+	 * |**1o**| JEQ        | MOVE      | set-ref+| JAF   | JAFX    | LD+     | LD       | TYPE   |
+	 * |**2o**| JP         |ARITY-ERROR| vm:make+|  ---  | APPLY   | NOP     | CAST     | NEW    |
+	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION | FEATURES| VMAX     | VSIZE  |
+	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE    | EXIT    | ADD      | MUL    |
+	 * |**5o**| SUB        | FF:RED?   | FF:BLACK| SET!  | LESS?   |  -----  | FF:TOGGLE| REF    |
+	 * |**6o**| CLOS       | FF:APPLY  | RUN     | CONS  | CAR     | CDR     | EQ?      | AND    |
+	 * |**7o**| IOR        | XOR       | SHR     | SHL   | UNPIN   | CLOCK   |  ------  | SYSCALL|
 	 * 
 	 * * set-ref+: `set-ref`, `set-ref!`
 	 * * vm:make+: `vm:make`, `vm:alloc`
@@ -3114,37 +3115,6 @@ loop:;
 		}
 		else
 			A3 = IFALSE;
-		ip += 4; break; }
-
-	// deprecated:
-	case 10: { // (set-ref! variable position value)
-		word *p = (word *)A0;
-		word result = IFALSE;
-
-		// this code is same as set-ref
-		// todo: merge it into one function
-		if (is_reference(p) && is_enum(A1)) {
-			word hdr = *p;
-			word size = header_size (hdr) - 1; // -1 for header
-			result = (word) p;
-			if (is_rawstream(p)) {
-				CHECK(is_enump(A2), A2, 10001)
-				size = size * sizeof(word) - header_pads(hdr);
-				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
-				if (pos < size) // will add [0..255] numbers
-					((unsigned char*)&car(p))[pos] = enum(A2) & 0xFF;
-			}
-			else {
-				++size;
-				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
-				if (pos && pos < size) // objects are indexed from 1
-					p[pos] = A2;
-			}
-			A3 = result;
-		}
-		else
-			A3 = IFALSE;
-
 		ip += 4; break; }
 
 	case EQQ: // (eq? a b)
