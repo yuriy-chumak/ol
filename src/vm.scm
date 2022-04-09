@@ -98,11 +98,10 @@
       ;; Список кодов виртуальной машины, используемых
       ;;  компилятором, которые не экспозятся на сам язык
 
-      (setq GOTO 2) ; jmp a, nargs    call Ra with nargs args
-      ;(setq GOTO-CODE 18) ; not used for now, check (fn-type)
-      ;(setq GOTO-PROC 19) ; not used for now, check (fn-type)
-      ;(setq GOTO-CLOS 21) ; not used for now, check (fn-type)
-      (setq RET  24)
+      ; procedure/closure support
+      (setq GOTO 2) ; jmp a, nargs - call Ra with nargs args
+      (setq CLOS 3) ; clos type, size, o, nenv, e0 ... en, t
+      (setq RET 24)
 
       ; set
       (setq MOVE  9) ; move a, t:      Ra -> Rt
@@ -115,9 +114,6 @@
       (setq LDN  77)  ; (+ 13 (<< 1 6))) ; 77
       (setq LDT 141)  ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
       (setq LDF 205)  ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
-
-      ; procedure/closure support
-      (setq CLOS 48) ; clos type, size, o, nenv, e0 ... en, t:
 
       ; conditional jumps
       (setq JEQ   8)  ; jeq a b o1 o2

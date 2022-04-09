@@ -2511,17 +2511,18 @@ loop:;
 	 * TODO: check this
 	 * |   #  | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
 	 * |:-----|:----------:|:---------:|:-------:|:-----:|:-------:|:-------:|:--------:|:------:|
-	 * |**0o**| JIT        | REFI      | GOTO    |  ---  |  -----  | MOV2    |  ------  |  ----  |
+	 * |**0o**| JIT        | REFI      | GOTO    | CLOS  |  -----  | MOV2    |  ------  |  ----  |
 	 * |**1o**| JEQ        | MOVE      | set-ref+| JAF   | JAFX    | LD+     | LD       | TYPE   |
 	 * |**2o**| JP         |ARITY-ERROR| vm:make+|  ---  | APPLY   | NOP     | CAST     | NEW    |
 	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION | FEATURES| VMAX     | VSIZE  |
 	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE    | EXIT    | ADD      | MUL    |
 	 * |**5o**| SUB        | FF:RED?   | FF:BLACK| SET!  | LESS?   |  -----  | FF:TOGGLE| REF    |
-	 * |**6o**| CLOS       | FF:APPLY  | RUN     | CONS  | CAR     | CDR     | EQ?      | AND    |
+	 * |**6o**|  --------  | FF:APPLY  | RUN     | CONS  | CAR     | CDR     | EQ?      | AND    |
 	 * |**7o**| IOR        | XOR       | SHR     | SHL   | UNPIN   | CLOCK   |  ------  | SYSCALL|
 	 * 
 	 * * set-ref+: `set-ref`, `set-ref!`
 	 * * vm:make+: `vm:make`, `vm:alloc`
+	 * * LD+: `LDE`, `LDN`, `LDT`, `LDF`
 	 */
 	switch ((op = *ip++) & 0x3F) {
 	/*! ##### JIT
@@ -2760,22 +2761,6 @@ loop:;
 
 		ip += 3; break;
 	}
-
-	// DEPRECATED >
-	#define OCLOSE(proctype)            { \
-		word size = *ip++, tmp; word *T = new (proctype, size-1); \
-		tmp = R[*ip++]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
-		while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-	#define CLOSE1(proctype)            { \
-		word size = *ip++, tmp; word *T = new (proctype, size-1); \
-		tmp = R[  1  ]; tmp = ((word *) tmp)[*ip++]; T[1] = tmp; tmp = 2; \
-		while (tmp != size) { T[tmp++] = R[*ip++]; } R[*ip++] = (word) T; }
-
-//	case 3: OCLOSE(TCLOS); break; //continue; (2%)
-//	case 4: OCLOSE(TPROC); break; //continue; (1%)
-//	case 6: CLOSE1(TCLOS); break; //continue; (2%)
-//	case 7: CLOSE1(TPROC); break; //continue; (1%)
-	// < DEPRECATED
 
 	case CLOS:
 	{	// CLOS type size r i a1 a2 a3 a4 ...
@@ -5337,23 +5322,18 @@ OLVM_new(unsigned char* bootstrap)
 	}
 	// точка входа в программу - бутстрап, обрабатывающий список автовыполняемых функций
 	else {
-		// (define (construction args objects)
-		// (foldr (lambda (constructor args)
-		// 		(constructor args))
-		// 	args objects))
-		// где objects - список автостартующих функций (лежит в [nobjs]), заменяет в загрузчике последнюю лямбду
-		// args - аргументы, которые предоставляет функция OLVM_run (а мы пока положим #null)
+		// objects: список автостартующих функций (лежит в [nobjs]),
+		//          заменяет в загрузчике последнюю лямбду
+		// args: аргументы, которые предоставляет функция OLVM_run
+		//       (а мы пока положим #null)
 		//
-		// (fasl-encode construction):
-		// unsigned char construction[] = {2,16,12,11,4,0,7,1,1,2,7,2,7,5,0,2,16,33,11,1,0,28,1,1,4,4,1,1,3,5,1,1,2,6,9,4,8,5,5,9,3,5,5,6,4,9,3,2,8,3,0,2,16,27,11,5,0,22,80,6,16,0,52,6,8,53,6,6,7,5,2,8,3,4,3,2,7,5,24,5,0,2,16,26,11,3,0,21,1,1,2,6,1,1,3,7,5,6,9,5,6,5,4,5,7,4,2,9,4,0,1,17,2,2,3,1,17,2,5,1,2,16,13,11,3,0,8,5,4,7,5,4,2,7,2,0,1,17,3,4,2,1,0};
-
 		// (define (construction args objects)
 		//    (unless (null? objects)
 		//       (construction args (cdr objects))
 		//       ((car objects) args)))
 		//
 		// (fasl-encode construction):
-		unsigned char construction[] = {2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,23,11,1,0,18,1,1,2,4,52,4,5,1,1,4,3,1,1,3,4,2,5,2,17,2,16,31,11,4,0,26,80,5,18,0,53,5,7,48,17,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,4,1,0};
+		unsigned char construction[] = {2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,23,11,1,0,18,1,1,2,4,52,4,5,1,1,4,3,1,1,3,4,2,5,2,17,2,16,31,11,4,0,26,80,5,18,0,53,5,7,3,17,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,4,1,0};
 
 		word wc = 0;
 		word no = count_fasl_objects(&wc, construction); // подсчет количества слов и объектов в образе

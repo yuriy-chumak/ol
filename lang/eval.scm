@@ -516,6 +516,7 @@
                         (36 (DIS 3 "SIZE"))
 
                         (2  (DIS 3 "GOTO"))
+                        (3  (DIS (+ (caddr src) 4) "CLOS"))
 
                         (16 (DIS 4 "JZ"))
                         (80 (DIS 4 "JN"))
@@ -526,11 +527,6 @@
                         (11 (DIS 4 "JAF"))
                         (12 (DIS 4 "JAFX"))
 
-                        (3  (DIS (+ (cadr src) 3) "CLOS0(deprecated)"))
-                        (4  (DIS (+ (cadr src) 3) "CLOC0(deprecated)"))
-                        (6  (DIS (+ (cadr src) 3) "CLOS1(deprecated)"))
-                        (7  (DIS (+ (cadr src) 3) "CLOC1(deprecated)"))
-                        (48 (DIS (+ (caddr src) 4) "CLOS"))
 
                         (54 (DIS 4 "EQ?"))
                         (44 (DIS 4 "LESS?"))
