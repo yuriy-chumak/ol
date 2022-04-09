@@ -1092,16 +1092,12 @@
       ;
       ; This data types related to olvm, not a part of r7rs
 
-      (define type-pair              TPAIR)   ; reference
-      (define type-vector            TVECTOR) ; reference
-      (define type-string            TSTRING) ; reference, blob / todo: -> 35 (#b100000 + 3)?
-      (define type-symbol            TSYMBOL) ; reference
+      (define type-pair             TPAIR)    ; reference
+      (define type-vector           TVECTOR)  ; reference
+      (define type-string           TSTRING)  ; reference, blob / todo: -> 35 (#b100000 + 3)?
+      (define type-symbol           TSYMBOL)  ; reference
 
-      (define type-string-wide       TSTRINGWIDE) ; reference
-      ; 6
-      ; 7
-      ;(define type-ff-black-leaf     8) ; reference ; todo: move to 28 ?
-      ; 9
+      (define type-string-wide      TSTRINGWIDE) ; reference
 
       (define type-rlist-spine      10) ; reference
       (define type-vector-leaf      11) ; reference
@@ -1118,21 +1114,7 @@
       (define type-bytevector       TBYTEVECTOR) ; reference, blob
       (define type-constructor      TCONSTRUCTOR); reference, constructor
 
-      ; 20
       (define type-string-dispatch  21) ; reference
-      ; 22
-      ; 23
-
-      ;; transitional trees or future ffs
-      (define type-ff               24) ; reference
-      (define type-ff-r             25) ; reference
-      (define type-ff-red           26) ; reference
-      (define type-ff-red-r         27) ; reference
-      ; + type-ff-red, type-ff-right
-
-      ;28
-      ;29
-      ;30
 
       (define type-thread-state     31) ; reference
       (define type-vptr             49) ; reference,  blob
@@ -1984,7 +1966,7 @@
       type-string type-string-wide type-string-dispatch
       type-thread-state
       type-vptr
-      type-ff type-ff-r type-ff-red type-ff-red-r
+      ;type-ff type-ff-r type-ff-red type-ff-red-r
       ; 6.3  Booleans
       not boolean?
       ; 6.4. Pairs and lists

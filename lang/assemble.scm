@@ -194,7 +194,7 @@
             (['ld val to cont]
                (cond
                   ;; todo: add implicit load values to free bits of the instruction
-                  ((eq? val null)
+                  ((eq? val #null)
                      (cons* LDN (reg to)
                         (assemble cont fail)))
                   ((eq? val #false)

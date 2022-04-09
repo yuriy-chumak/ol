@@ -55,43 +55,38 @@
       ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
       ; 6
       ; 7
-      ;(setq type-ff-black-leaf 8) ; reference ; TODO: move to 28
+      ;setq type-ff-black-leaf 8) ; reference ; TODO: move to 28
       ; 9
 
-      ;(setq type-rlist-spine  10) ; reference, used by rlist (not retested)
+      ;setq type-rlist-spine  10) ; reference, used by rlist (not retested)
       (setq type-vector-leaf  11) ; reference
 
       (setq TPORT             12) ; value or reference
       (setq TCONST            13) ; value
 
-      ;(setq type-rlist-node   14) ; reference, used by rlist (not retested)
+      ;setq type-rlist-node   14) ; reference, used by rlist (not retested)
       (setq type-vector-dispatch 15) ; reference
 
       (setq TBYTECODE         16) ; reference, a bytecode
       (setq TPROCEDURE        17) ; reference, pure function
       (setq TCLOSURE          18) ; reference, function with closures
-      (setq TCONSTRUCTOR      63) ; reference, autorun function(constructor)
 
       (setq TBYTEVECTOR       19) ; reference, raw
       ; 20
       (setq type-string-dispatch 21) ; reference
+      ; 22 ?
       ; 23
 
-      ;; transitional trees or future ffs
-      (setq type-ff           24) ; reference
-      (setq type-ff-r         25) ; reference
-      (setq type-ff-red       26) ; reference
-      (setq type-ff-red-r     27) ; reference
-      ; + type-ff-red, type-ff-right
-
-      ;28
-      ;29
-      ;30
+      ; 24..27 ff types
+      ; 28
+      ; 29
+      ; 30
 
       (setq type-thread-state 31) ; reference
 
       (setq TVPTR             49) ; reference, blob
       (setq TCALLABLE         61) ; reference, blob
+      (setq TCONSTRUCTOR      63) ; reference, autorun function(constructor)
 
 
       ; -------------------------------------------

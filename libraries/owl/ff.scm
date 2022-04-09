@@ -52,6 +52,13 @@
 
       (define (empty? x) (eq? x empty))
 
+      ;; transitional trees or future ffs
+      ;(setq type-ff           24) ; reference
+      ;(setq type-ff-r         25) ; reference
+      ;(setq type-ff-red       26) ; reference
+      ;(setq type-ff-red-r     27) ; reference
+      ; + type-ff-right
+
       ;; shadowed below
       ;(define (black l k v r)
       ;   (if (eq? l #empty)

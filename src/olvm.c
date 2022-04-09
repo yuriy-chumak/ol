@@ -139,7 +139,8 @@ void*OLVM_allocate (olvm_t* ol, unsigned words);
 //	         и ptr на функцию, что делает финализацию.
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
-#define IPOS      8  // === bits offset of (struct value_t, payload)
+#define IPOS      8  // === bits offset of (struct value_t, value), deprecated name
+#define VPOS      8  // === bits offset of (struct value_t, value)
 
 #define TPOS      2  // === bits offset of (struct header_t, type) and (struct value_t, type)
 #define PPOS      8  // === bits offset of (struct header_t, padding)
@@ -151,10 +152,10 @@ struct __attribute__ ((aligned(sizeof(word)), packed))
 value_t
 {
 	unsigned char mark : 1;    // mark bit (can be 1 only during gc)
-	unsigned char i    : 1;    // always 1
+	unsigned char v    : 1;    // always 1
 	unsigned char type : 6;    // value type
 
-	unsigned char payload[sizeof(word) - 1];
+	unsigned char value[sizeof(word) - 1];
 };
 
 // some critical vm limitations:
@@ -168,9 +169,9 @@ reference_t
 	union {
 		struct {
 			unsigned mark : 1;    // mark bit (can be 1 only during gc)
-			unsigned i    : 1;    // always 0
+			unsigned v    : 1;    // always 0
 		};
-		uintptr_t ptr; // btw, normally lower two bits is always 0
+		uintptr_t ptr; // btw, normally lower two bits is always 0, so this pointer always word-aligned
 	};
 };
 
@@ -183,17 +184,17 @@ struct __attribute__ ((aligned(sizeof(word)), packed))
 object_t
 {
 	union {
-		struct {
-			unsigned char mark : 1;    // always 0, (mark by 1 during gc)
-			unsigned char i    : 1;    // object mark, always 1
+		struct header_t {
+			unsigned char mark : 1;    // always 0, (can be 1 only during GC)
+			unsigned char i    : 1;    // always 1, required by GC
 			unsigned char type : 6;    // object type
 
 			unsigned char padding : 3; // number of padding (empty) bytes after the end of reasonable object data
-			unsigned char rawness : 1; // 1 for rawstream, 0 for vectors
+			unsigned char rawness : 1; // 1 for raw stream, 0 for vectors (tuples)
 
-			unsigned char size[sizeof(word) - 2];
-		};
-		word ref[1];
+			unsigned char size[sizeof(word) - 2]; // object size in words, including header one
+		} header;
+		word ref[1]; // we don't like empty objects
 	};
 };
 
@@ -234,13 +235,14 @@ object_t
 // ------------------------------------------------------
 
 #define VBITS                       ((sizeof (word) * 8) - 8) // bits in value (short, or 'enum' number)
-#define HIGHBIT                     ((int_t)1 << VBITS) // maximum value value + 1
+#define VSIZE                       ((sizeof (word) * 8) - 8) // bits in value (short, or 'enum' number)
+#define HIGHBIT                     ((int_t)1 << VSIZE) // maximum value value + 1
 #define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
 
 #define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (rawstream bit)
 #define BINARY                      (RAWBIT >> TPOS)
 
-#define make_value(type, value)     (2 | ((word)(value) << IPOS) | ((type) << TPOS))
+#define make_value(type, value)     (2 | ((word)(value) << VPOS) | ((type) << TPOS))
 
 // header making macro
 #define _header3(type, size, padding)(2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
@@ -262,6 +264,7 @@ object_t
 #define I(val) \
 		(make_value(TENUMP, val))  // === (value << VPOS) | 2
 // makes olvm reference from system pointer (and just do sanity check in DEBUG)
+// R means Reference
 #define R(v) ({\
 		word _reference = (word)(v);\
 		assert (!(_reference & (W-1)) && "olvm references must be aligned to word boundary");\
@@ -270,7 +273,7 @@ object_t
 // всякая всячина:
 #define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
 #define object_size(x)              (((word)(x)) >> SPOS)
-#define header_pads(x)              (unsigned char) ((((word)(x)) >> IPOS) & 7) // header_t(x).padding
+#define header_pads(x)              (unsigned char) ((((word)(x)) >> VPOS) & 7) // header_t(x).padding
 
 #define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
 #define reference_type(x)           (value_type (*R(x)))
@@ -278,6 +281,7 @@ object_t
 #define reference_size(x)           ((header_size(*R(x)) - 1))
 #define rawstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
 
+// types:
 // todo: объединить типы TENUMP и TINTP, TENUMN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
 #define TVECTOR                      (2)
@@ -346,7 +350,7 @@ object_t
 #define is_number(ob)               (is_numberp(ob) || is_numbern(ob))
 
 // взять значение аргумента:
-#define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> IPOS); })
+#define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> VPOS); })
 #define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
 
 #define ref(ob, n)                  ((R(ob))[n])
@@ -471,7 +475,7 @@ word* p = new (type, _words, _pads);\
 //	object handle. The per-process limit on kernel handles is 2^24.
 #define is_port(ob)  ((is_value(ob)     && value_type(ob)     == TPORT) ||\
                       (is_reference(ob) && reference_type(ob) == TPORT))
-#define make_port(a) ({ word _p = (word)a; assert (((word)_p << IPOS) >> IPOS == (word)_p); make_value(TPORT, _p); })
+#define make_port(a) ({ word _p = (word)a; assert (((word)_p << VPOS) >> VPOS == (word)_p); make_value(TPORT, _p); })
 #define port(o)      ({ word _p = (word)o; is_port(_p) ? value(_p) : car(_p); })
 
 #define new_port(arg1) ({ \
@@ -660,7 +664,7 @@ word*p = new (TVECTOR, 13);\
 #define enum(v) \
 	({  word _x1 = (word)(v);    \
 		assert(is_enum(_x1));     \
-		int_t y1 = (_x1 >> IPOS);\
+		int_t y1 = (_x1 >> VPOS);\
 		value_type (_x1) == TENUMN ? -y1 : y1; \
 	})//(x1 & 0x80) ? -y1 : y1;
 #define make_enum(v) \
@@ -2358,7 +2362,7 @@ mainloop:;
 
 	// безусловный переход
 	#	define GOTO   2       // jmp a, nargs
-	#	define CLOS  48       // todo: move to 3?
+	#	define CLOS   3
 
 	// управляющие команды
 	#	define NOP   21
@@ -2369,9 +2373,6 @@ mainloop:;
 	#	define VMEXIT 37
 
 	#	define MCP   27
-
-	// 3, 4: OCLOSE
-	// 6, 7: CLOSE1
 
 	#	define JAF   11
 	#	define JAFX  12
@@ -2508,7 +2509,7 @@ mainloop:;
 	int op; //operation to execute
 loop:;
 	/*! #### OLVM Codes
-	 * TODO: check this
+	 * 
 	 * |   #  | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
 	 * |:-----|:----------:|:---------:|:-------:|:-----:|:-------:|:-------:|:--------:|:------:|
 	 * |**0o**| JIT        | REFI      | GOTO    | CLOS  |  -----  | MOV2    |  ------  |  ----  |
@@ -2776,8 +2777,6 @@ loop:;
 		R[*ip++] = (word) T; // R[ret] = T
 		break;
 	}
-
-	// others: 1,2,3 %%)
 
 	/************************************************************************************/
 	// более высокоуровневые конструкции
@@ -3162,7 +3161,7 @@ loop:;
 		A2 = (A0 | A1);
 		ip += 3; break;
 	case BINARY_XOR: // vm:xor a b r, prechecked
-		A2 = (A0 ^ (A1 & (VMAX << IPOS))); // inherit a's type info
+		A2 = (A0 ^ (A1 & (VMAX << VPOS))); // inherit a's type info
 		ip += 3; break;
 
 	case SHIFT_RIGHT: { // vm:shr a b hi lo

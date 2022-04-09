@@ -36,8 +36,8 @@ ol%.exe: tmp/repl.c
 
 # sources
 extensions/ffi.c: CFLAGS += -Iincludes
-
 extensions/ffi.c: includes/ol/vm.h
+
 includes/ol/vm.h: src/olvm.c
 	sed -n '/__OLVM_C__/q;p' $^ >$@
 
