@@ -24,7 +24,7 @@
       JEQ JZ JE JN JF JAF JAFX
       CLOS
       LD LDE LDN LDT LDF
-      MOVE REFI MOVE2
+      MOVE REFI MOV2
 
       NEW    ; used by (lang rtl)
 
@@ -101,7 +101,7 @@
       ; set
       (setq MOVE  9) ; move a, t:      Ra -> Rt
       (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
-      (setq MOVE2 5) ; two moves, 4 args
+      (setq MOV2  5) ; two moves, 4 args
 
       ; load
       (setq LD   14)  ; ld a, t:        Rt = a, signed byte

@@ -138,7 +138,7 @@
             (['move a b more]
                (let ((tl (assemble more fail)))
                   (if (eq? (car tl) MOVE) ;; [move a b] + [move c d] = [move2 a b c d] to remove a common dispatch
-                     (cons* MOVE2 (reg a) (reg b) (cdr tl))
+                     (cons* MOV2 (reg a) (reg b) (cdr tl))
                      (cons* MOVE (reg a) (reg b) tl))))
             (['prim op args to more]
                (cond
