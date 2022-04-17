@@ -1,0 +1,416 @@
+{
+   "Cameras" : [
+      {
+         "angle" : 39.5977553357713,
+         "clip_end" : 100,
+         "clip_start" : 0.100000001490116,
+         "location" : [
+            13.8191070556641,
+            -25.3438682556152,
+            17.6054496765137
+         ],
+         "name" : "PERSP",
+         "target" : [
+            8.88738059997559,
+            -18.1412658691406,
+            12.7268648147583
+         ]
+      }
+   ],
+   "Lights" : [
+      {
+         "color" : [
+            1,
+            1,
+            1
+         ],
+         "position" : [
+            0.566393375396729,
+            0.218391180038452,
+            0.794672012329102,
+            0
+         ],
+         "type" : "SUN"
+      },
+      {
+         "color" : [
+            1,
+            1,
+            1
+         ],
+         "position" : [
+            -3.33199691772461,
+            8.18971252441406,
+            10,
+            1
+         ],
+         "type" : "POINT"
+      }
+   ],
+   "Objects" : [
+      {
+         "location" : [
+            0,
+            10,
+            -0.5
+         ],
+         "model" : "floorFull",
+         "name" : "floorFull",
+         "rotation" : [
+            0,
+            0,
+            0
+         ]
+      },
+      {
+         "location" : [
+            0,
+            0,
+            -0.5
+         ],
+         "model" : "floorFull",
+         "name" : "floorFull.001",
+         "rotation" : [
+            0,
+            0,
+            0
+         ]
+      },
+      {
+         "location" : [
+            -10,
+            0,
+            -0.5
+         ],
+         "model" : "floorFull",
+         "name" : "floorFull.002",
+         "rotation" : [
+            0,
+            0,
+            0
+         ]
+      },
+      {
+         "location" : [
+            -10,
+            10,
+            -0.5
+         ],
+         "model" : "floorFull",
+         "name" : "floorFull.003",
+         "rotation" : [
+            0,
+            0,
+            0
+         ]
+      },
+      {
+         "location" : [
+            10,
+            10,
+            -0.5
+         ],
+         "model" : "floorFull",
+         "name" : "floorFull.008",
+         "rotation" : [
+            0,
+            0,
+            0
+         ]
+      },
+      {
+         "location" : [
+            10,
+            0,
+            -0.5
+         ],
+         "model" : "floorFull",
+         "name" : "floorFull.010",
+         "rotation" : [
+            0,
+            0,
+            0
+         ]
+      },
+      {
+         "location" : [
+            -6.41440629959106,
+            2.56110835075378,
+            3.48570823669434
+         ],
+         "model" : "computerKeyboard",
+         "name" : "computerKeyboard",
+         "rotation" : [
+            0,
+            0,
+            -86.1728152860882
+         ]
+      },
+      {
+         "location" : [
+            -8.55891132354736,
+            2.25620937347412,
+            3.48059129714966
+         ],
+         "model" : "computerScreen",
+         "name" : "computerScreen",
+         "rotation" : [
+            0,
+            0,
+            -90.8982270218482
+         ]
+      },
+      {
+         "location" : [
+            -7.57784843444824,
+            6.33565902709961,
+            3.4973464012146
+         ],
+         "model" : "computerMouse",
+         "name" : "computerMouse",
+         "rotation" : [
+            0,
+            0,
+            88.5323519461933
+         ]
+      },
+      {
+         "location" : [
+            -4.92348766326904,
+            6.08072137832642,
+            0
+         ],
+         "model" : "chairDesk",
+         "name" : "chairDesk",
+         "rotation" : [
+            0,
+            0,
+            88.2745327955929
+         ]
+      },
+      {
+         "location" : [
+            -6.01593351364136,
+            -1.67513227462769,
+            0
+         ],
+         "model" : "tableCross",
+         "name" : "tableCross",
+         "rotation" : [
+            0,
+            0,
+            -89.999995674289
+         ]
+      },
+      {
+         "location" : [
+            -12.284818649292,
+            6.92520236968994,
+            0
+         ],
+         "model" : "cabinetTelevisionDoors",
+         "name" : "cabinetTelevisionDoors",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            -12.284818649292,
+            6.92520236968994,
+            3
+         ],
+         "model" : "cabinetTelevision",
+         "name" : "cabinetTelevision",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            -7.60379600524902,
+            -0.866335511207581,
+            3.48132753372192
+         ],
+         "model" : "laptop",
+         "name" : "laptop",
+         "rotation" : [
+            0,
+            0,
+            -82.8800425589276
+         ]
+      },
+      {
+         "location" : [
+            -6.2196364402771,
+            6.1398344039917,
+            6.11037445068359
+         ],
+         "model" : "laptop",
+         "name" : "laptop.001",
+         "rotation" : [
+            0,
+            0,
+            -108.877730125045
+         ]
+      },
+      {
+         "location" : [
+            -2.13786864280701,
+            7.42435073852539,
+            1.19209289550781e-07
+         ],
+         "model" : "kitchenCabinetUpperCorner",
+         "name" : "kitchenCabinetUpperCorner",
+         "rotation" : [
+            0,
+            0,
+            -90.2324406721229
+         ]
+      },
+      {
+         "location" : [
+            -2.13786864280701,
+            7.4245662689209,
+            3.90290689468384
+         ],
+         "model" : "kitchenCabinetUpperCorner",
+         "name" : "kitchenCabinetUpperCorner.001",
+         "rotation" : [
+            0,
+            0,
+            -90.2324406721229
+         ]
+      },
+      {
+         "location" : [
+            -1.07049465179443,
+            -1.78415882587433,
+            0
+         ],
+         "model" : "bedDouble",
+         "name" : "bedDouble",
+         "rotation" : [
+            0,
+            0,
+            179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            -8.18777084350586,
+            9.18831157684326,
+            5.72765731811523
+         ],
+         "model" : "bathroomMirror",
+         "name" : "bathroomMirror",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            -11.1877708435059,
+            9.18831157684326,
+            5.72765731811523
+         ],
+         "model" : "bathroomMirror",
+         "name" : "bathroomMirror.001",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            -5,
+            10,
+            0
+         ],
+         "model" : "paneling",
+         "name" : "paneling",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            0,
+            10,
+            0
+         ],
+         "model" : "paneling",
+         "name" : "paneling.001",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            5,
+            10,
+            0
+         ],
+         "model" : "paneling",
+         "name" : "paneling.002",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            -10,
+            10,
+            0
+         ],
+         "model" : "paneling",
+         "name" : "paneling.003",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            -15,
+            10,
+            0
+         ],
+         "model" : "paneling",
+         "name" : "paneling.008",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      },
+      {
+         "location" : [
+            -20,
+            10,
+            0
+         ],
+         "model" : "paneling",
+         "name" : "paneling.004",
+         "rotation" : [
+            0,
+            0,
+            -179.999991348578
+         ]
+      }
+   ]
+}

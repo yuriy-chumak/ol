@@ -4,29 +4,32 @@
 (import (lib gl-2))
 (gl:set-window-title "6.render-to-texture.lisp")
 
-(import (scene))
-
-; load (and create if no one) a models cache
-(define models (prepare-models "cache.bin"))
-
-;; load a scene
-(import (file json))
-(define scene (read-json-file "scene1.json"))
-
-;; init
+; gl global init
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
 
 ;(glEnable GL_CULL_FACE)
 ;(glCullFace GL_BACK)
 
-; create glsl shader program
+; scene
+(import (scene))
+
+; load (and create if no one) a models cache
+(define models (prepare-models "cache.bin"))
+
+; load a scene
+(import (file json))
+(define scene (read-json-file "scene.json"))
+
+; normals producer shader program
 (define normals (gl:create-program
 "#version 120 // OpenGL 2.1
-   #define gl_WorldMatrix gl_TextureMatrix[7]
+   #define gl_ModelMatrix gl_TextureMatrix[7] //project specific model matrix
+   #define gl_WorldViewProjectionMatrix gl_ModelViewProjectionMatrix
+
    varying vec3 normal;
    void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_WorldMatrix * gl_Vertex;
+      gl_Position = gl_WorldViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
       normal = gl_Normal * 0.5 + vec3(0.5, 0.5, 0.5);
    }"
 "#version 120 // OpenGL 2.1
@@ -35,6 +38,7 @@
       gl_FragColor = vec4(normalize(normal), 1.0);
    }"))
 
+; just apply texture program
 (define draw-texture (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
@@ -51,6 +55,9 @@
 ;; render buffer
 (import (OpenGL EXT framebuffer_object))
 
+(define TEXW 1024)
+(define TEXH 1024)
+
 (define framebuffer '(0))
 (glGenFramebuffers (length framebuffer) framebuffer)
 (print "framebuffer: " framebuffer)
@@ -58,9 +65,6 @@
 (define texture '(0))
 (glGenTextures (length texture) texture)
 (print "texture: " texture)
-
-(define TEXW 1024)
-(define TEXH 1024)
 
 (glBindTexture GL_TEXTURE_2D (car texture))
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_REPEAT)
@@ -73,7 +77,7 @@
 (glBindFramebuffer GL_FRAMEBUFFER (car framebuffer))
 (glFramebufferTexture2D GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 GL_TEXTURE_2D (car texture) 0)
 
-; we have to create depth buffer if we want to use a depth
+; we have to create hardware depth buffer if we want to use a depth
 (define depthrenderbuffer '(0))
 (glGenRenderbuffers (length depthrenderbuffer) depthrenderbuffer)
 (glBindRenderbuffer GL_RENDERBUFFER (car depthrenderbuffer))
@@ -81,7 +85,7 @@
 (glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (car depthrenderbuffer))
 
 ; draw
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda ()
    (glViewport 0 0 TEXW TEXH)
    (glBindFramebuffer GL_FRAMEBUFFER (car framebuffer))
 
@@ -91,27 +95,27 @@
 
    ; Camera setup
    (begin
-      (define camera (ref (scene 'Cameras) 1))
-
-      (define angle (camera 'angle))
-      (define location (camera 'location))
-      (define target (camera 'target))
+      (define Camera (ref (scene 'Cameras) 1))
 
       (glMatrixMode GL_PROJECTION)
       (glLoadIdentity)
-      (gluPerspective angle (/ (gl:get-window-width) (gl:get-window-height)) 0.1 100) ; (camera 'clip_start) (camera 'clip_end)
+      (gluPerspective
+         (Camera 'angle)
+         (/ (gl:get-window-width) (gl:get-window-height))
+         (Camera 'clip_start) (Camera 'clip_end))
+
+      (define target (vector->list (Camera 'target)))
+      (define location (vector->list (Camera 'location)))
+      (define up (vector->list [0 0 1]))
 
       (glMatrixMode GL_MODELVIEW)
       (glLoadIdentity)
-      (gluLookAt
-         (ref location 1) (ref location 2) (ref location 3)
-         (ref target 1) (ref target 2) (ref target 3)
-         0 0 1))
+      (apply gluLookAt (append location target up)))
 
-   ; draw a geometry
+   ; Draw a geometry with colors
    (draw-geometry scene models)
 
-   ; draw a texture:
+   ; Draw a result texture (normals)
    (glBindFramebuffer GL_FRAMEBUFFER 0)
    (glUseProgram draw-texture)
 
