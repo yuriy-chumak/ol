@@ -2920,7 +2920,7 @@ loop:;
 			if (is_rawstream(T))
 				A1 = I(rawstream_size(T));
 			else
-				A1 = I(header_size(*(word*)T) - 1);
+				A1 = I(reference_size(T));
 		}
 		ip += 2; break;
 	}
