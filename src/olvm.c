@@ -8,32 +8,39 @@
  *      Version 2.3.1
  </pre>
  * - - -
- * #### LICENSE
- *  This program is free software;  you can redistribute it and/or
- *  modify it under the terms of the GNU General Public License as
- *  published by the Free Software Foundation; either version 3 of
- *  the License, or (at your option) any later version.
+ * #### LICENSES
+ * You are free to choose an MIT or LGPLv3 license.
+ * 
+ * * MIT: <br/>
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ *   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ *   ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ *   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ *   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * 
+ * * LGPLv3: <br/>
+ *   This program is free software;  you can redistribute it and/or
+ *   modify it under the terms of the GNU General Public License as
+ *   published by the Free Software Foundation; either version 3 of
+ *   the License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * #### Download
- * Precompiled binaries for various platforms and architectures can
- * be found at [project page](http://yuriy-chumak.github.io/ol) and
- *    OpenSUSE [build service](https://bit.ly/2RUjjtS).
+ * #### BUILD
+ * `make; make install`
  *
- * #### Build
- *   make; make install
- *
- * #### Project Page:
+ * #### PROJECT PAGE
  *   http://yuriy-chumak.github.io/ol/
  *
  * ##### The parent project - Owl Lisp:
  *   https://gitlab.com/owl-lisp/owl (actual)             </br>
  *   https://code.google.com/p/owl-lisp (historical)
  *
- * #### Related links:
+ * ##### Related links:
  *   http://people.csail.mit.edu/jaffer/Scheme            </br>
  *   http://srfi.schemers.org/                            </br>
  *   http://groups.csail.mit.edu/mac/projects/scheme/     </br>
@@ -93,19 +100,6 @@ word OLVM_apply(olvm_t* ol, word function, word args);
 
 void*OLVM_userdata (olvm_t* ol, void* userdata);
 void*OLVM_allocate (olvm_t* ol, unsigned words);
-
-// // embed ol API
-// typedef struct ol_t
-// {
-// 	struct olvm_t* vm;  // ol virtual machine instance
-// 	size_t eval; // embedded pinned 'eval' function id
-// } ol_t;
-
-// // this functions works only for valid repl
-// word OL_new(ol_t* ol, unsigned char* bootstrap);
-// void OL_delete(ol_t* ol);
-// word OL_evalv(ol_t* ol, va_list* vp);
-// word OL_eval(ol_t* ol, ...);
 
 // -----------------------------------------------------
 // descriptor format
@@ -219,6 +213,7 @@ object_t
 
 #include <limits.h>
 
+// only 32-bit and 64-bit machines supported.
 // http://www.delorie.com/gnu/docs/gcc/gccint_53.html
 #if SIZE_MAX == 0xffffffffffffffffU
 	typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
@@ -242,16 +237,17 @@ object_t
 #define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (rawstream bit)
 #define BINARY                      (RAWBIT >> TPOS)
 
+// create a value
 #define make_value(type, value)     (2 | ((word)(value) << VPOS) | ((type) << TPOS))
 
 // header making macro
-#define _header3(type, size, padding)(2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
-#define _header2(type, size)        _header3(type, size, 0)
+#define header3(type, size, padding)(2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
+#define header2(type, size)         header3(type, size, 0)
 #define HEADER_MACRO(_1, _2, _3, NAME, ...) NAME
-#define make_header(...)            HEADER_MACRO(__VA_ARGS__, _header3, _header2, NOTHING, NOTHING)(__VA_ARGS__)
+#define make_header(...)            HEADER_MACRO(__VA_ARGS__, header3, header2, NOTHING, NOTHING)(__VA_ARGS__)
 
 
-// два главных класса:
+// three main classes:
 #define is_value(x)                 (( (word) (x)) & 2)
 #define is_reference(x)             (!is_value(x))
 #define is_rawstream(x)             ((*(word*)(x)) & RAWBIT) //((struct object_t*)(x))->rawness // ((*(word*)(x)) & RAWBIT)
@@ -260,7 +256,7 @@ object_t
 #define WALIGN(x)                   (((x) + W - 1) / W)
 
 // makes positive olvm integer value from int
-// I() is a deprecated name
+// I() is a
 #define I(val) \
 		(make_value(TENUMP, val))  // === (value << VPOS) | 2
 // makes olvm reference from system pointer (and just do sanity check in DEBUG)
