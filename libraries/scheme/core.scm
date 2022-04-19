@@ -109,6 +109,8 @@
                (vm:make TVECTOR v))
             ((k fill)
                (vm:make TVECTOR k fill))))
+   
+      (setq I (lambda x x)) ; Identity function
    )
 
    ; =================================================================
@@ -433,21 +435,13 @@
                (vector-apply node
                   (lambda (var ...)
                      (let* rest-bindings exp . rest-exps))))
-            ((let* (((name ...) <= value) . rest) . code)
+            ((let* (((name ...) <= value) . rest) . code) ; currently unused, may be removed
                (vector-apply value
                   (lambda (name ...)
                      (let* rest . code))))
             ((let* ()) exp)
             ((let* () exp . rest)
                (begin exp . rest))))
-
-      (define-syntax let*-values
-         (syntax-rules ()
-            ((let*-values (((var ...) gen) . rest) . body)
-               (values-apply gen
-                  (lambda (var ...) (let*-values rest . body))))
-            ((let*-values () . rest)
-               ((lambda () . rest)))))
 
 
       ; 5.3  Variable definitions
@@ -1904,7 +1898,7 @@
       ;; stop the vm *immediately* without flushing input or anything else with return value n
       (define (halt n)               (vm:exit n))
 )
-; ---------------------------
+   ; ---------------------------
    (export
       syntax-error runtime-error
       assert error
@@ -1923,12 +1917,13 @@
 
       ; 4.1.4  Procedures
       λ ; same as 'lambda'
+      I ; identity function
       ; 4.1.5, 4.2.2  Conditionals
       if and or
       ; 4.1.6  Assignments
       set!
       ; 4.2.1  Binding constructs and Sequencing
-      letrec let begin let* let*-values 
+      letrec let begin let*
       ; 5.3  Variable definitions
       define ;define*
       define-values

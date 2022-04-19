@@ -117,7 +117,7 @@
    length
    let
    let*
-   let*-values
+      ;; let*-values
       ;; let-syntax
       ;; let-values
    letrec
