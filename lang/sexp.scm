@@ -233,7 +233,7 @@
                   (ok l r p v))
                ((pair? r)
                   (if (eq? (car r) #\newline)
-                     (ok (cons (car r) l) (cdr r) (+ p 1) (reverse (cons (car r) v)))
+                     (ok (cons (car r) l) (cdr r) (+ p 1) (reverse v))
                      (loop (cons (car r) l) (cdr r) (+ p 1) (cons (car r) v))))
                (else
                   (loop l (r) p v)))))
@@ -241,10 +241,10 @@
 
       ;; #!<string>\n parses to '(hashbang <string>)
       (define hashbang
-         (let-parse*
-            ((hash (imm #\#))
-             (bang (imm #\!))
-             (line rest-of-line))
+         (let-parse*(
+               (hash (imm #\#))
+               (bang (imm #\!))
+               (line rest-of-line))
             (list 'quote (list 'hashbang (list->string line)))))
 
       ;; skip everything up to |#
@@ -292,7 +292,6 @@
 
       (define whitespace-or-comment
          (any-of
-            ;get-hashbang   ;; actually probably better to make it a symbol as above
             whitespace
             (let-parse*
                ((skip (imm #\;))
@@ -421,11 +420,7 @@
                         (word "n"     #null)
                         (word "N"     #null)
                         (word "e"     #empty)
-                        (word "E"     #empty)
-                        (let-parse* (
-                              (bang (imm #\!)) ; sha-bang
-                              (line rest-of-line))
-                           (list 'quote (list 'hashbang (list->string line)))))))
+                        (word "E"     #empty))))
                val)))
 
 
@@ -489,9 +484,9 @@
          (let-parse* (
                (skip maybe-whitespace)
                (val (any-of
-                     ;get-hashbang
+                     hashbang       ;; we skip leading #!
                      number
-                     get-sexp-regex     ;; must be before symbols, which also may start with /
+                     get-sexp-regex ;; must be before symbols, which also may start with /
                      symbol
                      string
                      special-word

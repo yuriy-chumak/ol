@@ -112,7 +112,6 @@
       chars))
 (define get-a-whitespace
    (get-any-of
-      ;get-hashbang   ;; actually probably better to make it a symbol as above
       (get-byte-if (lambda (x) (has? '(#\space #\tab #\return) x)))
       (let-parses
          ((skip (get-imm #\;))
