@@ -8,9 +8,9 @@ stdint = $(shell echo "\
 	   return INT32_MAX;\
 	}" |$(CC) -xc - -o /dev/null 2>/dev/null && echo 1)
 
-ifneq ($(call stdint),1)
-$(error Looks like you have no libc6-dev, please install.)
-endif
+#ifneq ($(call stdint),1)
+#$(error Looks like you have no libc6-dev, please install.)
+#endif
 
 # xxd tool
 ifneq ($(if $(shell echo "" |xxd),1,0),1)
