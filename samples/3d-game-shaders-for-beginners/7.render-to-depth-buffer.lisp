@@ -3,18 +3,14 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "7.render-to-depth-buffer")
-(import (lib soil))
 
 (import (scene))
-;; (import (scheme inexact))
-(import (lib math))
-(import (owl math fp))
+(import (scheme inexact))
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
-(print "compiled models:\n" models)
 
-;; load a scene
+; load a scene
 (import (file json))
 (define scene (read-json-file "scene.json"))
 
@@ -23,13 +19,11 @@
    (vector->list (scene 'Lights)))))
 (print "sun:" sun)
 
-;; ; and a light bulb
-;; (define bulb (car (filter (lambda (light) (string-eq? (light 'type) "POINT"))
-;;    (vector->list (scene 'Lights)))))
-;; (print "bulb:" bulb)
+; scene objects
+(define Objects (scene 'Objects))
+(print "Objects: " Objects)
 
-
-;; shaders
+; simply draw a 2d texture shader
 (define texture2d (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
@@ -42,6 +36,7 @@
       gl_FragColor = texture2D(shadow, gl_TexCoord[0].st);
    }"))
 
+; simply draw a cube texture shader
 (define textureCube (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
@@ -55,14 +50,13 @@
    }"))
 
 
-
-;; render buffer
+; framebuffers
 (import (OpenGL EXT framebuffer_object))
 
 (define TEXW 1024)
 (define TEXH 1024)
 
-; texture2d
+; depth 2d map framebuffer
 (define depthmap2d '(0))
 (glGenTextures (length depthmap2d) depthmap2d)
 (print "depthmap2d: " depthmap2d)
@@ -97,8 +91,9 @@
 ; textureCube
 (import (only (OpenGL EXT geometry_shader4) glFramebufferTexture))
 
+; depth cubemap framebuffer
 ;; кубическая карта теней
-;; https://habr.com/ru/post/354208/
+;; https://web.archive.org/web/20200911125435/https://habr.com/ru/post/354208/
 (define depthmapCube '(0))
 (glGenTextures (length depthmapCube) depthmapCube)
 (print "depthmapCube: " depthmapCube)
@@ -258,7 +253,7 @@ GL_TRIANGLES GL_TRIANGLE_STRIP 18
       0 0 1) ; up is 'z'
 
    (glDisable GL_CULL_FACE)
-   (draw-geometry scene models)
+   (draw-geometry (scene 'Objects) models)
 
    (glBindFramebuffer GL_FRAMEBUFFER 0)
    (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
@@ -316,7 +311,7 @@ GL_TRIANGLES GL_TRIANGLE_STRIP 18
    (glUseProgram depthCube)
 
    (glCullFace GL_FRONT)
-   (draw-geometry scene models)
+   (draw-geometry (scene 'Objects) models)
    (glCullFace GL_BACK)
 
    (glUseProgram 0)

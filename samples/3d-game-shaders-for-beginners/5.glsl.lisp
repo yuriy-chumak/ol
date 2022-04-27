@@ -21,13 +21,20 @@
 (import (file json))
 (define scene (read-json-file "scene.json"))
 
+; scene lights
+(define Lights (vector->list (scene 'Lights)))
+(print "Lights: " Lights)
+
+; scene objects
+(define Objects (scene 'Objects))
+(print "Objects: " Objects)
+
 ; We are moving away from the fixed OpenGL pipeline, in which
 ; Model and View matrices are combined into one.
-; объеденены в одну.
 ; As a Model matrix we will use gl_TextureMatrix[7].
 
-; simple glsl shader program
-(define greeny (gl:create-program
+; simple glsl shader program (greenify)
+(define greenify (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_ModelMatrix gl_TextureMatrix[7] //project specific model matrix
    #define gl_WorldViewProjectionMatrix gl_ModelViewProjectionMatrix
@@ -45,9 +52,9 @@
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
-   (glUseProgram greeny)
+   (glUseProgram greenify)
 
-   ; Camera setup
+   ; camera setup
    (begin
       (define Camera (ref (scene 'Cameras) 1))
 
@@ -66,7 +73,7 @@
       (glLoadIdentity)
       (apply gluLookAt (append location target up)))
 
-   ; Draw a geometry with colors
+   ; draw a geometry with colors
    (for-each (lambda (entity)
          (define model (entity 'model))
 
@@ -76,7 +83,7 @@
          ; transformations
          (let ((xyz (entity 'location)))
             (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
-         ;  blender rotation mode is "XYZ": yaw, pitch, roll (рыскание, тангаж, крен)
+         ;  blender rotation mode is "XYZ": yaw, pitch, roll
          (let ((ypr (entity 'rotation)))
             (glRotatef (ref ypr 1) 1 0 0)
             (glRotatef (ref ypr 2) 0 1 0)
@@ -84,5 +91,8 @@
          ; precompiled geometry
          (for-each glCallList
             (models (string->symbol model))))
-      (scene 'Objects))
+      Objects)
+
+   ; Draw a light bulbs
+   (draw-lightbulbs Lights)
 ))

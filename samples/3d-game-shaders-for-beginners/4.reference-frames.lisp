@@ -25,6 +25,11 @@
 (define Lights (vector->list (scene 'Lights)))
 (print "Lights: " Lights)
 
+; scene objects
+(define Objects (scene 'Objects))
+(print "Objects: " Objects)
+
+
 (glEnable GL_COLOR_MATERIAL)
 (glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
 ; set lights specular colors
@@ -48,7 +53,7 @@
       Lights
       (iota (length Lights)))
 
-   ; Camera setup
+   ; camera setup
    (begin
       (define Camera (ref (scene 'Cameras) 1))
 
@@ -67,7 +72,8 @@
       (glLoadIdentity)
       (apply gluLookAt (append location target up)))
 
-   ; Draw a geometry with colors
+   ; draw a geometry with colors
+   (glEnable GL_TEXTURE_2D)
    (for-each (lambda (entity)
          (define model (entity 'model))
 
@@ -76,7 +82,7 @@
          ; transformations
          (let ((xyz (entity 'location)))
             (glTranslatef (ref xyz 1) (ref xyz 2) (ref xyz 3)))
-         ;  blender rotation mode is "XYZ": yaw, pitch, roll (рыскание, тангаж, крен)
+         ;  blender rotation mode is "XYZ": yaw, pitch, roll
          (let ((ypr (entity 'rotation)))
             (glRotatef (ref ypr 1) 1 0 0)
             (glRotatef (ref ypr 2) 0 1 0)
@@ -85,7 +91,7 @@
          (for-each glCallList
             (models (string->symbol model)))
          (glPopMatrix))
-      (scene 'Objects))
+      Objects)
 
    ; Draw a light bulbs
    (glMatrixMode GL_MODELVIEW)
@@ -96,11 +102,10 @@
             (glColor3fv (light 'color))
             (glPushMatrix)
             (glTranslatef (ref (light 'position) 1)
-                           (ref (light 'position) 2)
-                           (ref (light 'position) 3))
+                          (ref (light 'position) 2)
+                          (ref (light 'position) 3))
             (gluSphere quadric 0.2 32 10)
             (glPopMatrix)))
       Lights
       (iota (length Lights)))
-
 ))

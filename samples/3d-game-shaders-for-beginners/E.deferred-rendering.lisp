@@ -3,9 +3,31 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "E. Deferred Rendering")
+(import (lib soil))
 
 (import (scene))
 (import (scheme char))
+(import (scheme dynamic-bindings))
+(import (lib x11))
+
+(define dpy (XOpenDisplay #f))
+(define root (XDefaultRootWindow dpy))
+(define SCREENW 1920)
+(define SCREENH 1080)
+
+(define screenTex '(0))
+(glGenTextures (length screenTex) screenTex)
+(print "screenTex: " screenTex)
+(glBindTexture GL_TEXTURE_2D (car screenTex))
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_REPEAT)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_REPEAT)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+(glTexImage2D GL_TEXTURE_2D 0 GL_RGB SCREENW SCREENH 0 GL_RGB GL_UNSIGNED_BYTE 0)
+(glBindTexture GL_TEXTURE_2D 0)
+
+(define screenTex (car screenTex))
+
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
@@ -13,30 +35,59 @@
 
 ;; load a scene
 (import (file json))
-(define scene (read-json-file "scene1.json"))
+(define scene (read-json-file "scene.json"))
+
+; scene objects
+(define Objects (vector->list (scene 'Objects)))
+(print "Objects: " Objects)
+
+; rotating ceiling fan
+(define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
+(define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
+
+(define Objects (remove ceilingFan? Objects))
+
+; computer display
+(define (computerScreen? entity) (string-eq? (entity 'name "") "computerScreen"))
+(define computerScreen (make-parameter (car (keep computerScreen? Objects))))
+
+(define Objects (remove computerScreen? Objects))
 
 ;; let's find a sun
 (define sun (car (filter (lambda (light) (string-ci=? (light 'type) "SUN"))
    (vector->list (scene 'Lights)))))
 (print "sun:" sun)
 
+(define TEXW 1024)
+(define TEXH 1024)
+
 ;; shaders
 (define just-depth (gl:create-program
+(list
 "#version 120 // OpenGL 2.1
    #define gl_WorldMatrix gl_TextureMatrix[7]
    void main() {
       gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_WorldMatrix * gl_Vertex;
-   }"
+   }")
+(list
 "#version 120 // OpenGL 2.1
    void main() {
       // nothing to do
-   }"))
+   }")))
 
 ;; -----------------------
 ; https://learnopengl.com/Getting-started/Coordinate-Systems
+(define vs (file->string "shaders/E.deferred-rendering.vs"))
+(define fs (file->string "shaders/E.deferred-rendering.fs"))
 (define forward-program (gl:create-program
-   (file->string "shaders/E.deferred-rendering.vs")
-   (file->string "shaders/E.deferred-rendering.fs")))
+   vs
+   fs))
+
+(define forward-program-textured (gl:create-program
+   vs
+   (list
+      "#define TEXTURED"
+      fs)))
 
 (define justdraw (gl:create-program
 "#version 120 // OpenGL 2.1
@@ -78,7 +129,7 @@
 
       // 2. PCF
       shadow = 0.0;
-      vec2 texelSize = 1.0 / vec2(1024);
+      vec2 texelSize = 1.0 / vec2(2048);
       for(int x = -1; x <= 1; x++) {
          for(int y = -1; y <= 1; y++) {
             float pcfDepth = texture2D(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
@@ -94,9 +145,6 @@
 ;; depth buffer
 (import (OpenGL EXT framebuffer_object))
 (import (OpenGL ARB draw_buffers))
-
-(define TEXW 1024)
-(define TEXH 1024)
 
 (define depth-map '(0))
 (glGenTextures (length depth-map) depth-map)
@@ -122,9 +170,6 @@
 (define forward-fbo '(0))
 (glGenFramebuffers (length forward-fbo) forward-fbo)
 (print "forward-fbo: " forward-fbo)
-
-(define TEXW 1024)
-(define TEXH 1024)
 
 (define color-textures '(0 0))
 (glGenTextures (length color-textures) color-textures)
@@ -185,13 +230,18 @@
       (glLightfv (+ GL_LIGHT0 i) GL_SPECULAR '(1.0 1.0 1.0 1))
       ; GL_EMISSION
       ; GL_SHININESS
-      ; 
       )
    (iota (length lights)))
 
 
 ; draw
 (gl:set-renderer (lambda (mouse)
+   ;; rotate ceilingFan
+   (define rotation ((ceilingFan) 'rotation))
+   (ceilingFan
+      (put (ceilingFan) 'rotation
+         (let ((z (ref rotation 3)))
+            (set-ref rotation 3 (+ z 0.1)))))
 
    ;; calculate the shadow texture
    (begin
@@ -217,7 +267,9 @@
       (glEnable GL_CULL_FACE)
       (glCullFace GL_FRONT)
       (glUseProgram just-depth)
-      (draw-geometry scene models))
+      (draw-geometry Objects models)
+      (draw-geometry (list (ceilingFan)) models)
+   )
 
    (glDisable GL_CULL_FACE)
    (glCullFace GL_BACK)
@@ -270,8 +322,29 @@
       
       (glActiveTexture GL_TEXTURE0) ; light matrix from the sun
       (glBindTexture GL_TEXTURE_2D (car depth-fbo))
+      (glUniform1i (glGetUniformLocation forward-program "shadowMap") 0)
 
-      (draw-geometry scene models))
+      (draw-geometry Objects models)
+      (draw-geometry (list (ceilingFan)) models)
+
+      (glUseProgram forward-program-textured)
+      (glActiveTexture GL_TEXTURE0) ; light matrix from the sun
+      (glBindTexture GL_TEXTURE_2D (car depth-fbo))
+      (glUniform1i (glGetUniformLocation forward-program-textured "shadowMap") 0)
+
+      ; load a new texture
+      (define image (XGetImage dpy root SCREENW 0 SCREENW SCREENH (XAllPlanes) ZPixmap))
+      (define data (bytevector->void* (vptr->bytevector image 100) 16))
+
+      (glActiveTexture GL_TEXTURE1) ; light matrix from the sun
+      (glBindTexture GL_TEXTURE_2D screenTex)
+      (glTexImage2D GL_TEXTURE_2D 0 GL_RGB SCREENW SCREENH 0 GL_BGRA GL_UNSIGNED_BYTE data)
+      (glUniform1i (glGetUniformLocation forward-program "textureId") 1)
+
+      (draw-geometry (list (computerScreen)) models)
+
+      (XDestroyImage image)
+   )
 
    ;; Calculate and draw a final image
    (begin
@@ -298,37 +371,6 @@
       (glActiveTexture GL_TEXTURE2)
       (glBindTexture GL_TEXTURE_2D (cadr color-textures))
       (glUniform1i (glGetUniformLocation deferred-shadow "fragPosLightMap") 2)
-
-      (glBegin GL_QUADS)
-         (glColor3f 1 1 1)
-
-         (glTexCoord2f 0 0)
-         (glVertex2f 0 0)
-         (glTexCoord2f 1 0)
-         (glVertex2f 1 0)
-         (glTexCoord2f 1 1)
-         (glVertex2f 1 1)
-         (glTexCoord2f 0 1)
-         (glVertex2f 0 1)
-      (glEnd))
-
-   '(begin
-      (glBindFramebuffer GL_FRAMEBUFFER 0)
-      (glUseProgram justdraw)
-
-      (glViewport 0 0 (div (gl:get-window-width) 2) (div (gl:get-window-height) 2))
-      (glClearColor 0 0 0 1)
-      (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-
-      (glMatrixMode GL_PROJECTION)
-      (glLoadIdentity)
-      (glMatrixMode GL_MODELVIEW)
-      (glLoadIdentity)
-      (glOrtho 0 1 0 1 0 1)
-
-      (glEnable GL_TEXTURE_2D)
-      (glActiveTexture GL_TEXTURE0)
-      (glBindTexture GL_TEXTURE_2D (car color-textures))
 
       (glBegin GL_QUADS)
          (glColor3f 1 1 1)

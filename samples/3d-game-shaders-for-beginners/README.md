@@ -77,3 +77,9 @@ shading techniques with ~~Panda3D~~ Ol and OpenGL specifically."*
 * "LowPoly Modular Sci-Fi Environments" 3d-models (c) [quaternius, OpenGameArt](https://opengameart.org/content/lowpoly-modular-sci-fi-environments), CC0 Public Domain.
   Models are not included, but can be automatically downloaded and processed using the 'make' tool.
 * These articles and source code are (c) me - Y.C., [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
+
+## Notes
+```
+__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia glxinfo | grep -iE "OpenGL renderer|vendor"
+```
+// https://en.wikibooks.org/wiki/GLSL_Programming/Blender

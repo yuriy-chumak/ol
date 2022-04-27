@@ -8,8 +8,8 @@
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
 
-;(glEnable GL_CULL_FACE)
-;(glCullFace GL_BACK)
+(glEnable GL_CULL_FACE)
+(glCullFace GL_BACK)
 
 ; scene
 (import (scene))
@@ -21,22 +21,13 @@
 (import (file json))
 (define scene (read-json-file "scene.json"))
 
-; normals producer shader program
-(define normals (gl:create-program
-"#version 120 // OpenGL 2.1
-   #define gl_ModelMatrix gl_TextureMatrix[7] //project specific model matrix
-   #define gl_WorldViewProjectionMatrix gl_ModelViewProjectionMatrix
+; scene lights
+(define Lights (vector->list (scene 'Lights)))
+(print "Lights: " Lights)
 
-   varying vec3 normal;
-   void main() {
-      gl_Position = gl_WorldViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
-      normal = gl_Normal * 0.5 + vec3(0.5, 0.5, 0.5);
-   }"
-"#version 120 // OpenGL 2.1
-   varying vec3 normal;
-   void main() {
-      gl_FragColor = vec4(normalize(normal), 1.0);
-   }"))
+; scene objects
+(define Objects (scene 'Objects))
+(print "Objects: " Objects)
 
 ; just apply texture program
 (define draw-texture (gl:create-program
@@ -58,14 +49,10 @@
 (define TEXW 1024)
 (define TEXH 1024)
 
-(define framebuffer '(0))
-(glGenFramebuffers (length framebuffer) framebuffer)
-(print "framebuffer: " framebuffer)
-
+; texture2d
 (define texture '(0))
 (glGenTextures (length texture) texture)
 (print "texture: " texture)
-
 (glBindTexture GL_TEXTURE_2D (car texture))
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_REPEAT)
 (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_REPEAT)
@@ -74,6 +61,9 @@
 (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA TEXW TEXH 0 GL_RGBA GL_UNSIGNED_BYTE 0)
 (glBindTexture GL_TEXTURE_2D 0)
 
+(define framebuffer '(0))
+(glGenFramebuffers (length framebuffer) framebuffer)
+(print "framebuffer: " framebuffer)
 (glBindFramebuffer GL_FRAMEBUFFER (car framebuffer))
 (glFramebufferTexture2D GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 GL_TEXTURE_2D (car texture) 0)
 
@@ -83,6 +73,24 @@
 (glBindRenderbuffer GL_RENDERBUFFER (car depthrenderbuffer))
 (glRenderbufferStorage GL_RENDERBUFFER GL_DEPTH_COMPONENT TEXW TEXH)
 (glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (car depthrenderbuffer))
+(glBindFramebuffer GL_FRAMEBUFFER 0)
+
+; normals producer shader program
+(define normals (gl:create-program
+"#version 120 // OpenGL 2.1
+   #define gl_ModelMatrix gl_TextureMatrix[7] //project specific model matrix
+   #define gl_WorldViewProjectionMatrix gl_ModelViewProjectionMatrix
+
+   varying vec3 normal;
+   void main() {
+      gl_Position = gl_WorldViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
+      normal = gl_Normal * 0.5 + vec3(0.5, 0.5, 0.5);
+   }"
+"#version 120 // OpenGL 2.1
+   varying vec3 normal;
+   void main() {
+      gl_FragColor = vec4(normalize(normal), 1.0);
+   }"))
 
 ; draw
 (gl:set-renderer (lambda ()
@@ -91,9 +99,10 @@
 
    (glClearColor 0 0 0 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
    (glUseProgram normals)
 
-   ; Camera setup
+   ; camera setup
    (begin
       (define Camera (ref (scene 'Cameras) 1))
 
@@ -112,8 +121,11 @@
       (glLoadIdentity)
       (apply gluLookAt (append location target up)))
 
-   ; Draw a geometry with colors
-   (draw-geometry scene models)
+   ; draw a geometry with colors
+   (draw-geometry Objects models)
+
+   ; Draw a light bulbs
+   (draw-lightbulbs Lights)
 
    ; Draw a result texture (normals)
    (glBindFramebuffer GL_FRAMEBUFFER 0)
@@ -145,4 +157,5 @@
       (glTexCoord2f 0 1)
       (glVertex2f 0 1)
    (glEnd)
+
 ))

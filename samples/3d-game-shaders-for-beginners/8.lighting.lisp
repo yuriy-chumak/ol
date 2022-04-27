@@ -2,17 +2,16 @@
 
 ; initialize OpenGL
 (import (lib gl-2))
-(gl:set-window-title "8. Lighting")
+(gl:set-window-title "8.lighting")
 
 (import (scene))
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
-(print "compiled models:\n" models)
 
-;; load a scene
+; load a scene
 (import (file json))
-(define scene (read-json-file "scene1.json"))
+(define scene (read-json-file "scene.json"))
 
 ;; shaders
 (define po (gl:create-program
@@ -80,17 +79,15 @@
 
 (glEnable GL_DEPTH_TEST)
 
-;(glEnable GL_NORMALIZE)
-;; (glEnable GL_COLOR_MATERIAL)
-;; (glColorMaterial GL_FRONT_AND_BACK GL_DIFFUSE)
-
-;; (glLightModelf GL_LIGHT_MODEL_TWO_SIDE GL_TRUE)
-
 ;; освещение сцены
 (glEnable GL_LIGHTING)
 
 (define Lights (vector->list (scene 'Lights)))
 (print "Lights: " Lights)
+
+; scene objects
+(define Objects (scene 'Objects))
+(print "Objects: " Objects)
 
 (glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
 ; set lights specular colors
@@ -111,7 +108,7 @@
 ; draw
 (gl:set-renderer (lambda (mouse)
 (let*((ss ms (clock))
-      (ticks (/ (+ ss (/ ms 1000)) 2)))
+      (ticks (/ (+ ss (/ ms 1000)) 1)))
 
       (define lights (append Lights (list
          {
@@ -144,7 +141,7 @@
                0 0 1)))
 
       (glCullFace GL_FRONT)
-      (draw-geometry scene models)
+      (draw-geometry Objects models)
       (glCullFace GL_BACK)
       (glBindFramebuffer GL_FRAMEBUFFER 0))
 
@@ -204,7 +201,7 @@
       ;; (glBindTexture GL_TEXTURE_2D (car depth-fbo))
       ;; (glUniform1i (glGetUniformLocation shadowed "shadow") 0) ; 0-th texture unit
 
-      (draw-geometry scene models)
+      (draw-geometry Objects models)
       
       ; а теперь добавим наши лампочки на сцену
       (glUseProgram 0)
