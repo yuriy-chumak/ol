@@ -5,6 +5,7 @@
    XOpenDisplay
    XDefaultScreen
    XRootWindow
+   XDefaultRootWindow
    XBlackPixel
    XWhitePixel
    XCreateWindow
@@ -17,6 +18,10 @@
    XStoreName
    XFree
 
+   XGetImage
+   XDestroyImage
+   XAllPlanes
+
 
    ; GLX (WGL: Windows, CGL: Mac OS X, EGL)
    glXQueryVersion
@@ -25,66 +30,69 @@
 
    True False None
 
+   AllPlanes
+   XYBitmap XYPixmap ZPixmap
+
    GLX_RGBA
    GLX_DOUBLEBUFFER
    GLX_RED_SIZE GLX_GREEN_SIZE GLX_BLUE_SIZE GLX_DEPTH_SIZE
 
-   GLX_CONFIG_CAVEAT
-   GLX_DONT_CARE
-   GLX_X_VISUAL_TYPE
-   GLX_TRANSPARENT_TYPE
-   GLX_TRANSPARENT_INDEX_VALUE
-   GLX_TRANSPARENT_RED_VALUE
-   GLX_TRANSPARENT_GREEN_VALUE
-   GLX_TRANSPARENT_BLUE_VALUE
-   GLX_TRANSPARENT_ALPHA_VALUE
-   GLX_WINDOW_BIT
-   GLX_PIXMAP_BIT
-   GLX_PBUFFER_BIT
-   GLX_AUX_BUFFERS_BIT
-   GLX_FRONT_LEFT_BUFFER_BIT
-   GLX_FRONT_RIGHT_BUFFER_BIT
-   GLX_BACK_LEFT_BUFFER_BIT
-   GLX_BACK_RIGHT_BUFFER_BIT
-   GLX_DEPTH_BUFFER_BIT
-   GLX_STENCIL_BUFFER_BIT
-   GLX_ACCUM_BUFFER_BIT
-   GLX_NONE
-   GLX_SLOW_CONFIG
-   GLX_TRUE_COLOR
-   GLX_DIRECT_COLOR
-   GLX_PSEUDO_COLOR
-   GLX_STATIC_COLOR
-   GLX_GRAY_SCALE
-   GLX_STATIC_GRAY
-   GLX_TRANSPARENT_RGB
-   GLX_TRANSPARENT_INDEX
-   GLX_VISUAL_ID
-   GLX_SCREEN
-   GLX_NON_CONFORMANT_CONFIG
-   GLX_DRAWABLE_TYPE
-   GLX_RENDER_TYPE
-   GLX_X_RENDERABLE
-   GLX_FBCONFIG_ID
-   GLX_RGBA_TYPE
-   GLX_COLOR_INDEX_TYPE
-   GLX_MAX_PBUFFER_WIDTH
-   GLX_MAX_PBUFFER_HEIGHT
-   GLX_MAX_PBUFFER_PIXELS
-   GLX_PRESERVED_CONTENTS
-   GLX_LARGEST_PBUFFER
-   GLX_WIDTH
-   GLX_HEIGHT
-   GLX_EVENT_MASK
-   GLX_DAMAGED
-   GLX_SAVED
-   GLX_WINDOW
-   GLX_PBUFFER
-   GLX_PBUFFER_HEIGHT
-   GLX_PBUFFER_WIDTH
-   GLX_RGBA_BIT
-   GLX_COLOR_INDEX_BIT
-   GLX_PBUFFER_CLOBBER_MASK
+   ;; GLX_CONFIG_CAVEAT
+   ;; GLX_DONT_CARE
+   ;; GLX_X_VISUAL_TYPE
+   ;; GLX_TRANSPARENT_TYPE
+   ;; GLX_TRANSPARENT_INDEX_VALUE
+   ;; GLX_TRANSPARENT_RED_VALUE
+   ;; GLX_TRANSPARENT_GREEN_VALUE
+   ;; GLX_TRANSPARENT_BLUE_VALUE
+   ;; GLX_TRANSPARENT_ALPHA_VALUE
+   ;; GLX_WINDOW_BIT
+   ;; GLX_PIXMAP_BIT
+   ;; GLX_PBUFFER_BIT
+   ;; GLX_AUX_BUFFERS_BIT
+   ;; GLX_FRONT_LEFT_BUFFER_BIT
+   ;; GLX_FRONT_RIGHT_BUFFER_BIT
+   ;; GLX_BACK_LEFT_BUFFER_BIT
+   ;; GLX_BACK_RIGHT_BUFFER_BIT
+   ;; GLX_DEPTH_BUFFER_BIT
+   ;; GLX_STENCIL_BUFFER_BIT
+   ;; GLX_ACCUM_BUFFER_BIT
+   ;; GLX_NONE
+   ;; GLX_SLOW_CONFIG
+   ;; GLX_TRUE_COLOR
+   ;; GLX_DIRECT_COLOR
+   ;; GLX_PSEUDO_COLOR
+   ;; GLX_STATIC_COLOR
+   ;; GLX_GRAY_SCALE
+   ;; GLX_STATIC_GRAY
+   ;; GLX_TRANSPARENT_RGB
+   ;; GLX_TRANSPARENT_INDEX
+   ;; GLX_VISUAL_ID
+   ;; GLX_SCREEN
+   ;; GLX_NON_CONFORMANT_CONFIG
+   ;; GLX_DRAWABLE_TYPE
+   ;; GLX_RENDER_TYPE
+   ;; GLX_X_RENDERABLE
+   ;; GLX_FBCONFIG_ID
+   ;; GLX_RGBA_TYPE
+   ;; GLX_COLOR_INDEX_TYPE
+   ;; GLX_MAX_PBUFFER_WIDTH
+   ;; GLX_MAX_PBUFFER_HEIGHT
+   ;; GLX_MAX_PBUFFER_PIXELS
+   ;; GLX_PRESERVED_CONTENTS
+   ;; GLX_LARGEST_PBUFFER
+   ;; GLX_WIDTH
+   ;; GLX_HEIGHT
+   ;; GLX_EVENT_MASK
+   ;; GLX_DAMAGED
+   ;; GLX_SAVED
+   ;; GLX_WINDOW
+   ;; GLX_PBUFFER
+   ;; GLX_PBUFFER_HEIGHT
+   ;; GLX_PBUFFER_WIDTH
+   ;; GLX_RGBA_BIT
+   ;; GLX_COLOR_INDEX_BIT
+   ;; GLX_PBUFFER_CLOBBER_MASK
 )
 
   (import
@@ -94,12 +102,25 @@
       (otus ffi))
 (begin
 
+; x11
+(define True 1)
+(define False 0)
+(define None 0)
+
+(define AllPlanes -1)
+
+(define XYBitmap 0)
+(define XYPixmap 1)
+(define ZPixmap 2)
+
 ; x11 types
 (define Display* fft-void*)
 (define Window fft-void*)
 (define Visual* fft-void*)
 (define XSetWindowAttributes* fft-void*)
 (define XEvent* fft-void*)
+(define XImage* fft-void*)
+(define Drawable fft-void*)
 
 (define X11 (or (load-dynamic-library "libX11.so")
                 (load-dynamic-library "libX11.so.6")))
@@ -108,10 +129,15 @@
 (define XOpenDisplay  (X11 Display* "XOpenDisplay" type-string))
 (define XDefaultScreen(X11 fft-int "XDefaultScreen" Display*))
 (define XRootWindow   (X11 Window "XRootWindow" Display* fft-int))
+(define XDefaultRootWindow (X11 Window "XDefaultRootWindow" Display*))
 (define XFree         (X11 fft-int "XFree" fft-void*))
 
 (define XBlackPixel (X11 fft-unsigned-long "XBlackPixel" Display* fft-int))
 (define XWhitePixel (X11 fft-unsigned-long "XWhitePixel" Display* fft-int))
+
+(define XGetImage     (X11 XImage* "XGetImage" Display* Drawable fft-int fft-int fft-unsigned-int fft-unsigned-int fft-unsigned-long fft-int))
+(define XDestroyImage (X11 fft-int "XDestroyImage" XImage*))
+(define XAllPlanes    (X11 fft-unsigned-long "XAllPlanes"))
 
 (define XCreateWindow (X11 Window "XCreateWindow"
    Display* ; display
