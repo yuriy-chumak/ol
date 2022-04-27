@@ -45,8 +45,16 @@
          (skip (get-imm #\newline)))
       [r g b 1.0]))
 
+(define (map-parser name)
+   (either
+      (let-parse* (
+            (skip (get-word name #true))
+            (value get-rest-of-line))
+         (bytes->string value))
+      (epsilon #false)))
+
 (define material-parser
-   (let-parses(
+   (let-parse* (
          (skip (get-imm #\newline))
          (newmtl get-newmtl)
          (ns (get-1-number "Ns "))
@@ -56,12 +64,14 @@
          (ke (get-3-numbers "Ke "))
          (ni (get-1-number "Ni "))
          (d (get-1-number "d "))
-         (illum (get-1-number "illum ")))
+         (illum (get-1-number "illum "))
+         (map_kd (map-parser "map_Kd ")))
       {
          'name   (bytes->string newmtl)
          'ns     ns
          'ka     ka
          'kd     kd
+         'map_kd map_kd
          'ks     ks
          'ke     ke
          'ni     ni
