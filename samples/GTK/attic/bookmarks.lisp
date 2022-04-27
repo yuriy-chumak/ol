@@ -17,12 +17,10 @@
 (print config)
 
 
-(define print_hello (vm:pin (cons
-   (cons fft-int (list GtkWidget* gpointer))
-   (lambda (widget userdata)
-      (gtk_label_set_text userdata (strftime "%F %H:%M:%S\0"))
-      TRUE
-))))
+(define print_hello (GTK_CALLBACK (widget userdata)
+   (gtk_label_set_text userdata (strftime "%F %H:%M:%S\0"))
+   TRUE
+))
 
 ; main:
 (gtk_init (box 0) #f)

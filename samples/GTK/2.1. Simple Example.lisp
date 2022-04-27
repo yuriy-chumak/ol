@@ -15,7 +15,6 @@
 
    ; display the window
    (gtk_widget_show_all window)))
-(print "activate: " activate)
 
 (g_signal_connect app "activate" (G_CALLBACK activate) NULL)
 
