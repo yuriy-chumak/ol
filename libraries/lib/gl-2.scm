@@ -13,8 +13,8 @@
    
 (begin
 
-   (define (compile shader source)
-      (glShaderSource shader 1 (list source) #false)
+   (define (compile shader sources)
+      (glShaderSource shader (length sources) sources #false)
       (glCompileShader shader)
       (let ((isCompiled (box 0)))
          (glGetShaderiv shader GL_COMPILE_STATUS isCompiled)
@@ -66,8 +66,8 @@
                   (if (eq? po 0)
                      (raise "Can't create shader program."))
 
-                  (compile vs vstext)
-                  (compile fs fstext)
+                  (compile vs (if (list? vstext) vstext (list vstext)))
+                  (compile fs (if (list? fstext) fstext (list fstext)))
 
                   (link po vs fs)
                   po))
@@ -81,12 +81,12 @@
                   (if (eq? program 0)
                      (raise "Can't create shader program."))
 
-                  (compile gs gstext)
-                  (compile vs vstext)
-                  (compile fs fstext)
+                  (apply compile gs (if (list? gstext) gstext (list gstext)))
+                  (apply compile vs (if (list? vstext) vstext (list vstext)))
+                  (apply compile fs (if (list? fstext) fstext (list fstext)))
 
                   (glProgramParameteri program GL_GEOMETRY_INPUT_TYPE inputType)
-                  (glProgramParameteri program GL_GEOMETRY_OUTPUT_TYPE outputType) ; only POINTS, LINE_STRIP and TRIANGLE_STRIP is allowed
+                  (glProgramParameteri program GL_GEOMETRY_OUTPUT_TYPE outputType) ; only POINTS, LINE_STRIP and TRIANGLE_STRIP is allowed:
                   (glProgramParameteri program GL_GEOMETRY_VERTICES_OUT outputCount)
 
                   (link program gs vs fs)
