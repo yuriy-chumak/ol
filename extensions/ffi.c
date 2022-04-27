@@ -2372,31 +2372,30 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 
 		case TINT8:
-			// little-endian:
-			result = (word*) new_number (*(char*)&got);  // TODO: change to __INT8_TYPE__
+			result = (word*) new_number (*(int8_t*)&got);
 			break;
 		case TINT16:
-			result = (word*) new_number (*(short*)&got); // TODO: change to __INT16_TYPE__
+			result = (word*) new_number (*(int16_t*)&got);
 			break;
 		case TINT32:
-			result = (word*) new_number (*(int*)&got);   // TODO: change to __INT32_TYPE__
+			result = (word*) new_number (*(int32_t*)&got);
 			break;
 		case TINT64: {
-			result = (word*) new_number (*(long long*)&got); // TODO: change to __INT64_TYPE__
+			result = (word*) new_number (*(int64_t*)&got);
 			break;
 		}
 
 		case TUINT8:
-			result = (word*) new_number (*(unsigned char*)&got); // TODO: change to __UINT8_TYPE__
+			result = (word*) new_number (*(uint8_t*)&got);
 			break;
 		case TUINT16:
-			result = (word*) new_number (*(unsigned short*)&got);// TODO: change to __UINT16_TYPE__
+			result = (word*) new_number (*(uint16_t*)&got);
 			break;
 		case TUINT32:
-			result = (word*) new_number (*(unsigned int*)&got);  // TODO: change to __UINT32_TYPE__
+			result = (word*) new_number (*(uint32_t*)&got);
 			break;
 		case TUINT64: {
-			result = (word*) new_number (*(unsigned long long*)&got); // TODO: change to __UINT32_TYPE__
+			result = (word*) new_number (*(uint64_t*)&got);
 			break;
 		}
 
