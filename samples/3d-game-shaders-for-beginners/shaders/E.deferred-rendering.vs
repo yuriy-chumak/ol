@@ -15,6 +15,7 @@ void main() {
 	gl_Position = gl_ProjectionMatrix * vertexPosition;
 	gl_FrontColor = gl_Color;
 	gl_BackColor = vec4(0.0,0.0,0.0, 1);
+	gl_TexCoord[0] = gl_MultiTexCoord0;
 
-    fragPosLightSpace = gl_TextureMatrix[2] * gl_WorldMatrix * gl_Vertex; // position from the sun view point
+	fragPosLightSpace = gl_TextureMatrix[2] * gl_WorldMatrix * gl_Vertex; // position from the sun view point
 }

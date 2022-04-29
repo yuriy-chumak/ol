@@ -2,7 +2,7 @@
 
 ; initialize OpenGL
 (import (lib gl-2))
-(gl:set-window-title "6.render-to-texture.lisp")
+(gl:set-window-title "7.texturing.lisp")
 (import (scheme dynamic-bindings))
 
 ; gl global init
@@ -14,6 +14,9 @@
 ; scene
 (import (scene))
 
+;(define textures (load-texures models))
+(import (lib soil))
+
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
 (define geometry (compile-triangles models))
@@ -24,30 +27,16 @@
 
 ; scene lights
 (define Lights (vector->list (scene 'Lights)))
-(print "Lights: " Lights)
+;(print "Lights: " Lights)
 
 ; scene objects
 (define Objects (vector->list (scene 'Objects)))
-(print "Objects: " Objects)
+;(print "Objects: " Objects)
 
 ; rotating ceiling fan
 (define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
 (define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
 (define Objects (remove ceilingFan? Objects))
-
-; just apply texture program
-(define draw-texture (gl:create-program
-"#version 120 // OpenGL 2.1
-   void main() {
-      gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
-      gl_TexCoord[0] = gl_MultiTexCoord0;
-   }"
-"#version 120 // OpenGL 2.1
-   uniform sampler2D tex0;
-   void main() {
-      gl_FragColor = texture2D(tex0, gl_TexCoord[0].st);
-   }"))
-
 
 ;; render buffer
 (import (OpenGL EXT framebuffer_object))
@@ -81,21 +70,34 @@
 (glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (car depthrenderbuffer))
 (glBindFramebuffer GL_FRAMEBUFFER 0)
 
-; normals producer shader program
-(define normals (gl:create-program
+; texture producer shader program
+(define texturer (gl:create-program
 "#version 120 // OpenGL 2.1
    #define gl_ModelMatrix gl_TextureMatrix[7] //project specific model matrix
    #define gl_WorldViewProjectionMatrix gl_ModelViewProjectionMatrix
 
-   varying vec3 normal;
    void main() {
       gl_Position = gl_WorldViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
-      normal = gl_Normal * 0.5 + vec3(0.5, 0.5, 0.5);
+      gl_FrontColor = gl_Color;
+      gl_TexCoord[0] = gl_MultiTexCoord0;
    }"
 "#version 120 // OpenGL 2.1
-   varying vec3 normal;
+   uniform sampler2D tex0;
    void main() {
-      gl_FragColor = vec4(normalize(normal), 1.0);
+      gl_FragColor = gl_Color * texture2D(tex0, gl_TexCoord[0].st);
+   }"))
+
+; just apply texture program
+(define draw-texture (gl:create-program
+"#version 120 // OpenGL 2.1
+   void main() {
+      gl_Position = ftransform();
+      gl_TexCoord[0] = gl_MultiTexCoord0;
+   }"
+"#version 120 // OpenGL 2.1
+   uniform sampler2D tex0;
+   void main() {
+      gl_FragColor = texture2D(tex0, gl_TexCoord[0].st);
    }"))
 
 ; draw
@@ -107,9 +109,9 @@
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    ;; rotate ceilingFan
-   (rotate ceilingFan 0.1)
+   (rotate ceilingFan 0.3)
 
-   (glUseProgram normals)
+   (glUseProgram texturer)
 
    ; camera setup
    (begin
@@ -131,6 +133,9 @@
       (apply gluLookAt (append location target up)))
 
    ; draw a geometry with colors
+   (glActiveTexture GL_TEXTURE0) ; light matrix from the sun
+   (glUniform1i (glGetUniformLocation texturer "tex0") 0)
+
    (draw-geometry (cons (ceilingFan) Objects) geometry)
 
    ; Draw a light bulbs

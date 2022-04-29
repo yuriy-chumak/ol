@@ -28,10 +28,13 @@
 
 (define screenTex (car screenTex))
 
+; "дефолтная текстура"
+(SOIL_load_OGL_texture "resources/Textures/black.png" SOIL_LOAD_RGBA 0 0)
+
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
-(print "compiled models:\n" models)
+(define geometry (compile-triangles models))
 
 ;; load a scene
 (import (file json))
@@ -44,13 +47,11 @@
 ; rotating ceiling fan
 (define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
 (define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
-
 (define Objects (remove ceilingFan? Objects))
 
 ; computer display
 (define (computerScreen? entity) (string-eq? (entity 'name "") "computerScreen"))
 (define computerScreen (make-parameter (car (keep computerScreen? Objects))))
-
 (define Objects (remove computerScreen? Objects))
 
 ;; let's find a sun
@@ -267,8 +268,8 @@
       (glEnable GL_CULL_FACE)
       (glCullFace GL_FRONT)
       (glUseProgram just-depth)
-      (draw-geometry Objects models)
-      (draw-geometry (list (ceilingFan)) models)
+      (draw-geometry Objects geometry)
+      (draw-geometry (list (ceilingFan)) geometry)
    )
 
    (glDisable GL_CULL_FACE)
@@ -324,8 +325,8 @@
       (glBindTexture GL_TEXTURE_2D (car depth-fbo))
       (glUniform1i (glGetUniformLocation forward-program "shadowMap") 0)
 
-      (draw-geometry Objects models)
-      (draw-geometry (list (ceilingFan)) models)
+      (draw-geometry Objects geometry)
+      (draw-geometry (list (ceilingFan)) geometry)
 
       (glUseProgram forward-program-textured)
       (glActiveTexture GL_TEXTURE0) ; light matrix from the sun
@@ -341,7 +342,7 @@
       (glTexImage2D GL_TEXTURE_2D 0 GL_RGB SCREENW SCREENH 0 GL_BGRA GL_UNSIGNED_BYTE data)
       (glUniform1i (glGetUniformLocation forward-program "textureId") 1)
 
-      (draw-geometry (list (computerScreen)) models)
+      (draw-geometry (list (computerScreen)) geometry)
 
       (XDestroyImage image)
    )

@@ -6,6 +6,10 @@ varying vec4 vertexNormal;
 uniform sampler2D shadowMap;
 varying vec4 fragPosLightSpace;
 
+#ifdef TEXTURED
+uniform sampler2D textureId;
+#endif
+
 void main() {
 	vec3 vertex = vertexPosition.xyz;
 	vec3 normal = normalize(vertexNormal.xyz);
@@ -19,9 +23,7 @@ void main() {
 	// Фоновое освещение (для солнца, для лампочки, для всех источников света)
 	vec4 ambient = gl_Color * gl_LightModel.ambient * vec4(1.0, 1.0, 1.0, 1); // todo: light color
 
-	// 1 - POINT
-	// 2 - SUN
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 2; i++) {
 		vec4 lightPosition = /*gl_ModelViewMatrixInverse **/gl_LightSource[i].position; // gl_LightSource already multiplied by gl_ModelViewMatrix
 		vec3 lightDirection = lightPosition.xyz - vertex * lightPosition.w;
 
@@ -60,6 +62,12 @@ void main() {
 		specular += vec4(specularTemp, diffuseTex.a); // alpha is a question
 	}
 
-	gl_FragData[0] = (ambient + diffuse + specular);
+	vec4 color;
+#ifdef TEXTURED
+		color = texture2D(textureId, gl_TexCoord[0].st);
+#else
+		color = vec4(1,1,1,1);
+#endif
+	gl_FragData[0] = (ambient + diffuse + specular) * color;
 	gl_FragData[1] = (fragPosLightSpace / fragPosLightSpace.w) * 0.5 + 0.5;
 }

@@ -9,6 +9,7 @@
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
+(define geometry (compile-triangles models))
 
 ; load a scene
 (import (file json))
@@ -228,6 +229,7 @@ GL_TRIANGLES GL_TRIANGLE_STRIP 18
 
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
+(glEnable GL_CULL_FACE); GL_BACK
 
 ; draw
 (gl:set-renderer (lambda ()
@@ -253,7 +255,7 @@ GL_TRIANGLES GL_TRIANGLE_STRIP 18
       0 0 1) ; up is 'z'
 
    (glDisable GL_CULL_FACE)
-   (draw-geometry (scene 'Objects) models)
+   (draw-geometry (scene 'Objects) geometry)
 
    (glBindFramebuffer GL_FRAMEBUFFER 0)
    (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
@@ -311,7 +313,7 @@ GL_TRIANGLES GL_TRIANGLE_STRIP 18
    (glUseProgram depthCube)
 
    (glCullFace GL_FRONT)
-   (draw-geometry (scene 'Objects) models)
+   (draw-geometry (scene 'Objects) geometry)
    (glCullFace GL_BACK)
 
    (glUseProgram 0)

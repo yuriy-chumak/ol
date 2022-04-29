@@ -3,19 +3,20 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "4.reference-frames.lisp")
+(import (scheme dynamic-bindings))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
 
-(glEnable GL_CULL_FACE)
-(glCullFace GL_BACK)
+(glEnable GL_CULL_FACE) ; GL_BACK
 
 ; scene
 (import (scene))
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
+(define geometry (compile-triangles models))
 
 ; load a scene
 (import (file json))
@@ -26,10 +27,15 @@
 (print "Lights: " Lights)
 
 ; scene objects
-(define Objects (scene 'Objects))
+(define Objects (vector->list (scene 'Objects)))
 (print "Objects: " Objects)
 
+; rotating ceiling fan
+(define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
+(define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
+(define Objects (remove ceilingFan? Objects))
 
+; lights init
 (glEnable GL_COLOR_MATERIAL)
 (glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
 ; set lights specular colors
@@ -44,6 +50,9 @@
 (gl:set-renderer (lambda ()
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
+   ;; rotate ceilingFan
+   (rotate ceilingFan 0.1)
 
    ; Lights
    (glEnable GL_LIGHTING)
@@ -89,9 +98,9 @@
             (glRotatef (ref ypr 3) 0 0 1))
          ; precompiled geometry
          (for-each glCallList
-            (models (string->symbol model)))
+            (geometry (string->symbol model)))
          (glPopMatrix))
-      Objects)
+      (cons (ceilingFan) Objects))
 
    ; Draw a light bulbs
    (glMatrixMode GL_MODELVIEW)

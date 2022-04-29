@@ -2,15 +2,15 @@
 
 ; initialize OpenGL
 (import (lib gl-2))
-(gl:set-window-title "7. Render to the Depth Buffer")
-; todo: splash screen
+(gl:set-window-title "Shadows")
+(import (scheme dynamic-bindings))
 
 (import (scene))
 (import (scheme char))
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
-(print "compiled models:\n" models)
+(define geometry (compile-triangles models))
 
 ;; load a scene
 (import (file json))
@@ -20,6 +20,15 @@
 (define sun (car (filter (lambda (light) (string-ci=? (light 'type) "SUN"))
    (vector->list (scene 'Lights)))))
 (print "sun:" sun)
+
+; scene objects
+(define Objects (vector->list (scene 'Objects)))
+(print "Objects: " Objects)
+
+; rotating ceiling fan
+(define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
+(define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
+(define Objects (remove ceilingFan? Objects))
 
 ;; shaders
 (define just-depth (gl:create-program
@@ -109,6 +118,14 @@
 
 ; draw
 (gl:set-renderer (lambda (mouse)
+   ;; rotate ceilingFan
+   (define rotation ((ceilingFan) 'rotation))
+   (ceilingFan
+      (put (ceilingFan) 'rotation
+         (let ((z (ref rotation 3)))
+            (set-ref rotation 3 (+ z 0.1)))))
+
+   ;; draw
    (glViewport 0 0 TEXW TEXH)
    (glBindFramebuffer GL_FRAMEBUFFER (car depth-fbo))
 
@@ -130,7 +147,7 @@
 
    (glUseProgram just-depth)
    (glDisable GL_CULL_FACE)
-   (draw-geometry (scene 'Objects) models)
+   (draw-geometry (cons (ceilingFan) Objects) geometry)
 
    (glBindFramebuffer GL_FRAMEBUFFER 0)
    (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
@@ -175,7 +192,7 @@
       (glBindTexture GL_TEXTURE_2D (car depth-fbo))
 
       ; Draw a geometry with colors
-      (draw-geometry (scene 'Objects) models)
+      (draw-geometry (cons (ceilingFan) Objects) geometry)
 
    else
       (glBindFramebuffer GL_FRAMEBUFFER 0)

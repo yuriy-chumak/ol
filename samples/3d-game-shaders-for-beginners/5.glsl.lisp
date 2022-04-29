@@ -3,19 +3,20 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "5.glsl.lisp")
+(import (scheme dynamic-bindings))
 
 ; gl global init
 (glShadeModel GL_SMOOTH)
 (glEnable GL_DEPTH_TEST)
 
-(glEnable GL_CULL_FACE)
-(glCullFace GL_BACK)
+(glEnable GL_CULL_FACE); GL_BACK
 
 ; scene
 (import (scene))
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
+(define geometry (compile-triangles models))
 
 ; load a scene
 (import (file json))
@@ -26,8 +27,13 @@
 (print "Lights: " Lights)
 
 ; scene objects
-(define Objects (scene 'Objects))
+(define Objects (vector->list (scene 'Objects)))
 (print "Objects: " Objects)
+
+; rotating ceiling fan
+(define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
+(define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
+(define Objects (remove ceilingFan? Objects))
 
 ; We are moving away from the fixed OpenGL pipeline, in which
 ; Model and View matrices are combined into one.
@@ -41,16 +47,21 @@
 
    void main() {
       gl_Position = gl_WorldViewProjectionMatrix * gl_ModelMatrix * gl_Vertex;
+      gl_FrontColor = gl_Color;
    }"
 "#version 120 // OpenGL 2.1
    void main() {
-      gl_FragColor = vec4(0, 1, 0, 1);
+      vec4 green = vec4(0,1,0, 1);
+      gl_FragColor = gl_FragCoord.y*2 < gl_FragCoord.x ? gl_Color : green;
    }"))
 
 ; draw
 (gl:set-renderer (lambda ()
    (glClearColor 0.1 0.1 0.1 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
+   ;; rotate ceilingFan
+   (rotate ceilingFan 0.1)
 
    (glUseProgram greenify)
 
@@ -90,8 +101,8 @@
             (glRotatef (ref ypr 3) 0 0 1))
          ; precompiled geometry
          (for-each glCallList
-            (models (string->symbol model))))
-      Objects)
+            (geometry (string->symbol model))))
+      (cons (ceilingFan) Objects))
 
    ; Draw a light bulbs
    (draw-lightbulbs Lights)

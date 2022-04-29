@@ -81,9 +81,9 @@
                   (if (eq? program 0)
                      (raise "Can't create shader program."))
 
-                  (apply compile gs (if (list? gstext) gstext (list gstext)))
-                  (apply compile vs (if (list? vstext) vstext (list vstext)))
-                  (apply compile fs (if (list? fstext) fstext (list fstext)))
+                  (compile gs (if (list? gstext) gstext (list gstext)))
+                  (compile vs (if (list? vstext) vstext (list vstext)))
+                  (compile fs (if (list? fstext) fstext (list fstext)))
 
                   (glProgramParameteri program GL_GEOMETRY_INPUT_TYPE inputType)
                   (glProgramParameteri program GL_GEOMETRY_OUTPUT_TYPE outputType) ; only POINTS, LINE_STRIP and TRIANGLE_STRIP is allowed:

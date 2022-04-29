@@ -3,15 +3,30 @@
 ; initialize OpenGL
 (import (lib gl-2))
 (gl:set-window-title "8.lighting")
+(import (scheme dynamic-bindings))
 
 (import (scene))
 
 ; load (and create if no one) a models cache
 (define models (prepare-models "cache.bin"))
+(define geometry (compile-triangles models))
 
 ; load a scene
 (import (file json))
 (define scene (read-json-file "scene.json"))
+
+; scene lights
+(define Lights (vector->list (scene 'Lights)))
+(print "Lights: " Lights)
+
+; scene objects
+(define Objects (vector->list (scene 'Objects)))
+(print "Objects: " Objects)
+
+; rotating ceiling fan
+(define (ceilingFan? entity) (string-eq? (entity 'name "") "ceilingFan"))
+(define ceilingFan (make-parameter (car (keep ceilingFan? Objects))))
+(define Objects (remove ceilingFan? Objects))
 
 ;; shaders
 (define po (gl:create-program
@@ -82,13 +97,6 @@
 ;; освещение сцены
 (glEnable GL_LIGHTING)
 
-(define Lights (vector->list (scene 'Lights)))
-(print "Lights: " Lights)
-
-; scene objects
-(define Objects (scene 'Objects))
-(print "Objects: " Objects)
-
 (glLightModelfv GL_LIGHT_MODEL_AMBIENT '(0.1 0.1 0.1 1))
 ; set lights specular colors
 (for-each (lambda (i)
@@ -121,29 +129,7 @@
                1]
          })))
 
-   '(begin ; calculate the shadow texture
-      (glViewport 0 0 1024 1024)
-      (glBindFramebuffer GL_FRAMEBUFFER (car depth-fbo))
-      (glClear GL_DEPTH_BUFFER_BIT)
-      (glUseProgram po)
-
-      (glMatrixMode GL_PROJECTION)
-      (glLoadIdentity)
-      ; lightSpaceMatrix is a (lightProjection * lightView) matrix
-      (glOrtho -20 20 -20 20 0 50) ; gl_Projection is a light projection matrix
-      ;(gluPerspective 45 1.0 0.1 100)
-      (glMatrixMode GL_MODELVIEW)
-      (glLoadIdentity)
-      (vector-apply ((cadr lights) 'position)
-         (lambda (x y z w)
-            (gluLookAt x y z ; gl_ModelView is a light space matrix
-               0 0 0
-               0 0 1)))
-
-      (glCullFace GL_FRONT)
-      (draw-geometry Objects models)
-      (glCullFace GL_BACK)
-      (glBindFramebuffer GL_FRAMEBUFFER 0))
+   (rotate ceilingFan 0.3)
 
    ;; let's draw a scene
    (glCullFace GL_BACK)
@@ -201,7 +187,7 @@
       ;; (glBindTexture GL_TEXTURE_2D (car depth-fbo))
       ;; (glUniform1i (glGetUniformLocation shadowed "shadow") 0) ; 0-th texture unit
 
-      (draw-geometry Objects models)
+      (draw-geometry (cons (ceilingFan) Objects) geometry)
       
       ; а теперь добавим наши лампочки на сцену
       (glUseProgram 0)
@@ -219,67 +205,4 @@
                (glPopMatrix)))
          lights
          (iota (length lights))))
-      
-      ;; (glUseProgram 0)
-      ;; (glPointSize 5)
-      ;; (glBegin GL_POINTS)
-      ;;    (glColor3f #xff/255 #xbf/255 0)
-      ;;    (glVertex3f x y z)
-      ;; (glEnd)
-      ;; (glBegin GL_LINES)
-      ;;    (glVertex3f x y z)
-      ;;    (glVertex3f x y 0)
-      ;; (glEnd)
-
-   '(begin
-      (glViewport 0 0 (/ (gl:get-window-width) 2) (/ (gl:get-window-height) 2))
-      (glClearColor 1 0 0 1)
-      ;(glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-      (glClear GL_DEPTH_BUFFER_BIT)
-
-      ;; ; set and show lighting point
-      ;; (glDisable GL_LIGHTING)
-      ;; (let*((ss ms (clock))
-      ;;       (x (- (* 7 (sin (+ ss (/ ms 1000)))) 3))
-      ;;       (y (- (* 7 (cos (+ ss (/ ms 1000)))) 3))
-      ;;       (z 5))
-      ;;    (glPointSize 5)
-      ;;    (glBegin GL_POINTS)
-      ;;    (glColor3f #xff/255 #xbf/255 0)
-      ;;    (glVertex3f x y z)
-      ;;    (glEnd)
-         
-      ;;    (glLightfv GL_LIGHT0 GL_POSITION (list x y z w)))
-      ;; (glEnable GL_LIGHTING)
-      ;; (glDisable GL_LIGHTING)
-
-      ;; draw a texture
-      (glBindFramebuffer GL_FRAMEBUFFER 0)
-      (glUseProgram justdraw)
-
-
-      (glMatrixMode GL_PROJECTION)
-      (glLoadIdentity)
-      (glMatrixMode GL_MODELVIEW)
-      (glLoadIdentity)
-      (glOrtho 0 1 0 1 0 1)
-
-      (glEnable GL_TEXTURE_2D)
-      (glBindTexture GL_TEXTURE_2D (car depth-fbo))
-      (glUniform1i (glGetUniformLocation justdraw "shadow") 0) ; 0-th texture unit
-
-      (glBegin GL_QUADS)
-         (glColor3f 1 1 1)
-
-         (glTexCoord2f 0 0)
-         (glVertex2f 0 0)
-         (glTexCoord2f 1 0)
-         (glVertex2f 1 0)
-         (glTexCoord2f 1 1)
-         (glVertex2f 1 1)
-         (glTexCoord2f 0 1)
-         (glVertex2f 0 1)
-      (glEnd))
-
-   (glClearColor 0 0 1 1)
 )))
