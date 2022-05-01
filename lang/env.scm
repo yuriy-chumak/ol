@@ -59,15 +59,15 @@
          (put env key
             ['macro transformer]))
 
-      (define-syntax invoke
-         (syntax-rules ()
-            ((invoke module name arg ...)
-               ((env-get module (quote name)
-                  (lambda (arg ...)
-                     (runtime-error "invoke: failed to invoke "
-                        (cons (quote name)
-                           (list arg ...)))))
-                  arg ...))))
+      ;; (define-syntax invoke
+      ;;    (syntax-rules ()
+      ;;       ((invoke module name arg ...)
+      ;;          ((env-get module (quote name)
+      ;;             (lambda (arg ...)
+      ;;                (runtime-error "invoke: failed to invoke "
+      ;;                   (cons (quote name)
+      ;;                      (list arg ...)))))
+      ;;             arg ...))))
 
       ;; mark an argument list (possibly improper list of symbols) as bound
       (define env-bind
@@ -114,8 +114,8 @@
             (['undefined]
                (fail
                (let ((error (bytes->string (foldr render '() (list "'" exp "'?")))))
-                  (if (has? '(q quit exit stop ret) exp)
-                     (list "What is " error " \n/if you want to quit just write ,quit (with comma!)/")
+                  (if (has? '(q quit stop ret) exp)
+                     (list "What is " error " \n/if you want to quit just type ,quit or (exit)/")
                      (list "What is " error)))))
             (else is bad
                (fail (list "The symbol" exp "has a funny value: '" bad "'")))))

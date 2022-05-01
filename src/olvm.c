@@ -2978,9 +2978,7 @@ loop:;
 				int size = header_size(hdr)-1; // (-1) for header
 				word *newobj = new (size);
 				word *res = newobj;
-				/* (hdr & 0b...11111111111111111111100000000111) | tttttttt000 */
-				//*newobj++ = (hdr&(~2040))|(type<<TPOS);
-				*newobj++ = (hdr & (~252)) | (type << TPOS); /* <- hardcoded ...111100000011 */
+				*newobj++ = (hdr & (~252)) | (type << TPOS);
 				wordcopy(ob, newobj, size);
 				A2 = (word)res;
 			}
