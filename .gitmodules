@@ -1,0 +1,3 @@
+[submodule "3d-game-shaders-for-beginners"]
+	path = samples/3d-game-shaders-for-beginners
+	url = https://github.com/yuriy-chumak/3d-game-shaders-for-beginners.git
