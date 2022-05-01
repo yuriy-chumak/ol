@@ -102,7 +102,6 @@
          (runtime-error "Core profile error:"
             (cons "Function" (cons function (cons "require to import" (cons module (cons "module." #null))))))))
 
-
       (setq make-vector ; #() and []
          (case-lambda
             ((v)
@@ -110,7 +109,8 @@
             ((k fill)
                (vm:make TVECTOR k fill))))
    
-      (setq I (lambda x x)) ; Identity function
+      ; * Identity function
+      (setq I (lambda (x) x))
    )
 
    ; =================================================================
@@ -394,9 +394,12 @@
             ((begin) #false) ; empty 
             ((begin exp) exp)
 
-            ; define
-            ((begin (define . a) (define . b) ... . rest) ; ??
+            ; define, define-values
+            ((begin (define . a) (define . b) ... . rest)
                (begin 42 () (define . a) (define . b) ... . rest))
+            ((begin (define-values (var ...) . body) . rest)
+               (values-apply (begin . body) (lambda (var ...) (begin . rest))))
+
             ((begin 42 done (define ((op . args1) . args2) . body) . rest) ; list of variables
                (begin 42 done (define (op . args1) (lambda args2 . body)) . rest))
             ((begin 42 done (define (var . args) . body) . rest) ; function
