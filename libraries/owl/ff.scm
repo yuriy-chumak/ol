@@ -23,6 +23,7 @@
       fupd        ; alias for ff-update
                   ;    - no rebalancing, just walk to leaf and update value
       ff-union ff-diff ; TEMP
+      ff-replace
       ff-fold ff-foldr ; like list folds but (op st key val) -> st'
       ff-map      ; like list map but (op key val) -> val'
       ff-iter     ; ff -> ((key . value) ...) stream (in order)
@@ -602,6 +603,9 @@
                      (if (null? c)
                         b
                         (loop b (car c) (cdr c))))))))
+
+      (define (ff-replace a b)
+         (ff-union (lambda (a b) b) a b))
 
       ;; todo: placeholder ff-diff
       (define (ff-diff a b)
