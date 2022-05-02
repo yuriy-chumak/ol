@@ -5,268 +5,182 @@
 
    GL_VERSION_1_0
 
-   GL_TRUE GL_FALSE           ; 1, 0
+   GL_TRUE GL_FALSE   ; 1, 0
 
    ;; 2.5 GL Errors
-   glGetError ; GLenum () +
-      GL_NO_ERROR
-      GL_INVALID_ENUM
-      GL_INVALID_VALUE
-      GL_INVALID_OPERATION
-      GL_STACK_OVERFLOW
-      GL_STACK_UNDERFLOW
-      GL_OUT_OF_MEMORY
+   glGetError ; GLenum ()
 
    ;; 2.6 Begin/End Paradigm
-   glBegin ; void (GLenum mode) +
-      GL_POINTS ; mode
-      GL_LINES
-      GL_LINE_LOOP
-      GL_LINE_STRIP
-      GL_TRIANGLES
-      GL_TRIANGLE_STRIP
-      GL_TRIANGLE_FAN
-      GL_QUADS
-      GL_QUAD_STRIP
-      GL_POLYGON
+   ;; 2.6.1 Begin and End Objects
+   glBegin ; void (GLenum mode)
+   glEnd   ; void ()
 
-   glEnd ; void () +
-
-   glEdgeFlag ; void (GLboolean flag)
-   glEdgeFlagv ; void (const GLboolean *flag);
+   ;; 2.6.2 Polygon Edges
+   glEdgeFlag  ; void (GLboolean flag)
+   glEdgeFlagv ; void (const GLboolean *flag)
 
    ;; 2.7 Vertex Specification
+   glVertex2d  ; void (GLdouble x, GLdouble y)
+   glVertex2dv ; void (const GLdouble *v)
+   glVertex2f  ; void (GLfloat x, GLfloat y)
+   glVertex2fv ; void (const GLfloat *v)
+   glVertex2i  ; void (GLint x, GLint y)
+   glVertex2iv ; void (const GLint *v)
+   glVertex2s  ; void (GLshort x, GLshort y)
+   glVertex2sv ; void (const GLshort *v)
+   glVertex3d  ; void (GLdouble x, GLdouble y, GLdouble z)
+   glVertex3dv ; void (const GLdouble *v)
+   glVertex3f  ; void (GLfloat x, GLfloat y, GLfloat z)
+   glVertex3fv ; void (const GLfloat *v)
+   glVertex3i  ; void (GLint x, GLint y, GLint z)
+   glVertex3iv ; void (const GLint *v)
+   glVertex3s  ; void (GLshort x, GLshort y, GLshort z)
+   glVertex3sv ; void (const GLshort *v)
+   glVertex4d  ; void (GLdouble x, GLdouble y, GLdouble z, GLdouble w)
+   glVertex4dv ; void (const GLdouble *v)
+   glVertex4f  ; void (GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+   glVertex4fv ; void (const GLfloat *v)
+   glVertex4i  ; void (GLint x, GLint y, GLint z, GLint w)
+   glVertex4iv ; void (const GLint *v)
+   glVertex4s  ; void (GLshort x, GLshort y, GLshort z, GLshort w)
+   glVertex4sv ; void (const GLshort *v)
 
-   glVertex2d  ; void (GLdouble x, GLdouble y) +
-   glVertex2dv ; void (const GLdouble *v) +
-   glVertex2f  ; void (GLfloat x, GLfloat y) +
-   glVertex2fv ; void (const GLfloat *v) +
-   glVertex2i  ; void (GLint x, GLint y) +
-   glVertex2iv ; void (const GLint *v); +
-   glVertex2s  ; void (GLshort x, GLshort y); +
-   glVertex2sv ; void (const GLshort *v); +
-   glVertex3d  ; void (GLdouble x, GLdouble y, GLdouble z) +
-   glVertex3dv ; void (const GLdouble *v); +
-   glVertex3f  ; void (GLfloat x, GLfloat y, GLfloat z) +
-   glVertex3fv ; void (const GLfloat *v) +
-   glVertex3i  ; void (GLint x, GLint y, GLint z) +
-   glVertex3iv ; void (const GLint *v); +
-   glVertex3s  ; void (GLshort x, GLshort y, GLshort z); +
-   glVertex3sv ; void (const GLshort *v); +
-   glVertex4d  ; void (GLdouble x, GLdouble y, GLdouble z, GLdouble w); +
-   glVertex4dv ; void (const GLdouble *v); +
-   glVertex4f  ; void (GLfloat x, GLfloat y, GLfloat z, GLfloat w); +
-   glVertex4fv ; void (const GLfloat *v); +
-   glVertex4i  ; void (GLint x, GLint y, GLint z, GLint w); +
-   glVertex4iv ; void (const GLint *v); +
-   glVertex4s  ; void (GLshort x, GLshort y, GLshort z, GLshort w); +
-   glVertex4sv ; void (const GLshort *v); +
+   glTexCoord1d  ; void (GLdouble s)
+   glTexCoord1dv ; void (const GLdouble *v)
+   glTexCoord1f  ; void (GLfloat s)
+   glTexCoord1fv ; void (const GLfloat *v)
+   glTexCoord1i  ; void (GLint s)
+   glTexCoord1iv ; void (const GLint *v)
+   glTexCoord1s  ; void (GLshort s)
+   glTexCoord1sv ; void (const GLshort *v)
+   glTexCoord2d  ; void (GLdouble s, GLdouble t)
+   glTexCoord2dv ; void (const GLdouble *v)
+   glTexCoord2f  ; void (GLfloat GLfloat)
+   glTexCoord2fv ; void (const GLfloat *v)
+   glTexCoord2i  ; void (GLint s, GLint t)
+   glTexCoord2iv ; void (const GLint *v)
+   glTexCoord2s  ; void (GLshort s, GLshort t)
+   glTexCoord2sv ; void (const GLshort *v)
+   glTexCoord3d  ; void (GLdouble s, GLdouble t, GLdouble r)
+   glTexCoord3dv ; void (const GLdouble *v)
+   glTexCoord3f  ; void (GLfloat s, GLfloat t, GLfloat r)
+   glTexCoord3fv ; void (const GLfloat *v)
+   glTexCoord3i  ; void (GLint s, GLint t, GLint r)
+   glTexCoord3iv ; void (const GLint *v)
+   glTexCoord3s  ; void (GLshort s, GLshort t, GLshort r)
+   glTexCoord3sv ; void (const GLshort *v)
+   glTexCoord4d  ; void (GLdouble s, GLdouble t, GLdouble r, GLdouble q)
+   glTexCoord4dv ; void (const GLdouble *v)
+   glTexCoord4f  ; void (GLfloat s, GLfloat t, GLfloat r, GLfloat q)
+   glTexCoord4fv ; void (const GLfloat *v)
+   glTexCoord4i  ; void (GLint s, GLint t, GLint r, GLint q)
+   glTexCoord4iv ; void (const GLint *v)
+   glTexCoord4s  ; void (GLshort s, GLshort t, GLshort r, GLshort q)
+   glTexCoord4sv ; void (const GLshort *v)
 
-   glTexCoord1d  ; void (GLdouble s); +
-   glTexCoord1dv ; void (const GLdouble *v); +
-   glTexCoord1f  ; void (GLfloat s); +
-   glTexCoord1fv ; void (const GLfloat *v); +
-   glTexCoord1i  ; void (GLint s); +
-   glTexCoord1iv ; void (const GLint *v); +
-   glTexCoord1s  ; void (GLshort s); +
-   glTexCoord1sv ; void (const GLshort *v); +
-   glTexCoord2d  ; void (GLdouble s, GLdouble t); +
-   glTexCoord2dv ; void (const GLdouble *v); +
-   glTexCoord2f  ; void (GLfloat GLfloat) +
-   glTexCoord2fv ; void (const GLfloat *v); +
-   glTexCoord2i  ; void (GLint s, GLint t); +
-   glTexCoord2iv ; void (const GLint *v); +
-   glTexCoord2s  ; void (GLshort s, GLshort t); +
-   glTexCoord2sv ; void (const GLshort *v); +
-   glTexCoord3d  ; void (GLdouble s, GLdouble t, GLdouble r); +
-   glTexCoord3dv ; void (const GLdouble *v); +
-   glTexCoord3f  ; void (GLfloat s, GLfloat t, GLfloat r); +
-   glTexCoord3fv ; void (const GLfloat *v); +
-   glTexCoord3i  ; void (GLint s, GLint t, GLint r); +
-   glTexCoord3iv ; void (const GLint *v); +
-   glTexCoord3s  ; void (GLshort s, GLshort t, GLshort r); +
-   glTexCoord3sv ; void (const GLshort *v); +
-   glTexCoord4d  ; void (GLdouble s, GLdouble t, GLdouble r, GLdouble q); +
-   glTexCoord4dv ; void (const GLdouble *v); +
-   glTexCoord4f  ; void (GLfloat s, GLfloat t, GLfloat r, GLfloat q); +
-   glTexCoord4fv ; void (const GLfloat *v); +
-   glTexCoord4i  ; void (GLint s, GLint t, GLint r, GLint q); +
-   glTexCoord4iv ; void (const GLint *v); +
-   glTexCoord4s  ; void (GLshort s, GLshort t, GLshort r, GLshort q); +
-   glTexCoord4sv ; void (const GLshort *v); +
+   glNormal3b  ; void (GLbyte nx, GLbyte ny, GLbyte nz)
+   glNormal3bv ; void (const GLbyte *v)
+   glNormal3d  ; void (GLdouble nx, GLdouble ny, GLdouble nz)
+   glNormal3dv ; void (const GLdouble *v)
+   glNormal3f  ; void (GLfloat nx, GLfloat ny, GLfloat nz)
+   glNormal3fv ; void (const GLfloat *v)
+   glNormal3i  ; void (GLint nx, GLint ny, GLint nz)
+   glNormal3iv ; void (const GLint *v)
+   glNormal3s  ; void (GLshort nx, GLshort ny, GLshort nz)
+   glNormal3sv ; void (const GLshort *v)
 
-   glNormal3b  ; void (GLbyte nx, GLbyte ny, GLbyte nz); +
-   glNormal3bv ; void (const GLbyte *v); +
-   glNormal3d  ; void (GLdouble nx, GLdouble ny, GLdouble nz); +
-   glNormal3dv ; void (const GLdouble *v); +
-   glNormal3f  ; void (GLfloat nx, GLfloat ny, GLfloat nz) +
-   glNormal3fv ; void (const GLfloat *v); +
-   glNormal3i  ; void (GLint nx, GLint ny, GLint nz); +
-   glNormal3iv ; void (const GLint *v); +
-   glNormal3s  ; void (GLshort nx, GLshort ny, GLshort nz); +
-   glNormal3sv ; void (const GLshort *v); +
+   glColor3b   ; void (GLbyte red, GLbyte green, GLbyte blue)
+   glColor3bv  ; void (const GLbyte *v)
+   glColor3d   ; void (GLdouble red, GLdouble green, GLdouble blue)
+   glColor3dv  ; void (const GLdouble *v)
+   glColor3f   ; void (GLfloat red, GLfloat green, GLfloat blue)
+   glColor3fv  ; void (const GLfloat *v)
+   glColor3i   ; void (GLint red, GLint green, GLint blue)
+   glColor3iv  ; void (const GLint *v)
+   glColor3s   ; void (GLshort red, GLshort green, GLshort blue)
+   glColor3sv  ; void (const GLshort *v)
+   glColor3ub  ; void (GLubyte red, GLubyte green, GLubyte blue)
+   glColor3ubv ; void (const GLubyte *v)
+   glColor3ui  ; void (GLuint red, GLuint green, GLuint blue)
+   glColor3uiv ; void (const GLuint *v)
+   glColor3us  ; void (GLushort red, GLushort green, GLushort blue)
+   glColor3usv ; void (const GLushort *v)
+   glColor4b   ; void (GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha)
+   glColor4bv  ; void (const GLbyte *v)
+   glColor4d   ; void (GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha)
+   glColor4dv  ; void (const GLdouble *v)
+   glColor4f   ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+   glColor4fv  ; void (const GLfloat *v)
+   glColor4i   ; void (GLint red, GLint green, GLint blue, GLint alpha)
+   glColor4iv  ; void (const GLint *v)
+   glColor4s   ; void (GLshort red, GLshort green, GLshort blue, GLshort alpha)
+   glColor4sv  ; void (const GLshort *v)
+   glColor4ub  ; void (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha)
+   glColor4ubv ; void (const GLubyte *v)
+   glColor4ui  ; void (GLuint red, GLuint green, GLuint blue, GLuint alpha)
+   glColor4uiv ; void (const GLuint *v)
+   glColor4us  ; void (GLushort red, GLushort green, GLushort blue, GLushort alpha)
+   glColor4usv ; void (const GLushort *v)
 
-   glColor3b   ; void (GLbyte red, GLbyte green, GLbyte blue) +
-   glColor3bv  ; void (const GLbyte *v); +
-   glColor3d   ; void (GLdouble red, GLdouble green, GLdouble blue); +
-   glColor3dv  ; void (const GLdouble *v); +
-   glColor3f   ; void (GLfloat red, GLfloat green, GLfloat blue) +
-   glColor3fv  ; void (const GLfloat *v) +
-   glColor3i   ; void (GLint red, GLint green, GLint blue) +
-   glColor3iv  ; void (const GLint *v); +
-   glColor3s   ; void (GLshort red, GLshort green, GLshort blue); +
-   glColor3sv  ; void (const GLshort *v); +
-   glColor3ub  ; void (GLubyte red, GLubyte green, GLubyte blue) +
-   glColor3ubv ; void (const GLubyte *v); +
-   glColor3ui  ; void (GLuint red, GLuint green, GLuint blue); +
-   glColor3uiv ; void (const GLuint *v); +
-   glColor3us  ; void (GLushort red, GLushort green, GLushort blue); +
-   glColor3usv ; void (const GLushort *v); +
-   glColor4b   ; void (GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha); +
-   glColor4bv  ; void (const GLbyte *v); +
-   glColor4d   ; void (GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha); +
-   glColor4dv  ; void (const GLdouble *v); +
-   glColor4f   ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) +
-   glColor4fv  ; void (const GLfloat *v); +
-   glColor4i   ; void (GLint red, GLint green, GLint blue, GLint alpha); +
-   glColor4iv  ; void (const GLint *v); +
-   glColor4s   ; void (GLshort red, GLshort green, GLshort blue, GLshort alpha); +
-   glColor4sv  ; void (const GLshort *v); +
-   glColor4ub  ; void (GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha); +
-   glColor4ubv ; void (const GLubyte *v); +
-   glColor4ui  ; void (GLuint red, GLuint green, GLuint blue, GLuint alpha); +
-   glColor4uiv ; void (const GLuint *v); +
-   glColor4us  ; void (GLushort red, GLushort green, GLushort blue, GLushort alpha); +
-   glColor4usv ; void (const GLushort *v); +
-
-   ;WINGDIAPI void APIENTRY glIndexd (GLdouble c); +
-   ;WINGDIAPI void APIENTRY glIndexdv (const GLdouble *c); +
-   ;WINGDIAPI void APIENTRY glIndexf (GLfloat c); +
-   ;WINGDIAPI void APIENTRY glIndexfv (const GLfloat *c); +
-   ;WINGDIAPI void APIENTRY glIndexi (GLint c); +
-   ;WINGDIAPI void APIENTRY glIndexiv (const GLint *c); +
-   ;WINGDIAPI void APIENTRY glIndexs (GLshort c); +
-   ;WINGDIAPI void APIENTRY glIndexsv (const GLshort *c); +
+   glIndexd  ; void (GLdouble c)
+   glIndexdv ; void (const GLdouble *c)
+   glIndexf  ; void (GLfloat c)
+   glIndexfv ; void (const GLfloat *c)
+   glIndexi  ; void (GLint c)
+   glIndexiv ; void (const GLint *c)
+   glIndexs  ; void (GLshort c)
+   glIndexsv ; void (const GLshort *c)
 
    ;; 2.8 Rectangles
-
-   ;WINGDIAPI void APIENTRY glRectd (GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2); +
-   ;WINGDIAPI void APIENTRY glRectdv (const GLdouble *v1, const GLdouble *v2); +
-   ;WINGDIAPI void APIENTRY glRectf (GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2); +
-   ;WINGDIAPI void APIENTRY glRectfv (const GLfloat *v1, const GLfloat *v2); +
-   ;WINGDIAPI void APIENTRY glRecti (GLint x1, GLint y1, GLint x2, GLint y2); +
-   ;WINGDIAPI void APIENTRY glRectiv (const GLint *v1, const GLint *v2); +
-   ;WINGDIAPI void APIENTRY glRects (GLshort x1, GLshort y1, GLshort x2, GLshort y2); +
-   ;WINGDIAPI void APIENTRY glRectsv (const GLshort *v1, const GLshort *v2); +
+   glRectd  ; void (GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2)
+   glRectdv ; void (const GLdouble *v1, const GLdouble *v2)
+   glRectf  ; void (GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
+   glRectfv ; void (const GLfloat *v1, const GLfloat *v2)
+   glRecti  ; void (GLint x1, GLint y1, GLint x2, GLint y2)
+   glRectiv ; void (const GLint *v1, const GLint *v2)
+   glRects  ; void (GLshort x1, GLshort y1, GLshort x2, GLshort y2)
+   glRectsv ; void (const GLshort *v1, const GLshort *v2)
 
    ;; 2.9 Coordinate Transformations
+   ;; 2.9.1 Controlling the Viewport
+   glDepthRange ; void (GLclampd zNear, GLclampd zFar)
+   glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height)
 
-   glDepthRange ; void (GLclampd zNear, GLclampd zFar) +
-   glViewport ; void (GLint x, GLint y, GLsizei width, GLsizei height) +
+   ;; 2.9.2 Matrices
+   glMatrixMode  ; void (GLenum mode)
+   glLoadMatrixd ; void (const GLdouble *m)
+   glLoadMatrixf ; void (const GLfloat *m)
+   glMultMatrixd ; void (const GLdouble *m)
+   glMultMatrixf ; void (const GLfloat *m)
+   glLoadIdentity; void (void)
 
-   glMatrixMode ; void (GLenum mode) +
-      ;GL_PROJECTION ; mode
-      ;GL_MODELVIEW
-      ;GL_TEXTURE
+   glRotated    ; void (GLdouble angle, GLdouble x, GLdouble y, GLdouble z)
+   glRotatef    ; void (GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
+   glTranslated ; void (GLdouble x, GLdouble y, GLdouble z)
+   glTranslatef ; void (GLfloat x, GLfloat y, GLfloat z)
+   glScaled     ; void (GLdouble x, GLdouble y, GLdouble z)
+   glScalef     ; void (GLfloat x, GLfloat y, GLfloat z)
 
-   glLoadMatrixd  ; void (const GLdouble *m); +
-   glLoadMatrixf  ; void (const GLfloat *m); +
+   glFrustum    ; void (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)
+   glOrtho      ; void (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)
 
-   glMultMatrixd ; void (const GLdouble *m) +
-   glMultMatrixf ; void (const GLfloat *m) +
+   glPushMatrix ; void glPushMatrix (void)
+   glPopMatrix  ; void glPopMatrix (void)
 
-   glLoadIdentity ; void (void); +
+   ;; 2.9.3 Normal Transformation
+   glEnable  ; void (GLenum cap)
+   glDisable ; void (GLenum cap)
 
-   ;WINGDIAPI void APIENTRY glRotated (GLdouble angle, GLdouble x, GLdouble y, GLdouble z); +
-   glRotatef ; void (GLfloat angle, GLfloat x, GLfloat y, GLfloat z) +
-
-   ;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z); +
-   glTranslatef ; void (GLfloat x, GLfloat y, GLfloat z) +
-
-   ;WINGDIAPI void APIENTRY glScaled (GLdouble x, GLdouble y, GLdouble z); +
-   glScalef  ; void (GLfloat x, GLfloat y, GLfloat z) +
-
-   ;WINGDIAPI void APIENTRY glFrustum (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar); +
-   glOrtho ; void (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar) +
-
-   glPushMatrix   ; void glPushMatrix (void) +
-   glPopMatrix ; void glPopMatrix (void) +
-
-   glEnable ; void (GLenum cap) +
-      ;GL_FOG ; cap
-      ;GL_LIGHTING
-      ;GL_TEXTURE_1D
-      ;GL_TEXTURE_2D
-      ;GL_LINE_STIPPLE
-      ;GL_POLYGON_STIPPLE
-      ;GL_CULL_FACE
-      ;GL_ALPHA_TEST
-      ;GL_BLEND
-      ;GL_LOGIC_OP
-      ;GL_DITHER
-      ;GL_STENCIL_TEST
-      ;GL_DEPTH_TEST
-      ;GL_CLIP_PLANE0
-      ;GL_CLIP_PLANE1
-      ;GL_CLIP_PLANE2
-      ;GL_CLIP_PLANE3
-      ;GL_CLIP_PLANE4
-      ;GL_CLIP_PLANE5
-      ;GL_LIGHT0
-      ;GL_LIGHT1
-      ;GL_LIGHT2
-      ;GL_LIGHT3
-      ;GL_LIGHT4
-      ;GL_LIGHT5
-      ;GL_LIGHT6
-      ;GL_LIGHT7
-      ;GL_TEXTURE_GEN_S
-      ;GL_TEXTURE_GEN_T
-      ;GL_TEXTURE_GEN_R
-      ;GL_TEXTURE_GEN_Q
-      ;GL_MAP1_VERTEX_3
-      ;GL_MAP1_VERTEX_4
-      ;GL_MAP1_COLOR_4
-      ;GL_MAP1_INDEX
-      ;GL_MAP1_NORMAL
-      ;GL_MAP1_TEXTURE_COORD_1
-      ;GL_MAP1_TEXTURE_COORD_2
-      ;GL_MAP1_TEXTURE_COORD_3
-      ;GL_MAP1_TEXTURE_COORD_4
-      ;GL_MAP2_VERTEX_3
-      ;GL_MAP2_VERTEX_4
-      ;GL_MAP2_COLOR_4
-      ;GL_MAP2_INDEX
-      ;GL_MAP2_NORMAL
-      ;GL_MAP2_TEXTURE_COORD_1
-      ;GL_MAP2_TEXTURE_COORD_2
-      ;GL_MAP2_TEXTURE_COORD_3
-      ;GL_MAP2_TEXTURE_COORD_4
-      ;GL_POINT_SMOOTH
-      ;GL_LINE_SMOOTH
-      ;GL_POLYGON_SMOOTH
-      ;GL_SCISSOR_TEST
-      ;GL_COLOR_MATERIAL
-      ;GL_NORMALIZE
-      ;GL_AUTO_NORMAL
-   glDisable                           ; void (GLenum cap) +
-      ; cap SAME as glEnable
-
-   ;WINGDIAPI void APIENTRY glTexGend (GLenum coord, GLenum pname, GLdouble param); +
-   ;WINGDIAPI void APIENTRY glTexGendv (GLenum coord, GLenum pname, const GLdouble *params); +
-   ;WINGDIAPI void APIENTRY glTexGenf (GLenum coord, GLenum pname, GLfloat param); +
-   glTexGenfv ; void glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params); +
-   glTexGeni  ; void glTexGeni (GLenum coord, GLenum pname, GLint param); +
-   ;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params); +
+   ;; 2.9.4 Generating texture coordinates
+   glTexGend  ; void glTexGend (GLenum coord, GLenum pname, GLdouble param)
+   glTexGendv ; void glTexGendv (GLenum coord, GLenum pname, const GLdouble *params)
+   glTexGenf  ; void glTexGenf (GLenum coord, GLenum pname, GLfloat param)
+   glTexGenfv ; void glTexGenfv (GLenum coord, GLenum pname, const GLfloat *params)
+   glTexGeni  ; void glTexGeni (GLenum coord, GLenum pname, GLint param)
+   glTexGeniv ; void glTexGeniv (GLenum coord, GLenum pname, const GLint *params)
 
    ;; 2.10 Clipping
-   glClipPlane                         ; void (GLenum plane, const GLdouble *equation) +
-      ;GL_CLIP_PLANE0 ; plane
-      ;GL_CLIP_PLANE1
-      ;GL_CLIP_PLANE2
-      ;GL_CLIP_PLANE3
-      ;GL_CLIP_PLANE4
-      ;GL_CLIP_PLANE5
+   glClipPlane ; void (GLenum plane, const GLdouble *equation)
 
    ;; 2.11 Current Ruster Position
    ;WINGDIAPI void APIENTRY glRasterPos2d (GLdouble x, GLdouble y); +
@@ -295,279 +209,116 @@
    ;WINGDIAPI void APIENTRY glRasterPos4sv (const GLshort *v); +
 
    ;; 2.12 Colors and Coloring
+   ;; 2.12.1 Lighting
+   glFrontFace  ; void (GLenum direction)
 
-   glFrontFace                         ; void (GLenum direction) +
-    #|; direction
-      GL_CW
-      GL_CCW|#
+   ;; 2.12.2 Lighting Parameter Specication
+   glMaterialf  ; void (GLenum face, GLenum pname, GLfloat param)
+   glMaterialfv ; void (GLenum face, GLenum pname, const GLfloat *params)
+   glMateriali  ; void (GLenum face, GLenum pname, GLint param)
+   glMaterialiv ; void (GLenum face, GLenum pname, const GLint *params)
 
-   glMaterialf  ; void (GLenum face, GLenum pname, GLfloat param) +
-   glMaterialfv ; void (GLenum face, GLenum pname, const GLfloat *params) +
-   ;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param); +
-   ;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params); +
+   glLightf  ; void (GLenum light, GLenum pname, GLfloat param)
+   glLightfv ; void (GLenum light, GLenum pname, const GLfloat *params)
+   glLighti  ; void (GLenum light, GLenum pname, GLint param)
+   glLightiv ; void (GLenum light, GLenum pname, const GLint *params)
 
-   ;WINGDIAPI void APIENTRY glLightf (GLenum light, GLenum pname, GLfloat param); +
-   glLightfv ; void (GLenum light, GLenum pname, const GLfloat *params) +
-   ;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param); +
-   ;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params); +
-    #|; light +
-      GL_LIGHT0
-      GL_LIGHT1
-      GL_LIGHT2
-      GL_LIGHT3
-      GL_LIGHT4
-      GL_LIGHT5
-      GL_LIGHT6
-      GL_LIGHT7
-    ; pname +
-      GL_AMBIENT
-      GL_DIFFUSE
-      GL_SPECULAR
-      GL_POSITION
-      GL_SPOT_DIRECTION
-      GL_SPOT_EXPONENT
-      GL_SPOT_CUTOFF
-      GL_CONSTANT_ATTENUATION
-      GL_LINEAR_ATTENUATION
-      GL_QUADRATIC_ATTENUATION|#
+   glLightModelf  ; void (GLenum pname, GLfloat param)
+   glLightModelfv ; void (GLenum pname, const GLfloat *params)
+   glLightModeli  ; void (GLenum pname, GLint param)
+   glLightModeliv ; void (GLenum pname, const GLint *params)
 
-   glLightModelf  ; void (GLenum pname, GLfloat param) +
-    #|; name +
-      GL_LIGHT_MODEL_AMBIENT
-      GL_LIGHT_MODEL_LOCAL_VIEWER
-      GL_LIGHT_MODEL_TWO_SIDE|#
+   ;; 2.12.3 ColorMaterial
+   glColorMaterial ; void (GLenum face, GLenum mode)
 
-    ; param
-   glLightModelfv ; void (GLenum pname, const GLfloat *params); +
-   glLightModeli ; void glLightModeli (GLenum pname, GLint param); +
-   glLightModeliv ; void glLightModeliv (GLenum pname, const GLint *params); +
-
-   glColorMaterial                     ; void (GLenum face, GLenum mode) +
-    #|; face
-      GL_FRONT
-      GL_BACK
-      GL_FRONT_AND_BACK
-    ; mode
-      GL_AMBIENT
-      GL_DIFFUSE
-      GL_AMBIENT_AND_DIFFUSE
-      GL_SPECULAR
-      GL_EMISSION
-      GL_SHININESS
-      ;GL_COLOR_INDEXES ;?|#
-
-   glShadeModel ; void (GLenum model) +
-      #|GL_FLAT
-      GL_SMOOTH|#
-
-   ; == 3 Rasterization ===
+   ;; 2.12.7 Flatshading
+   glShadeModel ; void (GLenum model)
 
    ;; 3.3 Points
+   glPointSize ; void (GLfloat size)
 
-   glPointSize ; void (GLfloat size) +
+   ;; 3.4 Line Segments
+   glLineWidth ; void (GLfloat width)
+   glLineStipple ; void (GLint factor, GLushort pattern)
 
-   ;; 3.4 Line
-
-   glLineWidth ; void (GLfloat width) +
-   glLineStipple ; void (GLint factor, GLushort pattern) +
-
-   ;; 3.5. Polygons
-
-   glCullFace                          ; void (GLenum mode) +
-   #|; mode
-      GL_FRONT
-      GL_BACK
-      GL_FRONT_AND_BACK|#
-
-   ;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask); +
-   glPolygonMode ; void (GLenum face, GLenum mode) +
+   ;; 3.5 Polygons
+   glCullFace ; void (GLenum mode)
+   glPolygonStipple ; void glPolygonStipple (const GLubyte *mask)
+   glPolygonMode ; void (GLenum face, GLenum mode)
 
    ;; 3.6. Pixel Rectangles
+   glPixelStoref ; void (GLenum pname, GLfloat param)
+   glPixelStorei ; void (GLenum pname, GLint param)
+   glPixelTransferf ; void (GLenum pname, GLfloat param)
+   glPixelTransferi ; void (GLenum pname, GLint param)
 
-   ;WINGDIAPI void APIENTRY glPixelStoref (GLenum pname, GLfloat param); +
-   glPixelStorei ; void (GLenum pname, GLint param); +
+   glPixelMapfv  ; void (GLenum map, GLsizei mapsize, const GLfloat *values)
+   glPixelMapuiv ; void (GLenum map, GLsizei mapsize, const GLuint *values)
+   glPixelMapusv ; void (GLenum map, GLsizei mapsize, const GLushort *values)
 
-   glPixelTransferf ; void glPixelTransferf (GLenum pname, GLfloat param); +
-   ;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param); +
-
-   glPixelMapfv ; void glPixelMapfv (GLenum map, GLsizei mapsize, const GLfloat *values); +
-   glPixelMapuiv ; void glPixelMapuiv (GLenum map, GLsizei mapsize, const GLuint *values); +
-   glPixelMapusv ; void glPixelMapusv (GLenum map, GLsizei mapsize, const GLushort *values); +
-   #|; map
-      GL_PIXEL_MAP_I_TO_I
-      GL_PIXEL_MAP_S_TO_S
-      GL_PIXEL_MAP_I_TO_R
-      GL_PIXEL_MAP_I_TO_G
-      GL_PIXEL_MAP_I_TO_B
-      GL_PIXEL_MAP_I_TO_A
-      GL_PIXEL_MAP_R_TO_R
-      GL_PIXEL_MAP_G_TO_G
-      GL_PIXEL_MAP_B_TO_B
-      GL_PIXEL_MAP_A_TO_A|#
-
-   glDrawPixels                        ; void (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels) +
-
-   glPixelZoom                         ; void (GLfloat xfactor, GLfloat yfactor)
+   ;; 3.6.3 Rasterization of Pixel Rectangles
+   glDrawPixels ; void (GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels)
+   glPixelZoom  ; void (GLfloat xfactor, GLfloat yfactor)
 
    ;; 3.7. Bitmaps
-
-   glBitmap                            ; void (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap) +
+   glBitmap ; void (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap)
 
    ;; 3.8. Texturing
+   glTexImage2D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
+   glTexImage1D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
 
-   glTexImage2D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels) +
-   glTexImage1D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels) +
+   glTexParameterf  ; void (GLenum target, GLenum pname, GLfloat param)
+   glTexParameterfv ; void (GLenum target, GLenum pname, const GLfloat *params)
+   glTexParameteri  ; void (GLenum target, GLenum pname, GLint param)
+   glTexParameteriv ; void (GLenum target, GLenum pname, const GLint *params)
 
-   glTexParameterf ; void (GLenum target, GLenum pname, GLfloat param) +
-   ;WINGDIAPI void APIENTRY glTexParameterfv (GLenum target, GLenum pname, const GLfloat *params); +
-   glTexParameteri ; void (GLenum target, GLenum pname, GLint param) +
-   glTexParameteriv ; void (GLenum target, GLenum pname, const GLint *params); +
-      #|GL_TEXTURE_MAG_FILTER GL_TEXTURE_MIN_FILTER
-      GL_TEXTURE_WRAP_S
-      GL_TEXTURE_WRAP_T
-      GL_CLAMP_TO_EDGE
-      GL_NEAREST GL_LINEAR|#
-
-   ;WINGDIAPI void APIENTRY glTexEnvf (GLenum target, GLenum pname, GLfloat param); +
-   ;WINGDIAPI void APIENTRY glTexEnvfv (GLenum target, GLenum pname, const GLfloat *params); +
-   glTexEnvi ; void (GLenum target, GLenum pname, GLint param); +
-   ;WINGDIAPI void APIENTRY glTexEnviv (GLenum target, GLenum pname, const GLint *params); +
+   ;; 3.8.3 Texture Environments and Texture Functions
+   glTexEnvf  ; void (GLenum target, GLenum pname, GLfloat param)
+   glTexEnvfv ; void (GLenum target, GLenum pname, const GLfloat *params)
+   glTexEnvi  ; void (GLenum target, GLenum pname, GLint param)
+   glTexEnviv ; void (GLenum target, GLenum pname, const GLint *params)
 
    ;; 3.9. Fog
-
-   glFogf                              ; void (GLenum pname, GLfloat param) +
-   glFogfv                             ; void (GLenum pname, const GLfloat *params) +
-   glFogi                              ; void (GLenum pname, GLint param) +
-   glFogiv                             ; void (GLenum pname, const GLint *params) +
-   #|; pname
-      GL_LINEAR
-      GL_EXP
-      GL_EXP2
-   ; parameter
-      GL_FOG_COLOR
-      GL_FOG_DENSITY
-      GL_FOG_END
-      GL_FOG_INDEX
-      GL_FOG_MODE
-      GL_FOG_START|#
-
-   ; 4 Per-Fragment Operations and the Framebuffer
+   glFogf  ; void (GLenum pname, GLfloat param)
+   glFogfv ; void (GLenum pname, const GLfloat *params)
+   glFogi  ; void (GLenum pname, GLint param)
+   glFogiv ; void (GLenum pname, const GLint *params)
 
    ;; 4.1 Per-Fragment Operations
-
-   glScissor ; void glScissor (GLint x, GLint y, GLsizei width, GLsizei height); +
-
-   glAlphaFunc                         ; void (GLenum func, GLclampf ref) +
-   #|; func
-      GL_NEVER
-      GL_LESS
-      GL_EQUAL
-      GL_LEQUAL
-      GL_GREATER
-      GL_NOTEQUAL
-      GL_GEQUAL
-      GL_ALWAYS
-   ; ref|#
-
-   glStencilFunc ;void (GLenum func, GLint ref, GLuint mask) +
-      #|GL_ALWAYS|#
-
-   glStencilOp ; void (GLenum fail, GLenum zfail, GLenum zpass) +
-      #|GL_KEEP
-      GL_REPLACE|#
-
-   glDepthFunc                         ; void (GLenum func) +
-   #|; func
-      GL_NEVER
-      GL_LESS
-      GL_EQUAL
-      GL_LEQUAL
-      GL_GREATER
-      GL_NOTEQUAL
-      GL_GEQUAL
-      GL_ALWAYS|#
-
-   glBlendFunc                         ; void (GLenum sfactor, GLenum dfactor) +
-   #|; sfactor +
-      GL_ZERO
-      GL_ONE
-      GL_SRC_COLOR
-      GL_ONE_MINUS_SRC_COLOR
-      GL_SRC_ALPHA
-      GL_ONE_MINUS_SRC_ALPHA
-      GL_DST_ALPHA
-      GL_ONE_MINUS_DST_ALPHA
-   ; dfactor +
-      GL_ZERO
-      GL_ONE
-      GL_DST_COLOR
-      GL_ONE_MINUS_DST_COLOR
-      GL_SRC_ALPHA_SATURATE
-      GL_SRC_ALPHA
-      GL_ONE_MINUS_SRC_ALPHA
-      GL_DST_ALPHA
-      GL_ONE_MINUS_DST_ALPHA|#
-
-   ;WINGDIAPI void APIENTRY glLogicOp (GLenum opcode); +
+   glScissor   ; void glScissor (GLint x, GLint y, GLsizei width, GLsizei height)
+   glAlphaFunc ; void (GLenum func, GLclampf ref)
+   glStencilFunc ;void (GLenum func, GLint ref, GLuint mask)
+   glStencilOp ; void (GLenum fail, GLenum zfail, GLenum zpass)
+   glDepthFunc ; void (GLenum func)
+   glBlendFunc ; void (GLenum sfactor, GLenum dfactor)
+   glLogicOp   ; void (GLenum opcode)
 
    ;; 4.2 Whole Framebuffer Operations
+   glDrawBuffer ; void (GLenum mode)
 
-   glDrawBuffer                        ; void (GLenum mode) +
-   #|; mode
-      GL_NONE
-      GL_FRONT_LEFT
-      GL_FRONT_RIGHT
-      GL_BACK_LEFT
-      GL_BACK_RIGHT
-      GL_FRONT
-      GL_BACK
-      GL_LEFT
-      GL_RIGHT
-      GL_FRONT_AND_BACK
-      GL_AUX0
-      GL_AUX1
-      GL_AUX2
-      GL_AUX3|#
+   ;; 4.2.2 Fine Control of Buffer Updates
+   glIndexMask   ; void (GLuint mask)
+   glColorMask   ; void (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
+   glDepthMask   ; void (GLboolean flag)
+   glStencilMask ; void (GLuint mask)
 
-   ;WINGDIAPI void APIENTRY glIndexMask (GLuint mask); +
-   glColorMask     ; void (GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) +
-   glDepthMask     ; void (GLboolean flag) +
-   glStencilMask   ; void (GLuint mask) +
+   ;; 4.2.3 Clearing the Buffers
+   glClear ; void (GLbitfield mask)
+   glClearColor ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
+   glClearIndex ; void (GLfloat c)
+   glClearDepth ; void (GLclampd depth)
+   glClearStencil ; void (GLint s)
+   glClearAccum ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 
-   glClear                             ; void (GLbitfield mask) +
-   #|; mask
-      GL_COLOR_BUFFER_BIT
-      GL_ACCUM_BUFFER_BIT
-      GL_STENCIL_BUFFER_BIT
-      GL_DEPTH_BUFFER_BIT|#
-
-   glClearColor                        ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) +
-   glClearIndex                        ; void (GLfloat c) +
-   glClearDepth                        ; void (GLclampd depth) +
-   glClearStencil                      ; void (GLint s) +
-   glClearAccum                        ; void (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) +
-
-   glAccum                             ; void (GLenum op, GLfloat value) +
-   #|; op
-      GL_ACCUM
-      GL_LOAD
-      GL_RETURN
-      GL_MULT
-      GL_ADD
-   ; value|#
+   ;; 4.2.4 The Accumulation Buffer
+   glAccum ; void (GLenum op, GLfloat value)
 
    ;; 4.3 Drawing, Reading, and Copying Pixels
-
-   glReadPixels    ; void (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels) +
-   glReadBuffer    ; void (GLenum mode) +
-   glCopyPixels    ; void (GLint x, GLint y, GLsizei width, GLsizei height, GLenum type) +
-
-
-   ; ===================
-   ; 5 Special Functions
+   glReadPixels ; void (GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *pixels)
+   glReadBuffer ; void (GLenum mode)
+   glCopyPixels ; void (GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
 
    ;; 5.1 Evaluators
-
    ;WINGDIAPI void APIENTRY glMap1d (GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble *points); +
    ;WINGDIAPI void APIENTRY glMap1f (GLenum target, GLfloat u1, GLfloat u2, GLint stride, GLint order, const GLfloat *points); +
    ;WINGDIAPI void APIENTRY glMap2d (GLenum target, GLdouble u1, GLdouble u2, GLint ustride, GLint uorder, GLdouble v1, GLdouble v2, GLint vstride, GLint vorder, const GLdouble *points); +
@@ -590,279 +341,41 @@
    ;WINGDIAPI void APIENTRY glEvalPoint2 (GLint i, GLint j); +
 
    ;; 5.2. Selection
-
-   ;WINGDIAPI void APIENTRY glInitNames (void); +
-   ;WINGDIAPI void APIENTRY glPopName (void); +
-   ;WINGDIAPI void APIENTRY glPushName (GLuint name); +
-   ;WINGDIAPI void APIENTRY glLoadName (GLuint name); +
-   ;WINGDIAPI GLint APIENTRY glRenderMode (GLenum mode); +
-   ;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer); +
+   glInitNames    ; void glInitNames (void)
+   glPopName      ; void glPopName (void)
+   glPushName     ; void glPushName (GLuint name)
+   glLoadName     ; void glLoadName (GLuint name)
+   glRenderMode   ; GLint glRenderMode (GLenum mode)
+   glSelectBuffer ; void glSelectBuffer (GLsizei size, GLuint *buffer)
 
    ;; 5.3. Feedback
-
-   glFeedbackBuffer                    ; void (GLsizei size, GLenum type, GLfloat *buffer) +
-   #|; type
-      GL_2D
-      GL_3D
-      GL_3D_COLOR
-      GL_3D_COLOR_TEXTURE
-      GL_4D_COLOR_TEXTURE
-   ; token
-      GL_PASS_THROUGH_TOKEN
-      GL_POINT_TOKEN
-      GL_LINE_TOKEN
-      GL_POLYGON_TOKEN
-      GL_BITMAP_TOKEN
-      GL_DRAW_PIXEL_TOKEN
-      GL_COPY_PIXEL_TOKEN
-      GL_LINE_RESET_TOKEN|#
-
-   ;WINGDIAPI void APIENTRY glPassThrough (GLfloat token); +
+   glFeedbackBuffer ; void (GLsizei size, GLenum type, GLfloat *buffer)
+   glPassThrough ; void (GLfloat token)
 
    ;; 5.4 Display Lists
-
-   glNewList ; void (GLuint list, GLenum mode) +
-   #|; mode
-      GL_COMPILE
-      GL_COMPILE_AND_EXECUTE|#
-   glEndList ; void glEndList (void) +
-   glCallList                          ; void (GLuint list) +
-   glCallLists                         ; void (GLsizei n, GLenum type, const GLvoid *lists) +
-   ;WINGDIAPI void APIENTRY glListBase (GLuint base); +
-   glGenLists                          ; GLuint (GLsizei range) +
-   ;WINGDIAPI GLboolean APIENTRY glIsList (GLuint list); +
-   glDeleteLists                       ; void (GLuint list, GLsizei range) +
+   glNewList   ; void (GLuint list, GLenum mode)
+   glEndList   ; void glEndList (void)
+   glCallList  ; void (GLuint list)
+   glCallLists ; void (GLsizei n, GLenum type, const GLvoid *lists)
+   glListBase  ; void (GLuint base)
+   glGenLists  ; GLuint (GLsizei range)
+   glIsList    ; GLboolean (GLuint list)
+   glDeleteLists ; void (GLuint list, GLsizei range)
 
    ;; 5.5 Flush and Finish
-
-   glFlush                             ; void (void) +
-   glFinish                            ; void (void) +
+   glFlush  ; void (void)
+   glFinish ; void (void)
 
    ;; 5.6 Hints
+   glHint ; void (GLenum target, GLenum mode)
 
-   glHint      ; void (GLenum target, GLenum mode) +
-      #|GL_DONT_CARE ; mode
-      GL_FASTEST
-      GL_NICEST
-      GL_PERSPECTIVE_CORRECTION_HINT ; target
-      GL_POINT_SMOOTH_HINT
-      GL_LINE_SMOOTH_HINT
-      GL_POLYGON_SMOOTH_HINT
-      GL_FOG_HINT
-      ; GL_PHONG_HINT (no this constant defined, maybe bug in original headers)|#
+   ;; 6 State and State Requests
+   glGetBooleanv ; void (GLenum pname, GLboolean *params)
+   glGetIntegerv ; void (GLenum pname, GLint *params)
+   glGetFloatv   ; void (GLenum pname, GLfloat *params)
+   glGetDoublev  ; void (GLenum pname, GLdouble *params)
 
-
-   ; ==========================
-   ; 6 State and State Requests
-
-   glGetBooleanv                       ; void (GLenum pname, GLboolean *params) +
-   glGetIntegerv                       ; void (GLenum pname, GLint *params) +
-   glGetFloatv                         ; void (GLenum pname, GLfloat *params) +
-   glGetDoublev                        ; void (GLenum pname, GLdouble *params) +
-   #|; pname
-      GL_CURRENT_COLOR
-      GL_CURRENT_INDEX
-      GL_CURRENT_NORMAL
-      GL_CURRENT_TEXTURE_COORDS
-      GL_CURRENT_RASTER_COLOR
-      GL_CURRENT_RASTER_INDEX
-      GL_CURRENT_RASTER_TEXTURE_COORDS
-      GL_CURRENT_RASTER_POSITION
-      GL_CURRENT_RASTER_POSITION_VALID
-      GL_CURRENT_RASTER_DISTANCE
-      GL_POINT_SMOOTH
-      GL_POINT_SIZE
-      GL_POINT_SIZE_RANGE
-      GL_POINT_SIZE_GRANULARITY
-      GL_LINE_SMOOTH
-      GL_LINE_WIDTH
-      GL_LINE_WIDTH_RANGE
-      GL_LINE_WIDTH_GRANULARITY
-      GL_LINE_STIPPLE
-      GL_LINE_STIPPLE_PATTERN
-      GL_LINE_STIPPLE_REPEAT
-      GL_LIST_MODE
-      GL_MAX_LIST_NESTING
-      GL_LIST_BASE
-      GL_LIST_INDEX
-      GL_POLYGON_MODE
-      GL_POLYGON_SMOOTH
-      GL_POLYGON_STIPPLE
-      GL_EDGE_FLAG
-      GL_CULL_FACE
-      GL_CULL_FACE_MODE
-      GL_FRONT_FACE
-      GL_LIGHTING
-      GL_LIGHT_MODEL_LOCAL_VIEWER
-      GL_LIGHT_MODEL_TWO_SIDE
-      GL_LIGHT_MODEL_AMBIENT
-      GL_SHADE_MODEL
-      GL_COLOR_MATERIAL_FACE
-      GL_COLOR_MATERIAL_PARAMETER
-      GL_COLOR_MATERIAL
-      GL_FOG
-      GL_FOG_INDEX
-      GL_FOG_DENSITY
-      GL_FOG_START
-      GL_FOG_END
-      GL_FOG_MODE
-      GL_FOG_COLOR
-      GL_DEPTH_RANGE
-      GL_DEPTH_TEST
-      GL_DEPTH_WRITEMASK
-      GL_DEPTH_CLEAR_VALUE
-      GL_DEPTH_FUNC
-      GL_ACCUM_CLEAR_VALUE
-      GL_STENCIL_TEST
-      GL_STENCIL_CLEAR_VALUE
-      GL_STENCIL_FUNC
-      GL_STENCIL_VALUE_MASK
-      GL_STENCIL_FAIL
-      GL_STENCIL_PASS_DEPTH_FAIL
-      GL_STENCIL_PASS_DEPTH_PASS
-      GL_STENCIL_REF
-      GL_STENCIL_WRITEMASK
-      GL_MATRIX_MODE
-      GL_NORMALIZE
-      GL_VIEWPORT
-      GL_MODELVIEW_STACK_DEPTH
-      GL_PROJECTION_STACK_DEPTH
-      GL_TEXTURE_STACK_DEPTH
-      GL_MODELVIEW_MATRIX
-      GL_PROJECTION_MATRIX
-      GL_TEXTURE_MATRIX
-      GL_ATTRIB_STACK_DEPTH
-      GL_ALPHA_TEST
-      GL_ALPHA_TEST_FUNC
-      GL_ALPHA_TEST_REF
-      GL_DITHER
-      GL_BLEND_DST
-      GL_BLEND_SRC
-      GL_BLEND
-      GL_LOGIC_OP_MODE
-      GL_LOGIC_OP
-      GL_AUX_BUFFERS
-      GL_DRAW_BUFFER
-      GL_READ_BUFFER
-      GL_SCISSOR_BOX
-      GL_SCISSOR_TEST
-      GL_INDEX_CLEAR_VALUE
-      GL_INDEX_WRITEMASK
-      GL_COLOR_CLEAR_VALUE
-      GL_COLOR_WRITEMASK
-      GL_INDEX_MODE
-      GL_RGBA_MODE
-      GL_DOUBLEBUFFER
-      GL_STEREO
-      GL_RENDER_MODE
-      GL_PERSPECTIVE_CORRECTION_HINT
-      GL_POINT_SMOOTH_HINT
-      GL_LINE_SMOOTH_HINT
-      GL_POLYGON_SMOOTH_HINT
-      GL_FOG_HINT
-      GL_TEXTURE_GEN_S
-      GL_TEXTURE_GEN_T
-      GL_TEXTURE_GEN_R
-      GL_TEXTURE_GEN_Q
-      GL_PIXEL_MAP_I_TO_I
-      GL_PIXEL_MAP_S_TO_S
-      GL_PIXEL_MAP_I_TO_R
-      GL_PIXEL_MAP_I_TO_G
-      GL_PIXEL_MAP_I_TO_B
-      GL_PIXEL_MAP_I_TO_A
-      GL_PIXEL_MAP_R_TO_R
-      GL_PIXEL_MAP_G_TO_G
-      GL_PIXEL_MAP_B_TO_B
-      GL_PIXEL_MAP_A_TO_A
-      GL_PIXEL_MAP_I_TO_I_SIZE
-      GL_PIXEL_MAP_S_TO_S_SIZE
-      GL_PIXEL_MAP_I_TO_R_SIZE
-      GL_PIXEL_MAP_I_TO_G_SIZE
-      GL_PIXEL_MAP_I_TO_B_SIZE
-      GL_PIXEL_MAP_I_TO_A_SIZE
-      GL_PIXEL_MAP_R_TO_R_SIZE
-      GL_PIXEL_MAP_G_TO_G_SIZE
-      GL_PIXEL_MAP_B_TO_B_SIZE
-      GL_PIXEL_MAP_A_TO_A_SIZE
-      GL_UNPACK_SWAP_BYTES
-      GL_UNPACK_LSB_FIRST
-      GL_UNPACK_ROW_LENGTH
-      GL_UNPACK_SKIP_ROWS
-      GL_UNPACK_SKIP_PIXELS
-      GL_UNPACK_ALIGNMENT
-      GL_PACK_SWAP_BYTES
-      GL_PACK_LSB_FIRST
-      GL_PACK_ROW_LENGTH
-      GL_PACK_SKIP_ROWS
-      GL_PACK_SKIP_PIXELS
-      GL_PACK_ALIGNMENT
-      GL_MAP_COLOR
-      GL_MAP_STENCIL
-      GL_INDEX_SHIFT
-      GL_INDEX_OFFSET
-      GL_RED_SCALE
-      GL_RED_BIAS
-      GL_ZOOM_X
-      GL_ZOOM_Y
-      GL_GREEN_SCALE
-      GL_GREEN_BIAS
-      GL_BLUE_SCALE
-      GL_BLUE_BIAS
-      GL_ALPHA_SCALE
-      GL_ALPHA_BIAS
-      GL_DEPTH_SCALE
-      GL_DEPTH_BIAS
-      GL_MAX_EVAL_ORDER
-      GL_MAX_LIGHTS
-      GL_MAX_CLIP_PLANES
-      GL_MAX_TEXTURE_SIZE
-      GL_MAX_PIXEL_MAP_TABLE
-      GL_MAX_ATTRIB_STACK_DEPTH
-      GL_MAX_MODELVIEW_STACK_DEPTH
-      GL_MAX_NAME_STACK_DEPTH
-      GL_MAX_PROJECTION_STACK_DEPTH
-      GL_MAX_TEXTURE_STACK_DEPTH
-      GL_MAX_VIEWPORT_DIMS
-      GL_SUBPIXEL_BITS
-      GL_INDEX_BITS
-      GL_RED_BITS
-      GL_GREEN_BITS
-      GL_BLUE_BITS
-      GL_ALPHA_BITS
-      GL_DEPTH_BITS
-      GL_STENCIL_BITS
-      GL_ACCUM_RED_BITS
-      GL_ACCUM_GREEN_BITS
-      GL_ACCUM_BLUE_BITS
-      GL_ACCUM_ALPHA_BITS
-      GL_NAME_STACK_DEPTH
-      GL_AUTO_NORMAL
-      GL_MAP1_COLOR_4
-      GL_MAP1_INDEX
-      GL_MAP1_NORMAL
-      GL_MAP1_TEXTURE_COORD_1
-      GL_MAP1_TEXTURE_COORD_2
-      GL_MAP1_TEXTURE_COORD_3
-      GL_MAP1_TEXTURE_COORD_4
-      GL_MAP1_VERTEX_3
-      GL_MAP1_VERTEX_4
-      GL_MAP2_COLOR_4
-      GL_MAP2_INDEX
-      GL_MAP2_NORMAL
-      GL_MAP2_TEXTURE_COORD_1
-      GL_MAP2_TEXTURE_COORD_2
-      GL_MAP2_TEXTURE_COORD_3
-      GL_MAP2_TEXTURE_COORD_4
-      GL_MAP2_VERTEX_3
-      GL_MAP2_VERTEX_4
-      GL_MAP1_GRID_DOMAIN
-      GL_MAP1_GRID_SEGMENTS
-      GL_MAP2_GRID_DOMAIN
-      GL_MAP2_GRID_SEGMENTS
-      GL_TEXTURE_1D
-      GL_TEXTURE_2D|#
-
-   ;WINGDIAPI GLboolean APIENTRY glIsEnabled (GLenum cap); +
+   glIsEnabled ; GLboolean (GLenum cap)
 
    ;WINGDIAPI void APIENTRY glGetClipPlane (GLenum plane, GLdouble *equation); +
    ;WINGDIAPI void APIENTRY glGetLightfv (GLenum light, GLenum pname, GLfloat *params); +
@@ -883,46 +396,15 @@
    ;WINGDIAPI void APIENTRY glGetMapdv (GLenum target, GLenum query, GLdouble *v); +
    ;WINGDIAPI void APIENTRY glGetMapfv (GLenum target, GLenum query, GLfloat *v); +
    ;WINGDIAPI void APIENTRY glGetMapiv (GLenum target, GLenum query, GLint *v); +
-    #|; target
-      GL_COEFF
-      GL_ORDER
-      GL_DOMAIN|#
-
    ;WINGDIAPI void APIENTRY glGetTexImage (GLenum target, GLint level, GLenum format, GLenum type, GLvoid *pixels); +
-
    ;WINGDIAPI void APIENTRY glGetPolygonStipple (GLubyte *mask); +
 
-   glGetString ; GLubyte* (GLenum name) +
-      #|GL_VENDOR
-      GL_RENDERER
-      GL_VERSION
-      GL_EXTENSIONS|#
+   glGetString  ; GLubyte* (GLenum name)
 
-   glPushAttrib ; void (GLbitfield mask) +
-      #|GL_CURRENT_BIT                   ;0x00000001
-      GL_POINT_BIT                     ;0x00000002
-      GL_LINE_BIT                      ;0x00000004
-      GL_POLYGON_BIT                   ;0x00000008
-      GL_POLYGON_STIPPLE_BIT           ;0x00000010
-      GL_PIXEL_MODE_BIT                ;0x00000020
-      GL_LIGHTING_BIT                  ;0x00000040
-      GL_FOG_BIT                       ;0x00000080
-      GL_DEPTH_BUFFER_BIT              ;0x00000100
-      GL_ACCUM_BUFFER_BIT              ;0x00000200
-      GL_STENCIL_BUFFER_BIT            ;0x00000400
-      GL_VIEWPORT_BIT                  ;0x00000800
-      GL_TRANSFORM_BIT                 ;0x00001000
-      GL_ENABLE_BIT                    ;0x00002000
-      GL_COLOR_BUFFER_BIT              ;0x00004000
-      GL_HINT_BIT                      ;0x00008000
-      GL_EVAL_BIT                      ;0x00010000
-      GL_LIST_BIT                      ;0x00020000
-      GL_TEXTURE_BIT                   ;0x00040000
-      GL_SCISSOR_BIT                   ;0x00080000
-      GL_ALL_ATTRIB_BITS               ;0x000fffff|#
-   glPopAttrib ; void glPopAttrib (void) +
+   glPushAttrib ; void (GLbitfield mask)
+   glPopAttrib  ; void (void)
 
-
+   ; -------------------------------------------------------------------------
    ; AccumOp
    GL_ACCUM
    GL_LOAD
@@ -2596,7 +2078,7 @@
    (define glClearIndex  (GL GLvoid "glClearIndex" GLfloat))
    (define glClearStencil(GL GLvoid "glClearStencil" GLint))
    (define glClipPlane   (GL GLvoid "glClipPlane"  GLenum GLdouble*))
-   ; glColor:
+
    (define glColor3b     (GL GLvoid "glColor3b"    GLbyte GLbyte GLbyte))
    (define glColor3bv    (GL GLvoid "glColor3bv"   GLbyte*))
    (define glColor3d     (GL GLvoid "glColor3d"    GLdouble GLdouble GLdouble))
@@ -2685,39 +2167,41 @@
 ;WINGDIAPI void APIENTRY glGetPixelMapuiv (GLenum map, GLuint *values);
 ;WINGDIAPI void APIENTRY glGetPixelMapusv (GLenum map, GLushort *values);
 ;WINGDIAPI void APIENTRY glGetPolygonStipple (GLubyte *mask);
-   (define glGetString (GL GLubyte* "glGetString" GLenum))
+   (define glGetString   (GL GLubyte* "glGetString" GLenum))
 ;WINGDIAPI void APIENTRY glGetTexEnvfv (GLenum target, GLenum pname, GLfloat *params);
 ;WINGDIAPI void APIENTRY glGetTexEnviv (GLenum target, GLenum pname, GLint *params);
 ;WINGDIAPI void APIENTRY glGetTexGendv (GLenum coord, GLenum pname, GLdouble *params);
 ;WINGDIAPI void APIENTRY glGetTexGenfv (GLenum coord, GLenum pname, GLfloat *params);
 ;WINGDIAPI void APIENTRY glGetTexGeniv (GLenum coord, GLenum pname, GLint *params);
-   (define glHint (GL GLvoid "glHint" GLenum GLenum))
-;WINGDIAPI void APIENTRY glIndexMask (GLuint mask);
-;WINGDIAPI void APIENTRY glIndexd (GLdouble c);
-;WINGDIAPI void APIENTRY glIndexdv (const GLdouble *c);
-;WINGDIAPI void APIENTRY glIndexf (GLfloat c);
-;WINGDIAPI void APIENTRY glIndexfv (const GLfloat *c);
-;WINGDIAPI void APIENTRY glIndexi (GLint c);
-;WINGDIAPI void APIENTRY glIndexiv (const GLint *c);
-;WINGDIAPI void APIENTRY glIndexs (GLshort c);
-;WINGDIAPI void APIENTRY glIndexsv (const GLshort *c);
-;WINGDIAPI void APIENTRY glInitNames (void);
-;WINGDIAPI GLboolean APIENTRY glIsList (GLuint list);
+   (define glHint        (GL GLvoid "glHint" GLenum GLenum))
+   (define glIndexMask   (GL GLvoid "glIndexMask" GLuint))
+   (define glIndexd      (GL GLvoid "glIndexd" GLdouble))
+   (define glIndexdv     (GL GLvoid "glIndexdv" GLdouble*))
+   (define glIndexf      (GL GLvoid "glIndexf" GLfloat))
+   (define glIndexfv     (GL GLvoid "glIndexfv" GLfloat*))
+   (define glIndexi      (GL GLvoid "glIndexi" GLint))
+   (define glIndexiv     (GL GLvoid "glIndexiv" GLint*))
+   (define glIndexs      (GL GLvoid "glIndexs" GLshort))
+   (define glIndexsv     (GL GLvoid "glIndexsv" GLshort*))
+   (define glInitNames   (GL GLvoid "glInitNames"))
+   (define glIsEnabled   (GL GLboolean "glIsEnabled" GLenum))
+   (define glIsList      (GL GLboolean "glIsList" GLuint))
    (define glLightModelf (GL GLvoid "glLightModelf" GLenum GLfloat))
-   (define glLightModelfv (GL GLvoid "glLightModelfv" GLenum GLfloat*))
+   (define glLightModelfv(GL GLvoid "glLightModelfv" GLenum GLfloat*))
    (define glLightModeli (GL GLvoid "glLightModeli" GLenum GLint))
-   (define glLightModeliv (GL GLvoid "glLightModeliv" GLenum GLint*))
-;WINGDIAPI void APIENTRY glLightf (GLenum light, GLenum pname, GLfloat param);
-   (define glLightfv (GL GLvoid "glLightfv" GLenum GLenum GLfloat*))
-;WINGDIAPI void APIENTRY glLighti (GLenum light, GLenum pname, GLint param);
-;WINGDIAPI void APIENTRY glLightiv (GLenum light, GLenum pname, const GLint *params);
+   (define glLightModeliv(GL GLvoid "glLightModeliv" GLenum GLint*))
+   (define glLightf      (GL GLvoid "glLightf" GLenum GLenum GLfloat))
+   (define glLightfv     (GL GLvoid "glLightfv" GLenum GLenum GLfloat*))
+   (define glLighti      (GL GLvoid "glLighti" GLenum GLenum GLint))
+   (define glLightiv     (GL GLvoid "glLightiv" GLenum GLenum GLint*))
    (define glLineStipple (GL GLvoid "glLineStipple" GLint GLushort))
-   (define glLineWidth (GL GLvoid "glLineWidth" GLfloat))
-;WINGDIAPI void APIENTRY glListBase (GLuint base);
-   (define glLoadIdentity (GL GLvoid "glLoadIdentity"))
+   (define glLineWidth   (GL GLvoid "glLineWidth" GLfloat))
+   (define glListBase    (GL GLvoid "glListBase" GLuint))
+   (define glLoadIdentity(GL GLvoid "glLoadIdentity"))
    (define glLoadMatrixd (GL GLvoid "glLoadMatrixd" GLdouble*))
    (define glLoadMatrixf (GL GLvoid "glLoadMatrixf" GLfloat*))
-;WINGDIAPI void APIENTRY glLoadName (GLuint name);
+   (define glLoadName    (GL GLvoid "glLoadName" GLuint))
+   (define glLogicOp     (GL GLvoid "glLogicOp" GLenum))
 ;WINGDIAPI void APIENTRY glMap1d (GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble *points);
 ;WINGDIAPI void APIENTRY glMap1f (GLenum target, GLfloat u1, GLfloat u2, GLint stride, GLint order, const GLfloat *points);
 ;WINGDIAPI void APIENTRY glMap2d (GLenum target, GLdouble u1, GLdouble u2, GLint ustride, GLint uorder, GLdouble v1, GLdouble v2, GLint vstride, GLint vorder, const GLdouble *points);
@@ -2726,44 +2210,45 @@
 ;WINGDIAPI void APIENTRY glMapGrid1f (GLint un, GLfloat u1, GLfloat u2);
 ;WINGDIAPI void APIENTRY glMapGrid2d (GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2);
 ;WINGDIAPI void APIENTRY glMapGrid2f (GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2);
-   (define glMaterialf  (GL GLvoid "glMaterialf"  GLenum GLenum GLfloat))
-   (define glMaterialfv (GL GLvoid "glMaterialfv" GLenum GLenum GLfloat*))
-;WINGDIAPI void APIENTRY glMateriali (GLenum face, GLenum pname, GLint param);
-;WINGDIAPI void APIENTRY glMaterialiv (GLenum face, GLenum pname, const GLint *params);
-   (define glMatrixMode (GL GLvoid "glMatrixMode" GLenum))
+   (define glMaterialf   (GL GLvoid "glMaterialf"  GLenum GLenum GLfloat))
+   (define glMaterialfv  (GL GLvoid "glMaterialfv" GLenum GLenum GLfloat*))
+   (define glMateriali   (GL GLvoid "glMateriali"  GLenum GLenum GLint))
+   (define glMaterialiv  (GL GLvoid "glMaterialiv" GLenum GLenum GLint*))
+   (define glMatrixMode  (GL GLvoid "glMatrixMode" GLenum))
    (define glMultMatrixd (GL GLvoid "glMultMatrixd" GLdouble*))
    (define glMultMatrixf (GL GLvoid "glMultMatrixf" GLfloat*))
-   (define glNewList (GL GLvoid "glNewList" GLuint GLenum))
-   (define glNormal3b (GL GLvoid "glNormal3b" GLbyte GLbyte GLbyte))
-   (define glNormal3bv (GL GLvoid "glNormal3bv" GLbyte*))
-   (define glNormal3d (GL GLvoid "glNormal3d" GLdouble GLdouble GLdouble))
-   (define glNormal3dv (GL GLvoid "glNormal3dv" GLdouble*))
-   (define glNormal3f  (GL GLvoid "glNormal3f"  GLfloat GLfloat GLfloat))
-   (define glNormal3fv (GL GLvoid "glNormal3fv" GLfloat*))
-   (define glNormal3i (GL GLvoid "glNormal3i" GLint GLint GLint))
-   (define glNormal3iv (GL GLvoid "glNormal3iv" GLint*))
-   (define glNormal3s (GL GLvoid "glNormal3s" GLshort GLshort GLshort))
-   (define glNormal3sv (GL GLvoid "glNormal3sv" GLshort*))
-   (define glOrtho (GL GLvoid "glOrtho" GLdouble GLdouble  GLdouble GLdouble  GLdouble GLdouble))
-;WINGDIAPI void APIENTRY glPassThrough (GLfloat token);
-   (define glPixelMapfv (GL GLvoid "glPixelMapfv" GLenum GLsizei GLfloat*))
+   (define glNewList     (GL GLvoid "glNewList" GLuint GLenum))
+   (define glNormal3b    (GL GLvoid "glNormal3b" GLbyte GLbyte GLbyte))
+   (define glNormal3bv   (GL GLvoid "glNormal3bv" GLbyte*))
+   (define glNormal3d    (GL GLvoid "glNormal3d" GLdouble GLdouble GLdouble))
+   (define glNormal3dv   (GL GLvoid "glNormal3dv" GLdouble*))
+   (define glNormal3f    (GL GLvoid "glNormal3f"  GLfloat GLfloat GLfloat))
+   (define glNormal3fv   (GL GLvoid "glNormal3fv" GLfloat*))
+   (define glNormal3i    (GL GLvoid "glNormal3i" GLint GLint GLint))
+   (define glNormal3iv   (GL GLvoid "glNormal3iv" GLint*))
+   (define glNormal3s    (GL GLvoid "glNormal3s" GLshort GLshort GLshort))
+   (define glNormal3sv   (GL GLvoid "glNormal3sv" GLshort*))
+   (define glOrtho       (GL GLvoid "glOrtho" GLdouble GLdouble  GLdouble GLdouble  GLdouble GLdouble))
+   (define glPassThrough (GL GLvoid "glPassThrough" GLfloat))
+   (define glPixelMapfv  (GL GLvoid "glPixelMapfv" GLenum GLsizei GLfloat*))
    (define glPixelMapuiv (GL GLvoid "glPixelMapuiv" GLenum GLsizei GLuint*))
    (define glPixelMapusv (GL GLvoid "glPixelMapusv" GLenum GLsizei GLushort*))
    (define glPixelTransferf (GL GLvoid "glPixelTransferf" GLenum GLfloat))
-;WINGDIAPI void APIENTRY glPixelTransferi (GLenum pname, GLint param);
-   (define glPixelZoom (GL GLvoid "glPixelZoom" GLfloat GLfloat))
-   (define glPointSize (GL GLvoid "glPointSize" GLfloat))
-;WINGDIAPI void APIENTRY glPolygonStipple (const GLubyte *mask);
-   (define glPolygonMode (GL GLvoid "glPolygonMode" GLenum GLenum)) ; GL 1.1 ?
+   (define glPixelTransferi (GL GLvoid "glPixelTransferi" GLenum GLint))
+   (define glPixelZoom   (GL GLvoid "glPixelZoom" GLfloat GLfloat))
+   (define glPointSize   (GL GLvoid "glPointSize" GLfloat))
+   (define glPolygonStipple (GL GLvoid "glPolygonStipple" GLubyte*))
+   (define glPolygonMode (GL GLvoid "glPolygonMode" GLenum GLenum))
 
+   (define glPixelStoref (GL GLvoid "glPixelStoref" GLenum GLfloat))
    (define glPixelStorei (GL GLvoid "glPixelStorei" GLenum GLint))
 
-   (define glPopAttrib (GL GLvoid "glPopAttrib"))
-   (define glPopMatrix  (GL GLvoid "glPopMatrix"))
-;WINGDIAPI void APIENTRY glPopName (void);
-   (define glPushAttrib (GL GLvoid "glPushAttrib" GLbitfield))
-   (define glPushMatrix (GL GLvoid "glPushMatrix"))
-;WINGDIAPI void APIENTRY glPushName (GLuint name);
+   (define glPopAttrib   (GL GLvoid "glPopAttrib"))
+   (define glPopMatrix   (GL GLvoid "glPopMatrix"))
+   (define glPopName     (GL GLvoid "glPopName"))
+   (define glPushAttrib  (GL GLvoid "glPushAttrib" GLbitfield))
+   (define glPushMatrix  (GL GLvoid "glPushMatrix"))
+   (define glPushName    (GL GLvoid "glPushName" GLuint))
 ;WINGDIAPI void APIENTRY glRasterPos2d (GLdouble x, GLdouble y);
 ;WINGDIAPI void APIENTRY glRasterPos2dv (const GLdouble *v);
 ;WINGDIAPI void APIENTRY glRasterPos2f (GLfloat x, GLfloat y);
@@ -2788,107 +2273,106 @@
 ;WINGDIAPI void APIENTRY glRasterPos4iv (const GLint *v);
 ;WINGDIAPI void APIENTRY glRasterPos4s (GLshort x, GLshort y, GLshort z, GLshort w);
 ;WINGDIAPI void APIENTRY glRasterPos4sv (const GLshort *v);
-   (define glReadBuffer (GL GLvoid "glReadBuffer" GLenum))
-   (define glReadPixels (GL GLvoid "glReadPixels" GLint GLint GLsizei GLsizei GLenum GLenum GLvoid*))
+   (define glReadBuffer  (GL GLvoid "glReadBuffer" GLenum))
+   (define glReadPixels  (GL GLvoid "glReadPixels" GLint GLint GLsizei GLsizei GLenum GLenum GLvoid*))
 
-;WINGDIAPI void APIENTRY glRectd (GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2);
-;WINGDIAPI void APIENTRY glRectdv (const GLdouble *v1, const GLdouble *v2);
-;WINGDIAPI void APIENTRY glRectf (GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2);
-;WINGDIAPI void APIENTRY glRectfv (const GLfloat *v1, const GLfloat *v2);
-;WINGDIAPI void APIENTRY glRecti (GLint x1, GLint y1, GLint x2, GLint y2);
-;WINGDIAPI void APIENTRY glRectiv (const GLint *v1, const GLint *v2);
-;WINGDIAPI void APIENTRY glRects (GLshort x1, GLshort y1, GLshort x2, GLshort y2);
-;WINGDIAPI void APIENTRY glRectsv (const GLshort *v1, const GLshort *v2);
-;WINGDIAPI GLint APIENTRY glRenderMode (GLenum mode);
-   (define glRotated (GL GLvoid "glRotated" GLdouble GLdouble GLdouble GLdouble))
-   (define glRotatef (GL GLvoid "glRotatef" GLfloat GLfloat GLfloat GLfloat))
-   (define glScaled (GL GLvoid "glScaled" GLdouble GLdouble GLdouble))
-   (define glScalef (GL GLvoid "glScalef" GLfloat GLfloat GLfloat))
-   (define glScissor (GL GLvoid "glScissor" GLint GLint GLsizei GLsizei))
-;WINGDIAPI void APIENTRY glSelectBuffer (GLsizei size, GLuint *buffer);
-   (define glShadeModel (GL GLvoid "glShadeModel" GLenum))
+   (define glRectd       (GL GLvoid "glRectd"  GLdouble GLdouble GLdouble GLdouble))
+   (define glRectdv      (GL GLvoid "glRectdv" GLdouble* GLdouble*))
+   (define glRectf       (GL GLvoid "glRectf"  GLfloat GLfloat GLfloat GLfloat))
+   (define glRectfv      (GL GLvoid "glRectfv" GLfloat* GLfloat*))
+   (define glRecti       (GL GLvoid "glRecti"  GLint GLint GLint GLint))
+   (define glRectiv      (GL GLvoid "glRectiv" GLint* GLint*))
+   (define glRects       (GL GLvoid "glRects"  GLshort GLshort GLshort GLshort))
+   (define glRectsv      (GL GLvoid "glRectsv" GLshort* GLshort*))
+   (define glRenderMode  (GL GLint "glRenderMode" GLenum))
+   (define glRotated     (GL GLvoid "glRotated" GLdouble GLdouble GLdouble GLdouble))
+   (define glRotatef     (GL GLvoid "glRotatef" GLfloat GLfloat GLfloat GLfloat))
+   (define glScaled      (GL GLvoid "glScaled" GLdouble GLdouble GLdouble))
+   (define glScalef      (GL GLvoid "glScalef" GLfloat GLfloat GLfloat))
+   (define glScissor     (GL GLvoid "glScissor" GLint GLint GLsizei GLsizei))
+   (define glSelectBuffer(GL GLvoid "glSelectBuffer" GLsizei GLuint*))
+   (define glShadeModel  (GL GLvoid "glShadeModel" GLenum))
    (define glStencilFunc (GL GLvoid "glStencilFunc" GLenum GLint GLuint))
    (define glStencilMask (GL GLvoid "glStencilMask" GLuint))
-   (define glStencilOp (GL GLvoid "glStencilOp" GLenum GLenum GLenum))
-   (define glTexCoord1d (GL GLvoid "glTexCoord1d" GLdouble))
+   (define glStencilOp   (GL GLvoid "glStencilOp" GLenum GLenum GLenum))
+   (define glTexCoord1d  (GL GLvoid "glTexCoord1d" GLdouble))
    (define glTexCoord1dv (GL GLvoid "glTexCoord1dv" GLdouble*))
-   (define glTexCoord1f (GL GLvoid "glTexCoord1f" GLfloat))
+   (define glTexCoord1f  (GL GLvoid "glTexCoord1f" GLfloat))
    (define glTexCoord1fv (GL GLvoid "glTexCoord1fv" GLfloat*))
-   (define glTexCoord1i (GL GLvoid "glTexCoord1i" GLint))
+   (define glTexCoord1i  (GL GLvoid "glTexCoord1i" GLint))
    (define glTexCoord1iv (GL GLvoid "glTexCoord1iv" GLint*))
-   (define glTexCoord1s (GL GLvoid "glTexCoord1s" GLshort))
+   (define glTexCoord1s  (GL GLvoid "glTexCoord1s" GLshort))
    (define glTexCoord1sv (GL GLvoid "glTexCoord1sv" GLshort*))
-   (define glTexCoord2d (GL GLvoid "glTexCoord2d" GLdouble GLdouble))
+   (define glTexCoord2d  (GL GLvoid "glTexCoord2d" GLdouble GLdouble))
    (define glTexCoord2dv (GL GLvoid "glTexCoord2dv" GLdouble*))
-   (define glTexCoord2f (GL GLvoid "glTexCoord2f" GLfloat GLfloat))
+   (define glTexCoord2f  (GL GLvoid "glTexCoord2f" GLfloat GLfloat))
    (define glTexCoord2fv (GL GLvoid "glTexCoord2fv" GLfloat*))
-   (define glTexCoord2i (GL GLvoid "glTexCoord2i" GLint GLint))
+   (define glTexCoord2i  (GL GLvoid "glTexCoord2i" GLint GLint))
    (define glTexCoord2iv (GL GLvoid "glTexCoord2iv" GLint*))
-   (define glTexCoord2s (GL GLvoid "glTexCoord2s" GLshort GLshort))
+   (define glTexCoord2s  (GL GLvoid "glTexCoord2s" GLshort GLshort))
    (define glTexCoord2sv (GL GLvoid "glTexCoord2sv" GLshort*))
-   (define glTexCoord3d (GL GLvoid "glTexCoord3d" GLdouble GLdouble GLdouble))
+   (define glTexCoord3d  (GL GLvoid "glTexCoord3d" GLdouble GLdouble GLdouble))
    (define glTexCoord3dv (GL GLvoid "glTexCoord3dv" GLdouble*))
-   (define glTexCoord3f (GL GLvoid "glTexCoord3f" GLfloat GLfloat GLfloat))
+   (define glTexCoord3f  (GL GLvoid "glTexCoord3f" GLfloat GLfloat GLfloat))
    (define glTexCoord3fv (GL GLvoid "glTexCoord3fv" GLfloat*))
-   (define glTexCoord3i (GL GLvoid "glTexCoord3i" GLint GLint GLint))
+   (define glTexCoord3i  (GL GLvoid "glTexCoord3i" GLint GLint GLint))
    (define glTexCoord3iv (GL GLvoid "glTexCoord3iv" GLint*))
-   (define glTexCoord3s (GL GLvoid "glTexCoord3s" GLshort GLshort GLshort))
+   (define glTexCoord3s  (GL GLvoid "glTexCoord3s" GLshort GLshort GLshort))
    (define glTexCoord3sv (GL GLvoid "glTexCoord3sv" GLshort*))
-   (define glTexCoord4d (GL GLvoid "glTexCoord4d" GLdouble GLdouble GLdouble GLdouble))
+   (define glTexCoord4d  (GL GLvoid "glTexCoord4d" GLdouble GLdouble GLdouble GLdouble))
    (define glTexCoord4dv (GL GLvoid "glTexCoord4dv" GLdouble*))
-   (define glTexCoord4f (GL GLvoid "glTexCoord4f" GLfloat GLfloat GLfloat GLfloat))
+   (define glTexCoord4f  (GL GLvoid "glTexCoord4f" GLfloat GLfloat GLfloat GLfloat))
    (define glTexCoord4fv (GL GLvoid "glTexCoord4fv" GLfloat*))
-   (define glTexCoord4i (GL GLvoid "glTexCoord4i" GLint GLint GLint GLint))
+   (define glTexCoord4i  (GL GLvoid "glTexCoord4i" GLint GLint GLint GLint))
    (define glTexCoord4iv (GL GLvoid "glTexCoord4iv" GLint*))
-   (define glTexCoord4s (GL GLvoid "glTexCoord4s" GLshort GLshort GLshort GLshort))
+   (define glTexCoord4s  (GL GLvoid "glTexCoord4s" GLshort GLshort GLshort GLshort))
    (define glTexCoord4sv (GL GLvoid "glTexCoord4sv" GLshort*))
-;WINGDIAPI void APIENTRY glTexEnvf (GLenum target, GLenum pname, GLfloat param);
-;WINGDIAPI void APIENTRY glTexEnvfv (GLenum target, GLenum pname, const GLfloat *params);
-   (define glTexEnvi (GL GLvoid "glTexEnvi" GLenum GLenum GLint))
-;WINGDIAPI void APIENTRY glTexEnviv (GLenum target, GLenum pname, const GLint *params);
-;WINGDIAPI void APIENTRY glTexGend (GLenum coord, GLenum pname, GLdouble param);
-;WINGDIAPI void APIENTRY glTexGendv (GLenum coord, GLenum pname, const GLdouble *params);
-;WINGDIAPI void APIENTRY glTexGenf (GLenum coord, GLenum pname, GLfloat param);
-   (define glTexGenfv (GL GLvoid "glTexGenfv" GLenum GLenum GLfloat*))
-   (define glTexGeni (GL GLvoid "glTexGeni" GLenum GLenum GLint))
-;WINGDIAPI void APIENTRY glTexGeniv (GLenum coord, GLenum pname, const GLint *params);
-   (define glTexImage1D (GL GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum fft-any))
-   (define glTexImage2D (GL GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum fft-any))
+   (define glTexEnvf     (GL GLvoid "glTexEnvf" GLenum GLenum GLfloat))
+   (define glTexEnvfv    (GL GLvoid "glTexEnvfv" GLenum GLenum GLfloat*))
+   (define glTexEnvi     (GL GLvoid "glTexEnvi" GLenum GLenum GLint))
+   (define glTexEnviv    (GL GLvoid "glTexEnviv" GLenum GLenum GLint*))
+   (define glTexGend     (GL GLvoid "glTexGend" GLenum GLenum GLdouble))
+   (define glTexGendv    (GL GLvoid "glTexGendv" GLenum GLenum GLdouble*))
+   (define glTexGenf     (GL GLvoid "glTexGenf" GLenum GLenum GLfloat))
+   (define glTexGenfv    (GL GLvoid "glTexGenfv" GLenum GLenum GLfloat*))
+   (define glTexGeni     (GL GLvoid "glTexGeni" GLenum GLenum GLint))
+   (define glTexGeniv    (GL GLvoid "glTexGeniv" GLenum GLenum GLint*))
+   (define glTexImage1D  (GL GLvoid "glTexImage1D" GLenum GLint GLint GLsizei GLint GLenum GLenum fft-any))
+   (define glTexImage2D  (GL GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum fft-any))
    (define glTexParameterf (GL GLvoid "glTexParameterf" GLenum GLenum GLfloat))
+   (define glTexParameterfv (GL GLvoid "glTexParameterfv" GLenum GLenum GLfloat*))
    (define glTexParameteri (GL GLvoid "glTexParameteri" GLenum GLenum GLint))
    (define glTexParameteriv (GL GLvoid "glTexParameteriv" GLenum GLenum GLint*))
 
+   (define glTranslated  (GL GLvoid "glTranslated" GLdouble GLdouble GLdouble))
+   (define glTranslatef  (GL GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
 
-;WINGDIAPI void APIENTRY glTranslated (GLdouble x, GLdouble y, GLdouble z);
-   (define glTranslatef (GL GLvoid "glTranslatef" GLfloat GLfloat GLfloat))
+   (define glVertex2d    (GL GLvoid "glVertex2d"  GLdouble GLdouble))
+   (define glVertex2dv   (GL GLvoid "glVertex2dv" GLdouble*))
+   (define glVertex2f    (GL GLvoid "glVertex2f"  GLfloat GLfloat))
+   (define glVertex2fv   (GL GLvoid "glVertex2fv" GLfloat*))
+   (define glVertex2i    (GL GLvoid "glVertex2i"  GLint GLint))
+   (define glVertex2iv   (GL GLvoid "glVertex2iv" GLint*))
+   (define glVertex2s    (GL GLvoid "glVertex2s"  GLshort GLshort))
+   (define glVertex2sv   (GL GLvoid "glVertex2sv" GLshort*))
+   (define glVertex3d    (GL GLvoid "glVertex3d"  GLdouble GLdouble GLdouble))
+   (define glVertex3dv   (GL GLvoid "glVertex3dv" GLdouble*))
+   (define glVertex3f    (GL GLvoid "glVertex3f"  GLfloat GLfloat GLfloat))
+   (define glVertex3fv   (GL GLvoid "glVertex3fv" GLfloat*))
+   (define glVertex3i    (GL GLvoid "glVertex3i"  GLint GLint GLint))
+   (define glVertex3iv   (GL GLvoid "glVertex3iv" GLint*))
+   (define glVertex3s    (GL GLvoid "glVertex3s"  GLshort GLshort GLshort))
+   (define glVertex3sv   (GL GLvoid "glVertex3sv" GLshort*))
+   (define glVertex4d    (GL GLvoid "glVertex4d"  GLdouble GLdouble GLdouble GLdouble))
+   (define glVertex4dv   (GL GLvoid "glVertex4dv" GLdouble*))
+   (define glVertex4f    (GL GLvoid "glVertex4f"  GLfloat GLfloat GLfloat GLfloat))
+   (define glVertex4fv   (GL GLvoid "glVertex4fv" GLfloat*))
+   (define glVertex4i    (GL GLvoid "glVertex4i"  GLint GLint GLint GLint))
+   (define glVertex4iv   (GL GLvoid "glVertex4iv" GLint*))
+   (define glVertex4s    (GL GLvoid "glVertex4s"  GLshort GLshort GLshort GLshort))
+   (define glVertex4sv   (GL GLvoid "glVertex4sv" GLshort*))
 
-   ;; 2.7 Vertex Specification
-   (define glVertex2d  (GL GLvoid "glVertex2d"  GLdouble GLdouble))
-   (define glVertex2dv (GL GLvoid "glVertex2dv" GLdouble*))
-   (define glVertex2f  (GL GLvoid "glVertex2f"  GLfloat GLfloat))
-   (define glVertex2fv (GL GLvoid "glVertex2fv" GLfloat*))
-   (define glVertex2i  (GL GLvoid "glVertex2i"  GLint GLint))
-   (define glVertex2iv (GL GLvoid "glVertex2iv" GLint*))
-   (define glVertex2s  (GL GLvoid "glVertex2s"  GLshort GLshort))
-   (define glVertex2sv (GL GLvoid "glVertex2sv" GLshort*))
-   (define glVertex3d  (GL GLvoid "glVertex3d"  GLdouble GLdouble GLdouble))
-   (define glVertex3dv (GL GLvoid "glVertex3dv" GLdouble*))
-   (define glVertex3f  (GL GLvoid "glVertex3f"  GLfloat GLfloat GLfloat))
-   (define glVertex3fv (GL GLvoid "glVertex3fv" GLfloat*))
-   (define glVertex3i  (GL GLvoid "glVertex3i"  GLint GLint GLint))
-   (define glVertex3iv (GL GLvoid "glVertex3iv" GLint*))
-   (define glVertex3s  (GL GLvoid "glVertex3s"  GLshort GLshort GLshort))
-   (define glVertex3sv (GL GLvoid "glVertex3sv" GLshort*))
-   (define glVertex4d  (GL GLvoid "glVertex4d"  GLdouble GLdouble GLdouble GLdouble))
-   (define glVertex4dv (GL GLvoid "glVertex4dv" GLdouble*))
-   (define glVertex4f  (GL GLvoid "glVertex4f"  GLfloat GLfloat GLfloat GLfloat))
-   (define glVertex4fv (GL GLvoid "glVertex4fv" GLfloat*))
-   (define glVertex4i  (GL GLvoid "glVertex4i"  GLint GLint GLint GLint))
-   (define glVertex4iv (GL GLvoid "glVertex4iv" GLint*))
-   (define glVertex4s  (GL GLvoid "glVertex4s"  GLshort GLshort GLshort GLshort))
-   (define glVertex4sv (GL GLvoid "glVertex4sv" GLshort*))
-
-   (define glViewport  (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
+   (define glViewport    (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
 )
 
 ; ==========================================================================
