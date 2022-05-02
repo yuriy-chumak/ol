@@ -1804,14 +1804,6 @@
 
       ; 4.2.6  Quasiquotation
 
-
-      ; Improper List (a chain of pairs that doesn't end in the empty list)
-      (define-syntax ilist
-         (syntax-rules ()
-            ((ilist a) a)
-            ((ilist a . b)
-               (cons a (ilist . b)))))
-
       (define-syntax cons* ; * MIT/GNU Scheme, srfi-1
          (syntax-rules ()
             ((cons* a) a)
