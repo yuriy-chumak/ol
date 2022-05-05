@@ -110,7 +110,7 @@
                (vm:make TVECTOR k fill))))
    
       ; * Identity function
-      (setq I (lambda (x) x))
+      (setq idf (lambda (x) x))
    )
 
    ; =================================================================
@@ -1912,7 +1912,6 @@
 
       ; 4.1.4  Procedures
       λ ; same as 'lambda'
-      I ; identity function
       ; 4.1.5, 4.2.2  Conditionals
       if and or
       ; 4.1.6  Assignments
@@ -2010,4 +2009,5 @@
       halt
 
       -- ++ ; * ol internal staff
+      idf ; identity function
 ))
