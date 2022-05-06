@@ -413,8 +413,8 @@
       (define (char>=? a . b)
          (compare great-eq? a b))
 
-      (define (char->integer x) x)
-      (define (integer->char x) x)
+      (define char->integer idf)
+      (define integer->char idf)
 
       ;; *********************
       ;; 6.10.  Control features
