@@ -1236,13 +1236,6 @@
 
    GLU_U_STEP GLU_V_STEP GLU_DISPLAY_MODE
 
-   ; пока бесхозные, todo: сложить на место
-   GL_MAP1_VERTEX_3 GL_MAP2_VERTEX_3
-   GL_LINE GL_FILL GL_POINT
-   GL_DEPTH_COMPONENT
-   GL_RGB GL_UNSIGNED_BYTE GL_RGBA
-   GL_STENCIL_INDEX
-
    ; platform staff
    (exports (OpenGL platform)))
 
