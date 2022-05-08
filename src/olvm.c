@@ -2963,6 +2963,8 @@ loop:;
 				fp = ol->heap.fp;
 				break;
 			}
+			if (is_number(T)) // just copy a number to number
+				type = is_value(T) ? value_type(T) : reference_type(T);
 			// else continue to default
 		#endif
 		default:
