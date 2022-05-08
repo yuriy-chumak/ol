@@ -12,6 +12,9 @@
       SOIL_load_image
       SOIL_load_image_from_memory
       SOIL_free_image_data
+
+      SOIL_create_OGL_texture
+      SOIL_save_image
       
       SOIL_LOAD_AUTO
       SOIL_LOAD_L
@@ -24,6 +27,10 @@
       SOIL_DDS_CUBEMAP_FACE_ORDER
 
       SOIL_FLAG_INVERT_Y
+
+      SOIL_SAVE_TYPE_TGA
+      SOIL_SAVE_TYPE_BMP
+      SOIL_SAVE_TYPE_DDS
    )
 (cond-expand
    (Windows
@@ -65,9 +72,9 @@
    (define SOIL_FLAG_CoCg_Y 256)
    (define SOIL_FLAG_TEXTURE_RECTANGLE 51)
 
-   ;SOIL_SAVE_TYPE_TGA = 0,
-   ;SOIL_SAVE_TYPE_BMP = 1,
-   ;SOIL_SAVE_TYPE_DDS = 2
+   (define SOIL_SAVE_TYPE_TGA 0)
+   (define SOIL_SAVE_TYPE_BMP 1)
+   (define SOIL_SAVE_TYPE_DDS 2)
    
    (define SOIL_DDS_CUBEMAP_FACE_ORDER "EWUDNS")
    
@@ -95,4 +102,6 @@
    (define SOIL_load_image_from_memory (libsoil type-vptr "SOIL_load_image_from_memory" type-bytevector int int& int& int& int))
    (define SOIL_free_image_data (libsoil fft-void "SOIL_free_image_data" type-vptr))
    
+   (define SOIL_create_OGL_texture (libsoil fft-int "SOIL_create_OGL_texture" fft-any fft-int fft-int fft-int fft-int fft-int))
+   (define SOIL_save_image (libsoil fft-int "SOIL_save_image" type-string fft-int fft-int fft-int fft-int fft-any))
 ))
