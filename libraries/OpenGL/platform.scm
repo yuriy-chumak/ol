@@ -257,7 +257,8 @@
          (define glXQueryExtensionsString
             (let*((glXQueryExtensionsString (GLX type-string "glXQueryExtensionsString" type-vptr fft-int))
                   (display (XOpenDisplay #false))
-                  (screen  (XDefaultScreen display)))
+                  ; WSL workaround: XDefaultScreen can be core dumped if no display
+                  (screen  (if display (XDefaultScreen display))))
                (if glXQueryExtensionsString
                   (case-lambda
                      ((display screen)
