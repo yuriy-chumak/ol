@@ -192,9 +192,7 @@
    GL_TEXTURE_BINDING_1D ; renamed from TEXTURE_1D_BINDING_EXT by 1.1
    GL_TEXTURE_BINDING_2D ; renamed from TEXTURE_2D_BINDING_EXT by 1.1
 ;  TEXTURE_3D_BINDING ; excluded by 1.1
-
-   GLU_VERSION_1_2
-   )
+)
 
 ; ============================================================================
 ; == implementation ==========================================================
@@ -368,9 +366,5 @@
    (define GL_TEXTURE_RESIDENT   #x8067)
    (define GL_TEXTURE_BINDING_1D #x8068)
    (define GL_TEXTURE_BINDING_2D #x8069)
-
-; ==========================================================================
-; GLU
-   (define GLU_VERSION_1_2 1)
 
 ))

@@ -74,10 +74,7 @@
    GL_LIGHT_MODEL_COLOR_CONTROL ; GL_VERSION_1_2_DEPRECATED
    GL_SINGLE_COLOR              ; GL_VERSION_1_2_DEPRECATED
    GL_SEPARATE_SPECULAR_COLOR   ; GL_VERSION_1_2_DEPRECATED
-
-   GLU_VERSION_1_3
-
-   (exports (OpenGL version-1-1)))
+)
 
 ; ============================================================================
 ; == implementation ==========================================================
@@ -157,9 +154,5 @@
    (define GL_SEPARATE_SPECULAR_COLOR   #x81FA)
 
  ; ARB_multitexture (todo: check is it included in 1.2.1 or 1.3)
-
-; ==========================================================================
-; GLU
-   (define GLU_VERSION_1_3 1)
 
 ))

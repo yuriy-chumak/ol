@@ -16,7 +16,7 @@
       (import (OpenGL platform)))
    (else
       (begin (runtime-error "Unsupported platform:" *uname*))))
-
+(import (lib GLU))
 
 (export
    gl:set-window-title gl:set-window-size
@@ -32,7 +32,10 @@
    gl:hide-cursor
 
    native:enable-context native:disable-context
-   hook:exit)
+   hook:exit
+
+   ; export GLU library
+   (exports (lib GLU)))
 
 ; notes:
 ;  WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
