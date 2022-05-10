@@ -1,7 +1,7 @@
 ; OpenGL 1.4 (24 Jul 2002)
-
 (define-library (OpenGL version-1-4)
 (export
+      (exports (OpenGL version-1-3))
 
    GL_VERSION_1_4
 
@@ -106,8 +106,7 @@
 ;; GLAPI void APIENTRY glBlendColor (GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 ;; GLAPI void APIENTRY glBlendEquation (GLenum mode);
 
-   (exports (OpenGL version-1-3)))
-
+)
 (import (scheme core)
    (OpenGL version-1-3))
 

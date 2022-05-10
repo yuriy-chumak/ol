@@ -1,9 +1,9 @@
-; OpenGL 2.1 (2 Jul 2006)
+; OpenGL 2.1 (2 Jul 2006)  GLSL 1.2
+(define-library (OpenGL version-2-1)
+(export
 ;   OpenGL 2.0
 ; + ARB_pixel_buffer_object
 ; + EXT_texture_sRGB
-(define-library (OpenGL version-2-1)
-(export
 
    GL_VERSION_2_1
 

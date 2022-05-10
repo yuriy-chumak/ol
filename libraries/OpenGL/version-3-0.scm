@@ -1,11 +1,9 @@
-; OpenGL 3.0 (11 Aug 2008)
-
+; OpenGL 3.0 (11 Aug 2008) GLSL 1.3
+(define-library (OpenGL version-3-0)
+(export
 ; this version provides new functionality over old
 ; so, OpenGL 1.0, 1.1, ..., 2.1 still available
 ; first disabling of old functionality was introduced in 3.2
-
-(define-library (OpenGL version-3-0)
-(export
    gl:CreateContextAttribs ; os independent context creation function
 
    GL_VERSION_3_0

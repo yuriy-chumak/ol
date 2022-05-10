@@ -1,7 +1,7 @@
 ; OpenGL 1.5 (29 Jul 2003)
-
 (define-library (OpenGL version-1-5)
 (export
+      (exports (OpenGL version-1-4))
 
    GL_VERSION_1_5
 
@@ -68,12 +68,12 @@
    ;; GLAPI void APIENTRY glGetQueryiv (GLenum, GLenum, GLint *);
    ;; GLAPI void APIENTRY glGetQueryObjectiv (GLuint, GLenum, GLint *);
    ;; GLAPI void APIENTRY glGetQueryObjectuiv (GLuint, GLenum, GLuint *);
+)
 
-
-   (exports (OpenGL version-1-4)))
-
+; ============================================================================
+; == implementation ==========================================================
 (import (scheme core)
-   (OpenGL version-1-4))
+        (OpenGL version-1-4))
 
 (begin
    (define GL_VERSION_1_5 1)

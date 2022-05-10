@@ -1,13 +1,12 @@
-; OpenGL 3.2 (3 Aug 2009)
-
+; OpenGL 3.2 (3 Aug 2009)  GLSL 1.5
+(define-library (OpenGL version-3-2)
+(export
 ; this version introduced "deprecation" model,
 ; so i think we should copy all defines here
 ; and remove old constants
 
 ; if you want to not disable "deprecated" functionality, please
 ; add corresponding GL_VERSION_x_x_DEPRECATED variable to config
-(define-library (OpenGL version-3-2)
-(export
 
    GL_VERSION_3_2
 

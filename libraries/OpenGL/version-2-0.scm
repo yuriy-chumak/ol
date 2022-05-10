@@ -1,16 +1,16 @@
-; OpenGL 2.0 (7 Sep 2004)
+; OpenGL 2.0 (7 Sep 2004), GLSL 1.1
 (define-library (OpenGL version-2-0)
 (export
       (exports (OpenGL version-1-5))
-   ; + ARB_shader_objects, heavily modified
-   ; + ARB_vertex_shader, heavily modified
-   ; + ARB_fragment_shader, heavily modified
-   ; + ARB_shading_language_100, heavily modified
-   ; + ARB_draw_buffers
-   ; + ARB_texture_non_power_of_two
-   ; + ARB_point_sprite
-   ; + ATI_separate_stencil
-   ; + EXT_stencil_two_side
+; + ARB_shader_objects, heavily modified
+; + ARB_vertex_shader, heavily modified
+; + ARB_fragment_shader, heavily modified
+; + ARB_shading_language_100, heavily modified
+; + ARB_draw_buffers
+; + ARB_texture_non_power_of_two
+; + ARB_point_sprite
+; + ATI_separate_stencil
+; + EXT_stencil_two_side
 
    GL_VERSION_2_0
 

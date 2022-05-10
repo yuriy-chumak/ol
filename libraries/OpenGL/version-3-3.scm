@@ -1,5 +1,4 @@
-; OpenGL 3.3 (11 Mar 2010)
-
+; OpenGL 3.3 (11 Mar 2010) GLSL 3.30
 (define-library (OpenGL version-3-3)
 (export
 

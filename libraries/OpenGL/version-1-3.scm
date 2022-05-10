@@ -1,8 +1,7 @@
 ; OpenGL 1.3 (14 Aug 2001)
-
 (define-library (OpenGL version-1-3)
 (export
-
+      (exports (OpenGL version-1-2))
    GL_VERSION_1_3
 
    (exports (OpenGL ARB transpose_matrix))
@@ -94,13 +93,12 @@ glActiveTexture
    GL_PROXY_TEXTURE_CUBE_MAP
    GL_MAX_CUBE_MAP_TEXTURE_SIZE
 
-
-   (exports (OpenGL version-1-2)))
+)
 ; ============================================================================
 ; == implementation ==========================================================
 (import (scheme core)
-   (OpenGL version-1-2)
-   (OpenGL ARB transpose_matrix))
+        (OpenGL version-1-2)
+        (OpenGL ARB transpose_matrix))
 
 (begin
    (define GL_VERSION_1_3 1)

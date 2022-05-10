@@ -1,5 +1,4 @@
-; OpenGL 4.2 (8 Aug 2011)
-
+; OpenGL 4.2 (8 Aug 2011)  GLSL 4.20
 (define-library (OpenGL version-4-2)
 (export
 

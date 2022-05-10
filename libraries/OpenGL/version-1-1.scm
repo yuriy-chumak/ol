@@ -1,5 +1,7 @@
 ; OpenGL 1.1 (4 Mar 1997)
-;   OpenGL 1.0
+(define-library (OpenGL version-1-1)
+(export
+      (exports (OpenGL version-1-0))
 ; + EXT_vertex_array
 ; + EXT_polygon_offset
 ; + EXT_blend_logic_op
@@ -7,18 +9,14 @@
 ; + EXT_copy_texture
 ; + EXT_subtexture
 ; + EXT_texture_object
-; ===========================================================================
-(define-library (OpenGL version-1-1)
-(export
-      (exports (OpenGL version-1-0))
 
    GL_VERSION_1_1
 
    GL_INDEX_LOGIC_OP          ; renamed from GL_LOGIC_OP by 1.1
    GL_TEXTURE_INTERNAL_FORMAT ; renamed from GL_TEXTURE_COMPONENTS by 1.1
 
-   ; WINGDIAPI void APIENTRY glIndexub (GLubyte c);
-   ; WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
+   glIndexub ; GLvoid (GLubyte c)
+   glIndexubv; GLvoid (const GLubyte *c)
 
    glEnableClientState ; void (GLenum array)
    glDisableClientState ; void (GLenum array)
@@ -39,8 +37,9 @@
    GL_T2F_C4F_N3F_V3F
    GL_T4F_C4F_N3F_V4F
 
-   ; WINGDIAPI void APIENTRY glPushClientAttrib (GLbitfield mask);
-   ; WINGDIAPI void APIENTRY glPopClientAttrib (void);
+   glPushClientAttrib ; void glPushClientAttrib (GLbitfield mask)
+   glPopClientAttrib ; void glPopClientAttrib (void)
+
    GL_CLIENT_PIXEL_STORE_BIT
    GL_CLIENT_VERTEX_ARRAY_BIT
    GL_CLIENT_ALL_ATTRIB_BITS
@@ -197,19 +196,19 @@
 ; ============================================================================
 ; == implementation ==========================================================
 (import (scheme core)
-   (OpenGL version-1-0))
+        (OpenGL version-1-0))
 
 (begin
    (define GL_VERSION_1_1 1)
 
-   (define GL GL_LIBRARY)
+   (setq GL GL_LIBRARY)
 
    (define GL_INDEX_LOGIC_OP GL_LOGIC_OP)
    (define GL_TEXTURE_INTERNAL_FORMAT GL_TEXTURE_COMPONENTS)
 
 
-   ;WINGDIAPI void APIENTRY glIndexub (GLubyte c);
-   ;WINGDIAPI void APIENTRY glIndexubv (const GLubyte *c);
+   (define glIndexub (GL GLvoid "glIndexub" GLubyte))
+   (define glIndexubv (GL GLvoid "glIndexubv" GLubyte*))
 
    (define glEnableClientState (GL GLvoid "glEnableClientState" GLenum))
    (define glDisableClientState (GL GLvoid "glDisableClientState" GLenum))
@@ -232,8 +231,9 @@
 
    ; 6 State and State Requests (TBD.)
 
-   ; WINGDIAPI void APIENTRY glPushClientAttrib (GLbitfield mask);
-   ; WINGDIAPI void APIENTRY glPopClientAttrib (void);
+   (define glPushClientAttrib (GL GLvoid "glPushClientAttrib" GLbitfield))
+   (define glPopClientAttrib (GL GLvoid "glPopClientAttrib"))
+
    (define GL_CLIENT_PIXEL_STORE_BIT         #x00000001)
    (define GL_CLIENT_VERTEX_ARRAY_BIT        #x00000002)
    (define GL_CLIENT_ALL_ATTRIB_BITS         #xffffffff)

@@ -1,5 +1,4 @@
-; OpenGL 4.6 (31 Jul 2017)
-
+; OpenGL 4.6 (31 Jul 2017) GLSL 4.60
 (define-library (OpenGL version-4-6)
 (export
 
