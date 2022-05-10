@@ -199,6 +199,21 @@
    GLU_TESS_WINDING_NEGATIVE
    GLU_TESS_WINDING_ABS_GEQ_TWO
 
+   ; _GLUfuncptr
+   GLU_NURBS_BEGIN_CALLBACK ; void begin ( GLenum type )
+   GLU_NURBS_BEGIN_DATA_CALLBACK ; void beginData (GLenum type, void *userData)
+   GLU_NURBS_VERTEX_CALLBACK ; void vertex ( GLfloat *vertex )
+   GLU_NURBS_VERTEX_DATA_CALLBACK ; void vertexData ( GLfloat *vertex, void *userData )
+   GLU_NURBS_NORMAL_CALLBACK ; void normal ( GLfloat *normal )
+   GLU_NURBS_NORMAL_DATA_CALLBACK ; void normalData ( GLfloat *normal, void *userData )
+   GLU_NURBS_COLOR_CALLBACK ; void color ( GLfloat *color )
+   GLU_NURBS_COLOR_DATA_CALLBACK ; void colorData ( GLfloat *color, void *userData )
+   GLU_NURBS_TEXTURE_COORD_CALLBACK ; void texCoord ( GLfloat *texCoord )
+   GLU_NURBS_TEXTURE_COORD_DATA_CALLBACK ; void texCoordData (GLfloat *texCoord, void *userData)
+   GLU_NURBS_END_CALLBACK ; void end ( void )
+   GLU_NURBS_END_DATA_CALLBACK ; void endData ( void *userData )
+   GLU_NURBS_ERROR_CALLBACK ; void error ( GLenum code )
+
    gluBeginCurve ; void (GLUnurbs* nurb)
    gluBeginPolygon ; void (GLUtesselator* tess)
    gluBeginSurface ; void (GLUnurbs* nurb)
@@ -473,19 +488,6 @@
    (define GLUtesselator* type-vptr)
 
    (define _GLUfuncptr type-callable)
-   ;GLU_NURBS_BEGIN_CALLBACK
-   ;GLU_NURBS_BEGIN_DATA_CALLBACK
-   ;GLU_NURBS_VERTEX_CALLBACK
-   ;GLU_NURBS_VERTEX_DATA_CALLBACK
-   ;GLU_NURBS_NORMAL_CALLBACK
-   ;GLU_NURBS_NORMAL_DATA_CALLBACK
-   ;GLU_NURBS_COLOR_CALLBACK
-   ;GLU_NURBS_COLOR_DATA_CALLBACK
-   ;GLU_NURBS_TEXTURE_COORD_CALLBACK
-   ;GLU_NURBS_TEXTURE_COORD_DATA_CALLBACK
-   ;GLU_NURBS_END_CALLBACK
-   ;GLU_NURBS_END_DATA_CALLBACK
-   ;GLU_NURBS_ERROR_CALLBACK
 
    (setq GLU GLU_LIBRARY)
 
@@ -551,4 +553,82 @@
    (define gluTessVertex (GLU GLvoid "gluTessVertex" GLUtesselator* GLdouble* GLvoid*))
    (define gluUnProject (GLU GLint "gluUnProject" GLdouble GLdouble GLdouble GLdouble* GLdouble* GLint* GLdouble* GLdouble* GLdouble*))
    (define gluUnProject4 (GLU GLint "gluUnProject4" GLdouble GLdouble GLdouble GLdouble GLdouble* GLdouble* GLint* GLdouble GLdouble GLdouble* GLdouble* GLdouble* GLdouble*))
+
+   ; _GLUfuncptr
+   (define-syntax GLU_NURBS_BEGIN_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_BEGIN_CALLBACK (type) . rest)
+            (vm:pin (cons
+               (cons GLvoid (list GLenum))
+               (lambda (type)
+                  .rest))))))
+
+   (define-syntax GLU_NURBS_BEGIN_DATA_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_BEGIN_DATA_CALLBACK (type userData) . rest)
+            (vm:pin (cons
+               (cons GLvoid (list GLenum GLvoid*))
+               (lambda (type userData)
+                  .rest))))))
+
+   (define-syntax GLU_NURBS_VERTEX_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_VERTEX_CALLBACK (vertex) . rest)
+            (vm:pin (cons
+               (cons GLvoid (list GLfloat))
+               (lambda (vertex)
+                  .rest))))))
+
+   (define-syntax GLU_NURBS_VERTEX_DATA_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_VERTEX_DATA_CALLBACK (vertex userData) . rest)
+            (vm:pin (cons
+               (cons GLvoid (GLfloat* GLvoid*))
+               (lambda (vertex userData)
+                  .rest))))))
+
+   (define-syntax GLU_NURBS_NORMAL_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_NORMAL_CALLBACK . rest) (GLU_NURBS_VERTEX_CALLBACK . rest))))
+
+   (define-syntax GLU_NURBS_NORMAL_DATA_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_NORMAL_DATA_CALLBACK . rest) (GLU_NURBS_VERTEX_DATA_CALLBACK . rest))))
+
+   (define-syntax GLU_NURBS_COLOR_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_COLOR_CALLBACK . rest) (GLU_NURBS_VERTEX_CALLBACK . rest))))
+
+   (define-syntax GLU_NURBS_COLOR_DATA_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_COLOR_DATA_CALLBACK . rest) (GLU_NURBS_VERTEX_DATA_CALLBACK . rest))))
+
+   (define-syntax GLU_NURBS_TEXTURE_COORD_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_TEXTURE_COORD_CALLBACK . rest) (GLU_NURBS_VERTEX_CALLBACK . rest))))
+
+   (define-syntax GLU_NURBS_TEXTURE_COORD_DATA_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_TEXTURE_COORD_DATA_CALLBACK . rest) (GLU_NURBS_VERTEX_DATA_CALLBACK . rest))))
+
+   (define-syntax GLU_NURBS_END_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_END_CALLBACK () . rest)
+            (vm:pin (cons
+               (cons GLvoid (list ))
+               (lambda ()
+                  .rest))))))
+
+   (define-syntax GLU_NURBS_END_DATA_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_END_DATA_CALLBACK (userData) . rest)
+            (vm:pin (cons
+               (cons GLvoid (list GLvoid*))
+               (lambda (userData)
+                  .rest))))))
+
+   (define-syntax GLU_NURBS_ERROR_CALLBACK
+      (syntax-rules ()
+         ((GLU_NURBS_ERROR_CALLBACK . rest) (GLU_NURBS_BEGIN_CALLBACK . rest))))
+
 ))
