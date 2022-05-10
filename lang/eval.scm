@@ -865,6 +865,15 @@
                         (λ (var)
                            (string->symbol
                               (string-append prefix (symbol->string var))))))))
+            ((match `(suffix ,? ,symbol?) iset)
+               (lets
+                  ((ok lib (import-set->library (cadr iset) libs fail))
+                   (suffix (symbol->string (caddr iset))))
+                  (values 'ok
+                     (env-keep lib
+                        (λ (var)
+                           (string->symbol
+                              (string-append (symbol->string var) suffix)))))))
             (else
                (fail 'needed iset))))
 
