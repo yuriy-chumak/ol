@@ -138,19 +138,19 @@
 
 (define mirror (this fft-float "f2f" fft-float))
    (try "float" mirror 0.0)
-   (try "float" mirror (inexact 0.0))
+   (try "float" mirror #i0.0)
    (try "float" mirror 125.125)
-   (try "float" mirror (inexact 125.125))
+   (try "float" mirror #i125.125)
    (try "float" mirror -125.125)
-   (try "float" mirror (inexact -125.125))
+   (try "float" mirror #i-125.125)
 
 (define mirror (this fft-double "d2d" fft-double))
    (try "double" mirror 0.0)
-   (try "double" mirror (inexact 0.0))
+   (try "double" mirror #i0.0)
    (try "double" mirror 125.125)
-   (try "double" mirror (inexact 125.125))
+   (try "double" mirror #i125.125)
    (try "double" mirror -125.125)
-   (try "double" mirror (inexact -125.125))
+   (try "double" mirror #i-125.125)
 
 ; ----------------------------------------------------------------
 (print "16 integer arguments type>type test:")
@@ -190,10 +190,10 @@
                                                   fft-float fft-float fft-float fft-float))
    (try "16 floats" summ 0.0 1.1 2.2 3.3 4.4 5.5 6.6 7.7 8.8 9.9 10.10 11.11 12.12 13.13 14.14 15.15)
    (try "16 floats" summ 15.15 14.14 13.13 12.12 11.11 10.10 9.9 8.8 7.7 6.6 5.5 4.4 3.3 2.2 1.1 0.0)
-   (try "16 floats" summ (inexact 0.0) (inexact 1.1) (inexact 2.2) (inexact 3.3)
-                         (inexact 4.4) (inexact 5.5) (inexact 6.6) (inexact 7.7)
-                         (inexact 8.8) (inexact 9.9) (inexact 10.10) (inexact 11.11)
-                         (inexact 12.12) (inexact 13.13) (inexact 14.14) (inexact 15.15))
+   (try "16 floats" summ #i0.0 #i1.1 #i2.2   #i3.3
+                         #i4.4 #i5.5 #i6.6   #i7.7
+                         #i8.8 #i9.9 #i10.10 #i11.11
+                         #i12.12 #i13.13 #i14.14 #i15.15)
 
 ; ----------------------------------------------------------------
 (print "12 mixed type variables test:")
@@ -231,12 +231,12 @@
                                   13 14 15.9375 16.6875
                                   17 18 19.71875 20.96875
                                   21.90625 22.875)
-   (try "22 mixed inexact arguments" summ  1  2  (inexact 3.0)  (inexact 4.5)
-                                   5  6 (inexact 7.25) (inexact 8.75)
-                                   9 10 (inexact 11.125) (inexact 12.875)
-                                  13 14 (inexact 15.9375) (inexact 16.6875)
-                                  17 18 (inexact 19.71875) (inexact 20.96875)
-                                  (inexact 21.90625) (inexact 22.875))
+   (try "22 mixed inexact arguments" summ  1  2  #i3.0  #i4.5
+                                   5  6 #i7.25 #i8.75
+                                   9 10 #i11.125 #i12.875
+                                  13 14 #i15.9375 #i16.6875
+                                  17 18 #i19.71875 #i20.96875
+                                  #i21.90625 #i22.875)
 
 ; ----------------------------------------------------------------
 ;; (print "too much arguments:") ; 16 arguments for only 8 required
@@ -390,19 +390,19 @@
 
 (define mirror (this fft-float "f2f" fft-any))
    (try-a "float" mirror (cons fft-float 0.0))
-   (try-a "float" mirror (cons fft-float (inexact 0.0)))
+   (try-a "float" mirror (cons fft-float #i0.0))
    (try-a "float" mirror (cons fft-float 125.125))
-   (try-a "float" mirror (cons fft-float (inexact 125.125)))
+   (try-a "float" mirror (cons fft-float #i125.125))
    (try-a "float" mirror (cons fft-float -125.125))
-   (try-a "float" mirror (cons fft-float (inexact -125.125)))
+   (try-a "float" mirror (cons fft-float #i-125.125))
 
 (define mirror (this fft-double "d2d" fft-any))
    (try-a "double" mirror (cons fft-double 0.0))
-   (try-a "double" mirror (cons fft-double (inexact 0.0)))
+   (try-a "double" mirror (cons fft-double #i0.0))
    (try-a "double" mirror (cons fft-double 125.125))
-   (try-a "double" mirror (cons fft-double (inexact 125.125)))
+   (try-a "double" mirror (cons fft-double #i125.125))
    (try-a "double" mirror (cons fft-double -125.125))
-   (try-a "double" mirror (cons fft-double (inexact -125.125)))
+   (try-a "double" mirror (cons fft-double #i-125.125))
 
 ;; (fft* ...)
 (print "basic simple fft-any (fft*)) > type test:")

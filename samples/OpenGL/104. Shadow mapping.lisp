@@ -13,7 +13,7 @@
    (halt 1))
 
 (import (lib math))
-(define (make-mat4x4) (map (lambda (_) (inexact 0)) (iota 16)))
+(define (make-mat4x4) (map (lambda (_) #i0) (iota 16)))
 
 ; load the model
 (import (owl parse))

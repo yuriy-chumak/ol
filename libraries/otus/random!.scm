@@ -2,11 +2,11 @@
 (define-library (otus random!)
 (export
    ; (rand! n)
-   ; generate random number in range [0 .. n) - from 0 to n-1
+   ; generate random number in range [0 .. n) - from 0 to n-
    rand!
 
    ; (rand-range! a b)
-   ; generate random number in range [a .. b) - from a to b-1
+   ; generate random number in range [a .. b) - from a to b-
    rand-range!
 
    ; (shuffle! t)

@@ -262,20 +262,20 @@
    (glEnd)
 
 ;  (glMaterialfv GL_FRONT GL_DIFFUSE '(1 0 0 1))
-   (let ((matrix (list (inexact 0) (inexact 0) (inexact 0) (inexact 0)
-                       (inexact 0) (inexact 0) (inexact 0) (inexact 0)
-                       (inexact 0) (inexact 0) (inexact 0) (inexact 0)
-                       (inexact 0) (inexact 0) (inexact 0) (inexact 0))))
+   (let ((matrix (list #i0 #i0 #i0 #i0
+                       #i0 #i0 #i0 #i0
+                       #i0 #i0 #i0 #i0
+                       #i0 #i0 #i0 #i0)))
       (for-each (lambda (cube)
          (NewtonBodyGetMatrix cube matrix)
          (glPushMatrix)
          (glMultMatrixf matrix)
          (glCube)
          (glPopMatrix)) cubes))
-   (let ((matrix (list (inexact 0) (inexact 0) (inexact 0) (inexact 0)
-                       (inexact 0) (inexact 0) (inexact 0) (inexact 0)
-                       (inexact 0) (inexact 0) (inexact 0) (inexact 0)
-                       (inexact 0) (inexact 0) (inexact 0) (inexact 0))))
+   (let ((matrix (list #i0 #i0 #i0 #i0
+                       #i0 #i0 #i0 #i0
+                       #i0 #i0 #i0 #i0
+                       #i0 #i0 #i0 #i0)))
       (for-each (lambda (sphere)
          (NewtonBodyGetMatrix sphere matrix)
          (glPushMatrix)

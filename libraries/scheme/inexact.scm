@@ -110,7 +110,7 @@
          ((n)
             (:sqrt n 0.0001)))) ; 1/10000
 
-;   (assert (sqrt 9)  ===> (inexact 3.0))
+;   (assert (sqrt 9)  ===> #i3.0)
 
    (define exp fexp)
    (define log

@@ -122,12 +122,10 @@
 
       ; ==========================================================
       ; procedure:  (zero? z)
-      (setq |0.| (vm:cast 0 type-inexact)) ; * internal
-
       (define (zero? x)
          (or
             (eq? x 0)
-            (equal? x |0.|)))
+            (equal? x #i0)))
 
       (assert (zero? 0)              ===>  #t)
       (assert (zero? 4)              ===>  #f)
@@ -146,8 +144,8 @@
                   (positive? n)))
             (type-inexact
                (or
-                  (fless? |0.| x)
-                  (equal? x |0.|)
+                  (fless? #i0 x)
+                  (equal? x #i0)
                   (equal? x +inf.0)))))
 
       (assert (positive? -1)       ===> #false)
@@ -160,7 +158,7 @@
       (assert (positive? -inf.0)   ===> #false)
       (assert (positive? +inf.0)   ===> #true)
       (assert (positive? +nan.0)   ===> #false)
-      (assert (positive? |0.|)     ===> #true)
+      (assert (positive? #i0)      ===> #true)
 
 
       ; procedure:  (negative? z)
@@ -174,7 +172,7 @@
                   (negative? n)))
             (type-inexact
                (or
-                  (fless? x |0.|)
+                  (fless? x #i0)
                   (equal? x -inf.0)))))
 
       (assert (negative? -1)       ===> #true)
@@ -187,7 +185,7 @@
       (assert (negative? -inf.0)   ===> #true)
       (assert (negative? +inf.0)   ===> #false)
       (assert (negative? +nan.0)   ===> #false)
-      (assert (negative? |0.|)     ===> #false)
+      (assert (negative? #i0)      ===> #false)
 
 
       ; ------------------------
@@ -2186,8 +2184,6 @@
             (unfold (λ (n) (lets ((q r (quotrem n base))) (values (char-of r) q))) num zero?)))
 
       ;; move to math.scm
-      (define i-zero (inexact 0)) ; TODO: change to |0.| that is already present
-
       (define (render-number num tl base)
          (cond
             ((eq? (type num) type-rational)
@@ -2211,10 +2207,12 @@
             ((eq? (type num) type-inexact)
                (cond ; for inf and nan should use equal?, because
                      ;  this numbers can be returned from ffi
-                  ((equal? num i-zero) (cons* #\0 #\. #\0 tl))
+                  ((equal? num #i0) (cons* #\0 #\. #\0 tl))
+
                   ((equal? num +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 tl))
                   ((equal? num -inf.0) (cons* #\- #\i #\n #\f #\. #\0 tl))
                   ((equal? num +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 tl))
+
                   (else
                      (let*((- sub) (* mul)
                            (sign num (if (fless? num 0)

@@ -43,7 +43,7 @@
                out))
 
          ;; float/double
-         (int (box (inexact 0))) ; we should allocate large number
+         (int (box #i0)) ; we should allocate large number
          (out (if (eq? (http_argument_get_float req "id" int) 1)
                (string-append out "float: " (number->string (unbox int)) "\n")
                out))
