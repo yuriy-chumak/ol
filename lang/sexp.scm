@@ -204,10 +204,17 @@
 
       (define real
          (any-of
+               rational ; typically this is it
                (word "+inf.0" +inf.0)
                (word "-inf.0" -inf.0)
                (word "+nan.0" +nan.0)
-               rational)) ;; typically this is it
+               ; #e/#i (exact/inexact)
+               (let-parse* (
+                     (conv (either
+                              (word "#i" inexact)
+                              (word "#e" exact)))
+                     (num rational))
+                  (conv num))))
 
 
       (define imaginary-part
