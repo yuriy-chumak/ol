@@ -72,11 +72,32 @@
             (lets ((this st (op st)))
                (cons this (unfold op st end?)))))
 
-      (define (foldr op st lst)
-         (if (null? lst)
-            st
-            (op (car lst)
-               (foldr op st (cdr lst)))))
+      (define foldr
+         ; (foldr (lambda (a state)) state a)
+         ; (foldr (lambda (a b state)) state a b)
+         ; (foldr (lambda (a... state)) state a...)
+         (case-lambda
+            ((f state a)      (let loop ((state state) (a a))
+                                 (if (null? a)
+                                    state
+                                    (f (car a) (loop state (cdr a))))))
+            ((f state a b)    (let loop ((state state) (a a) (b b))
+                                 (if (null? a)
+                                    state
+                                    (f (car a) (car b) (loop state (cdr a) (cdr b))))))
+            ((f state a b . c)
+                              (let loop ((state state) (args (cons* a b c)))
+                                 (if (null? (car args))
+                                    state
+                                    (apply f (append (map car args) (list (loop state (map cdr args))))))))
+            ((f state) state)))
+
+      ;(assert (foldr - 9)                             ===>  9)
+      ;(assert (foldr - 9 '(1 2))                      ===>  8)
+      ;(assert (foldr - 9 '(1 2) '(3 4))               ===>  9)
+      ;(assert (foldr - 9 '(1 2) '(3 4) '(5 6))        ===> 10)
+      ;(assert (foldr - 9 '(1 2) '(3 4) '(5 6) '(7 8)) ===> 11)
+
 
       (define (has? lst x)
          (cond
