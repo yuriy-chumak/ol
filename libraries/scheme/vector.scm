@@ -44,6 +44,7 @@
       vector-for-each
       vector-map
       vector-fold
+      vector-foldr
    )
 
    (import
@@ -230,6 +231,7 @@
       (assert (vector-map (lambda (x y) (cons x y))
                   #(1 2 3) #(9 8 7))                    ===>  #((1 . 9) (2 . 8) (3 . 7)))
 
+   ; TODO: optimize
    (define vector-fold (case-lambda
       ((f z a)       (fold f z (vector->list a)))
       ((f z a b)     (fold f z (vector->list a) (vector->list b)))
@@ -238,6 +240,17 @@
 
       (assert (vector-fold + 7 [1 2 3 4 5])  ===>  22)
       (assert (vector-fold + -1
+                         #(1 2 3) #(9 8 7))  ===>  29)
+
+   ; TODO: optimize
+   (define vector-foldr (case-lambda
+      ((f z a)       (foldr f z (vector->list a)))
+      ((f z a b)     (foldr f z (vector->list a) (vector->list b)))
+      ((f z a b . c) (apply foldr (cons* f z (map vector->list (cons a (cons b c))))))
+      ((f z) z)))
+
+      (assert (vector-foldr - 7 [1 2 3 4 5]) ===>  -4) ; (- 1 (- 2 (- 3 (- 4 (- 5 7)))))
+      (assert (vector-foldr - -1
                          #(1 2 3) #(9 8 7))  ===>  29)
 
 ))
