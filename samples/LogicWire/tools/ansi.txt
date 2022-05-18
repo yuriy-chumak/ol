@@ -1,0 +1,11 @@
+; Hexadecimal format: aarrggbb
+; https://en.wikipedia.org/wiki/X11_color_names
+; Pinta: Edit/Palette/Open...
+FF000000 ; black
+FFFF0000 ; red
+FF00FF00 ; green
+FFFFFF00 ; yellow
+FF0000FF ; blue
+FFFF00FF ; magenta
+FF00FFFF ; cyan
+FFFFFFFF ; white
