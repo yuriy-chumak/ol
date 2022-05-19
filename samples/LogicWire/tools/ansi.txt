@@ -9,3 +9,4 @@ FF0000FF ; blue
 FFFF00FF ; magenta
 FF00FFFF ; cyan
 FFFFFFFF ; white
+FFFFA500 ; orange
