@@ -107,5 +107,5 @@
    (define SOIL_create_OGL_texture (libsoil fft-int "SOIL_create_OGL_texture" fft-any fft-int fft-int fft-int fft-int fft-int))
    (define SOIL_save_image (libsoil fft-int "SOIL_save_image" type-string fft-int fft-int fft-int fft-int fft-any))
 
-   (define SOIL_save_screenshot (libsoil fft-int "SOIL_save_screenshot" type-string fft-int fft-int fft-int fft-int fft-int)
+   (define SOIL_save_screenshot (libsoil fft-int "SOIL_save_screenshot" type-string fft-int fft-int fft-int fft-int fft-int))
 ))
