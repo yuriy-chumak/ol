@@ -24,6 +24,10 @@ Example
 =======
 ![](https://i.imgur.com/DyKU2aj.gif)
 
+Please wait 15 ticks to stop all transients. Then press "RESET" button one time.
+
+The "carry" flag can still blink - it's ok.
+
 
 Note 1: use xpm file as source map
 ----------------------------------
@@ -56,3 +60,5 @@ Credits:
 https://www.instructables.com/How-to-Build-an-8-Bit-Computer/
 
 https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/
+
+https://www.dafont.com/i-pixel-u.font

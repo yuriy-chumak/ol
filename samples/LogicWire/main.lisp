@@ -45,6 +45,7 @@
 (define wires (vector-map (lambda (row)
       (make-vector (size row))) board))
 
+(display "Loading wires... ")
 (define wires-count
    (fold (lambda (n j)
             (fold (lambda (n i)    ; if already assigned or not a wire
@@ -53,8 +54,6 @@
                      else
                         ; well, we have found a new unassigned wire
                         (define N (++ n))
-                        (print "found new wire at point " i " " j ", assinged number " N)
-
                         (let loop ((i i) (j j))
                            (if (or (rref wires i j) (not (rref board i j)))
                               ; check possible cross-wire connection (first LogicWire pattern)
@@ -82,7 +81,7 @@
                         N))
                n (iota WIDTH 1)))
       0 (iota HEIGHT 1)))
-(print "wires count: " wires-count)
+(print "loaded " wires-count)
 
 ;; ; print wires:
 ;; (vector-for-each (lambda (row)
@@ -100,6 +99,7 @@
 ; step 2: find all NOT gates
 ; list of [from to]
 ; we don't need to store gate coordinates, just a way
+(display "Loading gates... ")
 (define gates
    (define (wired-cells i j)
       (fold (lambda (s di dj)
@@ -148,9 +148,7 @@
          (iota WIDTH 1)))
       '()
    (iota HEIGHT 1)))
-
-(print "gates: " gates)
-
+(print "loaded " (length gates))
 
 ; current wires state: powered (true) or not (false)
 (define wire-states (fold (lambda (f i)
@@ -165,8 +163,6 @@
                (put! wire-states (rref wires i j) TTL)))
          (iota WIDTH 1)))
    (iota HEIGHT 1))
-
-(print wire-states)
 
 ; ---------------------------------------------------------------------------------------
 ; simulation loop
@@ -189,7 +185,7 @@
                (when wire
                   (define state (wire-states wire #f))
                   (print "select wire " wire " < " state)
-                  (if (natural? state)
+                  (if state
                      (put! wire-states wire #false)
                   else
                      (put! wire-states wire TTL))))
@@ -310,9 +306,9 @@
                (iota (div width scale) x0))) ; opt: draw only visible cells
          (iota (div height scale) y0)) ; opt: draw only visible cells
    (glEnd)
-   (print "SOIL_save_screenshot: " SOIL_save_screenshot)
-   (SOIL_save_screenshot "out1.png" SOIL_SAVE_TYPE_TGA 0 0 width height)
-   (exit 1)
+   ;; (print "SOIL_save_screenshot: " SOIL_save_screenshot)
+   ;; (SOIL_save_screenshot "out1.png" SOIL_SAVE_TYPE_TGA 0 0 width height)
+   ;; (exit 1)
    (await (mail 'simulation #false))
 ))
 
@@ -324,7 +320,7 @@
          (define Y (+ (div (+ (lref args 2) (div scale 2) -1) scale) (Y0)))
          (mail 'simulation (list X Y)))
       (3
-         (mail 'simulation #false))
+         (await (mail 'simulation #false)))
       (4 ; scroll up)
          #true)
       (5 ; scroll down)

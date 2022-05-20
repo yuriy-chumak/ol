@@ -52,7 +52,7 @@
                              (runtime-error "Can't load libsoil" (list
                                       "try to install 'libsoil1' package, or\n"
                                "       check the home page of libsoil at https://github.com/yuriy-chumak/libol-soil\n"
-                               "       if no package available for yous OS")))))))
+                               "       if no package available for your OS")))))))
 
 (begin
 	; The format of images that may be loaded (force_channels)
