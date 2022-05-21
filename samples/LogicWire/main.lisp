@@ -5,8 +5,8 @@
 ; first color item is an "not a wire"
 ; second color item is an "initially powered wire"
 
-(define TTL 4) ; time to make wire powered
-(define INITIAL-SCALE 2) ; circuit scaling
+(define TTL 5) ; time to make wire powered
+(define INITIAL-SCALE 1) ; circuit scaling
 ;(define RELAX-TIME 15) ; time to start sim
 
 ; simulation board is a matrix: [[]]
@@ -233,9 +233,9 @@
 (define-library (lib gl config)
 (export config) (import (otus lisp))
 (begin
-   (define config (pairs->ff '(
-      (width . 1000)
-      (height . 999))))))
+   (define config (pairs->ff `(
+      (width . 1024) ; 1366
+      (height . 720))))))
 
 (import (lib gl-2))
 (gl:set-window-title "LogicWire")
@@ -244,26 +244,29 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
+(define (/2 x) (/ x 2))
 (define color-table (fold (lambda (ff array)
       (define index (ref array 1))
       (define color (list->string (ref array 3)))
-      (put ff index (cond
-         ((string-eq? color "black")  '(  0   0   0))
-         ((string-eq? color "red")    '(205  49  49))
-         ((string-eq? color "green")  '( 13 188 121))
-         ((string-eq? color "yellow") '(229 229  16))
-         ((string-eq? color "blue")   '( 36 114 200))
-         ((string-eq? color "magenta")'(188  63 188))
-         ((string-eq? color "cyan")   '( 17 168 205))
-         ((string-eq? color "white")  '(229 229 229))
-         ((string-eq? color "orange") '(255 160   0))
-         ((string-eq? color "None")   '( 17  17  17))
+      (put ff index (cond                ; /2 is to signed-int
+         ((string-eq? color "black")  (map /2 '(  0   0   0)))
+         ((string-eq? color "red")    (map /2 '(205  49  49)))
+         ((string-eq? color "green")  (map /2 '( 13 188 121)))
+         ((string-eq? color "yellow") (map /2 '(229 229  16)))
+         ((string-eq? color "blue")   (map /2 '( 36 114 200)))
+         ((string-eq? color "magenta")(map /2 '(188  63 188)))
+         ((string-eq? color "cyan")   (map /2 '( 17 168 205)))
+         ((string-eq? color "white")  (map /2 '(229 229 229)))
+         ((string-eq? color "orange") (map /2 '(255 160   0)))
+         ((string-eq? color "None")   (map /2 '( 17  17  17)))
          (else '(255 255 255)))))
    {}
    (file 'color-table)))
 
 (define X0 (make-parameter 0)); 440))
 (define Y0 (make-parameter 0)); 120))
+
+(define GO '(#true))
 (gl:set-resize-handler (lambda (width height)
    (glViewport 0 0 width height) ))
 
@@ -300,8 +303,8 @@
                   (when wire
                      (define color (color-table cell '(0 0 0)))
                      (if (wire-states wire #f)
-                        (glColor3bv (map (lambda (c) (/ c 2)) color))
-                        (glColor3bv (map (lambda (c) (/ c 4)) color)))
+                        (glColor3bv color)
+                        (glColor3bv (map /2 color)))
                      (glVertex2f i j)))
                (iota (div width scale) x0))) ; opt: draw only visible cells
          (iota (div height scale) y0)) ; opt: draw only visible cells
@@ -309,7 +312,8 @@
    ;; (print "SOIL_save_screenshot: " SOIL_save_screenshot)
    ;; (SOIL_save_screenshot "out1.png" SOIL_SAVE_TYPE_TGA 0 0 width height)
    ;; (exit 1)
-   (await (mail 'simulation #false))
+   (if (car GO)
+      (await (mail 'simulation #false)))
 ))
 
 (gl:set-mouse-handler (lambda args
@@ -319,12 +323,14 @@
          (define X (+ (div (+ (lref args 1) (div scale 2) -1) scale) (X0)))
          (define Y (+ (div (+ (lref args 2) (div scale 2) -1) scale) (Y0)))
          (mail 'simulation (list X Y)))
+      (2
+         (fasl-save wire-states "wire-states.fasl"))
       (3
          (await (mail 'simulation #false)))
       (4 ; scroll up)
-         #true)
+         (Y0 (- (Y0) 10)))
       (5 ; scroll down)
-         #true) )))
+         (Y0 (+ (Y0) 10))) )))
 
 (gl:set-keyboard-handler (lambda (key)
    (case key
@@ -338,6 +344,11 @@
 
       (97 ; home
          (X0 0) (Y0 0))
+
+      ((33 42) ; Pause/Play, Go
+         (set-car! GO (not (car GO))))
+      (39 ; Step
+         (await (mail 'simulation #false)))
 
       (102 ; right arrow
          (X0 (+ (X0) 10)))
