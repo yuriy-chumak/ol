@@ -13,6 +13,13 @@
       GTK_BUTTONS_YES_NO
       GTK_BUTTONS_OK_CANCEL
 
+      GtkMessageType
+      GTK_MESSAGE_INFO
+      GTK_MESSAGE_WARNING
+      GTK_MESSAGE_QUESTION
+      GTK_MESSAGE_ERROR
+      GTK_MESSAGE_OTHER
+
       (exports (lib gtk-3 dialog))
    )
    (import
@@ -33,6 +40,13 @@
    (define GTK_BUTTONS_CANCEL 3)
    (define GTK_BUTTONS_YES_NO 4)
    (define GTK_BUTTONS_OK_CANCEL 5)
+
+   (define GtkMessageType gint)
+   (define GTK_MESSAGE_INFO 0)
+   (define GTK_MESSAGE_WARNING 1)
+   (define GTK_MESSAGE_QUESTION 2)
+   (define GTK_MESSAGE_ERROR 3)
+   (define GTK_MESSAGE_OTHER 4)
 
    (define gtk_message_dialog_new (GTK3 GtkWidget* "gtk_message_dialog_new" GtkWindow* GtkDialogFlags GtkMessageType GtkButtonsType gchar*))
 
