@@ -234,7 +234,7 @@
 (export config) (import (otus lisp))
 (begin
    (define config (pairs->ff `(
-      (width . 1024) ; 1366
+      (width . 840)
       (height . 720))))))
 
 (import (lib gl-2))
@@ -333,6 +333,7 @@
          (Y0 (+ (Y0) 10))) )))
 
 (gl:set-keyboard-handler (lambda (key)
+   (print key)
    (case key
       (9 ; esc
          (exit #t))
@@ -358,5 +359,27 @@
          (Y0 (- (Y0) 10)))
       (104 ; down arrow
          (Y0 (+ (Y0) 10))) )))
+
+; show Help
+(print "
+Usage:
+  LMB: power wire for TTL ticks,
+  RMB: step
+  Scroll Up: scroll up
+  Scroll Down: scroll down
+
+  Home: reset position
+  Right Arrow: scroll right
+  Left Arrow: scroll left
+  Up Arrow: scroll up
+  Down Arrow: scroll down
+
+  P: pause/play
+  G: pause/play
+  -: scale down
+  +: scale up
+
+  Esc: exit
+")
 
 (print "ok")
