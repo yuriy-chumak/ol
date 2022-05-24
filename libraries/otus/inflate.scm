@@ -153,12 +153,10 @@
                      (cons code (lambda ()
                         (loop (band (+ i 1) #x7FFF) hold))))
                   ((eq? code 256) ; end of block
-                     ;(print-to stderr "hold: " (ref hold 1) " " (ref hold 2) " > " (ref hold 3))
-                     ;(print-to stderr "BFINAL: " BFINAL)
-                     (if (eq? BFINAL 1)
-                        (begin
-                           ;(print-to stderr "END-OF-STREAM")
-                           (ref hold 3)) ;#null
+                     ;; (print-to stderr "hold: " (ref hold 1) " " (ref hold 2) " > " (ref hold 3))
+                     ;; (print-to stderr "BFINAL: " BFINAL)
+                     (if (eq? BFINAL 1) ; "END-OF-STREAM"?
+                        #null ; (ref hold 3) is a stream continue
                         (make-block-decoder i hold)))
 
                   ((less? code 286) ; 257-264, ..., 285
