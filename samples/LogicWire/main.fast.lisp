@@ -12,7 +12,7 @@
 (import (scheme dynamic-bindings))
 
 (define file (xpm3-parse-file
-   (or (and (pair? (command-line)) (car (command-line))) "sample.xpm")))
+   (or (and (pair? (command-line)) (car (command-line))) "8bit_cpu.xpm")))
 (define (print-board board)
    (for-each (lambda (row)
          (for-each (lambda (cell)
@@ -225,7 +225,7 @@
 (define X0 (make-parameter 0)); 440))
 (define Y0 (make-parameter 0)); 120))
 
-(define GO '(#true))
+(define GO '(#false))
 (gl:set-resize-handler (lambda (width height)
    (glViewport 0 0 width height) ))
 
@@ -398,7 +398,7 @@
 
 (import (lib keyboard))
 (gl:set-keyboard-handler (lambda (key)
-   (print (string-append "0x" (number->string key 16)))
+   ;; (print (string-append "0x" (number->string key 16)))
    (case key
       (KEY_ESC
          (exit #t))
