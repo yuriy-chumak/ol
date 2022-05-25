@@ -9,12 +9,15 @@
    KEY_ENTER KEY_ESC
    KEY_LEFTCTRL KEY_LEFTALT KEY_LEFTSHIFT
    KEY_UP KEY_DOWN KEY_LEFT KEY_RIGHT
-   KEY_1 KEY_2 KEY_3 KEY_4 KEY_5 KEY_6 KEY_7 KEY_8 KEY_9 KEY_0
-   KEY_MINUS KEY_EQUAL KEY_BACKSPACE KEY_TAB
+   KEY_MINUS KEY_PLUS KEY_EQUAL KEY_BACKSPACE KEY_TAB
+   KEY_HOME
 
-   ;vkQ vkW vkE vkR vkT vkY vkU vkI vkO vkP
-   ;vkA vkS vkD vkF vkG vkH vkJ vkK vkL
-   ;vkZ vkX vkC vkV vkB vkN vkM
+   KEY_1 KEY_2 KEY_3 KEY_4 KEY_5 KEY_6 KEY_7 KEY_8 KEY_9 KEY_0
+
+   KEY_Q KEY_W KEY_E KEY_R KEY_T KEY_Y KEY_U KEY_I KEY_O KEY_P
+   KEY_A KEY_S KEY_D KEY_F KEY_G KEY_H KEY_J KEY_K KEY_L
+   KEY_Z KEY_X KEY_C KEY_V KEY_B KEY_N KEY_M
+
    ;vkStar vkPlus vkMinus vkEqual
    
    key-pressed?)
@@ -81,13 +84,14 @@
          (define KEY_LEFTCTRL #xffe3) (define KEY_LEFTALT #xffe9) (define KEY_LEFTSHIFT #xffe1)
          (define KEY_UP #xff52) (define KEY_DOWN #xff54) (define KEY_LEFT #xff51) (define KEY_RIGHT #xff53)
 
-         (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35)
-         (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
-         (define KEY_MINUS #x2D) (define KEY_EQUAL #x2B) (define KEY_BACKSPACE #xff08) (define KEY_TAB #xff09)
+         (define KEY_MINUS #x2D) (define KEY_PLUS #x3D) (define KEY_EQUAL #x2B) (define KEY_BACKSPACE #xff08) (define KEY_TAB #xff09) (define KEY_HOME #xff50)
 
-         ;; (define vkQ 24) (define vkW 25) (define vkE 26) (define vkR 27) (define vkT 28) (define vkY 29) (define vkU 30) (define vkI 31) (define vkO 32) (define vkP 33)
-         ;; (define vkA 38) (define vkS 39) (define vkD 40) (define vkF 41) (define vkG 42) (define vkH 43) (define vkJ 44)(define vkK 45) (define vkL 46)
-         ;; (define vkZ 52) (define vkX 53) (define vkC 54) (define vkV 55) (define vkB 56) (define vkN 57) (define vkM 58)
+         (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35) (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
+
+         (define KEY_Q #x71) (define KEY_W #x77) (define KEY_E #x65) (define KEY_R #x72) (define KEY_T #x74) (define KEY_Y #x79) (define KEY_U #x75) (define KEY_I #x69) (define KEY_O #x6f) (define KEY_P #x70)
+         (define KEY_A #x61) (define KEY_S #x73) (define KEY_D #x64) (define KEY_F #x66) (define KEY_G #x67) (define KEY_H #x68) (define KEY_J #x6a) (define KEY_K #x6b) (define KEY_L #x6c)
+         (define KEY_Z #x7a) (define KEY_X #x78) (define KEY_C #x63) (define KEY_V #x76) (define KEY_B #x62) (define KEY_N #x6e) (define KEY_M #x6d)
+
          ;; (define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
       ))
    (Darwin
