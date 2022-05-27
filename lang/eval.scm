@@ -138,11 +138,11 @@
 
       ; run the code in its own thread
       (define (evaluate-as exp env name)
-         (async-linked name
-            (λ ()
-               (evaluate exp env)))
-         (define answer (accept-mail (λ (env) (eq? (ref env 1) name))))
-         (case (ref answer 2)
+         (define answer (await
+            (async-linked name
+               (λ ()
+                  (evaluate exp env)))))
+         (case answer
             ;; evaluated, typical behavior (ok, fail)
             (['finished result]
                ;; (print-to stderr "finished with " (ref result 1))
@@ -786,7 +786,8 @@
       (define (eval exp env)
          (case (macro-expand exp env)
             (['ok exp env]
-               (case (evaluate-as exp env (list 'evaluating))
+               (define uniq ['evaluating])
+               (case (evaluate-as exp env uniq)
                   (['ok value env]
                      value)
                   (['fail reason]
