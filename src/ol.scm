@@ -184,9 +184,6 @@
 ;;; new repl image
 ;;;
 
-;; say hi if interactive mode and fail if cannot do so (the rest are done using
-;; repl-prompt. this should too, actually)
-
 ; entry point of the compiled image
 ; (called after starting mcp, symbol and bytecode interners)
 (define (main vm-args)

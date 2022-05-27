@@ -794,20 +794,6 @@
                      #false)))
             (['fail reason]
                #false)))
-;      (define-syntax eval
-;         (syntax-rules (*toplevel*)
-;            ((eval (exp env))
-;               (tuple-case (macro-expand exp env)
-;                  ((ok exp env)
-;                     (tuple-case (evaluate-as exp env (list 'evaluating))
-;                        ((ok value env)
-;                           value)
-;                        ((fail reason)
-;                           #false)))
-;                  ((fail reason)
-;                     #false)))
-;            ((eval (exp))
-;               (eval exp *toplevel*))))
 
       (define (bind-toplevel env)
          (env-set env '*toplevel*
@@ -1218,31 +1204,30 @@
       ;; run the repl on a fresh input stream, report errors and catch exit
       (define (repl-loop env in)
          (let boing ((env env))
-            ;; (let ((env (bind-toplevel env)))
-               (case (repl-port env in)
-                  ; "in" ended, all ok
-                  (['ok result env]
-                     (let ((hook:exit (env-get env 'hook:exit #false)))
-                        (if (function? hook:exit)
-                           (hook:exit result)))
+            (case (repl-port env in)
+               ; "in" ended, all ok
+               (['ok result env]
+                  (let ((hook:exit (env-get env 'hook:exit #false)))
+                     (if (function? hook:exit)
+                        (hook:exit result)))
 
-                     (if (interactive? env)
-                        (print "bye-bye."))
-                     result); returning value
+                  (if (interactive? env)
+                     (print "bye-bye."))
+                  result); returning value
 
-                  ; something wrong
-                  (['error reason env]
-                     (let ((hook:fail (env-get env 'hook:fail #false)))
-                        (if (function? hook:fail)
-                           (hook:fail reason (syscall 1002))))
+               ; something wrong
+               (['error reason env]
+                  (let ((hook:fail (env-get env 'hook:fail #false)))
+                     (if (function? hook:fail)
+                        (hook:fail reason (syscall 1002))))
 
-                     (if (list? reason)
-                        (print-repl-error (decode-value env reason)))
+                  (if (list? reason)
+                     (print-repl-error (decode-value env reason)))
 
-                     ; better luck next time
-                     (boing env))
+                  ; better luck next time
+                  (boing env))
 
-                  ; well, someone called an (exit-thread .)?
-                  (else is foo
-                     foo))))
+               ; well, someone called an (exit-thread .)?
+               (else is foo
+                  foo))))
 ))
