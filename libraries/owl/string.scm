@@ -47,12 +47,19 @@
       string>=?          ; str str → bool
       make-string        ; n char → str
 
+      ; "ANSI" string compare functions, use (scheme char) for the Unicode version
+      string-ci<=?       ; str str → bool
+      string-ci<?        ; str str → bool
+      string-ci=?        ; str str → bool
+      string-ci>?        ; str str → bool
+      string-ci>=?       ; str str → bool
+
       string-copy
    )
 
    (import (scheme core))
 
-   (import (owl iff))
+   (import (owl ff))
    (import (owl unicode))
    (import (owl list))
    (import (owl list-extra))
@@ -266,32 +273,28 @@
             (string->runes a)
             (string->runes b))))
 
-      (define (string-eq-walk a b)
+      (define (compare-strings op a b)
          (cond
             ((pair? a)
                (cond
                   ((pair? b)
-                     (if (= (car a) (car b))
-                        (string-eq-walk (cdr a) (cdr b))
-                        #false))
+                     (if (op (car a) (car b))
+                        (compare-strings op (cdr a) (cdr b))))
                   ((null? b) #false)
                   (else
-                     (let ((b (b)))
-                        (if (and (pair? b) (= (car b) (car a)))
-                           (string-eq-walk (cdr a) (cdr b))
-                           #false)))))
+                     (compare-strings op a (b)))))
             ((null? a)
                (cond
                   ((pair? b) #false)
                   ((null? b) #true)
-                  (else (string-eq-walk a (b)))))
-            (else (string-eq-walk (a) b))))
+                  (else
+                     (compare-strings op a (b)))))
+            (else
+               (compare-strings op (a) b))))
 
       (define (string-eq? a b)
-         (let ((la (string-length a)))
-            (if (= (string-length b) la)
-               (string-eq-walk (str-iter a) (str-iter b))
-               #false)))
+         (if (= (string-length a) (string-length b))
+            (compare-strings eq? (str-iter a) (str-iter b))))
 
       (define string-append (case-lambda
          ((a)   a)
@@ -417,6 +420,52 @@
 
       (define (make-string n char)
          (list->string (repeat char n)))
+
+
+      ;; "ANSI" string compare functions, use (scheme char) for the Unicode version
+      (define char-folds
+         (fold (lambda (ff A a)
+                  (put ff A a))
+            {}
+            '(#\A #\B #\C #\D #\E #\F #\G #\H #\I #\J #\K #\L #\M #\N #\O #\P #\Q #\R #\S #\T #\U #\V #\W #\X #\Y #\Z)
+            '(#\a #\b #\c #\d #\e #\f #\g #\h #\i #\j #\k #\l #\m #\n #\o #\p #\q #\r #\s #\t #\u #\v #\w #\x #\y #\z)))
+      (define (ci<? a b)
+         (less? (char-folds a a) (char-folds b b)))
+      (define (ci=? a b)
+         (eq? (char-folds a a) (char-folds b b)))
+      (define (ci<=? a b)
+         (let ((a (char-folds a a))
+               (b (char-folds b b)))
+            (or (eq? a b)
+                (less? a b))))
+
+      ; string-ci<=?
+      (define (string-ci<=? a b)
+         (compare-strings ci<=? (str-iter a) (str-iter b)))
+
+      (assert (string-ci<=? "Lisp" "lisp")             ===> #true)
+      (assert (string-ci<=? "lisp" "Lisp")             ===> #true)
+      (assert (string-ci<=? "Lisp" "list")             ===> #true)
+      (assert (string-ci<=? "List" "lisp")             ===> #false)
+
+      ; string-ci<?
+      (define (string-ci<? a b)
+         (compare-strings ci<? (str-iter a) (str-iter b)))
+
+
+      ; string-ci=?
+      (define (string-ci=? a b)
+         (compare-strings ci=? (str-iter a) (str-iter b)))
+
+
+      ; string-ci>?
+      (define (string-ci>? a b)
+         (compare-strings ci<? (str-iter b) (str-iter a)))
+
+
+      ; string-ci>=?
+      (define (string-ci>=? a b)
+         (compare-strings ci<=? (str-iter b) (str-iter a)))
 
 
       ;; strings
