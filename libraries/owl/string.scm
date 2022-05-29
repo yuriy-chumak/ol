@@ -21,31 +21,34 @@
       string-append
       c-string           ; str → #false | UTF-8 encoded null-terminated raw data string
       null-terminate     ; see ^
-      finish-string      ; useful to construct a string with sharing
+      finish-string      ; useful to construct a string with sharing (todo: remove)
       render-string
       render-quoted-string
       str-iter           ; "a .. n" -> lazy (a .. n) list
       str-iterr          ; "a .. n" -> lazy (n .. a) list
       str-iter-bytes     ; "a .. n" -> lazy (a .. n) list of UTF-8 encoded bytes
-      str-fold           ; fold over code points, as in lists
-      str-foldr          ; ditto
-      str-app            ; a ++ b, temp
+      str-fold           ; fold over code points, as in lists (todo: remove)
+      str-foldr          ; ditto                              (todo: remove)
+      str-app            ; a ++ b, temp                       (todo: remove)
       ; later: str-len str-ref str-set str-append...
-      str-replace        ; str pat value -> str' ;; todo: drop str-replace, we have regexen now
+      str-replace        ; str pat value -> str' ;; todo: drop str-replace, we have regexen now (todo: remove)
       str-compare        ;
       str-map            ; op str → str'
       str-rev
       string             ; (string char ...) → str
       substring          ; str start end → str', equivalent to calling string-copy with the same arguments, but is
                          ;                        provided for backward compatibility and stylistic flexibility.
+      make-string        ; n char → str
       string-ref         ; str pos → char | error
       string?
+      string-copy
+
+      ; string compare functions
       string=?           ; str str → bool
       string<?           ; str str → bool
       string>?           ; str str → bool
       string<=?          ; str str → bool
       string>=?          ; str str → bool
-      make-string        ; n char → str
 
       ; "ANSI" string compare functions, use (scheme char) for the Unicode version
       string-ci<=?       ; str str → bool
@@ -53,8 +56,6 @@
       string-ci=?        ; str str → bool
       string-ci>?        ; str str → bool
       string-ci>=?       ; str str → bool
-
-      string-copy
    )
 
    (import (scheme core))
@@ -373,17 +374,9 @@
 
       (define (i x) x)
 
-      ;; going as per R5RS
-      (define (substring str start end)
-         (cond
-            ((< (string-length str) end)
-               (runtime-error "substring: out of string: " end))
-            ((negative? start)
-               (runtime-error "substring: negative start: " start))
-            ((< end start)
-               (runtime-error "substring: bad interval " (cons start end)))
-            (else
-               (list->string (ltake (ldrop (str-iter str) start) (- end start))))))
+      (define substring (case-lambda
+         ((str start)     (runes->string (ldrop (str-iter str) start)))
+         ((str start end) (runes->string (ltake (ldrop (str-iter str) start) (- end start))))))
 
       ;; lexicographic comparison with end of string < lowest code point
       ;; 1 = sa smaller, 2 = equal, 3 = sb smaller
@@ -452,21 +445,37 @@
       (define (string-ci<? a b)
          (compare-strings ci<? (str-iter a) (str-iter b)))
 
+      (assert (string-ci<? "Lisp" "lisp")             ===> #false)
+      (assert (string-ci<? "lisp" "Lisp")             ===> #false)
+      (assert (string-ci<? "Lisp" "list")             ===> #false)
+      (assert (string-ci<? "List" "lisp")             ===> #false)
 
       ; string-ci=?
       (define (string-ci=? a b)
          (compare-strings ci=? (str-iter a) (str-iter b)))
 
+      (assert (string-ci=? "Lisp" "lisp")             ===> #true)
+      (assert (string-ci=? "lisp" "Lisp")             ===> #true)
+      (assert (string-ci=? "Lisp" "list")             ===> #false)
+      (assert (string-ci=? "List" "lisp")             ===> #false)
 
       ; string-ci>?
       (define (string-ci>? a b)
          (compare-strings ci<? (str-iter b) (str-iter a)))
 
+      (assert (string-ci>? "Lisp" "lisp")             ===> #false)
+      (assert (string-ci>? "lisp" "Lisp")             ===> #false)
+      (assert (string-ci>? "Lisp" "list")             ===> #false)
+      (assert (string-ci>? "List" "lisp")             ===> #false)
 
       ; string-ci>=?
       (define (string-ci>=? a b)
          (compare-strings ci<=? (str-iter b) (str-iter a)))
 
+      (assert (string-ci>=? "Lisp" "lisp")             ===> #true)
+      (assert (string-ci>=? "lisp" "Lisp")             ===> #true)
+      (assert (string-ci>=? "Lisp" "list")             ===> #false)
+      (assert (string-ci>=? "List" "lisp")             ===> #true)
 
       ;; strings
       (define string-copy (case-lambda
