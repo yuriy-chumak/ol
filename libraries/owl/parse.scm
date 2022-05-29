@@ -11,8 +11,8 @@
       either ;either!
       any-of ;any-of!
 
-      greedy*
-      greedy+
+      greedy* greedy+
+      lazy* lazy+
 
       byte
       byte-if
@@ -173,16 +173,17 @@
             (else
                (drop (cdr l) x))))
 
-      (define (greedy-star-vals a vals)
+      (define (greedy-star-vals parser vals)
          (λ (l r p ok)
-            (let ((bt (λ (l r fp why) (ok l r p (reverse vals)))))
-               (a
-                  (cons bt l)
-                  r
-                  p
-                  (λ (l r p val)
-                     ((greedy-star-vals a (cons val vals))
-                        (drop l bt) r p ok))))))
+            (define (bt l r fp why)
+               (ok l r p (reverse vals)))
+            (parser
+               (cons bt l)
+               r
+               p
+               (λ (l r p val)
+                  ((greedy-star-vals parser (cons val vals))
+                     (drop l bt) r p ok)))))
 
       (define (greedy* v)
          (greedy-star-vals v #null))
@@ -195,6 +196,23 @@
 
       ;; (define star! greedy-star)
       ;; (define plus! greedy-plus)
+
+      (define (lazy-star-vals parser vals)
+         (λ (l r p ok)
+            (define (bt l r fp why)
+               (parser l r fp (λ (l r p val)
+                  ((lazy-star-vals parser (cons val vals))
+                     l r p ok))))
+            (ok (cons bt l) r p (reverse vals))))
+
+      (define (lazy* parser)
+         (lazy-star-vals parser #null))
+
+      (define (lazy+ a)
+         (let-parse* (
+               (first a)
+               (rest (lazy* a)))
+            (cons first rest)))
 
       ; actual readings
 
@@ -407,9 +425,9 @@
       ;;             (else
       ;;                #n)))))
 
-      (define (try-parse parser data show-error)
+      (define (try-parse parser data unused)
          (let* ((l r p val (parser #null data 0 parser-succ)))
-            (unless (not l)
+            (when l
                (cons val r)))) ; '(val . #null) in case of full match
 
       (define (parse parser data unused-path errmsg fail-val) ; todo: use path
