@@ -586,8 +586,7 @@
       (assert (eqv? 0.33 0.33)              ===> #true) ; rational numbers
       (assert (eqv? 7/3 14/6)               ===> #true) ; rational numbers
       (assert (eqv? 2+3i 2+3i)              ===> #true) ; complex numbers
-      (assert (eqv? (vm:cast 2 TINEXACT)
-                    (vm:cast 2 TINEXACT))   ===> #true) ; inexact numbers
+      (assert (eqv? #i2 #i2)                ===> #true) ; inexact numbers
       (assert (eqv? +nan.0 +nan.0)          ===> #true) ; inexact NaNs
       (assert (let ((p (lambda (x) x)))
                  (eqv? p p))                ===> #true) ; same lambda
@@ -612,7 +611,7 @@
 
       ;  * one of obj 1 and obj 2 is an exact number but the other
       ;    is an inexact number
-      (assert (eqv? 2 (vm:cast 2 TINEXACT)) ===> #false)
+      (assert (eqv? 2 #i2)                  ===> #false)
 
       ;  * obj 1 and obj 2 are both exact numbers and are numer-
       ;    ically unequal
@@ -629,8 +628,7 @@
       ;    does not result in a NaN value. As an exception, the
       ;    behavior of eqv? is unspecified when both obj 1 and
       ;    obj 2 are NaN
-      (assert (eqv? (vm:cast 2 TINEXACT)
-                    (vm:cast 3 TINEXACT))   ===> #false)
+      (assert (eqv? #i2 #i3)                ===> #false)
            ; todo: more examples
 
       ;  * obj 1 and obj 2 are characters for which the char=? pro-
@@ -1175,7 +1173,7 @@
       (assert (pair? '(a . b))              ===>  #t)
       (assert (pair? '(a b c))              ===>  #t)
       (assert (pair? '())                   ===>  #f)
-      ;assert (pair? #(a b))                ===>  #f) ; vectors will be defined later
+      (assert (pair? #(a b))                ===>  #f) ; vectors will be defined later
 
       ; procedure:  (cons obj1 obj2)    * builtin
 
