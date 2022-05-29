@@ -148,21 +148,21 @@ Dangerous! Don't use.
 Dangerous! Don't use. -->
 
 # ca..ar ... cd..dr
-`(caar list)`, *procedure*
-`(cadr list)`, *procedure*
-`(cdar list)`, *procedure*
-`(cddr list)`, *procedure*
+`(caar list)`, *procedure*  
+`(cadr list)`, *procedure*  
+`(cdar list)`, *procedure*  
+`(cddr list)`, *procedure*  
 
-`(caaar list)`, *procedure*
-`(caadr list)`, *procedure*
+`(caaar list)`, *procedure*  
+`(caadr list)`, *procedure*  
 ...
-`(cddar list)`, *procedure*
-`(cdddr list)`, *procedure*
+`(cddar list)`, *procedure*  
+`(cdddr list)`, *procedure*  
 
-`(caaaar list)`, *procedure*, `(scheme cxr)`
-`(caaadr list)`, *procedure*, `(scheme cxr)`
-...
-`(cdddar list)`, *procedure*, `(scheme cxr)`
+`(caaaar list)`, *procedure*, `(scheme cxr)`  
+`(caaadr list)`, *procedure*, `(scheme cxr)`  
+...  
+`(cdddar list)`, *procedure*, `(scheme cxr)`  
 `(cddddr list)`, *procedure*, `(scheme cxr)`
 
 ```scheme
