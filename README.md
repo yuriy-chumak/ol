@@ -20,7 +20,8 @@ Otus Lisp, Version 2.3
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
-It implements an extended subset of the R<sup>7</sup>RS Scheme, including
+It implements an extended subset of the R<sup>7</sup>RS Scheme
+([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
 but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
 to call code written in another language.
@@ -92,23 +93,13 @@ $ sudo make install
 $ sudo make uninstall
 ```
 
-### PACKAGING
-
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
-[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
-[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
-
-**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).
-
-Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
-
 
 Table of Contents
 -----------------
 1. [Build / Install](#build--install) ([Advanced](doc/BUILD.md))
+1. [Packaging](#packaging)
 1. [Changelog](doc/CHANGELOG.md)
-1. [Learning](#learning)
+1. [Learning](#learning) / [Language Reference](doc/reference/)
 1. [R<sup>7</sup>RS Differences](#r7rs-differences)
 1. [Deprecations](#deprecations)
 1. [Running](#running)
@@ -117,6 +108,18 @@ Table of Contents
 1. [Embedding](#embedding-ol)
 1. [Docs](#documentation)
 1. [License](#license)
+
+
+PACKAGING
+---------
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
+[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
+[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
+
+**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).
+
+Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
 
 
 CHANGELOG
@@ -134,6 +137,7 @@ LEARNING
 The Otus Lisp language is based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with minor changes and useful extensions.
 
 You can find Ol samples at:
+* [Standard procedures](doc/reference/) list (under construction).
 * [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
 * [Samples](samples/) and [Tests](tests/) repository folders.
 * Embed usage sample available as toy [pacman game](samples/pacman/) sample.

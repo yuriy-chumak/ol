@@ -351,3 +351,9 @@ MAKEFILE_MAIN=1
 -include tests/Makefile
 -include tests/rosettacode/Makefile
 -include config/Makefile
+
+# documentation samples check
+check: check-reference
+check-reference:
+	@printf "Testing reference samples ... "
+	@cd doc/reference; ol ./check.lisp && echo $(ok) || echo $(failed)
