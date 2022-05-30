@@ -4,6 +4,14 @@ A *pair* (sometimes called a *dotted pair*) is a record structure with two field
 
 Pairs are used primarily to represent lists. A *list* can be defined recursively as either the empty list or a pair whose cdr is a list.
 
+[cons](#cons), [pair?](#pair), [car](#car), [cdr](#cdr),  
+[list](#list), [make-list](#make-list), [#null](#null), [#null?](#null-1), [cons*](#cons-1), [list?](#list-1),  
+[caar](#caar--cddr), [cadr](#caar--cddr), [cdar](#caar--cddr), [cddr](#caar--cddr),  
+[caaar](#caar--cddr), [caadr](#caar--cddr), [cadar](#caar--cddr), [caddr](#caar--cddr), [cdaar](#caar--cddr), [cdadr](#caar--cddr), [cddar](#caar--cddr), [cdddr](#caar--cddr),
+[caaaar](#caar--cddr), [caaadr](#caar--cddr), [caadar](#caar--cddr), [caaddr](#caar--cddr), [cadaar](#caar--cddr), [cadadr](#caar--cddr), [caddar](#caar--cddr), [cadddr](#caar--cddr), [cdaaar](#caar--cddr), [cdaadr](#caar--cddr), [cdadar](#caar--cddr), [cdaddr](#caar--cddr), [cddaar](#caar--cddr), [cddadr](#caar--cddr), [cdddar](#caar--cddr), [cddddr](#caar--cddr),  
+[append](#append), [reverse](#reverse), ...
+
+
 # cons
 `(cons obj1 obj2)`, *primop*
 
@@ -155,7 +163,7 @@ Dangerous! Don't use. -->
 
 `(caaar list)`, *procedure*  
 `(caadr list)`, *procedure*  
-...
+...  
 `(cddar list)`, *procedure*  
 `(cdddr list)`, *procedure*  
 

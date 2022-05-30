@@ -5,9 +5,8 @@
         \)  )          purely
       ---"-"---     functional!
    O t u s L i s p
-
- /Based on Aki Helin's Owl-Lisp/
 ```
+*Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
 
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/build%20linux/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
 [![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/build%20macos/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
@@ -35,6 +34,12 @@ used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
 Luakit, Iceape, etc.
 
 
+You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
+(Open/Free/Net) BSD, Solaris and other operating systems based
+on various hardware architectures (intel, arm, ppc, mips, etc).
+
+* thx to [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) for the tests.
+
 Q/A
 ---
 
@@ -47,9 +52,6 @@ Q/A
 1. Q. Anything else interesting?<br/>
    A. Yes, Ol provides **simplest HTTP web-server** for sharig a local folder over an inter/intra-net.
       Just type `$ echo ,l http/server| ol`.
-
-1. Q. Anything else interesting?<br/>
-   A. Yes, Ol works on a **Chromebook** (thx to [@the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) for the test).
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus_lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus_lisp) web-client) channel is available (the previous Freenode channel is closed).
