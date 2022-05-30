@@ -353,7 +353,7 @@ MAKEFILE_MAIN=1
 -include config/Makefile
 
 # documentation samples check
-check: check-reference
-check-reference:
-	@printf "Testing reference samples ... "
-	@cd doc/reference; ol ./check.lisp && echo $(ok) || echo $(failed)
+check: ol check-reference
+check-reference: $(wildcard doc/reference/*.md)
+	@echo "Testing reference samples:"
+	@./ol tools/reference-check.lisp $^ && echo $(ok) || echo $(failed)

@@ -9,12 +9,19 @@ but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
 to call code written in another language.
 
+This is Ol reference, not a Scheme. Scheme R7RS differences decribed in the
+main [README](https://github.com/yuriy-chumak/ol#r7rs-differences) file.
+
+```scheme
+; this is example of provided examples
+(car *version*) ==> "OL"
+```
 
 List of Standard procedures
 ---------------------------
 
 - [Pairs and Lists](pairs-and-lists.md).
-- [Equivalence predicates](equivalence-predicates.md), TBD.
+- [Equivalence predicates](equivalence-predicates.md).
 - [Numbers](numbers.md), TBD.
 - [Booleans](booleans.md), TBD.
 - [Symbols](symbols.md), TBD.

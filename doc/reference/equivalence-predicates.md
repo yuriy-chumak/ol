@@ -1,33 +1,102 @@
 Equivalence predicates
 ======================
 
-# eqv?
-`(eqv? obj1 obj2)`, *procedure*
+A predicate is a procedure that always returns a boolean value (#true or #false).
+An equivalence predicate is the computational analogue of a mathematical equivalence relation; it is symmetric, reflexive, and transitive.
 
-```scheme
-(eqv? 'a 'a)                 ==> #t
-(eqv? 'a 'b)                 ==> #f
-(eqv? 2 2)                   ==> #t
-(eqv? 2 2.0)                 ==> #f
-(eqv? '() '())               ==> #t
-(eqv? 100000000 100000000)   ==> #t
-(eqv? 0.0 +nan.0)            ==> #f
-(eqv? (cons 1 2) (cons 1 2)) ==> #f
-(eqv? (lambda () 1)
-      (lambda () 2))         ==> #f
-(let ((p (lambda (x) x)))
-    (eqv? p p))              ==> #t
-(eqv? #f 'nil)               ==> #f
-```
+[eq?](#eq), [eqv?](#eqv), [equal?](#equal)
 
 # eq?
 `(eq? obj1 obj2)`, *primop*
 
+Returns #true if *obj1* and *obj2* are definitely the same object.
+
 ```scheme
+(eq? 'a 'a)                  ==>  #true
+(eq? 'a 'b)                  ==>  #false
+
+(eq? '() '())                ==>  #true
+(eq? "" "")                  ==>  #false
+(eq? "a" "a")                ==>  #false
+(eq? '(a) '(a))              ==>  #false
+(let ((q '(a)))
+   (eq? q q))                ==>  #true
+
+(eq? 2 2)                    ==>  #true
+(eq? #\A #\A)                ==>  #true
+(eq? car car)                ==>  #true
+
+(eq? (lambda (x) x)
+     (lambda (x) x))         ==>  #true
+(eq? (lambda (x) x)
+     (lambda (y) y))         ==>  #true
+
+```
+
+# eqv?
+`(eqv? obj1 obj2)`, *procedure*
+
+The eqv? procedure defines a useful equivalence relation on objects.
+Briefly, it returns #true if *obj1* and *obj2* are normally regarded as the same object.
+
+
+```scheme
+(eqv? 'a 'a)                 ==>  #true
+(eqv? 'a 'b)                 ==>  #false
+
+(eqv? 2 2)                   ==>  #true
+(eqv? 2 2.0)                 ==>  #true  ; 2.0 is exact in Ol
+(eqv? 100000 100000)         ==>  #true
+(eqv? 1000000000000000000000000 1000000000000000000000000)   ==>  #true
+(eqv? 0.33 0.33)             ==>  #true
+(eqv? 7/3 14/6)              ==>  #true
+(eqv? 2+3i 2+3i)             ==>  #true
+(eqv? 1 #i1)                 ==>  #false
+
+(eqv? 0.0 +nan.0)            ==>  #false
+(eqv? +nan.0 +nan.0)         ==>  #true
+
+(eqv? '() '())               ==>  #true
+(eqv? #false '())            ==>  #false
+(eqv? "" "")                 ==>  #false
+(eqv? '#() '#())             ==>  #false
+(eqv? '(a) '(a))             ==>  #false
+(let ((q '(a)))
+   (eqv? q q))               ==>  #true
+(eqv? "a" "a")               ==>  #false
+(eqv? #\a #\A)               ==>  #false
+(eqv? '(b) (cdr '(a b)))     ==>  #false
+
+(eqv? (cons 1 2) (cons 1 2)) ==>  #false
+
+(eqv? (lambda () 1)
+      (lambda () 2))         ==>  #false
+(eqv? (lambda (x) x)
+      (lambda (x) x))        ==>  #true
+(eqv? (lambda (x) x)
+      (lambda (y) y))        ==>  #true
+(letrec (
+      (f (lambda () (if (eqv? f g) 'both 'f)))
+      (g (lambda () (if (eqv? f g) 'both 'g))))
+   (eqv? f g))               ==>  #false
+(let ((p (lambda (x) x)))
+    (eqv? p p))              ==>  #true
 ```
 
 # equal?
 `(equal? obj1 obj2)`, *procedure*
 
+The equal? procedure, when applied to pairs, vectors, strings and bytevectors, recursively compares them, returning #true when the unfoldings of its arguments into (possibly
+infinite) trees are equal (in the sense of equal?) as ordered trees, and #false otherwise.
+
 ```scheme
+(equal? "" "")               ==>  #true
+(equal? '#() '#())           ==>  #true
+(equal? '(a) '(a))           ==>  #true
+(equal? "a" "a")             ==>  #true
+(equal? #\a #\A)             ==>  #false
+(equal? #\A #\A)             ==>  #true
+(equal? (cons 1 2) (cons 1 2)) ==>  #true
+(equal? '(1 (2 (3 4)) 5)
+        '(1 (2 (3 4)) 5))    ==>  #true
 ```
