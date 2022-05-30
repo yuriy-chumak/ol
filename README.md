@@ -50,8 +50,8 @@ Q/A
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
 1. Q. Anything else interesting?<br/>
-   A. Yes, Ol provides **simplest HTTP web-server** for sharig a local folder over an inter/intra-net.
-      Just type `$ echo ,l http/server| ol`.
+   A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
+      Just type `$ echo ,load http/server| ol`.
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus_lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus_lisp) web-client) channel is available (the previous Freenode channel is closed).

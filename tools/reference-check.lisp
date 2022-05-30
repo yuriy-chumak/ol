@@ -22,6 +22,7 @@
 
 (define ok '(#true))
 (for-each (lambda (filename)
+      (print "  testing " filename "...")
       (for-each (lambda (test)
             (let loop ((test test))
                (define expressions (try-parse (greedy+ sexp-parser) test #false))
@@ -41,22 +42,5 @@
                            (subloop tail))))
                   (loop (cdr expressions)))))
          (car (try-parse parser (force (file->bytestream filename)) #f))))
-   '(
-      "pairs-and-lists.md"
-      ;"equivalence-predicates.md"
-      ;"numbers.md"
-      "booleans.md"
-      ;"symbols.md"
-      ;"characters.md"
-      ;"strings.md"
-      ;"vectors.md"
-      ;"bytevectors.md"
-      ;"control-features.md"
-      ;"exceptions.md"
-      ;"environments-and-evaluation.md"
-      ;"input-and-output.md"
-      ;"system-interface.md"
-      ;"dictionaries.md"
-      ;"lazy-evaluations.md"
-   ))
+   *vm-args*)
 (exit (car ok))

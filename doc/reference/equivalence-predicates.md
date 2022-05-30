@@ -90,13 +90,23 @@ The equal? procedure, when applied to pairs, vectors, strings and bytevectors, r
 infinite) trees are equal (in the sense of equal?) as ordered trees, and #false otherwise.
 
 ```scheme
-(equal? "" "")               ==>  #true
-(equal? '#() '#())           ==>  #true
-(equal? '(a) '(a))           ==>  #true
-(equal? "a" "a")             ==>  #true
-(equal? #\a #\A)             ==>  #false
-(equal? #\A #\A)             ==>  #true
+(equal? "" "")                 ==>  #true
+(equal? '#() '#())             ==>  #true
+(equal? '(a) '(a))             ==>  #true
+(equal? "a" "a")               ==>  #true
+(equal? #\a #\A)               ==>  #false
+(equal? #\A #\A)               ==>  #true
 (equal? (cons 1 2) (cons 1 2)) ==>  #true
 (equal? '(1 (2 (3 4)) 5)
-        '(1 (2 (3 4)) 5))    ==>  #true
+        '(1 (2 (3 4)) 5))      ==>  #true
+(equal? { 'name "Yuriy"
+          'phone 33172299 }
+        { 'name "Yuriy"
+          'phone 33172299 })   ==>  #true
+(equal? [1 2 3] [1 2 3])       ==>  #true
+(equal? (bytevector "123")
+        (string "123))         ==>  #false
+
+(equal? (append '(1 2) '((7)))
+       '(1 2 (7)))             ==>  #true
 ```
