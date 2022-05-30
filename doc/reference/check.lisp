@@ -19,7 +19,6 @@
 (import (lang eval))
 (import
    (scheme cxr))
-(define environment *toplevel*)
 
 (define ok '(#true))
 (for-each (lambda (filename)
@@ -32,8 +31,8 @@
                      (let*((query tail sexps)
                            (arrow tail tail)
                            (answer tail tail))
-                        (define a (eval query environment))
-                        (define b (eval answer environment))
+                        (define a (eval query *toplevel*))
+                        (define b (eval answer *toplevel*))
                         (unless (equal? a b)
                            (print "test error:")
                            (print "  " query " IS NOT EQUAL TO " answer)
