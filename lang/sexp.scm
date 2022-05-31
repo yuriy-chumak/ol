@@ -91,7 +91,7 @@
                (string->uninterned-symbol (runes->string (cons head tail))))
             (let-parse* (
                   (skip (imm #\|))
-                  (chars (greedy+ (rune-if (λ (x) (not (eq? x #\|))))))
+                  (chars (greedy* (rune-if (λ (x) (not (eq? x #\|))))))
                   (skip (imm #\|)))
                (string->uninterned-symbol (runes->string chars)))))
 
