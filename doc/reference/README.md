@@ -23,7 +23,7 @@ List of Standard procedures
 - [Pairs and Lists](pairs-and-lists.md).
 - [Equivalence predicates](equivalence-predicates.md).
 - [Numbers](numbers.md), TBD.
-- [Booleans](booleans.md), TBD.
+- [Booleans](booleans.md).
 - [Symbols](symbols.md), TBD.
 - [Characters](characters.md), TBD.
 - [Strings](strings.md), TBD.
