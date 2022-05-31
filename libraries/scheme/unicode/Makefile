@@ -18,12 +18,21 @@ unicode: libraries/scheme/unicode/numeric-chars.scm \
 libraries/scheme/unicode/numeric-chars.scm: tmp/UnicodeData.txt
 	echo "(define numeric-chars-alist '(" | tee $@ >/dev/null
 	echo '; Nd + Nl + No' \
-	    | tee -a $@ >/dev/null
+	    |tee -a $@ >/dev/null
 	cat tmp/UnicodeData.txt \
-	    |cut -d';' -f1,3 \
+	    |cut -d';' -f1,2,3 \
 	    |sed -n '/;\(Nd\|Nl\|No\)/p' \
-	    |cut -d';' -f1 \
-	    |sed 's/^\(.*\)$$/(#x\1 #T)/' \
+	    |sed '/DIGIT ZERO/s/^\([^;]*\).*$$/(#x\1 . 0)/' \
+	    |sed '/DIGIT ONE/s/^\([^;]*\).*$$/(#x\1 . 1)/' \
+	    |sed '/DIGIT TWO/s/^\([^;]*\).*$$/(#x\1 . 2)/' \
+	    |sed '/DIGIT THREE/s/^\([^;]*\).*$$/(#x\1 . 3)/' \
+	    |sed '/DIGIT FOUR/s/^\([^;]*\).*$$/(#x\1 . 4)/' \
+	    |sed '/DIGIT FIVE/s/^\([^;]*\).*$$/(#x\1 . 5)/' \
+	    |sed '/DIGIT SIX/s/^\([^;]*\).*$$/(#x\1 . 6)/' \
+	    |sed '/DIGIT SEVEN/s/^\([^;]*\).*$$/(#x\1 . 7)/' \
+	    |sed '/DIGIT EIGHT/s/^\([^;]*\).*$$/(#x\1 . 8)/' \
+	    |sed '/DIGIT NINE/s/^\([^;]*\).*$$/(#x\1 . 9)/' \
+	    |sed '/;/s/^\([^;]*\).*$$/(#x\1 . #T)/' \
 	    |tee -a $@ >/dev/null
 	echo '))' |tee -a $@ >/dev/null
 

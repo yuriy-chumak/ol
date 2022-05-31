@@ -63,6 +63,7 @@ Note that it is an error to take the car of the not a pair.
 (car (cons '(a) '(b c d)))    ==>  '(a)
 (car (cons "a" '(b c)))       ==>  "a"
 (car (cons '(a b) 'c))        ==>  '(a b)
+(car '(1 2 3 4 5))            ==>  1
 ```
 
 # cdr
@@ -79,6 +80,7 @@ Note that it is an error to take the cdr of the empty list.
 (cdr (cons '(a) '(b c d)))    ==>  '(b c d)
 (cdr (cons "a" '(b c)))       ==>  '(b c)
 (cdr (cons '(a b) 'c))        ==>  'c
+(cdr '(1 2 3 4 5))            ==>  '(2 3 4 5)
 ```
 
 # list
@@ -114,6 +116,8 @@ Only the pairs themselves are copied; the cars of the result are the same (in th
 ```scheme
 (list-copy '())               ==>  '()
 (list-copy '(1 2 (3) 4))      ==>  '(1 2 (3) 4)
+(let ((l '(1 2)))
+   (eq? (list-copy l) l))     ==>  #false
 ```
 
 # #null

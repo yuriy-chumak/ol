@@ -1,5 +1,7 @@
 (define-library (scheme char)
-   (export 
+   (export
+      digit-value
+
       char-ci=?
       char-ci<?
       char-ci>?
@@ -30,7 +32,7 @@
    )
 
    (import
-      (scheme core)
+      (scheme base)
       (owl list)
       (scheme srfi-1)
       (owl lazy)
@@ -61,6 +63,11 @@
 
       (define (char-whitespace? ch)
          (whitespace-chars ch #false))
+
+      (define (digit-value ch)
+         (let ((digit (numeric-chars ch #f)))
+            (if (char? digit)
+               digit)))
 
       ; * internal staff
       ; large table 'char => uppercase char'

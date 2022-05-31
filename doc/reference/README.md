@@ -24,8 +24,8 @@ List of Standard procedures
 - [Equivalence predicates](equivalence-predicates.md).
 - [Booleans](booleans.md).
 - [Symbols](symbols.md).
+- [Characters](characters.md).
 - [Numbers](numbers.md), TBD.
-- [Characters](characters.md), TBD.
 - [Strings](strings.md), TBD.
 - [Vectors](vectors.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
@@ -88,9 +88,12 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [cddadr](pairs-and-lists.md#caar--cddr)
 [cdddar](pairs-and-lists.md#caar--cddr)
 [cddddr](pairs-and-lists.md#caar--cddr)
+[char?](characters.md#char)
+[char->integer](characters.md#char-integer)
 [cons](pairs-and-lists.md#cons)
 [cons*](pairs-and-lists.md#cons-1)
 ## D
+[digit-value](characters.md#digit-value)
 [drop](pairs-and-lists.md#drop)
 ## E
 [eq?](equivalence-predicates.md#eq)
@@ -100,6 +103,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 ## G
 ## H
 ## I
+[integer->char](characters.md#integer-char)
 [iota](pairs-and-lists.md#iota)
 ## J
 ## K
