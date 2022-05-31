@@ -13,7 +13,7 @@ Of all the Scheme values, only *#false* counts as false in conditional expressio
 #F       ==>  #false
 ```
 
-[not](#not), [boolean?](#boolean), [boolean=?](#boolean=)
+[not](#not), [boolean?](#boolean), [boolean=?](#boolean-1)
 
 # not
 `(not obj)`, *procedure*

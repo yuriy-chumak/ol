@@ -13,7 +13,7 @@ Pairs are used primarily to represent lists. A *list* can be defined recursively
 [length](#length), [list-ref (lref)](#list-ref-lref), [list-tail](#list-tail),  
 [repeat](#repeat), [iota](#iota), [lrange](#lrange), [append](#append), [reverse](#reverse),  
 [take](#take), [drop](#drop),  
-[memq](#memq), [memv](#memv), [member](#member) [assq](#assq), [assv](#assv), [assoc](#assoc)
+[memq](#memq), [memv](#memv), [member](#member), [assq](#assq), [assv](#assv), [assoc](#assoc)
 
 Non functional features: [set-car!](#set-car), [set-cdr!](#set-cdr), [list-set!](#list-set)
 
