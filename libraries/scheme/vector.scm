@@ -199,8 +199,9 @@
 
    ; procedure:  (vector-append vector ...)
    (define (vector-append vector . tail)
-      (fold append (vector->list vector)
-         (map vector->list tail)))
+      (list->vector
+         (fold append (vector->list vector)
+            (map vector->list tail))))
 
    ; procedure:  (vector-fill! vector fill)
    ; procedure:  (vector-fill! vector fill start)
