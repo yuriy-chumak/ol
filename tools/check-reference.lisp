@@ -18,6 +18,7 @@
 
 (import (lang eval))
 (import
+   (scheme char)
    (scheme cxr))
 
 (define ok '(#true))

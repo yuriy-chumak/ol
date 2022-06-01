@@ -105,6 +105,7 @@ If a second argument is given, then each element is initialized to *fill*. Other
 ```scheme
 (make-list 7)     ==>  '(#false #false #false #false #false #false #false)
 (make-list 7 3)   ==>  '(3 3 3 3 3 3 3)
+(make-list 0)     ==>  '()
 ```
 
 # list-copy
@@ -431,7 +432,7 @@ Please only use them if you know what you are doing! This can lead to unexpected
 # set-car!
 `(set-car! pair obj)`, *procedure*
 
-Stores obj in the car field of pair. *Obj* can be enum, symbol, or constant.
+Stores obj in the car field of pair. *Obj* must be enum, symbol, or constant.
 
 ```scheme
 (set-car! '(1 . 2) 8)         ==>  '(8 . 2)
@@ -442,7 +443,7 @@ Stores obj in the car field of pair. *Obj* can be enum, symbol, or constant.
 # set-cdr!
 `(set-cdr! pair obj)`, *procedure*
 
-Stores obj in the cdr field of pair. *Obj* can be enum, symbol, or constant.
+Stores obj in the cdr field of pair. *Obj* must be enum, symbol, or constant.
 
 ```scheme
 (set-cdr! '(1 . 2) 8)         ==>  '(1 . 8)
@@ -453,7 +454,7 @@ Stores obj in the cdr field of pair. *Obj* can be enum, symbol, or constant.
 # list-set!
 `(list-set! list k obj)`, *procedure*
 
-Stores *obj* in element *k* of *list*. *Obj* can be enum, symbol, or constant.
+Stores *obj* in element *k* of *list*. *Obj* must be enum, symbol, or constant.
 
 ```scheme
 (let ((me '(1 2 3 4)))

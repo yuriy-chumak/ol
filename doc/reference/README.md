@@ -25,9 +25,9 @@ List of Standard procedures
 - [Booleans](booleans.md).
 - [Symbols](symbols.md).
 - [Characters](characters.md).
+- [Vectors](vectors.md).
 - [Numbers](numbers.md), TBD.
 - [Strings](strings.md), TBD.
-- [Vectors](vectors.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.
 - [Exceptions](exceptions.md), TBD.
@@ -48,6 +48,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 | [T](#t) | [U](#u) | [V](#v) | [W](#w) | [X](#x) | [Y](#y) | [Z](#z) |
 
 ## !
+## #
 [#null](pairs-and-lists.md#null)
 ## A
 [append](pairs-and-lists.md#append)
@@ -111,6 +112,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [length](pairs-and-lists.md#length)
 [list](pairs-and-lists.md#list)
 [list?](pairs-and-lists.md#list-1)
+[list->vector](vectors.md#list-vector)
 [list-copy](pairs-and-lists.md#list-copy)
 [list-ref (lref)](pairs-and-lists.md#list-ref-lref)
 [list-set!](pairs-and-lists.md#list-set)
@@ -118,6 +120,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [lrange](pairs-and-lists.md#lrange)
 ## M
 [make-list](pairs-and-lists.md#make-list)
+[make-vector](vectors.md#make-vector)
 [memq](pairs-and-lists.md#memq)
 [memv](pairs-and-lists.md#memv)
 [member](pairs-and-lists.md#member)
@@ -139,10 +142,22 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [symbol->string](symbols.md#symbol-string)
 [string->symbol](symbols.md#string-symbol)
 [string->uninterned-symbol](symbols.md#string-uninterned-symbol)
+[string->vector](vectors.md#string-vector)
 ## T
 [take](pairs-and-lists.md#take)
 ## U
 ## V
+[vector](vectors.md#vector)
+[vector?](vectors.md#vector-1)
+[vector->list](vectors.md#vector-list)
+[vector->string](vectors.md#vector-string)
+[vector-append](vectors.md#vector-append)
+[vector-copy](vectors.md#vector-copy)
+[vector-copy!](vectors.md#vector-copy-1)
+[vector-fill!](vectors.md#vector-fill)
+[vector-length](vectors.md#vector-length)
+[vector-ref](vectors.md#vector-ref)
+[vector-set!](vectors.md#vector-set)
 ## W
 ## X
 ## Y
