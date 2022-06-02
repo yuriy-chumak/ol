@@ -140,9 +140,7 @@ typedef int64_t ret_t;
 #	define PUBLIC __declspec(dllexport)
 #elif defined(__EMSCRIPTEN__)
 #	define PUBLIC EMSCRIPTEN_KEEPALIVE
-#elif defined(__unix__)
-#	define PUBLIC __attribute__ ((__visibility__("default")))
-#elif defined(__APPLE__)
+#else
 #	define PUBLIC __attribute__ ((__visibility__("default")))
 #endif
 
@@ -171,6 +169,23 @@ type name(ret_t* got) { \
 	return *(type*)(((unsigned char*)got) + sizeof(word) - sizeof(type));\
 }
 
+// // 64bit types
+// static __inline__
+// int64_t  INT64 (ret_t* got) {
+// 	return
+// 		((int64_t )(*(uint32_t*)(((unsigned char*)got) + 0))) << 32 |
+// 		           (*(uint32_t*)(((unsigned char*)got) + 4));
+// }
+// static __inline__
+// uint64_t UINT64(ret_t* got) {
+// 	return
+// 		((uint64_t)(*(uint32_t*)(((unsigned char*)got) + 0))) << 32 |
+// 		           (*(uint32_t*)(((unsigned char*)got) + 4));
+// }
+
+// static __inline__
+// double   DOUBLE(ret_t* got) { return *(double*)  got; }
+
 #else // __ORDER_LITTLE_ENDIAN__
 
 #define DECLARE_TYPE_CONVERTER(type, name) \
@@ -182,24 +197,24 @@ type name(ret_t* got) { \
 #endif
 
 // lower types
-DECLARE_TYPE_CONVERTER(int8_t, INT8)
-DECLARE_TYPE_CONVERTER(uint8_t, UINT8)
-DECLARE_TYPE_CONVERTER(int16_t, INT16)
-DECLARE_TYPE_CONVERTER(uint16_t, UINT16)
-DECLARE_TYPE_CONVERTER(int32_t, INT32)
-DECLARE_TYPE_CONVERTER(uint32_t, UINT32)
-//DECLARE_TYPE_CONVERTER(word*, WORDP)
-DECLARE_TYPE_CONVERTER(void*, VOIDP)
-DECLARE_TYPE_CONVERTER(long, LONG)
-DECLARE_TYPE_CONVERTER(float, FLOAT)
+DECLARE_TYPE_CONVERTER(int8_t, CV_INT8)
+DECLARE_TYPE_CONVERTER(uint8_t, CV_UINT8)
+DECLARE_TYPE_CONVERTER(int16_t, CV_INT16)
+DECLARE_TYPE_CONVERTER(uint16_t, CV_UINT16)
+DECLARE_TYPE_CONVERTER(int32_t, CV_INT32)
+DECLARE_TYPE_CONVERTER(uint32_t, CV_UINT32)
+//DECLARE_TYPE_CONVERTER(word*, CV_WORDP)
+DECLARE_TYPE_CONVERTER(void*, CV_VOIDP)
+DECLARE_TYPE_CONVERTER(long, CV_LONG)
+DECLARE_TYPE_CONVERTER(float, CV_FLOAT)
 
 // 64bit types
 static __inline__
-int64_t  INT64 (ret_t* got) { return *(int64_t *)got; }
+int64_t  CV_INT64 (ret_t* got) { return *(int64_t *)got; }
 static __inline__
-uint64_t UINT64(ret_t* got) { return *(uint64_t*)got; }
+uint64_t CV_UINT64(ret_t* got) { return *(uint64_t*)got; }
 static __inline__
-double   DOUBLE(ret_t* got) { return *(double*)  got; }
+double   CV_DOUBLE(ret_t* got) { return *(double*)  got; }
 
 
 
@@ -896,22 +911,22 @@ __ASM__(// "arm32_call:_arm32_call:",
 
 #elif __mips__ // 32-bit
 
-__attribute__((__interrupt__)) // "naked" for mips
+__attribute__((__interrupt__))
 ret_t mips32_call(int_t argv[], long i, void* function);
+
 __ASM__(
-".globl mips32_call", // For some reason inline assembly should start with .globl <func_name>.
-	"mips32_call:",
+".globl mips32_call", // inline assembly should start with .globl <func_name>.
+"mips32_call:",
 	"addiu  $sp, $sp,-16",
 	"sw     $fp, 4($sp)",
 	"sw     $ra, 8($sp)",
 	"move   $fp, $sp",
 
-	// "li   $t1, 4",
 	"ble  $a1, 4, $run",
 
 	// align stack
-	"addi $t2, $a1, 1",
-	"andi $t2, $t2, 1",
+	"addi $t2, $a1, 1", // +1
+	"andi $t2, $t2, 1", // &1
 	"sll  $t2, $t2, 2", // *4
 	"sub  $sp, $sp, $t2",
 
@@ -920,14 +935,12 @@ __ASM__(
 	"mul  $t2, $a1, 4",
 	"add  $t0, $a0, $t2", // move t0 up to end of arguments list
 "$loop:"
-//	"beq  $t1, $a1, $run",
 	"sub  $sp, $sp, 4",
 	"lw   $t2, 0($t0)",
 	"sw   $t2, 0($sp)",
 	"sub  $t0, $t0, 4",
 	"add  $t1, $t1, 1",
 	"bne  $t1, $a1, $loop",
-//	"b $loop",
 
 "$run:",
 	// https://chortle.ccsu.edu/assemblytutorial/Chapter-26/ass26_4.html
@@ -938,21 +951,10 @@ __ASM__(
 	"lw   $a2, 8($t0)",
 	"lw   $a3, 12($t0)",
 	"sub  $sp, $sp, 16", // reserved place for $a0..$a3
-	// // temp:
-	// "sw   $a0, 0($sp)",
-	// "sw   $a1, 4($sp)",
-	// "sw   $a2, 8($sp)",
-	// "sw   $a3,12($sp)",
-	// call
 	"jalr $t9",
-	"nop", // можно не ставить
+	"nop",
 
-	// "li     $v0, 1",
-	// "li     $v1, 1",
-	// "li    $2,0",
-	// "li    $3,7", // low word
-
-	// function exit
+	// return
 	"move   $sp, $fp",
 	"lw     $ra, 8($sp)",
 	"lw     $fp, 4($sp)",
@@ -1615,7 +1617,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 
 #if UINT64_MAX > UINTPTR_MAX // 32-bit machines
-		case TINT64: case TUINT64:
+		// 32-bits: long long values fills two words
+		case TINT64: case TUINT64: {
 			if (is_enum(arg))
 				*(int64_t*)&args[i++] = enum(arg);
 			else
@@ -1630,10 +1633,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				*(int64_t*)&args[i++] = from_rational(arg);
 				break;
 			default:
-				i++;
-				E("can't cast %d to (u)int64", type);
+				E("can't cast %d to (u)int64", type); i++;
 			}
 			break;
+		}
 #endif
 
 		//
@@ -2139,8 +2142,12 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #	else
 #		error "Unsupported platform"
 #	endif
+
+// -----------------------
+//  ARM
 #elif __aarch64__
 	got = arm64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
+
 #elif __arm__
 	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
 #	ifndef __ARM_PCS_VFP
@@ -2483,65 +2490,67 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	switch (returntype) {
 		// TENUMP - deprecated, TODO: remove
 		case TENUMP: // type-enum+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) make_enum (LONG(&got));
+			result = (word*) make_enum (CV_LONG(&got));
 			break;
 
 		case TINT8:
-			result = (word*) new_number (INT8(&got));
+			result = (word*) new_number (CV_INT8(&got));
 			break;
 		case TINT16:
-			result = (word*) new_number (INT16(&got));
+			result = (word*) new_number (CV_INT16(&got));
 			break;
 		case TINT32:
-			result = (word*) new_number (INT32(&got));
+			result = (word*) new_number (CV_INT32(&got));
 			break;
 		case TINT64: {
-			result = (word*) new_number (INT64(&got));
+			result = (word*) new_number (CV_INT64(&got));
 			break;
 		}
 
 		case TUINT8:
-			result = (word*) new_number (UINT8(&got));
+			result = (word*) new_number (CV_UINT8(&got));
 			break;
 		case TUINT16:
-			result = (word*) new_number (UINT16(&got));
+			result = (word*) new_number (CV_UINT16(&got));
 			break;
 		case TUINT32:
-			result = (word*) new_number (UINT32(&got));
+			result = (word*) new_number (CV_UINT32(&got));
 			break;
 		case TUINT64: {
-			result = (word*) new_number (UINT64(&got));
+			result = (word*) new_number (CV_UINT64(&got));
 			break;
 		}
 
 
 		case TPORT:
-			result = (word*) make_port (LONG(&got)); // todo: make port like in SYSCALL_OPEN
+			result = (word*) make_port (CV_LONG(&got)); // todo: make port like in SYSCALL_OPEN
 			break;
 		case TVOID:
 			result = (word*) ITRUE;
-			// special case: returning a structure
+			// special case: returning a structure (?)
 			if (is_pair(car(B)) && value(caar(B)) == TBYTEVECTOR) {
 				size_t len = value(cdar(B));
+				void* vptr = CV_VOIDP(&got);
+
 				if (len > sizeof(ret_t)) // returning a big structure
-					result = ((word*)(word)got) - 1;
+					result = ((word*)vptr) - 1; //? TODO check this!!
 				else { // returning a small structure
 					result = new_bytevector(len);
-					__builtin_memcpy(&car(result), &got, len);
+					__builtin_memcpy(&car(result), vptr, len);
 				}
 			}
 
 			break;
 
 		case TVPTR: {
-			void* vptr = VOIDP(&got);
+			void* vptr = CV_VOIDP(&got);
 			if (vptr)
-				result = new_vptr (vptr);
+				result = new_vptr(vptr);
 			break;
 		}
 
 		case TSTRING: { // assume that input string is a valid utf-8
-			void* vptr = VOIDP(&got);
+			void* vptr = CV_VOIDP(&got);
 			if (vptr) {
 				// check for string length and utf-8 encoded characters
 				int ch, utf8q = 0;
@@ -2604,7 +2613,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 		}
 		case TSTRINGWIDE: {
-			void* vptr = VOIDP(&got);
+			void* vptr = CV_VOIDP(&got);
 			if (vptr) {
 				widechar* p = (widechar*) vptr;
 				unsigned words = 0;
@@ -2629,8 +2638,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TDOUBLE: {
 			inexact_t value =
 				(returntype == TFLOAT)
-					? FLOAT(&got)
-					: DOUBLE(&got);
+					? CV_FLOAT(&got)
+					: CV_DOUBLE(&got);
 
 #if OLVM_INEXACTS
 			result = new_inexact(value);

@@ -1,8 +1,6 @@
 ; GLU 1.1 - 1.3 (18 Sep 2008)
 (define-library (lib GLU)
 (export
-      (exports (OpenGL platform))
-
    ; openGL Utility
    GLU_LIBRARY
 
