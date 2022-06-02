@@ -2372,30 +2372,30 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 
 		case TINT8:
-			result = (word*) new_number (*(int8_t*)&got);
+			result = (word*) new_number ((int8_t) got);
 			break;
 		case TINT16:
-			result = (word*) new_number (*(int16_t*)&got);
+			result = (word*) new_number ((int16_t)got);
 			break;
 		case TINT32:
-			result = (word*) new_number (*(int32_t*)&got);
+			result = (word*) new_number ((int32_t)got);
 			break;
 		case TINT64: {
-			result = (word*) new_number (*(int64_t*)&got);
+			result = (word*) new_number ((int64_t)got);
 			break;
 		}
 
 		case TUINT8:
-			result = (word*) new_number (*(uint8_t*)&got);
+			result = (word*) new_number ((uint8_t) got);
 			break;
 		case TUINT16:
-			result = (word*) new_number (*(uint16_t*)&got);
+			result = (word*) new_number ((uint16_t)got);
 			break;
 		case TUINT32:
-			result = (word*) new_number (*(uint32_t*)&got);
+			result = (word*) new_number ((uint32_t)got);
 			break;
 		case TUINT64: {
-			result = (word*) new_number (*(uint64_t*)&got);
+			result = (word*) new_number ((uint64_t)got);
 			break;
 		}
 
