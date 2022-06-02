@@ -804,10 +804,10 @@ word*p = new (TVECTOR, 13);\
 	 __builtin_types_compatible_p (typeof(val), signed long) ||\
 	 __builtin_types_compatible_p (typeof(val), signed long long)) ?\
 		new_snumber(val):\
-	(__builtin_types_compatible_p (typeof(val), int8_t) ||\
-	 __builtin_types_compatible_p (typeof(val), int16_t) ||\
-	 __builtin_types_compatible_p (typeof(val), int32_t) ||\
-	 __builtin_types_compatible_p (typeof(val), int64_t) ||\
+	(__builtin_types_compatible_p (typeof(val), uint8_t) ||\
+	 __builtin_types_compatible_p (typeof(val), uint16_t) ||\
+	 __builtin_types_compatible_p (typeof(val), uint32_t) ||\
+	 __builtin_types_compatible_p (typeof(val), uint64_t) ||\
 	 __builtin_types_compatible_p (typeof(val), unsigned) ||\
 	(__builtin_types_compatible_p (typeof(val), char) && CHAR_UNSIGNED) ||\
 	 __builtin_types_compatible_p (typeof(val), unsigned char) ||\
