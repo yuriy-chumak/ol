@@ -159,6 +159,49 @@ typedef int64_t ret_t;
 	typedef wchar_t widechar;
 #endif
 
+// ------------------
+// type convertors
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+
+// todo: check the word size!! if sizeof(word) == 4!
+
+#define DECLARE_TYPE_CONVERTER(type, name) \
+static __inline__ \
+type name(ret_t* got) { \
+	return *(type*)(((unsigned char*)got) + sizeof(word) - sizeof(type));\
+}
+
+#else // __ORDER_LITTLE_ENDIAN__
+
+#define DECLARE_TYPE_CONVERTER(type, name) \
+static __inline__ \
+type name(ret_t* got) { \
+	return *(type*)(((unsigned char*)got) + 0);\
+}
+
+#endif
+
+// lower types
+DECLARE_TYPE_CONVERTER(int8_t, INT8)
+DECLARE_TYPE_CONVERTER(uint8_t, UINT8)
+DECLARE_TYPE_CONVERTER(int16_t, INT16)
+DECLARE_TYPE_CONVERTER(uint16_t, UINT16)
+DECLARE_TYPE_CONVERTER(int32_t, INT32)
+DECLARE_TYPE_CONVERTER(uint32_t, UINT32)
+//DECLARE_TYPE_CONVERTER(word*, WORDP)
+DECLARE_TYPE_CONVERTER(void*, VOIDP)
+DECLARE_TYPE_CONVERTER(long, LONG)
+DECLARE_TYPE_CONVERTER(float, FLOAT)
+
+// 64bit types
+static __inline__
+int64_t  INT64 (ret_t* got) { return *(int64_t *)got; }
+static __inline__
+uint64_t UINT64(ret_t* got) { return *(uint64_t*)got; }
+static __inline__
+double   DOUBLE(ret_t* got) { return *(double*)  got; }
+
+
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 // However, on modern standard computers (i.e., implementing IEEE 754), one may
 // in practice safely assume that the endianness is the same for floating-point
@@ -2349,9 +2392,9 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 	}
 
-	word* result = (word*)IFALSE;
-
+	// RETURN
 	returntype &= 0x3F;
+	word* result = (word*)IFALSE;
 
 	// special case of returning a structure:
 	// allocate a space for the return value
@@ -2368,40 +2411,40 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	switch (returntype) {
 		// TENUMP - deprecated, TODO: remove
 		case TENUMP: // type-enum+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
-			result = (word*) make_enum (got);
+			result = (word*) make_enum (LONG(&got));
 			break;
 
 		case TINT8:
-			result = (word*) new_number ((int8_t) got);
+			result = (word*) new_number (INT8(&got));
 			break;
 		case TINT16:
-			result = (word*) new_number ((int16_t)got);
+			result = (word*) new_number (INT16(&got));
 			break;
 		case TINT32:
-			result = (word*) new_number ((int32_t)got);
+			result = (word*) new_number (INT32(&got));
 			break;
 		case TINT64: {
-			result = (word*) new_number ((int64_t)got);
+			result = (word*) new_number (INT64(&got));
 			break;
 		}
 
 		case TUINT8:
-			result = (word*) new_number ((uint8_t) got);
+			result = (word*) new_number (UINT8(&got));
 			break;
 		case TUINT16:
-			result = (word*) new_number ((uint16_t)got);
+			result = (word*) new_number (UINT16(&got));
 			break;
 		case TUINT32:
-			result = (word*) new_number ((uint32_t)got);
+			result = (word*) new_number (UINT32(&got));
 			break;
 		case TUINT64: {
-			result = (word*) new_number ((uint64_t)got);
+			result = (word*) new_number (UINT64(&got));
 			break;
 		}
 
 
 		case TPORT:
-			result = (word*) make_port ((long)got); // todo: make port like in SYSCALL_OPEN
+			result = (word*) make_port (LONG(&got)); // todo: make port like in SYSCALL_OPEN
 			break;
 		case TVOID:
 			result = (word*) ITRUE;
@@ -2418,17 +2461,20 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 			break;
 
-		case TVPTR:
-			if ((word)got)
-				result = new_vptr (got);
+		case TVPTR: {
+			void* vptr = VOIDP(&got);
+			if (vptr)
+				result = new_vptr (vptr);
 			break;
+		}
 
-		case TSTRING: // assume that input string is a valid utf-8
-			if ((word)got) {
+		case TSTRING: { // assume that input string is a valid utf-8
+			void* vptr = VOIDP(&got);
+			if (vptr) {
 				// check for string length and utf-8 encoded characters
 				int ch, utf8q = 0;
 				size_t len = 0;
-				char* p = (char*)(word)got;
+				char* p = (char*)vptr;
 				while (ch = *p++) {
 					len++;
 					unless ((ch & 0b10000000) == 0b00000000) {
@@ -2451,14 +2497,14 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				if (!utf8q) { // likely
 					result = new_alloc(TSTRING, len);
 					char* str = (char*) &car(result);
-					memcpy(str, (char*)(word)got, len);
+					memcpy(str, (char*) vptr, len);
 				}
 				// utf8 (maximal size of utf-8 encoded character is 21 bit that is smaller than 24 bits for enum for 32-bit platforms)
 				// so we definitely can use I() instead of make_number()
 				// https://www.vertex42.com/ExcelTips/unicode-symbols.html
 				else {
 					word* str = result = new (TSTRINGWIDE, len);
-					unsigned char* p = (unsigned char*)(word)got;
+					unsigned char* p = (unsigned char*) vptr;
 					while (ch = *p) {
 						if ((ch & 0b10000000) == 0b00000000) { // ansi
 							*++str = I((word)(p[0]));
@@ -2484,9 +2530,11 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				}
 			}
 			break;
-		case TSTRINGWIDE:
-			if ((word)got) {
-				widechar* p = (widechar*) (word)got;
+		}
+		case TSTRINGWIDE: {
+			void* vptr = VOIDP(&got);
+			if (vptr) {
+				widechar* p = (widechar*) vptr;
 				unsigned words = 0;
 				while (i++ <= VMAX && *p++) words++;
 
@@ -2497,19 +2545,20 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				}
 
 				word* str = result = new (TSTRINGWIDE, words);
-				p = (widechar*) (word)got;
+				p = (widechar*) vptr;
 				while (*p)
 					*++str = I(*p++);
 			}
 			break;
+		}
 
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
 		case TFLOAT:
 		case TDOUBLE: {
 			inexact_t value =
 				(returntype == TFLOAT)
-					? *(float* )&got
-					: *(double*)&got;
+					? FLOAT(&got)
+					: DOUBLE(&got);
 
 #if OLVM_INEXACTS
 			result = new_inexact(value);
