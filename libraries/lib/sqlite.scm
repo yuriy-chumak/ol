@@ -321,12 +321,11 @@
    (otus ffi))
 
 (cond-expand
-   (Linux
+   ((or Linux Android)
       (begin
-         (define sqlite (load-dynamic-library "libsqlite3.so"))))
-   (Android
-      (begin
-         (define sqlite (load-dynamic-library "libsqlite.so"))))
+         (define sqlite (or
+               (load-dynamic-library "libsqlite3.so.0")
+               (load-dynamic-library "libsqlite3.so")))))
    (Windows
       (begin
          (define sqlite (load-dynamic-library "sqlite3.dll"))))
