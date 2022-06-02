@@ -202,6 +202,7 @@ static __inline__
 double   DOUBLE(ret_t* got) { return *(double*)  got; }
 
 
+
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 // However, on modern standard computers (i.e., implementing IEEE 754), one may
 // in practice safely assume that the endianness is the same for floating-point
@@ -892,6 +893,73 @@ __ASM__(// "arm32_call:_arm32_call:",
 	"ldmfd   sp!, {r4, r5, pc}");
 }
 # endif
+
+#elif __mips__ // 32-bit
+
+__attribute__((__interrupt__)) // "naked" for mips
+ret_t mips32_call(int_t argv[], long i, void* function);
+__ASM__(
+".globl mips32_call", // For some reason inline assembly should start with .globl <func_name>.
+	"mips32_call:",
+	"addiu  $sp, $sp,-16",
+	"sw     $fp, 4($sp)",
+	"sw     $ra, 8($sp)",
+	"move   $fp, $sp",
+
+	// "li   $t1, 4",
+	"ble  $a1, 4, $run",
+
+	// align stack
+	"addi $t2, $a1, 1",
+	"andi $t2, $t2, 1",
+	"sll  $t2, $t2, 2", // *4
+	"sub  $sp, $sp, $t2",
+
+	// let's push data to the stack
+	"li   $t1, 3", // current index
+	"mul  $t2, $a1, 4",
+	"add  $t0, $a0, $t2", // move t0 up to end of arguments list
+"$loop:"
+//	"beq  $t1, $a1, $run",
+	"sub  $sp, $sp, 4",
+	"lw   $t2, 0($t0)",
+	"sw   $t2, 0($sp)",
+	"sub  $t0, $t0, 4",
+	"add  $t1, $t1, 1",
+	"bne  $t1, $a1, $loop",
+//	"b $loop",
+
+"$run:",
+	// https://chortle.ccsu.edu/assemblytutorial/Chapter-26/ass26_4.html
+	"move $t0, $a0", // t0 <- argv
+	"move $t9, $a2", // a2 - function
+	"lw   $a0, 0($t0)",
+	"lw   $a1, 4($t0)",
+	"lw   $a2, 8($t0)",
+	"lw   $a3, 12($t0)",
+	"sub  $sp, $sp, 16", // reserved place for $a0..$a3
+	// // temp:
+	// "sw   $a0, 0($sp)",
+	// "sw   $a1, 4($sp)",
+	// "sw   $a2, 8($sp)",
+	// "sw   $a3,12($sp)",
+	// call
+	"jalr $t9",
+	"nop", // можно не ставить
+
+	// "li     $v0, 1",
+	// "li     $v1, 1",
+	// "li    $2,0",
+	// "li    $3,7", // low word
+
+	// function exit
+	"move   $sp, $fp",
+	"lw     $ra, 8($sp)",
+	"lw     $fp, 4($sp)",
+	"addiu  $sp, $sp, 16",
+	"jr     $ra",
+	"nop");
+
 #elif __EMSCRIPTEN__
 
 ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
@@ -1542,33 +1610,30 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 // todo: cast TFLOAT and TDOUBLE
 			default:
-				E("can't cast %d to int", type);
-				args[i] = 0; // todo: error
+				E("can't cast %d to (u)int", type);
 			}
 			break;
 
 #if UINT64_MAX > UINTPTR_MAX // 32-bit machines
 		case TINT64: case TUINT64:
 			if (is_enum(arg))
-				*(int64_t*)&args[i] = enum(arg);
+				*(int64_t*)&args[i++] = enum(arg);
 			else
 			switch (reference_type(arg)) {
 			case TINTP: // source type
-				*(int64_t*)&args[i] = +from_ulong(arg);
+				*(int64_t*)&args[i++] = +from_ulong(arg);
 				break;
 			case TINTN:
-				*(int64_t*)&args[i] = -from_ulong(arg);
+				*(int64_t*)&args[i++] = -from_ulong(arg);
 				break;
 			case TRATIONAL:
-				*(int64_t*)&args[i] = from_rational(arg);
+				*(int64_t*)&args[i++] = from_rational(arg);
 				break;
 			default:
-				E("can't cast %d to int64", type);
+				i++;
+				E("can't cast %d to (u)int64", type);
 			}
-			#if UINT64_MAX > UINTPTR_MAX
-				i++; // for 32-bits: long long values fills two words
-			#endif
-		break;
+			break;
 #endif
 
 		//
@@ -2064,6 +2129,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #	else
 #		error "Unsupported platform"
 #	endif
+
 #elif __i386__
 #	if (__unix__ || __APPLE__)
 		got = x86_call(args, i, function, returntype & 0x3F);
@@ -2084,11 +2150,17 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	        i, 0,
 	        function, returntype & 0x3F); //(?)
 #	endif
-#elif __EMSCRIPTEN__
-	got = asmjs_call(args, fmask, function, returntype & 0x3F);
+
+// -----------------------
+//  MIPS
 #elif __mips__
 	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
-	got = call_x(args, i, function, returntype & 0x3F);
+	got = mips32_call(args, i, function);
+// -----------------------
+//  WASM
+#elif __EMSCRIPTEN__
+	got = asmjs_call(args, fmask, function, returntype & 0x3F);
+
 #elif __sparc64__
 	got = call_x(args, i, function, returntype & 0x3F);
 #else // ALL other
