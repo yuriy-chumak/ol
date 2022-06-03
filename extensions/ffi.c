@@ -911,15 +911,20 @@ __ASM__(// "arm32_call:_arm32_call:",
 
 #elif __mips__ // 32-bit
 
+// https://refspecs.linuxfoundation.org/elf/mipsabi.pdf
 __attribute__((__interrupt__))
-ret_t mips32_call(int_t argv[], long i, void* function);
-
+ret_t mips32_call(int_t argv[], long i, void* function, long type);
+// $a0: argv
+// $a1: i
+// $a2: function
+// $a3: type
 __ASM__(
 ".globl mips32_call", // inline assembly should start with .globl <func_name>.
 "mips32_call:",
 	"addiu  $sp, $sp,-16",
 	"sw     $fp, 4($sp)",
 	"sw     $ra, 8($sp)",
+	// "sw     $a3, 0($sp)",
 	"move   $fp, $sp",
 
 	"ble  $a1, 4, $run",
@@ -943,18 +948,23 @@ __ASM__(
 	"bne  $t1, $a1, $loop",
 
 "$run:",
-	// https://chortle.ccsu.edu/assemblytutorial/Chapter-26/ass26_4.html
 	"move $t0, $a0", // t0 <- argv
 	"move $t9, $a2", // a2 - function
 	"lw   $a0, 0($t0)",
 	"lw   $a1, 4($t0)",
 	"lw   $a2, 8($t0)",
 	"lw   $a3, 12($t0)",
-	"sub  $sp, $sp, 16", // reserved place for $a0..$a3
+	"sub  $sp, $sp, 16", // reserved space for $a0..$a3
 	"jalr $t9",
 	"nop",
-
-	// return
+// 	"lw   $a3, 0($sp)",
+// 	"beq  $a3, 46, $conv", // TFLOAT
+// 	"bne  $a3, 47, $ret",  // TDOUBLE
+// "$conv:",
+// 	// "move $v0, $f0",
+// 	// "move $v1, $f1",
+// 	// return
+"$ret:",
 	"move   $sp, $fp",
 	"lw     $ra, 8($sp)",
 	"lw     $fp, 4($sp)",
@@ -1466,6 +1476,9 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		i++;
 #if UINT64_MAX > UINTPTR_MAX // 32-bit machines
+		#if __mips__ // 32-bit mips,
+			i = (i+1)&-2; // dword align
+		#endif
 		if (type == TINT64 || type == TUINT64 || type == TDOUBLE)
 			i++;
 #endif
@@ -1619,6 +1632,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #if UINT64_MAX > UINTPTR_MAX // 32-bit machines
 		// 32-bits: long long values fills two words
 		case TINT64: case TUINT64: {
+			#if __mips__ // 32-bit mips,
+				i = (i+1)&-2; // dword align
+			#endif
+
 			if (is_enum(arg))
 				*(int64_t*)&args[i++] = enum(arg);
 			else
@@ -1780,6 +1797,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		case TDOUBLE:
 		tdouble:
+			#if __mips__ // 32-bit mips
+				i = (i+1)&-2; // dword align
+			#endif
+
 			#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
 				*(double*)&ad[d++] = OL2D(arg); --i;
 				floatsmask|=1;
@@ -2143,8 +2164,6 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #		error "Unsupported platform"
 #	endif
 
-// -----------------------
-//  ARM
 #elif __aarch64__
 	got = arm64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
 
@@ -2158,18 +2177,15 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	        function, returntype & 0x3F); //(?)
 #	endif
 
-// -----------------------
-//  MIPS
 #elif __mips__
-	// https://acm.sjtu.edu.cn/w/images/d/db/MIPSCallingConventionsSummary.pdf
-	got = mips32_call(args, i, function);
-// -----------------------
-//  WASM
+	got = mips32_call(args, i, function, returntype & 0x3F);
+
 #elif __EMSCRIPTEN__
 	got = asmjs_call(args, fmask, function, returntype & 0x3F);
 
 #elif __sparc64__
 	got = call_x(args, i, function, returntype & 0x3F);
+
 #else // ALL other
 	got = call_x(args, i, function, returntype & 0x3F);
 /*	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
