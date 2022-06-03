@@ -26,6 +26,8 @@ Windows support requires MinGW installed. Wine cross-compilation is also support
 
 WebAssembly binary compilation requires Emscripten 1.37.40+.
 
+If you want to build 32-bit binaries under 64-bit linux system, do `sudo apt-get install gcc-multilib`.
+
 ### BUILD IN SIMPLEST WAY
 
 ```bash
