@@ -32,6 +32,8 @@
       (exports (owl math-extra))
       (exports (owl math))
 
+      (exports (lib system))
+
       ; extended ol functions
       for-each ; universal for lists, vectors and strings
       
@@ -60,6 +62,8 @@
       (owl render)
       (otus async)
       (owl math)
+
+      (lib system)
 
       (scheme vector)
       (scheme bytevector)

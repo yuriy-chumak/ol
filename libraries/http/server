@@ -15,6 +15,7 @@
 (import (lib http))
 (import (owl parse))
 (import (otus ffi))
+(import (lib system))
 
 (define (yield) (syscall 1022 0))
 (define (time format seconds) (syscall 201 format seconds))
@@ -106,15 +107,11 @@
          ((not (zero? (band (ref stat 3) #o0040000)))
             (display "<folder> ")
             ; list folder:
-            (define In (syscall 22))
-            (define Out (syscall 22))
-            (define Pid (syscall 59 (c-string "/bin/bash")
-                           (map c-string (list
-                              "/bin/bash" "-c" (string-append "ls -lahQ --full-time " filename)))
-                           (list (car In) (cdr Out))))
-            (for-each close-port (list
-               (car In) (cdr Out) (cdr In)))
-            
+            (define In (pipe))
+            (define Out (pipe))
+            (define Pid (system (list "/bin/bash" "-c" (string-append "ls -lahQ --full-time " filename)) In Out))
+            (close-pipe In) ; we don't use In rigth now
+
             (define get-line
                (let-parse* (
                      (bytes (greedy+ (byte-if (lambda (x) (not (eq? x #\newline))))))
@@ -153,7 +150,8 @@
                   (loop (try-parse get-line (cdr stream) #false))))
             (send "</pre>\n")
             (send-uptime send)
-            (close-port (car Out))
+            (close-pipe Out)
+
             (print OK)
             (close #t))
          ; regular file?
