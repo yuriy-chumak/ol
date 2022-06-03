@@ -33,15 +33,19 @@
       PQerrorMessage
 
       PQexec
+      PQexecParams
       PQclear
 
       PQnfields
       PQfname
       PQntuples
       PQgetvalue
+
+      ; high-level interface
+      pq:query
    )
    (import
-      (scheme core)
+      (scheme base)
       (otus ffi))
 
 ; Step 1 — Installing PostgreSQL
@@ -57,6 +61,8 @@
    (define PGresult* fft-void*)
    (define ConnStatusType fft-long) ; enum
    (define ExecStatusType fft-long) ; enum
+   (define Oid fft-unsigned-int)
+   (define Oid* (fft* Oid))
 
    (define CONNECTION_OK                0)
    (define CONNECTION_BAD               1)
@@ -99,6 +105,15 @@
    (define PQfinish (PG fft-void "PQfinish" PGconn*))
 
    (define PQexec (PG PGresult* "PQexec" PGconn* type-string))
+   (define PQexecParams (PG PGresult* "PQexecParams" PGconn*
+			type-string        ; command
+         fft-int            ; nParams
+         (fft* Oid)         ; paramTypes
+         (fft* type-string) ; paramValues
+         (fft* fft-int)     ; paramLengths
+         (fft* fft-int)     ; paramFormats
+         fft-int))          ; resultFormat
+
    (define PQclear (PG fft-void "PQclear" PGresult*))
 
    (define PQnfields (PG fft-int "PQnfields" PGresult*))
@@ -106,4 +121,38 @@
    (define PQntuples (PG fft-int "PQntuples" PGresult*))
    (define PQgetvalue (PG type-string "PQgetvalue" PGresult* fft-int fft-int))
 
+   ; high-level interface
+   (define (pq:query db query . arguments)
+      (define args (map (lambda (arg)
+            (cond
+               ((number? arg)
+                  (number->string arg))
+               ((string? arg)
+                  arg)
+               (else
+                  (runtime-error "unsupported argument type" arg))))
+         arguments))
+
+      (define res (PQexecParams db query (length args) #F args #F #F 0))
+      (unless (eq? (PQresultStatus res) PGRES_TUPLES_OK)
+         (define message (PQerrorMessage db))
+         (PQclear res)
+         (runtime-error "QUERY failed:" message))
+
+      (define nFields (PQnfields res))
+
+      (define (query n)
+         (lambda ()
+            (if (eq? n (PQntuples res))
+            then
+               (PQclear res)
+               ;(PQclear (PQexec db "CLOSE portal"))
+               #null
+            else
+               (let loop ((i 0) (out #null))
+                  (if (eq? i nFields)
+                     (cons out (query (++ n)))
+                  else
+                     (loop (++ i) (cons (PQgetvalue res n i) out)))))))
+      (force (query 0)))
 ))

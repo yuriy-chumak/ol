@@ -1,7 +1,5 @@
 #!/usr/bin/env ol
 
-(import (lib pq))
-
 ; Step 1 — Installing PostgreSQL
 ;  sudo apt install postgresql postgresql-contrib
 ;  sudo systemctl start postgresql.service
@@ -10,6 +8,8 @@
 ;  sudo -u postgres createuser --interactive
 ; Step 4 — Creating a New Database
 ;  sudo -u postgres createdb template1
+
+(import (lib pq))
 
 #|
    begin, by setting the parameters for a backend connection if the
@@ -59,6 +59,8 @@
    ))
 (PQexec conn "COMMIT")
 
+;; -----------------------------------------------------------
+;; low-level query interface:
 ; Fetch rows from pg_database, the system catalog of databases
 (PQexec conn "BEGIN")
 (define res (PQexec conn "DECLARE myportal CURSOR FOR select id,msg from test where id > 1"))
@@ -92,6 +94,15 @@
 
 ; end the transaction
 (PQclear (PQexec conn "END"))
+
+;; ----------------------------------
+;; high-level query interface
+(define q (pq:query conn "select id,msg from test where id > $1" 1))
+
+(let loop ((q q))
+   (unless (null? q)
+      (print (car q))
+      (loop (force (cdr q)))))
 
 ; close the connection to the database and cleanup
 (PQfinish conn)
