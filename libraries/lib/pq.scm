@@ -34,6 +34,11 @@
 
       PQexec
       PQclear
+
+      PQnfields
+      PQfname
+      PQntuples
+      PQgetvalue
    )
    (import
       (scheme core)
@@ -95,5 +100,10 @@
 
    (define PQexec (PG PGresult* "PQexec" PGconn* type-string))
    (define PQclear (PG fft-void "PQclear" PGresult*))
+
+   (define PQnfields (PG fft-int "PQnfields" PGresult*))
+   (define PQfname (PG type-string "PQfname" PGresult* fft-int))
+   (define PQntuples (PG fft-int "PQntuples" PGresult*))
+   (define PQgetvalue (PG type-string "PQgetvalue" PGresult* fft-int fft-int))
 
 ))
