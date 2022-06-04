@@ -11,56 +11,29 @@ categories: en
 
 **Otus Lisp** (Ol in short) is a purely[\*](#pure) functional dialect of Lisp.
 
-It implements an extended subset of [R<sup>7</sup>RS](https://www.r7rs.org) Scheme including, but not limited to, some of the [SRFI](http://srfi.schemers.org/)s. It's small, embeddable and crossplatform; can run in own sandbox (for systems with sandboxing support); provides a portable, high level way for calling the code written in another languages. You can use Otus Lisp on GNU/Linux, Windows, different Unixes, kinds of BSDs, Android, webOS, macOS, Minoca and many other operation systems with various architectures (i.e. x86/x86_64, arm/aarch64, mips, ppc, ...) and platforms (ODroid, LattePanda, etc.).
+It implements an extended subset of the R<sup>7</sup>RS Scheme
+([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
+but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
+and cross-platform.  Provides a portable, high-level interface
+to call code written in another language.
 
-### Downloads
+You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
+(Open/Free/Net) BSD, Solaris and other operating systems based
+on various hardware architectures (intel, arm, ppc, mips, etc).
 
-Preparing **2.3**.
-
-2.3 RC1 changelog:
- * Ol got it's own [twitter account](https://twitter.com/otus_lisp)
- * vm opcodes 3,4,6,7 (OCLOS, CLOS1) is deprecated, will be removed soon
- * new opcode 48 (universal CLOS) is introduced (will be changed to 3 after deprecations remove)
- * new 'vm:set!' vm command, should speedup internal bytevector manipulations
- * integrated disassembler introduced (use ",dis" repl command)
-   * try ',dis +' to view the '+' function disassembly
- * ',save' repl feature returned; still experimental due to ffi
-   * you can ',save' a current session in the binary file and return to saved state by starting new Ol session with this file
- * Unicode support updated to version 14.0.0
- * big numbers vm loader fix
- * windows setup update
- * GC tune (reduced full gc count)
- * more samples and tests
-   * more gtk
-   * 3d game shaders for beginners
-   * convey's life
-   * etc.
- * windows command line support multiple path in "--home=...;..."
- * (define-values) can be used inside lambdas, begin, etc.
- * (otus async) async/await/coroutine/sleep functions: new old otus feature
-   * 'interact' is deprecated, use (await (mail ...)) instead
- * more r7rs compatibility: (features) got 'posix' symbol
- * i/o speedup (removed sleeper thread)
- * utf8-decode became a lazy, file reading speedup
- * json file reading: exponent issue fixed
- * 'string->number' became r7rs compliant
- * etc.
+Also, Ol is ported to the Web (in WebAssembly form) and can be
+used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
+Luakit, Iceape, etc.
 
 
-Release **2.2** is prepared.
+### Language reference
 
-Major changes:
-  * stabilized simple dictionaries ([{}](https://github.com/yuriy-chumak/ol/wiki/%7B%7D)) and vectors ([[]](https://github.com/yuriy-chumak/ol/wiki/%5B%5D)) syntax,
-  * new experimental human readable [if](https://github.com/yuriy-chumak/ol/wiki/if) statement extension,
-  * +nan.0, -inf.0, and +inf.0 as legal inexact numbers and more built-in inexact math functions provided,
-  * a lot of ffi updates and changes,
-  * introduced Otus Lisp Packages Repository (based on KISS pm).
-
-Full changes list and prebuilt binaries can be found at [link](https://github.com/yuriy-chumak/ol/releases).
+[Link to the Ol reference](https://github.com/yuriy-chumak/ol/blob/master/doc/reference/README.md)
 
 
-#### old downloads
-Release **2.1** available to [download](https://github.com/yuriy-chumak/ol/releases). Happy LISPing!
+### Source code
+Source codes can be accessed at the [official github repo](https://github.com/yuriy-chumak/ol)
+(check the README).
 
 
 ### Already tested platforms
@@ -97,19 +70,14 @@ Release **2.1** available to [download](https://github.com/yuriy-chumak/ol/relea
 - [x] Iceape 2.7.12 / Debian 6.0
 
 
-### Source code
-Source codes can be accessed at the [official github repo](https://github.com/yuriy-chumak/ol)
-(checkout the BUILD section of README).
-
-
-### About project
+### About
 Otus Lisp is available under 2 licenses:
 [MIT License](https://github.com/yuriy-chumak/ol/blob/master/LICENSE) and
 [GNU ](https://github.com/yuriy-chumak/ol/blob/master/COPYING)([L](https://github.com/yuriy-chumak/ol/blob/master/COPYING.LESSER))[GPLv3 License](https://github.com/yuriy-chumak/ol/blob/master/COPYING).
 
 This is incomplete list of Ol features:
 
-* small and fast virtual machine (only 42kb[\*](#42kb) in binary code)
+* small and fast virtual machine (only 64kb[\*](#64kb) in binary code)
 * high efficient (thanks for pure language functionality) garbage collector
 * cross-platform (Linux, Windows, Unix, different BSD flavors, Android, macOS, etc.)
 * cross-architecture (i586, amd64, arm, mips, etc.)
@@ -128,25 +96,6 @@ This is incomplete list of Ol features:
 * and, at least, it's a real Lisp!
 
 You can immediately try Otus Lisp in the provided terminal on the left of this page without downloading and installing any binaries. For the more information please refer to the "Learn" paragraph at the bottom of this page.
-
-
-### Development status <a name="news"></a>
-* 2020
-  * updated command line - now we can send arguments directly to the ol script (use \*vm-args\* to process)
-  * added new dictionary syntax - {}, '{}, `{}. old syntax not made and not planned made deprecated, you can use it freely
-  * added new vector (old named tuple) syntax - [], '[], `[]. old syntax not made and not planned made deprecated, you can use it freely
-  * added new math constants - +inf.0, -inf.0, +nan.0. division by 0 new returns a number (i.e. +inf.0), not an error
-  * function sqrt returns complex number in case of negative argument
-  * changed embed version, dramatically increased embed ol speed
-  * unicode version updated from 8.0.0 to 12.1.0
-  * better r7rs support - nearly all (scheme base) functions exposed
-  * and more, and more...
-
-* 2019
-  * version of builtin terminal ol updated to 2.1-2222
-  * a lot of changes, full list can be obtained [on github](https://github.com/yuriy-chumak/ol/commits/master).
-
-* [News archive](?en/news)
 
 
 ### Learn
@@ -208,5 +157,5 @@ which is another way of
 ### p.s.
 
 * <a name="pure"></a>In fact, Otus Lisp is slightly extended towards traditional imperative programming, namely, limited mutators have been introduced. It helps to organize non-repetitive random number generator and to speed-up some imperative-oriented operations.
-* <a name="42kb"></a>Real virtual machine size depends on parget platform and enabled features. 42kb is typical size for Linux without including debug information, ffi and experimental inexact library, but including couple of internal safe checks, sockets, native library calls and sandbox. For other operation systems size can be as bigger as lesser (i.e. 79kb for win64 x86_64, 30kb for ubuntu64 armhf).
+* <a name="64kb"></a>Real virtual machine size depends on parget platform and enabled features. 42kb is typical size for Linux without including debug information, ffi and experimental inexact library, but including couple of internal safe checks, sockets, native library calls and sandbox. For other operation systems size can be as bigger as lesser (i.e. 79kb for win64 x86_64, 30kb for ubuntu64 armhf).
 * <a name="sandbox"></a>Sandboxing works only under OS with [SECCOMP](https://en.wikipedia.org/wiki/Seccomp) (secure computing mode) - it's GNU/Linux (and different Linux disctributives, Ubuntu, Debian, Suse, etc.). Supporting sandboxing under *BSD is in progress.
