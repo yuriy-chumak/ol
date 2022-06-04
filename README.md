@@ -99,13 +99,14 @@ $ sudo make uninstall
 Table of Contents
 -----------------
 1. [Build / Install](#build--install) ([Advanced](doc/BUILD.md))
+1. [Cross-Compilation](doc/CROSS-COMPILATION.md)
 1. [Packaging](#packaging)
 1. [Changelog](doc/CHANGELOG.md)
 1. [Learning](#learning) / [Language Reference](doc/reference/)
 1. [R<sup>7</sup>RS Differences](#r7rs-differences)
 1. [Deprecations](#deprecations)
 1. [Running](#running)
-1. [Binary Scripts](#binary-scripts)
+1. [Lisp sources in binary form](#binary-scripts)
 1. [Files](#files)
 1. [Embedding](#embedding-ol)
 1. [Docs](#documentation)
