@@ -5,9 +5,8 @@
         \)  )          purely
       ---"-"---     functional!
    O t u s L i s p
-
- /Based on Aki Helin's Owl-Lisp/
 ```
+*Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
 
 BUILD
 =====
