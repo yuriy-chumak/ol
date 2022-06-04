@@ -41,14 +41,20 @@
          (mcp 4 (list name) thunk))
 
       ; forker wants to receive any issues the thread runs into
-      (define (async-linked name thunk)
-         (mcp 4 (list name 'link) thunk))
+      (define async-linked
+         (define (async-linked name thunk)
+            (mcp 4 (list name 'link) thunk))
+         (case-lambda
+            ((name thunk)
+               (async-linked name thunk))
+            ((thunk)
+               (async-linked [] thunk))))
 
       ; the thread should have a mailbox for communication in state
-      (define (coroutine name handler)
+      (define (actor name handler)
          (mcp 4 (list name 'mailbox) handler))
       
-      (define (coroutine-linked name handler)
+      (define (actor-linked name handler)
          (mcp 4 (list name 'mailbox 'link) handler))
 
       (define (return-mails rmails)
@@ -166,8 +172,8 @@
          ((name thunk)
                   (async-named name thunk))))
 
-      (define actor coroutine)
-      (define actor-linked coroutine-linked)
+      (define coroutine actor)
+      (define coroutine-linked actor-linked)
 
       ; sleep
 
