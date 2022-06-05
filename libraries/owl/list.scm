@@ -11,7 +11,7 @@
       all some
       smap unfold
       take-while                ;; pred, lst -> as, bs
-      first
+      find
       halve
 
       diff union intersect)
@@ -161,11 +161,15 @@
 
 
       ; could also fold
-      (define (first pred l def)
-         (cond
-            ((null? l) def)
-            ((pred (car l)) (car l))
-            (else (first pred (cdr l) def))))
+      (define find
+         (define (find pred l def)
+            (cond
+               ((null? l) def)
+               ((pred (car l)) (car l))
+               (else (find pred (cdr l) def))))
+         (case-lambda
+            ((pred l def) (find pred l def))
+            ((pred l) (find pred l #false))))
 
       (define (fold-map o s l)
          (let loop ((s s) (l l) (r null))
