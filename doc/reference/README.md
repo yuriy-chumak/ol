@@ -101,6 +101,8 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [eqv?](equivalence-predicates.md#eqv)
 [equal?](equivalence-predicates.md#equal)
 ## F
+[fold](pairs-and-lists.md#fold)
+[foldr](pairs-and-lists.md#foldr)
 ## G
 ## H
 ## I
@@ -121,6 +123,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 ## M
 [make-list](pairs-and-lists.md#make-list)
 [make-vector](vectors.md#make-vector)
+[map](pairs-and-lists.md#map)
 [memq](pairs-and-lists.md#memq)
 [memv](pairs-and-lists.md#memv)
 [member](pairs-and-lists.md#member)

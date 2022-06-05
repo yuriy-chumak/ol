@@ -13,7 +13,8 @@ Pairs are used primarily to represent lists. A *list* can be defined recursively
 [length](#length), [list-ref (lref)](#list-ref-lref), [list-tail](#list-tail),  
 [repeat](#repeat), [iota](#iota), [lrange](#lrange), [append](#append), [reverse](#reverse),  
 [take](#take), [drop](#drop),  
-[memq](#memq), [memv](#memv), [member](#member), [assq](#assq), [assv](#assv), [assoc](#assoc)
+[memq](#memq), [memv](#memv), [member](#member), [assq](#assq), [assv](#assv), [assoc](#assoc),  
+[map](#map), [fold](#fold), [foldr](#foldr)
 
 Non functional features: [set-car!](#set-car), [set-cdr!](#set-cdr), [list-set!](#list-set)
 
@@ -422,6 +423,77 @@ The `assoc` procedure uses *compare* if given, and `equal?` otherwise, to compar
 (assoc "B" '(("a" 1) ("b" 2) ("c" 3)) string-ci=?)   ==>  '("b" 2)
 ```
 
+# map
+`(map handler a ...)`, *procedure*
+
+The `map` function uses the per-element results to create a new list.
+
+```scheme
+(map - '(1 2 3))                 ==>  '(-1 -2 -3)
+(map (lambda (n i)
+        ((if (zero? (mod i 2)) + -) n))
+   '(1 3 5 7 9)
+   '(1 2 3 4 5))                 ==>  '(-1 3 -5 7 -9)
+(map (lambda (n) (/ 1 n))
+   (iota 5 1 2))                 ==>  '(1 1/3 1/5 1/7 1/9)
+```
+
+# fold
+`(fold handler state a ...)`, *procedure*
+
+Combine the elements of list(s) from left to right.
+
+```scheme
+(fold + 0 '(1 2 3))           ==>  6
+(fold + 7 '(1 2 3))           ==>  13
+(fold - 7 '(1 2 3))           ==>  1
+(fold cons 3 '(5 6 7))        ==>  '(((3 . 5) . 6) . 7)
+
+(fold put {} '(x y z) '(4 5 6))  ==>  { 'x 4  'y 5  'z 6 }
+(fold (lambda (f x)
+         (min f x))
+   100
+   '(6 7 8 4 7))                 ==>  4
+(fold (lambda (f x y)
+         (string-append f "/" x y))
+   "X"
+   '("a" "b" "c" "d")
+   '("1" "2" "3" "4"))           ==>  "X/a1/b2/c3/d4"
+
+# Leibniz formula for Pi,
+#  1 - 1/3 + 1/5 - 1/7 + 1/9 - 1/11 + ...
+(let ((N 10000))
+   (define (sign n)
+      (if (zero? (mod n 2)) + -))
+   (fold (lambda (f x i)
+            ((sign i) f (/ #i4 x)))
+      #i4
+      (iota N 3 2)
+      (iota N 1)))               ==>  3.14169264
+```
+
+# foldr
+`(foldr handler state a ...)`, *procedure*
+
+Combine the elements of list(s) from right to left.
+
+```scheme
+(foldr + 0 '(1 2 3))           ==>  6
+(foldr + 7 '(1 2 3))           ==>  13
+(foldr - 7 '(1 2 3))           ==>  -5
+(foldr cons 3 '(5 6 7))        ==>  '(5 6 7 . 3)
+
+# Please note that the order of variables in the lambda is different than in fold!
+(foldr (lambda (x f)
+         (min f x))
+   100
+   '(6 7 8 4 7))               ==>  4
+(foldr (lambda (x y f)
+         (string-append f "/" x y))
+   "X"
+   '("a" "b" "c" "d")
+   '("1" "2" "3" "4"))         ==>  "X/d4/c3/b2/a1"
+   ```
 
 Non functional features
 =======================
