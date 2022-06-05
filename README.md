@@ -25,18 +25,14 @@ but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
 to call code written in another language.
 
-You can use Ol in Linux, Windows, macOS, Android, BSD (and its
-descendants), webOS, Solaris and other operating systems based
+You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
+(Open/Free/Net) BSD, Solaris and other operating systems based
 on various hardware architectures (intel, arm, ppc, mips, etc).
 
 Also, Ol is ported to the Web (in WebAssembly form) and can be
 used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
 Luakit, Iceape, etc.
 
-
-You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
-(Open/Free/Net) BSD, Solaris and other operating systems based
-on various hardware architectures (intel, arm, ppc, mips, etc).
 
 * thx to [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) for the tests.
 
