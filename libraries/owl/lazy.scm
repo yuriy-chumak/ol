@@ -13,7 +13,7 @@
       lfor liota liter lnums
       lzip ltake llast llen ; todo: remove lzip (change to lfold like fold)
       ledit
-      ldrop llref
+      ldrop llref lfind
       lfor-each
       lpair?
       tail uncons
@@ -240,6 +240,16 @@
             (if (eq? val blank)
                (runtime-error "llref: out of list: " p)
                val)))
+
+      (define lfind
+         (define (lfind pred l def)
+            (cond
+               ((null? l) def)
+               ((pred (car l)) (car l))
+               (else (lfind pred (cdr l) def))))
+         (case-lambda
+            ((pred l def) (lfind pred l def))
+            ((pred l) (lfind pred l #false))))
 
       ;; zip, preserves laziness of first argument
       (define (lzip op a b)
