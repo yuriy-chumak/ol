@@ -3,7 +3,8 @@
    ; todo: move fold to srfi-1
    (export
       null
-      for fold foldr
+      fold foldr
+      for ; deprecated
       has? getq last drop-while
       mem
       fold-map foldr-map
@@ -34,6 +35,7 @@
       ; (for st l op) == (fold op st l)
       ; just usually less indentation clutter
 
+      ; deprecated
       (define (for st l op)
          (if (null? l)
             st

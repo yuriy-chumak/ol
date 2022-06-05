@@ -15,9 +15,9 @@
    (begin
       ;; ff of opcode → wrapper
       (define prim-opcodes ;; ff of wrapper-fn → opcode
-         (for empty *primops*
-            (λ (ff node)
-               (put ff (ref node 5) (ref node 2)))))
+         (fold (λ (ff node)
+                  (put ff (ref node 5) (ref node 2)))
+            empty *primops*))
 
       ;; later check type, get first opcode and compare to primop wrapper
       (define (primop-of val)

@@ -162,24 +162,23 @@
             ; 4, fork
             (λ (id cont opts thunk todo done state tc)
                ; (system-println "mcp: interop 4 -- fork")
-               (lets
-                  ((new-id (car opts))
-                   (todo (cons* [new-id thunk] [id (λ () (cont new-id))] todo))
-                   (state
-                      (for state (cdr opts)
-                        (λ (state req)
-                           (cond
-                              ((eq? req 'link)
-                                 ;; forker wants to receive any issues the thread runs into
-                                 (let ((links (get state link-tag empty)))
-                                    (put state link-tag
-                                       (put links new-id (list id)))))
-                              ((eq? req 'mailbox)
-                                 ;; the thread should have a mailbox for communication in state
-                                 (put state new-id qnull))
-                              (else
-                                 (system-println "fork: bad parameter")
-                                 state))))))
+               (lets((new-id (car opts))
+                     (todo (cons* [new-id thunk] [id (λ () (cont new-id))] todo))
+                     (state
+                        (fold (λ (state req)
+                                 (cond
+                                    ((eq? req 'link)
+                                       ;; forker wants to receive any issues the thread runs into
+                                       (let ((links (get state link-tag empty)))
+                                          (put state link-tag
+                                             (put links new-id (list id)))))
+                                    ((eq? req 'mailbox)
+                                       ;; the thread should have a mailbox for communication in state
+                                       (put state new-id qnull))
+                                    (else
+                                       (system-println "fork: bad parameter")
+                                       state)))
+                           state (cdr opts))))
                   (tc todo done state)))
 
             ; 5, user thrown error. (runtime-error ...)

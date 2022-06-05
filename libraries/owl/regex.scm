@@ -139,11 +139,12 @@
       (define (make-ff cs)
          (call/cc
             (λ (ret)
-               (for empty cs
-                  (λ (ff n)
-                     (if (eq? (type n) type-enum+)
-                        (put ff n #true)
-                        (ret #false))))))) ;; code point outside of fixnum range
+               (fold (λ (ff n)
+                        (if (eq? (type n) type-enum+)
+                           (put ff n #true)
+                        else
+                           (ret #false)))
+                  #empty cs)))) ;; code point outside of fixnum range
 
       ;; todo: large ranges would be more efficiently matched with something like interval trees
       (define (make-char-class complement? cs)
@@ -153,16 +154,18 @@
             (complement?
                ;; always use an iff for now in [^...]
                (reject-iff
-                  (for #empty cs
-                     (λ (iff val) (iput iff val #true)))))
+                  (fold (λ (iff val)
+                           (iput iff val #true))
+                     #empty cs)))
             ((null? (cdr cs))
                (imm (car cs)))
             ((make-ff cs) =>
                (λ (ff) (accept-ff ff)))
             (else
                (accept-iff
-                  (for #empty cs
-                     (λ (iff val) (iput iff val #true)))))))
+                  (fold (λ (iff val)
+                           (iput iff val #true))
+                     #empty cs)))))
 
       ;; <ra>|<rb>
       (define (rex-or ra rb)

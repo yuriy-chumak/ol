@@ -295,6 +295,7 @@
 		((eq? gen any-nz) (not (= n 0)))
 		(else (error "type-ok: unknown generator: " gen))))
 
+(define (for state l f) (fold f state l))
 (define (run-cartesian-test nums msg)
 	(print msg)
 	(for 1 nums
