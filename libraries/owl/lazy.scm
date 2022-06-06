@@ -39,9 +39,8 @@
 
       (define (lpair? ll)
          (cond
-            ((null? ll) #f)
             ((pair? ll) ll)
-            (else
+            ((function? ll)
                (lpair? (force ll)))))
 
       (define (lcar ll)
