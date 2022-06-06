@@ -84,16 +84,15 @@
             then
                ;; no threads were waiting for something that is being removed, so tell stderr about it
                (case (ref (ref msg 2) 1)
-                  ; (runtime-error ...)
-                  ('error
+                  ; runtime error or vm error
+                  ((error crashed)
                      (vector-apply (ref msg 2)
-                        (lambda (state continuation reason clarification)
-                           (print-repl-error (list reason clarification)))))
-                  ; vm error
-                  ('crashed
-                     (vector-apply (ref msg 2)
-                        (lambda (state opcode a b)
-                           (print-repl-error (verbose-vm-error opcode a b))))))
+                        (lambda (state code reason clarification)
+                           (print-repl-error
+                              (if (function? code) ; code is continuation
+                                 (list reason clarification)
+                              else ; code is opcode
+                                 (verbose-vm-error code reason clarification)))))))
                      
                (tc todo done (del state id))
             else
@@ -151,7 +150,7 @@
                (drop-delivering todo done state id
                   [id ['finished a b c]] tc))
 
-            ; 3, vm thrown error
+            ; 3, vm thrown internal error (on assert)
             (λ (id a b c todo done state tc)
                ;(system-println "mcp: interop 3 -- vm error")
                ;; set crashed exit value proposal

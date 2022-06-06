@@ -2132,15 +2132,36 @@ word get(word *ff, word key, word def, jmp_buf fail)
 	return def;
 }
 
-// 
-#define FAIL(opcode, a, b) { \
-	D("FAIL AT %s:%d (%s) -> %d/%d/%d", __FILE__, __LINE__, __FUNCTION__, opcode, a, b); \
-	R[4] = I (opcode);\
+// generates 'error
+#define ERROR3(code, a, b) { \
+	D("VM ERROR AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code, a, b); \
+	R[4] = I(code); R[3] = I(5);\
 	R[5] = (word) (a);\
 	R[6] = (word) (b);\
 	goto error; \
 }
-#define CHECK(exp,val,errorcode)    if (!(exp)) FAIL(errorcode, val, ITRUE);
+#define ERROR2(code, a) ERROR3(code, a, INULL)
+#define ERROR_MACRO(_1, _2, _3, NAME, ...) NAME
+#define ERROR(...) ERROR_MACRO(__VA_ARGS__, ERROR3, ERROR2,, NOTHING)(__VA_ARGS__)
+
+#define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
+
+#define FAIL(a,b,c) ERROR(a,b,c)
+
+// generates 'crashed
+#define CRASH3(code, a, b) { \
+	D("VM CRASH AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code, a, b); \
+	R[4] = I(code), R[3] = I(3);\
+	R[5] = (word) (a);\
+	R[6] = (word) (b);\
+	goto error;\
+}
+
+#define CRASH2(code, a) CRASH3(code, a, INULL)
+#define CRASH_MACRO(_1, _2, _3, NAME, ...) NAME
+#define CRASH(...) CRASH_MACRO(__VA_ARGS__, CRASH3, CRASH2,, NOTHING)(__VA_ARGS__)
+
+#define ASSERT(exp, code, a)        if (!(exp)) { CRASH(code, a, INULL) }
 
 #define TICKS                       10000 // # of function calls in a thread quantum
 
@@ -2188,21 +2209,21 @@ apply:;
 		else
 		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
 			// ff assumed to be valid
-			word cont = R[3];
+			word continuation = R[3];
             word key = R[4];
 			switch (acc) {
 			case 2:
-				R[3] = get((word*)this, key,    0, ol->fail); // 0 is NULL
+				R[3] = get((word*)this, key,    0, ol->fail); // 0 is "not found"
 				if (!R[3])
-					FAIL(260, this, key);
+					ERROR(260, this, key);
 				break;
 			case 3:
 				R[3] = get((word*)this, key, R[5], ol->fail);
 				break;
 			default:
-				FAIL(259, this, INULL);
+				ERROR(259, this, I(acc));
 			}
-			this = cont;
+			this = continuation;
 			acc = 1;
 
 			goto apply;
@@ -2233,9 +2254,8 @@ apply:;
 			goto apply;
 		}
 		else
-		if (type != TBYTECODE) {
-			FAIL(258, this, INULL);
-		}
+		if (type != TBYTECODE)
+			CRASH(258, this);
 
 		// А не стоит ли нам переключить поток?
 		if (--ticker < 0) {
@@ -2321,6 +2341,7 @@ apply:;
 
 		goto apply;
 	}
+
 	// done ?
 	if (this == IHALT) {
 		// a thread or mcp is calling the final continuation
@@ -2346,7 +2367,7 @@ apply:;
 		goto done;       // колбек закончен! надо просто выйти наверх
 	}
 	
-	FAIL(261, this, INULL); // not callable
+	CRASH(261, this); // not callable
 
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
@@ -2537,7 +2558,7 @@ loop:;
 		// TODO: JIT!
 		//	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
 		default:
-			FAIL(262, I(op), ITRUE);
+			CRASH(0, I(op));
 		}
 		break;
 
@@ -2548,7 +2569,7 @@ loop:;
 	 */
 	case 19:
 	case 62:
-		FAIL(op, new_string("Unused opcode"), ITRUE);
+		CRASH(0, I(op));
 		break;
 
 	/*! ##### GOTO
@@ -2590,6 +2611,8 @@ loop:;
 			acc -= 2; // ignore function and stop before last one (the list)
 		}
 
+		if (acc < 0)
+			ERROR(APPLY, I(0));
 		while (acc--) { // move explicitly given arguments down by one to correct positions
 			R[reg] = R[reg+1]; // copy args down
 			reg++;
@@ -2598,13 +2621,8 @@ loop:;
 		word *lst = (word *) R[reg+1];
 
 		while (is_pair(lst)) { // unwind argument list
-			// FIXME: unwind only up to last register and add limited rewinding to arity check
-			// тут бага, количество регистров может стать больше, чем надо, и пиздец. todo: исправить!!
-			// todo: исправить с помощью динамического количества регистров!
-			if (reg > NR) { // dummy handling for now
-				// TODO: add changing the size of R array!
-				FAIL(APPLY, new_string("Too large apply"), ITRUE);
-			}
+			if (reg > NR)
+				ERROR(APPLY, I(reg)); // MAYBE: add changing the size of R array?
 			R[reg++] = car (lst);
 			lst = (word *) cdr (lst);
 			arity++;
@@ -2639,7 +2657,8 @@ loop:;
 		R[0] = R[3];
 		ticker = bank ? bank : value (A1);
 		bank = 0;
-		CHECK(is_reference(this), this, RUN);
+		if (!is_reference(this))
+			CRASH(RUN, this);
 
 		word hdr = ref(this, 0);
 		if (value_type (hdr) == TTHREAD) {
@@ -2661,8 +2680,7 @@ loop:;
 	 * Arity Error
 	 */
 	case ARITY_ERROR: // (0%)
-		// TODO: добавить в .scm вывод ошибки четности
-		FAIL(ARITY_ERROR, this, I(acc));
+		ERROR(ARITY_ERROR, this, I(acc));
 		break;
 
 
@@ -3019,7 +3037,7 @@ loop:;
 	// speed version of (ref a 1)
 	case CAR: {  // car a -> r
 		word T = A0;
-		CHECK(CHECKCAR(T), T, CAR);
+		ASSERT(CHECKCAR(T), T, CAR);
 		A1 = car(T);//((word*)T)[1];
 		ip += 2; break;
 	}
@@ -3027,7 +3045,7 @@ loop:;
 	// speed version of (ref a 2)
 	case CDR: {  // cdr a -> r
 		word T = A0;
-		CHECK(CHECKCDR(T), T, CDR);
+		ASSERT(CHECKCDR(T), T, CDR);
 		A1 = cdr(T);//((word*)T)[2];
 		ip += 2; break;
 	}
@@ -4804,7 +4822,6 @@ loop:;
 error:; // R4-R6 set, and call mcp (if any)
 	this = R[0];
 	R[0] = IFALSE;
-	R[3] = I(3); // vm thrown error, check the "threading.scm"
 	if (is_reference(this)) {
 		acc = 4;
 		goto apply;

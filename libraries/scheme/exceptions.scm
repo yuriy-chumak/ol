@@ -29,8 +29,8 @@
 
          ; (raise info)
          ; note, these could easily be made resumable by storing cont
-         (['error cont reason info]
-            (handler info))
+         (['error continuation reason info]
+            (handler (cons reason info)))
 
          (else is foo
             (runtime-error "something wrong" foo))))

@@ -142,6 +142,10 @@
             (async-linked name
                (λ ()
                   (evaluate exp env)))))
+         (define describe-error
+            (env-get env 'describe-vm-error
+               (lambda (opcode a b)
+                  (list "error" opcode "->" a " / " b))))
          (case answer
             ;; evaluated, typical behavior (ok, fail)
             (['finished result]
@@ -151,16 +155,12 @@
             ; (VM::FAIL ...), vm pushed an error
             (['crashed opcode a b]
                ;; (print-to stderr "crashed")
-               (fail ((env-get env 'describe-vm-error
-                        (lambda (opcode a b)
-                           (list "error" opcode "->" a " / " b)))
-                     opcode a b)))
+               (fail (describe-error opcode a b)))
 
             ; (runtime-error ...)
-            ; note, these could easily be made resumable by storing cont
-            (['error cont reason info]
-               ;; (print-to stderr "error")
-               (fail (list reason info)))
+            ; note, these could easily be made resumable if continuation
+            (['error code reason clarification]
+               (fail (describe-error code reason clarification)))
 
             ;; (['breaked]
             ;;    (print-to stderr "breaked")
@@ -236,54 +236,65 @@
             (format-error lst 0)))
 
       (define (verbose-vm-error opcode a b)
-      (list "error" opcode "->"
-         (case opcode
-            (ARITY-ERROR  ;; arity error, could be variable
-               `(function ,a did not accept ,(- b 1) arguments))
-            (52 ; (car not-a-pair)
-               `("trying to get `car` of a non-pair" ,a))
-            (53 ; (cdr not-a-pair)
-               `("trying to get `cdr` of a non-pair" ,a))
+         (define expecting-2-3-arguments "expecting 2-3 arguments, but got")
+         (list "error" opcode "->"
+            (case opcode
+               (0
+                  `(unsupported vm opcode ,a))
+               (20 ; (apply ...)
+                  (if (eq? a 0)
+                     '(empty apply)
+                     '(too large apply)))
+               (50 ; (vm:run ...)
+                  '(invalid vm:run state))
+               (ARITY-ERROR
+                  `(,a did not accept ,(-- b) arguments))
 
-            ((261 258) ; (not-an-executable-object)
-               `("illegal invocation of" ,a))
-            (259 ; (ff)
-               `(,a "is not a procedure"))
-            (260 ; (ff not-existent-key)
-               `("key" ,b "not found in" ,a))
+               (52 ; (car not-a-pair)
+                  `(trying car of a non-pair ,a))
+               (53 ; (cdr not-a-pair)
+                  `(trying cdr of a non-pair ,a))
 
-            ; ------------------------------------------------------------
-            ; syscall errors:
-            (62000
-               `(too ,(if (> a b) 'many 'few) arguments given to syscall))
+               (259 ; ff direct call
+                  `(,expecting-2-3-arguments ,b))
+               (260 ; (ff not-existent-key)
+                  `(key ,b not found in ,a))
 
-            (62001
-               `(syscall argument ,a is not a port))
-            (62002
-               `(syscall argument ,a is not a number))
-            (62003
-               `(syscall argument ,a is not a reference))
-            (62004
-               `(syscall argument ,a is not a binary sequence))
-            (62005
-               `(syscall argument ,a is not a string))
-            (62006
-               `(syscall argument ,a is not a string or port))
-            (62006
-               `(syscall argument ,a is not a positive number))
+               ((261 258) ; (not-an-executable-object)
+                  `(illegal invocation of ,a))
+
+               ; ------------------------------------------------------------
+               ; syscall errors:
+               (62000
+                  `(too ,(if (> a b) 'many 'few) arguments to syscall))
+
+               (62001
+                  `(syscall argument ,a is not a port))
+               (62002
+                  `(syscall argument ,a is not a number))
+               (62003
+                  `(syscall argument ,a is not a reference))
+               (62004
+                  `(syscall argument ,a is not a binary sequence))
+               (62005
+                  `(syscall argument ,a is not a string))
+               (62006
+                  `(syscall argument ,a is not a string or port))
+               (62006
+                  `(syscall argument ,a is not a positive number))
 
 
-            ;; (62000 ; syscall number is not a number
-            ;;    `(syscall "> " ,a is not a number))
-            ;; ;; 0, read
-            ;; (62001 ; too few/many arguments given to
-            ;;    `(syscall "> " too ,(if (> a b) 'many 'few) arguments given to))
-            ;; (62002 ;
-            ;;    `(syscall "> " ,a is not a port))
-            (else
-               (if (less? opcode 256)
-                  `(,(primop-name opcode) reported error ": " ,a " " ,b)
-                  `(,opcode " .. " ,a " " ,b))))))
+               ;; (62000 ; syscall number is not a number
+               ;;    `(syscall "> " ,a is not a number))
+               ;; ;; 0, read
+               ;; (62001 ; too few/many arguments given to
+               ;;    `(syscall "> " too ,(if (> a b) 'many 'few) arguments given to))
+               ;; (62002 ;
+               ;;    `(syscall "> " ,a is not a port))
+               (else
+                  (if (less? opcode 256)
+                     `(,(primop-name opcode) reported error ": " ,a " " ,b)
+                     `(,opcode " .. " ,a " " ,b))))))
       ;   ;((eq? opcode 52)
       ;   ;   `(trying to get car of a non-pair ,a))
       ;   (else
