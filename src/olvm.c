@@ -1,14 +1,17 @@
 /*!# Otus Lisp
- <pre>
- *         Simple purely functional Lisp!
- *                                               `___`
- *  Copyright(c) 2014 - 2022 Yuriy Chumak        (O,O)
- *                                               (  /(
- *                                           - ---"-"--- -
- *      Version 2.3.1
- </pre>
+ * ```
+ *                     small,
+ *         `___`           embeddable
+ *         (O,O)               and
+ *         \)  )            purely
+ *       ---"-"---       functional!
+ * 
+ * Copyright(c) 2014 - 2022 Yuriy Chumak
+ * ```
+ * *Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
  * - - -
- * #### LICENSES
+ *
+ * ## LICENSES
  * You are free to choose an MIT or LGPLv3 license.
  * 
  * * MIT: <br/>
@@ -30,23 +33,12 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *
- * #### BUILD
+ * ## BUILD
  * `make; make install`
  *
- * #### PROJECT PAGE
- *   http://yuriy-chumak.github.io/ol/
- *
- * ##### The parent project - Owl Lisp:
- *   https://gitlab.com/owl-lisp/owl (actual)             </br>
- *   https://code.google.com/p/owl-lisp (historical)
- *
- * ##### Related links:
- *   http://people.csail.mit.edu/jaffer/Scheme            </br>
- *   http://srfi.schemers.org/                            </br>
- *   http://groups.csail.mit.edu/mac/projects/scheme/     </br>
- *   http://www.s48.org/                                  </br>
- *   http://www.call-cc.org/                              </br>
- *   http://www.scheme.com/tspl4/                         </br>
+ * ## THE PROJECT
+ * - https://github.com/yuriy-chumak/ol
+ * - https://yuriy-chumak.github.io/ol/
  */
 
 #ifndef __OLVM_H__
@@ -963,7 +955,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	define offsetof __builtin_offsetof
 # endif
 #endif
-
 
 #if GCC_VERSION < 40500
 #	define __builtin_unreachable() do { \
@@ -2504,22 +2495,22 @@ mainloop:;
 	// ENTRY LOOP POINT
 	int op; //operation to execute
 loop:;
-	/*! #### OLVM Codes
+	/*! ### OLVM Codes
 	 * 
-	 * |   #  | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
+	 * | #o/8 | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
 	 * |:-----|:----------:|:---------:|:-------:|:-----:|:-------:|:-------:|:--------:|:------:|
 	 * |**0o**| JIT        | REFI      | GOTO    | CLOS  |  -----  | MOV2    |  ------  |  ----  |
-	 * |**1o**| JEQ        | MOVE      | set-ref+| JAF   | JAFX    | LD+     | LD       | TYPE   |
-	 * |**2o**| JP         |ARITY-ERROR| vm:make+|  ---  | APPLY   | NOP     | CAST     | NEW    |
+	 * |**1o**| JEQ        | MOVE      | set-ref*| JAF   | JAFX    | LD*     | LD       | TYPE   |
+	 * |**2o**| JP         |ARITY-ERROR| vm:make*|  ---  | APPLY   | NOP     | CAST     | NEW    |
 	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION | FEATURES| VMAX     | VSIZE  |
 	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE    | EXIT    | ADD      | MUL    |
 	 * |**5o**| SUB        | FF:RED?   | FF:BLACK| SET!  | LESS?   |  -----  | FF:TOGGLE| REF    |
 	 * |**6o**|  --------  | FF:APPLY  | RUN     | CONS  | CAR     | CDR     | EQ?      | AND    |
 	 * |**7o**| IOR        | XOR       | SHR     | SHL   | UNPIN   | CLOCK   |  ------  | SYSCALL|
 	 * 
-	 * * set-ref+: `set-ref`, `set-ref!`
-	 * * vm:make+: `vm:make`, `vm:alloc`
-	 * * LD+: `LDE`, `LDN`, `LDT`, `LDF`
+	 * * set-ref*: `set-ref`, `set-ref!`
+	 * * vm:make*: `vm:make`, `vm:alloc`
+	 * * LD*: `LDE`, `LDN`, `LDT`, `LDF`
 	 */
 	switch ((op = *ip++) & 0x3F) {
 	/*! ##### JIT
@@ -5570,4 +5561,14 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
 }
 
 
+/*!
+ *
+ * ## Related links:
+ * - http://people.csail.mit.edu/jaffer/Scheme
+ * - http://srfi.schemers.org/
+ * - http://groups.csail.mit.edu/mac/projects/scheme/
+ * - http://www.s48.org/
+ * - http://www.call-cc.org/
+ * - http://www.scheme.com/tspl4/
+ */
 #endif//__OLVM_C__
