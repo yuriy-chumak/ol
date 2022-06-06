@@ -2555,10 +2555,8 @@ loop:;
 	 * * LD*: `LDE`, `LDN`, `LDT`, `LDF`
 	 */
 	switch ((op = *ip++) & 0x3F) {
-	/*! ##### JIT
+	/*! #### JIT
 	 * Reserved for feature use.
-	 * 
-	 * Throws 262 error code.
 	 */
 	case 0:
 		op = (ip[0] << 8) | ip[1]; // big endian
@@ -2572,7 +2570,7 @@ loop:;
 		}
 		break;
 
-	/*! ##### 48, 62: Unused numbers
+	/*! #### 19, 62: Unused numbers
 	 * Reserved for feature use.
 	 * 
 	 * Throws "Invalid opcode" error.
@@ -2582,14 +2580,14 @@ loop:;
 		CRASH(0, I(op));
 		break;
 
-	/*! ##### GOTO
+	/*! #### GOTO
 	 */
 	case GOTO: // (10%)
 		this = A0;
 		acc = ip[1];
 		goto apply;
 
-	/*! ##### RET
+	/*! #### RET
 	 */
 	case RET: // (3%) return value
 		this = R[3];
@@ -2597,13 +2595,13 @@ loop:;
 		acc = 1;
 		goto apply;
 
-	/*! ##### NOP
+	/*! #### NOP
 	 * No OPeration
 	 */
 	case NOP:
 		break;
 
-	/*! ##### apply
+	/*! #### APPLY
 	 */
 	// todo:? include apply-tuple, apply-values? and apply-ff to the APPLY
 	case APPLY: { // (0%)
@@ -2634,7 +2632,7 @@ loop:;
 			if (reg > NR)
 				ERROR(APPLY, I(reg)); // MAYBE: add changing the size of R array?
 			R[reg++] = car (lst);
-			lst = (word *) cdr (lst);
+			lst = (word *) cdr(lst);
 			arity++;
 		}
 		acc = arity;
@@ -2642,7 +2640,7 @@ loop:;
 		goto apply;
 	}
 
-	/*! ##### MCP
+	/*! #### MCP
 	 */
 	// do mcp operation with continuation
 	case MCP: // (1%) sys continuation op arg1 arg2
@@ -2656,7 +2654,7 @@ loop:;
 
 		goto apply;
 
-	/*! ##### RUN
+	/*! #### RUN
 	 */
 	case RUN: { // (1%) run thunk quantum
 	// the type of quantum is ignored, for now.
@@ -2686,7 +2684,7 @@ loop:;
 
 		goto apply;
 	}
-	/*! ##### ARITY_ERROR
+	/*! #### ARITY_ERROR
 	 * Arity Error
 	 */
 	case ARITY_ERROR: // (0%)
@@ -2698,7 +2696,7 @@ loop:;
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
 
-	/*! ##### LDI r (LDE, LDN, LDT, LDF)
+	/*! #### LDI r (LDE, LDN, LDT, LDF)
 	 * - LDE Store `#empty` into register `r`
 	 * - LDN Store `#null` into register `r`
 	 * - LDT Store `#true` into register `r`
@@ -2710,7 +2708,7 @@ loop:;
 		A0 = I[op>>6];
 		ip += 1; break;
 	}
-	/*! ##### LD b r
+	/*! #### LD b r
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
 	case LD: // (5%)
@@ -2718,20 +2716,20 @@ loop:;
 		ip += 2; break;
 
 
-	/*! ##### REFI a p t
+	/*! #### REFI a p t
 	 * Rt = (ref R[a] R[p]), p is unsinged
 	 */
 	case REFI: { // (24%)
 		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
 		ip += 3; break;
 	}
-	/*! ##### MOVE a t
+	/*! #### MOVE a t
 	 * Rt = Ra
 	 */
 	case MOVE: // (3%)
 		A1 = A0;
 		ip += 2; break;
-	/*! ##### MOV2 a1 t1 a2 t2
+	/*! #### MOV2 a1 t1 a2 t2
 	 * Rt1 = Ra1,
 	 * Rt2 = Ra2
 	 */
@@ -2742,7 +2740,7 @@ loop:;
 	// todo: add MOV3?
 
 	// условные переходы
-	/*! ##### JEQ a b o
+	/*! #### JEQ a b o
 	 * Jump to ip+o if a == b, o is a two-byte binary value
 	 */
 	case JEQ: // (5%) jeq a b o, extended jump
@@ -2750,7 +2748,7 @@ loop:;
 			ip += (ip[3] << 8) + ip[2]; // little-endian
 		ip += 4; break;
 
-	/*! ##### JP a o (JZ, JN, JT, JF)
+	/*! #### JP a o (JZ, JN, JT, JF)
 	 * - JZ, jump if a == 0
 	 * - JN, jump if a == #null
 	 * - JE, jump if a == #empty
@@ -3385,7 +3383,8 @@ loop:;
 	/*! #### OLVM Syscalls
 	 * `(syscall number ...) -> val|ref`
 	 *
-	 * Otus Lisp provides access to the some operation system functions.
+	 * A system call is the way in which an Ol requests a service
+	 * from the operating system on which it is executed.
 	 *
 	 */
 	// http://docs.cs.up.ac.za/programming/asm/derick_tut/syscalls.html (32-bit)

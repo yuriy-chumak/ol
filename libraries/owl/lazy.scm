@@ -46,12 +46,12 @@
       (define (lcar ll)
          (if (pair? ll)
             (car ll)
-            (lcar (ll))))
+            (lcar (force ll))))
 
       (define (lcdr ll)
          (if (pair? ll)
             (cdr ll)
-            (lcdr (ll))))
+            (lcdr (force ll))))
 
       (define (tail l)
          (cond
