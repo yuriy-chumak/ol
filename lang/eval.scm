@@ -12,7 +12,7 @@
       repl-loop
       repl
       print-repl-error
-      verbose-vm-error
+      verbose-ol-error
       bind-toplevel
       library-import                ; env exps fail-cont → env' | (fail-cont <reason>)
       *src-olvm*
@@ -143,7 +143,8 @@
                (λ ()
                   (evaluate exp env)))))
          (define describe-error
-            (env-get env 'describe-vm-error
+            (env-get env 'describe-ol-error
+               ; empty error printer:
                (lambda (opcode a b)
                   (list "error" opcode "->" a " / " b))))
          (case answer
@@ -235,66 +236,69 @@
          (write-bytes error-port
             (format-error lst 0)))
 
-      (define (verbose-vm-error opcode a b)
+      (define (verbose-ol-error code a b)
          (define expecting-2-3-arguments "expecting 2-3 arguments, but got")
-         (list "error" opcode "->"
-            (case opcode
-               (0
-                  `(unsupported vm opcode ,a))
-               (20 ; (apply ...)
-                  (if (eq? a 0)
-                     '(empty apply)
-                     '(too large apply)))
-               (50 ; (vm:run ...)
-                  '(invalid vm:run state))
-               (ARITY-ERROR
-                  `(,a did not accept ,(-- b) arguments))
+         (if (function? code) ; continuation?
+            (list a b)
+         else
+            (list "error" code "->"
+               (case code
+                  (0
+                     `(unsupported vm code ,a))
+                  (20 ; (apply ...)
+                     (if (eq? a 0)
+                        '(empty apply)
+                        '(too large apply)))
+                  (50 ; (vm:run ...)
+                     '(invalid vm:run state))
+                  (ARITY-ERROR
+                     `(,a did not accept ,(-- b) arguments))
 
-               (52 ; (car not-a-pair)
-                  `(trying car of a non-pair ,a))
-               (53 ; (cdr not-a-pair)
-                  `(trying cdr of a non-pair ,a))
+                  (52 ; (car not-a-pair)
+                     `(trying car of a non-pair ,a))
+                  (53 ; (cdr not-a-pair)
+                     `(trying cdr of a non-pair ,a))
 
-               (259 ; ff direct call
-                  `(,expecting-2-3-arguments ,b))
-               (260 ; (ff not-existent-key)
-                  `(key ,b not found in ,a))
+                  (259 ; ff direct call
+                     `(,expecting-2-3-arguments ,b))
+                  (260 ; (ff not-existent-key)
+                     `(key ,b not found in ,a))
 
-               ((261 258) ; (not-an-executable-object)
-                  `(illegal invocation of ,a))
+                  ((261 258) ; (not-an-executable-object)
+                     `(illegal invocation of ,a))
 
-               ; ------------------------------------------------------------
-               ; syscall errors:
-               (62000
-                  `(too ,(if (> a b) 'many 'few) arguments to syscall))
+                  ; ------------------------------------------------------------
+                  ; syscall errors:
+                  (62000
+                     `(too ,(if (> a b) 'many 'few) arguments to syscall))
 
-               (62001
-                  `(syscall argument ,a is not a port))
-               (62002
-                  `(syscall argument ,a is not a number))
-               (62003
-                  `(syscall argument ,a is not a reference))
-               (62004
-                  `(syscall argument ,a is not a binary sequence))
-               (62005
-                  `(syscall argument ,a is not a string))
-               (62006
-                  `(syscall argument ,a is not a string or port))
-               (62006
-                  `(syscall argument ,a is not a positive number))
+                  (62001
+                     `(syscall argument ,a is not a port))
+                  (62002
+                     `(syscall argument ,a is not a number))
+                  (62003
+                     `(syscall argument ,a is not a reference))
+                  (62004
+                     `(syscall argument ,a is not a binary sequence))
+                  (62005
+                     `(syscall argument ,a is not a string))
+                  (62006
+                     `(syscall argument ,a is not a string or port))
+                  (62006
+                     `(syscall argument ,a is not a positive number))
 
 
-               ;; (62000 ; syscall number is not a number
-               ;;    `(syscall "> " ,a is not a number))
-               ;; ;; 0, read
-               ;; (62001 ; too few/many arguments given to
-               ;;    `(syscall "> " too ,(if (> a b) 'many 'few) arguments given to))
-               ;; (62002 ;
-               ;;    `(syscall "> " ,a is not a port))
-               (else
-                  (if (less? opcode 256)
-                     `(,(primop-name opcode) reported error ": " ,a " " ,b)
-                     `(,opcode " .. " ,a " " ,b))))))
+                  ;; (62000 ; syscall number is not a number
+                  ;;    `(syscall "> " ,a is not a number))
+                  ;; ;; 0, read
+                  ;; (62001 ; too few/many arguments given to
+                  ;;    `(syscall "> " too ,(if (> a b) 'many 'few) arguments given to))
+                  ;; (62002 ;
+                  ;;    `(syscall "> " ,a is not a port))
+                  (else
+                     (if (less? code 256)
+                        `(,(primop-name code) reported error ": " ,a " " ,b)
+                        `(,code " .. " ,a " " ,b)))))))
       ;   ;((eq? opcode 52)
       ;   ;   `(trying to get car of a non-pair ,a))
       ;   (else

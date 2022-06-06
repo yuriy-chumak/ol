@@ -314,7 +314,7 @@
                                                                      (string->symbol (ref uname 5)))) ; Platform
                                                                *features*))))
                                           *features*))
-                     (cons 'describe-vm-error verbose-vm-error)
+                     (cons 'describe-ol-error verbose-ol-error)
                      ;(cons '*scheme* 'r7rs)
                      (cons '*sandbox* sandbox?)))))
          ; go:

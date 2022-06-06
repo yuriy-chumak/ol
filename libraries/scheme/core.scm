@@ -1726,7 +1726,7 @@
       (define (raise obj)
          (call-with-current-continuation
             (lambda (resume)
-               (vm:mcp resume 5 "runtime-error:" obj))))
+               (vm:mcp resume 5 'runtime-error obj))))
       ; procedure:  (raise-continuable obj)  * temporary is equal to 'raise'
       (define raise-continuable raise)
 
