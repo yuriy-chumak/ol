@@ -1365,6 +1365,17 @@ void E(char* format, ...)
 				(void)write(fd, "0123456789" + (d / i) % 10, 1);
 			break;
 		}
+		case 'p': {
+			word p = va_arg(args, word);
+			(void)write(fd, "0x", 2);
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+			for (int i = 0; i < sizeof(word)*8; i += 4)
+#else
+			for (int i = sizeof(word)*8 - 4; i >= 0; i -= 4)
+#endif
+				(void)write(fd, "0123456789abcdef" + ((p >> i) & 0xF), 1);
+			break;
+		}
 		default:
 			(void)write(fd, format-1, sizeof(char));
 		}
