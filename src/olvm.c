@@ -2333,12 +2333,22 @@ apply:;
 		goto mainloop; // let's execute
 	}
 
-	// running ff's ?
-	if (this == IEMPTY && acc > 1) { /* ff application: (#empty key def) -> def */
-		this = R[3];                 /* call cont */
-		R[3] = (acc > 2) ? R[5] : IFALSE;  /* default arg or false if none */
+	// ff call ({} key def) -> def
+	if (this == IEMPTY) {
+		word continuation = R[3];
+        word key = R[4];
+		switch (acc) {
+		case 2:
+			ERROR(260, this, key); // key
+			break;
+		case 3:
+			R[3] = R[5];           // default value
+			break;
+		default:
+			ERROR(259, this, I(acc));
+		}
+		this = continuation;
 		acc = 1;
-
 		goto apply;
 	}
 
