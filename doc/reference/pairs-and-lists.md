@@ -430,12 +430,19 @@ The `map` function uses the per-element results to create a new list.
 
 ```scheme
 (map - '(1 2 3))                 ==>  '(-1 -2 -3)
+(map sqrt '(1 4 9 16))           ==>  '(1 2 3 4)
 (map (lambda (n i)
         ((if (zero? (mod i 2)) + -) n))
    '(1 3 5 7 9)
    '(1 2 3 4 5))                 ==>  '(-1 3 -5 7 -9)
 (map (lambda (n) (/ 1 n))
    (iota 5 1 2))                 ==>  '(1 1/3 1/5 1/7 1/9)
+(map (lambda (i p)
+        (string-append i p))
+   '("peanuts" "popcorn" "crackerjack")
+   '("!" "?" "^"))               ==>  '("peanuts!" "popcorn?" "crackerjack^")
+(map car '(
+   (1 . 2) (3 . 4) (5 . 6)))     ==>  '(1 3 5)
 ```
 
 # fold
