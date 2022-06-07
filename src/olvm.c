@@ -1004,8 +1004,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
 #	define SYSCALL_GETRLIMIT 0
 // qemu for windows: https://qemu.weilnetz.de/
-// linux for qemu:   https://buildroot.uclibc.org/
 // images for qemu:  https://4pda.ru/forum/index.php?showtopic=318284
+
 #endif
 
 #ifdef __APPLE__
@@ -1274,6 +1274,11 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	endif
 #	include "unistd-ext.h"  // own win32 implementation
 #	include "stdlib-ext.h"  // own win32 implementation
+
+// we'r not using win32 ERROR (which is 0), we are using own macro
+#	ifdef ERROR
+#	undef ERROR
+#	endif
 #endif
 
 #if HAS_SENDFILE
@@ -2133,33 +2138,27 @@ word get(word *ff, word key, word def, jmp_buf fail)
 }
 
 // generates 'error
-#define ERROR3(code, a, b) { \
-	D("VM ERROR AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code, a, b); \
-	R[4] = I(code); R[3] = I(5);\
+#define ERROR5(type,value, code,a,b) { \
+	D("VM " type " AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code,a,b); \
+	R[4] = I(code); R[3] = I(value);\
 	R[5] = (word) (a);\
 	R[6] = (word) (b);\
 	goto error; \
 }
-#define ERROR2(code, a) ERROR3(code, a, INULL)
 #define ERROR_MACRO(_1, _2, _3, NAME, ...) NAME
+
+#define ERROR3(code, a, b) ERROR5("ERROR", 5, code,a,b)
+#define ERROR2(code, a) ERROR3(code, a, INULL)
 #define ERROR(...) ERROR_MACRO(__VA_ARGS__, ERROR3, ERROR2,, NOTHING)(__VA_ARGS__)
 
-#define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
+#define CRASH3(code, a, b) ERROR5("CRASH",3, code,a,b)
+#define CRASH2(code, a) CRASH3(code, a, INULL)
+#define CRASH(...) ERROR_MACRO(__VA_ARGS__, CRASH3, CRASH2,, NOTHING)(__VA_ARGS__)
 
+#define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
 #define FAIL(a,b,c) ERROR(a,b,c)
 
 // generates 'crashed
-#define CRASH3(code, a, b) { \
-	D("VM CRASH AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code, a, b); \
-	R[4] = I(code), R[3] = I(3);\
-	R[5] = (word) (a);\
-	R[6] = (word) (b);\
-	goto error;\
-}
-
-#define CRASH2(code, a) CRASH3(code, a, INULL)
-#define CRASH_MACRO(_1, _2, _3, NAME, ...) NAME
-#define CRASH(...) CRASH_MACRO(__VA_ARGS__, CRASH3, CRASH2,, NOTHING)(__VA_ARGS__)
 
 #define ASSERT(exp, code, a)        if (!(exp)) { CRASH(code, a, INULL) }
 
