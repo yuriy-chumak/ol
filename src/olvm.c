@@ -2194,18 +2194,20 @@ word runtime(struct olvm_t* ol)
 	// runtime entry
 apply:;
 
-	if (is_reference(this)) { // если это аллоцированный объект
+	// if it's an allocated object, not a value:
+	if (is_reference(this)) {
 		word type = reference_type (this);
-		if (type == TPROC) { //hdr == header(TPROC, 0)) { // proc (58% for "yes")
-			R[1] = this; this = car(this); // ob = car(ob)
+		if (type == TCLOS) { // closure, (66% for "yes")
+			R[1] = this; this = car(this);
+			R[2] = this; this = car(this);
 		}
 		else
-		if (type == TCLOS) { //hdr == header(TCLOS, 0)) { // clos (66% for "yes")
-			R[1] = this; this = car(this); // ob = car(ob)
-			R[2] = this; this = car(this); // ob = car(ob)
+		if (type == TPROC) { // procedure, (58% for "yes")
+			R[1] = this; this = car(this);
 		}
 		else
-		if ((type & 0x3C) == TFF) { // low bits have special meaning (95% for "no")
+		// low bits have special meaning
+		if ((type & 0x3C) == TFF) { // (95% for "no")
 			// ff assumed to be valid
 			word continuation = R[3];
             word key = R[4];
@@ -2260,7 +2262,8 @@ apply:;
 			// время потока вышло, переключим на следующий
 			ticker = TICKS;
 
-			if (R[0] != IFALSE) { // if mcp present:
+			// if mcp present,
+			if (R[0] != IFALSE) {
 				// save vm state and enter mcp cont at R0!
 				bank = 0;
 				acc += 4;
@@ -2558,14 +2561,19 @@ loop:;
 		}
 		break;
 
-	/*! #### 19, 62: Unused numbers
+	/*! #### Unused numbers
 	 * Reserved for feature use.
 	 * 
 	 * Throws "Invalid opcode" error.
 	 */
-	case 19:
-	case 62:
+	default:
 		CRASH(0, I(op));
+		break;
+
+	/*! #### NOP
+	 * No OPeration
+	 */
+	case NOP:
 		break;
 
 	/*! #### GOTO
@@ -2583,34 +2591,27 @@ loop:;
 		acc = 1;
 		goto apply;
 
-	/*! #### NOP
-	 * No OPeration
-	 */
-	case NOP:
-		break;
-
 	/*! #### APPLY
 	 */
 	// todo:? include apply-tuple, apply-values? and apply-ff to the APPLY
 	case APPLY: { // (0%)
-		int reg, arity;
-		if (op == APPLY) { // normal apply: cont=r3, fn=r4, a0=r5,
-			reg = 4; // include cont
-			arity = 1;
-			this = R[reg];
-			acc -= 3; // ignore cont, function and stop before last one (the list)
-		}
-		else { // apply-cont (_sans_cps apply): func=r3, a0=r4,
-			reg = 3; // include cont
+		int reg = 4;   // normal apply: cont=r3, func=r4, a0=r5,
+		int arity = 1;
+		acc -= 3; // ignore cont, function and stop before last one (the list)
+
+		if (op == APPLYCONT) {    // (_sans_cps apply): func=r3, a0=r4
+			reg = 3;
 			arity = 0;
-			this = R[reg];
-			acc -= 2; // ignore function and stop before last one (the list)
+			acc += 1;
 		}
 
 		if (acc < 0)
 			ERROR(APPLY, I(0));
+		this = R[reg];
+
+		// copy args down
 		while (acc--) { // move explicitly given arguments down by one to correct positions
-			R[reg] = R[reg+1]; // copy args down
+			R[reg] = R[reg+1];
 			reg++;
 			arity++;
 		}
@@ -2751,6 +2752,7 @@ loop:;
 	}
 
 	// (13%) for JAF and JAFX
+	// NOTE: Do not combine JAF and JAFX for the gods of speed!
 	case JAF: {
 		long arity = ip[0];
 		if (acc != arity)
@@ -2758,6 +2760,7 @@ loop:;
 
 		ip += 3; break;
 	}
+
 	// additionally packs extra arguments list
 	case JAFX: {
 		long arity = ip[0];
@@ -4803,15 +4806,11 @@ loop:;
 		ip += 2; break;
 	}
 
-	case VMEXIT: {
+	// (vm:exit value)
+	case VMEXIT:
 		this = R[3];
 		R[3] = A0;
 		goto done;
-	}
-
-	default:
-		FAIL(op, new_string("Invalid opcode"), ITRUE);
-		break;
 	}
 	goto loop;
 
