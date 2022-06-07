@@ -2386,7 +2386,8 @@ mainloop:;
 
 	// управляющие команды
 	#	define NOP   21
-	#	define APPLY 20 // apply-cont = 20+64
+	#	define APPLY 20
+	#	  define APPLYCONT (APPLY + 1*64)
 	#	define RET   24
 	#	define RUN   50
 	#	define ARITY_ERROR 17
