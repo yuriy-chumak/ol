@@ -1721,14 +1721,9 @@
       ; 6.11  Exceptions
 
       ; procedure:  (with-exception-handler handler thunk)  * (scheme exceptions)
-
-      ; procedure:  (raise obj)
-      (define (raise obj)
-         (call-with-current-continuation
-            (lambda (resume)
-               (vm:mcp resume 5 'runtime-error obj))))
-      ; procedure:  (raise-continuable obj)  * temporary is equal to 'raise'
-      (define raise-continuable raise)
+      ; procedure:  (raise obj) * (scheme exceptions)
+      ; procedure:  (raise-continuable obj)  * (scheme exceptions)
+      ;  note: temporary is equal to 'raise'
 
       ; procedure:  (error message obj ...)
       ; procedure:  (error-object? obj)
@@ -1982,15 +1977,7 @@
       call-with-current-continuation call/cc
       call-with-values
       
-      ; 6.11  Exceptions
-      ; with-exception-handler  * (scheme exceptions)
-      raise raise-continuable
-      ; error
-      ; error-object?
-      ; error-object-message
-      ; error-object-irritants
-      ; read-error?
-      ; file-error?
+      ; 6.11  Exceptions                         * (scheme exceptions)
 
       ; ----------------------------
       list length append reverse

@@ -253,6 +253,7 @@
       (scheme vector)
       (scheme bytevector)
       (scheme string)
+      (scheme exceptions)
       ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (coroutines required)
       (owl io) (owl math) (owl math-extra)
       (scheme inexact)

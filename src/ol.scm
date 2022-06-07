@@ -54,6 +54,7 @@
 (import (lang env))
 (import (lang macro))
 (import (lang sexp))
+(import (lang error))
 
 (import (lang ast))
 (import (lang fixedpoint))

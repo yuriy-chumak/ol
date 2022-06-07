@@ -2,6 +2,7 @@
 (import
    (scheme core)
    (scheme bytevector)
+   (scheme exceptions)
    (lib gl config)
    (lib gl)
    (OpenGL version-2-1))

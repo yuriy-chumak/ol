@@ -26,6 +26,7 @@
       (owl string)
       (owl render)
       (lang env) (lang eval)
+      (lang error)
       (owl io))
 
    (begin
