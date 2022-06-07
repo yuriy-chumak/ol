@@ -2137,7 +2137,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 	return def;
 }
 
-// generates 'error
+// generate errors and crashes
 #define ERROR5(type,value, code,a,b) { \
 	D("VM " type " AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code,a,b); \
 	R[4] = I(code); R[3] = I(value);\
@@ -2156,13 +2156,12 @@ word get(word *ff, word key, word def, jmp_buf fail)
 #define CRASH(...) ERROR_MACRO(__VA_ARGS__, CRASH3, CRASH2,, NOTHING)(__VA_ARGS__)
 
 #define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
-#define FAIL(a,b,c) ERROR(a,b,c)
+#define FAIL(a,b,c) ERROR(a,b,c)    // deprecated
 
-// generates 'crashed
+#define ASSERT(exp, code, a)        if (!(exp)) CRASH(code, a, INULL);
 
-#define ASSERT(exp, code, a)        if (!(exp)) { CRASH(code, a, INULL) }
-
-#define TICKS                       10000 // # of function calls in a thread quantum
+// # of function calls in a thread quantum
+#define TICKS                       10000
 
 #define A0                          R[ip[0]]
 #define A1                          R[ip[1]]
@@ -2260,16 +2259,6 @@ apply:;
 		if (--ticker < 0) {
 			// время потока вышло, переключим на следующий
 			ticker = TICKS;
-
-#			ifdef __EMSCRIPTEN__
-			{
-			//	static int cntr = 100; // magic number for counter
-			//	if (cntr-- == 0) {
-			//		emscripten_sleep(1);
-			//		cntr = 100;
-			//	}
-			}
-#			endif
 
 			if (R[0] != IFALSE) { // if mcp present:
 				// save vm state and enter mcp cont at R0!
@@ -3626,7 +3615,7 @@ loop:;
 			}
 
 			/*! \subsection lseek
-			* \brief 4: (lseek port offset whence) -> offset|#f
+			* \brief 8: (lseek port offset whence) -> offset|#f
 			*
 			* Reposition read/write file offset
 			*
@@ -5199,7 +5188,7 @@ int main(int argc, char** argv)
 #ifndef PREFIX
 #define PREFIX "/usr"
 #endif
-	setenv("OL_HOME", PREFIX "/lib/ol", 0);
+	setenv("OL_HOME", PREFIX "/lib/ol", 0); // don't overwrite
 
 	OL* olvm = OLVM_new(bootstrap);
 	if (bootstrap != language) // was previously malloc'ed
