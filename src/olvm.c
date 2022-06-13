@@ -2487,17 +2487,21 @@ mainloop:;
 
 	#		ifndef SYSCALL_IOCTL
 	#		define SYSCALL_IOCTL 16
-	#		endif
+	#		endif//
+
 	#		define SYSCALL_IOCTL_TIOCGETA 19
 
 	#		ifndef SYSCALL_PIPE
 	#		define SYSCALL_PIPE 22
-	#		endif
+	#		endif//
+
 	#		define SYSCALL_YIELD 24
 
+	#		ifndef SYSCALL_SLEEP
 	#		define SYSCALL_SLEEP 35
-	#		define SYSCALL_SENDFILE 40
+	#		endif//
 
+	#		define SYSCALL_SENDFILE 40
 	#		define SYSCALL_EXIT 60
 	#		define SYSCALL_GETDENTS 78
 	#		define SYSCALL_CHDIR 80
