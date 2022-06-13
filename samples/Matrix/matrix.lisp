@@ -18,30 +18,25 @@
 ;(define DEFAULT-GLOWRATE 10)
 
 ; defaults
-(define config (pairs->ff (list
-   (cons 'density  20)
-   (cons 'glowrate 10))))
+(define config {
+   'density  20
+   'glowrate 10
+})
 
 
 (define (ne? x y)
    (not (eq? x y)))
 
-(define (ith vector i)
-   (ref vector (+ i 1)))
-;   (if (eq? i 0) vector
-;      (ith (cdr vector) (- i 1))))
-
+(define ith vector-ref)
 
 (define (create-scalar value)
    (cons value null))
 (define (create-vector size)
-   (list->vector (repeat 0 size)))
+   (make-vector size 0))
 (define (create-matrix size-x size-y)
-   (list->vector
-   (let loop ((n size-y) (out null))
-      (if (eq? n 0)
-         out
-         (loop (- n 1) (cons (list->vector (repeat 0 size-x)) out))))))
+   (vector-map (lambda (_)
+                  (create-vector size-x))
+      (make-vector size-y)))
 
 (define (get-value scalar)
    (car scalar))
@@ -68,21 +63,23 @@
 
 (define glyphs (create-matrix WIDTH HEIGHT))
 (define glows  (create-matrix WIDTH HEIGHT))
-(define spinners (create-matrix WIDTH HEIGHT))
 
-(define cells (pairs->ff (list
+(define cells {
 ;   (cons 'glyph     (create-matrix WIDTH HEIGHT))
 ;   (cons 'glow      (create-matrix WIDTH HEIGHT))
-   (cons 'spinner   (create-matrix WIDTH HEIGHT))))) ; 1/0
+   'spinner   (create-matrix WIDTH HEIGHT) ; 1/0
+})
 
-(define feeders (pairs->ff (list
-   (cons 'y         (create-vector WIDTH)))))
+(define feeders {
+   'y (create-vector WIDTH)
+})
 (define remainings (create-vector WIDTH))
 (define throttles (create-vector WIDTH))
 
-(define spinners (pairs->ff (list
-   (cons 'x (create-vector 101))
-   (cons 'y (create-vector 101)))))
+(define spinners {
+   'x (create-vector 101)
+   'y (create-vector 101)
+})
 
 (define density (create-scalar (getf config 'density)))
 
@@ -91,15 +88,14 @@
 (define (create_spinner i)
 (let ((x (rand! WIDTH))
       (y (rand! HEIGHT)))
-;   (print "create new spinner " i "(" x "," y ")")
-   (setx! (getf spinners 'x) i x)
-   (setx! (getf spinners 'y) i y)
-   (setx! (getf cells 'spinner) x y 1)))
+   (setx! (spinners 'x) i x)
+   (setx! (spinners 'y) i y)
+   (setx! (cells 'spinner) x y 1)))
 
 (define (clear_spinner i)
-(let ((x (get-vector-value (getf spinners 'x) i))
-      (y (get-vector-value (getf spinners 'y) i)))
-   (setx! (getf cells 'spinner) x y  0)))
+(let ((x (get-vector-value (spinners 'x) i))
+      (y (get-vector-value (spinners 'y) i)))
+   (setx! (cells 'spinner) x y  0)))
 
 
 (define spinners_length (create-scalar 0))
@@ -130,47 +126,47 @@
 (let ((bottom_feeder_p (>= y 0)))
 (let ((y (if bottom_feeder_p
             y
-            (begin
-               (let loop ((y (- HEIGHT 1)))
-                  (if (eq? y 0)
-                     0
-                     (begin
-                        (if (and
-                              PHOSPHOR-ENABLED
-                              (ne? (get-matrix-value (getf cells 'glyph) x y) 0)
-                              (eq? (get-matrix-value (getf cells 'glyph) x (- y 1)) 0))
-                           (setx! (getf cells 'glow) x y -1)
-                           (begin
-                              (setx! (getf cells 'glow ) x y (get-matrix-value (getf cells 'glow ) x (- y 1)))
-                              (setx! (getf cells 'glyph) x y (get-matrix-value (getf cells 'glyph) x (- y 1)))))
-                        (loop (- y 1)))))))))
+         else
+            (let loop ((y (- HEIGHT 1)))
+               (if (eq? y 0)
+                  0
+               else
+                  (if (and
+                        PHOSPHOR-ENABLED
+                        (ne? (get-matrix-value (cells 'glyph) x y) 0)
+                        (eq? (get-matrix-value (cells 'glyph) x (- y 1)) 0))
+                     (setx! (cells 'glow) x y -1)
+                  else
+                     (setx! (cells 'glow ) x y (get-matrix-value (cells 'glow ) x (- y 1)))
+                     (setx! (cells 'glyph) x y (get-matrix-value (cells 'glyph) x (- y 1))))
+                  (loop (- y 1)))))))
 
-   (setx! (getf cells 'glyph) x y glyph)
+   (setx! (cells 'glyph) x y glyph)
 
    (if (eq? glyph 0)
       (if bottom_feeder_p
-         (setx! (getf cells 'glow ) x y (+ 1 (rand! 2)))
-         (setx! (getf cells 'glow ) x y 0))))))
+         (setx! (cells 'glow ) x y (+ 1 (rand! 2)))
+         (setx! (cells 'glow ) x y 0))))))
 
 (define (insert_glyph glyph x y)
 (if (< y HEIGHT)
 (let ((bottom_feeder_p (>= y 0)))
 (let ((y (if bottom_feeder_p
             y
-            (begin
-               (let loop ((y (- HEIGHT 1)))
-                  (if (eq? y 0)
-                     0
-                     (begin
-                        (if (and
-                              PHOSPHOR-ENABLED
-                              (ne? (get-matrix-value glyphs x y) 0)
-                              (eq? (get-matrix-value glyphs x (- y 1)) 0))
-                           (setx! glows x y -1)
-                           (begin
-                              (setx! glows x y (get-matrix-value glows x (- y 1)))
-                              (setx! glyphs x y (get-matrix-value glyphs x (- y 1)))))
-                        (loop (- y 1)))))))))
+         else
+            (let loop ((y (- HEIGHT 1)))
+               (if (eq? y 0)
+                  0
+               else
+                  (if (and
+                        PHOSPHOR-ENABLED
+                        (ne? (get-matrix-value glyphs x y) 0)
+                        (eq? (get-matrix-value glyphs x (- y 1)) 0))
+                     (setx! glows x y -1)
+                  else
+                     (setx! glows x y (get-matrix-value glows x (- y 1)))
+                     (setx! glyphs x y (get-matrix-value glyphs x (- y 1))))
+                  (loop (- y 1)))))))
 
    (setx! glyphs x y glyph)
 
@@ -183,37 +179,38 @@
 (gl:set-window-title "Digital Rain")
 
 ; init
-   (glShadeModel GL_SMOOTH)
-   (glClearColor 0 0 0 1.0)
+(glShadeModel GL_SMOOTH)
+(glClearColor 0 0 0 1.0)
 
-   (glEnable GL_TEXTURE_2D)
-   (glBindTexture GL_TEXTURE_2D 0)
-   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
-   (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
-   (glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
-      42 448
-      0 GL_RGB GL_UNSIGNED_BYTE (file->bytevector "matrix.rgb"))
+(glEnable GL_TEXTURE_2D)
+(glBindTexture GL_TEXTURE_2D 0)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+(glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+(glTexImage2D GL_TEXTURE_2D 0 GL_RGB8
+   42 448
+   0 GL_RGB GL_UNSIGNED_BYTE (file->bytevector "matrix.rgb"))
 
-   (glMatrixMode GL_PROJECTION)
-   (glLoadIdentity)
-   (glScalef -1 -1 1)
-   (glOrtho 0 WIDTH 0 HEIGHT 0 1)
+(glMatrixMode GL_PROJECTION)
+(glLoadIdentity)
+(glScalef -1 -1 1)
+(glOrtho 0 WIDTH 0 HEIGHT 0 1)
 
-   (glMatrixMode GL_MODELVIEW)
-   (glLoadIdentity)
+(glMatrixMode GL_MODELVIEW)
+(glLoadIdentity)
 
 ; draw
-(gl:set-renderer (lambda (mouse)
+(gl:set-renderer (lambda ()
 
-   (if #t ;(not (= oldtime time))
-   (begin
+   ; update:
+   (when #true  ;(not (= oldtime time))
+
    ; feed matrix
-   (if #t
+   (when #true
    (let loop ((x 0))
       (if (< x WIDTH)
          (let ((throttle  (get-vector-value throttles x))
                (remaining (get-vector-value remainings x))
-               (y         (get-vector-value (getf feeders 'y)         x)))
+               (y         (get-vector-value (feeders 'y) x)))
 
             (cond
                ((> throttle 0)
@@ -222,11 +219,11 @@
                   (insert_glyph (+ (rand! NGLYPHS) 1) x y)
                   (setx! remainings x (- remaining 1))
                   (if (>= y 0)
-                     (setx! (getf feeders 'y) x (+ y 1))))
+                     (setx! (feeders 'y) x (+ y 1))))
                (else
                   (insert_glyph 0 x y)
                   (if (>= y 0)
-                     (setx! (getf feeders 'y) x (+ y 1)))))
+                     (setx! (feeders 'y) x (+ y 1)))))
             (if (eq? (rand! 10) 0)
                (setx! throttles x (+ (rand! 5) (rand! 5))))
 
@@ -248,7 +245,7 @@
                (loop (- i 1))))))
 
    ;; Change some of the feeders
-   (if #t
+   (when #true
    (let loop ((x 0))
       (if (< x WIDTH) (begin
          (if (and
@@ -261,17 +258,17 @@
                   (setx! remainings x 0))
 
                (case SLIDING-MODE
-                  (0 (setx! (getf feeders 'y) x  (rand! HEIGHT)))
-                  (1 (setx! (getf feeders 'y) x  (if (eq? (rand! 2) 0) -1 (rand! HEIGHT))))
-                  (2 (setx! (getf feeders 'y) x -1)))))
+                  (0 (setx! (feeders 'y) x  (rand! HEIGHT)))
+                  (1 (setx! (feeders 'y) x  (if (eq? (rand! 2) 0) -1 (rand! HEIGHT))))
+                  (2 (setx! (feeders 'y) x -1)))))
          (loop (+ x 1)))))
    )
 
    ; скорость обновления спиннеров - в 5 раз ниже матрицы
    ; спиннеры можно вынести в отдельный массив и рендерить поверх основной матрицы
 
-   (if #t
-   (if (eq? (rand! 50) 0) (begin
+   (when #true
+   (when (eq? (rand! 50) 0)
       ; update spinners
       (cond
          ((> (get-value spinners_new_length) (get-value spinners_length))
@@ -284,12 +281,11 @@
       (if (ne? (get-value spinners_length) 0)
          (let ((i (rand! (get-value spinners_length))))
             (clear_spinner i)
-            (create_spinner i)))))
+            (create_spinner i))))
+   )
    )
 
-   ))
-
-   ; renderer
+   ; renderer:
    (glClear GL_COLOR_BUFFER_BIT)
    (glColor3f 1 1 1)
    (glBindTexture GL_TEXTURE_2D 0)
@@ -300,13 +296,13 @@
       (for-each (lambda (x)
          (let ((glow    (get-matrix-value glows  x y))
                (glyph   (get-matrix-value glyphs x y))
-               (spinner (get-matrix-value (getf cells 'spinner) x y)))
+               (spinner (get-matrix-value (cells 'spinner) x y)))
 
          (let ((u (/ (cond
-                     ((> spinner 0) SWITCH_GLOW)
-                     ((less? 0 glow)    SWITCH_GLOW)
-                     ((less? glow 0)    SWITCH_FADE)
-                     (else          SWITCH_PLAIN)) 3))
+                        ((> spinner 0) SWITCH_GLOW)
+                        ((less? 0 glow) SWITCH_GLOW)
+                        ((less? glow 0) SWITCH_FADE)
+                        (else SWITCH_PLAIN)) 3))
                (v (/ glyph NGLYPHS)))
 
             (glTexCoord2f    u         v)
@@ -318,7 +314,7 @@
             (glTexCoord2f (+ u 1/3)    v)
             (glVertex2f (+ x 1) y))
 
-            (if #t (begin ;(not (= oldtime time)) (begin ...)
+            (when #true ;(not (= oldtime time)) (begin ...)
                (if (> glow 0)
                   (setx! glows x y (- glow 1)) ; cell->changed = 1;
                (if (< glow 0) (begin
@@ -327,12 +323,9 @@
                      (setx! glyphs x y  0))))) ; cell->changed = 1;
 
                (if (> spinner 0)
-                  (setx! glyphs x y (rand! NGLYPHS)))))))
+                  (setx! glyphs x y (rand! NGLYPHS))))))
       (iota WIDTH)))
    (iota HEIGHT))
  ; cell->changed = 1;
 
-
-   (glEnd)
-
-   #false))
+   (glEnd)))
