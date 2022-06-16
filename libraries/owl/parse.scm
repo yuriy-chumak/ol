@@ -7,6 +7,7 @@
 
       maybe
       times
+      rest-of-line
 
       either ;either!
       any-of ;any-of!
@@ -150,6 +151,18 @@
                   (else
                      (loop l (r) p n v))))))
 
+      ; line up to #\newline (with #\newline) or to the end-of-file
+      (define (rest-of-line l r p ok) ; always do "ok"
+         (let loop ((l l) (r r) (p p) (v #null))
+            (cond
+               ((null? r)
+                  (ok l r p v))
+               ((pair? r)
+                  (if (eq? (car r) #\newline)
+                     (ok (cons (car r) l) (cdr r) (+ p 1) (reverse v))
+                     (loop (cons (car r) l) (cdr r) (+ p 1) (cons (car r) v))))
+               (else
+                  (loop l (r) p v)))))
 
       (define-syntax any-of
          (syntax-rules ()
