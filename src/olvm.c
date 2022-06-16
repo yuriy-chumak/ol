@@ -2151,7 +2151,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 #define ERROR2(code, a) ERROR3(code, a, INULL)
 #define ERROR(...) ERROR_MACRO(__VA_ARGS__, ERROR3, ERROR2,, NOTHING)(__VA_ARGS__)
 
-#define CRASH3(code, a, b) ERROR5("CRASH",3, code,a,b)
+#define CRASH3(code, a, b) ERROR5("CRASH", 3, code,a,b)
 #define CRASH2(code, a) CRASH3(code, a, INULL)
 #define CRASH(...) ERROR_MACRO(__VA_ARGS__, CRASH3, CRASH2,, NOTHING)(__VA_ARGS__)
 
@@ -3041,7 +3041,7 @@ loop:;
 	// speed version of (ref a 1)
 	case CAR: {  // car a -> r
 		word T = A0;
-		ASSERT(CHECKCAR(T), T, CAR);
+		ASSERT(CHECKCAR(T), CAR, T);
 		A1 = car(T);//((word*)T)[1];
 		ip += 2; break;
 	}
@@ -3049,7 +3049,7 @@ loop:;
 	// speed version of (ref a 2)
 	case CDR: {  // cdr a -> r
 		word T = A0;
-		ASSERT(CHECKCDR(T), T, CDR);
+		ASSERT(CHECKCDR(T), CDR, T);
 		A1 = cdr(T);//((word*)T)[2];
 		ip += 2; break;
 	}
