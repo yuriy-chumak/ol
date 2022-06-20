@@ -64,7 +64,7 @@
 
    (define ansi-chars (fold (lambda (ff char) (put ff char #T))
          #empty
-         (string->runes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_")))
+         (string->runes "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_0123456789")))
 
    (define string-char
       (let-parse* (
@@ -110,9 +110,13 @@
                (skip (imm #\')))
             (runes->string chars))))
 
+   (define numbers (fold (lambda (ff char) (put ff char #T))
+         #empty
+         (string->runes "0123456789")))
+
    (define natural
       (let-parse* (
-            (value (greedy+ (rune-if (lambda (rune) (<= #\0 rune #\9))))))
+            (value (greedy+ (rune-if (lambda (rune) (numbers rune #f))))))
          (list->number value 10)))
 
    (define number
@@ -125,7 +129,7 @@
             (frac (either
                         (let-parse* (
                               (skip (imm #\.))
-                              (digits (greedy* (rune-if (lambda (rune) (<= #\0 rune #\9))))))
+                              (digits (greedy* (rune-if (lambda (rune) (numbers rune #f))))))
                            (/ (list->number digits 10) (expt 10 (length digits))))
                         (epsilon 0)))
             (exponent (any-of
@@ -144,11 +148,8 @@
       (let-parse* (
             (/ maybe-whitespaces) ; skip leading whitespaces
             (value (any-of
-               string
-               ;; (word "true" #true)
-               ;; (word "false" #false)
-               ;; (word "null" #null)
                number
+               string
                ; objects:
                (let-parse* (
                      (/ (imm #\{))
