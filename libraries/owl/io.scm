@@ -50,6 +50,7 @@
       system-print system-println system-stderr
       fasl-save         ;; obj path → done?
       fasl-load         ;; path default → done?
+      deserialize-file
    )
 
    (import
@@ -476,4 +477,8 @@
             (if bs
                (fasl-decode bs fail-val)
                fail-val)))
+
+      (define (deserialize-file path fail)
+         (deserialize (file->bytestream path) fail))
+
 ))
