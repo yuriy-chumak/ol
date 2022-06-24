@@ -17,8 +17,9 @@
 (export
    random-integer
    random-real
-   default-random-source
+   random-reset! ; * ol specific
 
+   default-random-source
    make-random-source
    random-source?
    random-source-state-ref
@@ -71,14 +72,15 @@
             (p2 (- p2 (* m2 k)))
             (p2 (if (fless? p2 0.0) (+ p2 m2) p2)))
 
+         (define sizeof-inexact (size #i0))
          ; shift
-         (bytevector-copy! s10 0 s11 0)
-         (bytevector-copy! s11 0 s12 0)
-         (bytevector-copy! s12 0 p1 0)
+         (vm:set! s10 0 s11 0 sizeof-inexact)
+         (vm:set! s11 0 s12 0 sizeof-inexact)
+         (vm:set! s12 0 p1 0 sizeof-inexact)
 
-         (bytevector-copy! s20 0 s21 0)
-         (bytevector-copy! s21 0 s22 0)
-         (bytevector-copy! s22 0 p2 0)
+         (vm:set! s20 0 s21 0 sizeof-inexact)
+         (vm:set! s21 0 s22 0 sizeof-inexact)
+         (vm:set! s22 0 p2 0 sizeof-inexact)
 
          ; combination
          (if (fless? p2 p1)
@@ -92,9 +94,25 @@
    (define (random-integer n)
       (exact (floor (* (random-real) n))))
 
-   (define default-random-source (cons ss ms))
+   (define (random-reset! v_1 v_2 v_3 v_4 v_5 v_6)
+      (define len (size s11))
+      (vm:set! s10 0 (inexact v_1) 0 len)
+      (vm:set! s11 0 (inexact v_2) 0 len)
+      (vm:set! s12 0 (inexact v_3) 0 len)
+      (vm:set! s20 0 (inexact v_4) 0 len)
+      (vm:set! s21 0 (inexact v_5) 0 len)
+      (vm:set! s22 0 (inexact v_6) 0 len))
+   (define random-reset! (case-lambda
+      ((a b c d e f)
+            (random-reset! a b c b d e))
+      (() (let* ((a b (clock)))
+            (random-reset! a #i0 #i0 b #i0 #i0)))
+      ((a b)(random-reset! a #i0 #i0 b #i0 #i0))))
 
    ; -----------------------------------------
+   (define default-random-source
+      ['random-source (list s10 s11 s12 s20 s21 s22)])
+
    (define (make-random-source)
       (let*((ss ms (clock)))
       (let ((s10 (inexact (mod ss M1)))
