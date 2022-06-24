@@ -18,8 +18,8 @@ failed:="\033[1;31mfailed\033[0m"
 
 # GNU/Linux (base development system) specific defines:
 ifeq ($(UNAME),Linux)
-HAS_32CDEFS   ?= $(call exists,-m32,<sys/cdefs.h>,exit)
-HAS_64CDEFS   ?= $(call exists,-m64,<sys/cdefs.h>,exit)
+HAS_32CDEFS   ?= $(call exists,-m32,sys/cdefs.h,exit)
+HAS_64CDEFS   ?= $(call exists,-m64,sys/cdefs.h,exit)
 endif
 
 ifeq ($(HAS_64CDEFS),1)

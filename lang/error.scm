@@ -8,9 +8,9 @@
       (lang primop))
 
 (begin
-   (define (verbose-ol-error code a b)
-      (define expecting-2-3-arguments "expecting 2-3 arguments, but got")
+   (setq expecting-2-3-arguments "expecting 2-3 arguments, but got")
 
+   (define (verbose-ol-error code a b)
       (if (eq? (type code) type-closure) ; continuation?
          (list a b)
       else

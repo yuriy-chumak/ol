@@ -32,12 +32,12 @@
 ;; todo: add a version which handles symbols and ff's specially
    (export
       encode2              ; obj -> (lazy) fasl list
-      fasl-encode          ; obj -> (byte ... 0) ; TODO: rename to serialize
-      serialize
+      fasl-encode          ; obj -> (byte ... 0)
+      serialize            ; same as fasl-encode
 
       decode2              ; (lazy) fasl list -> obj
-      fasl-decode          ; (byte ...) -> obj ; TODO: rename to deserialize
-      deserialize)
+      fasl-decode          ; (byte ...) -> obj
+      deserialize)         ; slower than fasl-decode, but interns symbols
 
    (import
       (scheme core)
