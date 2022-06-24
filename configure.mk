@@ -24,15 +24,17 @@ exists = $(shell echo "\
 	\
 	int main() {\
 	   return $3();\
-	}" |$(CC) $1 -xc - $4 -o /dev/null 2>/dev/null && echo 1)
+	}" |$(CC) -xc - $4\
+	          -include $2\
+	          -o /dev/null 2>/dev/null && echo 1)
 
 sizeof = $(shell SIZEOF=`mktemp /tmp/sizeof.XXXXXXXXX`; \
 	trap "{ rm -f $$SIZEOF; }" EXIT; \
 	echo "\
 	void main() {\
 	   printf(\"%d\", sizeof($1));\
-	}" |$(CC) -xc - \
-	          -include stdio.h $3\
+	}" |$(CC) -xc - $3\
+	          -include stdio.h\
 	          -o $$SIZEOF 2>stderr && $$SIZEOF)
 
 offsetof = $(shell OFFSETOF=`mktemp /tmp/offsetof.XXXXXXXXX`; \
@@ -40,8 +42,9 @@ offsetof = $(shell OFFSETOF=`mktemp /tmp/offsetof.XXXXXXXXX`; \
 	echo "\
 	void main() {\
 	   printf(\"%d\", offsetof($1,$2));\
-	}" |$(CC) -xc - \
-	          -include X11/Xlib.h -include stdio.h $3\
+	}" |$(CC) -xc - $3\
+	          -include X11/Xlib.h\
+			  -include stdio.h\
 	          -o $$OFFSETOF 2>/dev/null && $$OFFSETOF)
 
 # default platform features
