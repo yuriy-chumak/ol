@@ -7,6 +7,9 @@
 
    glWindowPos2iv
 
+   glPointParameterf
+   glSecondaryColor3f
+
 ;; #define GL_BLEND_DST_RGB                  0x80C8
 ;; #define GL_BLEND_SRC_RGB                  0x80C9
 ;; #define GL_BLEND_DST_ALPHA                0x80CA
@@ -23,8 +26,8 @@
 ;; #define GL_TEXTURE_DEPTH_SIZE             0x884A
 ;; #define GL_TEXTURE_COMPARE_MODE           0x884C
 ;; #define GL_TEXTURE_COMPARE_FUNC           0x884D
-;; #define GL_POINT_SIZE_MIN                 0x8126
-;; #define GL_POINT_SIZE_MAX                 0x8127
+   GL_POINT_SIZE_MIN
+   GL_POINT_SIZE_MAX
 ;; #define GL_POINT_DISTANCE_ATTENUATION     0x8129
 ;; #define GL_GENERATE_MIPMAP                0x8191
 ;; #define GL_GENERATE_MIPMAP_HINT           0x8192
@@ -62,6 +65,7 @@
 ;; GLAPI void APIENTRY glMultiDrawArrays (GLenum mode, const GLint *first, const GLsizei *count, GLsizei drawcount);
 ;; GLAPI void APIENTRY glMultiDrawElements (GLenum mode, const GLsizei *count, GLenum type, const void *const*indices, GLsizei drawcount);
 ;; GLAPI void APIENTRY glPointParameterf (GLenum pname, GLfloat param);
+   glPointParameterf
 ;; GLAPI void APIENTRY glPointParameterfv (GLenum pname, const GLfloat *params);
 ;; GLAPI void APIENTRY glPointParameteri (GLenum pname, GLint param);
 ;; GLAPI void APIENTRY glPointParameteriv (GLenum pname, const GLint *params);
@@ -117,5 +121,11 @@
    (define glWindowPos2iv (GL GLvoid "glWindowPos2iv" (fft* GLint)))
 
    (define GL_DEPTH_COMPONENT24              #x81A6)
+   (define GL_POINT_SIZE_MIN                 #x8126)
+   (define GL_POINT_SIZE_MAX                 #x8127)
+
+   (define glPointParameterf (GL GLvoid "glPointParameterf" GLenum GLfloat))
+
+   (define glSecondaryColor3f (GL GLvoid "glSecondaryColor3f" GLfloat GLfloat GLfloat))
 
 ))
