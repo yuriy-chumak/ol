@@ -2011,6 +2011,7 @@
             (type-int+ n)
             (type-int- (ncons (ncar n) (ncdr n)))
             (type-rational (if (negative? n) (sub 0 n) n))
+            (type-inexact (if (negative? n) (fsub 0 n) n))
             (else (runtime-error "bad math: " (list 'abs n)))))
 
       (define (floor n)
