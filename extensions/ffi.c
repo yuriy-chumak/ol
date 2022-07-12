@@ -2218,9 +2218,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	B = OLVM_unpin(this, pB);
 	C = OLVM_unpin(this, pC);
 
+	// флажок, что среди параметрво есть те, что надо заполнить
 	if (has_wb) {
-		// еще раз пробежимся по аргументам, может какие надо будет вернуть взад
-		p = (word*)C;   // сами аргументы
+		// пробежимся по аргументам, может какие надо будет вернуть взад
+		p = (word*)C;   // аргументы
 		t = (word*)cdr(B); // rtti
 
 		i = 0;
@@ -2374,36 +2375,59 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 			case TFLOAT + FFT_REF: {
 			tfloatref:;
-				// todo: перепроверить!
-				// вот тут попробуем заполнить переменные назад
-				int c = llen(arg);
-				float* f = (float*)args[i];
+				switch (reference_type(arg)) {
+					case TPAIR: {
+						int c = llen(arg);
+						float* f = (float*)args[i];
 
-				word l = arg;
-				while (c--) {
-					float value = *f++;
-					word num = car(l);
-					switch (reference_type(num)) {
-						// case TRATIONAL: {
-						// 	// максимальная читабельность (todo: change like fto..)
-						// 	long n = value * 10000;
-						// 	long d = 10000;
-						// 	car(num) = make_enum(n);
-						// 	cdr(num) = make_enum(d);
-						// 	// максимальная точность (fixme: пока не работает как надо)
-						// 	//car(num) = make_enum(value * VMAX);
-						// 	//cdr(num) = I(VMAX);
-						// 	break;
-						// }
-						case TINEXACT: {
-							*(inexact_t*)&car(num) = value;
-							break;
+						word l = arg;
+						while (c--) {
+							float value = *f++;
+							word num = car (l);
+							switch (reference_type(num)) {
+								// case TRATIONAL: {
+								// 	// максимальная читабельность (todo: change like fto..)
+								// 	long n = value * 10000;
+								// 	long d = 10000;
+								// 	car(num) = make_enum(n);
+								// 	cdr(num) = make_enum(d);
+								// 	// максимальная точность (fixme: пока не работает как надо)
+								// 	//car(num) = make_enum(value * VMAX);
+								// 	//cdr(num) = I(VMAX);
+								// 	break;
+								// }
+								case TINEXACT: {
+									*(inexact_t*)&car(num) = value;
+									break;
+								}
+								default:
+									assert (0 && "Invalid return variables.");
+									break;
+							}
+							l = cdr(l);
 						}
-						default:
-							assert (0 && "Invalid return variables.");
-							break;
 					}
-					l = cdr(l);
+					case TVECTOR: {
+						int c = reference_size(arg);
+						float* f = (float*) args[i];
+
+						word* l = &car(arg);
+						while (c--) {
+							float value = *f++;
+							word num = *l;
+							switch (reference_type(num)) {
+								case TINEXACT: {
+									*(inexact_t*)&car(num) = value;
+									break;
+								}
+								default:
+									assert (0 && "Invalid return variables.");
+									break;
+							}
+							l++;
+						}
+					}
+					default: break; // не должны сюда попастьs
 				}
 				break;
 			}
