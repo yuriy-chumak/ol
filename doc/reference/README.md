@@ -38,6 +38,8 @@ List of Standard procedures
 - [Dictionaries](dictionaries.md), TBD.
 - [Lazy evaluations](lazy-evaluations.md), TBD.
 
+- [Serialization/Deserialization](serialization-deserialization.md)
+
 Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 =====================================================================
 |         |         |         |         |         |         |         |
@@ -94,13 +96,18 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [cons](pairs-and-lists.md#cons)
 [cons*](pairs-and-lists.md#cons-1)
 ## D
+[decode2](serialization-deserialization.md#decode2)
+[deserialize](serialization-deserialization.md#deserialize)
 [digit-value](characters.md#digit-value)
 [drop](pairs-and-lists.md#drop)
 ## E
+[encode2](serialization-deserialization.md#encode2)
 [eq?](equivalence-predicates.md#eq)
 [eqv?](equivalence-predicates.md#eqv)
 [equal?](equivalence-predicates.md#equal)
 ## F
+[fasl-decode](serialization-deserialization.md#fasl-decode)
+[fasl-encode](serialization-deserialization.md#fasl-encode)
 [fold](pairs-and-lists.md#fold)
 [foldr](pairs-and-lists.md#foldr)
 ## G
@@ -140,12 +147,13 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 ## S
 [set-car!](pairs-and-lists.md#set-car)
 [set-cdr!](pairs-and-lists.md#set-cdr)
-[symbol?](symbols.md#symbol)
-[symbol=?](symbols.md#symbol-1)
-[symbol->string](symbols.md#symbol-string)
+[serialize](serialization-deserialization.md#serialize)
 [string->symbol](symbols.md#string-symbol)
 [string->uninterned-symbol](symbols.md#string-uninterned-symbol)
 [string->vector](vectors.md#string-vector)
+[symbol?](symbols.md#symbol)
+[symbol=?](symbols.md#symbol-1)
+[symbol->string](symbols.md#symbol-string)
 ## T
 [take](pairs-and-lists.md#take)
 ## U
