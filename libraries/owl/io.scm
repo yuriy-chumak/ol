@@ -479,6 +479,7 @@
                fail-val)))
 
       (define (deserialize-file path fail)
-         (deserialize (file->bytestream path) fail))
+         (let ((stream (file->bytestream path)))
+            (if stream (deserialize stream fail) fail)))
 
 ))
