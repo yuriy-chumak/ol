@@ -40,6 +40,8 @@
                   (display (floor (/ i n)))
                   (if (less? 1 n)
                      (loop (mod i n) (/ n 10))))))
+            ((inexact? L)
+               (display L))
             ((vector? L)
                (display "[")
                (let ((len (size L)))
