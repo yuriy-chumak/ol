@@ -209,10 +209,10 @@ install: ol includes/ol/vm.h
 	@echo Ok.
 
 uninstall:
-	-rm -f $(DESTDIR)$(PREFIX)/bin/ol
+	-rm -rf $(DESTDIR)$(PREFIX)/bin/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/include/ol
-	-rm /usr/share/man/man1/ol.1.gz
+	-rm -rf $(DESTDIR)$(PREFIX)/share/man/man1/ol.1.gz
 
 ## actual 'building' part
 debug: CFLAGS += $(CFLAGS_DEBUG)
