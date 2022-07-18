@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+ <head>
+   <meta charset="utf-8">
+   <meta http-equiv="X-UA-Compatible" content="chrome=1">
+   <title>Ol Input/Output Ports Usage</title>
+ </head>
+ <body>
+   <!-- Let's start Ol:-->
+   <script>
+      // Ol JS Module
+      var Module = {
+         INITIAL_MEMORY: 67108864,
+         arguments: ['--no-interactive'], // don't echo interactive data
+         // stdout
+         print: function(text) {
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            console.log(text); // dump text to the debug console
+
+            // At this point we have Ol output as a string,
+            //  let's show it at the end of the page.
+            var myDiv = document.createElement("div");
+            myDiv.innerHTML = text;
+            document.body.appendChild(myDiv);
+         },
+         // stderr
+         printErr: function(text) {
+            console.error(text); // dump text to the debug console
+         },
+
+         noExitRuntime: 0
+      };
+
+      // stdin
+      var stdInput = "";
+      // connect `stdInput` variable to the Ol stdin:
+      window.prompt = function(event) {
+         if (stdInput.length == 0) {
+            return undefined; // don't remove, that's important
+         }
+
+         // send all text to the Ol
+         let string = stdInput;
+         stdInput = "";
+         return string;
+      };
+
+      // -------------------
+      // Let's load Ol wasm:
+      var script = document.createElement('script');
+      script.src = "ol.js";
+
+      script.addEventListener('load', function(event) {
+         console.log("Ol loaded!");
+
+         // Let's execute some initial program text:
+         stdInput = `
+            (define (print_f1)
+               (print "This will be formulae 1"))
+            (define (print_sum . args)
+               (print "The sum: " (fold + 0 args)))
+
+            (print "I'm loaded! Hello :)")
+         `;
+      }, false);
+      script.addEventListener('error', function(event) {
+         console.error(event);
+      }, false);
+
+      document.body.appendChild(script);
+   </script>
+
+   <!-- Usage Examples: -->
+   <script>
+      // three different Ol function runners with three different buttons
+      function click1() {
+         stdInput += "(print_f1)";
+      }
+      function click2() {
+         stdInput += "(print_sum 7 12 333)";
+      }
+      function click3() {
+         stdInput += "(print (time-ms))";
+      }
+   </script>
+   <button type="button" onclick="click1()">Print the first formulae</button> <br/>
+   <button type="button" onclick="click2()">Print the second formulae</button> <br/>
+   <button type="button" onclick="click3()">Show the time-ms</button> <br/>
+ </body>
+</html>
