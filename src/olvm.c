@@ -3284,14 +3284,14 @@ loop:;
 
 	// bind vector to registers
 	case VECTORAPPLY: { /* bind <vector > <n> <r0> .. <rn> */
-		word *tuple = (word *) R[*ip++];
-		//CHECK(is_reference(tuple), tuple, BIND);
+		word *vector = (word *) R[*ip++];
+		ASSERT(is_reference(vector), vector, I(10101));
 
 		word pos = 1, n = *ip++;
 		//word hdr = *tuple;
-		//CHECK(!(is_raw(hdr) || header_size(hdr)-1 != n), tuple, BIND);
+		//CHECK(!(is_raw(hdr) || header_size(hdr)-1 != n), vector, BIND);
 		while (n--)
-			R[*ip++] = tuple[pos++];
+			R[*ip++] = vector[pos++];
 
 		break;
 	}
