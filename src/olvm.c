@@ -2564,6 +2564,8 @@ loop:;
 	switch ((op = *ip++) & 0x3F) {
 	/*! #### JIT
 	 * Reserved for feature use.
+	 *
+	 * Throws "Invalid opcode" error.
 	 */
 	case 0:
 		op = (ip[0] << 8) | ip[1]; // big endian
@@ -2588,11 +2590,13 @@ loop:;
 
 	/*! #### NOP
 	 * No OPeration
+	 * `21`
 	 */
 	case NOP:
 		break;
 
 	/*! #### GOTO
+	 * GO TO procedure, arity
 	 */
 	case GOTO: // (10%)
 		this = A0;
@@ -2600,6 +2604,7 @@ loop:;
 		goto apply;
 
 	/*! #### RET
+	 * RETurn from procedure
 	 */
 	case RET: // (3%) return value
 		this = R[3];
@@ -3114,7 +3119,7 @@ loop:;
 			result = (word)newobj;
 
 			if (is_rawstream(p)) {
-				CHECK(is_enump(A2), A2, 10001) // ?
+				ASSERT(is_enump(A2), A2, 10001) // ?
 				size = size * sizeof(word) - header_pads(hdr);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos < size) // will add [0..255] numbers
@@ -3399,21 +3404,21 @@ loop:;
 	case SYSCALL: {
 		word argc = *ip++;
 		if (argc == 0)
-			FAIL(62000, I(0), I(1));
+			ERROR(62000, I(0), I(1));
 		--argc; // skip syscall number
 		word* r = (word*) IFALSE;  // by default returning #false
 
 		// ----------------------------------------------------------------------------------
 		// safety checking macro
-		#define CHECK_ARGC_EQ(n)  if (argc - n) FAIL(62000, I(argc), I(n)); // === (arg != n)
-		#define CHECK_ARGC(a, b)  if (argc < a) FAIL(62000, I(argc), I(a))\
-                             else if (argc > b) FAIL(62000, I(argc), I(b));
+		#define CHECK_ARGC_EQ(n)  if (argc - n) ERROR(62000, I(argc), I(n)); // === (arg != n)
+		#define CHECK_ARGC(a, b)  if (argc < a) ERROR(62000, I(argc), I(a))\
+                             else if (argc > b) ERROR(62000, I(argc), I(b));
 		// numbers checking
-		#define CHECK_TYPE(arg, type, error) if (argc >= arg) if (!is_##type(A##arg)) FAIL(error, I(arg), A##arg)
+		#define CHECK_TYPE(arg, type, error) if (argc >= arg) if (!is_##type(A##arg)) ERROR(error, I(arg), A##arg)
 		#define CHECK_TYPE_OR_FALSE(arg, type, error) \
-		                                     if (argc >= arg) if (!is_##type(A##arg) && !(A##arg == IFALSE)) FAIL(error, I(arg), A##arg)
+		                                     if (argc >= arg) if (!is_##type(A##arg) && !(A##arg == IFALSE)) ERROR(error, I(arg), A##arg)
 		#define CHECK_TYPE_OR_TYPE2(arg, type, type2, error) \
-		                                     if (argc >= arg) if (!is_##type(A##arg) && !is_##type2(A##arg)) FAIL(error, I(arg), A##arg)
+		                                     if (argc >= arg) if (!is_##type(A##arg) && !is_##type2(A##arg)) ERROR(error, I(arg), A##arg)
 
 		#define CHECK_PORT(arg)      CHECK_TYPE(arg, port, 62001)
 		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)
@@ -3458,7 +3463,7 @@ loop:;
 			*/
 			case SYSCALL_READ + SECCOMP:
 			case SYSCALL_READ: { //
-				CHECK_ARGC(1, 2); // (port ?count)
+				CHECK_ARGC(1, 2);
 				CHECK_PORT(1);
 				CHECK_NUMBER_OR_FALSE(2);
 
@@ -3649,7 +3654,7 @@ loop:;
 			*/
 			case SYSCALL_LSEEK + SECCOMP:
 			case SYSCALL_LSEEK: { // TODO: add to tests!
-				CHECK_ARGC_EQ(1);
+				CHECK_ARGC_EQ(3);
 				CHECK_PORT(1);
 				CHECK_NUMBER(2);
 				CHECK_NUMBER(3);
@@ -3960,6 +3965,7 @@ loop:;
 
 			// todo: http://man7.org/linux/man-pages/man2/nanosleep.2.html
 			// TODO: change to "select" call (?)
+#if SYSCALL_SLEEP
 			case SYSCALL_SLEEP: { // time in micro(!)seconds
 				CHECK_ARGC_EQ(1);
 				CHECK_NUMBERP(1);
@@ -3984,6 +3990,7 @@ loop:;
 				#endif
 				break;
 			}
+#endif
 
 			// (EXECVE program-or-function env (vector port port port))
 			// http://linux.die.net/man/3/execve
@@ -4119,8 +4126,9 @@ loop:;
 			}
 
 			case SYSCALL_DLCLOSE: {
-				// CHECK(is_vptr(a), a, SYSCALL);
 				word a = A1;
+				if (!is_vptr(a))
+					ERROR(SYSCALL_DLCLOSE, a, INULL);
 				void* module = (void*)car (a);
 
 				if (dlclose(module) == 0)
@@ -4236,7 +4244,8 @@ loop:;
 			case 42: { // (connect sockfd host port)
 				word a = A1, b = A2, c = A3;
 
-				// CHECK(is_port(a), a, SYSCALL);
+				if (!is_port(a))
+					ERROR(SYSCALL, 42, a);
 				int sockfd = port (a);
 				char* host = string (b); // todo: check for string type
 				int port = value (c);
@@ -4277,7 +4286,8 @@ loop:;
 			// http://linux.die.net/man/2/shutdown
 			case 48: { // (shutdown socket)
 				word a = A1; //, b = A2, c = A3;
-				// CHECK(is_port(a), a, SYSCALL);
+				if (!is_port(a))
+					ERROR(SYSCALL, 48, a);
 
 				int socket = port(a);
 
@@ -4678,10 +4688,12 @@ loop:;
 				/*struct sock_filter filter[] = {
 					// http://outflux.net/teach-seccomp/
 				};*/
+			#ifdef SECCOMP_MODE_STRICT
 				if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_STRICT, 0, 0, 0) != -1) { /* true if no problem going seccomp */
 					sandboxp = SECCOMP;
 					r = (word*) ITRUE;
 				}
+			#endif
 				break;
 #endif
 
@@ -4808,7 +4820,7 @@ loop:;
 	}
 	case VMUNPIN: { // vm:unpin => old pin value
 		word pin = A0;
-		CHECK (is_value(pin), pin, VMUNPIN);
+		ASSERT (is_value(pin), pin, VMUNPIN);
 
 		int id = value(pin);
         word o = OLVM_unpin(ol, id);
@@ -4820,7 +4832,7 @@ loop:;
 
 	case VMDEREF: {// vm:deref /get pinned object value/
 		word pin = A0;
-		CHECK (is_value(pin), pin, VMDEREF);
+		ASSERT (is_value(pin), pin, VMDEREF);
 
 		int id = value(pin);
         A1 = OLVM_deref(ol, id);
