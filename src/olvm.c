@@ -84,7 +84,7 @@ word OLVM_run(olvm_t* ol, int argc, char** argv);
 word OLVM_evaluate(olvm_t* ol, word function, int argc, word* argv);
 
 // "pinned" objects supporting functions
-size_t OLVM_pin(olvm_t* ol, word ref);
+size_t OLVM_pin(olvm_t* ol, word ref); // pin can realloc ol->R
 word OLVM_deref(olvm_t* ol, size_t p);
 word OLVM_unpin(olvm_t* ol, size_t p);
 
@@ -389,6 +389,7 @@ void E(char* format, ...);
 // shamil.free.fr/comp/ocaml/html/book011.html
 
 // память машины, управляемая сборщиком мусора
+// TODO: усложнить, разделив на две - кучу больших объектов и кучу маленьких
 struct heap_t
 {
 	// new (size) === { *(size*)fp; fp += size; }
@@ -398,6 +399,8 @@ struct heap_t
 	word *begin;     // begin of heap
 	word *end;       // end of heap
 	word *genstart;  // young generation begin pointer
+
+	size_t padding;  // safe padding area
 
 	// вызвать GC если в памяти мало места (в словах)
 	// для безусловного вызова передать 0
@@ -1533,7 +1536,7 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 #endif
 
 
-#define CR                          128 // available callables
+#define CR                          128 // available initial callables, should be more than 4!
 #define NR                          256 // see n-registers in register.scm
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
@@ -1600,9 +1603,10 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		return 0;
 
 	word *old = heap->begin;
-	heap->begin = realloc(heap->begin, (cells + GCPAD(NR) + MEMPAD) * sizeof(word));
+	size_t pads = heap->padding;
+	heap->begin = realloc(heap->begin, (cells + pads) * sizeof(word));
     if (heap->begin == NULL) {
-        D("heap reallocation failed! %ld->%ld", heap->end - old, (long)(cells + GCPAD(NR)));
+        E("Fatal: heap reallocation failed! (%ld -> %ld)", heap->end - old, (long)(cells + pads));
         exit(1); // todo: manage memory issues by longjmp
     }
 	heap->end = heap->begin + cells; // so, heap->end is not actual heap end, we have a "safe" bytes after
@@ -1760,8 +1764,8 @@ word gc(heap_t *heap, int query, word regs)
 		fp = sweep(fp, heap);
 		regs = root[0];
 
-		// todo: add diagnostic callback "if (heap->oncb) heap->oncb(heap, deltatime)"
-		#if DEBUG_GC
+		// TODO: add diagnostic callback "if (heap->oncb) heap->oncb(heap, deltatime)"
+#if DEBUG_GC
 		static int tick = 0;
 		typedef long long int lld;
 		// show only full garbage collecting
@@ -1779,7 +1783,7 @@ word gc(heap_t *heap, int query, word regs)
 				);
 			tick = 0;
 		}
-		#endif
+#endif
 	}
 	heap->fp = fp;
 
@@ -1880,31 +1884,36 @@ void set_signal_handler()
  */
 struct olvm_t
 {
-	heap_t heap; // MUST be first (!)
+	heap_t heap; // MUST be first (!!)
+	jmp_buf fail;   // аварийный выход
+
 	// word max_heap_size; // max heap size in MiB
 
-	jmp_buf fail;   // аварийный выход из любого места olvm
-	void* userdata;	// user data
+	// 0 - mcp, 1 - this, 2 - clos-this, 3 - a0, often cont
+	// todo: перенести R в конец кучи, а сам R в heap ?
+	word* R;	// регистры виртуальной машины
 
-	// i/o polymorphism
-	open_t*  open;
-	close_t* close;
-	read_t*  read;
-	write_t* write;
-//	stat_t*  stat;
-
-	// callback when OL task ready to switch
-	idle_t* idle;
-
-	// 0 - mcp, 1 - this, 2 - sub-this, 3 - a0, often cont
-	// todo: перенести R в конец кучи, а сам R в heap
-	word R[NR + CR];   // регистры виртуальной машины
 	// pinned objects support
+	size_t cr;
 	size_t ffpin; // first free pin
+	size_t lfpin; // last free pin
 
 	// текущий контекст с арностью
 	word this;
 	long arity;
+
+	// i/o polymorphism
+	open_t* open;
+	close_t* close;
+	read_t* read;
+	write_t* write;
+//	stat_t*  stat;
+
+	// debug callbacks
+	idle_t* idle;   // OL task ready to switch
+
+	// user data
+	void* userdata;
 };
 
 static_assert(offsetof(olvm_t, heap) == 0, "heap_t must be first field of olvm_t!");
@@ -2077,7 +2086,7 @@ static int OLVM_gc(struct olvm_t* ol, unsigned ws) // ws - required size in word
 		return 0;
 
 	word* R = ol->R;
-	int p = 0, N = NR+CR;
+	int p = 0, N = NR + ol->cr;
 
 	// попробуем освободить ненужные регистры?
 	for (int i = ol->arity + 3; i < NR; i++)
@@ -2088,8 +2097,6 @@ static int OLVM_gc(struct olvm_t* ol, unsigned ws) // ws - required size in word
 
 	// если нам не хватило магических 1024, то у нас проблема
 	// assert (fp + N + 3 < ol->heap.end);
-
-	// TODO: складывать регистры не в топе, а в heap->real-end - NR - 2
 
 	// TODO: складывать this первым, тогда можно будет копировать только ol->arity регистров
 
@@ -2238,12 +2245,16 @@ apply:;
 
 			word (*function)(struct olvm_t*, word*) = (word (*)(struct olvm_t*, word*)) car(this);  assert (function);
 			size_t cont = OLVM_pin(ol, R[3]);
+			R = ol->R; // pin can realloc registers!
 
 			heap->fp = fp;
-			R[3] = function(ol, args);
-			this = OLVM_unpin(ol, cont);
+			word x = function(ol, args);
 			fp = heap->fp;
 
+			this = OLVM_unpin(ol, cont);
+			R = ol->R; // don't remove!
+
+			R[3] = x;
 			acc = 1;
 			goto apply;
 		}
@@ -4790,6 +4801,8 @@ loop:;
 		word object = A0;
 
 		int id = OLVM_pin(ol, object);
+		R = ol->R; // pin can realloc registers!
+
         A1 = (id > 3) ? I(id) : IFALSE;
 		ip += 2; break;
 	}
@@ -4798,7 +4811,10 @@ loop:;
 		CHECK (is_value(pin), pin, VMUNPIN);
 
 		int id = value(pin);
-        A1 = OLVM_unpin(ol, id);
+        word o = OLVM_unpin(ol, id);
+		R = ol->R; // don't remove
+
+		A1 = o;
 		ip += 2; break;
 	}
 
@@ -5254,6 +5270,7 @@ fail:;
 }
 #endif
 
+// TODO: optional olvm without malloc
 struct olvm_t*
 OLVM_new(unsigned char* bootstrap)
 {
@@ -5263,36 +5280,40 @@ OLVM_new(unsigned char* bootstrap)
 	}
 
 	// ===============================================================
-	// создадим виртуальную машину
+	// создадим виртуальную машину:
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
-	// а теперь поработаем с сериализованным образом:
+	// посчитаем сколько памяти нам надо для выполнения бинарника:
 	word words = 0;
-	word nobjs = count_fasl_objects(&words, bootstrap); // подсчет количества слов и объектов в образе
+	word nobjs = count_fasl_objects(&words, bootstrap);
 	if (nobjs == 0)
 		goto fail;
 	words += (nobjs + 2); // for ptrs
 
 	word *fp;
 	heap_t* heap = &handle->heap;
+	size_t padding = GCPAD(NR + CR) + MEMPAD;
 
-	// // выделим память машине:
+	// выделим память машине:
 	// int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 	// //int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
 
-	// в соответствии со стратегией сборки 50*1.3-33*0.9, и так как данные в бинарнике
+	// в соответствии со стратегией сборки 50*1.3-33*0.9 и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
 	int required_memory_size = words * 2;
 
-	fp = heap->begin = (word*) malloc((required_memory_size + GCPAD(NR) + MEMPAD) * sizeof(word)); // at least one argument string always fits
+	fp = heap->begin = (word*) malloc((required_memory_size + padding) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
-		E("Failed to allocate %d bytes in memory for vm", required_memory_size * sizeof(word));
+		E("Error: can't allocate %d", (required_memory_size + padding) * sizeof(word));
 		goto fail;
 	}
-	// ok
+	// память выделена, инициализируем кучу:
 	heap->end = heap->begin + required_memory_size;
 	heap->genstart = heap->begin;
+	heap->padding = padding;
+
+	// дефолтный сборщик мусора
 	heap->gc = OLVM_gc;
 
 	// handle->max_heap_size = max_heap_size;
@@ -5300,27 +5321,40 @@ OLVM_new(unsigned char* bootstrap)
 	// Десериализация загруженного образа в объекты
 	// обязательно выделить n+1 объектов,
 	// последнее место зарезервировано для конструктора
+	// TODO: сложить этот вектор в nobjs + 1 + words...,
+	//	чтобы потом не надо было вычищать из памяти
 	word *ptrs = new(TBYTEVECTOR, nobjs + 1, 0);
+
 	// этот вектор содержит "неправильные" ссылки в смысле модели памяти ol,
 	// которые указывают вперед по куче, а не назад. но так как на него никто
 	// не указывает, то этот объект будет спокойно удален во время первой же
 	// полной сборки кучи (которую стоило бы сделать в deserialize()).
 	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
-
-	if (fp == 0)
+	if (!fp) {
+		E("Error: invalid bootstrap");
 		goto fail;
+	}
 
-	// обязательно почистим регистры! иначе gc() сбойнет, пытаясь работать с мусором
-	word* R = handle->R; // регистры виртуальной машины:
+	// подготовим регистры и закрепленные объекты (regs + pins):
+	handle->cr = CR;
+	handle->R = malloc((NR+CR) * sizeof(word));
+	if (!heap->begin) {
+		E("Error: can't allocate %d", (NR+CR) * sizeof(word));
+		goto fail;
+	}
+
+	// регистры виртуальной машины
+	word* R = handle->R;
 	for (ptrdiff_t i = 0; i < NR+CR; i++)
 		R[i] = IFALSE;
 	R[0] = IFALSE; // MCP - master control program (NO mcp for now)
 	R[3] = IHALT;  // continuation, just finish job
 	R[4] = INULL;  // first argument
 
+	//
 	handle->ffpin = 4; // first free pin is definitely 4
 
-	// i/o
+	// i/o overrides
 	handle->open = os_open;
 	handle->close = os_close;
 	handle->read = os_read;
@@ -5328,8 +5362,8 @@ OLVM_new(unsigned char* bootstrap)
 
 //	handle->exit = exit;
 
-	// if no autoprun points found, just run last one lambla (like old behavior)
-	// точка входа в программу - последняя лямбда загруженного образа (λ (args))
+	// if no autorun points found, just run last one lambla (like old behavior)
+	// точка входа в программу: последняя лямбда загруженного образа (λ (args))
 	// TODO: make configurable
 	if (ptrs[nobjs + 1] == INULL) {
 		handle->this = ptrs[nobjs]; // (construction constructors main args)
@@ -5348,16 +5382,19 @@ OLVM_new(unsigned char* bootstrap)
 		//       ((car objects) args)))
 		//
 		// (fasl-encode construction):
-		unsigned char construction[] = {2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,23,11,1,0,18,1,1,2,4,52,4,5,1,1,4,3,1,1,3,4,2,5,2,17,2,16,31,11,4,0,26,80,5,18,0,53,5,7,3,17,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,4,1,0};
+		unsigned char construction[] = { 2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,23,11,1,
+			0,18,1,1,2,4,52,4,5,1,1,4,3,1,1,3,4,2,5,2,17,2,16,31,11,4,0,26,80,5,18,0,53,
+			5,7,3,17,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,4,1,0 };
 
+		// подсчет количества слов и объектов в этом коде
 		word wc = 0;
-		word no = count_fasl_objects(&wc, construction); // подсчет количества слов и объектов в образе
+		word no = count_fasl_objects(&wc, construction);
 		// assert (w < NUMPAD), etc.
-		word *p = new(TBYTEVECTOR, no+1, 0);
+		word *p = new(TBYTEVECTOR, no + 1, 0);
 		fp = deserialize(&p[1], no, construction, fp);
 
 		handle->this = p[no]; // (construction constructors main args)
-		handle->R[5] = ptrs[nobjs+1];
+		handle->R[5] = ptrs[nobjs + 1];
 		handle->arity = 3; // two arguments
 	}
 
@@ -5366,6 +5403,12 @@ OLVM_new(unsigned char* bootstrap)
 	return handle;
 
 fail:
+	if (heap->begin)
+		free (heap->begin);
+	heap->begin = 0;
+	if (handle->R)
+		free (handle->R);
+	handle->R = 0;
 	OLVM_delete(handle);
 	return 0;
 }
@@ -5504,26 +5547,40 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 
 // [0..3] - errors
 // 0 means "no space left"
-// 1 means "no pinnable object"
+// 1 means "not a pinnable object"
 size_t OLVM_pin(struct olvm_t* ol, word ref)
 {
-    if (ref == IFALSE)
-        return 1; // #false is not a pinnable object
-    // TODO: увеличить heap->CR если маловато колбеков!
-    for (int id = ol->ffpin; id < CR; id++) {
-        if (ol->R[NR+id] == IFALSE) {
-            ol->R[NR+id] = ref;
-			ol->ffpin = id + 1;
-            return id;
-        }
-    }
-    return 0; // no space left
+	if (ref == IFALSE)
+		return 1; // #false is not a pinnable object
+	int id = ol->ffpin;
+	size_t cr = ol->cr;
+	for (; id < cr; id++) {
+		if (ol->R[NR+id] == IFALSE)
+			goto ok;
+	}
+
+	// больше нету места, попробуем увеличить
+	size_t ncr = cr + cr / 3 + 1;
+	word* R = realloc(ol->R, (NR + ncr) * sizeof(word));
+	if (!R)
+		return 0; // no space left
+	ol->R = R;
+	ol->cr = ncr;
+	ol->heap.padding = GCPAD(NR + ncr) + MEMPAD;
+
+	for (int i = id; i < ncr; i++)
+		R[NR+i] = IFALSE;
+
+ok:
+	ol->R[NR+id] = ref;
+	ol->ffpin = id + 1;
+	return id;
 }
 
 word OLVM_deref(struct olvm_t* ol, size_t p)
 {
 	size_t id = p;
-	if (id > 3 && id < CR)
+	if (id > 3 && id < ol->cr)
 		return ol->R[NR + id];
 	else
 		return IFALSE;
@@ -5533,7 +5590,7 @@ word OLVM_unpin(struct olvm_t* ol, size_t p)
 {
     word re = IFALSE;
     size_t id = p;
-    if (id > 3 && id < CR) {
+    if (id > 3 && id < ol->cr) {
         re = ol->R[NR+id];
         ol->R[NR+id] = IFALSE;
 
