@@ -2437,39 +2437,55 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 			case TDOUBLE + FFT_REF: {
 			tdoubleref:;
-				// todo: перепроверить!
-				// вот тут попробуем заполнить переменные назад
-				int c = llen(arg);
-				double* f = (double*)args[i];
+				if (is_reference(arg))
+				switch (reference_type(arg)) {
+					case TPAIR: {
+						int c = llen(arg);
+						double* f = (double*)args[i];
 
-				word l = arg;
-				while (c--) {
-					double value = *f++;
-					word num = car(l);
-					switch (reference_type(num)) {
-						// case TRATIONAL: {
-						// 	self->heap.fp = fp;
-						// 	word v = D2OL(self, value);
-						// 	fp = self->heap.fp;
-
-						// 	if (is_value (v))
-						// 		car(l) = v;
-						// 	else {
-						// 		assert (is_value(car(v)) && is_value(cdr(v)));
-						// 		car(num) = car(v);
-						// 		cdr(num) = cdr(v);
-						// 	}
-						// 	break;
-						// }
-						case TINEXACT: {
-							*(inexact_t*)&car(num) = value;
-							break;
+						word l = arg;
+						while (c--) {
+							double value = *f++;
+							word num = car(l);
+							if (is_reference(num))
+							switch (reference_type(num)) {
+								// case TRATIONAL: {
+								// 	self->heap.fp = fp;
+								// 	word v = D2OL(self, value);
+								// 	fp = self->heap.fp;
+								case TINEXACT:
+									*(inexact_t*)&car(num) = (inexact_t)value;
+									break;
+								default:
+									assert (0 && "Invalid return variables.");
+									break;
+							}
+							l = cdr(l);
 						}
-						default:
-							assert (0 && "Invalid return variables.");
-							break;
+						break;
 					}
-					l = cdr(l);
+					case TVECTOR: {
+						int c = reference_size(arg);
+						double* f = (double*) args[i];
+
+						word* l = &car(arg);
+						while (c--) {
+							double value = *f++;
+							word num = *l;
+							if (is_reference(num))
+							switch (reference_type(num)) {
+								case TINEXACT: {
+									*(inexact_t*)&car(num) = (inexact_t)value;
+									break;
+								}
+								default:
+									assert (0 && "Invalid return variables.");
+									break;
+							}
+							l++;
+						}
+					}
+					default: break; // не должны сюда попасть
 				}
 				break;
 			}
