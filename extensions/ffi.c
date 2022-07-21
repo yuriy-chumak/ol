@@ -2375,6 +2375,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 			case TFLOAT + FFT_REF: {
 			tfloatref:;
+				if (is_reference(arg))
 				switch (reference_type(arg)) {
 					case TPAIR: {
 						int c = llen(arg);
@@ -2384,6 +2385,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						while (c--) {
 							float value = *f++;
 							word num = car (l);
+							if (is_reference(num))
 							switch (reference_type(num)) {
 								// case TRATIONAL: {
 								// 	// максимальная читабельность (todo: change like fto..)
@@ -2396,16 +2398,16 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 								// 	//cdr(num) = I(VMAX);
 								// 	break;
 								// }
-								case TINEXACT: {
-									*(inexact_t*)&car(num) = value;
+								case TINEXACT:
+									*(inexact_t*)&car(num) = (inexact_t)value;
 									break;
-								}
 								default:
 									assert (0 && "Invalid return variables.");
 									break;
 							}
 							l = cdr(l);
 						}
+						break;
 					}
 					case TVECTOR: {
 						int c = reference_size(arg);
@@ -2415,19 +2417,21 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						while (c--) {
 							float value = *f++;
 							word num = *l;
+							if (is_reference(num))
 							switch (reference_type(num)) {
 								case TINEXACT: {
-									*(inexact_t*)&car(num) = value;
+									*(inexact_t*)&car(num) = (inexact_t)value;
 									break;
 								}
-								default:
+								default: {
 									assert (0 && "Invalid return variables.");
 									break;
+								}
 							}
 							l++;
 						}
 					}
-					default: break; // не должны сюда попастьs
+					default: break; // не должны сюда попасть
 				}
 				break;
 			}
