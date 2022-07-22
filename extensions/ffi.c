@@ -3269,7 +3269,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 				"flds (%esp)",
 				"addl $4, %esp");
 #elif __aarch64__
-			__asm__("fmov d0, %[reg]" :: [reg]"r" (OL2F(r)));
+			__asm__("fmov d0, %[reg]" :: [reg]"r" (OL2D(r)));
 #elif __arm__
 # ifndef __ARM_PCS_VFP
 			__asm__("BKPT");
