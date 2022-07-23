@@ -25,6 +25,7 @@
       ff-union ff-diff ; TEMP
       ff-replace
       ff-fold ff-foldr ; like list folds but (op st key val) -> st'
+      ff-for-each
       ff-map      ; like list map but (op key val) -> val'
       ff-iter     ; ff -> ((key . value) ...) stream (in order)
       ff-singleton? ; ff → bool (has just one key?)
@@ -430,6 +431,13 @@
                (if (red? ff)
                   (red   (ff-map op l) k (op k v) (ff-map op r))
                   (black (ff-map op l) k (op k v) (ff-map op r))))))
+
+      (define (ff-for-each op ff)
+         (unless (empty? ff)
+            (with-ff (ff l k v r)
+               (op k v)
+               (ff-for-each op l)
+               (ff-for-each op r))))
 
       ;; could benchmark if sort + grow from bottom is faster
       (define (alist->ff lst)
