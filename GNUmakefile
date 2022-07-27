@@ -37,6 +37,10 @@ ol%.exe: src/olvm.c
 ol%.exe: extensions/ffi.c
 ol%.exe: tmp/repl.c
 
+# experimental
+olvm: vm
+	cp vm olvm
+
 # sources
 extensions/ffi.c: CFLAGS += -Iincludes
 extensions/ffi.c: includes/ol/vm.h
@@ -187,10 +191,13 @@ clean:
 	rm -r tmp/*
 
 install: ol includes/ol/vm.h
-	# install Ol executable to $(DESTDIR)$(PREFIX)/bin:
+	# install Ol executable(s) to $(DESTDIR)$(PREFIX)/bin:
 	@echo Installing main binary...
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install ol $(DESTDIR)$(PREFIX)/bin/ol
+	@echo Installing ol virtual machine binary...
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install vm $(DESTDIR)$(PREFIX)/bin/olvm
 	# install Ol binary REPL to $(DESTDIR)$(PREFIX)/lib/ol:
 	@echo Installing REPL...
 	install -d $(DESTDIR)$(PREFIX)/lib/ol
@@ -216,10 +223,10 @@ uninstall:
 
 ## actual 'building' part
 debug: CFLAGS += $(CFLAGS_DEBUG)
-debug: vm repl ol
+debug: vm repl ol olvm
 
 release: CFLAGS += $(CFLAGS_RELEASE)
-release: vm repl ol
+release: vm repl ol olvm
 
 slim: CFLAGS += -DHAS_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
 slim: release
