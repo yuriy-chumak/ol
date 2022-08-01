@@ -2,7 +2,7 @@
 
 (import (owl parse))
 
-(coroutine 'reader (lambda ()
+(actor 'reader (lambda ()
    ; lazy file line-by-line reader
    (define (not-a-newline x) (not (eq? x #\newline)))
    (define parser (let-parse*
@@ -26,7 +26,7 @@
    (print "total lines read: " (await (mail 'writer #t)))
 ))
 
-(coroutine 'writer (lambda ()
+(actor 'writer (lambda ()
    (let loop ((n 0))
       (define line (await (mail 'reader #t)))
 

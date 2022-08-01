@@ -4,7 +4,7 @@
 (define MOVE 1001)
 (define GET 1002)
 
-(coroutine 'hero (lambda ()
+(actor 'hero (lambda ()
 (let loop ((this {
                   'x 10
                   'y 7

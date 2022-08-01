@@ -15,23 +15,23 @@
 (let loop ((id (- n 1)) (next n))
 	(if (> id 1)
 		(begin
-			(coroutine id (forwarder next))
+			(actor id (forwarder next))
 			(loop (- id 1) id))))
 
 ; first one is a special,
 ;  wait for a message, send "pass this around" to the second coroutine
 ;  print a secnd message and stop execution
-(coroutine 1 (lambda ()
+(actor 1 (lambda ()
    (define msg (ref (wait-mail) 2))
-   (print "  coroutine 1 got '" msg "', let's go!")
+   (print "  actor 1 got '" msg "', let's go!")
    (mail 2 "pass this around")
 
    (let*((envelope (wait-mail))
          (sender msg envelope))
-      (print "Thread 1: coroutine named '" sender "' sent me an '" msg "'"))))
+      (print "Thread 1: actor named '" sender "' sent me an '" msg "'"))))
 
 ;; last one sends to first
 (print "Sending a first message.")
-(coroutine n (forwarder 1))
+(actor n (forwarder 1))
 
 (mail 1 'start)

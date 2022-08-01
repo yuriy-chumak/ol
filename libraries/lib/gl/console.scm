@@ -244,7 +244,7 @@
 
 
    ; сопрограмма - главный обработчик графической консоли
-   (coroutine 'windows (lambda ()
+   (actor 'windows (lambda ()
       (let this ((itself #empty))
          (let*((envelope (wait-mail))
                (sender msg envelope))

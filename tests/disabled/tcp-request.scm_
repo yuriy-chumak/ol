@@ -17,7 +17,7 @@
 
 (define message (render "hello there" null))
 
-(coroutine 'socket-thread
+(actor 'socket-thread
    (lambda ()
       (let ((cli (interact sock 'accept))) ; <- blocks the thread
          (print "Client connected")

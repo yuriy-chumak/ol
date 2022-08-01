@@ -47,7 +47,7 @@
                   (wait rounds)
                   (loop wanted rst)))))))
 
-(coroutine 'fini
+(actor 'fini
    (λ ()
       (print (ref (wait-mail) 2)) ; omit the id to make output equal in all cases
       (for-each (λ (id) (mail id 'halt)) 
@@ -56,7 +56,7 @@
 (fold
    (λ (rst id)
       (lets ((rst n (rand rst #xffffffff)))
-         (coroutine id
+         (actor id
             (λ () (spammer (seed->rands n))))
          rst))
    (seed->rands seed)

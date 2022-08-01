@@ -82,7 +82,7 @@
 
 ;(define blinky 'blinky)
 (define (born-blinky)
-   (coroutine 'blinky (lambda ()
+   (actor 'blinky (lambda ()
       (let this ((x 13) (y 18))
          (let*((envelope (wait-mail))
                (sender msg envelope))

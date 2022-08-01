@@ -43,7 +43,7 @@
 (print "stack: " stack)
 (print "is stack empty: " (eq? stack #null))
 
-(coroutine 'stack (lambda ()
+(actor 'stack (lambda ()
    (let this ((me '()))
       (let*((envelope (wait-mail))
             (sender msg envelope))

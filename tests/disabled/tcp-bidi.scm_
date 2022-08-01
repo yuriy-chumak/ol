@@ -38,7 +38,7 @@
 (define (sender fd)
    (for-each (λ (x) (mail fd x)) elems))
    
-(coroutine 'socket-thread
+(actor 'socket-thread
    (λ ()
       (let ((cli (interact sock 'accept)))
          (sender cli)

@@ -1,5 +1,5 @@
 (define-library (otus async)
-
+   ; coroutine is deprecated name, will be removed soon!
    (export
       async async-named ; just run as a thread
       coroutine actor ; always named, can receive and send a messages
@@ -163,9 +163,9 @@
       ; arrives. Messages are of the form #(<sender-id> <message>).
 
       ; example: (await (mail 'who ['a 'message]))
-      (define (await sentmail)
-         (if sentmail
-            (ref (accept-mail (λ (env) (eq? (ref env 1) sentmail))) 2)))
+      (define (await coroutine)
+         (if coroutine
+            (ref (accept-mail (λ (env) (eq? (ref env 1) coroutine))) 2)))
 
       (define async (case-lambda
          ((thunk) (async-named [] thunk))

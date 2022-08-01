@@ -1194,7 +1194,7 @@
 
    (define fft-float* (fft* fft-float))
 
-   (coroutine 'opengl-compat (lambda ()
+   (actor 'opengl-compat (lambda ()
       ; some internal staff
       (define default-color '(1 1 1 1))
 

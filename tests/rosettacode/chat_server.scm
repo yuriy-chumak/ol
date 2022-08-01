@@ -2,7 +2,7 @@
 
 (define (timestamp) (syscall 201 "%c"))
 
-(coroutine 'chat-room (lambda ()
+(actor 'chat-room (lambda ()
 (let this ((visitors #empty))
 (let* ((envelope (wait-mail))
        (sender msg envelope))

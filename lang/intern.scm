@@ -118,7 +118,7 @@
       ; call before
       (define (fork-symbol-interner symbols)
          (let ((codes (fold put-symbol empty-symbol-tree symbols)))
-            (coroutine 'intern (lambda ()
+            (actor 'intern (lambda ()
                (let loop ((codes codes))
                   (let*((envelope (wait-mail))
                         (sender msg envelope)  ; assert (string? msg)

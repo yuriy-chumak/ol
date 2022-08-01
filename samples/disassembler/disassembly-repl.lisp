@@ -34,7 +34,7 @@
 
 
 ; -- cache --
-(coroutine 'cache (lambda ()
+(actor 'cache (lambda ()
    (let loop ((cache {}) (id 1))
       (let*((envelope (wait-mail))
             (sender msg envelope))

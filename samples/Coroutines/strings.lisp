@@ -1,7 +1,7 @@
 #!/usr/bin/env ol
 
 ; all strings are collected in this coroutine in "strings" ff
-(coroutine 'strings (lambda ()
+(actor 'strings (lambda ()
 (let this ((strings #empty))
 (let* ((envelope (wait-mail))
        (sender msg envelope))

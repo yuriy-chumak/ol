@@ -358,7 +358,7 @@
                (halt (vm:pin evaluate)))
          else
             ; regular repl:
-            (coroutine ['repl] (lambda ()
+            (actor ['repl] (lambda ()
                ;; repl
                (exit-thread
                   (repl-loop env file)))))))

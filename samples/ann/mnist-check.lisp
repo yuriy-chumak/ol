@@ -295,7 +295,7 @@ GL_POINTS GL_TRIANGLE_STRIP 4
 (read-matrix! (get-layer ann 2) "syn1")
 
 ; обучение сети
-(coroutine 'ann (lambda ()
+(actor 'ann (lambda ()
 (let this ()
 (let* ((envelope (wait-mail))
        (sender msg envelope))

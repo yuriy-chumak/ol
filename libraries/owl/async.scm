@@ -22,8 +22,8 @@
       (define fork async)
       (define fork-named async-named)
       (define fork-linked async-linked)
-      (define fork-server coroutine)
-      (define fork-linked-server coroutine-linked)
+      (define fork-server actor)
+      (define fork-linked-server actor-linked)
 
       ;; (executable ...) → (first-value . rest-ll) | (), or crash if something crashes in them
       (define (par* ts)

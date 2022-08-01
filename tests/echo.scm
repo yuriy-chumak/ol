@@ -10,7 +10,7 @@
       (mail from msg)
       (echoer)))
 
-(coroutine echo echoer)
+(actor echo echoer)
 
 (let loop ((n 1))
    (cond

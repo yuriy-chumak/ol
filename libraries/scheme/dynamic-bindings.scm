@@ -8,7 +8,7 @@
    (owl ff) (otus async))
 (begin
    (setq coname '|4.2.6 Dynamic bindings|)
-   (coroutine coname (lambda ()
+   (actor coname (lambda ()
       (let loop ((bindings #empty))
          (let*((envelope (wait-mail))
                (sender msg envelope))

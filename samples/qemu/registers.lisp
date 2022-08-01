@@ -248,7 +248,7 @@
 
 
 
-(coroutine 'registers (lambda ()
+(actor 'registers (lambda ()
 (let loop ((ff #empty))
 (let*((envelope (wait-mail))
       (sender msg envelope))

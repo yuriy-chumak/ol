@@ -299,7 +299,7 @@ GL_POINTS GL_TRIANGLE_STRIP 4
 (read-matrix! (get-layer ann 2) "syn1")
 
 ; обучение сети
-(coroutine 'ann (lambda ()
+(actor 'ann (lambda ()
    (print "запуcкаю обучение сети")
    (let this ((n 0))
       (let*((i (rand! images-count))

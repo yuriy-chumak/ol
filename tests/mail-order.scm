@@ -10,7 +10,7 @@
       (mail from msg)
       (echoer)))
 
-(coroutine echo echoer)
+(actor echo echoer)
 
 (begin
    ;; send 0-99 mails and leave the responses to inbox

@@ -95,7 +95,7 @@
     (rs a (rand rs #xffffffffffffff))
     (rs b (rand rs #xffffffffffffff)))
 
-   (coroutine 'socket-thread
+   (actor 'socket-thread
       (λ ()
          (let ((cli (interact sock 'accept)))
             (compare-bidi cli (seed->rands a))

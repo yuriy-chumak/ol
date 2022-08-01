@@ -221,7 +221,7 @@
 ; =============================================================================================
 ; ==
 (define (fork name . arguments)
-(coroutine name (lambda ()
+(actor name (lambda ()
    (define In (syscall 22)) ; create input/output pipes: '(read-pipe . write-pipe)
    (define Out (syscall 22))
    (define Pid
@@ -274,7 +274,7 @@
 ; прерыватель gdb "по требованию" (отправляет Ctrl+C)
 ; любое сообщение этой сопрограмме заканчивает ее
 (define (run-gdb-breaker)
-   (coroutine 'gdb-breaker (lambda ()
+   (actor 'gdb-breaker (lambda ()
       (let this ((unused #f))
          (unless (check-mail)
             (if (key-pressed #xffbf) ; f2
@@ -439,7 +439,7 @@
 
 ; ================================
 ; code window
-(coroutine 'code (lambda ()
+(actor 'code (lambda ()
 (let loop ((ff #empty))
 (let*((envelope (wait-mail))
       (sender msg envelope))
@@ -498,7 +498,7 @@
 ; ============================================
 ; запустим вычислитель, это надо сделать здесь
 ; чтобы захватить все предыдущие дефайны
-(coroutine 'evaluator (lambda ()
+(actor 'evaluator (lambda ()
 (let loop ((env *toplevel*))
 (let*((envelope (wait-mail))
       (sender msg envelope))

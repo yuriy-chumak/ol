@@ -25,7 +25,7 @@
 ; unique session id:
 (setq coname '[http-session-ids])
 
-(coroutine coname (lambda ()
+(actor coname (lambda ()
 (let this ((id 1))
 (let*((envelope (wait-mail))
       (sender msg envelope))

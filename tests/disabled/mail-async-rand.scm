@@ -39,8 +39,8 @@
       (lets
          ((rst seed-1 (rand rst #xfffffffffffffff))
           (rst seed-2 (rand rst #xfffffffffffffff)))
-         (coroutine id (λ () (mailer (seed->rands seed-1) (+ id 1))))
-         (coroutine (+ id 1) (λ () (mailer (seed->rands seed-2) id)))
+         (actor id (λ () (mailer (seed->rands seed-1) (+ id 1))))
+         (actor (+ id 1) (λ () (mailer (seed->rands seed-2) id)))
          rst))
    (seed->rands (* (time-ms) (<< (time-ms) 9)))
    (lrange 0 2 n-threads))
