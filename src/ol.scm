@@ -101,50 +101,32 @@
 
 (print "Code loaded at " (- (time-ms) build-start) " ms.")
 
-;;;
-;;; Entering sandbox
-;;;
-
 ;; a temporary O(n) way to get some space in the heap
 
 ;; fixme: allow a faster way to allocate memory
 ;; n-megs → _
 (define (ensure-free-heap-space megs)
-   #true)
-;   (if (> megs 0)
-;      (lets
-;         ((my-word-size (get-word-size)) ;; word size in bytes in the current binary (4 or 8)
-;          (blocksize 65536)              ;; want this many bytes per node in list
-;          (pairsize (* my-word-size 3))  ;; size of cons cell, being [header] [car-field] [cdr-field]
-;          (bytes                         ;; want n bytes after vector header and pair node for each block
-;            (map (λ (x) 0)
-;               (iota 0 1
-;                  (- blocksize (+ pairsize my-word-size)))))
-;          (n-blocks
-;            (ceil (/ (* megs (* 1024 1024)) blocksize))))
-;         ;; make a big data structure
-;         (map
-;            (λ (node)
-;               ;; make a freshly allocated byte vector at each node
-;               (make-bytevector bytes))
-;            (iota 0 1 n-blocks))
-;         ;; leave it as garbage
-;         #true)))
-;
+   (when (> megs 0)
+      (define word-size (size (vm:cast 0 type-vptr)))
+      (define blocksize (<< 1 (* (- word-size 1) 8)))
+      (let loop ((megs (* megs 1048576)) (out #null))
+         (print "megs: " megs ", blocksize: " blocksize)
+         (if (zero? megs)
+            out
+         else
+            (define bytes (min megs blocksize))
+            (print "bytes: " bytes)
+            (loop (- megs bytes) (cons (make-bytevector bytes) out))))))
 
 (define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
 
-;; enter sandbox with at least n-megs of free space in heap, or stop the world (including all other threads and io)
+;; enter sandbox with at least n-megs of free space in heap, or exit
 (define (sandbox n-megs)
-   ;; grow some heap space work working, which is usually necessary given that we can't
-   ;; get any more memory after entering seccomp
-   (if (and n-megs (> n-megs 0))
-      (ensure-free-heap-space n-megs))
-   (or
-      (syscall 157)
-      (begin
-         (system-stderr "Failed to enter sandbox. \nYou must be on a newish Linux and have seccomp support enabled in kernel.\n")
-         (halt exit-seccomp-failed))))
+   ; allocate n-megs heap space, which is necessary given that
+   ;  we won't be able to get more memory after entering seccomp.
+   (define garbage (ensure-free-heap-space
+      (if (string? n-megs) (string->number n-megs) 1)))
+   (syscall 157))
 
 
 ;; todo: share the modules instead later
@@ -216,12 +198,17 @@
 
                   ((starts-with? (car args) "--version=")
                      (loop (put options 'version
-                              (substring (car args) 10 (string-length (car args))))
+                              (substring (car args) 10))
                            (cdr args)))
 
                   ;; additional options
                   ((string-eq? (car args) "--sandbox")
                      (loop (put options 'sandbox #t) (cdr args)))
+                  ((starts-with? (car args) "--sandbox=")
+                     (loop (put options 'sandbox
+                              (substring (car args) 10))
+                           (cdr args)))
+
                   ((string-eq? (car args) "--interactive")
                      (loop (put options 'interactive #t) (cdr args)))
                   ((string-eq? (car args) "--no-interactive")
@@ -320,7 +307,10 @@
                      (cons '*sandbox* sandbox?)))))
          ; go:
          (if sandbox?
-            (sandbox 1)) ;todo: (sandbox megs) - check is memory enough
+            (unless (sandbox sandbox?)
+               (system-stderr "Failed to enter the sandbox.\nYou must have SECCOMP support enabled in the OS kernel.\n")
+               (halt exit-seccomp-failed)))
+
 
          ; ohai:
          (if interactive?

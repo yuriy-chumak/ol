@@ -27,6 +27,9 @@
                (ARITY-ERROR
                   `(,a did not accept ,(-- b) arguments))
 
+               ((23 18 82) ; VMNEW, VMMAKE, VMALLOC
+                  `(memory allocation error))
+
                (52 ; (car not-a-pair)
                   `(trying car of a non-pair ,a))
                (53 ; (cdr not-a-pair)

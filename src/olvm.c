@@ -405,7 +405,7 @@ struct heap_t
 	// вызвать GC если в памяти мало места (в словах)
 	// для безусловного вызова передать 0
 	// возвращает 1, если была проведена сборка
-	int (*gc)(struct olvm_t* ol, unsigned ws);
+	int (*gc)(struct olvm_t* ol, long ws);
 };
 
 typedef struct heap_t heap_t;
@@ -1739,7 +1739,7 @@ word *sweep(word* end, heap_t* heap)
 // query: sure to be able to alloc query words
 // regs: registers
 static
-word gc(heap_t *heap, int query, word regs)
+word gc(heap_t *heap, long query, word regs)
 {
 	word *fp;
 	if (query == -1) { // do the full gc?
@@ -1806,10 +1806,18 @@ word gc(heap_t *heap, int query, word regs)
 		if (nused > (hsize / 2)) {
 			if (nused < hsize)
 				nused = hsize;
+#if DEBUG_GC
+			fprintf(stderr, "Growing GC from %ld(%ld) to %ld(%ld), queried %ld\n",
+					hsize, hsize*W, nused + nused / 3, (nused + nused / 3) * W, query);
+#endif
 			regs += resize_heap(heap, nused + nused / 3) * W;
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
 		else if (nused < (hsize / 3)) {
+#if DEBUG_GC
+			fprintf(stderr, "Shrinking GC from %ld(%ld) to %ld(%ld), queried %ld\n",
+					hsize, hsize*W, hsize - hsize / 9, (hsize - hsize / 9) * W, query);
+#endif
 			regs += resize_heap(heap, hsize - hsize / 9) * W;
 		}
 		heap->genstart = (word*)regs; // always start new generation
@@ -2077,12 +2085,12 @@ word d2ol(struct olvm_t* ol, double v) {
 
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
-static int OLVM_gc(struct olvm_t* ol, unsigned ws) // ws - required size in words
+static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 {
 	word *fp = ol->heap.fp; // memory allocation pointer
 
 	// если места еще хватит, не будем ничего делать
-	if ((ws != 0) && ((fp + ws) < ol->heap.end))
+	if ((ws >= 0) && ((fp + ws) < ol->heap.end))
 		return 0;
 
 	word* R = ol->R;
@@ -2092,13 +2100,8 @@ static int OLVM_gc(struct olvm_t* ol, unsigned ws) // ws - required size in word
 	for (int i = ol->arity + 3; i < NR; i++)
 		R[i] = IFALSE;
 	ol->ffpin = 4; // init first free pin
-    // расширения должны использовать область pinned объектов
-	// fprintf(stderr, "%d", ol->arity);
 
-	// если нам не хватило магических 1024, то у нас проблема
 	// assert (fp + N + 3 < ol->heap.end);
-
-	// TODO: складывать this первым, тогда можно будет копировать только ol->arity регистров
 
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = new (TVECTOR, N + 1); // N for regs, 1 for this
@@ -2106,7 +2109,7 @@ static int OLVM_gc(struct olvm_t* ol, unsigned ws) // ws - required size in word
 	regs[p] = ol->this;
 	// выполним сборку мусора
 	ol->heap.fp = fp;
-	regs = (word*)gc(&ol->heap, ws, (word)regs); // GC занимает 0-1 ms
+	regs = (word*)gc(&ol->heap, ws, (word)regs);
 	// и восстановим все регистры, уже подкорректированные сборщиком
 	ol->this = regs[p];
 	while (--p >= 1) R[p-1] = regs[p];
@@ -2869,11 +2872,15 @@ loop:;
 					dp = ip - (unsigned char*)this;
 
 					heap->fp = fp; ol->this = this;
-					heap->gc(ol, len);
+					heap->gc(ol, (len / mult));
 					fp = heap->fp; this = ol->this;
 
 					ip = (unsigned char*)this + dp;
 					value = A1, el = A2; // reload values after possible gc
+
+					// fail, no memory available:
+					if (fp + (len / mult) > heap->end)
+						CRASH(op, sandboxp ? ITRUE : IFALSE, I(size));
 				}
 
 				word *ptr = (op == VMMAKE)
@@ -2925,7 +2932,7 @@ loop:;
 				}
 				break;
 			}
-			default:
+			default: fail:
 				FAIL(op, this, I(size));
 		}
 
@@ -4643,6 +4650,7 @@ loop:;
 	//			ol->slice  = uvtoi (a);
 	//			break;
 	//		}
+			case 1117 + SECCOMP:
 			case 1117: { // get memory stats -> #[old-generation-size allocated-size heap-size], all in words
 				int g = heap->genstart - heap->begin;
 				int f = fp - heap->begin;
