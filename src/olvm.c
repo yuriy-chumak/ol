@@ -55,26 +55,22 @@
 
 // unsigned int that is capable of storing a pointer
 // основной data type, зависит от разрядности машины
-//   базируется на C99 стандарте, <stdint.h>
+//   based on C99 standard, <stdint.h>
 typedef uintptr_t word;
 
-//	arm, armv7-a, armv8-a: 4; arch64: 8
-//	risc-v 32: 4;          risc-v 64: 8
-//	wasm:      4
-//	x86:       4;             x86-64: 8
-//	mips:      4;             mips64: 8
-//	ppc:       4;     ppc64, ppc64le: 8
-//	raspbian:  4
+// arm, armv7-a, armv8-a: 4;  arch64: 8;
+// risc-v 32: 4;           risc-v 64: 8;
+// wasm:      4;
+// x86:       4;              x86-64: 8;
+// mips:      4;              mips64: 8;
+// ppc:       4;      ppc64, ppc64le: 8;
+// raspbian:  4;
 
-#ifndef OLVM_NOMAIN
-#define OLVM_NOMAIN 0
-#endif
 
-//
-// virtual machine:
+// OL Virtual Machine
 typedef struct olvm_t olvm_t;
 
-// ------------------------------------------------------
+// -----------------------------------------------------
 // PUBLIC API:
 
 olvm_t*
@@ -83,15 +79,16 @@ void OLVM_delete(olvm_t* ol);
 word OLVM_run(olvm_t* ol, int argc, char** argv);
 word OLVM_evaluate(olvm_t* ol, word function, int argc, word* argv);
 
+void*OLVM_userdata(olvm_t* ol, void* userdata);
+void*OLVM_allocate(olvm_t* ol, unsigned words);
+
 // "pinned" objects supporting functions
 size_t OLVM_pin(olvm_t* ol, word ref); // pin can realloc ol->R
 word OLVM_deref(olvm_t* ol, size_t p);
 word OLVM_unpin(olvm_t* ol, size_t p);
 
+// ffi callbacks support
 word OLVM_apply(olvm_t* ol, word function, word args);
-
-void*OLVM_userdata (olvm_t* ol, void* userdata);
-void*OLVM_allocate (olvm_t* ol, unsigned words);
 
 // -----------------------------------------------------
 // descriptor format
@@ -1518,6 +1515,9 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 // internal declarations
 
 
+#ifndef OLVM_NOMAIN
+#define OLVM_NOMAIN 0
+#endif
 
 
 // ------------------------------------------------------
@@ -1865,12 +1865,6 @@ void set_blocking(int sock, int blockp) {
 /* small functions defined locally after hitting some portability issues */
 //static __inline__ void bytecopy(char *from, char *to, int n) { while (n--) *to++ = *from++; }
 static __inline__ void wordcopy(word *from, word *to, int n) { while (n--) *to++ = *from++; }
-static __inline__
-unsigned int lenn(char *pos, size_t max) { // added here, strnlen was missing in win32 compile
-	unsigned int p = 0;
-	while (p < max && *pos++) p++;
-	return p;
-}
 
 #if !OLVM_NOMAIN
 #	ifdef _WIN32
@@ -5319,9 +5313,8 @@ struct olvm_t*
 OLVM_new(unsigned char* bootstrap)
 {
 	// если отсутствует исполнимый образ
-	if (bootstrap == 0) {
+	if (bootstrap == 0)
 		return 0;
-	}
 
 	// ===============================================================
 	// создадим виртуальную машину:
