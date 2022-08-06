@@ -1123,10 +1123,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #endif
 
 #ifndef HAS_SENDFILE
-# if defined(_WIN32) || defined(__linux__)
-#define HAS_SENDFILE HAS_SOCKETS
+# if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
+#  define HAS_SENDFILE HAS_SOCKETS
 # else
-#define HAS_SENDFILE 0
+#  define HAS_SENDFILE 0
 # endif
 #endif
 
@@ -1180,6 +1180,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 # if !defined ( __EMSCRIPTEN__ )
 #	include <sched.h> // yield
 # endif
+#endif
+
+#ifdef __APPLE__
+#	include <sched.h>
 #endif
 
 
@@ -1285,7 +1289,12 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #endif
 
 #if HAS_SENDFILE
+# if defined(__linux__)
 #	include <sys/sendfile.h>
+# endif
+# if defined(_WIN32)
+#	include <sys/sendfile.h>// own win32 implementation
+# endif
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -1406,7 +1415,8 @@ void yield()
      defined(__FreeBSD__) ||\
      defined(__NetBSD__) ||\
      defined(__OpenBSD__) ||\
-     defined(__DragonFly__)
+     defined(__DragonFly__) ||\
+	 defined(__APPLE__)
 	sched_yield();
 # endif
 # ifdef _WIN32
@@ -3769,24 +3779,38 @@ loop:;
 				CHECK_NUMBER(3);
 				CHECK_NUMBER(4);
 
-				int socket = port(A1);
-				int filefd = port(A2);
+				int socket = port(A1); // to
+				int filefd = port(A2); // from
 				off_t offset = number(A3);
-				int count = number(A4);
+				int count = number(A4);// count
 
 				ssize_t wrote= 0;
 				while (count > 0) {
+#if defined(__APPLE__)
+					off_t len = count;
+					wrote = sendfile(filefd, socket, offset, &len, NULL, 0);
+					if (wrote == 0)
+						wrote = len;
+#else
 					wrote = sendfile(socket, filefd, &offset, count);
+#endif
 					if (wrote < 0) {
 						if (errno != EAGAIN)
 							break;
 						yield();
+#if defined(__APPLE__)
+						wrote = len;
+						goto ok;
+#endif
 					}
 					else
 					if (wrote == 0)
 						break;
-					else
+					else {
+					ok:
+						offset += wrote;
 						count -= wrote;
+					}
 				}
 				if (wrote < 0)
 					break;
