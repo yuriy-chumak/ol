@@ -20,7 +20,40 @@
 (define (yield) (syscall 1022 0))
 (define (time format seconds) (syscall 201 format seconds))
 (define uname (syscall 63))
-(define split c/"/) ;"
+
+(define (space? x) (eq? x #\space))
+(define (non-space? x) (not (eq? x #\space)))
+(define split (let-parse* (
+      (permissions         (greedy+ (rune-if non-space?)))
+      (sp1 (greedy+ (rune-if space?)))
+      (number-of-hardlinks (greedy+ (rune-if non-space?)))
+      (sp2 (greedy+ (rune-if space?)))
+      (file-owner          (greedy+ (rune-if non-space?)))
+      (sp3 (greedy+ (rune-if space?)))
+      (file-group          (greedy+ (rune-if non-space?)))
+      (sp4 (greedy+ (rune-if space?)))
+      (file-size           (greedy+ (rune-if non-space?)))
+      (sp5 (greedy+ (rune-if space?)))
+      (month               (greedy+ (rune-if non-space?)))
+      (sp6 (greedy+ (rune-if space?)))
+      (day                 (greedy+ (rune-if non-space?)))
+      (sp7 (greedy+ (rune-if space?)))
+      (time                (greedy+ (rune-if non-space?)))
+      (sp8 (greedy+ (rune-if space?)))
+
+      (filename            (greedy+ byte)))
+   (cons
+      (runes->string
+         (append
+            permissions         sp1
+            number-of-hardlinks sp2
+            file-owner          sp3
+            file-group          sp4
+            file-size           sp5
+            month               sp6
+            day                 sp7
+            time                sp8))
+      (runes->string filename))))
 
 (define OK "\e[0;32mOK\e[0;0m")
 (define FAIL "\e[0;31mFAIL\e[0;0m")
@@ -109,14 +142,14 @@
             ; list folder:
             (define In (pipe))
             (define Out (pipe))
-            (define Pid (system (list "/bin/bash" "-c" (string-append "ls -lahQ --full-time " filename)) In Out))
+            (define Pid (system (list "/bin/bash" "-c" (string-append "ls -lah " filename)) In Out))
             (close-pipe In) ; we don't use In rigth now
 
             (define get-line
                (let-parse* (
                      (bytes (greedy+ (byte-if (lambda (x) (not (eq? x #\newline))))))
                      (endl (imm #\newline)))
-                  (bytes->string bytes)))
+                  bytes))
 
             (send "HTTP/1.0 200 OK\n"
                "Connection: close\n"
@@ -132,19 +165,19 @@
             (let loop ((stream (try-parse get-line (cdr line) #false)))
                (when stream
                   (define line (car stream))
-                  (define lines (split line))
-                  (send (car lines))
+                  (define columns (parse split line filename "invlid ls output" #f))
+                  (send (car columns))
                   (send
                      "<a href='"
                         (cond
-                           ((string-eq? (cadr lines) ".")
+                           ((string-eq? (cdr columns) ".")
                               (string-append "/" filename))
                            (else
-                              (string-append "/" filename "/" (cadr lines))))
+                              (string-append "/" filename "/" (cdr columns))))
                      "'>"
-                     (cadr lines)
+                     (cdr columns)
                      "</a>")
-                  (for-each send (cddr lines))
+                  ;(for-each send (cddr columns))
                   (send "<br/>")
 
                   (loop (try-parse get-line (cdr stream) #false))))
