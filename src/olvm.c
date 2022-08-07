@@ -2102,7 +2102,6 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 	// попробуем освободить ненужные регистры?
 	for (int i = ol->arity + 3; i < NR; i++)
 		R[i] = IFALSE;
-	ol->ffpin = 4; // init first free pin
 
 	// assert (fp + N + 3 < ol->heap.end);
 
@@ -5395,8 +5394,7 @@ OLVM_new(unsigned char* bootstrap)
 	R[3] = IHALT;  // continuation, just finish job
 	R[4] = INULL;  // first argument
 
-	//
-	handle->ffpin = 4; // first free pin is definitely 4
+	handle->ffpin = 4; // first four pins are used internally
 
 	// i/o overrides
 	handle->open = os_open;
