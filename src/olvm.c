@@ -82,7 +82,7 @@ word OLVM_evaluate(olvm_t* ol, word function, int argc, word* argv);
 void*OLVM_userdata(olvm_t* ol, void* userdata);
 void*OLVM_allocate(olvm_t* ol, unsigned words);
 
-// "pinned" objects supporting functions
+// pinned objects support functions
 size_t OLVM_pin(olvm_t* ol, word ref); // pin can realloc ol->R
 word OLVM_deref(olvm_t* ol, size_t p);
 word OLVM_unpin(olvm_t* ol, size_t p);
@@ -93,18 +93,18 @@ word OLVM_apply(olvm_t* ol, word function, word args);
 // -----------------------------------------------------
 // descriptor format
 // заголовок объекта, находится по адресу 0 (ob[0], *ob):
-//  [s...sss ????rppp tttttt10] // bit 2 у заголовков всегда(!) выставлен в 1 (для GC!)
+//  [s...sss ????rppp tttttt10] // bit 2 у заголовков всегда выставлен в 1 (используется GC)
 //   '-----| '--||'-| '----|
 //         |    ||  |      '-----> tttttt,  object type
 //         |    ||  '------------> ppp,     number of padding (unused) bytes at the end of object, if raw (0-(wordsize-1))
-//         |    |'---------------> r,       rawness bit (raw objects have no descriptors(pointers) in them)
+//         |    |'---------------> r,       rawness bit (raw objects have no references(pointers) in them)
 //         |    '----------------> ????,    your tags here! e.g. tag for closing file descriptors in gc, etc. not used for now
 //         '---------------------> s...sss, object size in words
 //
 // а это то, что лежит в объектах - либо непосредственные значения, либо указатели на другие объекты:
 //                       .------------> value, if 'v' is set
 //                       |      .-----> type, if 'v' is set
-//                       |      |.----> 'v' bit
+//                       |      |.----> 'value' bit
 //   .-------------------| .----||.---> mark bit (can be 1 only during gc process)
 //  [... pppppppp pppppppp ttttttv0]
 //   '----------------------------|
@@ -113,13 +113,10 @@ word OLVM_apply(olvm_t* ol, word function, word args);
 //       внутренними указателями - таким образом, ВСЕ объекты в куче выравнены по границе слова
 //
 //
-//; note - there are 6 type bits, but one is currently wasted in old header position
-//; to the right of them, so all types must be <32 until they can be slid to right
-//; position.
-
 // todo: вот те 4 бита можно использовать для кастомных типов,
-// например, в спецполя складывать ptr на функцию, что вызывает mark для подпоинтеров,
+// например, в спецполя складывать id функции, что вызывает mark для подпоинтеров,
 //	         и ptr на функцию, что делает финализацию.
+// todo: move "r" bit left to allow 128-bit machines
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
 #define IPOS      8  // === bits offset of (struct value_t, value), deprecated name
@@ -131,12 +128,13 @@ word OLVM_apply(olvm_t* ol, word function, word args);
 #define SPOS     16  // === bits offset of (struct header_t, size)
 
 // ---==( value_t )==---
+// immediate Ol value
 struct __attribute__ ((aligned(sizeof(word)), packed))
 value_t
 {
-	unsigned char mark : 1;    // mark bit (can be 1 only during gc)
-	unsigned char v    : 1;    // always 1
-	unsigned char type : 6;    // value type
+	unsigned char mark : 1;    // always 0, (1 only during GC) =
+	unsigned char v    : 1;    // always 1                      = 8 bits
+	unsigned char type : 6;    // value type                   =
 
 	unsigned char value[sizeof(word) - 1];
 };
@@ -146,12 +144,13 @@ value_t
 
 
 // ---==( reference_t )==---
+// pointer to the object_t
 struct __attribute__ ((aligned(sizeof(word)), packed))
 reference_t
 {
 	union {
 		struct {
-			unsigned mark : 1;    // mark bit (can be 1 only during gc)
+			unsigned mark : 1;    // always 0, (1 only during GC)
 			unsigned v    : 1;    // always 0
 		};
 		uintptr_t ptr; // btw, normally lower two bits is always 0, so this pointer always word-aligned
@@ -168,12 +167,13 @@ object_t
 {
 	union {
 		struct header_t {
-			unsigned char mark : 1;    // always 0, (can be 1 only during GC)
-			unsigned char i    : 1;    // always 1, required by GC
-			unsigned char type : 6;    // object type
+			unsigned char mark : 1;    // always 0, (1 only during GC) =
+			unsigned char i    : 1;    // always 1, (0 only during GC)  = 8 bits
+			unsigned char type : 6;    // object type                  =
 
 			unsigned char padding : 3; // number of padding (empty) bytes after the end of reasonable object data
 			unsigned char rawness : 1; // 1 for raw stream, 0 for vectors (tuples)
+				               // : 4; // reserved bits bits
 
 			unsigned char size[sizeof(word) - 2]; // object size in words, including header one
 		} header;
@@ -184,12 +184,13 @@ object_t
 // some critical vm limitations:
 //static_assert(sizeof(struct object_t) == sizeof(word), "Minimal size of object_t structure should be equal to size of virtual machine word");
 
+
 // ------------------------------------------------------
 #ifndef OLVM_ANSI_INT_LIMITS
 #define OLVM_ANSI_INT_LIMITS 0
 #endif
 
-// floating point numbers (inexact numbers in terms of lisp) support
+// floating point numbers (inexact numbers in terms of Scheme) support
 #ifndef OLVM_INEXACTS
 #define OLVM_INEXACTS 1
 #endif
@@ -267,7 +268,6 @@ object_t
 #define rawstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
 
 // types:
-// todo: объединить типы TENUMP и TINTP, TENUMN и TINTN, так как они различаются битом I
 #define TPAIR                        (1)
 #define TVECTOR                      (2)
 #define TSTRING                      (3)
@@ -282,7 +282,7 @@ object_t
 #define TCLOS                       (18)
 #define TCONSTRUCTOR                (63) // вызываемая процедура (не байткод! не замыкание!), TODO: проверить, что точно работает
 
-#define TFF                         (24) // // 26,27 same
+#define TFF                         (24) // 26,27 same
 #	define TRIGHT                     1 // flags for TFF
 #	define TRED                       2
 
@@ -342,21 +342,18 @@ object_t
 #define car(ob)                     (ref(ob, 1))
 #define cdr(ob)                     (ref(ob, 2))
 
-#define caar(o)                     car(car(o))
-#define cadr(o)                     car(cdr(o))
-#define cdar(o)                     cdr(car(o))
-#define cddr(o)                     cdr(cdr(o))
+#define caar(o)                     car(car (o))
+#define cadr(o)                     car(cdr (o))
+#define cdar(o)                     cdr(car (o))
+#define cddr(o)                     cdr(cdr (o))
 
 // constants:
-// #define I(val)
-// 		(make_value(TENUMP, val))  // === (value << VPOS) | 2, deprecated name
 #define IFALSE                      make_value(TCONST, 0) // I(0)
 #define ITRUE                       make_value(TCONST, 1)
 #define INULL                       make_value(TCONST, 2)
 #define IEMPTY                      make_value(TCONST, 3) // empty ff
 #define IEOF                        make_value(TCONST, 4)
-//#define IHALT                       INULL // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
-#define IHALT                       make_value(TCONST, 5) // FIXME: adde a distinct IHALT, TODO: rename all IHALT to INULL, use IHALT to other things.
+#define IHALT                       make_value(TCONST, 5)
 #define IRETURN                     make_value(TCONST, 6)
 
 #define RFALSE  ((word*)IFALSE)
@@ -656,7 +653,7 @@ word*p = new (TVECTOR, 13);\
 		value_type (_x1) == TENUMN ? -y1 : y1; \
 	})//(x1 & 0x80) ? -y1 : y1;
 #define make_enum(v) \
-	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << IPOS) | 0x82 : (x4 << IPOS) | 2/*make_value(-x4, TENUMN) : make_value(x4, TENUMP)*/; })
+	(word)({ int_t x4 = (int_t)(v);  (x4 < 0) ? (-x4 << VPOS) | 0x82 : (x4 << VPOS) | 2/*make_value(-x4, TENUMN) : make_value(x4, TENUMP)*/; })
 #define make_enump(v) I(v)
 // todo: check this automation - ((struct value)(v).sign) ? -uvtoi (v) : uvtoi (v);
 
@@ -2010,7 +2007,7 @@ word d2ol(struct olvm_t* ol, double v) {
 	word* fp;
 	// check for non representable numbers:
 	if (v == INFINITY || v == -INFINITY || v == NAN)
-		return IFALSE;
+		return IFALSE; // todo: return +inf.0, -inf.0, +nan.0
 
 	fp = ol->heap.fp;
 
@@ -2052,7 +2049,6 @@ word d2ol(struct olvm_t* ol, double v) {
 	// число целое?
 	// числа должны лежать в обратном порядке, как мы их и получаем
 	// но в память то мы их кладем в обратном! так что нужен реверс
-	// todo: проверка выхода за границы кучи!!!
 	if (1) {
 		int negative = v < 0;  v = v < 0 ? -v : v;
 		if (v < (double)HIGHBIT)
@@ -2067,6 +2063,7 @@ word d2ol(struct olvm_t* ol, double v) {
 			size_t len = (p - fp);
 
 			//word* m = (word*) __builtin_alloca(len * sizeof(word)) + len;
+			// allocation is safe during MEMPAD 
 			new_bytevector(sizeof(word) * len); // dummy,
 			               // will be destroyed during next gc()
 			word* m = fp;
@@ -2085,7 +2082,9 @@ word d2ol(struct olvm_t* ol, double v) {
 	ol->heap.fp = fp;
 	return r;
 }
-#endif
+
+#endif // OLVM_INEXACTS
+// =================================================================
 
 
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
@@ -2175,14 +2174,22 @@ word get(word *ff, word key, word def, jmp_buf fail)
 #define ASSERT(exp, code, a)        if (!(exp)) CRASH(code, a, INULL);
 
 // # of function calls in a thread quantum
-#define TICKS                       10000
+#define TICKS  10000
 
-#define A0                          R[ip[0]]
-#define A1                          R[ip[1]]
-#define A2                          R[ip[2]]
-#define A3                          R[ip[3]]
-#define A4                          R[ip[4]]
-#define A5                          R[ip[5]]
+#define R0  R[0]
+#define R1  R[1]
+#define R2  R[2]
+#define R3  R[3]
+#define R4  R[4]
+#define R5  R[5]
+#define R6  R[6]
+
+#define A0  R[ip[0]]
+#define A1  R[ip[1]]
+#define A2  R[ip[2]]
+#define A3  R[ip[3]]
+#define A4  R[ip[4]]
+#define A5  R[ip[5]]
 
 static //__attribute__((aligned(8)))
 word runtime(struct olvm_t* ol)
