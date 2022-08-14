@@ -1756,7 +1756,6 @@ word gc(heap_t *heap, long query, word regs)
 
 	fp = heap->fp;
 	{
-		*fp = make_header(TVECTOR, 2); // этого можно не делать
 		word *root = &fp[1];
 	//	word *root = fp + 1; // same
 
