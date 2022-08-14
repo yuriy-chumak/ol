@@ -225,7 +225,7 @@ double   CV_DOUBLE(ret_t* got) { return *(double*)  got; }
 // data type.
 // (Small embedded systems using special floating-point formats may be another
 // matter however.)
-word d2ol(struct olvm_t* ol, double v);        // implemented in olvm.c
+word d2ol(struct heap_t* ol, double v);      // implemented in olvm.c
 double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 
 static
@@ -245,10 +245,10 @@ unsigned int llen(word list)
 	cp < 0x110000 ? 4 : 1; })
 
 static // length of wide string in utf-8 encoded bytes
-int utf8_len(word widestr)
+size_t utf8_len(word widestr)
 {
-	int len = 0;
-	for (int i = 1; i <= reference_size(widestr); i++)
+	size_t len = 0;
+	for (size_t i = 1; i <= reference_size(widestr); i++)
 		len += codepoint_len(value(ref(widestr, i)));
 	return len;
 }
@@ -1246,7 +1246,7 @@ char* wchars2utf8(char* ptr, word widestring)
 
 	// utf-8 encoding
 	// we don't know actual length of encoded string
-	for (int i = 1; i <= reference_size(widestring); i++) {
+	for (size_t i = 1; i <= reference_size(widestring); i++) {
 		int cp = value(ref(widestring, i));
 		if (cp < 0x80)
 			*ptr++ = cp;
@@ -1312,6 +1312,7 @@ size_t string2ol(char* ptr, word string, char* (cpy)(char*,word))
 static
 char* not_a_string(char* ptr, word string)
 {
+	(void) string;
 	E("invalid parameter value (requested string)");
 	return ptr;
 }
@@ -1381,7 +1382,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		again:
 		if (is_reference(arg)) {
 			if (type & (FFT_PTR|FFT_REF)) {
-                int cnt =
+                size_t cnt =
                     reference_type(arg) == TPAIR ? list_length(arg) :
                     reference_type(arg) == TVECTOR ? vector_length(arg) :
                     0;
@@ -1389,10 +1390,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				int atype = type &~(FFT_REF|FFT_PTR); // c data type
 
 				// TODO: add new define "FAST_STRING_CALC" (or "PRECISE_STRING_CALC") and do (len*4) insterad of utf8_len()
-				int len = // in bytes
+				size_t len = // in bytes
                 atype == TSTRING ? ({
                     int l = 0;
-                    for (int i = 0; i < cnt; i++) {
+                    for (size_t i = 0; i < cnt; i++) {
                         word str = car(arg);
                         l += reference_type(str) == TSTRING ? rawstream_size(str) :
                              reference_type(str) == TSTRINGWIDE ? utf8_len(str) :
@@ -1405,7 +1406,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
                 }) :
                 atype == TSTRINGWIDE ? ({
                     int l = 0;
-                    for (int i = 0; i < cnt; i++) {
+                    for (size_t i = 0; i < cnt; i++) {
                         word str = car(arg);
                         l += reference_type(str) == TSTRING ? rawstream_size(str) :
                              reference_type(str) == TSTRINGWIDE ? reference_size(str) :
@@ -1682,7 +1683,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TINT16 + FFT_REF:
 		case TUINT16 + FFT_REF:
 			has_wb = 1;
-			//no break
+			// fall through
 		case TINT16 + FFT_PTR:
 		case TUINT16 + FFT_PTR:
 		tint16ptr: {
@@ -1704,7 +1705,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TINT32 + FFT_REF:
 		case TUINT32 + FFT_REF:
 			has_wb = 1;
-			//no break
+			// fall through
 		case TINT32 + FFT_PTR:
 		case TUINT32 + FFT_PTR:
 		tint32ptr: {
@@ -1726,7 +1727,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TINT64 + FFT_REF:
 		case TUINT64 + FFT_REF:
 			has_wb = 1;
-			//no break
+			// fall through
 		case TINT64 + FFT_PTR:
 		case TUINT64 + FFT_PTR:
 		tint64ptr: {
@@ -1761,7 +1762,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 		case TFLOAT + FFT_REF:
 			has_wb = 1;
-			//no break
+			// fall through
 		case TFLOAT + FFT_PTR:
 		tfloatptr: {
 			if (arg == INULL) // empty array will be sent as nullptr
@@ -1816,7 +1817,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		case TDOUBLE + FFT_REF:
 			has_wb = 1;
-			// no break
+			// fall through
 		case TDOUBLE + FFT_PTR:
 		tdoubleptr: {
 			if (arg == INULL) // empty array will be sent as nullptr
@@ -1892,7 +1893,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 		case TVPTR + FFT_REF:
 			has_wb = 1;
-			// no break
+			// fall through
 		case TVPTR + FFT_PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
@@ -2402,6 +2403,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 									*(inexact_t*)&car(num) = (inexact_t)value;
 									break;
 								default:
+									(void) value;
 									assert (0 && "Invalid return variables.");
 									break;
 							}
@@ -2424,6 +2426,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 									break;
 								}
 								default: {
+									(void) value;
 									assert (0 && "Invalid return variables.");
 									break;
 								}
@@ -2457,6 +2460,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 									*(inexact_t*)&car(num) = (inexact_t)value;
 									break;
 								default:
+									(void) value;
 									assert (0 && "Invalid return variables.");
 									break;
 							}
@@ -2479,6 +2483,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 									break;
 								}
 								default:
+									(void) value;
 									assert (0 && "Invalid return variables.");
 									break;
 							}
@@ -2704,9 +2709,9 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #if OLVM_INEXACTS
 			result = new_inexact(value);
 #else
-			this->fp = fp;
-			result = (word*) d2ol(self, value);
-			fp = this->fp;
+			heap->fp = fp;
+			result = (word*) d2ol(heap, value);
+			fp = heap->fp;
 #endif
 			break;
 		}
@@ -2730,6 +2735,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 PUBLIC
 word OLVM_sizeof(olvm_t* self, word* arguments)
 {
+	(void) self;
+
 	word* A = (word*)car(arguments); // type
 	switch (value(A)) {
 		// primitive integer types
@@ -3135,7 +3142,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 				value =   *(float*) &argi[i++];
 			#endif
 			heap->fp = fp;
-			R[a] = d2ol(ol, value);
+			R[a] = d2ol(heap, value);
 			fp = heap->fp;
 			break;
 		}
@@ -3157,7 +3164,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 				value =   *(double*) &argi[i++]; i++;
 			#endif
 			heap->fp = fp;
-			R[a] = d2ol(ol, value);
+			R[a] = d2ol(heap, value);
 			fp = heap->fp;
 			break;
 		}

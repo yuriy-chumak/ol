@@ -1488,15 +1488,19 @@ typedef void    (idle_t) (void* userdata);
 // iternal wrappers for open/close/read and write functions:
 // (just skip userdata)
 static int os_open (const char *filename, int flags, int mode, void* userdata) {
+	(void) userdata;
 	return open(filename, flags, mode);
 }
 static int os_close(int fd, void* userdata) {
+	(void) userdata;
 	return close(fd);
 }
 static ssize_t os_read(int fd, void *buf, size_t size, void* userdata) {
+	(void) userdata;
 	return read(fd, buf, size);
 }
 static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
+	(void) userdata;
 	return write(fd, buf, size);
 }
 // todo: os_stat
@@ -1873,6 +1877,7 @@ void set_signal_handler() { }
 static
 void sigint_handler(int sig)
 {
+	(void) sig;
 	set_blocking(STDOUT_FILENO, 1);
 	set_blocking(STDERR_FILENO, 1);
 	exit(1);
@@ -2002,13 +2007,13 @@ float OL2F(word arg) {
 }
 
 // TODO: add memory checking
-word d2ol(struct olvm_t* ol, double v) {
+word d2ol(struct heap_t* heap, double v) {
 	word* fp;
 	// check for non representable numbers:
 	if (v == INFINITY || v == -INFINITY || v == NAN)
 		return IFALSE; // todo: return +inf.0, -inf.0, +nan.0
 
-	fp = ol->heap.fp;
+	fp = heap->fp;
 
 	word a, b = INULL;
 	double i;
@@ -2078,7 +2083,7 @@ word d2ol(struct olvm_t* ol, double v) {
 	else
 		r = (word)new_pair(TRATIONAL, a, b);
 
-	ol->heap.fp = fp;
+	heap->fp = fp;
 	return r;
 }
 
@@ -2685,7 +2690,7 @@ loop:;
 	//				STDERR("run R[%d], R[%d]", ip[0], ip[1]);
 		this = A0;
 		R[0] = R[3];
-		ticker = bank ? bank : value (A1);
+		ticker = bank ? bank : (int) value(A1);
 		bank = 0;
 		if (!is_reference(this))
 			CRASH(RUN, this);
@@ -2861,7 +2866,7 @@ loop:;
 			case 3:
 				el = A2;
 				elnum = (size_t) value(A2);
-				//no break
+				// fall through
 			case 2: {
 				unsigned len = 0;
 				word list = value;
@@ -2900,12 +2905,12 @@ loop:;
 				if (is_numberp(value)) { // no list, just
 					if (op == VMMAKE) {
 						word* wp = ptr;
-						for (int i = 0; i < len; i++)
+						for (unsigned i = 0; i < len; i++)
 							*++wp = el;
 					}
 					else { // VMALLOC
 						unsigned char* wp = (unsigned char*)&ptr[1];
-						for (int i = 0; i < len; i++)
+						for (unsigned i = 0; i < len; i++)
 							*wp++ = (unsigned char) elnum;
 						// clear the padding bytes, don't remove!
 						// actually not required, but sometimes very useful!
@@ -3015,14 +3020,14 @@ loop:;
 				inexact_t v = *(inexact_t*)&car(T);
 
 				ol->heap.fp = fp;
-				A2 = d2ol(ol, v); // no GC expected
+				A2 = d2ol(ol->heap, v); // no GC expected
 				fp = ol->heap.fp;
 				break;
 			}
 			if (is_number(T)) // just copy a number to number
 				type = is_value(T) ? value_type(T) : reference_type(T);
-			// else continue to default
 		#endif
+			// fall through
 		default:
 			if (is_value(T)) {
 				word val = value(T);
@@ -3127,7 +3132,7 @@ loop:;
 			word *newobj;
 			if (op == SETREF) { // __builtin_expect((x),1)
 				newobj = new (size);
-				for (ptrdiff_t i = 0; i <= size; i++)
+				for (size_t i = 0; i <= size; i++)
 					newobj[i] = p[i];
 			}
 			else
@@ -3379,10 +3384,10 @@ loop:;
 		word h = *node++;
 		*p++ = (h ^ (TRED << TPOS));
 		switch (header_size(h)) {
-			case 5:  *p++ = *node++;
-			case 4:  *p++ = *node++;
+			case 5:  *p++ = *node++; // fall through
+			case 4:  *p++ = *node++; // fall through
 			default: *p++ = *node++;
-					 *p++ = *node++;
+					 *p++ = *node++; // fall through
 		}
 		fp = (word*) p;
 		ip += 2; break;
@@ -3485,7 +3490,7 @@ loop:;
 
 				int portfd = port(A1);
 				int count = (argc > 1 && A2 != IFALSE)
-									? number(A2) : -1; // in bytes
+									? (int) number(A2) : -1; // in bytes
 
 				if (count < 0)
 #if defined(FIONREAD) && !defined(_WIN32)
@@ -3547,7 +3552,7 @@ loop:;
 
 				int portfd = port(A1);
 				int count = (argc > 2 && A3 != IFALSE)
-									? number(A3) : -1; // в байтах
+									? (int) number(A3) : -1; // в байтах
 
 				word *buff = (word *) A2;
 				int length = rawstream_size(buff);
@@ -4044,7 +4049,7 @@ loop:;
 							D("forked %s", command);
 							if (is_pair (c)) {
 								const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
-								for (ptrdiff_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++) {
+								for (size_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++) {
 									if (is_port(car(c))) {
 										dup2(port(car(c)), in[i]);
 										close(port(car(c)));
@@ -4227,7 +4232,7 @@ loop:;
 				CHECK_NUMBERP_OR_FALSE(2);
 
 				time_t seconds = (argc > 1 && A2 != IFALSE)
-			 		? numberp(A2)
+			 		? (time_t) numberp(A2)
 					: time(0);
 
 #if HAS_STRFTIME // todo: check this code!
@@ -4906,10 +4911,10 @@ done:;
 
 // fasl decoding
 static __inline__
-word get_nat(unsigned char** hp)
+size_t get_nat(unsigned char** hp)
 	// TODO: assert if overflow
 {
-	word nat = 0;
+	size_t nat = 0;
 	int i = 0;
 	unsigned char ch;
 
@@ -4933,8 +4938,8 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 	for (ptrdiff_t id = 0; id < nobjs; id++) {
 		ptrs[id] = (word) fp;
 
-		int type;
-		int size;
+		size_t type;
+		size_t size;
 		switch (*hp++) { // todo: adding type information here would reduce fasl and executable size
 		case 1: {
 			type = *hp++; assert (!(type & ~0x3F)); // type is 6 bits long
@@ -4944,7 +4949,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			*fp++ = make_header(type, size + 1); // +1 to include header in size
 			while (size--) {
 				if (*hp != 0) { // reference
-					word diff = get_nat(&hp);
+					size_t diff = get_nat(&hp);
 					*fp++ = ptrs[id - diff];
 				}
 				else { // value
@@ -4953,7 +4958,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 					word* obj = object;
 
 					word nat = 0;
-					int i = 0;
+					size_t i = 0;
 					unsigned char ch;
 					do {
 						ch = *hp++;
@@ -5073,7 +5078,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 		switch (*hp++) {
 		case 1: { // object
 			hp++; ++allocated;
-			int size = get_nat(&hp);
+			size_t size = get_nat(&hp);
 			while (size--) {
 				//decode_field:
 				if (*hp == 0) {
@@ -5083,7 +5088,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 
 					int type = *op++;
 					if (type == TENUMP || type == TENUMN) {
-						int size = hp - op;
+						size_t size = hp - op;
 						int words = (size < W) ? 1 : ((size + W-2) / (W-1)) * 3;
 						allocated += words;
 					}
@@ -5591,7 +5596,7 @@ size_t OLVM_pin(struct olvm_t* ol, word ref)
 {
 	if (ref == IFALSE)
 		return 1; // #false is not a pinnable object
-	int id = ol->ffpin;
+	size_t id = ol->ffpin;
 	size_t cr = ol->cr;
 	for (; id < cr; id++) {
 		if (ol->R[NR+id] == IFALSE)
@@ -5607,7 +5612,7 @@ size_t OLVM_pin(struct olvm_t* ol, word ref)
 	ol->cr = ncr;
 	ol->heap.padding = GCPAD(NR + ncr) + MEMPAD;
 
-	for (int i = id; i < ncr; i++)
+	for (size_t i = id; i < ncr; i++)
 		R[NR+i] = IFALSE;
 
 ok:
