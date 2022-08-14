@@ -5326,16 +5326,15 @@ OLVM_new(unsigned char* bootstrap)
 	OL *handle = malloc(sizeof(OL));
 	memset(handle, 0x0, sizeof(OL));
 
+	word *fp;
+	heap_t* heap = &handle->heap;
+
 	// посчитаем сколько памяти нам надо для выполнения бинарника:
 	word words = 0;
 	word nobjs = count_fasl_objects(&words, bootstrap);
 	if (nobjs == 0)
 		goto fail;
 	words += (nobjs + 2); // for ptrs
-
-	word *fp;
-	heap_t* heap = &handle->heap;
-	size_t padding = GCPAD(NR + CR) + MEMPAD;
 
 	// выделим память машине:
 	// int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
@@ -5344,6 +5343,7 @@ OLVM_new(unsigned char* bootstrap)
 	// в соответствии со стратегией сборки 50*1.3-33*0.9 и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
 	int required_memory_size = words * 2;
+	size_t padding = GCPAD(NR + CR) + MEMPAD;
 
 	fp = heap->begin = (word*) malloc((required_memory_size + padding) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
