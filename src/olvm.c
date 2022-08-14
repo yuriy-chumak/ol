@@ -3023,7 +3023,7 @@ loop:;
 				inexact_t v = *(inexact_t*)&car(T);
 
 				ol->heap.fp = fp;
-				A2 = d2ol(ol->heap, v); // no GC expected
+				A2 = d2ol(&ol->heap, v); // no GC expected
 				fp = ol->heap.fp;
 				break;
 			}
