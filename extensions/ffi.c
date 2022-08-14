@@ -103,7 +103,6 @@
 #define TUINT64       (58)
 // 59 for 128 ?
 
-
 #define TMASK     0x00FFF
 
 #define TCDECL    0x01000
@@ -1324,6 +1323,10 @@ PUBLIC __attribute__((used)) word OLVM_idf(word x) {
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
+
+#define PTR FFT_PTR // just pointer
+#define REF FFT_REF // pointer with drawback
+
 PUBLIC
 __attribute__((used))
 word* OLVM_ffi(olvm_t* this, word* arguments)
@@ -1618,7 +1621,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			case TINTN:
 				args[i] = -from_uint(arg);
 				break;
-			case TRATIONAL: //?
+			case TRATIONAL:
 				*(int64_t*)&args[i] = from_rational(arg);
 #if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word)
 				i++;
@@ -1658,12 +1661,12 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #endif
 
 		//
-		case TINT8 + FFT_REF:
-		case TUINT8 + FFT_REF:
+		case TINT8+REF:
+		case TUINT8+REF:
 			has_wb = 1;
-			//no break
-		case TINT8 + FFT_PTR:
-		case TUINT8 + FFT_PTR:
+			// fall through
+		case TINT8+PTR:
+		case TUINT8+PTR:
 		tint8ptr: {
 			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
@@ -1680,12 +1683,12 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 		}
 
-		case TINT16 + FFT_REF:
-		case TUINT16 + FFT_REF:
+		case TINT16+REF:
+		case TUINT16+REF:
 			has_wb = 1;
 			// fall through
-		case TINT16 + FFT_PTR:
-		case TUINT16 + FFT_PTR:
+		case TINT16+PTR:
+		case TUINT16+PTR:
 		tint16ptr: {
 			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
@@ -1702,12 +1705,12 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 		}
 
-		case TINT32 + FFT_REF:
-		case TUINT32 + FFT_REF:
+		case TINT32+REF:
+		case TUINT32+REF:
 			has_wb = 1;
 			// fall through
-		case TINT32 + FFT_PTR:
-		case TUINT32 + FFT_PTR:
+		case TINT32+PTR:
+		case TUINT32+PTR:
 		tint32ptr: {
 			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
@@ -1724,12 +1727,12 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 		}
 
-		case TINT64 + FFT_REF:
-		case TUINT64 + FFT_REF:
+		case TINT64+REF:
+		case TUINT64+REF:
 			has_wb = 1;
 			// fall through
-		case TINT64 + FFT_PTR:
-		case TUINT64 + FFT_PTR:
+		case TINT64+PTR:
+		case TUINT64+PTR:
 		tint64ptr: {
 			// todo: add vectors pushing
 			if (arg == INULL) // empty array will be sent as nullptr
@@ -1760,10 +1763,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			# endif
 			#endif
 			break;
-		case TFLOAT + FFT_REF:
+		case TFLOAT+REF:
 			has_wb = 1;
 			// fall through
-		case TFLOAT + FFT_PTR:
+		case TFLOAT+PTR:
 		tfloatptr: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
@@ -1815,10 +1818,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			#endif
 			break;
 
-		case TDOUBLE + FFT_REF:
+		case TDOUBLE+REF:
 			has_wb = 1;
 			// fall through
-		case TDOUBLE + FFT_PTR:
+		case TDOUBLE+PTR:
 		tdoubleptr: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
@@ -1891,10 +1894,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			else
 				E("invalid parameter value (requested vptr)");
 			break;
-		case TVPTR + FFT_REF:
+		case TVPTR+REF:
 			has_wb = 1;
 			// fall through
-		case TVPTR + FFT_PTR: {
+		case TVPTR+PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 			if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
@@ -1979,8 +1982,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 
 		case TBYTEVECTOR:
-//		case TBYTEVECTOR + FFT_PTR:
-//		case TBYTEVECTOR + FFT_REF:
+//		case TBYTEVECTOR+PTR:
+//		case TBYTEVECTOR+REF:
 		tbytevector:
 			switch (reference_type(arg)) {
 			case TBYTEVECTOR:
@@ -2008,7 +2011,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 			break;
 		}
-		case TSTRING + FFT_PTR: {
+		case TSTRING+PTR: {
 			int size = llen(arg);
 
 			// TODO: check the available memory and run GC if necessary
@@ -2240,7 +2243,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			switch (type) {
 
 			// simplest cases - all shorts are fits as value
-			case TINT8 + FFT_REF: {
+			case TINT8+REF: {
 			tint8ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -2256,7 +2259,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				}
 				break;
 			}
-			case TUINT8 + FFT_REF: {
+			case TUINT8+REF: {
 			tuint8ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -2273,7 +2276,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			}
 
-			case TINT16 + FFT_REF: {
+			case TINT16+REF: {
 			tint16ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -2289,7 +2292,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				}
 				break;
 			}
-			case TUINT16 + FFT_REF: {
+			case TUINT16+REF: {
 			tuint16ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -2306,7 +2309,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			}
 
-			case TINT32 + FFT_REF: {
+			case TINT32+REF: {
 			tint32ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -2341,7 +2344,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			}
 
-			case TUINT32 + FFT_REF: {
+			case TUINT32+REF: {
 			tuint32ref:;
 				// вот тут попробуем заполнить переменные назад
 				int c = llen(arg);
@@ -2372,9 +2375,9 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			}
 			// TODO:
-			// case TUINT64 + FFT_REF: {
+			// case TUINT64+REF: {
 
-			case TFLOAT + FFT_REF: {
+			case TFLOAT+REF: {
 			tfloatref:;
 				if (is_reference(arg))
 				switch (reference_type(arg)) {
@@ -2440,7 +2443,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				}
 				break;
 			}
-			case TDOUBLE + FFT_REF: {
+			case TDOUBLE+REF: {
 			tdoubleref:;
 				if (is_reference(arg))
 				switch (reference_type(arg)) {
@@ -2500,7 +2503,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			}
 
-			case TVPTR + FFT_REF: {
+			case TVPTR+REF: {
 				int c = llen(arg);
 				void** f = (void**)args[i];
 
