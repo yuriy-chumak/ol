@@ -38,12 +38,14 @@
           (seed (band (+ ss ms) #xffffffff))
           (seed (cons (band seed #xffffff) (>> seed 24))))
       (lambda (limit)
-         (let*((next (+ (car seed) (<< (cdr seed) 24)))
-               (next (+ (* next 1103515245) 12345)))
-            (set-car! seed (band     next     #xffffff))
-            (set-cdr! seed (band (>> next 24) #xffffff))
+         (if (eq? limit 0) 0
+         else
+            (let*((next (+ (car seed) (<< (cdr seed) 24)))
+                  (next (+ (* next 1103515245) 12345)))
+               (set-car! seed (band     next     #xffffff))
+               (set-cdr! seed (band (>> next 24) #xffffff))
 
-            (mod (mod (floor (/ next 65536)) 32768) limit)))))
+               (mod (mod (floor (>> next 16)) #b1000000000000000) limit))))))
 
 (define (rand-range! lo hi)
    (if (< lo hi)
