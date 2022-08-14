@@ -196,9 +196,9 @@ object_t
 #endif
 
 #ifndef OLVM_INEXACT_TYPE
-#define inexact_t double
+#	define inexact_t double
 #else
-#define inexact_t OLVM_INEXACT_TYPE
+#	define inexact_t OLVM_INEXACT_TYPE
 #endif
 
 #include <limits.h>
@@ -861,7 +861,7 @@ word _data = (word) a;\
 	new_pair (TDLSYM, new_vptr(a), b);\
 })
 
-#ifdef OLVM_INEXACTS
+#if OLVM_INEXACTS
 #define new_inexact(a) ({\
 inexact_t f = (inexact_t) a;\
 	word* me = new_alloc (TINEXACT, sizeof(f));\
@@ -1934,9 +1934,6 @@ static_assert(offsetof(olvm_t, heap) == 0, "heap_t must be first field of olvm_t
 
 // =================================================================
 // machine floating point support, internal functions
-#if OLVM_INEXACTS
-
-#define ol2f(num) __builtin_choose_expr( __builtin_types_compatible_p (inexact_t, double), OL2D(num), OL2F(num) )
 
 // todo: add disabling ol2d (for machines without doubles), or better reusing as ol2f
 static
@@ -1965,8 +1962,10 @@ double OL2D(word arg) {
 		return OL2D(car(arg)) / OL2D(cdr(arg));
 	case TCOMPLEX: // only real part of complex number
 		return OL2D(car(arg));
+#if OLVM_INEXACTS
 	case TINEXACT:
 		return *(inexact_t*)&car(arg);
+#endif
 	default:
 		assert(0);
 		return 0.;
@@ -1998,8 +1997,10 @@ float OL2F(word arg) {
 		return OL2F(car(arg)) / OL2F(cdr(arg));
 	case TCOMPLEX: // use only real part of complex number
 		return OL2F(car(arg));
+#if OLVM_INEXACTS
 	case TINEXACT:
 		return *(inexact_t*)&car(arg);
+#endif
 	default:
 		assert(0);
 		return 0.;
@@ -2087,6 +2088,8 @@ word d2ol(struct heap_t* heap, double v) {
 	return r;
 }
 
+#if OLVM_INEXACTS
+#define ol2f(num) __builtin_choose_expr( __builtin_types_compatible_p (inexact_t, double), OL2D(num), OL2F(num) )
 #endif // OLVM_INEXACTS
 // =================================================================
 

@@ -2399,9 +2399,11 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 								// 	//cdr(num) = I(VMAX);
 								// 	break;
 								// }
+#if OLVM_INEXACTS
 								case TINEXACT:
 									*(inexact_t*)&car(num) = (inexact_t)value;
 									break;
+#endif
 								default:
 									(void) value;
 									assert (0 && "Invalid return variables.");
@@ -2421,15 +2423,15 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 							word num = *l;
 							if (is_reference(num))
 							switch (reference_type(num)) {
-								case TINEXACT: {
+#if OLVM_INEXACTS
+								case TINEXACT:
 									*(inexact_t*)&car(num) = (inexact_t)value;
 									break;
-								}
-								default: {
+#endif
+								default:
 									(void) value;
 									assert (0 && "Invalid return variables.");
 									break;
-								}
 							}
 							l++;
 						}
@@ -2456,9 +2458,11 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 								// 	self->heap.fp = fp;
 								// 	word v = D2OL(self, value);
 								// 	fp = self->heap.fp;
+#if OLVM_INEXACTS
 								case TINEXACT:
 									*(inexact_t*)&car(num) = (inexact_t)value;
 									break;
+#endif
 								default:
 									(void) value;
 									assert (0 && "Invalid return variables.");
@@ -2478,10 +2482,11 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 							word num = *l;
 							if (is_reference(num))
 							switch (reference_type(num)) {
-								case TINEXACT: {
+#if OLVM_INEXACTS
+								case TINEXACT:
 									*(inexact_t*)&car(num) = (inexact_t)value;
 									break;
-								}
+#endif
 								default:
 									(void) value;
 									assert (0 && "Invalid return variables.");
