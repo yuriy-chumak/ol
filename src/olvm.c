@@ -5363,15 +5363,13 @@ OLVM_new(unsigned char* bootstrap)
 	// Десериализация загруженного образа в объекты
 	// обязательно выделить n+1 объектов,
 	// последнее место зарезервировано для конструктора
-	// TODO: сложить этот вектор в nobjs + 1 + words...,
-	//	чтобы потом не надо было вычищать из памяти
-	word *ptrs = new(TBYTEVECTOR, nobjs + 1, 0);
+	word *ptrs = alloca((nobjs + 1) * sizeof(word));
 
 	// этот вектор содержит "неправильные" ссылки в смысле модели памяти ol,
 	// которые указывают вперед по куче, а не назад. но так как на него никто
 	// не указывает, то этот объект будет спокойно удален во время первой же
 	// полной сборки кучи (которую стоило бы сделать в deserialize()).
-	fp = deserialize(&ptrs[1], nobjs, bootstrap, fp);
+	fp = deserialize(ptrs, nobjs, bootstrap, fp);
 	if (!fp) {
 		E("Error: invalid bootstrap");
 		goto fail;
@@ -5406,8 +5404,8 @@ OLVM_new(unsigned char* bootstrap)
 	// if no autorun points found, just run last one lambla (like old behavior)
 	// точка входа в программу: последняя лямбда загруженного образа (λ (args))
 	// TODO: make configurable
-	if (ptrs[nobjs + 1] == INULL) {
-		handle->this = ptrs[nobjs]; // (construction constructors main args)
+	if (ptrs[nobjs] == INULL) {
+		handle->this = ptrs[nobjs-1]; // (construction constructors main args)
 		handle->arity = 2; // 1 argument
 	}
 	// точка входа в программу - бутстрап, обрабатывающий список автовыполняемых функций
@@ -5435,7 +5433,7 @@ OLVM_new(unsigned char* bootstrap)
 		fp = deserialize(&p[1], no, construction, fp);
 
 		handle->this = p[no]; // (construction constructors main args)
-		handle->R[5] = ptrs[nobjs + 1];
+		handle->R[5] = ptrs[nobjs];
 		handle->arity = 3; // two arguments
 	}
 
