@@ -51,6 +51,11 @@
       fasl-save         ;; obj path → done?
       fasl-load         ;; path default → done?
       deserialize-file
+
+      ; virtual i/o
+      open-input-string
+      open-output-string
+      get-output-string
    )
 
    (import
@@ -482,4 +487,17 @@
          (let ((stream (file->bytestream path)))
             (if stream (deserialize stream fail) fail)))
 
+
+      (define (open-output-string)
+         (syscall 85))
+
+      (define (get-output-string port)
+         (syscall 8 port 0 0)
+         (bytes->string (port->bytestream port)))
+
+      (define (open-input-string str)
+         (let ((port (open-output-string)))
+            (display-to port str)
+            (syscall 8 port 0 0)
+            port))
 ))

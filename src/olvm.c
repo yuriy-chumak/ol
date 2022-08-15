@@ -1299,6 +1299,16 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #include <android/log.h>
 #endif
 
+// new feature, disabled by default
+#ifndef SYSCALL_MEMFD
+#define SYSCALL_MEMFD 0
+#endif
+
+#if SYSCALL_MEMFD
+#include <sys/mman.h>
+#endif
+
+
 // FFI support:
 #ifndef OLVM_FFI
 #define OLVM_FFI HAS_DLOPEN // ffi have no sense without dlopen/dlsym
@@ -2538,6 +2548,10 @@ mainloop:;
 	#		define SYSCALL_CHDIR 80
 	#		define SYSCALL_MKDIR 83 // todo: move SYSCALL_MKDIR as part of SYSCALL_SYSCALL, remove redundant code
 
+	#		ifndef SYSCALL_MEMFD
+	#		define SYSCALL_MEMFD 85
+	#		endif
+
 	#		define SYSCALL_GETTIMEOFDAY 96
 
 	#		ifndef SYSCALL_GETRLIMIT
@@ -2998,12 +3012,20 @@ loop:;
 		case TPORT:
 			if (is_value(T)) {
 				word val = value(T);
-				// safe limitation (todo: make macro to on/off)
-				if (val <= 2)
-					A2 = make_port(val);
+				// only stdin/stdout/stderr are supported
+				switch (val) {
+					case 0: A2 = make_port(STDIN_FILENO);
+						break;
+					case 1: A2 = make_port(STDOUT_FILENO);
+						break;
+					case 2: A2 = make_port(STDERR_FILENO);
+						break;
+					default:
+						ERROR(VMCAST, I(type), T);
+				}
 			}
 			else
-				FAIL(VMCAST, this, T);
+				ERROR(VMCAST, I(type), T);
 			break;
 		case TVPTR:
 			// safe limitation (todo: make macro to on/off)
@@ -3826,6 +3848,19 @@ loop:;
 				break;
 			}
 #endif
+
+#if SYSCALL_MEMFD
+			case SYSCALL_MEMFD: {
+				CHECK_ARGC_EQ(0);
+
+				int port = memfd_create("T", 0);
+				if (port >= 0)
+					r = (word*) make_port(port);
+
+				break;
+			}
+#endif
+
 
 			/*! \subsection unlink
 			* \brief 87: (unlink pathname) -> #t|#f
