@@ -325,6 +325,7 @@ object_t
 
 #define is_string(ob)               (is_reference(ob) && reference_type (ob) == TSTRING)
 #define is_vector(ob)               (is_reference(ob) && reference_type (ob) == TVECTOR)
+#define is_thread(ob)               (is_reference(ob) && reference_type (ob) == TTHREAD)
 
 #define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TVPTR,     2))
 #define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TCALLABLE, 2))
@@ -2207,13 +2208,29 @@ word get(word *ff, word key, word def, jmp_buf fail)
 #define A4  R[ip[4]]
 #define A5  R[ip[5]]
 
+static
+void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char** ip0, word** fp, word* this)
+{
+	ptrdiff_t dp = *ip - *ip0;
+
+	ol->heap.fp = *fp; ol->this = *this;
+	ol->heap.gc(ol, words);
+	*fp = ol->heap.fp; *this = ol->this;
+
+	// fix ip (the last element of thread thunk is an "this")
+	*ip0 = *ip = ((unsigned char*) &car(reference_type(*this) == TTHREAD
+		? (word) ref(*this, reference_size(*this))
+		: *this)) + dp;
+
+	return;
+}
+
 static //__attribute__((aligned(8)))
 word runtime(struct olvm_t* ol)
 {
 	heap_t* heap = &ol->heap; // global vm heap
 
 	word *fp = heap->fp; // memory allocation pointer
-	unsigned char *ip=0;   // vm instructions pointer
 	word* R = ol->R;     // virtual machine registers
 
 //	int breaked = 0;
@@ -2227,6 +2244,11 @@ word runtime(struct olvm_t* ol)
 //	setvbuf(stdout, (void*)0, _IONBF, 0);
 	set_blocking(STDOUT_FILENO, 0);
 	set_blocking(STDERR_FILENO, 0);
+
+	// vm instructions pointer(s)
+	unsigned char *ip = 0, *ip0;
+	// internal gc call wrapper
+#	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
 
 	// runtime entry
 apply:;
@@ -2361,7 +2383,7 @@ apply:;
 			//	breaked |= 8; // will be passed over to mcp at thread switch
 		}
 
-		ip = (unsigned char *) &ref(this, 1);
+		ip0 = ip = (unsigned char *) &ref(this, 1);
 		goto mainloop; // let's execute
 	}
 
@@ -2719,7 +2741,7 @@ loop:;
 			acc = pos - 3;
 			while (--pos)
 				R[pos] = ref(this, pos);
-			ip = ((unsigned char *) code) + W;
+			ip0 = ip = (unsigned char *) &car(code);
 			break;  // no apply, continue
 		}
 		// else call a thunk with terminal continuation:
@@ -2899,14 +2921,8 @@ loop:;
 				//	выйти за пределы кучи (репродюсится стабильно)
 				int mult = (op == VMALLOC) ? sizeof(word) : 1;
 				if (fp + (len / mult) > heap->end) {
-					ptrdiff_t dp;
-					dp = ip - (unsigned char*)this;
-
-					heap->fp = fp; ol->this = this;
-					heap->gc(ol, (len / mult));
-					fp = heap->fp; this = ol->this;
-
-					ip = (unsigned char*)this + dp;
+					GC(len / mult);
+					
 					value = A1, el = A2; // reload values after possible gc
 
 					// fail, no memory available:
@@ -3525,14 +3541,7 @@ loop:;
 
 				unsigned words = WALIGN(count) + 1; // in words
 				if (fp + words > heap->end) {
-					ptrdiff_t dp;
-					dp = ip - (unsigned char*)this;
-
-					heap->fp = fp; ol->this = this;
-					heap->gc(ol, words);
-					fp = heap->fp; this = ol->this;
-
-					ip = (unsigned char*)this + dp;
+					GC(words);
 				}
 
 				int read;
@@ -3970,14 +3979,7 @@ loop:;
 
 				unsigned words = WALIGN(count) + 1; // in words
 				if (fp + words > heap->end) {
-					ptrdiff_t dp;
-					dp = ip - (unsigned char*)this;
-
-					heap->fp = fp; ol->this = this;
-					heap->gc(ol, words);
-					fp = heap->fp; this = ol->this;
-
-					ip = (unsigned char*)this + dp;
+					GC(words);
 				}
 
 				r = new_bytevector(count);
@@ -4684,14 +4686,8 @@ loop:;
 			case 1000: { // GC
 				CHECK_ARGC_EQ(0);
 
-				ptrdiff_t dp;
-				dp = ip - (unsigned char*)this;
+				GC(-1);
 
-				heap->fp = fp; ol->this = this;
-				heap->gc(ol, -1); // full gc
-				fp = heap->fp; this = ol->this;
-
-				ip = (unsigned char*)this + dp;
 				break;
 			}
 			case 1002: // return userdata
