@@ -3,12 +3,12 @@
 (define-library (lang sexp)
    (export
       sexp-parser sexp
-      ;read-exps-from
-      list->number
       ;get-sexps       ;; greedy* get-sexp
       ;; string->sexp
       ;bytevector->sexps
+
       list->sexps
+      list->number
 
       ; parser
       number get-number
@@ -64,30 +64,43 @@
          (map putT (list #\tab #\newline #\space #\return)) ))
 
 
-      (define symbol-lead-chars (ff-union #false
+      (define symbol-lead-chars (ff-union left
          alphabetic-chars
-         (alist->ff
-            (map putT (string->runes "!$%&*+-/:<=>?@^_~"))
+         (alist->ff ; no ', digits and /
+            (map putT (string->runes "!$%&*+-:<=>?@^_~"))
       )))
+      (define symbol-lead-chars/
+         (put symbol-lead-chars #\/ #T))
 
-      (define symbol-chars (ff-union left
+      (define symbol-chars/ (ff-union left
          symbol-lead-chars
          numeric-chars
          (alist->ff
-            (map putT (string->runes "'"))  ;; we can use ' as part of symbol names
+            (map putT (string->runes "'/"))  ;; we can use ' and / as part of symbol names
       )))
 
       (define (symbol-lead-char? n)
          (symbol-lead-chars n (less? 126 n)))
+      (define (symbol-lead-char/? n)
+         (symbol-lead-chars/ n (less? 126 n)))
+      (define (symbol-char/? n)
+         (symbol-chars/ n (less? 126 n)))
 
-      (define (symbol-char? n)
-         (symbol-chars n (less? 126 n)))
+      ; simple symbols (without "/" and "|"), easy case for speedup
+      (define simple-symbol
+         (let-parse* (
+               (s1 (rune-if symbol-lead-char?))
+               (s2 (rune-if symbol-lead-char?))
+               (tail (greedy* (rune-if symbol-char/?))))
+            (string->uninterned-symbol (runes->string (cons* s1 s2 tail)))))
 
+      ; full featured symbols (with "|" and "/"), must be used after regex parser
+      ;  (that may contain "/" and "|" both)
       (define symbol
          (either
             (let-parse* (
-                  (head (rune-if symbol-lead-char?))
-                  (tail (greedy* (rune-if symbol-char?))))
+                  (head (rune-if symbol-lead-char/?))
+                  (tail (greedy* (rune-if symbol-char/?))))
                (string->uninterned-symbol (runes->string (cons head tail))))
             (let-parse* (
                   (skip (imm #\|))
@@ -473,35 +486,45 @@
                   (list 'make-ff (list q things))
                   (list 'make-ff (cons 'list things))))))
 
+      ; returns uninterned symbols
       (define (sexp)
          (let-parse* (
                (skip maybe-whitespace)
                (val (any-of
-                     hashbang       ;; we skip leading #!
-                     number
-                     get-sexp-regex ;; must be before symbols, which also may start with /
-                     symbol
-                     string
-                     special-word
-                     quoted-char
-                     (list-of (sexp))
-                     (vector-of (sexp))
-                     (ff-of (sexp))
-                     (quoted (sexp))
-                     (byte-if eof?))))
+                        (list-of (sexp))
+                        number
+                        simple-symbol
+                        special-word
+                        string
+                        quoted-char
+                        get-sexp-regex ; before symbols, which also may have "/" and "|"
+                        symbol
+                        (vector-of (sexp))
+                        (ff-of (sexp))
+                        (quoted (sexp))
+                        (byte-if eof?))))
             val))
+
+      (define hashbang+sexp
+         (let-parse* (
+               (skip (either
+                        hashbang ;; we skip leading #!
+                        (epsilon #f)))
+               (value (sexp)))
+            value))
 
       (define (ok? x) (eq? (ref x 1) 'ok))
       (define (ok exp env) ['ok exp env])
       (define (fail reason) ['fail reason])
 
+      ; returns interned symbols
       (define sexp-parser
          ;; old code:
          ;; (let-parse* (
          ;;       (s-exp (sexp)))
          ;;    (intern-symbols s-exp)))
          (λ (l r p ok)
-            (let* ((l r p val ((sexp) l r p
+            (let* ((l r p val (hashbang+sexp l r p
                                  ; ok
                                  (λ (l r p val)
                                     (ok l r p (intern-symbols val))))))
