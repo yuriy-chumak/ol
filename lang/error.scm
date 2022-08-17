@@ -1,14 +1,41 @@
 (define-library (lang error)
    (export
+      typename
       verbose-ol-error)
 
    (import
       (scheme core)
-      (src vm)
+      (src vm) (owl ff)
       (lang primop))
 
 (begin
    (setq expecting-2-3-arguments "expecting 2-3 arguments, but got")
+
+   (define typename {
+      type-pair 'type-pair
+      type-vector 'type-vector
+      type-string 'type-string
+      type-string-wide 'type-string-wide
+      type-string-dispatch 'type-string-dispatch
+      type-symbol 'type-symbol
+      type-port 'type-port
+      type-const 'type-const
+      type-bytecode 'type-bytecode
+      type-procedure 'type-procedure
+      type-closure 'type-closure
+      type-bytevector 'type-bytevector
+      type-constructor 'type-constructor
+      type-thread-state 'type-thread
+      type-vptr 'type-vptr
+
+      type-enum+ 'type-enum+
+      type-enum- 'type-enum-
+      type-int+ 'type-int+
+      type-int- 'type-int-
+      type-rational 'type-rational
+      type-complex 'type-complex
+      type-inexact 'type-inexact
+   })
 
    (define (verbose-ol-error code a b)
       (if (eq? (type code) type-closure) ; continuation?
@@ -22,6 +49,8 @@
                   (if (eq? a 0)
                      '(empty apply)
                      '(too large apply)))
+               (22 ; (vm:cast ...)
+                  `(invalid cast to ,(typename b (cons 'type b)) for ,a))
                (50 ; (vm:run ...)
                   '(invalid vm:run state))
                (ARITY-ERROR

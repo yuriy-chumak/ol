@@ -334,6 +334,7 @@ object_t
 #define is_numberp(ob)              (is_enump(ob) || is_npairp(ob))
 #define is_numbern(ob)              (is_enumn(ob) || is_npairn(ob))
 #define is_number(ob)               (is_numberp(ob) || is_numbern(ob))
+#define is_integer(ob)              (is_numberp(ob) || is_numbern(ob))
 
 // взять значение аргумента:
 #define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> VPOS); })
@@ -2170,7 +2171,7 @@ word get(word *ff, word key, word def, jmp_buf fail)
 // generate errors and crashes
 #define ERROR5(type,value, code,a,b) { \
 	D("VM " type " AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code,a,b); \
-	R[4] = I(code); R[3] = I(value);\
+	R[4] = I(code);    R[3] = I(value);\
 	R[5] = (word) (a);\
 	R[6] = (word) (b);\
 	goto error; \
@@ -2217,7 +2218,7 @@ void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char
 	ol->heap.gc(ol, words);
 	*fp = ol->heap.fp; *this = ol->this;
 
-	// fix ip (the last element of thread thunk is an "this")
+	// fix ip (the bytecode of thread thunk is last element of)
 	*ip0 = *ip = ((unsigned char*) &car(reference_type(*this) == TTHREAD
 		? (word) ref(*this, reference_size(*this))
 		: *this)) + dp;
@@ -3015,14 +3016,15 @@ loop:;
 		ip += 2; break;
 	}
 
-	// todo: переделать!
 	// todo: опасные вещи вроде int->port и int->void* спрятать под SAFE блок
 	case VMCAST: { // cast obj type -> result
-		if (!is_value(A1))
-			FAIL(VMCAST, this, A1);
 		word T = A0;
-		word type = value(A1) & 63; // maybe better add type checking? todo: add and measure time
+		word a1 = A1;
 		A2 = IFALSE;
+
+		if (!is_value(a1))
+			ERROR(VMCAST, T, a1);
+		word type = value(a1) & 63;
 
 		switch (type) {
 		case TPORT:
@@ -3037,17 +3039,19 @@ loop:;
 					case 2: A2 = make_port(STDERR_FILENO);
 						break;
 					default:
-						ERROR(VMCAST, I(type), T);
+						goto error_cast;
 				}
 			}
 			else
-				ERROR(VMCAST, I(type), T);
+				goto error_cast;
 			break;
 		case TVPTR:
 			// safe limitation (todo: make macro to on/off)
-			// if (is_value(T) && value(T) == 0)
-			// 	A2 = (word)new_vptr(0);
-			A2 = (word)new_vptr(untoi(T));
+			if (is_integer(T))
+				A2 = (word)new_vptr(untoi(T));
+			// TODO: add macro to enable this check:
+			else
+				goto error_cast;
 			break;
 
 		#if OLVM_INEXACTS
@@ -3076,7 +3080,7 @@ loop:;
 			}
 			else
 			{	// make this code safe
-				// make a object clone with defined new type
+				// make an object clone with new type
 				word* ob = (word*)T;
 				word hdr = *ob++;
 				int size = header_size(hdr)-1; // (-1) for header
@@ -3089,6 +3093,8 @@ loop:;
 			break;
 		}
 		ip += 3; break;
+		error_cast:
+			ERROR(VMCAST, T, I(type));
 	}
 
 	// todo: reference objects (with check for 'less?')

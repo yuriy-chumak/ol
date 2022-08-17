@@ -37,6 +37,7 @@
       ; extended ol functions
       for-each ; universal for lists, vectors and strings
       
+      (exports (lang error))
       )
 
    (import
@@ -69,6 +70,8 @@
       (scheme bytevector)
       (scheme misc)
       (scheme exceptions)
+
+      (lang error)
    )
 
 (begin
