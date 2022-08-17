@@ -448,6 +448,9 @@ Copyright (c) 2014-2022 Yuriy Chumak                      <br/>
 Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
 
 Thanks to:
+* [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) for the tests, ideas, and questions.
+
+Resources:
 * http://groups.csail.mit.edu/mac/projects/scheme/
 * http://people.csail.mit.edu/jaffer/Scheme
 * http://r7rs.org
