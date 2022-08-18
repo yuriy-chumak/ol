@@ -208,8 +208,8 @@ install: ol includes/ol/vm.h
 	install -m 644 includes/ol/ol.h $(DESTDIR)$(PREFIX)/include/ol/ol.h
 	# and libraries to $(DESTDIR)$(PREFIX)/lib/ol:
 	@echo Installing basic libraries...
-	find libraries -type d -exec bash -c 'install -d "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
-	find libraries -type f -exec bash -c 'install -m 644 "$$0" "$(DESTDIR)$(PREFIX)/lib/ol/$${0/libraries\/}"' {} \;
+	cd libraries && find * -type d -exec install -d "{}" "$(DESTDIR)$(PREFIX)/lib/ol/{}" \;
+	cd libraries && find * -type f -exec install -m 644 "{}" "$(DESTDIR)$(PREFIX)/lib/ol/{}" \;
 	@echo Installing man page...
 	install -d $(DESTDIR)$(PREFIX)/share/man/man1
 	gzip <ol.1 >$(DESTDIR)$(PREFIX)/share/man/man1/ol.1.gz
