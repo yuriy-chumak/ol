@@ -2212,17 +2212,19 @@ word get(word *ff, word key, word def, jmp_buf fail)
 static
 void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char** ip0, word** fp, word* this)
 {
-	ptrdiff_t dp = *ip - *ip0;
+	ptrdiff_t dp;
+	dp = *ip - *ip0;
 
 	ol->heap.fp = *fp; ol->this = *this;
 	ol->heap.gc(ol, words);
 	*fp = ol->heap.fp; *this = ol->this;
 
-	// fix ip (the bytecode of thread thunk is last element of)
-	*ip0 = *ip = ((unsigned char*) &car(reference_type(*this) == TTHREAD
-		? (word) ref(*this, reference_size(*this))
-		: *this)) + dp;
-
+	// (the bytecode of thread thunk is last element of)
+	*ip0 = (unsigned char*) &car(
+			reference_type(*this) == TTHREAD
+				? (word) ref(*this, reference_size(*this))
+				: *this);
+	*ip = *ip0 + dp;
 	return;
 }
 
