@@ -104,7 +104,7 @@
       (define (has? lst x)
          (cond
             ((null? lst) #false)
-            ((eq? (car lst) x) lst)
+            ((eq? (car lst) x) #true)
             (else (has? (cdr lst) x))))
 
       (define (getq lst k)
