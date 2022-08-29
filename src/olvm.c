@@ -3545,7 +3545,7 @@ loop:;
 #if defined(FIONREAD) && !defined(_WIN32)
 					if (ioctl(portfd, FIONREAD, count) == -1)
 #endif
-						count = ((heap->end - fp) - 1) * sizeof(word); // сколько есть места, столько читаем (TODO: спорный момент)
+						count = ((heap->end - fp) - 1) * sizeof(word); // сколько есть свободного места, столько читаем
 
 				unsigned words = WALIGN(count) + 1; // in words
 				if (fp + words > heap->end) {

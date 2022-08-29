@@ -490,7 +490,17 @@ Combine the elements of list(s) from right to left.
 (foldr - 7 '(1 2 3))           ==>  -5
 (foldr cons 3 '(5 6 7))        ==>  '(5 6 7 . 3)
 
-# Please note that the order of variables in the lambda is different than in fold!
+(foldr - 9)                               ==>  9
+(foldr - 9 '(1 2))                      ; === (- 1 (- 2 9))
+                                          ==>  8
+(foldr - 9 '(1 2) '(3 4))               ; === (- 1 3 (- 2 4 9))
+                                          ==>  9
+(foldr - 9 '(1 2) '(3 4) '(5 6))        ; === (- 1 3 5 (- 2 4 6 9))
+                                          ==> 10
+(foldr - 9 '(1 2) '(3 4) '(5 6) '(7 8)) ; === (- 1 3 5 7 (- 2 4 6 8 9))
+                                          ==> 11
+
+# Please note that the order of variables in the lambda differs than in fold!
 (foldr (lambda (x f)
          (min f x))
    100

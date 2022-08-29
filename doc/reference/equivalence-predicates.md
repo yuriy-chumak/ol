@@ -46,12 +46,13 @@ Briefly, it returns #true if *obj1* and *obj2* are normally regarded as the same
 
 (eqv? 2 2)                   ==>  #true
 (eqv? 2 2.0)                 ==>  #true  ; 2.0 is exact in Ol
+(eqv? 2 #i2.0)               ==>  #false
+(eqv? 1 #i1)                 ==>  #false
 (eqv? 100000 100000)         ==>  #true
 (eqv? 1000000000000000000000000 1000000000000000000000000)   ==>  #true
 (eqv? 0.33 0.33)             ==>  #true
 (eqv? 7/3 14/6)              ==>  #true
 (eqv? 2+3i 2+3i)             ==>  #true
-(eqv? 1 #i1)                 ==>  #false
 
 (eqv? 0.0 +nan.0)            ==>  #false
 (eqv? +nan.0 +nan.0)         ==>  #true
