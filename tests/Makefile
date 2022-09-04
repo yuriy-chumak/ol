@@ -415,9 +415,9 @@ endef
 check: tests
 tests: testing-binaries
 	@rm -f $(FAILED)
-	@make -s testing-internal
-	@make -s testing-ffi
-	@make -s testing-embed
+	$(MAKE) -s testing-internal
+	$(MAKE) -s testing-ffi
+	$(MAKE) -s testing-embed
 	@echo " "
 	@echo "common tests"
 	@echo "---------------------------------------"

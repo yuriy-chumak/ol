@@ -356,7 +356,7 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm
 	   echo '\033[1;32mBuild Ok.\033[0m' ;\
 	else \
 	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
-	   cp -b $@ repl ;make $@ ;\
+	   cp -b $@ repl ;$(MAKE) $@ ;\
 	fi
 
 libraries/owl/unicode-char-folds.scm:
