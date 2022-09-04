@@ -617,7 +617,9 @@ ret_t arm64_call(int_t argv[], double ad[],
 // x6: type
 __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"stp  x29, x30, [sp, -16]!",
+	"stp  x26, x27, [sp, -16]!",
 	"mov  x29, sp",
+	"mov  x26, x6",
 
 	"mov x9, x5",
 	"mov x8, #8",
@@ -643,7 +645,7 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"bge 1f", // goto Ltest
 	"b 4f",   // goto Lgo
 
-"1:" // Ltest
+"1:", // Ltest
 	// теперь посчитаем сколько нам нужно закидывать в стек
 	"sub x12, x2, #8",
 	"cmp x12, #0",
@@ -714,9 +716,27 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 "7:", // Lcall
 	"blr x9", // SP mod 16 = 0.  The stack must be quad-word aligned.
 
+	"cmp x26, #46",      // TFLOAT
+	"beq 2f",
+	"cmp x26, #47",      // TDOUBLE
+	"beq 3f",
+"0:",
 	"mov sp, x29",
+	"ldp x26, x27, [sp], 16",
 	"ldp x29, x30, [sp], 16",
-	"ret");
+	"ret",
+	
+"2:",
+	"str x0, [sp, -16]!",
+	"str s0, [sp]",
+	"ldr x0, [sp], 16",
+	"b 0b",
+"3:",
+	"str x0, [sp, -16]!",
+	"str d0, [sp]",
+	"ldr x0, [sp], 16",
+	"b 0b"
+);
 
 
 #elif __arm__
