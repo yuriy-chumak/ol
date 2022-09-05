@@ -3299,10 +3299,10 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 #elif __i386__ // x86
 			__asm__("push %%eax" :: "a" (OL2F(r)));
 			__ASM__(
-				"flds (%esp)",
-				"addl $4, %esp");
+					"flds (%esp)",
+					"addl $4, %esp");
 #elif __aarch64__
-			__asm__("fmov d0, %[reg]" :: [reg]"r" (OL2D(r)));
+			__asm__("fmov s0, %w[reg]" :: [reg]"r" (OL2F(r)));
 #elif __arm__
 # ifndef __ARM_PCS_VFP
 			__asm__("BKPT");
@@ -3311,7 +3311,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 			__asm__("vmov s0, %[reg]" :: [reg]"r" (OL2F(r))); // todo: I'm not sure
 # endif
 #endif
-			return 0; // actually we return st(0)
+			return 0; // actually we return st(0)/s0
 		}
 		case TVOID:
 			return 0;
