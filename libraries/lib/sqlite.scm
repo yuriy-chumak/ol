@@ -321,7 +321,7 @@
    (otus ffi))
 
 (cond-expand
-   ((or Linux Android)
+   ((or Linux Android FreeBSD)
       (begin
          (define sqlite (or
                (load-dynamic-library "libsqlite3.so.0")
