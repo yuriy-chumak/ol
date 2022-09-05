@@ -3292,19 +3292,31 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 			return number(r);
 		case TFLOAT: {
 			float f = OL2F(r);
-#if __amd64__
-			__asm__("flds %0" :: "m" (f));
-#elif __i386__ // x86
+#if __amd64__ || __i386__  // x86/64
 			__asm__("flds %0" :: "m" (f));
 #elif __aarch64__
-			__asm__("fmov s0, %w[reg]" :: [reg]"r" (OL2F(r)));
-#elif __arm__
-# ifndef __ARM_PCS_VFP
-			__asm__("BKPT");
-			__asm__("mov r0, %[reg]" :: [reg]"r" (OL2F(r))); // todo: I'm not sure
-# else 
-			__asm__("vmov s0, %[reg]" :: [reg]"r" (OL2F(r))); // todo: I'm not sure
-# endif
+			__asm__("fmov s0, %w0" :: "r" (f));
+// #elif __arm__
+// # ifndef __ARM_PCS_VFP
+// 			__asm__("mov r0, %0" :: "r" (f));
+// # else 
+// 			__asm__("vmov s0, %0" :: "r" (f));
+// # endif
+#endif
+			return 0; // actually we return st(0)/s0
+		}
+		case TDOUBLE: {
+			double d = OL2D(r);
+#if __amd64__ || __i386__  // x86/64
+			__asm__("fldl %0" :: "m" (d));
+#elif __aarch64__
+			__asm__("fmov d0, %0" :: "r" (d));
+// #elif __arm__
+// # ifndef __ARM_PCS_VFP
+// 			__asm__("ldm {r0, r1}, %0" :: "r" (d)); // todo: I'm not sure
+// # else 
+// 			__asm__("vmov d0, %0" :: "m" (d)); // todo: I'm not sure
+// # endif
 #endif
 			return 0; // actually we return st(0)/s0
 		}
