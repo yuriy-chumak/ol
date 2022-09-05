@@ -3291,16 +3291,11 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 		case TINT64: case TUINT64:
 			return number(r);
 		case TFLOAT: {
+			float f = OL2F(r);
 #if __amd64__
-			__asm__("push %%rax" :: "a" (OL2F(r)));
-			__ASM__(
-				"flds (%rsp)",
-				"addq $8, %rsp");
+			__asm__("flds %0" :: "m" (f));
 #elif __i386__ // x86
-			__asm__("push %%eax" :: "a" (OL2F(r)));
-			__ASM__(
-					"flds (%esp)",
-					"addl $4, %esp");
+			__asm__("flds %0" :: "m" (f));
 #elif __aarch64__
 			__asm__("fmov s0, %w[reg]" :: [reg]"r" (OL2F(r)));
 #elif __arm__
