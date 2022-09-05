@@ -321,7 +321,7 @@
    (otus ffi))
 
 (cond-expand
-   ((or Linux Android FreeBSD)
+   ((or Linux Android FreeBSD Darwin)
       (begin
          (define sqlite (or
                (load-dynamic-library "libsqlite3.so.0")
