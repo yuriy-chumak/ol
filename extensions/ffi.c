@@ -615,12 +615,13 @@ ret_t arm64_call(int_t argv[], double ad[],
 // x4: mask <function>
 // x5: function <type>
 // x6: type
-__ASM__("arm64_call:", "_arm64_call:", //"brk #0",
+__ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"stp  x29, x30, [sp, -16]!",
+	"stp  x10, x26, [sp, -16]!",
 	"mov  x29, sp",
+	"mov  x26, x6",
 
 	"mov x9, x5",
-	"mov x8, #8",
 
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
 	"cbz x3, 0f",  // is x3 == 0 goto Lno_more_floats
@@ -637,13 +638,13 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"ldr d7, [x1, #56]",
 
 "0:", // Lno_more_floats
-	"cmp x2, x8",
+	"cmp x2, #8",
 	"bge 1f", // goto Ltest
-	"cmp x3, x8",
+	"cmp x3, #8",
 	"bge 1f", // goto Ltest
 	"b 4f",   // goto Lgo
 
-"1:" // Ltest
+"1:", // Ltest
 	// теперь посчитаем сколько нам нужно закидывать в стек
 	"sub x12, x2, #8",
 	"cmp x12, #0",
@@ -658,6 +659,8 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"add x15, x12, x13", // total x15 - count of arguments to be pushed to stack
 	// "cmp x15, #0", // эта проверка не нужна - мы уже проверили выше на две восьмерки
 	// "ble 4f",
+
+	"mov x8, #8",
 
 	// выравняем стек
 	"orr x10, x15, #1",
@@ -677,7 +680,7 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 "6:", // Lpush
 	"orr x5, x12, x13", // больше нечего пушить
 	"cbz x5, 4f", // goto Lgo
-//	"tbz x4, #1, 5f", }
+//	"tbz x4, #1, 5f",
 	"tst x4, #1",
 	"lsr x4, x4, #1", // давай посмотрим - инт или флоат
 	"beq 5f", // == bc set, goto Lint
@@ -697,7 +700,7 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 // done. go
 "4:", // Lgo
 	// assert (x15 == sp)
-	// а теперь целочисленные аргументы
+	// а теперь обычные целочисленные аргументы
 	"cbz x2, 7f", // Lcall
 	"cmp x2, #4",
 	"ble 8f", // Lless2
@@ -712,11 +715,26 @@ __ASM__("arm64_call:", "_arm64_call:", //"brk #0",
 	"ldr x0, [x0]",
 
 "7:", // Lcall
-	"blr x9", // SP mod 16 = 0.  The stack must be quad-word aligned.
-
+	"blr x9", // assert (SP mod 16 == 0). The stack must be quad-word aligned.
 	"mov sp, x29",
+	"str x0, [sp]",
+
+	"cmp x26, #46",      // TFLOAT
+	"beq 6f",
+	"cmp x26, #47",      // TDOUBLE
+	"beq 7f",
+"0:",
+	"ldp  x0, x26, [sp], 16",
 	"ldp x29, x30, [sp], 16",
-	"ret");
+	"ret",
+	
+"6:", // float (4)
+	"str s0, [sp]",
+	"b 0b",
+"7:", // double (8)
+	"str d0, [sp]",
+	"b 0b"
+);
 
 
 #elif __arm__
