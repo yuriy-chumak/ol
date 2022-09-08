@@ -397,10 +397,8 @@
          (compare less? a b))
 
       ; procedure:  (char>? char1 char2 ...)
-      (define (great? a b)
-         (less? b a))
       (define (char>? a . b)
-         (compare great? a b))
+         (compare greater? a b))
 
       ; procedure:  (char<=? char1 char2 ...)
       (define (less-eq? a b)
@@ -409,10 +407,10 @@
          (compare less-eq? a b))
 
       ; procedure:  (char>=? char1 char2 ...)
-      (define (great-eq? a b)
-         (or (great? a b) (eq? a b)))
+      (define (greater-eq? a b)
+         (or (greater? a b) (eq? a b)))
       (define (char>=? a . b)
-         (compare great-eq? a b))
+         (compare greater-eq? a b))
 
       (define char->integer idf)
       (define integer->char idf)

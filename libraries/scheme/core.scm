@@ -111,6 +111,10 @@
    
       ; * Identity function
       (setq idf (lambda (x) x))
+
+      ; not less
+      (setq greater? (lambda (a b)
+         (less? b a)))
    )
 
    ; =================================================================
@@ -1895,6 +1899,8 @@
       call-with-current-continuation
       call/cc let*/cc
 
+      idf greater?
+
       ; not required to be exported:
       ;  quote values lambda setq
       ;  let-eval ifeq brae values-apply
@@ -1994,5 +2000,4 @@
       halt
 
       -- ++ ; * ol internal staff
-      idf ; identity function
 ))
