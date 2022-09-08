@@ -64,17 +64,17 @@
          (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 
 
-(define (make-entry main)
-   (let ((symbols (symbols-of main))
-         (codes   (codes-of   main)))
-      (vm:new type-constructor
-         (λ (vm-args)
-            (start-thread-controller
-               (list ; just 1 thread
-                  ['main
-                     (λ ()
-                        (fork-symbol-interner symbols)
-                        (fork-bytecode-interner codes)
-                        (main vm-args))] ))))))
+   (define (make-entry main)
+      (let ((symbols (symbols-of main))
+            (codes   (codes-of   main)))
+         (vm:new type-constructor
+            (λ (vm-args)
+               (start-thread-controller
+                  (list ; just 1 thread
+                     ['main
+                        (λ ()
+                           (fork-symbol-interner symbols)
+                           (fork-bytecode-interner codes)
+                           (main vm-args))] ))))))
 
 ))

@@ -321,24 +321,26 @@
    (otus ffi))
 
 (cond-expand
-   ((or Linux Android FreeBSD)
+   ((or Linux FreeBSD NetBSD OpenBSD Android)
       (begin
          (define sqlite (or
                (load-dynamic-library "libsqlite3.so.0")
                (load-dynamic-library "libsqlite3.so")))))
-   (Darwin
+   (Darwin ; macOS
       (begin
          (define sqlite (or
-               (load-dynamic-library "libsqlite3.so.0") ; compatibility ..
-               (load-dynamic-library "libsqlite3.so")   ; .. layer
                (load-dynamic-library "libsqlite3.0.dylib")
-               (load-dynamic-library "libsqlite3.dylib")))))
+               (load-dynamic-library "libsqlite3.dylib")
+               ; compatibility layer
+               (load-dynamic-library "libsqlite3.so.0")
+               (load-dynamic-library "libsqlite3.so")))))
    (Windows
       (begin
          (define sqlite (load-dynamic-library "sqlite3.dll"))))
    (else
       (begin
-         (runtime-error "sqlite3: unknown platform" (uname)))))
+         (runtime-error "sqlite3 error: unknown platform"
+            (uname)))))
 
 (begin
    (define (make-void*) (vm:cast 0 type-vptr))

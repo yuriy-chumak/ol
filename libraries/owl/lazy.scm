@@ -107,7 +107,7 @@
             ((null? l)
                null)
             (else
-               (λ () (lmap fn (l))))))
+               (delay (lmap fn (l))))))
 
       ;; preserves laziness
       (define (lappend a b)

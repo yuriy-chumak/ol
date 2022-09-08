@@ -39,6 +39,10 @@ The boolean? predicate returns #true if *obj* is either #true or #false and retu
 (boolean? #f)    ==>  #true
 (boolean? 0)     ==>  #false
 (boolean? '())   ==>  #false
+(boolean? #T)    ==>  #true
+(boolean? #true) ==>  #true
+(boolean? #false)==>  #true
+(boolean? #null) ==>  #false
 ```
 
 # boolean=?

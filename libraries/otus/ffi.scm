@@ -269,7 +269,7 @@
 (define fft-size-t (case (ffi:sizeof |size_t|)
    (4 fft-int32)
    (8 fft-int64)
-   (else (runtime-error "assertion error: unsupported native 'long' type size"))))
+   (else (runtime-error "assertion error: unsupported native 'size_t' type size"))))
 
 ; ...
 (define fft-int* (fft* fft-int))

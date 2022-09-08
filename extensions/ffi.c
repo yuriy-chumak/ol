@@ -2822,20 +2822,19 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 		return IFALSE;
 
 	word* fp;
+	char* ptr = 0;
 
 	int pin = untoi(A);
 
-	char* ptr = 0;
 #ifdef __i386__ // x86
 	// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
 	static char bytecode[] =
-			"\x90"  // nop
+			"\x90" // nop
 			"\x8D\x44\x24\x04" // lea eax, [esp+4]
 			"\x50"     // push eax
-			// 6
-			"\x68-id-" // push $0
-			"\x68-ol-" // push ol
-			"\xB8-cb-" // mov eax, ...
+	/* 6*/	"\x68-id-" // push id
+	/*11*/	"\x68-ol-" // push self
+	/*16*/	"\xB8-cb-" // mov eax, &callback
 			"\xFF\xD0" // call eax
 			"\x83\xC4\x0C" // add esp, 3*4
 			"\xC3"; // ret
@@ -2936,13 +2935,13 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 			"\xF2\x0F\x11\x6C\x24\x28"    // movsd [esp+40], xmm5
 			"\xF2\x0F\x11\x74\x24\x30"    // movsd [esp+48], xmm6
 			"\xF2\x0F\x11\x7C\x24\x38"    // movsd [esp+56], xmm7
-			"\x48\x89\xE1"          // mov rcx, rsp         // argf
-			// 76
-			"\x48\xBE---id---"      // mov rsi, 0          // id
-			// 86
-			"\x48\xBF---ol---"      // mov rdi, 0          // ol
-			// 96
-			"\x48\xB8--call--"      // mov rax, callback
+			"\x48\x89\xE1"          // mov rcx, rsp        // argf
+			// pin
+	/*76*/	"\x48\xBE---id---"      // mov rsi, 0          // id
+			// self
+	/*86*/	"\x48\xBF---ol---"      // mov rdi, 0          // ol
+			// callback
+	/*96*/	"\x48\xB8--call--"      // mov rax, callback
 			"\xFF\xD0"              // call rax
 			"\xC9"                  // leave
 			"\xC3";                 // ret
@@ -2967,6 +2966,7 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 		"\xee\x03\x00\x91" //mov  x14, sp
 		"\xfd\x7b\xbf\xa9" //stp  x29, x30, [sp,#-16]!
 		"\xfd\x03\x00\x91" //mov  x29, sp
+		// 
 		"\xe6\x1f\xbf\xa9" //stp  x6, x7, [sp,#-16]!
 		"\xe4\x17\xbf\xa9" //stp  x4, x5, [sp,#-16]!
 		"\xe2\x0f\xbf\xa9" //stp  x2, x3, [sp,#-16]!
@@ -2979,15 +2979,19 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 		"\xe6\x1f\x03\x6d" //stp  d6, d7, [sp,#48]
 		"\xe3\x03\x00\x91" //mov  x3, sp              // argf
 		"\xe4\x03\x0e\xaa" //mov  x4, x14             // rest
+		// self
 /*15*/	"\x00\x00\x80\xd2" //mov  x0, #0x0000
 		"\x00\x00\xa0\xf2" //movk x0, #0x0000, lsl #16
 		"\x00\x00\xc0\xf2" //movk x0, #0x0000, lsl #32
 		"\x00\x00\xe0\xf2" //movk x0, #0x0000, lsl #48  // ol
+		// id
 /*19*/	"\x01\x00\x00\xd2" //mov  x1, #0x0000           // id
+		// callback
 /*20*/	"\x09\x00\x80\xd2" //mov  x0, #0x0000
 		"\x09\x00\xa0\xf2" //movk x0, #0x0000, lsl #16
 		"\x09\x00\xc0\xf2" //movk x0, #0x0000, lsl #32
 		"\x09\x00\xe0\xf2" //movk x0, #0x0000, lsl #48  // ol
+
 		"\x20\x01\x3f\xd6" //blr  x9
 		"\xbf\x03\x00\x91" //mov  sp, x29
 		"\xfd\x7b\xc1\xa8" //ldp  x29, x30, [sp],#16

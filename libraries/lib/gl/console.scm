@@ -19,6 +19,7 @@
 
    (export
       move-to ; x y, передвинуть курсор в координаты x,y внутри текущего окна
+      cursor
 
       set-color ; '(R G B), установить текущий цвет в терминах RGB палитры
       BLACK BLUE GREEN CYAN RED MAGENTA BROWN GRAY YELLOW WHITE
