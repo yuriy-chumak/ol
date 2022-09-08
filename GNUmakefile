@@ -235,6 +235,7 @@ install-dev:
 uninstall:
 	-rm -rf $(DESTDIR)$(PREFIX)/bin/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/bin/olvm
+	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol/repl
 	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/include/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/share/man/man1/ol.1.gz
