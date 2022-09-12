@@ -11,6 +11,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (lang gensym)
       (lang ast)
       (owl math)

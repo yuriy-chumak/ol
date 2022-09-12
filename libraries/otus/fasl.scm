@@ -41,11 +41,11 @@
 
    (import
       (scheme core)
+      (scheme list)
 
       (owl math)
       (owl ff)
       (owl lazy)
-      (owl list)
       (owl rlist)
       (otus async))
 

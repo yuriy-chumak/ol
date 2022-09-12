@@ -4,6 +4,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (owl ff) (owl list)
       (scheme vector)
       (owl io) (owl math)

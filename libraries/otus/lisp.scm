@@ -35,7 +35,8 @@
       (exports (lib system))
 
       ; extended ol functions
-      for-each ; universal for lists, vectors and strings
+      ; universal for lists, vectors and strings
+      for-each fold
       
       (exports (lang error))
       )
@@ -88,22 +89,29 @@
          (else
             x)))
 
-   ; ol for-each accepts vectors, lists and strings as function arguments in one manner
-   ; * experimental feature
+   ; * experimental features
+
+   ; ol `for-each` and `fold` accepts vectors, lists and strings
+   ;  as function arguments in one manner
    (define for-each (case-lambda
-      ((f a)      (let loop ((a (->list a)))
-                     (unless (null? a)
-                        (f (car a))
-                        (loop (cdr a)))))
-      ((f a b)    (let loop ((a (->list a))
-                             (b (->list b)))
-                     (unless (null? a)
-                        (f (car a) (car b))
-                        (loop (cdr a) (cdr b)))))
+      ((f a)      (for-each f (->list a)))
+      ((f a b)    (for-each f (->list a)
+                              (->list b)))
       ((f a b . c)
-                  (let loop ((a (map ->list (cons a (cons b c)))))
+                  (let loop ((a (map ->list (cons* a b c))))
                      (unless (null? (car a))
                         (apply f (map car a))
                         (loop (map cdr a)))))
       ((f) #false)))
+
+   (define fold (case-lambda
+      ((f state a)      (fold f state (->list a)))
+      ((f state a b)    (fold f state (->list a)
+                                      (->list b)))
+      ((f state a b . c)
+                        (let loop ((state state) (args (map ->list (cons* a b c))))
+                           (if (null? (car args))
+                              state
+                              (loop (apply f (cons state (map car args))) (map cdr args)))))
+      ((f state) state)))
 ))

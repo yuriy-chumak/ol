@@ -50,7 +50,7 @@
    (import
       (scheme core)
       (scheme srfi-1)
-      (owl list)
+      (scheme list)
       (owl string)
       (owl math))
 

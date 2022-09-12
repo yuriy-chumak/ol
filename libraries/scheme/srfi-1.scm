@@ -6,8 +6,8 @@
 ;   https://github.com/scheme-requests-for-implementation/srfi-1/blob/master/srfi-1-reference.scm
 (import
    (scheme core)
-   (owl math)
-   (owl list))
+   (scheme list)
+   (owl math))
 
    (export
       ; Constructors
@@ -85,7 +85,7 @@
    ; (filter even? '(0 7 8 8 43 -4)) => (0 8 8 -4)
 
    (define (filter p l)
-      (foldr (lambda (x tl) (if (p x) (cons x tl) tl)) null l))
+      (foldr (lambda (x tl) (if (p x) (cons x tl) tl)) #null l))
    ;   (let loop ((l l) (o '()))
    ;      (if (null? l)
    ;         (reverse o)

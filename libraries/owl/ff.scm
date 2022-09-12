@@ -41,7 +41,7 @@
 
    (import
       (scheme core)
-      (owl list))
+      (scheme list))
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -419,8 +419,8 @@
                      (λ () (ff-iterrate l tl)))))
             tl))
 
-      (define (ff-iter  tree) (ff-iterate  tree null))
-      (define (ff-iterr tree) (ff-iterrate tree null))
+      (define (ff-iter  tree) (ff-iterate  tree #null))
+      (define (ff-iterr tree) (ff-iterrate tree #null))
 
       ;; note: ff-map will switch argument order in the generic equivalent
       ;; fixme, also much faster if types are used directly

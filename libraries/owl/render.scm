@@ -5,8 +5,8 @@
 
    (import
       (scheme core)
+      (scheme list)
       (owl string)
-      (owl list)
       (owl list-extra)
       (owl symbol)
       (owl ff)
@@ -297,7 +297,7 @@
                         (if (eq? refs 1)
                            shared
                            (cons ob shared))))
-                  null refs)))
+                  #null refs)))
             (let loop ((out empty) (shares shares) (n 1))
                (if (null? shares)
                   out

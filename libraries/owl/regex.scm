@@ -34,6 +34,8 @@
 
    (import
       (scheme core)
+      (scheme list)
+      (scheme srfi-1)
       (owl parse)
       (owl ff)
       (owl list)
@@ -41,7 +43,6 @@
       (owl string)
       (otus blobs)
       (owl list-extra)
-      (scheme srfi-1)
       (owl iff))
 
    (begin

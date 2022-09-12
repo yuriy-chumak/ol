@@ -15,6 +15,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (owl ff)
       (owl math)
       (owl list-extra)

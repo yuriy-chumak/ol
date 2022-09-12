@@ -60,6 +60,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (otus async)
       (owl queue)
       (owl string)
@@ -67,7 +68,6 @@
       (owl ff)
       (otus blobs)
       (owl render)
-      (owl list)
       (owl math)
       (otus fasl)
       (owl lazy)

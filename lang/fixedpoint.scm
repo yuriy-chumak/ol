@@ -7,6 +7,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (lang ast)
       (owl math)
       (owl list)

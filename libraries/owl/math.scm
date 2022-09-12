@@ -46,8 +46,9 @@
 
    (import
       (scheme core)
+      (scheme list)
       (owl math fp)
-      (owl list)
+      (only (owl list) unfold)
       (owl ff))
 
    (begin

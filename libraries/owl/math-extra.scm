@@ -20,9 +20,9 @@
 
    (import
       (scheme core)
+      (scheme list)
       (owl math)
       (owl iff)
-      (owl list)
       (owl list-extra)
       (owl sort)
       (only (otus async) por por*)

@@ -76,6 +76,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (scheme bytevector)
       (owl lazy)
       (owl list)

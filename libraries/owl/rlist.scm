@@ -40,7 +40,7 @@
 
    (import
       (scheme core)
-      (owl list)
+      (scheme list)
       (owl math))
 
    (begin
@@ -143,7 +143,7 @@
 
       (define (rmap op rl)
          (if (null? rl)
-            null
+            #null
             (lets ((w t tl rl))
                (spine w (rmap-tree t op) (rmap op tl)))))
 
@@ -168,7 +168,7 @@
                (riter-tree t
                   (lambda () (riterator tl tail))))))
 
-      (define (riter rl) (riterator rl null))
+      (define (riter rl) (riterator rl #null))
 
       ;; riterr (backwards)
 
@@ -188,7 +188,7 @@
                   (lambda ()
                      (riterr-tree t tail))))))
 
-      (define (riterr rl) (riteratorr rl null))
+      (define (riterr rl) (riteratorr rl #null))
 
       ;; rfold (== (lfold op st (riter rl)))
 
@@ -227,10 +227,10 @@
       ;; conversions
 
       (define (list->rlist l) ; naive O(n log n)
-         (foldr rcons null l))
+         (foldr rcons #null l))
 
       (define (rlist->list rl)
-         (rfoldr cons null rl))
+         (rfoldr cons #null rl))
 
       ;; len
 
@@ -247,13 +247,13 @@
 
       (define-syntax rlist
          (syntax-rules ()
-            ((rlist) null)
+            ((rlist) #null)
             ((rlist a . as)
                (rcons a (rlist . as)))))
 
    ;; note, could also be done in O(n)
    (define (rrev rl)
-      (rfold (λ (out x) (rcons x out)) null rl))
+      (rfold (λ (out x) (rcons x out)) #null rl))
 
 ))
 

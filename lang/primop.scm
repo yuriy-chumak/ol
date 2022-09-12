@@ -10,6 +10,7 @@
 
    (import
       (scheme core) (src vm)
+      (scheme list)
       (owl list) (owl ff) (owl math))
 
    (begin

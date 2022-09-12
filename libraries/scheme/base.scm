@@ -98,6 +98,7 @@
       ;; floor-remainder
       ;; floor/
       ;; flush-output-port
+   fold foldr ; * ol specific
    for-each
    gcd
       ;; get-output-bytevector
@@ -250,6 +251,7 @@
 )
    (import
       (scheme core) (src vm)
+      (scheme list)
       (scheme vector)
       (scheme bytevector)
       (scheme string)

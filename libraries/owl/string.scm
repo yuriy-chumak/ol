@@ -59,10 +59,10 @@
    )
 
    (import (scheme core))
+   (import (scheme list))
 
    (import (owl ff))
    (import (owl unicode))
-   (import (owl list))
    (import (owl list-extra))
    (import (owl lazy))
    (import (owl math))
@@ -121,14 +121,14 @@
             (else
                (runtime-error "str-iter: not a string: " str))))
 
-      (define (str-iter str) (str-iter-any str null))
+      (define (str-iter str) (str-iter-any str #null))
 
       (define (str-iter-bytes str)
          (ledit
             (lambda (codepoint)
                (if (less? codepoint #x80)
                   #false ;; keep the old one
-                  (encode-point codepoint null)))
+                  (encode-point codepoint #null)))
             (str-iter str)))
 
       ;;; iterate backwards
@@ -166,7 +166,7 @@
             (else
                (runtime-error "str-iterr: not a string: " str))))
 
-      (define (str-iterr str) (str-iterr-any str null))
+      (define (str-iterr str) (str-iterr-any str #null))
 
 
       ;; string folds
@@ -183,9 +183,9 @@
             (encode-point p tl)))
 
       ; note: it is assumed string construction has checked that all code points are valid and thus encodable
-      (define (string->bytes str)    (str-foldr encode-point null str))
+      (define (string->bytes str)    (str-foldr encode-point #null str))
       (define (render-string str tl) (str-foldr encode-point tl str))
-      (define (string->runes str)    (str-foldr cons null str))
+      (define (string->runes str)    (str-foldr cons #null str))
       (define (render-quoted-string str tl)
          (str-foldr encode-quoted-point tl str))
 
@@ -215,9 +215,9 @@
                   ; use 234-nodes for now
                   (lets
                      ((q (div n 4))
-                      (a l (split null chunks q))
-                      (b l (split null l q))
-                      (c d (split null l q))
+                      (a l (split #null chunks q))
+                      (b l (split #null l q))
+                      (c d (split #null l q))
                       (subs (map finish-string (list a b c d)))
                       (len (fold + 0 (map string-length subs))))
                      (vm:make type-string-dispatch (cons len subs))))
@@ -241,13 +241,13 @@
                   (reverse (cons (make-chunk out ascii?) chu))))
             ; make 4Kb chunks by default
             ((eq? n 4096)
-               (stringify runes null 0 #true
+               (stringify runes #null 0 #true
                   (cons (make-chunk out ascii?) chu)))
             ((pair? runes)
                (cond
                   ((and ascii? (< 128 (car runes)) (> n 256))
                      ; allow smaller leaf chunks
-                     (stringify runes null 0 #true
+                     (stringify runes #null 0 #true
                         (cons (make-chunk out ascii?) chu)))
                   ((valid-code-point? (car runes))
                      (let ((rune (car runes)))
@@ -259,7 +259,7 @@
 
       ;; (codepoint ..) → string | #false
       (define (runes->string lst)
-         (stringify lst null 0 #true null))
+         (stringify lst #null 0 #true #null))
 
       (define (bytes->string stream)
          (runes->string (utf8-decode stream)))
@@ -355,7 +355,7 @@
                   (λ (in) (walk (append rval rout) in)))
                (else
                   (walk (cons (car in) rout) (cdr in)))))))
-         (walk null lst)))
+         (walk #null lst)))
 
       (define (str-replace str pat val)
          (runes->string

@@ -17,6 +17,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (only (src vm) vm:run)
       (owl queue)
       (otus async)
