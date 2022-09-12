@@ -2,7 +2,6 @@
 
    ; todo: move fold to srfi-1
    (export
-      null
       for ; deprecated
       has? getq last drop-while
       mem

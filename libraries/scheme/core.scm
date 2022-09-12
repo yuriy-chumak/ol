@@ -1889,6 +1889,9 @@
 
       ;; stop the vm *immediately* without flushing input or anything else with return value n
       (define (halt n)               (vm:exit n))
+
+      ;; owl backward compatibility
+      (define null #null)
 )
    ; ---------------------------
    (export
@@ -1998,6 +2001,9 @@
 
       ; ol extension:
       halt
+
+      ; owl extension:
+      null
 
       -- ++ ; * ol internal staff
 ))
