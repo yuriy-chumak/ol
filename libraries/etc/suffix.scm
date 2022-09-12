@@ -10,7 +10,7 @@
    )
 
    (import
-      (scheme core)
+      (scheme base)
       (scheme vector)
       (owl math)
       (owl list)

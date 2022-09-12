@@ -11,7 +11,7 @@
       )
 
    (import 
-      (scheme core)
+      (scheme base)
       (owl math)
       (owl iff) 
       (owl list)
