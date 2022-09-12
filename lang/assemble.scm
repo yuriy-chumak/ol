@@ -9,8 +9,7 @@
       fork-bytecode-interner)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
       (owl ff)
       (owl list)
       (owl math)

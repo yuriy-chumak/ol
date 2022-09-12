@@ -16,8 +16,7 @@
       fork-symbol-interner)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
       (owl string)
       (otus async)
       (owl list)

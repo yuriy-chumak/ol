@@ -16,8 +16,7 @@
       compile)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
       (owl math)
       (owl list)
       (owl list-extra)

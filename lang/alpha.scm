@@ -10,14 +10,10 @@
    (export alpha-convert)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
+      (owl ff)
       (lang gensym)
-      (lang ast)
-      (owl math)
-      (owl list)
-      (owl list-extra)
-      (owl ff))
+      (lang ast))
 
    (begin
       (define (ok exp env) ['ok exp env])

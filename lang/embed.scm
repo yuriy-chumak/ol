@@ -3,8 +3,7 @@
       make-entry)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
       (owl ff) (owl list)
       (scheme vector)
       (owl io) (owl math)

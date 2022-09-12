@@ -6,8 +6,7 @@
    (export cps)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
       (lang ast)
       (owl list)
       (owl list-extra)

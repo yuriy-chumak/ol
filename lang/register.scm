@@ -14,8 +14,7 @@
       n-registers)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
       (owl ff)
       (owl math)
       (owl list-extra)

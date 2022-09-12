@@ -9,7 +9,7 @@
       uncompiled-closure?)
 
    (import
-      (scheme core)
+      (scheme base)
       (owl list)
       (lang ast)
       (owl math)

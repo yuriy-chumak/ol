@@ -6,8 +6,7 @@
    (export fix-points)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
       (lang ast)
       (owl math)
       (owl list)

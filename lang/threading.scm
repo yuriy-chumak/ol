@@ -16,8 +16,7 @@
       start-thread-controller)
 
    (import
-      (scheme core)
-      (scheme list)
+      (scheme base)
       (only (src vm) vm:run)
       (owl queue)
       (otus async)

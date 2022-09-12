@@ -195,7 +195,7 @@
    string->symbol
    string->utf8
    string->vector
-   string->bytes   ; *ol
+   string->bytes   ; * ol specific
    string-append
       ;; string-copy
       ;; string-copy!
@@ -416,6 +416,10 @@
 
       (define char->integer idf)
       (define integer->char idf)
+
+      ;; 6.6.  Characters (additional staff)
+
+
 
       ;; *********************
       ;; 6.10.  Control features
