@@ -1651,15 +1651,15 @@
       (assert (call-with-current-continuation procedure?)
                                                 ===> #true)
 
-      ; procedure:  (apply proc arg1 ... args)  * builtin
+      ; procedure:  (apply proc arg1 ...)  * builtin
 
-      ; procedure:  (map proc list1 list2 ...)  * (scheme list)
-      ; procedure:  (string-map proc string1 string2 ...)  * (scheme string)
-      ; procedure:  (vector-map proc vector1 vector2 ...)  * (scheme vector)
+      ; procedure:  (map proc list1 ...)  * (scheme list)
+      ; procedure:  (string-map proc string1 ...)  * (scheme string)
+      ; procedure:  (vector-map proc vector1 ...)  * (scheme vector)
 
-      ; procedure:  (for-each proc list1 list2 ...)  * (scheme list)
-      ; procedure:  (string-for-each proc string1 string2 ...)  * (scheme string)
-      ; procedure:  (vector-for-each proc vector1 vector2 ...)  * (scheme vector)
+      ; procedure:  (for-each proc list1 ...)  * (scheme list)
+      ; procedure:  (string-for-each proc string1 ...)  * (scheme string)
+      ; procedure:  (vector-for-each proc vector1 ...)  * (scheme vector)
 
       ; procedure:  (call-with-current-continuation proc)  * (src vm)
 
