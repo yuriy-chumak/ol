@@ -14,10 +14,12 @@
 ;  ...            * reserved for use by Scheme
    /
    <
+   <<     ; * ol specific
    <=
    =
 ;  =>             * reserved for use by Scheme
    >
+   >>     ; * ol specific
    >=
    abs
    and
