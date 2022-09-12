@@ -6,6 +6,7 @@
     base64:encode)
     
   (import (scheme core)
+      (scheme list)
       (owl math) (owl list) (owl string) (owl list-extra))
 (begin
 

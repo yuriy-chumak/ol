@@ -37,6 +37,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (owl math)
       (owl lazy)
       (owl list)

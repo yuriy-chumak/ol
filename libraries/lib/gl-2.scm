@@ -1,8 +1,6 @@
 (define-library (lib gl-2)
 (import
-   (scheme core)
-   (scheme bytevector)
-   (scheme exceptions)
+   (scheme base)
    (lib gl config)
    (lib gl)
    (OpenGL version-2-1))

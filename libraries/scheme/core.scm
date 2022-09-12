@@ -1650,56 +1650,14 @@
                                                 ===> #true)
       (assert (call-with-current-continuation procedure?)
                                                 ===> #true)
+
       ; procedure:  (apply proc arg1 ... args)  * builtin
 
-      ; procedure:  (map proc list1 list2 ...)
-      ;
-      (define map
-         (define map (lambda (f a)
-            (let loop ((a a))
-               (if (null? a)
-                  #null
-                  (cons (f (car a)) (loop (cdr a)))))))
-         (case-lambda
-            ((f a)      (map f a))
-            ((f a b)    (let loop ((a a)(b b)) ; map2
-                           (if (null? a)
-                              #null
-                              (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
-            ; possible speedup:
-            ;((f a b c) (let loop ((a a)(b b)(c c))
-            ;              (if (null? a)
-            ;                 #null
-            ;                 (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
-            ((f a b . c) ; mapN
-                        (let loop ((args (cons a (cons b c))))
-                           (if (null? (car args)) ; закончились
-                              #null
-                              (cons (apply f (map car args)) (loop (map cdr args))))))
-            ((f ) #null)))
-
-         (assert (map cadr '((a b) (d e) (g h)))  ===> '(b e h))
-      
+      ; procedure:  (map proc list1 list2 ...)  * (scheme list)
       ; procedure:  (string-map proc string1 string2 ...)  * (scheme string)
       ; procedure:  (vector-map proc vector1 vector2 ...)  * (scheme vector)
 
-      ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
-      (define for-each (case-lambda
-         ((f a)      (let loop ((a a))
-                        (unless (null? a)
-                           (f (car a))
-                           (loop (cdr a)))))
-         ((f a b)    (let loop ((a a) (b b))
-                        (unless (null? a)
-                           (f (car a) (car b))
-                           (loop (cdr a) (cdr b)))))
-         ((f a b . c)
-                     (let loop ((a (cons a (cons b c))))
-                        (unless (null? (car a)) ; закончились
-                           (apply f (map car a))
-                           (loop (map cdr a)))))
-         ((f) #false)))
-
+      ; procedure:  (for-each proc list1 list2 ...)  * (scheme list)
       ; procedure:  (string-for-each proc string1 string2 ...)  * (scheme string)
       ; procedure:  (vector-for-each proc vector1 vector2 ...)  * (scheme vector)
 
@@ -1981,8 +1939,6 @@
       ; 6.10  Control features
       ff? bytecode? function?
       procedure? apply
-      map      ;string-map vector-map            * (owl string) (scheme vector)
-      for-each ;string-for-each vector-for-each  * (owl string) (scheme vector)
       call-with-current-continuation call/cc
       call-with-values
       

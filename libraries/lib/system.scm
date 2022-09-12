@@ -5,6 +5,7 @@
       system)
    (import
       (scheme core)
+      (scheme list)
       (owl io) (owl string))
 (begin
    (define (pipe) (syscall 22))
