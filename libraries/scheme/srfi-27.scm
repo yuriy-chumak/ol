@@ -32,6 +32,7 @@
 
 (import
    (scheme core)
+   (scheme list)
    (owl math) (owl math fp)
    (owl list)
    (scheme bytevector))
