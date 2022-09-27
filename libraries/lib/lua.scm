@@ -50,12 +50,25 @@
 (import
    (otus lisp)
    (otus ffi))
-(begin
-   (setq LUA (or
-      (load-dynamic-library "liblua5.2.so")
-      (load-dynamic-library "liblua5.2.so.0")
-      (runtime-error "Can't load lua library" #null)))
 
+(cond-expand
+   ((or Linux FreeBSD NetBSD OpenBSD Android)
+      (begin
+         (setq LUA (or
+            (load-dynamic-library "liblua5.2.so")
+            (load-dynamic-library "liblua5.2.so.0")
+            (runtime-error "Can't load lua library" #null)))))
+   (Windows
+      (begin
+         (setq LUA (or
+            (load-dynamic-library "lua52.dll")
+            (load-dynamic-library "lua5.2.dll")
+            (runtime-error "Can't load lua library" #null)))))
+   (else
+      (begin (runtime-error "Unsupported platform OS" *uname*))))
+
+;; ==============================================================
+(begin
    (setq int fft-int)
    (setq void fft-void)
    (setq size_t& (fft& fft-size-t))
