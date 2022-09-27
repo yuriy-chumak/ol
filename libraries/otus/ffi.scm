@@ -76,7 +76,8 @@
 
       fft-long  fft-signed-long  fft-unsigned-long
       fft-long-long fft-signed-long-long fft-unsigned-long-long
-      fft-size-t
+      fft-size-t ; deprecated
+      fft-size_t
 
       fft-enum
 
@@ -266,10 +267,12 @@
 
 (define fft-enum fft-int)
 
-(define fft-size-t (case (ffi:sizeof |size_t|)
+(define fft-size_t (case (ffi:sizeof |size_t|)
    (4 fft-int32)
    (8 fft-int64)
    (else (runtime-error "assertion error: unsupported native 'size_t' type size"))))
+
+(define fft-size-t fft-size_t)
 
 ; ...
 (define fft-int* (fft* fft-int))
