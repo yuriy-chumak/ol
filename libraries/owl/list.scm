@@ -3,9 +3,9 @@
    ; todo: move fold to srfi-1
    (export
       for ; deprecated
-      has? getq last drop-while
+      getq last drop-while
       mem
-      fold-map foldr-map
+      fold-map foldr-map ; deprecated
       keep remove
       all some
       smap unfold
@@ -46,12 +46,6 @@
             (lets ((this st (op st)))
                (cons this (unfold op st end?)))))
 
-
-      (define (has? lst x)
-         (cond
-            ((null? lst) #false)
-            ((eq? (car lst) x) #true)
-            (else (has? (cdr lst) x))))
 
       (define (getq lst k)
          (cond

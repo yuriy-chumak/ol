@@ -10,10 +10,25 @@
 
    (export
       map for-each
-      fold foldr)
+      fold foldr
+      
+      has? ; * ol specific, fast version of member
+   )
 
 
 (begin
+
+   (define (has? lst x)
+      (unless (null? lst)
+         (or (eq? (car lst) x)
+            (has? (cdr lst) x))))
+
+   ;; (define (has? lst x)
+   ;;    (unless (null? lst)
+   ;;       (if (eq? (car lst) x)
+   ;;          #true
+   ;;          (has? (cdr lst) x))))
+
 
    ; procedure:  (map proc list1 list2 ...)
    ;

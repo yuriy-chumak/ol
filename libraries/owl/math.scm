@@ -48,7 +48,6 @@
       (scheme core)
       (scheme list)
       (owl math fp)
-      (only (owl list) unfold)
       (owl ff))
 
    (begin
@@ -2180,6 +2179,12 @@
 
       (define (char-of digit)
          (add digit (if (< digit 10) 48 87)))
+
+      (define (unfold op st end?)
+         (if (end? st)
+            null
+            (lets ((this st (op st)))
+               (cons this (unfold op st end?)))))
 
       (define (render-digits num tl base)
          (fold (λ (a b) (cons b a)) tl

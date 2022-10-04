@@ -11,7 +11,6 @@
    (import
       (scheme base)
       (owl ff)
-      (owl list)
       (owl math)
       (otus async)
       (owl list-extra)

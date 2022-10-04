@@ -106,6 +106,7 @@
       ;; get-output-bytevector
       ;; get-output-string
       ;; guard
+   has?       ; * ol specific
    if
    include
    include-ci
