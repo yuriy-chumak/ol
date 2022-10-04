@@ -799,9 +799,8 @@
       ; syntax:  delay <expression>
       (define-syntax delay
          (syntax-rules ()
-            ((delay (op . args))
-               (lambda () (op . args)))
-            ((delay value) value)))
+            ((delay . body)
+               (lambda () (begin . body)))))
 
       ; syntax:  delay-force <expression>
       ; todo.

@@ -45,7 +45,7 @@
             (handler
                (if (eq? reason flag)
                   info
-                  (handler (verbose-ol-error code reason info)))))
+                  (verbose-ol-error code reason info))))
 
          (else is foo
             (runtime-error "something wrong" foo))))
