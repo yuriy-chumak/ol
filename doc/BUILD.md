@@ -134,6 +134,10 @@ If you want to enable/disable some olvm features you can use -Dxxx or -Dxxx=y gc
 |CAR_CHECK     | 1\|0, default 1 |Enable car arguments check|
 |CDR_CHECK     | 1\|0, default 1 |Enable cdr arguments check|
 
+|Variable         |Value                          |Meaning |
+|-----------------|-------------------------------|--------|
+|OLVM_INEXACT_TYPE| float\|double, default double |Internal inexact type representation|
+
 This variables are automatically set by the Makefile (like `configure` script). You can override those values, sure:
 
 |Variable      |Value            |Meaning |

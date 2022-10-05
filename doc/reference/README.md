@@ -26,6 +26,7 @@ List of Standard procedures
 - [Symbols](symbols.md).
 - [Characters](characters.md).
 - [Vectors](vectors.md).
+- [Lazy Lists](lazy-lists.md).
 - [Numbers](numbers.md), TBD.
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
