@@ -38,6 +38,8 @@
          AL_EXTENSIONS
 
       alcOpenDevice
+      alcCloseDevice
+
       alcCreateContext
       alcMakeContextCurrent
 
@@ -50,7 +52,6 @@
       alGetSourcei
          AL_BUFFERS_QUEUED AL_BUFFERS_PROCESSED
 
-
       alBufferData
          AL_FORMAT_MONO8 AL_FORMAT_MONO16
          AL_FORMAT_STEREO8 AL_FORMAT_STEREO16
@@ -61,6 +62,18 @@
 
       ; Source:
       AL_BUFFER AL_LOOPING
+
+      alcGetError
+      alcCaptureOpenDevice
+      alcCaptureCloseDevice
+      alcCaptureStart
+      alcCaptureStop
+      alcCaptureSamples
+
+      alcGetIntegerv
+
+      ALC_CAPTURE_SAMPLES
+
    )
 ; ============================================================================
 ; == implementation ==========================================================
@@ -422,7 +435,9 @@
    (define ALCubyte   fft-unsigned-char)
    (define ALCshort   fft-short)
    (define ALCushort  fft-unsigned-short)
-   (define ALCint     fft-int)            (define ALCint*  (fft* ALCint))
+   (define ALCint     fft-int)
+      (define ALCint*  (fft* ALCint))
+      (define ALCint&  (fft& ALCint))
    (define ALCuint    fft-unsigned-int)
       (define ALCuint*  (fft* ALCuint))
       (define ALCuint&  (fft& ALCuint))
@@ -453,7 +468,7 @@
    ; Device Management
 
    (define alcOpenDevice (openal ALCdevice* "alcOpenDevice" ALCchar*))
-   ;alcCloseDevice
+   (define alcCloseDevice (openal ALCboolean "alcCloseDevice" ALCdevice*))
 
    (define alcGetError (openal ALCenum "alcGetError" ALCdevice*))
 
@@ -467,13 +482,14 @@
    
    ; Query functions
    ;alcGetString
-   ;alcGetIntegerv
+   (define alcGetIntegerv (openal ALvoid "alcGetIntegerv" ALCdevice* ALCenum ALCsizei ALCint&))
 
    ; Capture functions
-   ;alcCaptureOpenDevice
-   ;alcCaptureCloseDevice
-   ;alcCaptureStart
-   ;alcCaptureStop
-   ;alcCaptureSamples
+   (define alcCaptureOpenDevice (openal ALCdevice* "alcCaptureOpenDevice" ALCchar* ALCuint ALCenum ALCsizei))
+   (define alcCaptureCloseDevice (openal ALCboolean "alcCaptureCloseDevice" ALCdevice*))
+   (define alcCaptureStart (openal ALvoid "alcCaptureStart" ALCdevice*))
+   (define alcCaptureStop (openal ALvoid "alcCaptureStop" ALCdevice*))
+   (define alcCaptureSamples (openal ALvoid "alcCaptureSamples" ALCdevice*))
 
+   (define ALC_CAPTURE_SAMPLES #x312)
 ))
