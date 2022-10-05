@@ -201,7 +201,7 @@
 
    (define (read-json-string str)
       (when str
-         (read-json-stream (str-iter str))))
+         (read-json-stream (str-iter-bytes str))))
 
    (define read-json (case-lambda
       (() (read-json-port stdin))
