@@ -64,6 +64,12 @@
 #	endif
 #endif
 
+#ifdef __APPLE__
+#	ifndef _DARWIN_C_SOURCE
+#	define _DARWIN_C_SOURCE
+#	endif
+#endif
+
 // assume we use posix
 #ifndef HAVE_UNISTD_H
 #define HAVE_UNISTD_H 1
@@ -1042,10 +1048,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	else
 	// Unsupported platform
 #	endif
-
-	// Defining _DARWIN_C_SOURCE causes library and kernel calls to
-	// conform to the SUSv3 standards
-#	define _DARWIN_C_SOURCE
 #endif
 
 // ---------------------------------------------------------
@@ -1143,7 +1145,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #endif
 
 #ifndef HAS_SENDFILE
-# if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
+# if defined(_WIN32) || defined(__linux__)
 #  define HAS_SENDFILE HAS_SOCKETS
 # else
 #  define HAS_SENDFILE 0
@@ -1217,6 +1219,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #include <string.h>
 #include <setjmp.h>
 
+#include <alloca.h>
 // no <alloca.h>, use http://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
 #ifndef __GNUC__
 #define __builtin_alloca alloca
