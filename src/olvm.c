@@ -44,11 +44,37 @@
 #ifndef __OLVM_H__
 #define __OLVM_H__
 
+// <!-- standard definitions
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 600 // (Since glibc 2.2) The value 600 or greater additionally
+                          // exposes definitions for SUSv3 (UNIX 03; i.e., the
+                          // POSIX.1-2001 base specification plus the XSI extension)
+                          // and C99 definitions.
+#endif
+
+// http://man7.org/linux/man-pages/man7/posixoptions.7.html
+#define _GNU_SOURCE 1     // nanosleep, mmap, etc.
+
+#define _BSD_SOURCE 1
+#define _DEFAULT_SOURCE 1
+
+#ifdef __NetBSD__         // make all NetBSD features available
+#	ifndef _NETBSD_SOURCE
+#	define _NETBSD_SOURCE 1
+#	endif
+#endif
+
+// assume we use posix
+#ifndef HAVE_UNISTD_H
+#define HAVE_UNISTD_H 1
+#endif
+
+// --> end of standard definitions
+
 /*!- - -
  * ## Otus Lisp Virtual Machine
  * ### Source file: src/olvm.c
  */
-
 #include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -67,14 +93,13 @@ typedef uintptr_t word;
 // raspbian:  4;
 
 
-// OL Virtual Machine
+// OL Virtual Machine type
 typedef struct olvm_t olvm_t;
 
 // -----------------------------------------------------
 // PUBLIC API:
 
-olvm_t*
-     OLVM_new(unsigned char* bootstrap);
+olvm_t* OLVM_new(unsigned char* bootstrap);
 void OLVM_delete(olvm_t* ol);
 word OLVM_run(olvm_t* ol, int argc, char** argv);
 word OLVM_evaluate(olvm_t* ol, word function, int argc, word* argv);
@@ -878,8 +903,7 @@ inexact_t f = (inexact_t) a;\
 /****************************************************************/
 #endif//__OLVM_H__
 
-#ifndef __OLVM_C__
-#define __OLVM_C__
+// <!-- __OLVM_C__
 /****************************************************************/
 
 #define __OLVM_NAME__ "OL"
@@ -1134,33 +1158,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #  define OLVM_LIBRARY_SO_NAME NULL
 #endif
 
-// http://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
-// http://man7.org/linux/man-pages/man7/feature_test_macros.7.html
-//#define _POSIX_C_SOURCE // Obsolette. Enables functionality from the POSIX.1 standard (IEEE Standard 1003.1),
-//                      //            as well as all of the ISO C facilities.
-
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 600 // (Since glibc 2.2) The value 600 or greater additionally
-                          // exposes definitions for SUSv3 (UNIX 03; i.e., the
-                          // POSIX.1-2001 base specification plus the XSI extension)
-                          // and C99 definitions.
-#endif
-
-// http://man7.org/linux/man-pages/man7/posixoptions.7.html
-#define _BSD_SOURCE 1
-#define _GNU_SOURCE 1  // nanosleep, etc.
-
-#ifdef __NetBSD__     // make all NetBSD features available
-#	ifndef _NETBSD_SOURCE
-#	define _NETBSD_SOURCE 1
-#	endif
-#endif
-
-// assume we compile for posix
-#ifndef HAVE_UNISTD_H
-#define HAVE_UNISTD_H 1
-#endif
-
 #if HAVE_UNISTD_H
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #endif
@@ -1301,12 +1298,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #include <android/log.h>
 #endif
 
-// new feature, disabled by default
-#ifndef SYSCALL_MEMFD
-#define SYSCALL_MEMFD 0
-#endif
-
-#if SYSCALL_MEMFD
+#if !defined(SYSCALL_MEMFD) || !SYSCALL_MEMFD
 #include <sys/mman.h>
 #endif
 
@@ -5743,4 +5735,4 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
  * - http://www.call-cc.org/
  * - http://www.scheme.com/tspl4/
  */
-#endif//__OLVM_C__
+// -->

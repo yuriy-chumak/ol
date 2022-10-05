@@ -28,6 +28,12 @@ pacman3: main.c embed3.c texturing.c binf.c
 	    ../../src/olvm.c -ldl -lm -pthread \
 	    -o $@
 
+pacman3s: main.c embed3.c texturing.c binf.c
+	gcc $^ -I. -lGL -lglut -lpng \
+	    -I../../includes -DOLVM_NOMAIN $(CFLAGS) \
+	    -lol -ldl -lm -pthread \
+	    -o $@
+
 tmp.bin: precompile.scm main.scm
 	ol precompile.scm
 binf.c: tmp.bin

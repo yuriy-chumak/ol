@@ -31,6 +31,9 @@ vm: extensions/ffi.c
 ol: src/olvm.c
 ol: extensions/ffi.c
 ol: tmp/repl.c
+libol.so: src/olvm.c
+libol.so: extensions/ffi.c
+libol.so: tmp/repl.c
 
 # win/wine
 ol%.exe: src/olvm.c
@@ -46,7 +49,7 @@ extensions/ffi.c: CFLAGS += -Iincludes
 extensions/ffi.c: includes/ol/vm.h
 
 includes/ol/vm.h: src/olvm.c
-	sed -n '/__OLVM_C__/q;p' $^ >$@
+	sed -e '/\/\/ <!--/,/\/\/ -->/d' $^ >$@
 
 tmp/repl.c: repl
 	xxd --include repl >tmp/repl.c
@@ -149,6 +152,8 @@ install: ol includes/ol/vm.h
 	@echo Installing ol virtual machine binary...
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install vm $(DESTDIR)$(PREFIX)/bin/olvm
+	@echo Installing libol.so...
+	install libol.so $(DESTDIR)$(PREFIX)/lib/libol.so
 	@echo Installing headers...
 	install -d $(DESTDIR)$(PREFIX)/include/ol
 	install -m 644 includes/ol/vm.h $(DESTDIR)$(PREFIX)/include/ol/vm.h
@@ -173,6 +178,8 @@ install-dev:
 	@echo Installing ol virtual machine binary...
 	install -d $(DESTDIR)$(PREFIX)/bin
 	ln -s `pwd`/olvm $(DESTDIR)$(PREFIX)/bin/olvm
+	@echo Installing libol.so...
+	ln -s `pwd`/libol.so $(DESTDIR)$(PREFIX)/lib/libol.so
 	@echo Installing headers...
 	install -d $(DESTDIR)$(PREFIX)/include/ol
 	ln -s `pwd`/includes/ol $(DESTDIR)$(PREFIX)/include/ol
@@ -186,6 +193,7 @@ install-dev:
 uninstall:
 	-rm -rf $(DESTDIR)$(PREFIX)/bin/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/bin/olvm
+	-rm -rf $(DESTDIR)$(PREFIX)/lib/libol.so
 	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol/repl
 	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/include/ol
@@ -196,7 +204,7 @@ debug: CFLAGS += $(CFLAGS_DEBUG)
 debug: vm repl ol olvm
 
 release: CFLAGS += $(CFLAGS_RELEASE)
-release: vm repl ol olvm
+release: vm repl ol olvm libol.so
 
 slim: CFLAGS += -DHAS_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
 slim: release
@@ -230,6 +238,13 @@ ol:
 	   tmp/repl.c -DREPL=repl
 	@echo Ok.
 
+libol.so:
+	$(CC) src/olvm.c -o $@ \
+	   extensions/ffi.c -Iincludes \
+	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L) \
+	   tmp/repl.c -DREPL=repl \
+	   -DOLVM_NOMAIN -shared -fPIC
+	@echo Ok.
 
 # emscripten version 1.37.40+
 ol.wasm: src/olvm.c tmp/repl.c
