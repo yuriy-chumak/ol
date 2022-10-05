@@ -7,7 +7,7 @@
       session
    )
    (import
-      (scheme core)
+      (scheme base)
       (otus ffi) (owl string)
       (owl parse) (lib http)
       (owl io)
@@ -15,7 +15,7 @@
       (file json))
 
 (begin
-   (define server (make-parameter "http://127.0.0.1:4000"))
+   (define server (make-parameter "http://127.0.0.1:4002"))
    (define session (make-parameter "*"))
 
    (define (REQUEST TYPE URL body)

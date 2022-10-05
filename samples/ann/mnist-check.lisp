@@ -72,7 +72,7 @@ GL_POINTS GL_TRIANGLE_STRIP 4
    }
 "))
 
-(print "Please wait while loading a testing database...")
+(print "Please wait while loading a test database...")
 
 ; --= mnist data =----------
 (import (file gzip))
@@ -190,8 +190,8 @@ GL_POINTS GL_TRIANGLE_STRIP 4
 
       (for-each (lambda (j)
             (if (eq? label j)
-               (glColor3f 1 1 1)
-               (glColor3f 0 0 0))
+               (glColor3f 1.0 1.0 1.0)
+               (glColor3f 0.2 0.2 0.2))
 
             (glBindTexture GL_TEXTURE_2D (lref numbers j))
             (glBegin GL_QUADS)
