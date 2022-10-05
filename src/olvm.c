@@ -1279,6 +1279,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	ifdef ERROR
 #	undef ERROR
 #	endif
+
+#	define SYSCALL_MEMFD 0  // no win32 implementation yet
 #endif
 
 #if HAS_SENDFILE
