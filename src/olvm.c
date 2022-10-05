@@ -1283,6 +1283,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	define SYSCALL_MEMFD 0  // no win32 implementation yet
 #endif
 
+#ifdef __APPLE__
+#	define SYSCALL_MEMFD 0  // no macOS implementation yet
+#endif
+
 #if HAS_SENDFILE
 # if defined(__linux__)
 #	include <sys/sendfile.h>
@@ -1300,7 +1304,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #include <android/log.h>
 #endif
 
-#if !defined(SYSCALL_MEMFD) || !SYSCALL_MEMFD
+#if !defined(SYSCALL_MEMFD) || (defined(SYSCALL_MEMFD) && SYSCALL_MEMFD != 0)
 #include <sys/mman.h>
 #endif
 
