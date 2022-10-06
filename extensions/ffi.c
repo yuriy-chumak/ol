@@ -46,14 +46,12 @@
 #include <string.h>
 #include <stdio.h> // temp
 
-#if defined(__unix__) || defined(__APPLE__)
-#	include <sys/mman.h>
-#endif
-
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+
+#include <sys/mman.h> // we have own win32 implementation
 
 #ifndef WARN_ALL
 #	ifdef __clang__

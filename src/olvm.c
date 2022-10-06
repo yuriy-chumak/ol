@@ -1246,6 +1246,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #include <time.h>
 #include <math.h>
 
+#include <sys/mman.h> // we have own win32 implementation
 #include <sys/utsname.h> // we have own win32 implementation
 #if HAS_DLOPEN
 #	include <dlfcn.h> // we have own win32 implementation
@@ -1280,8 +1281,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	ifdef ERROR
 #	undef ERROR
 #	endif
-
-#	define SYSCALL_MEMFD 0  // no win32 implementation yet
 #endif
 
 #ifdef __APPLE__
@@ -1304,11 +1303,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #ifdef __ANDROID__
 #include <android/log.h>
 #endif
-
-#if !defined(SYSCALL_MEMFD) || (defined(SYSCALL_MEMFD) && SYSCALL_MEMFD != 0)
-#include <sys/mman.h>
-#endif
-
 
 // FFI support:
 #ifndef OLVM_FFI
