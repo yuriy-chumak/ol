@@ -40,7 +40,7 @@ void *dlsym(void *handle, const char *name)
 {
 	FARPROC function;
 
-	function = GetProcAddress((HANDLE)handle, name);
+	function = GetProcAddress((HMODULE)handle, name);
 	return function;
 }
 

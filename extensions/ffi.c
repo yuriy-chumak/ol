@@ -2814,6 +2814,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi
 
 
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
+// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
 PUBLIC
 word OLVM_mkcb(olvm_t* self, word* arguments)
 {
@@ -2826,8 +2827,8 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 
 	int pin = untoi(A);
 
-#ifdef __i386__ // x86
-	// JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
+#ifdef __i386__ // x86 linux/windows
+	// long callback(olvm_t* ol, int id, int* argv)
 	static char bytecode[] =
 			"\x90" // nop
 			"\x8D\x44\x24\x04" // lea eax, [esp+4]

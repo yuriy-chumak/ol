@@ -485,12 +485,7 @@ word* p = new (type, _words, _pads);\
 // -= ports =-------------------------------------------
 // создает порт, НЕ аллоцирует память
 
-// it's safe under linux (posix uses int as io handles)
-// it's safe under Windows (handles is 24-bit width):
-//	https://msdn.microsoft.com/en-us/library/ms724485(VS.85).aspx
-//	Kernel object handles are process specific. That is, a process must
-//	either create the object or open an existing object to obtain a kernel
-//	object handle. The per-process limit on kernel handles is 2^24.
+// it's safe (posix uses int as io handles)
 #define is_port(ob)  ((is_value(ob)     && value_type(ob)     == TPORT) ||\
                       (is_reference(ob) && reference_type(ob) == TPORT))
 #define make_port(a) ({ word _p = (word)a; assert (((word)_p << VPOS) >> VPOS == (word)_p); make_value(TPORT, _p); })
@@ -1238,6 +1233,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #ifndef _WIN32
 #include <sys/ioctl.h>
 #endif
@@ -1252,7 +1248,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 
 #include <sys/utsname.h> // we have own win32 implementation
 #if HAS_DLOPEN
-#	include <dlfcn.h>    // we have own win32 implementation
+#	include <dlfcn.h> // we have own win32 implementation
 # ifdef __ANDROID__
 	static char* MODULE_FILENAME = 0;
 # endif
@@ -4138,17 +4134,17 @@ loop:;
 						si.dwFlags |= STARTF_USESTDHANDLES;
 						if (is_pair(c)) {
 							if (is_port(car(c)))
-								si.hStdInput = (HANDLE) port(c);
+								si.hStdInput = (HANDLE) _get_osfhandle(port(c));
 							c = cdr(c);
 						}
 						if (is_pair(c)) {
 							if (is_port(car(c)))
-								si.hStdOutput = (HANDLE) port(c);
+								si.hStdOutput = (HANDLE) _get_osfhandle(port(c));
 							c = cdr(c);
 						}
 						if (is_pair(c)) {
 							if (is_port(car(c)))
-								si.hStdError = (HANDLE) port(c);
+								si.hStdError = (HANDLE) _get_osfhandle(port(c));
 							c = cdr(c);
 						}
 
