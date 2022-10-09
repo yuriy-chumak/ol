@@ -45,6 +45,9 @@ Q/A
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?<br/>
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
+1. Q. I want to have a Virtual Environment. Can I?
+   A. Yes. A virtual environment is an Ol environment such that the libraries and scripts installed into it are isolated from those installed in other virtual environments and your operating system. Use `--home=the-yours-venv-path` Ol command line option.
+
 1. Q. Anything else interesting?<br/>
    A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
       Just type `$ echo ,load http/server| ol`.
