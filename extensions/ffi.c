@@ -82,6 +82,7 @@
 //efine TSTRINGWIDE   (5)
 //efine TBYTEVECTOR   (19)
 
+#define TBOOL         (60) // 0 is #false, everything else is #true
 #define TUNKNOWN      (62) // only for ffi, direct sending argument without processing
 #define TANY          (63) // automatic conversion based on actual argument type
 
@@ -1446,6 +1447,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					( atype == TVPTR                      ) ? sizeof(void*) : // removed "&& !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) " just for speedup
                     ( atype == TSTRING                    ) ? sizeof(char) :
 					( atype == TSTRINGWIDE                ) ? sizeof(widechar) :
+					( atype == TBOOL                      ) ? sizeof(int32_t) : // _Bool
 					0)) + 1;
 			}
 			else
@@ -1852,6 +1854,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				*p++ = OL2D(car(l)), l = cdr(l);
 			break;
 		}
+
+		case TBOOL:
+			args[i] = (arg == IFALSE) ? 0 : 1;
+			break;
 
 		// поинтер на данные
 		case TUNKNOWN:
@@ -2628,7 +2634,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					__builtin_memcpy(&car(result), vptr, len);
 				}
 			}
+			break;
 
+		case TBOOL:
+			result = (CV_INT32(&got) == 0) ? (word*)IFALSE : (word*)ITRUE;
 			break;
 
 		case TVPTR: {
@@ -3323,6 +3332,8 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 #endif
 			return 0; // actually we return st(0)/s0
 		}
+		case TBOOL:
+			return (r == IFALSE) ? 0 : 1;
 		case TVOID:
 			return 0;
 		default:

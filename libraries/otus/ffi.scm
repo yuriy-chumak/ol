@@ -42,6 +42,7 @@
 
       fft-void fft-void* fft-void**
 
+      fft-bool
       fft-unknown
       fft-any
 
@@ -207,6 +208,7 @@
 (define fft-void*   49)  ; same as type-vptr
 (define fft-void** (fft* fft-void*))
 
+(define fft-bool 60)
 (define fft-unknown 62)
 (define fft-any 63)
 
