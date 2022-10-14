@@ -54,7 +54,6 @@
 
 // http://man7.org/linux/man-pages/man7/posixoptions.7.html
 #define _GNU_SOURCE 1     // nanosleep, mmap, etc.
-
 #define _BSD_SOURCE 1
 #define _DEFAULT_SOURCE 1
 
@@ -114,7 +113,7 @@ void*OLVM_userdata(olvm_t* ol, void* userdata);
 void*OLVM_allocate(olvm_t* ol, unsigned words);
 
 // pinned objects support functions
-size_t OLVM_pin(olvm_t* ol, word ref); // pin can realloc ol->R
+size_t OLVM_pin(olvm_t* ol, word ref); // pin can realloc RPS (Register and Pin Set)
 word OLVM_deref(olvm_t* ol, size_t p);
 word OLVM_unpin(olvm_t* ol, size_t p);
 
@@ -245,15 +244,15 @@ object_t
 	typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
 	#define INT_T_MIN INT32_MIN
 #else
-#	error Unsupported math bit-count
+#	error Unsupported math bit-count, only only 32-bit and 64-bit are supported
 #endif
 
 // ------------------------------------------------------
 
-#define VBITS                       ((sizeof (word) * 8) - 8) // bits in value (short, or 'enum' number)
-#define VSIZE                       ((sizeof (word) * 8) - 8) // bits in value (short, or 'enum' number)
-#define HIGHBIT                     ((int_t)1 << VSIZE) // maximum value value + 1
-#define VMAX                        (HIGHBIT - 1)       // maximum value value (and most negative value)
+#define VBITS                       ((sizeof (word) * 8) - 8) // bits in Value (short number aka 'enum')
+#define VSIZE                       ((sizeof (word) * 8) - 8) // bits in Value (short number aka 'enum')
+#define HIGHBIT                     ((int_t)1 << VSIZE) // maximum Value value + 1
+#define VMAX                        (HIGHBIT - 1)       // maximum Value value (and most negative value)
 
 #define RAWBIT                      (1 << RPOS) // todo: rename to BSBIT (rawstream bit)
 #define BINARY                      (RAWBIT >> TPOS)
@@ -269,41 +268,44 @@ object_t
 
 
 // three main classes:
-#define is_value(x)                 (( (word) (x)) & 2)
+#define is_value(x)                 (( (V)(x)) & 2)
 #define is_reference(x)             (!is_value(x))
-#define is_rawstream(x)             ((*(word*)(x)) & RAWBIT) //((struct object_t*)(x))->rawness // ((*(word*)(x)) & RAWBIT)
+#define is_rawstream(x)             ((*(R)(x)) & RAWBIT) //((struct object_t*)(x))->rawness // ((*(word*)(x)) & RAWBIT)
 
 #define W                           (sizeof (word)) // todo: change to WSIZE
 #define WALIGN(x)                   (((x) + W - 1) / W)
 
+// V means Value
+typedef word V;
 // makes positive olvm integer value from int
-// I() is a
 #define I(val) \
 		(make_value(TENUMP, val))  // === (value << VPOS) | 2
-// makes olvm reference from system pointer (and just do sanity check in DEBUG)
+
 // R means Reference
-#define R(v) ({\
+typedef word* R;
+// makes olvm reference from system pointer (and do sanity check in DEBUG mode)
+#define reference(v) ({\
 		word _reference = (word)(v);\
 		assert (!(_reference & (W-1)) && "olvm references must be aligned to word boundary");\
 		(word*) _reference; })
 
 // всякая всячина:
 #define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
-#define object_size(x)              (((word)(x)) >> SPOS)
+#define object_size(x)              (header_size(x))
 #define header_pads(x)              (unsigned char) ((((word)(x)) >> VPOS) & 7) // header_t(x).padding
 
 #define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
-#define reference_type(x)           (value_type (*R(x)))
+#define reference_type(x)           (value_type (*reference(x)))
 
-#define reference_size(x)           ((header_size(*R(x)) - 1))
-#define rawstream_size(x)           ((header_size(*R(x)) - 1) * sizeof(word) - header_pads(*R(x)))
+#define reference_size(x)           ((header_size(*reference(x)) - 1))
+#define rawstream_size(x)           ((header_size(*reference(x)) - 1) * sizeof(word) - header_pads(*reference(x)))
 
 // types:
-#define TPAIR                        (1)
-#define TVECTOR                      (2)
-#define TSTRING                      (3)
-#define TSYMBOL                      (4)
-#define TSTRINGWIDE                  (5)
+#define TPAIR                       (1)
+#define TVECTOR                     (2)
+#define TSTRING                     (3)
+#define TSYMBOL                     (4)
+#define TSTRINGWIDE                 (5)
 
 #define TPORT                       (12)
 #define TCONST                      (13)
@@ -371,7 +373,7 @@ object_t
 #define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> VPOS); })
 #define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
 
-#define ref(ob, n)                  ((R(ob))[n])
+#define ref(ob, n)                  ((reference(ob))[n])
 #define car(ob)                     (ref(ob, 1))
 #define cdr(ob)                     (ref(ob, 2))
 
@@ -381,21 +383,21 @@ object_t
 #define cddr(o)                     cdr(cdr (o))
 
 // constants:
-#define IFALSE                      make_value(TCONST, 0) // I(0)
-#define ITRUE                       make_value(TCONST, 1)
-#define INULL                       make_value(TCONST, 2)
-#define IEMPTY                      make_value(TCONST, 3) // empty ff
-#define IEOF                        make_value(TCONST, 4)
-#define IHALT                       make_value(TCONST, 5)
-#define IRETURN                     make_value(TCONST, 6)
+#define IFALSE    make_value(TCONST, 0)  // #false, false value
+#define ITRUE     make_value(TCONST, 1)  // #true, non false value
+#define INULL     make_value(TCONST, 2)  // #null, empty list, '()
+#define IEMPTY    make_value(TCONST, 3)  // #empty, empty ff, {}
+#define IEOF      make_value(TCONST, 4)  // #eof, end of file
+#define IHALT     make_value(TCONST, 5)  // #halt, end of thread
+#define IRETURN   make_value(TCONST, 6)  // #return, end of program
 
-#define RFALSE  ((word*)IFALSE)
-#define RTRUE   ((word*)ITRUE)
-#define RNULL   ((word*)INULL)
-#define REMPTY  ((word*)IEMPTY)
-#define REOF    ((word*)IEOF)
-#define RHALT   ((word*)IHALT)
-#define RRETURN ((word*)IRETURN)
+#define RFALSE    ((R)IFALSE)
+#define RTRUE     ((R)ITRUE)
+#define RNULL     ((R)INULL)
+#define REMPTY    ((R)IEMPTY)
+#define REOF      ((R)IEOF)
+#define RHALT     ((R)IHALT)
+#define RRETURN   ((R)IRETURN)
 
 // ------- service functions ------------------
 void E(char* format, ...);
@@ -416,7 +418,7 @@ void E(char* format, ...);
 // shamil.free.fr/comp/ocaml/html/book011.html
 
 // память машины, управляемая сборщиком мусора
-// TODO: усложнить, разделив на две - кучу больших объектов и кучу маленьких
+// TODO?: усложнить, разделив на две - кучу больших объектов и кучу маленьких
 struct heap_t
 {
 	// new (size) === { *(size*)fp; fp += size; }
@@ -434,7 +436,6 @@ struct heap_t
 	// возвращает 1, если была проведена сборка
 	int (*gc)(struct olvm_t* ol, long ws);
 };
-
 typedef struct heap_t heap_t;
 
 
@@ -885,6 +886,7 @@ word _data = (word) a;\
 	/*return*/ _me;\
 })
 
+// unused, but should be.
 #define new_dlsym(a, b) ({\
 	new_pair (TDLSYM, new_vptr(a), b);\
 })
@@ -897,8 +899,6 @@ inexact_t f = (inexact_t) a;\
 	/*return*/me;\
 })
 #endif
-
-
 
 
 /****************************************************************/
@@ -1020,6 +1020,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	endif
 #	define SYSCALL_SYSINFO 0
 #	define SYSCALL_GETRLIMIT 0
+
+#	if __ANDROID_API__ < 30
+#		define SYSCALL_MEMFD 0
+#	endif
 #endif
 
 // https://msdn.microsoft.com/en-us/library/b0084kay.aspx
@@ -1333,6 +1337,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #define VMRAW_CHECK 1
 #endif
 
+#ifndef OLVM_NOMAIN
+#define OLVM_NOMAIN 0
+#endif
+
 
 // ========================================
 // -=( logger )=---------------------------
@@ -1516,18 +1524,8 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 // ------------------------------
 // -=( OL )=--------------------------------------------------------------------
 // --
-// TODO: !!!!! move this definitions to the top of file !!!!!!
 
 // internal declarations
-
-
-#ifndef OLVM_NOMAIN
-#define OLVM_NOMAIN 0
-#endif
-
-
-// ------------------------------------------------------
-
 
 // набор макросов - проверок для команд
 // car, cdr:
@@ -1552,8 +1550,8 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 #endif
 
 
-#define CR                          128 // available initial callables, should be more than 4!
 #define NR                          256 // see n-registers in register.scm
+#define CR                          128 // available initial callables, should be more than 4!
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
 #define MEMPAD                     (1024) // space after end of heap to guarantee apply
@@ -1603,13 +1601,8 @@ static int unsafesp = 1;
 
 
 
-
-
-
-
 // -= gc implementation =-----------
 #define is_flagged(x) (((word)(x)) & 1)  // mark for GC
-
 
 // cells - новый размер кучи (в словах)
 static
@@ -1647,7 +1640,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 				pos++, sz--;
 				while (sz--) {
 					word val = *pos;
-					if (is_reference(val))
+					if (is_reference(val)) // TODO: optimize
 						*pos = val + delta*W;
 					pos++;
 				}
@@ -1674,7 +1667,7 @@ word* chase(word* pos) {
 	word* p_pos;
 	while (1) {
 		p_pos = *(word**) ((word)pos & ~1);      // p_pos = *pos; ~ = bitwise NOT, (корректное разименование указателя, без учета бита mark)
-		if (!is_reference(p_pos) || !is_flagged(p_pos)) // p_pos & 0x3 == 0x1
+		if (!is_reference(p_pos) || !is_flagged(p_pos)) // p_pos & 0x3 == 0x1  // TODO: optimize!
 			return (word*)((word)pos & ~1);
 		pos = p_pos;
 	}
@@ -1907,9 +1900,10 @@ struct olvm_t
 
 	// word max_heap_size; // max heap size in MiB
 
-	// 0 - mcp, 1 - this, 2 - clos-this, 3 - a0, often cont
-	// todo: перенести R в конец кучи, а сам R в heap ?
-	word* R;	// регистры виртуальной машины
+	// 0 - mcp, 1 - this, 2 - clos-this, 3 - a0, often cont, 4 - a1, ..., NR - pin0, ...
+	// todo: перенести в конец кучи?
+	// register and pin set
+	word* rps;
 
 	// pinned objects support
 	size_t cr;
@@ -2108,25 +2102,25 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 	if ((ws >= 0) && ((fp + ws) < ol->heap.end))
 		return 0;
 
-	word* R = ol->R;
+	word* S = ol->rps;
 	int p = 0, N = NR + ol->cr;
 
 	// попробуем освободить ненужные регистры?
 	for (int i = ol->arity + 3; i < NR; i++)
-		R[i] = IFALSE;
+		S[i] = IFALSE;
 
 	// assert (fp + N + 3 < ol->heap.end);
 
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = new (TVECTOR, N + 1); // N for regs, 1 for this
-	while (++p <= N) regs[p] = R[p-1];
+	while (++p <= N) regs[p] = S[p-1];
 	regs[p] = ol->this;
 	// выполним сборку мусора
 	ol->heap.fp = fp;
 	regs = (word*)gc(&ol->heap, ws, (word)regs);
 	// и восстановим все регистры, уже подкорректированные сборщиком
 	ol->this = regs[p];
-	while (--p >= 1) R[p-1] = regs[p];
+	while (--p >= 1) S[p-1] = regs[p];
 
 	// закончили, почистим за собой:
 	ol->heap.fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
@@ -2164,9 +2158,9 @@ word get(word *ff, word key, word def, jmp_buf fail)
 // generate errors and crashes
 #define ERROR5(type,value, code,a,b) { \
 	D("VM " type " AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code,a,b); \
-	R[4] = I(code);    R[3] = I(value);\
-	R[5] = (word) (a);\
-	R[6] = (word) (b);\
+	S[4] = I(code);    S[3] = I(value);\
+	S[5] = (word) (a);\
+	S[6] = (word) (b);\
 	goto error; \
 }
 #define ERROR_MACRO(_1, _2, _3, NAME, ...) NAME
@@ -2187,20 +2181,20 @@ word get(word *ff, word key, word def, jmp_buf fail)
 // # of function calls in a thread quantum
 #define TICKS  10000
 
-#define R0  R[0]
-#define R1  R[1]
-#define R2  R[2]
-#define R3  R[3]
-#define R4  R[4]
-#define R5  R[5]
-#define R6  R[6]
+#define R0  S[0]
+#define R1  S[1]
+#define R2  S[2]
+#define R3  S[3]
+#define R4  S[4]
+#define R5  S[5]
+#define R6  S[6]
 
-#define A0  R[ip[0]]
-#define A1  R[ip[1]]
-#define A2  R[ip[2]]
-#define A3  R[ip[3]]
-#define A4  R[ip[4]]
-#define A5  R[ip[5]]
+#define A0  S[ip[0]]
+#define A1  S[ip[1]]
+#define A2  S[ip[2]]
+#define A3  S[ip[3]]
+#define A4  S[ip[4]]
+#define A5  S[ip[5]]
 
 static
 void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char** ip0, word** fp, word* this)
@@ -2227,7 +2221,7 @@ word runtime(struct olvm_t* ol)
 	heap_t* heap = &ol->heap; // global vm heap
 
 	word *fp = heap->fp; // memory allocation pointer
-	word* R = ol->R;     // virtual machine registers
+	word* S = ol->rps;   // virtual machine registers
 
 //	int breaked = 0;
 	int ticker = TICKS; // any initial value ok
@@ -2253,27 +2247,27 @@ apply:;
 	if (is_reference(this)) {
 		word type = reference_type (this);
 		if (type == TCLOS) { // closure, (66% for "yes")
-			R[1] = this; this = car(this);
-			R[2] = this; this = car(this);
+			R1 = this; this = car(this);
+			R2 = this; this = car(this);
 		}
 		else
 		if (type == TPROC) { // procedure, (58% for "yes")
-			R[1] = this; this = car(this);
+			R1 = this; this = car(this);
 		}
 		else
 		// low bits have special meaning
 		if ((type & 0x3C) == TFF) { // (95% for "no")
 			// ff assumed to be valid
-			word continuation = R[3];
-            word key = R[4];
+			word continuation = S[3];
+            word key = S[4];
 			switch (acc) {
 			case 2:
-				R[3] = get((word*)this, key,    0, ol->fail); // 0 is "not found"
-				if (!R[3])
+				S[3] = get((word*)this, key,    0, ol->fail); // 0 is "not found"
+				if (!S[3])
 					ERROR(260, this, key);
 				break;
 			case 3:
-				R[3] = get((word*)this, key, R[5], ol->fail);
+				S[3] = get((word*)this, key, S[5], ol->fail);
 				break;
 			default:
 				ERROR(259, this, I(acc));
@@ -2289,20 +2283,20 @@ apply:;
 		if (type == TVPTR) { // todo: change to special type or/and add a second word - function name (== [ptr function-name])
 			word* args = (word*)INULL;
 			for (int i = acc; i > 1; i--)
-				args = new_pair(R[i+2], args);
+				args = new_pair(S[i+2], args);
 
 			word (*function)(struct olvm_t*, word*) = (word (*)(struct olvm_t*, word*)) car(this);  assert (function);
-			size_t cont = OLVM_pin(ol, R[3]);
-			R = ol->R; // pin can realloc registers!
+			size_t cont = OLVM_pin(ol, S[3]);
+			S = ol->rps; // pin can realloc registers!
 
 			heap->fp = fp;
 			word x = function(ol, args);
 			fp = heap->fp;
 
 			this = OLVM_unpin(ol, cont);
-			R = ol->R; // don't remove!
+			S = ol->rps; // don't remove!
 
-			R[3] = x;
+			S[3] = x;
 			acc = 1;
 			goto apply;
 		}
@@ -2322,7 +2316,7 @@ apply:;
 			ticker = TICKS;
 
 			// if mcp present,
-			if (R[0] != IFALSE) {
+			if (S[0] != IFALSE) {
 				// save vm state and enter mcp cont at R0!
 				bank = 0;
 				acc += 4;
@@ -2331,21 +2325,21 @@ apply:;
 
 				thread = new (TTHREAD, acc-1);
 				for (ptrdiff_t pos = 1; pos < acc-1; pos++)
-					thread[pos] = R[pos];
+					thread[pos] = S[pos];
 
-				R[acc] = this;
+				S[acc] = this;
 				thread[acc-1] = this;
-				this = R[0]; // mcp
+				this = S[0]; // mcp
 
-				R[0] = IFALSE; // remove mcp cont
+				S[0] = IFALSE; // remove mcp cont
 				// R3 marks the interop to perform
 				// 1 - runnig and time slice exhausted
 				// 10: breaked - call signal handler
 				// 14: memory limit was exceeded
-				R[3] = I(1); // breaked ? ((breaked & 8) ? I(14) : I(10)) : I(1); // fixme - handle also different signals via one handler
-				R[4] = (word) thread; // thread state
-				R[5] = I(0); // I(breaked); // сюда можно передать userdata из потока
-				R[6] = IFALSE;
+				S[3] = I(1); // breaked ? ((breaked & 8) ? I(14) : I(10)) : I(1); // fixme - handle also different signals via one handler
+				S[4] = (word) thread; // thread state
+				S[5] = I(0); // I(breaked); // сюда можно передать userdata из потока
+				S[6] = IFALSE;
 				acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
 				// breaked = 0;
 
@@ -2385,14 +2379,14 @@ apply:;
 
 	// ff call ({} key def) -> def
 	if (this == IEMPTY) {
-		word continuation = R[3];
-        word key = R[4];
+		word continuation = S[3];
+        word key = S[4];
 		switch (acc) {
 		case 2:
 			ERROR(260, this, key); // key
 			break;
 		case 3:
-			R[3] = R[5];           // default value
+			S[3] = S[5];           // default value
 			break;
 		default:
 			ERROR(259, this, I(acc));
@@ -2405,15 +2399,15 @@ apply:;
 	// done ?
 	if (this == IHALT) {
 		// a thread or mcp is calling the final continuation
-		this = R[0];
+		this = S[0];
 		if (!is_reference(this))
 			goto done; // expected exit
 
-		R[0] = IFALSE; // set mcp yes?
-		R[4] = R[3];
-		R[3] = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
-		R[5] = IFALSE;
-		R[6] = IFALSE;
+		S[0] = IFALSE; // set mcp yes?
+		S[4] = S[3];
+		S[3] = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
+		S[5] = IFALSE;
+		S[6] = IFALSE;
 //		breaked = 0;
 		ticker = TICKS;// ?
 		bank = 0;
@@ -2423,7 +2417,7 @@ apply:;
 	}
 
 	if (this == IRETURN) {
-		// в R[3] находится код возврата
+		// в S[3] находится код возврата
 		goto done;       // колбек закончен! надо просто выйти наверх
 	}
 	
@@ -2431,7 +2425,7 @@ apply:;
 
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
-	// Rn - регистр машины (R[n])
+	// Rn - регистр машины (rps[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
 	// todo: exchange NOP and APPLY operation codes
@@ -2659,8 +2653,8 @@ loop:;
 	 * RETurn from procedure
 	 */
 	case RET: // (3%) return value
-		this = R[3];
-		R[3] = A0;
+		this = S[3];
+		S[3] = A0;
 		acc = 1;
 		goto apply;
 
@@ -2680,20 +2674,20 @@ loop:;
 
 		if (acc < 0)
 			ERROR(APPLY, I(0));
-		this = R[reg];
+		this = S[reg];
 
 		// copy args down
 		while (acc--) { // move explicitly given arguments down by one to correct positions
-			R[reg] = R[reg+1];
+			S[reg] = S[reg+1];
 			reg++;
 			arity++;
 		}
-		word *lst = (word *) R[reg+1];
+		word *lst = (word *) S[reg+1];
 
 		while (is_pair(lst)) { // unwind argument list
 			if (reg > NR)
-				ERROR(APPLY, I(reg)); // MAYBE: add changing the size of R array?
-			R[reg++] = car (lst);
+				ERROR(APPLY, I(reg)); // MAYBE: add changing the size of S array?
+			S[reg++] = car (lst);
 			lst = (word *) cdr(lst);
 			arity++;
 		}
@@ -2706,9 +2700,9 @@ loop:;
 	 */
 	// do mcp operation with continuation
 	case MCP: // (1%) sys continuation op arg1 arg2
-		this = R[0];
-		R[0] = IFALSE; // let's call mcp
-		R[3] = A1; R[4] = A0; R[5] = A2; R[6] = A3;
+		this = S[0];
+		S[0] = IFALSE; // let's call mcp
+		S[3] = A1; S[4] = A0; S[5] = A2; S[6] = A3;
 		acc = 4;
 		if (ticker > 10)
 			bank = ticker; // deposit remaining ticks for return to thread
@@ -2722,9 +2716,9 @@ loop:;
 	// the type of quantum is ignored, for now.
 	// todo: add quantum type checking
 	//			if (ip[0] != 4 || ip[1] != 5)
-	//				STDERR("run R[%d], R[%d]", ip[0], ip[1]);
+	//				STDERR("run S[%d], S[%d]", ip[0], ip[1]);
 		this = A0;
-		R[0] = R[3];
+		S[0] = S[3];
 		ticker = bank ? bank : (int) value(A1);
 		bank = 0;
 		if (!is_reference(this))
@@ -2736,12 +2730,12 @@ loop:;
 			word code = ref(this, pos);
 			acc = pos - 3;
 			while (--pos)
-				R[pos] = ref(this, pos);
+				S[pos] = ref(this, pos);
 			ip0 = ip = (unsigned char *) &car(code);
 			break;  // no apply, continue
 		}
 		// else call a thunk with terminal continuation:
-		R[3] = IHALT; // exit via R0 when the time comes
+		S[3] = IHALT; // exit via R0 when the time comes
 		acc = 1;
 
 		goto apply;
@@ -2774,12 +2768,12 @@ loop:;
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
 	case LD: // (5%)
-		A1 = I(ip[0]); // I(ip[0]) -> R[ip[1]]
+		A1 = I(ip[0]); // I(ip[0]) -> S[ip[1]]
 		ip += 2; break;
 
 
 	/*! #### REFI a p t
-	 * Rt = (ref R[a] R[p]), p is unsinged
+	 * Rt = (ref S[a] S[p]), p is unsinged
 	 */
 	case REFI: { // (24%)
 		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
@@ -2840,10 +2834,10 @@ loop:;
 		if (acc >= arity) {
 			word tail = INULL;
 			while (acc > arity) {
-				tail = (word)new_pair (R[acc + 2], tail);
+				tail = (word)new_pair (S[acc + 2], tail);
 				acc--;
 			}
-			R[acc + 3] = tail;
+			S[acc + 3] = tail;
 		}
 		else
 			ip += (ip[1] << 8) | ip[2];
@@ -2857,12 +2851,12 @@ loop:;
 		word size = *ip++;
 		word *T = new (type, size-1);
 
-		word vec = R[*ip++];
-		T[1] = ((word *) vec)[*ip++]; // (ref R[r] i)
+		word vec = S[*ip++];
+		T[1] = ((word *) vec)[*ip++]; // (ref S[r] i)
 
 		for (size_t i = 2; i < size; )
-			T[i++] = R[*ip++];
-		R[*ip++] = (word) T; // R[ret] = T
+			T[i++] = S[*ip++];
+		S[*ip++] = (word) T; // S[ret] = T
 		break;
 	}
 
@@ -2879,10 +2873,10 @@ loop:;
 		word size = *ip++ + 1; // the argument is n-1 to allow making a 255-tuple with 255, and avoid 0 length objects
 		word *p = new (type, size), i = 0; // s fields + header
 		while (i < size) {
-			p[i+1] = R[*ip++];
+			p[i+1] = S[*ip++];
 			i++;
 		}
-		R[*ip++] = (word) p;
+		S[*ip++] = (word) p;
 		break;
 	}
 
@@ -2929,7 +2923,7 @@ loop:;
 				word *ptr = (op == VMMAKE)
 					? new (type, len)
 					: new_alloc(type, len);
-				R[ip[size]] = (word)ptr;
+				S[ip[size]] = (word)ptr;
 
 				if (is_numberp(value)) { // no list, just
 					if (op == VMMAKE) {
@@ -2971,7 +2965,7 @@ loop:;
 				}
 				else {
 					// invalid parameters
-					R[ip[size]] = IFALSE;
+					S[ip[size]] = IFALSE;
 				}
 				break;
 			}
@@ -3347,14 +3341,14 @@ loop:;
 
 	// bind vector to registers
 	case VECTORAPPLY: { /* bind <vector > <n> <r0> .. <rn> */
-		word *vector = (word *) R[*ip++];
+		word *vector = (word *) S[*ip++];
 		ASSERT(is_reference(vector), vector, I(10101));
 
 		word pos = 1, n = *ip++;
 		//word hdr = *tuple;
 		//CHECK(!(is_raw(hdr) || header_size(hdr)-1 != n), vector, BIND);
 		while (n--)
-			R[*ip++] = vector[pos++];
+			S[*ip++] = vector[pos++];
 
 		break;
 	}
@@ -4247,7 +4241,7 @@ loop:;
 					r = new_string(error);
 				break;
 			}
-		#endif// HAS_DLOPEN
+#endif// HAS_DLOPEN
 
 			// TIME FUNCTIONS
 
@@ -4656,7 +4650,7 @@ loop:;
 				CHECK_TRUE_OR_FALSE(3);
 
 				char* name = string(A1);
-				word* value = (argc > 1) ? A2 : IFALSE;
+				word* value = (argc > 1) ? (word*)A2 : (word*)IFALSE;
 				int overwrite = (argc > 2 && A3 != IFALSE) ? 1 : 0;
 
 				if (value == RFALSE) {
@@ -4806,7 +4800,7 @@ loop:;
 		}
 
 		++argc; // restore real arguments count
-		R[ip[argc]] = (word)r; // result
+		S[ip[argc]] = (word)r; // result
 		ip += argc + 1; break;
 	}// end of syscalls
 
@@ -4910,7 +4904,7 @@ loop:;
 		word object = A0;
 
 		int id = OLVM_pin(ol, object);
-		R = ol->R; // pin can realloc registers!
+		S = ol->rps; // pin can realloc registers!
 
         A1 = (id > 3) ? I(id) : IFALSE;
 		ip += 2; break;
@@ -4921,7 +4915,7 @@ loop:;
 
 		int id = value(pin);
         word o = OLVM_unpin(ol, id);
-		R = ol->R; // don't remove
+		S = ol->rps; // don't remove
 
 		A1 = o;
 		ip += 2; break;
@@ -4938,16 +4932,16 @@ loop:;
 
 	// (vm:exit value)
 	case VMEXIT:
-		this = R[3];
-		R[3] = A0;
+		this = S[3];
+		S[3] = A0;
 		goto done;
 	}
 	goto loop;
 
 
 error:; // R4-R6 set, and call mcp (if any)
-	this = R[0];
-	R[0] = IFALSE;
+	this = S[0];
+	S[0] = IFALSE;
 	if (is_reference(this)) {
 		acc = 4;
 		goto apply;
@@ -5409,7 +5403,7 @@ OLVM_new(unsigned char* bootstrap)
 	// в соответствии со стратегией сборки 50*1.3-33*0.9 и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
 	int required_memory_size = words * 2;
-	size_t padding = GCPAD(NR + CR) + MEMPAD;
+	size_t padding = GCPAD(NR + CR) + MEMPAD;  // initial padding
 
 	fp = heap->begin = (word*) malloc((required_memory_size + padding) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
@@ -5443,19 +5437,19 @@ OLVM_new(unsigned char* bootstrap)
 
 	// подготовим регистры и закрепленные объекты (regs + pins):
 	handle->cr = CR;
-	handle->R = malloc((NR+CR) * sizeof(word));
+	handle->rps = malloc((NR+CR) * sizeof(word));
 	if (!heap->begin) {
 		E("Error: can't allocate %d", (NR+CR) * sizeof(word));
 		goto fail;
 	}
 
 	// регистры виртуальной машины
-	word* R = handle->R;
+	word* S = handle->rps;
 	for (ptrdiff_t i = 0; i < NR+CR; i++)
-		R[i] = IFALSE;
-	R[0] = IFALSE; // MCP - master control program (NO mcp for now)
-	R[3] = IHALT;  // continuation, just finish job
-	R[4] = INULL;  // first argument
+		S[i] = IFALSE;
+	S[0] = IFALSE; // MCP - master control program (NO mcp for now)
+	S[3] = IHALT;  // continuation, just finish job
+	S[4] = INULL;  // first argument
 
 	handle->ffpin = 4; // first four pins are used internally
 
@@ -5499,7 +5493,7 @@ OLVM_new(unsigned char* bootstrap)
 		fp = deserialize(&p[1], no, construction, fp);
 
 		handle->this = p[no]; // (construction constructors main args)
-		handle->R[5] = ptrs[nobjs];
+		handle->rps[5] = ptrs[nobjs];
 		handle->arity = 3; // two arguments
 	}
 
@@ -5511,9 +5505,9 @@ fail:
 	if (heap->begin)
 		free (heap->begin);
 	heap->begin = 0;
-	if (handle->R)
-		free (handle->R);
-	handle->R = 0;
+	if (handle->rps)
+		free (handle->rps);
+	handle->rps = 0;
 	OLVM_delete(handle);
 	return 0;
 }
@@ -5577,12 +5571,12 @@ OLVM_run(OL* ol, int argc, char** argv)
 	if (r != 0) {
 		// TODO: restore old values
 		// TODO: if IFALSE - it's error
-		return ol->R[3]; // returned value
+		return ol->rps[3]; // returned value
 	}
 #endif
 
 	// подготовим аргументы:
-	word userdata = ol->R[4];
+	word userdata = ol->rps[4];
 	{
 		word* fp = ol->heap.fp;
 
@@ -5600,7 +5594,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 
 		ol->heap.fp = fp;
 	}
-	ol->R[4] = userdata;
+	ol->rps[4] = userdata;
 
 	sandboxp = 0;  // static variable
 
@@ -5609,7 +5603,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 		(int)runtime(ol));
 #else
 	runtime(ol);
-	return ol->R[3];
+	return ol->rps[3];
 #endif
 }
 
@@ -5619,7 +5613,7 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 #ifndef __EMSCRIPTEN__
 	int r = setjmp(ol->fail);
 	if (r != 0) {
-		return ol->R[3];
+		return ol->rps[3];
 	}
 #endif
 	if (argc + 3 > NR) {
@@ -5633,9 +5627,9 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 	// подготовим аргументы
 	unsigned short acc = 1;
 	for (ptrdiff_t i = 0; i < argc; i++)
-		ol->R[acc++ + 3] = (word)argv[i];
+		ol->rps[acc++ + 3] = (word)argv[i];
 
-	ol->R[3] = IRETURN; // continuation
+	ol->rps[3] = IRETURN; // continuation
 
 	// теперь все готово для запуска главного цикла виртуальной машины
 	ol->this = this;
@@ -5646,7 +5640,7 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 		(int)runtime(ol));
 #else
 	runtime(ol);
-	return ol->R[3];
+	return ol->rps[3];
 #endif
 }
 
@@ -5660,24 +5654,25 @@ size_t OLVM_pin(struct olvm_t* ol, word ref)
 	size_t id = ol->ffpin;
 	size_t cr = ol->cr;
 	for (; id < cr; id++) {
-		if (ol->R[NR+id] == IFALSE)
+		if (ol->rps[NR+id] == IFALSE)
 			goto ok;
 	}
 
 	// больше нету места, попробуем увеличить
 	size_t ncr = cr + cr / 3 + 1;
-	word* R = realloc(ol->R, (NR + ncr) * sizeof(word));
-	if (!R)
+
+	word* p = realloc(ol->rps, (NR + ncr) * sizeof(word));
+	if (!p)
 		return 0; // no space left
-	ol->R = R;
+	ol->rps = p;
 	ol->cr = ncr;
 	ol->heap.padding = GCPAD(NR + ncr) + MEMPAD;
 
 	for (size_t i = id; i < ncr; i++)
-		R[NR+i] = IFALSE;
+		p[NR+i] = IFALSE;
 
 ok:
-	ol->R[NR+id] = ref;
+	ol->rps[NR+id] = ref;
 	ol->ffpin = id + 1;
 	return id;
 }
@@ -5686,7 +5681,7 @@ word OLVM_deref(struct olvm_t* ol, size_t p)
 {
 	size_t id = p;
 	if (id > 3 && id < ol->cr)
-		return ol->R[NR + id];
+		return ol->rps[NR + id];
 	else
 		return IFALSE;
 }
@@ -5696,8 +5691,8 @@ word OLVM_unpin(struct olvm_t* ol, size_t p)
     word re = IFALSE;
     size_t id = p;
     if (id > 3 && id < ol->cr) {
-        re = ol->R[NR+id];
-        ol->R[NR+id] = IFALSE;
+        re = ol->rps[NR+id];
+        ol->rps[NR+id] = IFALSE;
 
 		if (ol->ffpin > id)
 			ol->ffpin = id;
@@ -5717,21 +5712,21 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
 
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же
-	word* R = ol->R;
+	word* S = ol->rps;
 
-//	R[NR + 0] = R[0]; // не надо, mcp
-//	R[NR + 1] = R[1]; // не надо
-//	R[NR + 2] = R[2]; // не надо
-	R[NR + 3] = R[3]; // continuation/result
+//	S[NR + 0] = S[0]; // не надо, mcp
+//	S[NR + 1] = S[1]; // не надо
+//	S[NR + 2] = S[2]; // не надо
+	S[NR + 3] = S[3]; // continuation/result
 
 	// вызовем колбек:
-//	R[0] = IFALSE;  // не надо, продолжаем использовать mcp
-	R[3] = IRETURN; // команда выхода из колбека
+//	S[0] = IFALSE;  // не надо, продолжаем использовать mcp
+	S[3] = IRETURN; // команда выхода из колбека
 	ol->arity = 1;
 
 	size_t a = 4;
 	while (args != INULL) {
-		R[a] = car(args);
+		S[a] = car(args);
 		args = cdr(args);
 
 		a++;
@@ -5740,13 +5735,13 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
 
 	runtime(ol);
 
-	word r = R[3]; // callback result
+	word r = S[3]; // callback result
 	// возврат из колбека,
-	// R, NR могли измениться
-	R[3] = R[NR + 3];
-//	R[2] = R[NR + 2]; // не надо
-//	R[1] = R[NR + 1]; // не надо
-//	R[0] = R[NR + 0]; // не надо, продолжаем использовать MCP
+	// S, NR могли измениться
+	S[3] = S[NR + 3];
+//	S[2] = S[NR + 2]; // не надо
+//	S[1] = S[NR + 1]; // не надо
+//	S[0] = S[NR + 0]; // не надо, продолжаем использовать MCP
 
 	return r;
 }
