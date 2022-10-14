@@ -3071,7 +3071,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 		args = cdr(args);
 	}
 
-	word R[a]; // сложим все в стек, потом заполним оттуда список
+	word A[a]; // сложим все в стек, потом заполним оттуда список
 	size_t count = a;
 
 	heap_t* heap = (heap_t*)ol;
@@ -3121,44 +3121,44 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 		switch (car(types)) {
 		case I(TVPTR): {
 			c2ol_value(void*);
-			R[a] = (word) new_vptr(value);
+			A[a] = (word) new_vptr(value);
 			break;
 		}
 		case I(TUINT8): {
 			c2ol_value(unsigned char);
-			R[a] = I(value);
+			A[a] = I(value);
 			break; }
 		case I(TUINT16): {
 			c2ol_value(unsigned short);
-			R[a] = I(value);
+			A[a] = I(value);
 			break; }
 		case I(TUINT32): {
 			c2ol_value(unsigned int);
-			R[a] = (word) new_number(value);
+			A[a] = (word) new_number(value);
 			break;
 		}
 		case I(TUINT64): {
 			c2ol_value(unsigned long long);
-			R[a] = (word) new_number(value);
+			A[a] = (word) new_number(value);
 			break;
 		}
 
 		case I(TINT8): {
 			c2ol_value(signed char);
-			R[a] = (word) new_number(value);
+			A[a] = (word) new_number(value);
 			break; }
 		case I(TINT16): {
 			c2ol_value(signed short);
-			R[a] = (word) new_number(value);
+			A[a] = (word) new_number(value);
 			break; }
 		case I(TINT32): {
 			c2ol_value(signed int);
-			R[a] = (word) new_number(value);
+			A[a] = (word) new_number(value);
 			break;
 		}
 		case I(TINT64): {
 			c2ol_value(signed long long);
-			R[a] = (word) new_number(value);
+			A[a] = (word) new_number(value);
 			break;
 		}
 
@@ -3180,7 +3180,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 				value =   *(float*) &argi[i++];
 			#endif
 			heap->fp = fp;
-			R[a] = d2ol(heap, value);
+			A[a] = d2ol(heap, value);
 			fp = heap->fp;
 			break;
 		}
@@ -3202,7 +3202,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 				value =   *(double*) &argi[i++]; i++;
 			#endif
 			heap->fp = fp;
-			R[a] = d2ol(heap, value);
+			A[a] = d2ol(heap, value);
 			fp = heap->fp;
 			break;
 		}
@@ -3228,11 +3228,11 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 			#else
 				value =   *(void**) &argi[i++];
 			#endif
-			R[a] = value ? (word)new_string(value) : IFALSE;
+			A[a] = value ? (word)new_string(value) : IFALSE;
 			break;
 		}
 //		case I(TVOID):
-//			R[a] = IFALSE;
+//			A[a] = IFALSE;
 //			i++;
 //			break;
 		default: {
@@ -3275,7 +3275,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 					}
 					argv = cdr (argv);
 				}
-				R[a] = tail;
+				A[a] = tail;
 				break;
 			}
 
@@ -3290,7 +3290,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 	// let's put all arguments into list
 	args = INULL;
 	for (size_t i = 0; i < count; i++)
-		args = (word) new_pair(R[i], args);
+		args = (word) new_pair(A[i], args);
 
 	heap->fp = fp; // well, done
 
