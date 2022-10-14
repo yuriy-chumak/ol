@@ -350,7 +350,7 @@
              (char
                (either
                   (let-parse*
-                     ((char (byte-if (λ (byte) (getf quoted-values byte)))))
+                     ((char (byte-if (λ (byte) (quoted-values byte #f)))))
                      (getf quoted-values char))
                   (let-parse*
                      ((skip (imm #\x))
@@ -393,6 +393,8 @@
             (word "backspace" #\backspace) ; 8
             (word "tab"       #\tab)       ; 9
             (word "newline"   #\newline)   ;10
+            ;; (word "vtab"      #\vtab)
+            ;; (word "formfeed"  #\formfeed)
             (word "return"    #\return)    ;13
             (word "escape"    #\escape)    ;27
             (word "space"     #\space)     ;32
