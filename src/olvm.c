@@ -3496,6 +3496,7 @@ loop:;
 		#define CHECK_PORT_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, port, string, 62006)
 		#define CHECK_VPTR_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, vptr, string, 62011)
 		#define CHECK_NUMBER_OR_STRING(arg) CHECK_TYPE_OR_TYPE2(arg, number, string, 62010)
+		#define CHECK_STRING_OR_FALSE(arg)  CHECK_TYPE_OR_FALSE(arg, string, 62011)
 		#define CHECK_TRUE_OR_FALSE(arg)    if (argc >= arg) if (A##arg != ITRUE && A##arg != IFALSE) FAIL(62020, I(arg), A##arg)
 		// ------------------------------------------------------------------------------
 
@@ -3635,7 +3636,7 @@ loop:;
 						| (f & 00100 ? O_TRUNC : 0)
 						| (f & 00002 ? O_RDWR  : 0)
                         | (f & 0100000 ? O_BINARY : 0);
-				int blocking = (argc > 2 && A3 == ITRUE) ? 1 : 0;
+				int blocking = (argc > 2 && A3 == ITRUE) ? 1 : 0; // todo: A3 != IFALSE
 				int mode =     (argc > 3 && A4 != IFALSE)
 			 		? number(A4)
 					: S_IRUSR | S_IWUSR;
@@ -4647,7 +4648,32 @@ loop:;
 			}
 			#endif
 
+			// getenv/setenv/environ
+			case 1014: { // (setenv "name" "value" overwrite?)
+				CHECK_ARGC(1,3);
+				CHECK_STRING(1);
+				CHECK_STRING_OR_FALSE(2);
+				CHECK_TRUE_OR_FALSE(3);
+
+				char* name = string(A1);
+				word* value = (argc > 1) ? A2 : IFALSE;
+				int overwrite = (argc > 2 && A3 != IFALSE) ? 1 : 0;
+
+				if (value == RFALSE) {
+#ifndef _WIN32
+					if (unsetenv(name) == 0)
+						r = (word*)ITRUE;
+#endif
+				}
+				else {
+					if (setenv(name, string(value), overwrite) == 0)
+						r = (word*)ITRUE;
+				}
+				break;
+			}
 			case 1015: { // environ
+				CHECK_ARGC_EQ(0);
+
 				extern char **environ;
 				
 				char** ptr = environ;
