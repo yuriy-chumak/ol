@@ -2230,12 +2230,10 @@ word runtime(struct olvm_t* ol)
 	word this = ol->this; // context
 	long acc = ol->arity; // arity
 
-//	setvbuf(stderr, (void*)0, _IONBF, 0);
-//	setvbuf(stdout, (void*)0, _IONBF, 0);
 	set_blocking(STDOUT_FILENO, 0);
 	set_blocking(STDERR_FILENO, 0);
 
-	// vm instructions pointer(s)
+	// vm instruction pointer(s)
 	unsigned char *ip = 0, *ip0;
 	// internal gc call wrapper
 #	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
@@ -2258,16 +2256,16 @@ apply:;
 		// low bits have special meaning
 		if ((type & 0x3C) == TFF) { // (95% for "no")
 			// ff assumed to be valid
-			word continuation = S[3];
-            word key = S[4];
+			word continuation = R3;
+            word key = R4;
 			switch (acc) {
 			case 2:
-				S[3] = get((word*)this, key,    0, ol->fail); // 0 is "not found"
-				if (!S[3])
+				R3 = get((word*)this, key,  0, ol->fail); // 0 is "not found"
+				if (!R3)
 					ERROR(260, this, key);
 				break;
 			case 3:
-				S[3] = get((word*)this, key, S[5], ol->fail);
+				R3 = get((word*)this, key, R5, ol->fail);
 				break;
 			default:
 				ERROR(259, this, I(acc));
@@ -2316,7 +2314,7 @@ apply:;
 			ticker = TICKS;
 
 			// if mcp present,
-			if (S[0] != IFALSE) {
+			if (R0 != IFALSE) {
 				// save vm state and enter mcp cont at R0!
 				bank = 0;
 				acc += 4;
@@ -2329,17 +2327,17 @@ apply:;
 
 				S[acc] = this;
 				thread[acc-1] = this;
-				this = S[0]; // mcp
+				this = R0; // mcp
 
-				S[0] = IFALSE; // remove mcp cont
+				R0 = IFALSE; // remove mcp cont
 				// R3 marks the interop to perform
 				// 1 - runnig and time slice exhausted
 				// 10: breaked - call signal handler
 				// 14: memory limit was exceeded
-				S[3] = I(1); // breaked ? ((breaked & 8) ? I(14) : I(10)) : I(1); // fixme - handle also different signals via one handler
-				S[4] = (word) thread; // thread state
-				S[5] = I(0); // I(breaked); // сюда можно передать userdata из потока
-				S[6] = IFALSE;
+				R3 = I(1); // breaked ? ((breaked & 8) ? I(14) : I(10)) : I(1); // fixme - handle also different signals via one handler
+				R4 = (word) thread; // thread state
+				R5 = I(0); // I(breaked); // сюда можно передать userdata из потока
+				R6 = IFALSE;
 				acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
 				// breaked = 0;
 
@@ -2379,14 +2377,14 @@ apply:;
 
 	// ff call ({} key def) -> def
 	if (this == IEMPTY) {
-		word continuation = S[3];
-        word key = S[4];
+		word continuation = R3;
+        word key = R4;
 		switch (acc) {
 		case 2:
 			ERROR(260, this, key); // key
 			break;
 		case 3:
-			S[3] = S[5];           // default value
+			R3 = R5;           // default value
 			break;
 		default:
 			ERROR(259, this, I(acc));
@@ -2399,15 +2397,15 @@ apply:;
 	// done ?
 	if (this == IHALT) {
 		// a thread or mcp is calling the final continuation
-		this = S[0];
+		this = R0;
 		if (!is_reference(this))
 			goto done; // expected exit
 
-		S[0] = IFALSE; // set mcp yes?
-		S[4] = S[3];
-		S[3] = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
-		S[5] = IFALSE;
-		S[6] = IFALSE;
+		R0 = IFALSE; // set mcp yes?
+		R4 = R3;
+		R3 = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
+		R5 = IFALSE;
+		R6 = IFALSE;
 //		breaked = 0;
 		ticker = TICKS;// ?
 		bank = 0;
@@ -2425,6 +2423,7 @@ apply:;
 
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
+	#	define MODD(i, n) ((i) + ((n)<<6))
 	// Rn - регистр машины (rps[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
@@ -2440,7 +2439,7 @@ mainloop:;
 	// управляющие команды
 	#	define NOP   21
 	#	define APPLY 20
-	#	  define APPLYCONT (APPLY + 1*64)
+	#	  define APPLYCONT MODD(APPLY, 1)
 	#	define RET   24
 	#	define RUN   50
 	#	define ARITY_ERROR 17
@@ -2451,10 +2450,10 @@ mainloop:;
 	#	define JAF   11
 	#	define JAFX  12
 	#	define LDI   13      // LDE (13), LDN (77), LDT (141), LDF (205)
-	#	  define LDE (LDI + 0*64)
-	#	  define LDN (LDI + 1*64)
-	#	  define LDT (LDI + 2*64)
-	#	  define LDF (LDI + 3*64)
+	#	  define LDE MODD(LDI, 0)
+	#	  define LDN MODD(LDI, 1)
+	#	  define LDT MODD(LDI, 2)
+	#	  define LDF MODD(LDI, 3)
 	#	define LD    14
 
 	#	define REFI   1      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
@@ -2467,7 +2466,7 @@ mainloop:;
 	// примитивы языка:
 	#	define VMNEW 23     // make a typed object (fast and simple)
 	#	define VMMAKE 18    // make a typed object (slow, but smart)
-	#		define VMALLOC (VMMAKE + 1*64)  // alloc a memory region
+	#		define VMALLOC MODD(VMMAKE, 1)  // alloc a memory region
 	#	define VMCAST 22
 	#	define VMSETE 43
 
@@ -2486,7 +2485,7 @@ mainloop:;
 
 		// ?
 	#	define SETREF 10
-	#	  define SETREFE (SETREF + 1*64) // set-ref!
+	#	  define SETREFE MODD(SETREF, 1) // set-ref!
 
 		// ?
 	#	define EQQ   54
@@ -2501,10 +2500,10 @@ mainloop:;
 
 	#	define FFLEAF    42 // make ff leaf
 	#	define FFBLACK   FFLEAF
-	#	define FFRED    (FFLEAF + (1<<6))
+	#	define FFRED     MODD(FFLEAF, 1)
 	#	define FFTOGGLE  46 // toggle ff leaf color
 	#	define FFREDQ    41 // is ff leaf read?
-	#	define FFRIGHTQ (FFREDQ + (1<<6)) // if ff leaf right?
+	#	define FFRIGHTQ  MODD(FFREDQ, 1) // if ff leaf right?
 
 		// ALU
 	#	define ADDITION       38
@@ -2519,6 +2518,7 @@ mainloop:;
 
 	#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
 
+	// operation SYStem interaction CALLs
 	#	define SYSCALL 63
 	#		define SYSCALL_SYSCALL ? // TODO: https://linux.die.net/man/2/syscall and remove redundant calls
 			// read, write, open, close must exist
@@ -2641,22 +2641,30 @@ loop:;
 	case NOP:
 		break;
 
+	/*! #### ARITY_ERROR
+	 * Arity Error
+	 */
+	case ARITY_ERROR: // (0%)
+		ERROR(ARITY_ERROR, this, I(acc));
+		break;
+
 	/*! #### GOTO
 	 * GO TO procedure, arity
 	 */
-	case GOTO: // (10%)
+	case GOTO: { // (10%)
 		this = A0;
 		acc = ip[1];
 		goto apply;
+	}
 
 	/*! #### RET
 	 * RETurn from procedure
 	 */
-	case RET: // (3%) return value
-		this = S[3];
-		S[3] = A0;
-		acc = 1;
+	case RET: { // (3%) return value
+		this = R3;
+		R3 = A0; acc = 1;
 		goto apply;
+	}
 
 	/*! #### APPLY
 	 */
@@ -2699,16 +2707,17 @@ loop:;
 	/*! #### MCP
 	 */
 	// do mcp operation with continuation
-	case MCP: // (1%) sys continuation op arg1 arg2
-		this = S[0];
-		S[0] = IFALSE; // let's call mcp
-		S[3] = A1; S[4] = A0; S[5] = A2; S[6] = A3;
+	case MCP: { // (1%) sys continuation op arg1 arg2
+		this = R0;
+		R0 = IFALSE; // let's call mcp
+		R3 = A1; R4 = A0; R5 = A2; R6 = A3;
 		acc = 4;
 		if (ticker > 10)
 			bank = ticker; // deposit remaining ticks for return to thread
 		ticker = TICKS;
 
 		goto apply;
+	}
 
 	/*! #### RUN
 	 */
@@ -2718,7 +2727,7 @@ loop:;
 	//			if (ip[0] != 4 || ip[1] != 5)
 	//				STDERR("run S[%d], S[%d]", ip[0], ip[1]);
 		this = A0;
-		S[0] = S[3];
+		R0 = R3;
 		ticker = bank ? bank : (int) value(A1);
 		bank = 0;
 		if (!is_reference(this))
@@ -2734,19 +2743,12 @@ loop:;
 			ip0 = ip = (unsigned char *) &car(code);
 			break;  // no apply, continue
 		}
-		// else call a thunk with terminal continuation:
-		S[3] = IHALT; // exit via R0 when the time comes
+		// else call a thunk with terminal continuation
+		R3 = IHALT;  // exit via R0 when the time comes
 		acc = 1;
 
 		goto apply;
 	}
-	/*! #### ARITY_ERROR
-	 * Arity Error
-	 */
-	case ARITY_ERROR: // (0%)
-		ERROR(ARITY_ERROR, this, I(acc));
-		break;
-
 
 	/************************************************************************************/
 	// операции с данными
@@ -2884,7 +2886,7 @@ loop:;
 	// (vm:make type list-of-values) ; length is list length
 	// (vm:make type length) ; default value is equal to #false
 	// (vm:make type length default-value)
-	case VMMAKE: {
+	case VMMAKE: { // and VMALLOC
 	 	word size = *ip++;
 		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
 		word value = A1;
@@ -2990,18 +2992,15 @@ loop:;
 	}
 
 	case SIZE: { // size o -> r
-	//			word T = A0;
-	//			A1 = is_value(T) ? IFALSE : I(header_size(*(word*)T) - 1);
-	//
-		word* T = (word*) A0;
-		if (is_value(T))
-			A1 = IFALSE;
-		else {
+		word* T = (word*)A0;
+		if (is_reference(T)) {
 			if (is_rawstream(T))
 				A1 = I(rawstream_size(T));
 			else
 				A1 = I(reference_size(T));
 		}
+		else
+			A1 = IFALSE;
 		ip += 2; break;
 	}
 
@@ -3013,7 +3012,7 @@ loop:;
 
 		if (!is_value(a1))
 			ERROR(VMCAST, T, a1);
-		word type = value(a1) & 63;
+		word type = value(a1) & 0x3F;
 
 		switch (type) {
 		case TPORT:
@@ -3109,7 +3108,6 @@ loop:;
 		A5 = result;
 		ip += 6; break;
 	}
-
 
 	// speed version of (ref a 1)
 	case CAR: {  // car a -> r
@@ -3332,10 +3330,10 @@ loop:;
 		#endif
 		);
 		ip += 1; break;
-	case 30: // (vm:maxvalue)
+	case 30: // (vm:vmax)
 		A0 = I(VMAX);
 		ip += 1; break;
-	case 31: // (vm:valuewidth)
+	case 31: // (vm:vsize)
 		A0 = I(VBITS);
 		ip += 1; break;
 
@@ -3463,7 +3461,7 @@ loop:;
 		if (argc == 0)
 			ERROR(62000, I(0), I(1));
 		--argc; // skip syscall number
-		word* r = (word*) IFALSE;  // by default returning #false
+		word* r = (R) IFALSE;  // by default returning #false
 
 		// ----------------------------------------------------------------------------------
 		// safety checking macro
@@ -3529,11 +3527,13 @@ loop:;
 				int count = (argc > 1 && A2 != IFALSE)
 									? (int) number(A2) : -1; // in bytes
 
-				if (count < 0)
+				if (count < 0) {
 #if defined(FIONREAD) && !defined(_WIN32)
 					if (ioctl(portfd, FIONREAD, count) == -1)
 #endif
-						count = ((heap->end - fp) - 1) * sizeof(word); // сколько есть свободного места, столько читаем
+						// сколько есть свободного места, столько читаем
+						count = ((heap->end - fp) - 1) * sizeof(word);
+				}
 
 				unsigned words = WALIGN(count) + 1; // in words
 				if (fp + words > heap->end) {
@@ -3547,12 +3547,12 @@ loop:;
 				if (read > 0)
 					r = new_bytevector(read);
 				else if (read == 0)
-					r = (word*) IEOF;
+					r = (R) IEOF;
 				else if (err == EAGAIN) { // (may be the same value as EWOULDBLOCK) (POSIX.1)
 					#ifdef __EMSCRIPTEN__
 					emscripten_sleep(500);
 					#endif
-					r = (word*) ITRUE;
+					r = (R) ITRUE;
 				}
 
 				break;
@@ -3593,10 +3593,10 @@ loop:;
 				wrote = ol->write(portfd, (char*)&buff[1], count, ol->userdata);
 
 				if (wrote > 0)
-					r = (word*) new_number (wrote);
+					r = new_number (wrote);
 				else
 				if (errno == EAGAIN || errno == EWOULDBLOCK)
-					r = (word*) I(0);
+					r = (R) I(0);
 
 				break;
 			}
@@ -3649,10 +3649,10 @@ loop:;
 
                     if (!blocking)
 					    set_blocking(file, 0); // and set "non-blocking" mode
-					r = (word*) make_port(file);
+					r = (R) make_port(file);
 				}
 				else // port as reference
-					r = (word*) new_port(file);
+					r = new_port(file);
 
 				break;
 			}
@@ -3676,13 +3676,13 @@ loop:;
 				int portfd = port(A1);
 
 				if (ol->close(portfd, ol) == 0)
-					r = (word*)ITRUE;
+					r = (R)ITRUE;
 #ifdef _WIN32
 #	if HAS_SOCKETS
 				// Win32 socket workaround
 				else if (errno == EBADF) {
 					if (closesocket(portfd) == 0)
-						r = (word*)ITRUE;
+						r = (R)ITRUE;
 				}
 #	endif
 #endif
