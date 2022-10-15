@@ -2787,7 +2787,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			break;
 
 		case TBOOL:
-			result = (CV_INT32(&got) == 0) ? (word*)IFALSE : (word*)ITRUE;
+			result = (CV_INT8(&got) == 0) ? (R)IFALSE : (R)ITRUE;
 			break;
 
 		case TVPTR: {
