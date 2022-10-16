@@ -1401,7 +1401,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	// 1. do memory precalculations and count number of arguments
 	unsigned words = 0;
 	int i = 0;     // актуальное количество аргументов
-	int lower = 0; // нижняя граница для параметров больших структур
+	int l = 0;  // нижняя граница для параметров больших структур
 
 	word* p = (word*)C;   // ol arguments
 	word* t = (word*)cdr (B); // rtty
@@ -1520,13 +1520,14 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 								( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
 								( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
 								( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
-								( stv == TFLOAT                   ) ? sizeof(float) :
-								( stv == TDOUBLE                  ) ? sizeof(double) : 0;
+								( stv == TFLOAT                   ) ? sizeof(float) : // todo: increase df size
+								( stv == TDOUBLE                  ) ? sizeof(double) : // todo: increase df size
+							0;
 							size = ((size + subsize - 1) & -subsize) + subsize;
 						}
 						// TODO: сюда тоже добавить кеширование
 						if (size > 16)
-							lower += WALIGN(size);
+							l += WALIGN(size);
 						else
 							i += WALIGN(size);
 					}
@@ -1583,8 +1584,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	}
 
 	word* fp = heap->fp;
-	int_t* args = __builtin_alloca(max(i + lower, 16) * sizeof(int_t)); // minimum - 16 words for arguments
-	i = 0; lower = 0;
+	int_t* args = __builtin_alloca(max(i + l, 16) * sizeof(int_t)); // minimum - 16 words for arguments
+	i = l = 0;
 
 	// ----------------------------
 	// 2. prepare arguments to push
@@ -1626,8 +1627,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}*/
 
 		// #ifdef linux x64, struct-by-value-passing
-		if (i == 6 && lower) {
-			i = lower;
+		if (i == 6 && l) {
+			i = l;
 		}
 		// #endif
 
@@ -2003,7 +2004,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TPAIR:
 			// todo: check a types of structure
 			switch (reference_type(arg)) {
-			// pack stracture into bytevector
+			// pack structure into bytevector
 			// doto: move to the standalone function named `struct2ol`
 			// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
 			case TPAIR: { // structures
@@ -2029,8 +2030,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				size = (size + sizeof(word)-1) & -sizeof(word);
 
 				int j = i;
-				if (size > 16)
-					j = max(i, 6, lower);
+				if (size > 16) // should send using stack
+					j = max(i, 6, l);
 				char* ptr = (char*)&args[j];
 
 				size_t offset = 0;
@@ -2044,7 +2045,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 					switch (stv) {
 						case TINT8:  case TUINT8:
-							offset = offset;
+							// offset = offset;
 							break;
 						case TINT16: case TUINT16:
 							offset = (offset + 1) & -2;
@@ -2063,6 +2064,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						if (general || (size > 16)) { // в регистр общего назначения
 							j++; floatsmask <<= 1;
 							ptr += 8;
+
+							// если добрались до стека, а он уже что-то содержит
+							if (j == 6 && l)
+								j = l;
 						}
 						else { // в регистр с плавающей запятой
 							// move from ptr to the ad
@@ -2113,8 +2118,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					}
 				}
 
-				if (size > 16)
-					lower = j;
+				if (size > 16 && i < 6)
+					l = j;
 				else
 					i = j;
 
@@ -2298,7 +2303,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 #if  __amd64__
 #	if (__unix__ || __APPLE__)
-		got = nix64_call(args, ad, max(i, lower), d, floatsmask, function, returntype & 0x3F);
+		got = nix64_call(args, ad, max(i, l), d, floatsmask, function, returntype & 0x3F);
 #	elif _WIN64
 		got = win64_call(args, i, function, returntype & 0x3F);
 #	else
@@ -2695,18 +2700,18 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	returntype &= 0x3F;
 	word* result = (word*)IFALSE;
 
-	// special case of returning a structure:
-	// allocate a space for the return value
-	if (is_pair(car(B)) && value(caar(B)) == TBYTEVECTOR) {
-		if (value(cdar(B)) > sizeof(ret_t))
-			result = (word*)args[0] - 1;
-		else {
-			int len = value(cdar(B));
-			result = new_bytevector(len);
-			memcpy((void*) &car(result), &got, len);
-		}
-	}
-	else // usual case
+	// // special case of returning a structure:
+	// // allocate a space for the return value
+	// if (is_pair(car(B)) && value(caar(B)) == TBYTEVECTOR) {
+	// 	if (value(cdar(B)) > sizeof(ret_t))
+	// 		result = (word*)args[0] - 1;
+	// 	else {
+	// 		int len = value(cdar(B));
+	// 		result = new_bytevector(len);
+	// 		memcpy((void*) &car(result), &got, len);
+	// 	}
+	// }
+	// else // usual case
 	switch (returntype) {
 		// TENUMP - deprecated, TODO: remove
 		case TENUMP: // type-enum+ - если я уверен, что число заведомо меньше 0x00FFFFFF! (или сколько там в x64)
