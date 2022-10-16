@@ -2299,7 +2299,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 //		__asm__("int $3");
 
 	ret_t got = 0; // результат вызова функции
-	int returntype = is_value(car(B)) ? value(car(B)) : TVOID;
+	int returntype = is_value(car(B)) ? value(car(B)) : reference_type(car(B));
 
 #if  __amd64__
 #	if (__unix__ || __APPLE__)
@@ -2876,6 +2876,18 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			result = (word*) d2ol(heap, value);
 			fp = heap->fp;
 #endif
+			break;
+		}
+
+		// returning structures
+		case TPAIR: {
+			// currest simplest case
+			float* floats = (float*)&got;
+			inexact_t a = floats[0];
+			inexact_t b = floats[1];
+			result = new_list(TPAIR,
+				new_inexact(a),
+				new_inexact(b));
 			break;
 		}
 	}
