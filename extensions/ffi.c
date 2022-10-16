@@ -215,6 +215,19 @@ static __inline__
 double   CV_DOUBLE(ret_t* got) { return *(double*)  got; }
 
 
+#define max2(a,b) ({ \
+	typeof (a) _a = (a); \
+	typeof (b) _b = (b); \
+    _a > _b ? _a : _b; \
+})
+#define max3(a,b,c) max2(a, max2(b, c))
+
+#ifdef max
+#undef max
+#endif
+#define MAX_MACRO(_1, _2, _3, NAME, ...) NAME
+#define max(...) MAX_MACRO(__VA_ARGS__, max3, max2, NOTHING, NOTHING)(__VA_ARGS__)
+
 
 // https://en.wikipedia.org/wiki/Double-precision_floating-point_format
 // However, on modern standard computers (i.e., implementing IEEE 754), one may
@@ -1512,10 +1525,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 							size = ((size + subsize - 1) & -subsize) + subsize;
 						}
 						// TODO: сюда тоже добавить кеширование
-						if (size > 16) {
-							lower = max(6, lower);
+						if (size > 16)
 							lower += WALIGN(size);
-						}
 						else
 							i += WALIGN(size);
 					}
@@ -1524,9 +1535,6 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 
 		i++;
-		if (i == 6 && lower) {
-			i = lower;
-		}
 
 #if UINT64_MAX > UINTPTR_MAX // 32-bit machines
 		#if __mips__ // 32-bit mips,
@@ -1575,7 +1583,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	}
 
 	word* fp = heap->fp;
-	int_t* args = __builtin_alloca((i > 16 ? i : 16) * sizeof(int_t)); // minimum - 16 words for arguments
+	int_t* args = __builtin_alloca(max(i + lower, 16) * sizeof(int_t)); // minimum - 16 words for arguments
 	i = 0; lower = 0;
 
 	// ----------------------------
@@ -2022,7 +2030,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 				int j = i;
 				if (size > 16)
-					j = max(max(i, 6), lower);
+					j = max(i, 6, lower);
 				char* ptr = (char*)&args[j];
 
 				size_t offset = 0;
