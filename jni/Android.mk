@@ -1,49 +1,75 @@
+# https://developer.android.com/ndk/guides/android_mk
 LOCAL_PATH := $(call my-dir)
+
 # notes:
 #
 # mips64
-# I have no found the way to set the repl.o [nan2008] private flag. So I still
+# I have not found a way to set the repl.o [nan2008] private flag.  So I still
 # got an error "linking -mnan=legacy module with previous -mnan=2008 modules".
 # 
 # Therefore you can't just run "ndk-build" but you must run "make android" for
 # the first time. Make will convert repl into repl.c and after this you can do
 # anything: ndk-build or make android again for your choice.
 
-# -- libOL ------------------------------------------------------------------------
+# common OL compiler flags
+OL_CFLAGS   := -fsigned-char
+OL_CFLAGS   += -I$(LOCAL_PATH)/../includes
+OL_CFLAGS   += -std=c99 -std=gnu11 -O3 -g0
+
+# -- libMAIN -----------------------------------------------------------------
+# native app
 include $(CLEAR_VARS)
-LOCAL_MODULE   := shared-library
-LOCAL_MODULE_FILENAME := libol
+LOCAL_MODULE   := main
+LOCAL_SHARED_LIBRARIES := olvm
 
-LOCAL_SRC_FILES := ../src/olvm.c
-LOCAL_SRC_FILES += oljni.c ../tmp/repl.c
-LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O3 -g0 -Iincludes -DOLVM_NOMAIN
-
-LOCAL_SRC_FILES += ../extensions/ffi.c
-LOCAL_CFLAGS   += -fsigned-char -Ijni/../src -DOLVM_FFI=1
-
-LOCAL_LDFLAGS  := -Xlinker --export-dynamic
-
-LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"libol.so"' -Wno-unsequenced -Wno-parentheses
+# configure
+LOCAL_CFLAGS   += $(OL_CFLAGS)
+# src
+LOCAL_CFLAGS   += -I$(NDK_ROOT) -DREPL=repl
+LOCAL_SRC_FILES += native-app.c ../tmp/repl.c
 LOCAL_LDLIBS   += -llog -landroid
 
+LOCAL_EXPORT_LDFLAGS := -u ANativeActivity_onCreate
+include $(BUILD_SHARED_LIBRARY)
+
+# -- libOLVM------------------------------------------------------------------
+# ol shared library
+include $(CLEAR_VARS)
+LOCAL_MODULE   := olvm
+#LOCAL_MODULE_FILENAME := libol
+
+# configure
+LOCAL_CFLAGS   += $(OL_CFLAGS)
+LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"libolvm.so"' \
+                  -Wno-unsequenced -Wno-parentheses
+LOCAL_CFLAGS   += -DOLVM_NOMAIN
+# src
+LOCAL_SRC_FILES := ../src/olvm.c #../tmp/repl.c
+
+# extensions
+LOCAL_CFLAGS   += -DHAS_DLOPEN=1
+LOCAL_SRC_FILES += ../extensions/ffi.c
+
+LOCAL_LDFLAGS  := -Xlinker --export-dynamic
+LOCAL_LDLIBS   += -llog -landroid
 
 include $(BUILD_SHARED_LIBRARY)
 
-# -- OL ---------------------------------------------------------------------------
-include $(CLEAR_VARS)
-LOCAL_MODULE   := ol
+# # -- OL ---------------------------------------------------------------------------
+# include $(CLEAR_VARS)
+# LOCAL_MODULE   := ol
 
-LOCAL_SRC_FILES := ../src/olvm.c
-LOCAL_SRC_FILES += ../tmp/repl.c
-LOCAL_SRC_FILES += ../extensions/ffi.c
-LOCAL_SRC_FILES += ../tests/ffi.c
+# LOCAL_SRC_FILES := ../src/olvm.c
+# LOCAL_SRC_FILES += ../tmp/repl.c
+# LOCAL_SRC_FILES += ../extensions/ffi.c
+# LOCAL_SRC_FILES += ../tests/ffi.c
 
-LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O0 -g3 -Iincludes -fsigned-char
-LOCAL_CFLAGS   += -Ijni/../src -DOLVM_FFI=1 -Wno-unsequenced -Wno-parentheses
-LOCAL_LDFLAGS  := -Xlinker --export-dynamic
+# LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O0 -g3 -Iincludes -fsigned-char
+# LOCAL_CFLAGS   += -Ijni/../src -DOLVM_FFI=1 -Wno-unsequenced -Wno-parentheses
+# LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
-LOCAL_LDLIBS   += -llog -landroid
-include $(BUILD_EXECUTABLE)
+# LOCAL_LDLIBS   += -llog -landroid
+# include $(BUILD_EXECUTABLE)
 
 # -- gl4es -----------------------------------------------------------------------
 ifneq ("$(wildcard $(LOCAL_PATH)/gl4es/src)","")
@@ -60,6 +86,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/gl4es/include
 
 LOCAL_CFLAGS   += -g -std=gnu99 -funwind-tables -O3 -fvisibility=hidden
 LOCAL_CFLAGS   += -DNOX11 -DNO_GBM -DDEFAULT_ES=2 -DNOEGL
+LOCAL_CFLAGS   += -DNO_INIT_CONSTRUCTOR -DUSE_ANDROID_LOG
 LOCAL_CFLAGS   += -include android_debug.h
 #LOCAL_CFLAGS   += -DDEBUG
 

@@ -1,114 +1,71 @@
 #!/bin/bash
 #
-ANDROID_SDK_ROOT=/opt/android/sdk
-export PATH=$PATH:$ANDROID_SDK_ROOT/platform-tools
+ANDROID_SDK=/opt/android/sdk
 
-APK_BASENAME=wnd
-
-# A Simple Script to build a simple APK without ant/gradle
-# Copyright 2016 Wanghong Lin
-# Copyright 2018 Yuriy Chumak
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# 	http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-# BASED ON: https://github.com/WanghongLin/miscellaneous/blob/master/tools/build-apk-manually.sh
-# $ android create project -n MyApplication -p MyApplication -k com.example -a MainActivity --target 8
-# copy this script to the root of your Android project and run
-
-[ x$ANDROID_SDK_ROOT == x ] && {
-   printf '\e[31mANDROID_SDK_ROOT not set\e[30m\n'
+[ x$ANDROID_SDK == x ] && {
+   printf '\e[31mANDROID_SDK not set\e[30m\n'
    exit 1
 }
 
-[ ! -d $ANDROID_SDK_ROOT ] && {
-   printf "\e[31mInvalid ANDROID_SDK_ROOT ---> $ANDROID_SDK_ROOT\e[30m\n"
+[ ! -d $ANDROID_SDK ] && {
+   printf "\e[31mInvalid ANDROID_SDK ---> $ANDROID_SDK\e[30m\n"
    exit 1
 }
 
-make -C ../.. android
+# .
+APK_BASENAME=debug
 
-# use the latest build tool version
-# and the oldest platform version for compatibility
-_BUILD_TOOLS_VERSION=$(ls $ANDROID_SDK_ROOT/build-tools | sort -n |tail -1)
-_PLATORM=$(ls $ANDROID_SDK_ROOT/platforms | sort -nr |tail -1)
-_ANDROID_CP=$ANDROID_SDK_ROOT/platforms/$_PLATORM/android.jar
-_AAPT=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/aapt
-_DX=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/dx
-_ZIPALIGN=$ANDROID_SDK_ROOT/build-tools/$_BUILD_TOOLS_VERSION/zipalign
-_ADB=$ANDROID_SDK_ROOT/platform-tools/adb
-_INTERMEDIATE="bin gen lib ${APK_BASENAME}.apk.unaligned"
+export PATH=$PATH:$ANDROID_SDK/platform-tools
+BUILD_TOOLS=$ANDROID_SDK/build-tools/29.0.2
 
-printf "\e[32mBuild with configuration: \n"
-printf "\tbuild tools version: $_BUILD_TOOLS_VERSION \n"
-printf "\tplatform: $_PLATORM\e[0m\n"
+# Build Native Code
+make -C ../.. android || exit
 
-rm -rf $_INTERMEDIATE
-mkdir bin gen
-cp -r ../../libs lib
+# Build 
+$BUILD_TOOLS/aapt package -f -m \
+	-S res -J src -M AndroidManifest.xml \
+	-I $ANDROID_SDK/platforms/android-29/android.jar
 
-$_AAPT package -f -m -J gen -M AndroidManifest.xml -S res -I $_ANDROID_CP
+# Compile java
+# Compile NativeLoader.java
+mkdir -p obj
+javac -verbose -source 1.8 -target 1.8 -d obj \
+	-bootclasspath jre/lib/rt.jar \
+	-classpath $ANDROID_SDK/platforms/android-29/android.jar:obj \
+	-sourcepath src `find . -name *.java` || exit
 
-printf "\e[31m"
-javac -classpath $_ANDROID_CP \
-   -sourcepath 'src:gen' \
-   -d 'bin' -target 1.7 -source 1.7 \
-   `find . -name "*.java"` \
-   -bootclasspath /usr/lib/jvm/java-8-openjdk-amd64/jre/libjar
-RESULT=$?
-printf "\e[0m"
-if [ $RESULT -ne 0 ]; then
-    exit 1
-fi
 
-$_DX --dex --output=classes.dex bin
+# Generate android bytecode
+mkdir -p dex
+$BUILD_TOOLS/dx --verbose --dex --output=dex/classes.dex obj
 
-test -e "classes.dex" || exit 1
+# Create APK with code, resources, and assets
+$BUILD_TOOLS/aapt package -f \
+	-M AndroidManifest.xml -S res -A assets \
+	-I $ANDROID_SDK/platforms/android-29/android.jar -F debug.apk dex
 
-rm -f ${APK_BASENAME}.apk.unaligned
-rm -f ${APK_BASENAME}-debug.apk
+# Add shared libraries to APK
+mkdir -p lib
+cp -r ../../libs/* lib
+$BUILD_TOOLS/aapt add debug.apk `find -L lib/ -name *.so`
 
-$_AAPT package -f -M AndroidManifest.xml -S res -I $_ANDROID_CP -F ${APK_BASENAME}.apk.unaligned
+# # keytool -genkey -v -validity 14000 -dname "CN=Ol,O=Android,C=ES" -keystore debug.keystore    -storepass android    -keypass android    -alias androiddebugkey -keyalg RSA
+# # keytool -genkeypair -validity 1000 -dname "CN=Ol,O=Android,C=ES" -keystore otuslisp.keystore -storepass 'otuslisp' -keypass 'otuslisp' -alias projectKey -keyalg RSA
+# jarsigner -keystore otuslisp.keystore -storepass otuslisp -keypass otuslisp \
+# 	-signedjar debug.apk debug.apk projectKey
+# jarsigner -keystore ./debug.keystore -sigalg SHA1withRSA -digestalg SHA1 -storepass android \
+# 	-signedjar debug.apk debug.apk androiddebugkey
 
-$_AAPT add ${APK_BASENAME}.apk.unaligned classes.dex
-$_AAPT add ${APK_BASENAME}.apk.unaligned `find -L assets/ -type f \( ! -name "* *" \)`
-$_AAPT add ${APK_BASENAME}.apk.unaligned `find -L lib/ -type f`
+# Sign APK
+# NOTE: If you changed the storepass and keypass in the setup process, change them here too
+[ -f raylib.keystore ] || keytool -genkeypair -validity 1000 -dname "CN=raylib,O=Android,C=ES" -keystore raylib.keystore -storepass 'raylib' -keypass 'raylib' -alias projectKey -keyalg RSA
 
-# creating debug keystore:
-# ? keytool -genkey -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 1000
-# keytool -genkey -v -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android -keyalg RSA -validity 14000
-#
-#    First and last name: Android Debug
-#    Organizational unit: Android
-#    Name of organization: Unknown
-#    City or Locality: Unknown
-#    State or Province: Unknown
-#    Country code: US
+jarsigner -keystore raylib.keystore -storepass raylib -keypass raylib \
+	-signedjar debug.apk debug.apk projectKey
 
-#jarsigner -keystore ~/.android/debug.keystore -storepass 'android' ${APK_BASENAME}.apk.unaligned androiddebugkey
+# Zipalign APK
+$BUILD_TOOLS/zipalign -f 4 debug.apk debug.final.apk
+mv -f debug.final.apk debug.apk
 
-## create a release version with your keys
-## jarsigner -keystore /path/to/your/release/keystore -storepass 'yourkeystorepassword' ${APK_BASENAME}.apk.unaligned yourkeystorename
-
-jarsigner -keystore ./debug.keystore -sigalg SHA1withRSA -digestalg SHA1 -storepass android ./${APK_BASENAME}.apk.unaligned androiddebugkey
-$_ZIPALIGN -f 4 ${APK_BASENAME}.apk.unaligned ${APK_BASENAME}-debug.apk
-
-#
-#rm -rf $_INTERMEDIATE
-#
-#$_ADB get-state 1>/dev/null 2>&1 && $_ADB install -r ${APK_BASENAME}-debug.apk || printf '\e[31mNo Android device attach\e[30m\n'
-
-#. up
-#$_ADB push assets /sdcard
-#$_ADB shell monkey -p name.yuriy_chumak.ol -c android.intent.category.LAUNCHER 1
-#adb install -r wnd-debug.apk
+# Done
+exit
