@@ -47,6 +47,7 @@ $BUILD_TOOLS/aapt package -f \
 # Add shared libraries to APK
 mkdir -p lib
 cp -r ../../libs/* lib
+#rm lib/arm64-v8a/libvrapi.so
 $BUILD_TOOLS/aapt add debug.apk `find -L lib/ -name *.so`
 
 # # keytool -genkey -v -validity 14000 -dname "CN=Ol,O=Android,C=ES" -keystore debug.keystore    -storepass android    -keypass android    -alias androiddebugkey -keyalg RSA

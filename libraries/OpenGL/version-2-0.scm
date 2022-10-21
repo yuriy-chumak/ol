@@ -38,8 +38,11 @@ glGetUniformLocation
 glUniform1i
 glUniform1f
 glUniform2f
+glUniform2fv
 glUniform3f
+glUniform3fv
 glUniform4f
+glUniform4fv
 glUniform1fv
 glUniformMatrix4fv
 glEnableVertexAttribArray
@@ -90,10 +93,13 @@ GL_CURRENT_PROGRAM
     (define glUniform1i     (gl:GetProcAddress GLvoid "glUniform1i" GLint GLint))
     (define glUniform1f     (gl:GetProcAddress GLvoid "glUniform1f" GLint GLfloat))
     (define glUniform2f     (gl:GetProcAddress GLvoid "glUniform2f" GLint GLfloat GLfloat))
+    (define glUniform2fv    (gl:GetProcAddress GLvoid "glUniform2fv" GLint GLsizei GLfloat*))
     (define glUniform3f     (gl:GetProcAddress GLvoid "glUniform3f" GLint GLfloat GLfloat GLfloat))
+    (define glUniform3fv    (gl:GetProcAddress GLvoid "glUniform3fv" GLint GLsizei GLfloat*))
     (define glUniform4f     (gl:GetProcAddress GLvoid "glUniform4f" GLint GLfloat GLfloat GLfloat GLfloat))
-    (define glUniform1fv    (gl:GetProcAddress GLvoid "glUniform1fv" GLint GLsizei GLfloat*)) ; TEMP from GLfloat*
-    (define glUniformMatrix4fv (gl:GetProcAddress GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLfloat*)) ; TEMPORARY RENAMED FROM GLfloat*
+    (define glUniform4fv    (gl:GetProcAddress GLvoid "glUniform4fv" GLint GLsizei GLfloat*))
+    (define glUniform1fv    (gl:GetProcAddress GLvoid "glUniform1fv" GLint GLsizei GLfloat*))
+    (define glUniformMatrix4fv (gl:GetProcAddress GLvoid "glUniformMatrix4fv" GLint GLsizei GLboolean GLfloat*))
   (define glEnableVertexAttribArray (gl:GetProcAddress GLvoid "glEnableVertexAttribArray" GLuint))
   (define glVertexAttribPointer (gl:GetProcAddress GLvoid "glVertexAttribPointer" GLuint GLint GLenum GLboolean GLsizei void*))
     (define GL_FLOAT #x1406)

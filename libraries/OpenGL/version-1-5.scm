@@ -78,6 +78,8 @@
 (begin
    (define GL_VERSION_1_5 1)
 
+   (setq GL gl:GetProcAddress)
+
  ; ARB_vertex_buffer_object
    (define GLintptr fft-signed-long) ;ptrdiff_t
    (define GLsizeiptr fft-unsigned-long) ;ptrdiff_t
@@ -120,11 +122,11 @@
 
    (define GL_BUFFER_MAP_POINTER             #x88BD)
 
-   (define glBindBuffer (gl:GetProcAddress GLvoid "glBindBuffer" GLenum GLuint))
-   (define glDeleteBuffers (gl:GetProcAddress GLvoid "glDeleteBuffers" GLsizei GLuint*))
-   (define glGenBuffers (gl:GetProcAddress GLvoid "glGenBuffers" GLsizei GLuint&))
+   (define glBindBuffer (GL GLvoid "glBindBuffer" GLenum GLuint))
+   (define glDeleteBuffers (GL GLvoid "glDeleteBuffers" GLsizei GLuint*))
+   (define glGenBuffers (GL GLvoid "glGenBuffers" GLsizei GLuint&))
 ;; GLAPI GLboolean APIENTRY glIsBuffer (GLuint);
-   (define glBufferData (gl:GetProcAddress GLvoid "glBufferData" GLenum GLsizeiptr fft-any GLenum))
+   (define glBufferData (GL GLvoid "glBufferData" GLenum GLsizeiptr fft-any GLenum))
 ;; GLAPI void APIENTRY glBufferSubData (GLenum, GLintptr, GLsizeiptr, const GLvoid *);
 ;; GLAPI void APIENTRY glGetBufferSubData (GLenum, GLintptr, GLsizeiptr, GLvoid *);
 ;; GLAPI GLvoid* APIENTRY glMapBuffer (GLenum, GLenum);
