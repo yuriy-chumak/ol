@@ -16,18 +16,38 @@ OL_CFLAGS   := -fsigned-char
 OL_CFLAGS   += -I$(LOCAL_PATH)/../includes
 OL_CFLAGS   += -std=c99 -std=gnu11 -O3 -g0
 
+# -- OL ----------------------------------------------------------------------
+include $(CLEAR_VARS)
+LOCAL_MODULE   := ol
+
+LOCAL_CFLAGS   += $(OL_CFLAGS) -DHAS_DLOPEN=1 -DHAS_SOCKETS=1 -DREPL=repl
+
+LOCAL_SRC_FILES := ../src/olvm.c
+LOCAL_SRC_FILES += ../tmp/repl.c
+LOCAL_SRC_FILES += ../extensions/ffi.c
+LOCAL_SRC_FILES += ../tests/ffi.c # only for tests/ffi.scm
+
+LOCAL_LDFLAGS  := -Xlinker --export-dynamic
+
+include $(BUILD_EXECUTABLE)
+
 # -- libMAIN -----------------------------------------------------------------
 # native app
 include $(CLEAR_VARS)
 LOCAL_MODULE   := main
-LOCAL_SHARED_LIBRARIES := olvm
+LOCAL_SHARED_LIBRARIES := olvm vrapi # TODO: move "vrapi" under define
 
 # configure
 LOCAL_CFLAGS   += $(OL_CFLAGS)
 # src
-LOCAL_CFLAGS   += -I$(NDK_ROOT) -DREPL=repl
+LOCAL_CFLAGS   += -I$(NDK_ROOT) -DREPL=repl -I$(LOCAL_PATH)/vrApi/include
 LOCAL_SRC_FILES += native-app.c ../tmp/repl.c
+LOCAL_SRC_FILES += ovr.c # Oculus Go
+LOCAL_SRC_FILES += egl.c # OpenGL ES
 LOCAL_LDLIBS   += -llog -landroid
+
+#opengl
+LOCAL_LDLIBS   += -lEGL -lGLESv3
 
 LOCAL_EXPORT_LDFLAGS := -u ANativeActivity_onCreate
 include $(BUILD_SHARED_LIBRARY)
@@ -55,22 +75,6 @@ LOCAL_LDLIBS   += -llog -landroid
 
 include $(BUILD_SHARED_LIBRARY)
 
-# # -- OL ---------------------------------------------------------------------------
-# include $(CLEAR_VARS)
-# LOCAL_MODULE   := ol
-
-# LOCAL_SRC_FILES := ../src/olvm.c
-# LOCAL_SRC_FILES += ../tmp/repl.c
-# LOCAL_SRC_FILES += ../extensions/ffi.c
-# LOCAL_SRC_FILES += ../tests/ffi.c
-
-# LOCAL_CFLAGS   += -std=c99 -std=gnu11 -O0 -g3 -Iincludes -fsigned-char
-# LOCAL_CFLAGS   += -Ijni/../src -DOLVM_FFI=1 -Wno-unsequenced -Wno-parentheses
-# LOCAL_LDFLAGS  := -Xlinker --export-dynamic
-
-# LOCAL_LDLIBS   += -llog -landroid
-# include $(BUILD_EXECUTABLE)
-
 # -- gl4es -----------------------------------------------------------------------
 ifneq ("$(wildcard $(LOCAL_PATH)/gl4es/src)","")
 include $(CLEAR_VARS)
@@ -87,6 +91,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/gl4es/include
 LOCAL_CFLAGS   += -g -std=gnu99 -funwind-tables -O3 -fvisibility=hidden
 LOCAL_CFLAGS   += -DNOX11 -DNO_GBM -DDEFAULT_ES=2 -DNOEGL
 LOCAL_CFLAGS   += -DNO_INIT_CONSTRUCTOR -DUSE_ANDROID_LOG
+#LOCAL_CFLAGS   += -DGL4ES_COMPILE_FOR_USE_IN_SHARED_LIB
 LOCAL_CFLAGS   += -include android_debug.h
 #LOCAL_CFLAGS   += -DDEBUG
 
@@ -222,8 +227,9 @@ LOCAL_MODULE   := SOIL
 SOIL_SRC_FILES := $(wildcard $(LOCAL_PATH)/SOIL/src/*.c)
 LOCAL_SRC_FILES := $(SOIL_SRC_FILES:$(LOCAL_PATH)/%=%)
 
-LOCAL_CFLAGS   += -I$(LOCAL_PATH)/SOIL/include
+LOCAL_CFLAGS   += -I$(LOCAL_PATH)/SOIL/include -D__ANDROID__
 LOCAL_CFLAGS   += -I$(LOCAL_PATH)/gl4es/include
+LOCAL_LDLIBS   := -llog
 
 LOCAL_SHARED_LIBRARIES += gl4es
 include $(BUILD_SHARED_LIBRARY)
@@ -264,3 +270,10 @@ endif
 
 # include $(BUILD_SHARED_LIBRARY)
 # endif
+
+# -- libvr -------------------------------------------------------------------
+include $(CLEAR_VARS)
+LOCAL_MODULE := vrapi
+LOCAL_SRC_FILES := vrApi/libs/$(TARGET_ARCH_ABI)/libvrapi.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
+include $(PREBUILT_SHARED_LIBRARY)

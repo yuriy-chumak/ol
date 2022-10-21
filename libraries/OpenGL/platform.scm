@@ -142,16 +142,20 @@
       (begin
          (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
 
-			(setq EGL (load-dynamic-library "libEGL.so"))
-         (setq GetProcAddress (EGL type-vptr "eglGetProcAddress" type-string))
+			(setq THIS (load-dynamic-library "libmain.so"))
+         (setq GetProcAddress (GL_LIBRARY type-vptr "gl4es_GetProcAddress" type-string))
 
          (define (gl:CreateContext . args)
 				(print-to stderr "No CreateContext under Android is required."))
          (define (gl:MakeCurrent . args)
 				(print-to stderr "No MakeCurrent under Android is required."))
-         (define (gl:SwapBuffers . args)
-				(print-to stderr "No SwapBuffers under Android is required."))
 
+         (define gl:SwapBuffers
+            (let ((anlSwapBuffers (THIS fft-int "anlSwapBuffers"))
+                  (glFlush (GL_LIBRARY fft-void "glFlush")))
+               (lambda (context)
+                  (glFlush)
+                  (anlSwapBuffers))))
    ))
    ; -=( macOS )=--------------------------------------
    (Darwin
@@ -272,11 +276,8 @@
 
 ; common part
 (begin
-   (define display-to (lambda (fd . args)
-      (for-each (λ (s) (display-to fd s)) args)))
-
    (define (gl:QueryExtension extension)
-      (display-to stderr "Checking " extension " support...") ; debug info
+      (display (string-append "Checking " extension " support...") stderr) ; debug info
       (let ((extensions (c/ / (or ; split by space character
                (cond
                   ; GLX, Linux

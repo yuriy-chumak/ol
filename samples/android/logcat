@@ -1,0 +1,3 @@
+#!/bin/bash
+# Appl:V VrApi:V
+adb logcat -v color ol:V threaded_app:V LIBGL:V VrCubeWorld:V ol-ovr:V *:F

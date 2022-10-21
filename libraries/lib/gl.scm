@@ -4,10 +4,9 @@
    (description "otus-lisp gl library")
 (import
    (otus lisp) (otus ffi)
-   (scheme dynamic-bindings)
-   (otus case-apply)
    (lib gl config)
-   (lib keyboard))
+   (scheme dynamic-bindings)
+   (otus case-apply))
 
 (cond-expand
    (Android
@@ -16,40 +15,39 @@
       (import (OpenGL platform)))
    (else
       (begin (runtime-error "Unsupported platform:" *uname*))))
-(import (lib GLU))
 
 (export
    gl:set-window-title gl:set-window-size
-   gl:set-renderer
+   gl:set-renderer ; OpenGL renderer
+   ;gl:set-advancer ; Math and Phys advancer
+
+   ; event handlers
    gl:set-mouse-handler
    gl:set-keyboard-handler
-   gl:set-resize-handler ;todo: rename to reshape-handler
-   gl:finish ; if renderer exists - wait for window close, else just glFinish
+   gl:set-resize-handler
 
-   gl:window-dimensions
-   gl:get-window-width gl:get-window-height
+   ; getters
+   gl:window-dimensions ; variable
+   gl:get-window-width gl:get-window-height ; functions
 
    gl:hide-cursor
 
-   native:enable-context native:disable-context
-   hook:exit
+   native:enable-context native:disable-context ; internal use (with gl3 and gl4, for example)
+   hook:exit)
 
-   ; export GLU library
-   (exports (lib GLU)))
+   ;gl:finish ; if renderer exists - wait for window close, else just glFinish
 
 ; notes:
 ;  WGL context creation https://www.GL.org/wiki/Creating_an_OpenGL_Context_(WGL)
 ;  GLX context creation https://www.GL.org/wiki/Tutorial:_OpenGL_3.0_Context_Creation_(GLX)
 
 (begin
-   (setq x32? (eq? (size nullptr) 4))
-
    (define WIDTH  (get config 'width  854))
    (define HEIGHT (get config 'height 480))
 
 ; assume that window size can not be large than 16777215 for x32 build
 ;                                  and 72057594037927935 for x64 build.
-   (define STATE [0 0 WIDTH HEIGHT]) ; x y width height, current window state
+   (define STATE [0 0 WIDTH HEIGHT]) ; x y width height, ...
 
    (define (gl:get-window-width)
       (ref STATE 3))
@@ -64,13 +62,11 @@
    ; -=( Android )=------------------------------------------
    (Android
       (begin
-
-         (setq EGL (load-dynamic-library "libEGL.so"))
 			(setq gl4es (load-dynamic-library "libgl4es.so"))
 
-         ; no context creation, we use already created context
          (define (native:create-context title)
-            #false)
+            ; context already created, just notify opengl
+            #true)
 
          ; android printing to the stdin means "DEBUG" logcat message
          (print-to stdin "OpenGL version: " (glGetString GL_VERSION))
@@ -78,23 +74,27 @@
          (print-to stdin "OpenGL renderer: " (glGetString GL_RENDERER))
          (print-to stdin "OpenGL extensions: " (glGetString GL_EXTENSIONS))
 
-         (define width '(1184)) ; todo: query display
-         (define height '(672))
-         ;; (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
-         ;; (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
+         ;; hack to get window size
+         (setq viewport '(0 0 0 0))
+         (setq GL_VIEWPORT  #x0BA2)
+         ((gl4es fft-void "glGetIntegerv" fft-int (fft& fft-int)) GL_VIEWPORT viewport)
 
-         (set-ref! gl:window-dimensions 3 (car width))
-         (set-ref! gl:window-dimensions 4 (car height))
+         ;; ;; (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
+         ;; ;; (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
 
-;            (glViewport 0 0 (car width) (car height)))
+         (set-ref! gl:window-dimensions 3 (list-ref viewport 2))
+         (set-ref! gl:window-dimensions 4 (list-ref viewport 3))
 
          (define (native:enable-context context)
-            #false)
+            #true)
          (define (native:disable-context context)
-            #false)
+            #true)
+
+			(setq THIS (load-dynamic-library "libmain.so"))
+         (setq anlProcessEvents (THIS fft-void "anlProcessEvents"))
+
          (define (native:process-events context handler)
-            ; todo: process 'resize event
-            #false)
+            (anlProcessEvents))
 
          (define (gl:SetWindowTitle context title)
             #false)
@@ -103,6 +103,7 @@
          (define (gl:HideCursor context)
             #false)
          (define (gl:GetMousePos context)
+            ;; TODO: aniGetMousePos, etc....
             #false)
    ))
 
@@ -200,9 +201,6 @@
                   (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))
                   (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
                   ;(gl:MakeCurrent display #f #f)
-                  (mail 'opengl ['set-context [display screen window cx]]) ; notify opengl server
-                  ;(interact 'opengl ['get-context]) ; синхронизация (не нужна, вроде)
-
                   [display screen window cx])))
 
          (define (native:enable-context context)
@@ -241,9 +239,7 @@
                         (21 #f) ; ReparentNotify
                         (22 ; ConfigureNotify
                            ;(print "ConfigureNotify: " XEvent)
-                           (let (;(x (bytevector->int32 XEvent (if x32? ? ?)))
-                                 ;(y (bytevector->int32 XEvent (if x32? ? ?)))
-                                 (w (bytevector->int32 XEvent (x11config '|XConfigureEvent.width|)))
+                           (let ((w (bytevector->int32 XEvent (x11config '|XConfigureEvent.width|)))
                                  (h (bytevector->int32 XEvent (x11config '|XConfigureEvent.height|))))
                               (handler ['resize w h]))) ; todo: add x y, change to 'configure
                         (else ;
@@ -357,7 +353,6 @@
             (mail 'opengl ['set-surface surface])
 
             (define context (eglCreateContext display (car config) EGL_NO_CONTEXT contextAttribs))
-            (mail 'opengl ['set-context context])
 
             ; gl2es part
             (define gl4es (dlopen))
@@ -380,6 +375,7 @@
             ;; (set-ref! gl:window-dimensions 4 (car height))
 
             ;; (glViewport 0 0 (car width) (car height)))
+            context
          ))
 
          (define (native:enable-context context)
@@ -479,9 +475,7 @@
                   (print-to stderr "OpenGL version: " (glGetString GL_VERSION))
                   (print-to stderr "OpenGL vendor: " (glGetString GL_VENDOR))
                   (print-to stderr "OpenGL renderer: " (glGetString GL_RENDERER))
-               ;(gl:MakeCurrent #f #f)
-                  (mail 'opengl ['set-context [hDC hRC window]])
-                  (await (mail 'opengl ['get-context])) ; синхронизация
+                  ;; (await (mail 'opengl ['get-context])) ; синхронизация
 
                   (ShowWindow window 5)
                   [hDC hRC window])))
@@ -571,7 +565,7 @@
 
 ; -=( opengl coroutine )=------------------------------------
 (cond-expand
-   ((or Android Emscripten)
+   ((or Emscripten)
       (begin
          (actor 'opengl (lambda ()
          (let this ((dictionary {
@@ -599,6 +593,16 @@
                   (['get-context]
                      (mail sender (get dictionary 'context #f))
                      (this dictionary))
+
+                  (['finish]
+                     (unless (get dictionary 'renderer #f)
+                        ; рендерера нет, значит оновим буфер
+                        (gl:SwapBuffers (get dictionary 'context #f)))
+                        ; рендерер есть, но режим интерактивный? тогда вернем управление юзеру
+                        ;(if *interactive* ;(or (zero? (length (command-line))) (string-eq? (car (command-line)) "-"))
+                        ;   (mail sender 'ok)))
+                     (this (put dictionary 'customer sender)))
+
                   (else
                      (print-to stderr "Unknown opengl server command " msg)
                      (this dictionary))
@@ -608,7 +612,7 @@
          ; =============================================
          ; automation
          (actor 'opengl (lambda ()
-         (let this ((dictionary {
+         (let this ((dictionary { ; default resize handler
                'resize-handler (lambda (w h) (glViewport 0 0 w h))}))
          (cond
             ; блок обработки сообщений
@@ -626,8 +630,6 @@
                         (this dictionary))
 
                      (['finish]  ; wait for OpenGL window closing (just no answer for interact)
-                        ;(glFinish)
-
                         (unless (get dictionary 'renderer #f)
                            ; рендерера нет, значит оновим буфер
                            (gl:SwapBuffers (get dictionary 'context #f)))
@@ -733,7 +735,10 @@
 
 ; -=( main )=--------------------------
 ; force window creation.
-(native:create-context "Ol: OpenGL Window")
+(let ((context (native:create-context "Ol: OpenGL Window")))
+   (if context
+      (mail 'opengl ['set-context context])
+      (runtime-error "Can't create OpenGL context" #null)))
 
 ; -----------------------------
 (define (gl:set-renderer renderer)
@@ -748,7 +753,7 @@
 (define (gl:finish)
    (await (mail 'opengl ['finish])))
 
-(define hook:exit (lambda args (gl:finish)))
+(define hook:exit (lambda args (gl:finish))) ; TODO: fix
 
 ; -----------------------------
 ;; (define gl:Color (case-lambda

@@ -15,9 +15,15 @@ endif
 .PHONY: all
 
 all:
-	./make
+	$(MAKE) build
+	$(MAKE) stop
+	$(MAKE) uninstall
+	$(MAKE) upload
 	$(MAKE) install
 	$(MAKE) start
+
+build:
+	./make
 
 clean:
 	rm -rf dex lib obj
@@ -26,13 +32,14 @@ clean:
 
 start:
 	adb push main.lisp /sdcard/ol/main.lisp
+	adb push config.scm /sdcard/ol/config.scm
 	adb shell am start -n name.yuriy_chumak.ol/name.yuriy_chumak.ol.NativeLoader
 stop:
 	adb shell am force-stop name.yuriy_chumak.ol
 
 restart:
 	$(MAKE) stop
-	(cd ../../libraries; adb push * /sdcard/ol;)
+	$(MAKE) upload
 	$(MAKE) start
 
 
@@ -47,3 +54,9 @@ uninstall:
 reinstall:
 	$(MAKE) uninstall
 	$(MAKE) install
+
+
+upload:
+	adb shell mkdir -p /sdcard/ol/media
+	cd ../../libraries; adb push * /sdcard/ol
+	cd media; adb shell mkdir sdcard/ol/media; adb push * /sdcard/ol/media
