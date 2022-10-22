@@ -1,25 +1,42 @@
-# FFI Extension
+# FFI olvm Extension
 
+An FFI (Foreign Function Interface) is an OLVM (Otus Lisp Vurtual Machine) extension
+by which a program written in Ol (Otus Lisp) can call routines or make use of services
+provided by the OS (Operation System) or thirdparty libraries.
+
+For example, you can use Sqlite library without including support for that library in Ol.
+
+#### TOC
 * [Basic example](#basic-example)
-* [Advanced usage](#advanced-usage)
 * [Function declaration](#function-declaration)
-* [Type system](#type-system)
-  * [Value type system](#value-type-system)
-  * [Reference type system](#reference-type-system)
+* [Function result types](#function-result-types)
+  * [Integer types](#integer-types)
+  * [Floating point types](#floating-point-types)
+  * [String types](#string-types)
+  * [Other cases](#other-cases)
+* [Argument Types](#argument-types)
+  * [Integer types](#integer-types-1)
+  * [Floating point types](#floating-point-types-1)
+  * [String types](#string-types-1)
+  * [Pointer types](#pointer-types)
+  * [Other cases](#other-cases-1)
+* [C Types Default Mapping](#c-types-default-mapping)
+* [Advanced usage](#advanced-usage)
+
 
 
 ## Basic Example
 
-If you want to import some functions from the system library, follow this steps:
+If you want to import some functions from the system library, follow these steps:
 
-1. Import ol ffi library: `(import (otus ffi))`
+1. Import the ffi library: `(import (otus ffi))`
 1. Load a system dynamic library: `(define libm (load-dynamic-library "libm.so.6"))`
-1. Declare external function: `(define asin (libm fft-double "asin" fft-double))`
-1. Use external function as a regular: `(print (asin 0.5))`
+1. Link an external function: `(define asin (libm fft-double "asin" fft-double))`
+1. Use external function like regular: `(print (asin 0.5))`
 
 Easy, huh?
 
-All steps demo:
+All-in-one steps demo:
 ```scheme
 $ ol
 Welcome to Otus Lisp 2.3.1-3172-43e20773
@@ -38,10 +55,206 @@ type ',help' to help, ',quit' to end session.
 bye-bye.
 ```
 
+## Function declaration
+
+Function declaration (linking occurs at the time of declaration, so library should be loaded and valid at this point) consists of:
+1. the library (`libm` in the example above),
+1. the data type of the value the function returns in terms of ffi (first `fft-double` in the example above),
+1. the function name (`"asin"` in the example above),
+1. the function parameters, if any (`fft-double` in the example above).
+
+We use some common names for types in tables:
+  * `integer-types` means type-enum+, type-enum-, type-int+, and type-int-.
+  * `number-types` means integer-types, type-rational, type-inexact, and type-complex
+  * `string-types` means type-string, type-string-wide, and type-string-dispatch.
+  * `structure-type` means list (possibly a tree) of structure types in consistent order.
+
+## Function result types
+
+List of result types that ffi supports, with a short description:
+
+### Integer types:
+
+| Result Type     | FFI Type   | Possible Ol Result Types | Comments |
+|-----------------|------------|--------------------------|----------|
+| signed 8 bit    | fft-int8   | type-enum+, type-enum- | |
+| unsigned 8 bit  | fft-uint8  | type-enum+ | |
+| signed 16 bit   | fft-int16  | type-enum+, type-enum- | |
+| unsigned 16 bit | fft-uint16 | type-enum+ | |
+| signed 32 bit   | fft-int32  | type-enum+, type-enum-, type-int+ (only 32-bit machines), type-int- (only 32-bit machines) | |
+| unsigned 32 bit | fft-uint32 | type-enum+, type-int+ (only 32-bit machines) | |
+| signed 64 bit   | fft-int64  | type-enum+, type-enum-, type-int+, type-int- | |
+| unsigned 64 bit | fft-uint64 | type-enum+, type-int+ | |
+
+### Floating Point Types
+
+| Result Type     | FFI Type   | Possible Ol Result Types | Comments |
+|-----------------|------------|--------------------------|----------|
+| 32-bit float    | fft-float  | type-inexact | `+nan.0`, `-inf.0`, `+inf.0` are valid results |
+| 64-bit float    | fft-double | type-inexact | `+nan.0`, `-inf.0`, `+inf.0` are valid results |
+
+### String Types
+
+| Result Type     | FFI Type    | Possible Ol Result Types | Comments |
+|-----------------|-------------|--------------------------|----------|
+| ansi string     | type-string | type-string, type-string-wide | Depends on ansi/unicode result type |
+| unicode string  | type-string-wide | type-string-wide | Means 16-bit wide characters string |
+| utf-8 string    | type-string | type-string, type-string-wide | Depends on ansi/unicode result type |
+
+### Other Cases
+
+| Result Type     | FFI Type  | Possible Ol Result Types | Comments |
+|-----------------|-----------|--------------------------|----------|
+| void            | fft-void  | type-const | Always returns `#true` |
+| port            | type-port | type-port (value or reference) | |
+| boolean         | fft-bool  | type-const | Returns `#false` for a zero result, otherwise `#true` |
+| any pointer     | type-vptr | type-vptr | |
+| structure       | type-pair | type-pair | Note 3 below. |
+
+## Argument Types
+
+List of argument types that ffi supports is wider than return types and include pointers, callables, and bytevectors.
+Also, the `#false` can be used as the "default" for any argument (typically as 0).
+
+List of argument types with a short description:
+
+### Integer types:
+
+| Parameter Type    | FFI Type     | Possible Ol Parameter Types | Comments |
+|-------------------|--------------|-----------------------------|----------|
+| (un)signed 8 bit  | fft-(u)int8  | integer-types | Value truncated onto 8 bit |
+|                   |              | type-rational, type-inexact | Value truncated onto 8 bit, not rounded! |
+|                   |              | type-complex | Real part used with rules above. Imaginary part discarded. |
+| (un)signed 16 bit | fft-(u)int16 | integer-types | Value truncated onto 16 bit |
+|                   |              | type-rational, type-inexact | Value truncated onto 16 bit, not rounded! |
+|                   |              | type-complex | Real part used with rules above. Imaginary part discarded. |
+| (un)signed 32 bit | fft-(u)int32 | integer-types | Value truncated onto 32 bit |
+|                   |              | type-rational, type-inexact | Value truncated onto 32 bit, not rounded! |
+|                   |              | type-complex | Real part used with rules above. Imaginary part discarded. |
+| (un)signed 64 bit | fft-(u)int64 | integer-types | Value truncated onto 64 bit |
+|                   |              | type-rational, type-inexact | Value truncated onto 64 bit, not rounded! |
+|                   |              | type-complex | Real part used with rules above. Imaginary part discarded. |
+
+### Floating Point Types
+
+| Parameter Type  | FFI Type   | Possible Ol Parameter Types | Comments |
+|-----------------|------------|-----------------------------|----------|
+| 32-bit float    | fft-float  | integer-types, type-rational, type-inexact | Exact numbers may lose exactness. |
+|                 |            | type-complex | Real part used with rules above. May lose exactness if exact. |
+| 64-bit float    | fft-double | integer-types, type-rational, type-inexact | Exact numbers may lose exactness. |
+|                 |            | type-complex | Real part used with rules above. May lose exactness if exact. |
+
+### String Types
+
+| Parameter Type  | FFI Type    | Possible Ol Parameter Types | Comments |
+|-----------------|-------------|-----------------------------|----------|
+| ansi string     | type-string | string-types, type-symbol | Unicode strings encoded as utf-8 |
+| unicode string  | type-string | string-types, type-symbol | Means 16-bit wide characters string |
+| utf-8 string    | type-string | string-types, type-symbol | |
+
+### Pointer Types
+
+Ffi accepts two pointer types named `pointers` and `references`.
+Only difference that references reflect their changes during the execution of foreign function.
+Pointers remain unchanged even if the foreign function changes their value. References are slower.
+
+Note: References can fit only applicable values. For example, if you pass '(#i1 2 #3) as (fft* fft-float) to the
+c-function `void function(float* p) { for (int i = 0; i < 3; i++) p[i]*=2;}` you'll get error. But `(#i1 #i2 #3) will be ok.
+
+Pointer declared using function `fft*`, reference using `fft&`.
+Some pointer/reference types already defined in (otus ffi), `fft-int8*` as `(fft* fft-int8)` for example.
+
+| Parameter Type      | FFI Type    | Possible Ol Parameter Types | Comments |
+|---------------------|-------------|-----------------------------|----------|
+| (un)signed 8 bit *  | fft-(u)int8*, fft-(u)int8&   | list of number-types | Value conversion same as for integer types |
+| (un)signed 16 bit * | fft-(u)int16*, fft-(u)int16& | list of number-types | Value conversion same as for integer types |
+| (un)signed 32 bit * | fft-(u)int32*, fft-(u)int32& | list of number-types | Value conversion same as for integer types |
+| (un)signed 64 bit * | fft-(u)int64*, fft-(u)int64& | list of number-types | Value conversion same as for integer types |
+| 32-bit float *      | (fft* fft-float), (fft& fft-float)  | list or vector of number-types  | Value conversion same as for integer types |
+| 32-bit float *      | (fft* fft-float), (fft& fft-float)  | type-bytevector  | Deprecated. |
+| 64-bit float *      | (fft* fft-double) | list of number-types            | Value conversion same as for integer types |
+| system pointer *    | (fft* type-vptr) | list of type-vptr or string-types | |
+| system pointer *    | (fft* type-vptr) | list of string-types | Deprecated |
+| string pointer *    | (fft* type-vptr) | list of string-types | |
+
+### Other Cases
+
+| Parameter Type   | FFI Type    | Possible Ol Parameter Types | Comments |
+|------------------|-------------|-----------------------------|----------|
+| void             | fft-void    | any | argument ignored, always interpret as 0 |
+| system pointer   | type-vptr   | type-vptr, type-bytevector | Note 2.|
+| port             | type-port   | type-port (value or reference) | |
+| boolean          | fft-bool    | type-const | `#false` interpreted as false, all others as `#true` |
+| any              | fft-any     | any | Note 1. |
+| raw olvm pointer | fft-unknown | any | Don't use, because for internal purposes and can be changed at any moment. |
+| internal pointer | type-bytevector | type-bytevector, type-string | Deprecated |
+| structure        | type-pair   | structure-type | Note 3. |
+
+* Note 1: `fft-any` interpret argument depending on argument type with rules:
+  * integer-types interpret as 32-bit integer for 32-bit machine, 64-bit integer for 64-bit machine,
+  * string-types interpret as utf8 string,
+  * type-vptr interpret as system pointer,
+  * type-callable interpret as ol callable (platform function pointer),
+  * dot-pair '(type . argument) as type.
+* Note 2. Bytevectors interpret as pointer to this bytevector. Please don't use because of risky.
+* Note 3. Structures TBD a bit later.
+
+## C Types Default Mapping
+
+For the 99% of function declarations you can use c-like ffi types freely.
+This is the table of correspondence C types to Ol types, with the internal type mapping noted.
+
+| C Typename         | Ol FFI Typename    | Mapping Type | Comments |
+|--------------------|--------------------|--------------|----------|
+| char (signed)      | fft-char           | fft-int8 | char in (otus ffi) is signed by default |
+| signed char        | fft-signed-char    | fft-int8 | |
+| unsigned char      | fft-unsigned-char  | fft-uint8 | |
+| short              | fft-short          | fft-int16 | |
+| short int          | fft-short          | fft-int16 | |
+| signed short       | fft-short, fft-signed-short | fft-int16 | |
+| signed short int   | fft-short, fft-signed-short | fft-int16 | |
+| unsigned short     | fft-unsigned-short | fft-uint16 | |
+| unsigned short int | fft-unsigned-short | fft-uint16 | |
+| int                | fft-int            | fft-int32 | |
+| signed             | fft-signed-int     | fft-int32 | |
+| signed int         | fft-signed-int     | fft-int32 | |
+| unsigned           | fft-unsigned-int   | fft-uint32 | |
+| unsigned int       | fft-unsigned-int   | fft-uint32 | |
+| long               | fft-long           | fft-int32 | all 32-bit machines, 64-bit windows |
+| long               | fft-long           | fft-int64 | all 64-bit machines, except windows |
+| long int           | fft-long           | fft-int32 | all 32-bit machines, 64-bit windows |
+| long int           | fft-long           | fft-int64 | all 64-bit machines, except windows |
+| signed long        | fft-signed-long    | fft-int32 | all 32-bit machines, 64-bit windows |
+| signed long        | fft-signed-long    | fft-int64 | all 64-bit machines, except windows |
+| signed long int    | fft-signed-long    | fft-int32 | all 32-bit machines, 64-bit windows |
+| signed long int    | fft-signed-long    | fft-int64 | all 64-bit machines, except windows |
+| unsigned long      | ffr-unsigned-long  | fft-uint32 | all 32-bit machines, 64-bit windows |
+| unsigned long      | ffr-unsigned-long  | fft-uint64 | all 64-bit machines, except windows |
+| unsigned long int  | ffr-unsigned-long  | fft-uint32 | all 32-bit machines, 64-bit windows |
+| unsigned long int  | ffr-unsigned-long  | fft-uint64 | all 64-bit machines, except windows |
+| long long              | fft-long-long      | fft-int64 | |
+| long long int          | fft-long-long      | fft-int64 | |
+| signed long long       | fft-signed-long-long   | fft-int64 | |
+| signed long long int   | fft-signed-long-long   | fft-int64 | |
+| unsigned long long     | fft-unsigned-long-long | fft-uint64 | |
+| unsigned long long int | fft-unsigned-long-long | fft-uint64 | |
+| | | |
+| float       | fft-float  | fft-float  | |
+| double      | fft-double | fft-double | |
+| long double | no         | no         | |
+| | | |
+| _Bool       | fft-bool   | fft-bool   | |
+| size_t      | fft-size_t | fft-int32  | all 32-bit machines |
+| size_t      | fft-size_t | fft-int64  | all 64-bit machines |
+| ptrdiff_t   | fft-size_t | fft-int32  | all 32-bit machines |
+| ptrdiff_t   | fft-size_t | fft-int64  | all 64-bit machines |
+| enum        | fft-enum   | fft-int    | |
+
 
 ## Advanced usage
 
-An OS-independent solution requires loading different libraries for different OSes. You can do this with `or`, for example:
+An OS-independent solution requires loading different libraries for different OSes.
+You can do this with `or`, for example:
 ```scheme
 (define libm (or
    (load-dynamic-library "libm.so.6")
@@ -49,7 +262,7 @@ An OS-independent solution requires loading different libraries for different OS
 (define asin (libm fft-double "asin" fft-double))
 ```
 
-But I recommend creating a complex solution:
+But I recommend creating a comprehensive solution:
 ```scheme
 (define-library (mylib)
 (import
@@ -67,7 +280,7 @@ But I recommend creating a complex solution:
    (else
       (begin
          ; (syscall 63) is a `uname` function
-         (runtime-error "Unsupported OS" (syscall 63)))))
+         (runtime-error "Unsupported platform" (syscall 63)))))
 (begin
    (define asin (libm fft-double "asin" fft-double))
 ))
@@ -79,75 +292,3 @@ Then very simple usage like any other ol functions:
 (print (asin 0.5))
 ```
 
-
-## Function Declaration
-
-Every external function declared using *return-type*, *function-name*, and list of *type-of* arguments (if any):
-`(libm return-type "function-name" type-of-first-argument type-of-second-argument ...)`.
-
-
-## Type System
-
-### Value Type System
-
-* `"C" Type` - native type of imported function. In terms of "ANSI C" language.
-* `FFI Type` - equivalent type in terms of ol ffi.
-* `Applicable LISP Types` - which ol objects can be safely marshalled to and from an imported function.
-  * note: void (fft-void) is only the type of function result (means no result is expected).
-
-|          "C" Type           |               FFI Type              |                    Applicable LISP Types                    |
-| :-------------------------- | :---------------------------------- | :---------------------------------------------------------: |
-| void                        | fft-void                            |                              -                              |
-| char                        | fft-char                            | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to long) |
-| signed char                 | fft-signed-char                     | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| unsigned char               | fft-unsigned-char                   | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| short, signed short         | fft-short, fft-signed-short         | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| unsigned short              | fft-unsigned-short                  | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| int, signed int             | fft-int, fft-signed-int             | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| unsigned int                | fft-unsigned-int                    | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| long, signed long           | fft-long, fft-signed-long           | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| unsigned long               | fft-unsigned-long                   | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| long long, signed long long | fft-long-long, fft-signed-long-long | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| unsigned long long          | fft-unsigned-long-long              | type-enum+, type-enum-, type-int+, type-int-, type-rational (truncation to int) |
-| float                       | fft-float                           | type-enum+, type-enum-, type-int+, type-int-, type-rational, type-complex, type-inexact |
-| double                      | fft-double                          | type-enum+, type-enum-, type-int+, type-int-, type-rational, type-complex, type-inexact |
-
-#### Exact bitwise types are available.
-
-| "C" Type | FFI type   | Applicable LISP Types                                       |
-| :------- | :--------- | :---------------------------------------------------------- |
-| int8_t   | fft-int8   | type-enum+, type-enum-, type-int+, type-int-, type-rational |
-| uint8_t  | fft-uint8  | type-enum+, type-enum-, type-int+, type-int-, type-rational |
-| uint16_t | fft-uint16 | type-enum+, type-enum-, type-int+, type-int-, type-rational |
-| uint16_t | fft-uint16 | type-enum+, type-enum-, type-int+, type-int-, type-rational |
-| uint32_t | fft-uint32 | type-enum+, type-enum-, type-int+, type-int-, type-rational |
-| uint32_t | fft-uint32 | type-enum+, type-enum-, type-int+, type-int-, type-rational |
-| uint64_t | fft-uint64 | type-enum+, type-enum-, type-int+, type-int-, type-rational |
-| uint64_t | fft-uint64 | type-enum+, type-enum-, type-int+, type-int-, type-rational |
-
-#### Special ffi types are available.
-
-
-| "C" Type | FFI type  | Applicable LISP Types |
-| :------- | :-------- | :-------------------- |
-|          | fft-any   | ... |
-|          | fft-void* | ... |
-
-
-### Reference Type System (TBD.)
-
-Pointers are also supported by ffi marshaller. Ol prepared a native raw array filled with requested type.
-Ol may marshal pointers using two different ways: just as a pointer or as a reference. What that's mean:
-  * as a pointer `(ffi* fft-xxx)`: any change of this array data by the callee side will have no effects to the Ol side
-  * as a reference `(ffi& fft-xxx)`: any change of this array data by the callee will change original Ol array
-
-As a pointer can be sent lists and vectors.
-
-TBD.
-
-| "C" Type                            | FFI type    | Applicable LISP Types    | Notes |
-| :---------------------------------- | :---------- | :----------------------- | :---- |
-| char*, signed char*, unsigned char* | type-vector | type-vector, type-string | UNSAFE! Pass a raw pointer to the internal memory |
-| char*, signed char*, unsigned char* | type-string | type-string, type-string-wide, type-string-dispatch | Correctly encode and decode utf-8 strings |
-
-TBD.
