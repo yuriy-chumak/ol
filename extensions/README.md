@@ -22,6 +22,7 @@ For example, you can use Sqlite library without including support for that libra
   * [Other cases](#other-cases-1)
 * [C Types Default Mapping](#c-types-default-mapping)
 * [Advanced usage](#advanced-usage)
+  * [Examples](#examples)
 
 
 
@@ -31,6 +32,7 @@ If you want to import some functions from the system library, follow these steps
 
 1. Import the ffi library: `(import (otus ffi))`
 1. Load a system dynamic library: `(define libm (load-dynamic-library "libm.so.6"))`
+   (I assume we use kind of Linux or any Unix flavor, for Windows use "user32.dll" library name).
 1. Link an external function: `(define asin (libm fft-double "asin" fft-double))`
 1. Use external function like regular: `(print (asin 0.5))`
 
@@ -292,3 +294,120 @@ Then very simple usage like any other ol functions:
 (print (asin 0.5))
 ```
 
+### Examples
+
+Examples in form of "C declaration, Ol declaration, maybe usage example(s)".
+Both Linux, *BSD, macOS, and Windows are supported.
+
+```scheme
+(import (otus ffi))
+(define SO (or (load-dynamic-library "libsqlite3.so")
+               (load-dynamic-library "libsqlite3.dylib")
+               (load-dynamic-library "sqlite3.dll")))
+(unless SO
+   (runtime-error "Sqlite3 error:" "library not found"))
+
+
+; int sqlite3_libversion_number(void);
+(define sqlite3_libversion_number (SO fft-int "sqlite3_libversion_number"))
+
+(print "sqlite3 version number: " (sqlite3_libversion_number))
+
+
+; const char *sqlite3_libversion(void);
+(define sqlite3_libversion (SO type-string "sqlite3_libversion"))
+
+(print "sqlite3 version: " (sqlite3_libversion))
+
+
+; typedef struct sqlite3 sqlite3
+; int sqlite3_open(
+;   const char *filename,   /* Database filename (UTF-8) */
+;   sqlite3 **ppDb          /* OUT: SQLite db handle */
+; );
+(define sqlite3_open (SO fft-int "sqlite3_open" type-string fft-void**))
+
+(define database (make-vptr)) ; (make-vptr) is an Ol function to make empty vptr
+(sqlite3_open "database.b" database)
+
+
+; typedef struct sqlite3_str sqlite3_str;
+; sqlite3_str *sqlite3_str_new(sqlite3*);
+(define sqlite3_str_new (SO type-vptr "sqlite3_str_new" type-vptr))
+
+(define str (sqlite3_str_new database))
+
+
+; void sqlite3_str_appendf(sqlite3_str*, const char *zFormat, ...);
+(define sqlite3_str_appendf (SO fft-void "sqlite3_str_appendf" type-vptr type-string))
+
+(sqlite3_str_appendf str "int: %d, string: [%s], float: %f"
+   (cons fft-int 123456)             ; all additional function arguments should be sent
+   (cons type-string "I'm a string") ;     using dot-pair '(type . value)
+   (cons fft-double 123.456))        ; '%f' receives doubles, not floats
+
+
+; char *sqlite3_str_finish(sqlite3_str*);
+(define sqlite3_str_finish (SO type-string "sqlite3_str_finish" type-vptr))
+
+(print (sqlite3_str_finish str))
+
+;; ------------------------------------------------------------------------
+;; C->Ol callback example
+;; provides SHA1 function
+(import (lib sha1))
+
+; SQLITE_API int sqlite3_create_function_v2(
+;   sqlite3 *db,
+;   const char *zFunctionName,
+;   int nArg,
+;   int eTextRep,
+;   void *pApp,
+;   void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
+;   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
+;   void (*xFinal)(sqlite3_context*),
+;   void(*xDestroy)(void*)
+; );
+(define sqlite3_create_function_v2 (SO fft-int "sqlite3_create_function_v2" type-vptr type-string fft-int fft-int
+   type-vptr type-callable type-callable type-callable type-vptr))
+
+; typedef struct sqlite3_value sqlite3_value;
+; unsigned char *sqlite3_value_text(sqlite3_value*);
+(define sqlite3_value_text (SO type-string "sqlite3_value_text" type-vptr))
+
+; typedef struct sqlite3_context sqlite3_context;
+; void sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));
+(define sqlite3_result_text (SO fft-void "sqlite3_result_text" type-vptr type-string fft-int type-callable))
+
+; void (*xFunc)(sqlite3_context*,int,sqlite3_value**)
+; callback is a dot-pair '(types . lambda)
+;   where types is a dot-pair (return-type . list-of-argument-types)
+(define calculate (vm:pin (cons             ; this pair should be pinned, 
+                                            ; so it will not be moved during possible garbage collecting
+   ; return-type
+   (cons fft-int
+         ;     sqlite3_context* int     sqlite3_value**
+         (list type-vptr        fft-int (list type-vptr)))
+   ; function
+   (lambda (context argc argv)
+      (define v (sqlite3_value_text (car argv)))
+      (define r (base64:encode (sha1:digest v)))
+      (sqlite3_result_text context r -1 #false))
+)))
+
+; actually create a callback
+(define xFunc (make-callback calculate))
+
+; use it
+(define SQLITE_UTF8 1)
+(sqlite3_create_function_v2 database "SHA1" 1 SQLITE_UTF8 #f xFunc #f #f #f)
+
+```
+
+More examples can be found in:
+* FFI autotest (the [ffi.c](../tests/ffi.c) and [ffi.scm](../tests/ffi.scm)) source files,
+  * the [ffi.scm.ok](../tests/ffi.scm.ok) is etalon test output.
+* Sqlite3 library interface in the [sqlite.scm](../libraries/lib/sqlite.scm),
+* OpenGL library interface in the [version-1-0](../libraries/OpenGL/version-1-0.scm),
+* Lua library interface in the [lua.scm](../libraries/lib/lua.scm),
+* [etc.](../libraries/lib/).
