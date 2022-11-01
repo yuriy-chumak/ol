@@ -61,7 +61,7 @@
                ; disable and destroy old context
                (native:disable-context context) ; todo: destroy
                ; set new context
-               (mail 'opengl ['set-context new_context])
+               (mail 'opengl ['set 'context new_context])
                (native:enable-context new_context)
                #true))))
    (Windows
