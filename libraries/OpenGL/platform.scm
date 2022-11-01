@@ -1,10 +1,11 @@
 (define-library (OpenGL platform)
-   (version 1.1)
+   (version 1.2)
    (license MIT/LGPL3)
    (description
       "Platform-specific types and definitions for OpenGL")
 
 (export
+   (exports (otus ffi))
 
    ; GL types
    ; https://www.opengl.org/wiki/OpenGL_Type
@@ -26,7 +27,7 @@
 
    GLvoid   GLvoid*       ; void, void*
 
-   ; minimal required GL function set
+   ; minimal required GL functions set
    glGetString
       GL_VENDOR
       GL_RENDERER
@@ -36,36 +37,16 @@
    glViewport
 
    ; WGL/GLX/CGL/EGL/... platform functions
-   gl:GetProcAddress
+   gl:GetProcAddress ; * ol internal
+   gl:QueryExtension ; * ol specific
 
-   gl:CreateContext ; context creation
-   gl:MakeCurrent
-   gl:SwapBuffers
-   gl:QueryExtension ; ol specific
-
-   ; todo: change to this functions
-   ;; get-proc-address
-   ;; make-context-current
-   ;; create-context
-   ;; swap-gl-buffers
-   ;; query-gl-extension
-   ; or to this
-   ;; GetProcAddress
-   ;; CreateContext
-   ;; MakeCurrent
-   ;; SwapBuffers
-   ;; QueryExtension
-
-
-   ; internal variables
-   GL_LIBRARY
-
-   (exports (otus ffi)))
+   GL_LIBRARY)
 
 ; ============================================================================
 ; == implementation ==========================================================
-(import (otus lisp) (otus ffi))
-
+(import
+   (otus lisp)
+   (otus ffi))
 
 ; = OS DEPENDENT part ===============
 ; https://en.wikipedia.org/wiki/Uname
@@ -78,103 +59,73 @@
             (load-dynamic-library "libGL.so.1")))
 
          (setq GLX GL_LIBRARY)
-         (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string))
-
-         ; нужные функции платформ для создания/уничтожения контекста
-         (setq Display* type-vptr)
-         (setq XVisualInfo* type-vptr)
-         ;glXChooseVisual      ChoosePixelFormat
-         ;glXCopyContext       wglCopyContext
-         (define gl:CreateContext (GLX type-vptr "glXCreateContext" Display* XVisualInfo* fft-void* fft-int))
-         (define gl:MakeCurrent (GLX fft-int "glXMakeCurrent" fft-void* fft-void* fft-void*))
-
-         (define gl:SwapBuffers
-            (let ((SwapBuffers (GLX type-vptr "glXSwapBuffers" fft-void* fft-void*)))
-               (lambda (context)
-                  (SwapBuffers (ref context 1) (ref context 3)))))
-
-   ))
+         (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string)) ))
    ; -=( Windows )=--------------------------------------
    (Windows
       (begin
          (define GL_LIBRARY (load-dynamic-library "opengl32.dll"))
 
          (setq WGL GL_LIBRARY)
-         (setq GDI (load-dynamic-library "gdi32.dll"))
-         (setq GetProcAddress (WGL type-vptr "wglGetProcAddress" type-string))
-
-         (define gl:CreateContext (WGL type-vptr "wglCreateContext" fft-void*))
-         (define gl:MakeCurrent (WGL fft-int "wglMakeCurrent" fft-void* fft-void*))
-
-         (define gl:SwapBuffers
-            (let ((SwapBuffers (GDI fft-int "SwapBuffers" fft-void*)))
-               (lambda (context)
-                  (SwapBuffers (ref context 1)))))
-
-   ))
-   ; -=( WebGL )=-----------
-   (Emscripten
-      (begin
-         (setq gl4es (dlopen))
-
-         ;; gl4es hack: add "gl4es_" prefix to all opengl functions
-         (define (GL_LIBRARY type name . prototype)
-            (let ((rtti (cons type prototype))
-                  (function (dlsym gl4es (string-append "gl4es_" name))))
-               (if function
-                  (lambda args
-                     (ffi function rtti args)))))
-
-
-         (setq GLX GL_LIBRARY)
-         (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string))
-         
-         ; unsupported
-         (define (gl:CreateContext . args) #false)
-         (define (gl:MakeCurrent . args) #false)
-         (define (gl:SwapBuffers . args) #false)
-   ))
+         (setq GetProcAddress (WGL type-vptr "wglGetProcAddress" type-string)) ))
    ; -=( Android )=-----------
    ; This means that we are trying to use OpenGL on the Android
    ; and at the moment the OpenGL context has already been created and
-   ; activated via gl4es.
+   ; activated via native code and gl4es.
+   ; Additionally support for VR glasses may be enabled
    (Android
       (begin
          (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
 
 			(setq THIS (load-dynamic-library "libmain.so"))
-         (setq GetProcAddress (GL_LIBRARY type-vptr "gl4es_GetProcAddress" type-string))
+         (setq GetProcAddress (GL_LIBRARY type-vptr "gl4es_GetProcAddress" type-string)) ))
 
-         (define (gl:CreateContext . args)
-				(print-to stderr "No CreateContext under Android is required."))
-         (define (gl:MakeCurrent . args)
-				(print-to stderr "No MakeCurrent under Android is required."))
+;;          (define gl:SwapBuffers
+;;             (let ((anlSwapBuffers (THIS fft-int "anlSwapBuffers"))
+;;                   (glFlush (GL_LIBRARY fft-void "glFlush")))
+;;                (lambda (context)
+;;                   (glFlush)
+;;                   (anlSwapBuffers))))
+   ; -=( WebGL )=-----------
+;;    (Emscripten
+;;       (begin
+;;          (setq gl4es (dlopen))
 
-         (define gl:SwapBuffers
-            (let ((anlSwapBuffers (THIS fft-int "anlSwapBuffers"))
-                  (glFlush (GL_LIBRARY fft-void "glFlush")))
-               (lambda (context)
-                  (glFlush)
-                  (anlSwapBuffers))))
-   ))
-   ; -=( macOS )=--------------------------------------
-   (Darwin
-      (begin
-         (define GL_LIBRARY (load-dynamic-library "/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"))
+;;          ;; gl4es hack: add "gl4es_" prefix to all opengl functions
+;;          (define (GL_LIBRARY type name . prototype)
+;;             (let ((rtti (cons type prototype))
+;;                   (function (dlsym gl4es (string-append "gl4es_" name))))
+;;                (if function
+;;                   (lambda args
+;;                      (ffi function rtti args)))))
 
-         (setq THIS (load-dynamic-library #f))
-         (setq NSLookupAndBindSymbol (THIS fft-void* "NSLookupAndBindSymbol"))
 
-         (setq GetProcAddress (lambda (name)
-            (NSLookupAndBindSymbol (string-append "_" name))))
+;;          (setq GLX GL_LIBRARY)
+;;          (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string))
+         
+;;          ; unsupported
+;;          (define (gl:CreateContext . args) #false)
+;;          (define (gl:MakeCurrent . args) #false)
+;;          (define (gl:SwapBuffers . args) #false)
+;;    ))
 
-         (define (gl:CreateContext . args)
-            (runtime-error "CreateContext is not supported, use libSDL instead" #null))
-         (define (gl:MakeCurrent . args)
-            (runtime-error "MakeCurrent is not supported, use libSDL instead" #null))
-         (define (gl:SwapBuffers . args)
-            (runtime-error "SwapBuffers is not supported, use libSDL instead" #null))
-   ))
+;;    ; -=( macOS )=--------------------------------------
+;;    (Darwin
+;;       (begin
+;;          (define GL_LIBRARY (load-dynamic-library "/System/Library/Frameworks/OpenGL.framework/Libraries/libGL.dylib"))
+
+;;          (setq THIS (load-dynamic-library #f))
+;;          (setq NSLookupAndBindSymbol (THIS fft-void* "NSLookupAndBindSymbol"))
+
+;;          (setq GetProcAddress (lambda (name)
+;;             (NSLookupAndBindSymbol (string-append "_" name))))
+
+;;          (define (gl:CreateContext . args)
+;;             (runtime-error "CreateContext is not supported, use libSDL instead" #null))
+;;          (define (gl:MakeCurrent . args)
+;;             (runtime-error "MakeCurrent is not supported, use libSDL instead" #null))
+;;          (define (gl:SwapBuffers . args)
+;;             (runtime-error "SwapBuffers is not supported, use libSDL instead" #null))
+;;    ))
 
    ; -=( Unknown )=--
    ;"HP-UX"
@@ -240,13 +191,6 @@
    (define glGetString (GL type-string "glGetString" fft-unsigned-int))
    (define glHint (GL fft-void "glHint" GLenum GLenum))
    (define glViewport (GL GLvoid "glViewport" GLint GLint GLsizei GLsizei))
-
-   (define (gl:GetProcAddress type name . prototype)
-      (let ((rtti (cons type prototype))
-            (function (GetProcAddress name)))
-         (if function
-            (lambda args
-               (ffi function rtti args)))))
 )
 
 ; ----------------------------------
@@ -274,14 +218,23 @@
       (begin
          (define glXQueryExtensionsString (lambda args #false)))))
 
-; common part
+; public interface
 (begin
+
+   (define (gl:GetProcAddress type name . prototype)
+      (let ((rtti (cons type prototype))
+            (function (GetProcAddress name)))
+         (if function
+            (lambda args
+               (ffi function rtti args)))))
+
    (define (gl:QueryExtension extension)
-      (display (string-append "Checking " extension " support...") stderr) ; debug info
+      (display-to stderr (string-append
+         "Checking " extension " support..."))
       (let ((extensions (c/ / (or ; split by space character
                (cond
                   ; GLX, Linux
-                  ((and (> (size extension) 3) (string-eq? (substring extension 0 4) "GLX_"))
+                  ((and (>= (size extension) 4) (string-eq? (substring extension 0 4) "GLX_"))
                      (glXQueryExtensionsString))
                   ; all others
                   (else
@@ -291,4 +244,5 @@
          (if (member extension extensions)
             (begin (print-to stderr " ok.") #true)
             (begin (print-to stderr " not found.") #false))))
+   #true
 ))
