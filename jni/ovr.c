@@ -122,8 +122,8 @@ int oculusgo_init(struct android_app *app)
 	Display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 	VLOG("Display: %p", Display);
 
-	EGLint		MajorVersion;
-	EGLint		MinorVersion;
+	EGLint MajorVersion;
+	EGLint MinorVersion;
 	eglInitialize(Display, &MajorVersion, &MinorVersion);
 	VLOG("eglInitialize: %d.%d", MajorVersion, MinorVersion);
 
@@ -328,7 +328,7 @@ void oculusgo_swap(void)
 	// 
 }
 
-void oculusgo_handle_intput(void)
+void oculusgo_handle_input(void)
 {
 	// тут заполним кватернион поворота
 	// а так же джойстик

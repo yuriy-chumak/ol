@@ -33,7 +33,7 @@ static void init(struct android_app *app)
 		return;
 	if ((Opengl = opengles_init(app)))
 		return;
-	FLOG("No 3D backend supported!!!");
+	FLOG("No GL backend supported!!!");
 	exit(-1);
 }
 
@@ -43,7 +43,6 @@ static void done(struct android_app *app)
 {
 	if (Oculus) oculusgo_done(app);
 	if (Opengl) opengles_done(app);
-	ILOG("Done.");
 }
 
 extern void oculusgo_swap(void);
@@ -126,7 +125,8 @@ void android_main(struct android_app *app)
 	init(app);
 
 	void (*initialize_gl4es)() = dlsym(dlopen("libgl4es.so", RTLD_LAZY), "initialize_gl4es");
-	initialize_gl4es();
+	if (initialize_gl4es)
+		initialize_gl4es();
 
     (void) main(1, (char *[]){ "ol", NULL });
 	done(app);
