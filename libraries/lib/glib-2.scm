@@ -34,7 +34,7 @@
 (begin
 (define TRUE 1)
 (define FALSE 0)
-(define NULL (vm:make type-vptr 0))
+(define NULL (vm:cast 0 fft-void*))
 
 (define G_APPLICATION_FLAGS_NONE 0)
 
