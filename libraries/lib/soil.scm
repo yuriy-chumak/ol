@@ -7,7 +7,9 @@
       SOIL_load_OGL_texture_from_memory
 
       SOIL_load_OGL_cubemap
+      SOIL_load_OGL_cubemap_from_memory
       SOIL_load_OGL_single_cubemap
+      SOIL_load_OGL_single_cubemap_from_memory
 
       SOIL_load_image
       SOIL_load_image_from_memory
@@ -33,6 +35,8 @@
       SOIL_SAVE_TYPE_DDS
 
       SOIL_save_screenshot
+
+      SOIL_FLAG_MIPMAPS
    )
 (cond-expand
    (Windows
@@ -91,12 +95,26 @@
    
    (define SOIL_load_OGL_texture (libsoil fft-unsigned-int "SOIL_load_OGL_texture" type-string fft-int fft-unsigned-int fft-unsigned-int))
    (define SOIL_load_OGL_texture_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_texture_from_memory" type-bytevector fft-int fft-int fft-unsigned-int fft-unsigned-int))
+
    (define SOIL_load_OGL_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_cubemap"
       type-string type-string type-string type-string type-string type-string
       fft-int fft-unsigned-int fft-unsigned-int))
-   ;SOIL_load_OGL_cubemap_from_memory
+   (define SOIL_load_OGL_cubemap_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_cubemap_from_memory"
+      type-bytevector fft-int ; x positive
+      type-bytevector fft-int ; x negative
+      type-bytevector fft-int ; y positive
+      type-bytevector fft-int ; y negative
+      type-bytevector fft-int ; z positive
+      type-bytevector fft-int ; z negative
+      fft-int fft-unsigned-int fft-unsigned-int))
+
    (define SOIL_load_OGL_single_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_single_cubemap"
       type-string type-string fft-int fft-unsigned-int fft-unsigned-int))
+   (define SOIL_load_OGL_single_cubemap_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_single_cubemap_from_memory"
+      type-bytevector fft-int
+      type-string
+      fft-int fft-unsigned-int fft-unsigned-int))
+
    ;SOIL_load_OGL_single_cubemap_from_memory
    ;SOIL_load_OGL_HDR_texture
 
