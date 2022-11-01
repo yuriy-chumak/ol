@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 (import (lib gl))
-(gl:set-window-title "2. Lines")
+(gl:set-window-title "2. Mouse")
 
 (import (OpenGL version-1-0))
 (import (lib math))
