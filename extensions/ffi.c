@@ -1164,7 +1164,7 @@ int_t from_uint(word arg) {
 	return (car(arg) >> 8) | ((car(cdr(arg)) >> 8) << VBITS);
 }
 
-#if UINTPTR_MAX == 0xffffffff // 32-bit platform math
+#if UINTPTR_MAX == UINT32_MAX // 32-bit platform math
 static
 int64_t from_ulong(word arg) {
 	assert (is_reference(arg));
@@ -1180,7 +1180,7 @@ int64_t from_ulong(word arg) {
 #endif
 
 static
-int64_t from_rational(word arg) {
+int_t from_rational(word arg) {
 	word* pa = (word*)car(arg);
 	word* pb = (word*)cdr(arg);
 
@@ -1216,7 +1216,7 @@ int64_t from_rational(word arg) {
 }
 
 static
-int to_int(word arg) {
+int_t to_int(word arg) {
 	if (is_enum(arg))
 		return enum(arg);
 
@@ -1227,17 +1227,41 @@ int to_int(word arg) {
 		return (int)-from_uint(arg);
 	case TRATIONAL:
 		return (int) from_rational(arg);
-	case TCOMPLEX:
-		return to_int(car(arg)); // return real part of value
-	case TINEXACT:
+	case TCOMPLEX: // use Re part
+		return to_int(car(arg));
+	case TINEXACT: // truncate, not round
 		return (int) *(inexact_t*)&car(arg);
 	default:
-		E("can't get int from %d", reference_type(arg));
+		E("can't cast type %d to (u)int", reference_type(arg));
 	}
 
 	return 0;
 }
 
+#if UINT32_MAX == UINTPTR_MAX // 32-bit machines
+static
+int64_t to_int64(word arg) {
+	if (is_enum(arg))
+		return enum(arg);
+
+	switch (reference_type(arg)) {
+	case TINTP:
+		return +from_ulong(arg);
+	case TINTN:
+		return -from_ulong(arg);
+	case TRATIONAL:
+		return (int64_t) from_rational(arg);
+	case TCOMPLEX: // use Re part
+		return to_int64(car(arg));
+	case TINEXACT: // truncate, not round
+		return (int64_t) *(inexact_t*)&car(arg);
+	default:
+		E("can't cast type %d to (u)int64", reference_type(arg));
+	}
+
+	return 0;
+}
+#endif
 /*
 static
 long to_long(word arg) {
@@ -1351,6 +1375,31 @@ char* not_a_string(char* ptr, word string)
 // ffi helper "Identity" function
 PUBLIC __attribute__((used)) word OLVM_idf(word x) {
 	return x;
+}
+
+////////////////////////
+// todo: return two words, one for integers, one for floats
+size_t structure_size(word t)
+{
+	size_t size = 0;
+	// http://www.catb.org/esr/structure-packing/
+	for (word p = car(t); p != INULL; p = cdr(p)) {
+		word subtype = car(p);
+
+		assert (is_value(subtype));
+		word stv = value(subtype);
+		// внутриструктурное выравнивание (по умолчанию)
+		size_t subsize = // todo: speedup use table
+			( stv == TINT8  || stv == TUINT8  ) ? sizeof(int8_t) :
+			( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
+			( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
+			( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
+			( stv == TFLOAT                   ) ? sizeof(float) : // todo: increase df size
+			( stv == TDOUBLE                  ) ? sizeof(double) : // todo: increase df size
+		0;
+		size = ((size + subsize - 1) & -subsize) + subsize;
+	}
+	return size;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1507,24 +1556,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					break;
 				case TPAIR: // structures
 					if (reference_type(arg) == TPAIR) {
-						size_t size = 0;
-						// http://www.catb.org/esr/structure-packing/
-						for (word p = car(t); p != INULL; p = cdr(p)) {
-							word subtype = car(p);
+						size_t size = structure_size((word)t);
 
-							assert (is_value(subtype));
-							word stv = value(subtype);
-							// внутриструктурное выравнивание (по умолчанию)
-							size_t subsize = // todo: speedup use table
-								( stv == TINT8  || stv == TUINT8  ) ? sizeof(int8_t) :
-								( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
-								( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
-								( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
-								( stv == TFLOAT                   ) ? sizeof(float) : // todo: increase df size
-								( stv == TDOUBLE                  ) ? sizeof(double) : // todo: increase df size
-							0;
-							size = ((size + subsize - 1) & -subsize) + subsize;
-						}
 						// TODO: сюда тоже добавить кеширование
 						if (size > 16)
 							l += WALIGN(size);
@@ -1662,55 +1695,22 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TINT8:  case TUINT8:
 		case TINT16: case TUINT16:
 		case TINT32: case TUINT32:
-#if UINT64_MAX == UINTPTR_MAX // 64-bit machines
+#if UINTPTR_MAX == UINT64_MAX  // 64-bit machines
 		case TINT64: case TUINT64:
 #endif
 		tint:
-			if (is_enum(arg))
-				args[i] = enum(arg);
-			else
-			switch (reference_type(arg)) {
-			case TINTP:
-				args[i] = +from_uint(arg);
-				break;
-			case TINTN:
-				args[i] = -from_uint(arg);
-				break;
-			case TRATIONAL:
-				*(int64_t*)&args[i] = from_rational(arg); //?
-#if UINT64_MAX > UINTPTR_MAX // sizeof(long long) > sizeof(word)
-				i++;
-#endif
-				break;
-// todo: cast TFLOAT and TDOUBLE
-			default:
-				E("can't cast %d to (u)int", type);
-			}
+			args[i] = to_int(arg);
 			break;
 
 #if UINT64_MAX > UINTPTR_MAX // 32-bit machines
 		// 32-bits: long long values fills two words
 		case TINT64: case TUINT64: {
+		tint64:
 			#if __mips__ // 32-bit mips,
 				i = (i+1)&-2; // dword align
 			#endif
 
-			if (is_enum(arg))
-				*(int64_t*)&args[i++] = enum(arg);
-			else
-			switch (reference_type(arg)) {
-			case TINTP: // source type
-				*(int64_t*)&args[i++] = +from_ulong(arg);
-				break;
-			case TINTN:
-				*(int64_t*)&args[i++] = -from_ulong(arg);
-				break;
-			case TRATIONAL:
-				*(int64_t*)&args[i++] = from_rational(arg);
-				break;
-			default:
-				E("can't cast %d to (u)int64", type); i++;
-			}
+			*(int64_t*)&args[i++] = to_int64(arg);
 			break;
 		}
 #endif
@@ -1838,6 +1838,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						*p++ = OL2F(car(l)), l = cdr(l);
 					break;
 				}
+				// Deprecated.
 				case TVECTOR: // let's support not only lists as float*
 				case TVECTORLEAF: { // todo: bytevector?
 					int c = reference_size(arg);
@@ -1898,7 +1899,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		// поинтер на данные
 		case TUNKNOWN:
-			args[i] = arg;
+			args[i] = &car(arg);
 			break;
 
 		// automatically change the type to argument type, if fft-any
@@ -1976,7 +1977,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						case TVPTR:
 							*p++ = (void*)car(l);
 							break;
-						case TSTRING:
+						case TSTRING: // TODO: Deprecated.
 						case TSTRINGWIDE:
 						case TSTRINGDISPATCH: {
 							char* ptr = (char*)(*p++ = &fp[1]);
@@ -2193,7 +2194,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TSTRINGWIDE:
 		tstringwide:
 			switch (reference_type(arg)) {
-			case TBYTEVECTOR:
+			case TBYTEVECTOR: // Deprecated(?)
 			case TSTRING: {
 				int len = rawstream_size(arg);
 				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
@@ -2232,27 +2233,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				E("invalid parameter values (requested callable)");
 			break;
 		}
-/*
-		case TTUPLE:
-			switch (reference_type(arg)) {
-			case TTUPLE: { // ?
-				// аллоцировать массив и сложить в него указатели на элементы кортежа
-				int size = hdrsize(*(word*)arg);
-				*fp++ = make_raw_header(TBYTEVECTOR, size, 0);
-				args[i] = (word)fp; // ссылка на массив указателей на элементы
 
-				word* src = &car(arg);
-				while (--size)
-					*fp++ = (word)((word*)*src++ + 1);
-				}
-				break;
-			default:
-				args[i] = INULL; // todo: error
-			}
-			break;*/
-//		case TRAWVALUE:
-//			args[i] = (word)arg;
-//			break;
 		case TPORT: {
 			if (arg == make_enum(-1)) { // ?
 				args[i] = -1;
@@ -2375,7 +2356,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	C = OLVM_unpin(this, pC);
 
 	// флажок, что среди параметрво есть те, что надо заполнить
-	if (has_wb) {
+	if (has_wb) { // todo: rename
 		// пробежимся по аргументам, может какие надо будет вернуть взад
 		p = (word*)C;   // аргументы
 		t = (word*)cdr(B); // rtti
@@ -2561,7 +2542,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #endif
 								default:
 									(void) value;
-									assert (0 && "Invalid return variables.");
+									assert (0 && "Invalid return variables."); // todo: log debug error
 									break;
 							}
 							l = cdr(l);
