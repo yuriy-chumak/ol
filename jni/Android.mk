@@ -25,7 +25,7 @@ LOCAL_CFLAGS   += $(OL_CFLAGS) -DHAS_DLOPEN=1 -DHAS_SOCKETS=1 -DREPL=repl
 LOCAL_SRC_FILES := ../src/olvm.c
 LOCAL_SRC_FILES += ../tmp/repl.c
 LOCAL_SRC_FILES += ../extensions/ffi.c
-LOCAL_SRC_FILES += ../tests/ffi.c # only for tests/ffi.scm
+#LOCAL_SRC_FILES += ../tests/ffi.c # only for tests/ffi.scm
 
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
@@ -64,46 +64,65 @@ LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"libolvm.so"' \
                   -Wno-unsequenced -Wno-parentheses
 LOCAL_CFLAGS   += -DOLVM_NOMAIN
 # src
-LOCAL_SRC_FILES := ../src/olvm.c #../tmp/repl.c
+LOCAL_SRC_FILES:= ../src/olvm.c
 
 # extensions
 LOCAL_CFLAGS   += -DHAS_DLOPEN=1
-LOCAL_SRC_FILES += ../extensions/ffi.c
+LOCAL_SRC_FILES+= ../extensions/ffi.c
 
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 LOCAL_LDLIBS   += -llog -landroid
 
 include $(BUILD_SHARED_LIBRARY)
 
-# -- gl4es -----------------------------------------------------------------------
-ifneq ("$(wildcard $(LOCAL_PATH)/gl4es/src)","")
+# -- gl2es -----------------------------------------------------------------------
+ifneq ("$(wildcard $(LOCAL_PATH)/gl2es/src)","")
 include $(CLEAR_VARS)
-LOCAL_MODULE := gl4es
+LOCAL_MODULE := gl2es
 
-GL_SRC_FILES := $(wildcard $(LOCAL_PATH)/gl4es/src/gl/*.c)\
-                $(wildcard $(LOCAL_PATH)/gl4es/src/gl/math/*.c)\
-                $(wildcard $(LOCAL_PATH)/gl4es/src/gl/wrap/*.c)\
-                $(wildcard $(LOCAL_PATH)/gl4es/src/glx/*.c)
+GL2ES_SRC_FILES := $(wildcard $(LOCAL_PATH)/gl2es/src/*.c)
 
-LOCAL_SRC_FILES  := $(GL_SRC_FILES:$(LOCAL_PATH)/%=%)
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/gl4es/include
+LOCAL_SRC_FILES  := $(GL2ES_SRC_FILES:$(LOCAL_PATH)/%=%)
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/gl2es/include
 
 LOCAL_CFLAGS   += -g -std=gnu99 -funwind-tables -O3 -fvisibility=hidden
-LOCAL_CFLAGS   += -DNOX11 -DNO_GBM -DDEFAULT_ES=2 -DNOEGL
-LOCAL_CFLAGS   += -DNO_INIT_CONSTRUCTOR -DUSE_ANDROID_LOG
-#LOCAL_CFLAGS   += -DGL4ES_COMPILE_FOR_USE_IN_SHARED_LIB
-LOCAL_CFLAGS   += -include android_debug.h
-#LOCAL_CFLAGS   += -DDEBUG
 
+LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 LOCAL_LDLIBS   += -ldl -llog -landroid
-LOCAL_LDLIBS   += -lGLESv2
-
-# prepatch example
-#$(LOCAL_PATH)/gl4es/patched: $(LOCAL_PATH)/gl4es.patch
-#	echo 1 >$(LOCAL_PATH)/gl4es/patched
+LOCAL_LDLIBS   += -lGLESv2 -lEGL
 
 include $(BUILD_SHARED_LIBRARY)
 endif
+
+# # -- gl4es -----------------------------------------------------------------------
+# ifneq ("$(wildcard $(LOCAL_PATH)/gl4es/src)","")
+# include $(CLEAR_VARS)
+# LOCAL_MODULE := gl4es
+
+# GL_SRC_FILES := $(wildcard $(LOCAL_PATH)/gl4es/src/gl/*.c)\
+#                 $(wildcard $(LOCAL_PATH)/gl4es/src/gl/math/*.c)\
+#                 $(wildcard $(LOCAL_PATH)/gl4es/src/gl/wrap/*.c)\
+#                 $(wildcard $(LOCAL_PATH)/gl4es/src/glx/*.c)
+
+# LOCAL_SRC_FILES  := $(GL_SRC_FILES:$(LOCAL_PATH)/%=%)
+# LOCAL_C_INCLUDES := $(LOCAL_PATH)/gl4es/include
+
+# LOCAL_CFLAGS   += -g -std=gnu99 -funwind-tables -O3 -fvisibility=hidden
+# LOCAL_CFLAGS   += -DNOX11 -DNO_GBM -DDEFAULT_ES=2 -DNOEGL
+# LOCAL_CFLAGS   += -DNO_INIT_CONSTRUCTOR -DUSE_ANDROID_LOG
+# #LOCAL_CFLAGS   += -DGL4ES_COMPILE_FOR_USE_IN_SHARED_LIB
+# LOCAL_CFLAGS   += -include android_debug.h
+# #LOCAL_CFLAGS   += -DDEBUG
+
+# LOCAL_LDLIBS   += -ldl -llog -landroid
+# LOCAL_LDLIBS   += -lGLESv2
+
+# # prepatch example
+# #$(LOCAL_PATH)/gl4es/patched: $(LOCAL_PATH)/gl4es.patch
+# #	echo 1 >$(LOCAL_PATH)/gl4es/patched
+
+# include $(BUILD_SHARED_LIBRARY)
+# endif
 
 # -- GLU -------------------------------------------------------------------------
 ifneq ("$(wildcard $(LOCAL_PATH)/GLU/src)","")
@@ -111,7 +130,6 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := GLU
 
 LOCAL_CFLAGS += -fsigned-char -DLIBRARYBUILD
-
 LOCAL_CONLYFLAGS += -std=c99
 
 LOCAL_C_INCLUDES := \
@@ -212,7 +230,7 @@ LOCAL_SRC_FILES := \
 	GLU/src/libnurbs/nurbtess/sampledLine.cc			\
 	GLU/src/libnurbs/nurbtess/searchTree.cc
 
-LOCAL_SHARED_LIBRARIES := gl4es
+LOCAL_SHARED_LIBRARIES := gl2es
 #LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 LOCAL_LDLIBS := -ldl -llog
 
@@ -225,13 +243,13 @@ include $(CLEAR_VARS)
 LOCAL_MODULE   := SOIL
 
 SOIL_SRC_FILES := $(wildcard $(LOCAL_PATH)/SOIL/src/*.c)
-LOCAL_SRC_FILES := $(SOIL_SRC_FILES:$(LOCAL_PATH)/%=%)
+LOCAL_SRC_FILES:= $(SOIL_SRC_FILES:$(LOCAL_PATH)/%=%)
 
 LOCAL_CFLAGS   += -I$(LOCAL_PATH)/SOIL/include -D__ANDROID__
-LOCAL_CFLAGS   += -I$(LOCAL_PATH)/gl4es/include
-LOCAL_LDLIBS   := -llog
+#LOCAL_CFLAGS   += -I$(LOCAL_PATH)/gl4es/include
+LOCAL_LDLIBS   := -llog -lEGL
 
-LOCAL_SHARED_LIBRARIES += gl4es
+LOCAL_SHARED_LIBRARIES += gl2es
 include $(BUILD_SHARED_LIBRARY)
 endif
 
