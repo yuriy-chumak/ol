@@ -8,3 +8,8 @@ obj/
 libs/
 #======
 includes/ol/vm.h
+# jni submodules
+jni/gl2es/
+jni/gl4es/
+jni/GLU/
+jni/SOIL/
