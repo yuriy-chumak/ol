@@ -17,6 +17,8 @@
 #include <GLES2/gl2ext.h>
 #include <GLES3/gl3ext.h>
 
+#include <dlfcn.h>
+
 static const char * EglErrorString(const EGLint error)
 {
 	switch (error)
@@ -75,10 +77,27 @@ PFNGLFRAMEBUFFERTEXTUREMULTISAMPLEMULTIVIEWOVRPROC glFramebufferTextureMultisamp
 #define GL_CLAMP_TO_BORDER			0x812D
 #define GL_TEXTURE_BORDER_COLOR		0x1004
 
+// PFNGLHINT glHint;
+
+// -=( gl2es )=------------------------------
+#define GL_MATRIX_MODE 0x0BA0
+
+#define VR_PROJECTION  0x11701
+#define VR_MODELVIEW   0x11700
+
+typedef void (PFNGLMATRIXMODE) (GLenum mode);
+typedef void (PFNGLGETINTEGERV)(GLenum pname, GLint *params);
+typedef void (PFNGLLOADMATRIXF)(const GLfloat *m);
+
+PFNGLMATRIXMODE *vrMatrixMode;
+PFNGLGETINTEGERV *vrGetIntegerv;
+PFNGLLOADMATRIXF *vrLoadMatrixf;
+// -----------------------------------
+
 // настройки
 static const int CPU_LEVEL			= 2;
 static const int GPU_LEVEL			= 3;
-static const int NUM_MULTI_SAMPLES	= 4;
+static const int NUM_MULTI_SAMPLES	= 0;
 
 // фреймбуферы для левого и правого глаз
 typedef struct {
@@ -101,8 +120,6 @@ double DisplayTime = 0.0;
 /****************************************************************************************/
 int oculusgo_init(struct android_app *app)
 {
-	ILOG("oculusgo_init");
-
 	// Initialize Java
 	Java.Vm = app->activity->vm;
 	(*Java.Vm)->AttachCurrentThread(Java.Vm, &Java.Env, NULL);
@@ -274,6 +291,8 @@ int oculusgo_init(struct android_app *app)
 	ovrLayerLoadingIcon2 iconLayer = vrapi_DefaultLayerLoadingIcon2();
 	iconLayer.Header.Flags |= VRAPI_FRAME_LAYER_FLAG_INHIBIT_SRGB_FRAMEBUFFER;
 
+	double predictedDisplayTime = vrapi_GetPredictedDisplayTime(Ovr, 0);
+
 	{
 		const ovrLayerHeader2 * layers[] = {
 			&blackLayer.Header,
@@ -284,7 +303,7 @@ int oculusgo_init(struct android_app *app)
 		frameDesc.Flags = frameFlags;
 		frameDesc.SwapInterval = 1;
 		frameDesc.FrameIndex = FrameIndex;
-		frameDesc.DisplayTime = 0;
+		frameDesc.DisplayTime = predictedDisplayTime;
 		frameDesc.LayerCount = 2;
 		frameDesc.Layers = layers;
 
@@ -292,10 +311,11 @@ int oculusgo_init(struct android_app *app)
 	}
 #endif
 
-	// begin();
-	// update(0); flush();
-	// update(1); flush();
-	// end();
+	// загрузим наш OpenGL 2.1 -> GLES слой
+	void* gl2es = dlopen("libgl2es.so", RTLD_LAZY);
+	vrMatrixMode = dlsym(gl2es, "glMatrixMode");
+	vrGetIntegerv = dlsym(gl2es, "glGetIntegerv");
+	vrLoadMatrixf = dlsym(gl2es, "glLoadMatrixf");
 
 	return 1;
 }
@@ -336,37 +356,34 @@ void oculusgo_handle_input(void)
 
 // заведем пару новых функций оберток для тестового рендерера
 ovrLayerProjection2 worldLayer;
-ovrTracking2 tracking;
 ovrMatrix4f eyeViewMatrixTransposed[2];
 ovrMatrix4f projectionMatrixTransposed[2];
 
 void begin()
 {
+	worldLayer = vrapi_DefaultLayerProjection2();
+	worldLayer.Header.Flags |= VRAPI_FRAME_LAYER_FLAG_CHROMATIC_ABERRATION_CORRECTION;
+
 	// замапим нужные нам буфера для рисования (используем из примера)
 	double predictedDisplayTime = vrapi_GetPredictedDisplayTime(Ovr, ++FrameIndex);
-	tracking = vrapi_GetPredictedTracking2(Ovr, predictedDisplayTime);
+	ovrTracking2 tracking = vrapi_GetPredictedTracking2(Ovr, predictedDisplayTime);
 
 	DisplayTime = predictedDisplayTime;
 
-	// типа две матрицы трансформации, но они нам нахер не нужны, если что..
-	// потому что у нас уже будет своя матрица! нам только нужен кватернион поворота и мы будем нашу матрицу
-	// на этот кватернион двигать (но пока-что попользуем эту)
-	// так что выкатим эти две матрицы наверх через api (todo)
+	// типа две матрицы трансформации
 	eyeViewMatrixTransposed[0] = ovrMatrix4f_Transpose(&tracking.Eye[0].ViewMatrix);
 	eyeViewMatrixTransposed[1] = ovrMatrix4f_Transpose(&tracking.Eye[1].ViewMatrix);
 
 	projectionMatrixTransposed[0] = ovrMatrix4f_Transpose(&tracking.Eye[0].ProjectionMatrix);
 	projectionMatrixTransposed[1] = ovrMatrix4f_Transpose(&tracking.Eye[1].ProjectionMatrix);
 
-	worldLayer = vrapi_DefaultLayerProjection2();
-	worldLayer.HeadPose = tracking.HeadPose; // ???
+	worldLayer.HeadPose = tracking.HeadPose;
 	for (int eye = 0; eye < 2; eye++) {
 		ovrFramebuffer * frameBuffer = &FrameBuffer[eye];
 		worldLayer.Textures[eye].ColorSwapChain = frameBuffer->ColorTextureSwapChain;
 		worldLayer.Textures[eye].SwapChainIndex = frameBuffer->TextureSwapChainIndex;
 		worldLayer.Textures[eye].TexCoordsFromTanAngles = ovrMatrix4f_TanAngleMatrixFromProjection(&tracking.Eye[eye].ProjectionMatrix);
 	}
-	worldLayer.Header.Flags |= VRAPI_FRAME_LAYER_FLAG_CHROMATIC_ABERRATION_CORRECTION;
 }
 
 void update(int eye)
@@ -374,52 +391,53 @@ void update(int eye)
 	ovrFramebuffer * frameBuffer = &FrameBuffer[eye];
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer->FrameBuffers[frameBuffer->TextureSwapChainIndex]); // _SetCurrent
 
-	GLint Program;
-	glGetIntegerv(GL_CURRENT_PROGRAM, &Program);
-
 	glViewport(0, 0, frameBuffer->Width, frameBuffer->Height);
-	glScissor (0, 0, frameBuffer->Width, frameBuffer->Height);
+	glScissor (0, 0, frameBuffer->Width, frameBuffer->Height); // remove?
 
-	// TODO: glUniform... matrix, not an eye index
-	GLint ProjectionMatrix = glGetUniformLocation(Program, "ProjectionMatrix");
-	GLint ViewMatrix = glGetUniformLocation(Program, "ViewMatrix");
+	// ---------------------------------------
+	// Загрузим наши матрицы в движок
+	GLint matrixmode;
+	vrGetIntegerv(GL_MATRIX_MODE, &matrixmode);
 
-	glUniformMatrix4fv(ViewMatrix, 1, GL_FALSE, (float*)&eyeViewMatrixTransposed[eye]);
-	glUniformMatrix4fv(ProjectionMatrix, 1, GL_FALSE, (float*)&projectionMatrixTransposed[eye]);
+	vrMatrixMode(VR_PROJECTION);
+	vrLoadMatrixf((float*)&projectionMatrixTransposed[eye]);
+	vrMatrixMode(VR_MODELVIEW);
+	vrLoadMatrixf((float*)&eyeViewMatrixTransposed[eye]);
+
+	vrMatrixMode(matrixmode);
 }
-// TODO: new function to obtain (right)eye direction
 
 void flush()
 {
 	GLenum depthAttachment[1] = { GL_DEPTH_ATTACHMENT }; // _Resolve
-	glInvalidateFramebuffer(GL_DRAW_FRAMEBUFFER, 1, depthAttachment); // TODO: проверить а нужно ли
-	glFlush(); // TODO: проверить а нужно ли
+	glInvalidateFramebuffer(GL_DRAW_FRAMEBUFFER, 1, depthAttachment);
+
+	glFlush(); // TODO: проверить а нужно ли?
 }
 
 void end()
 {
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // _SetNone
+
 	for (int eye = 0; eye < 2; eye++) {
 		ovrFramebuffer * frameBuffer = &FrameBuffer[eye];
 		frameBuffer->TextureSwapChainIndex = (frameBuffer->TextureSwapChainIndex + 1) % frameBuffer->TextureSwapChainLength; // _Advance
 	}
 
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // _SetNone
-	{
-		const ovrLayerHeader2 * layers[] = {
-			&worldLayer.Header
-		};
+	const ovrLayerHeader2 * layers[] = {
+		&worldLayer.Header
+	};
 
-		ovrSubmitFrameDescription2 frameDesc = { 0 };
-		frameDesc.Flags = 0;
-		frameDesc.SwapInterval = 1;
-		frameDesc.FrameIndex = FrameIndex;
-		frameDesc.DisplayTime = DisplayTime;
-		frameDesc.LayerCount = 1;
-		frameDesc.Layers = layers;
+	ovrSubmitFrameDescription2 frameDesc = { 0 };
+	frameDesc.Flags = 0;
+	frameDesc.SwapInterval = 1;
+	frameDesc.FrameIndex = FrameIndex;
+	frameDesc.DisplayTime = DisplayTime;
+	frameDesc.LayerCount = 1;
+	frameDesc.Layers = layers;
 
-		// Hand over the eye images to the time warp.
-		vrapi_SubmitFrame2(Ovr, &frameDesc);
-	}
+	// Hand over the eye images to the time warp.
+	vrapi_SubmitFrame2(Ovr, &frameDesc);
 
 }
 

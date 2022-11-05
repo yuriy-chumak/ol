@@ -4,6 +4,6 @@ checkout() {
     [ ! -d "$1/src" ] && git clone https://github.com/yuriy-chumak/$1 $1
 }
 
-checkout gl4es
+checkout gl2es
 checkout GLU
 checkout SOIL

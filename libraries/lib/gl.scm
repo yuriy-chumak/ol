@@ -48,8 +48,14 @@
       (ref STATE 3))
    (define (gl:get-window-height)
       (ref STATE 4))
+
+   (define GL_VR_HINT #x12001)
+   (define GL_VIEWPORT #x0BA2)
 )
 
+(begin
+   (setq glGetIntegerv (GL_LIBRARY fft-void "glGetIntegerv" fft-int (fft& fft-int)))
+)
 ; -=( native functions )=-------------------------------------
 (cond-expand
    (Android (include "lib/gl/Android.scm"))
@@ -175,14 +181,31 @@
                      (define (draw)
                         (case-apply renderer
                            (list 0)
-                           (list 1 mouse)))
+                           (list 1 mouse)
+                           (list 2 mouse { ; TBD.
+                              'option1 #true
+                              'option2 #false
+                           })))
 
                      (if (this 'vr-mode) ;; VR mode
                      then
+                        (define viewport '(0 0 0 0))
+
+                        (glHint GL_VR_HINT 1)
                         ((this 'vr-begin))
-                        ((this 'vr-update) 0) (draw) ((this 'vr-flush)) ; left eye
-                        ((this 'vr-update) 1) (draw) ((this 'vr-flush)) ; right eye
+                        (for-each (lambda (eye)
+                              ((this 'vr-update) eye)
+                              (glGetIntegerv GL_VIEWPORT viewport)
+                              ; todo: use vector (update ffi.c)
+                              (set-ref! gl:window-dimensions 1 (list-ref viewport 0))
+                              (set-ref! gl:window-dimensions 2 (list-ref viewport 1))
+                              (set-ref! gl:window-dimensions 3 (list-ref viewport 2))
+                              (set-ref! gl:window-dimensions 4 (list-ref viewport 3))
+
+                              (draw) ((this 'vr-flush)))
+                           '(0 1)) ; left eye, right eye
                         ((this 'vr-end))
+                        (glHint GL_VR_HINT 0)
                      else
                         (draw) ;; regular mode
                         (native:swap-buffers (this 'context []))))

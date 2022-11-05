@@ -1,5 +1,6 @@
-(setq gl4es (load-dynamic-library "libgl4es.so"))
-(setq glGetIntegerv (gl4es fft-void "glGetIntegerv" fft-int (fft& fft-int)))
+;; (setq gl4es (load-dynamic-library "libgl4es.so"))
+;; (setq gl2es (load-dynamic-library "libgl2es.so"))
+;; (setq GLESv2 (load-dynamic-library "libGLESv2.so"))
 
 (setq THIS (load-dynamic-library "libmain.so")) ; android shared code (todo: move to gl4es)
 (setq anlProcessEvents (THIS fft-void "anlProcessEvents"))
@@ -16,6 +17,10 @@
    (set-ref! gl:window-dimensions 3 (list-ref viewport 2))
    (set-ref! gl:window-dimensions 4 (list-ref viewport 3))
 
+   (define vr '(0))
+   (define GL_VR  #x10C33)
+   (glGetIntegerv GL_VR vr)
+
    ;; ;; (eglQuerySurface display surface #x3057 width) ;EGL_WIDTH
    ;; ;; (eglQuerySurface display surface #x3056 height) ;EGL_HEIGHT
 
@@ -23,6 +28,21 @@
    (print-to stdin "OpenGL version: " (glGetString GL_VERSION))
    (print-to stdin "OpenGL vendor: " (glGetString GL_VENDOR))
    (print-to stdin "OpenGL renderer: " (glGetString GL_RENDERER))
+   (print-to stdin "OpenGL VR: " (eq? (car vr) 1))
+
+   ; switch to vr mode
+   (when (eq? (car vr) 1)
+      (define vr-begin (THIS fft-void "begin"))
+      (define vr-update (THIS fft-void "update" fft-int))
+      (define vr-flush (THIS fft-void "flush"))
+      (define vr-end (THIS fft-void "end"))
+
+      (mail 'opengl ['set 'vr-begin vr-begin])
+      (mail 'opengl ['set 'vr-update vr-update])
+      (mail 'opengl ['set 'vr-flush vr-flush])
+      (mail 'opengl ['set 'vr-end vr-end])
+
+      (mail 'opengl ['set 'vr-mode #true]))
 
    #true)
 

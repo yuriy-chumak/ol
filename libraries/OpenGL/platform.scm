@@ -63,28 +63,26 @@
    ; -=( Windows )=--------------------------------------
    (Windows
       (begin
-         (define GL_LIBRARY (load-dynamic-library "opengl32.dll"))
+         (define GL_LIBRARY
+            (load-dynamic-library "opengl32.dll"))
 
          (setq WGL GL_LIBRARY)
          (setq GetProcAddress (WGL type-vptr "wglGetProcAddress" type-string)) ))
    ; -=( Android )=-----------
-   ; This means that we are trying to use OpenGL on the Android
-   ; and at the moment the OpenGL context has already been created and
-   ; activated via native code and gl4es.
-   ; Additionally support for VR glasses may be enabled
    (Android
       (begin
-         (define GL_LIBRARY (load-dynamic-library "libgl4es.so"))
+         (define GL_LIBRARY
+            (load-dynamic-library "libgl2es.so"))
 
-			(setq THIS (load-dynamic-library "libmain.so"))
-         (setq GetProcAddress (GL_LIBRARY type-vptr "gl4es_GetProcAddress" type-string)) ))
+         (setq GL2 GL_LIBRARY)
+         (setq GetProcAddress (GL2 type-vptr "gl2GetProcAddress" type-string)) ))
 
-;;          (define gl:SwapBuffers
-;;             (let ((anlSwapBuffers (THIS fft-int "anlSwapBuffers"))
-;;                   (glFlush (GL_LIBRARY fft-void "glFlush")))
-;;                (lambda (context)
-;;                   (glFlush)
-;;                   (anlSwapBuffers))))
+         ;; (setq GL2 (dlopen "libgl2es.so"))
+         ;; (print "GL2: " GL2)
+         ;; (print "GetProcAddress: " GetProcAddress)
+         ;; ;; ))
+         ;; (define (GetProcAddress name)
+         ;;    (dlsym GL2 (string-append name))) ))
    ; -=( WebGL )=-----------
 ;;    (Emscripten
 ;;       (begin
@@ -229,8 +227,8 @@
                (ffi function rtti args)))))
 
    (define (gl:QueryExtension extension)
-      (display-to stderr (string-append
-         "Checking " extension " support..."))
+      ;; (display-to stderr (string-append
+      ;;    "Checking " extension " support..."))
       (let ((extensions (c/ / (or ; split by space character
                (cond
                   ; GLX, Linux
@@ -242,7 +240,7 @@
                ; if no extensions - use empty string:
                ""))))
          (if (member extension extensions)
-            (begin (print-to stderr " ok.") #true)
-            (begin (print-to stderr " not found.") #false))))
+            (begin (print-to stderr "Checking " extension " support... ok.") #true)
+            (begin (print-to stderr "Checking " extension " support... not found.") #false))))
    #true
 ))

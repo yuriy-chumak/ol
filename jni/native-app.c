@@ -22,7 +22,6 @@ void anlBindFramebuffer(GLenum target, GLuint framebuffer);
 // portable api
 int Oculus = 0; // Running under Oculus Go
 int Opengl = 0;
-extern void initialize_gl4es(); // gl4es
 
 extern int oculusgo_init(struct android_app *app);
 extern int opengles_init(struct android_app *app);
@@ -55,8 +54,8 @@ static void swap(void)
 
 static void handle_input(void)
 {
-	if (Oculus) 0;
-	if (Opengl) 0;
+	if (Oculus) (void)0;
+	if (Opengl) (void)0;
 }
 
 // todo: или glFlush, может?
@@ -124,9 +123,15 @@ void android_main(struct android_app *app)
 
 	init(app);
 
-	void (*initialize_gl4es)() = dlsym(dlopen("libgl4es.so", RTLD_LAZY), "initialize_gl4es");
-	if (initialize_gl4es)
-		initialize_gl4es();
+	// пока что не можем привязать к gl2es через линковку, так как
+	// не все нужные функции для ovr экспозятся.  TODO: исправить!
+	void* gl2es = dlopen("libgl2es.so", RTLD_LAZY);
+	void (*initialize_gl2es)() = dlsym(gl2es, "initialize_gl2es");
+	if (initialize_gl2es)
+		initialize_gl2es();
+	void (*glHint)(GLenum pname, GLenum mode) = dlsym(gl2es, "glHint");
+	if (glHint)   // GL_VR, сообщаем о поддержке VR
+		glHint(0x10C33, Oculus ? GL_TRUE : GL_FALSE);
 
     (void) main(1, (char *[]){ "ol", NULL });
 	done(app);
@@ -140,7 +145,6 @@ void android_main(struct android_app *app)
 void anlSwapBuffers(void)
 {
 	swap();
-	//eglSwapBuffers(Display, Surface);
 }
 
 void anlProcessEvents(void)
@@ -266,9 +270,10 @@ int assets_open(const char *filename, int flags, int mode, void *userdata)
 	char *filename1 = (char*)filename;
 
 	int file = open(filename1, flags, mode);
-	DLOG("open file.1: %s -> %d(%s)", filename1, file, file != -1 ? "Ok" : strerror(errno));
-	if (file != -1)
+	if (file != -1) {
+		DLOG("open file.2: %s -> %d(Ok)", filename1, file);
 		return file;
+	}
 
 	// no file, try to open $OL_HOME/file
 	char *home = getenv("OL_HOME");
