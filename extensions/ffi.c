@@ -2155,6 +2155,9 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			// todo: add check to not copy the zero-ended string
 			// note: no heap size checking required (done before)
 			int stype = reference_type(arg);
+			if (stype == TSYMBOL) {
+				arg = car(arg); goto tstring;
+			}
 			char* ptr = (char*)(args[i] = (int_t) &fp[1]);
 			new_bytevector(string2ol(ptr, arg,
 				stype == TSTRING ? chars2ol :
@@ -2221,6 +2224,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				args[i] = (word) unicode;
 				break;
 			}
+			case TSYMBOL:
+				arg = car(arg);
+				goto tstringwide;
+
 			default:
 				E("invalid parameter values (requested string)");
 			}
