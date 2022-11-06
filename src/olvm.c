@@ -3639,14 +3639,14 @@ loop:;
 				if (file == -1)
 					break;
 
+				struct stat sb; // do not open directories
+				if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
+					close(file);
+					break;
+				}
+
 				// regular file? (id less than VMAX, then we return port as value)
 				if ((unsigned long)file <= VMAX) {
-					struct stat sb; // do not open directories
-					if (fstat(file, &sb) < 0 || S_ISDIR(sb.st_mode)) {
-						close(file);
-						break;
-					}
-
                     if (!blocking)
 					    set_blocking(file, 0); // and set "non-blocking" mode
 					r = (R) make_port(file);
