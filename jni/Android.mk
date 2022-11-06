@@ -31,27 +31,6 @@ LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
 include $(BUILD_EXECUTABLE)
 
-# -- libMAIN -----------------------------------------------------------------
-# native app
-include $(CLEAR_VARS)
-LOCAL_MODULE   := main
-LOCAL_SHARED_LIBRARIES := olvm vrapi # TODO: move "vrapi" under define
-
-# configure
-LOCAL_CFLAGS   += $(OL_CFLAGS)
-# src
-LOCAL_CFLAGS   += -I$(NDK_ROOT) -DREPL=repl -I$(LOCAL_PATH)/vrApi/include
-LOCAL_SRC_FILES += native-app.c ../tmp/repl.c
-LOCAL_SRC_FILES += ovr.c # Oculus Go
-LOCAL_SRC_FILES += egl.c # OpenGL ES
-LOCAL_LDLIBS   += -llog -landroid
-
-#opengl
-LOCAL_LDLIBS   += -lEGL -lGLESv3
-
-LOCAL_EXPORT_LDFLAGS := -u ANativeActivity_onCreate
-include $(BUILD_SHARED_LIBRARY)
-
 # -- libOLVM------------------------------------------------------------------
 # ol shared library
 include $(CLEAR_VARS)
@@ -73,6 +52,38 @@ LOCAL_SRC_FILES+= ../extensions/ffi.c
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 LOCAL_LDLIBS   += -llog -landroid
 
+include $(BUILD_SHARED_LIBRARY)
+
+
+# -- libMAIN -----------------------------------------------------------------
+# native app
+include $(CLEAR_VARS)
+LOCAL_MODULE   := main
+LOCAL_SHARED_LIBRARIES := olvm vrapi # TODO: move "vrapi" under define
+
+# configure
+LOCAL_CFLAGS   += $(OL_CFLAGS)
+# src
+LOCAL_CFLAGS   += -I$(NDK_ROOT) -DREPL=repl -I$(LOCAL_PATH)/vrApi/include
+LOCAL_SRC_FILES += native-app.c ../tmp/repl.c
+LOCAL_SRC_FILES += ovr.c # Oculus Go
+LOCAL_SRC_FILES += egl.c # OpenGL ES
+LOCAL_LDLIBS   += -llog -landroid
+
+#opengl
+ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
+LOCAL_CFLAGS   += -DNO_GLES3=1 # no GLESv3 on the older platform
+LOCAL_LDLIBS   += -lEGL -lGLESv2
+else
+ifeq ($(TARGET_ARCH_ABI),x86)
+LOCAL_CFLAGS   += -DNO_GLES3=1 # no GLESv3 on the older platform
+LOCAL_LDLIBS   += -lEGL -lGLESv2
+else
+LOCAL_LDLIBS   += -lEGL -lGLESv3
+endif
+endif
+
+LOCAL_EXPORT_LDFLAGS := -u ANativeActivity_onCreate
 include $(BUILD_SHARED_LIBRARY)
 
 # -- gl2es -----------------------------------------------------------------------
@@ -289,9 +300,23 @@ endif
 # include $(BUILD_SHARED_LIBRARY)
 # endif
 
-# -- libvr -------------------------------------------------------------------
+# -- libvrapi ------------------------------------------------------------------
+ifneq ("$(wildcard $(LOCAL_PATH)/vrApi/libs/$(TARGET_ARCH_ABI)/libvrapi.so)","")
+
 include $(CLEAR_VARS)
 LOCAL_MODULE := vrapi
 LOCAL_SRC_FILES := vrApi/libs/$(TARGET_ARCH_ABI)/libvrapi.so
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 include $(PREBUILT_SHARED_LIBRARY)
+
+else
+
+include $(CLEAR_VARS)
+LOCAL_MODULE   := vrapi
+
+LOCAL_SRC_FILES := vrApi/stub.c
+LOCAL_LDFLAGS  := -Xlinker --export-dynamic
+
+include $(BUILD_SHARED_LIBRARY)
+
+endif

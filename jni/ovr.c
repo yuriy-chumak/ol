@@ -410,7 +410,9 @@ void update(int eye)
 void flush()
 {
 	GLenum depthAttachment[1] = { GL_DEPTH_ATTACHMENT }; // _Resolve
+#ifndef NO_GLES3
 	glInvalidateFramebuffer(GL_DRAW_FRAMEBUFFER, 1, depthAttachment);
+#endif
 
 	glFlush(); // TODO: проверить а нужно ли?
 }
