@@ -32,7 +32,6 @@ clean:
 
 start:
 	adb push main.lisp /sdcard/ol/main.lisp
-	adb push config.scm /sdcard/ol/config.scm
 	adb shell am start -n name.yuriy_chumak.ol/name.yuriy_chumak.ol.NativeLoader
 stop:
 	adb shell am force-stop name.yuriy_chumak.ol

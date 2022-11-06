@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-ANDROID_SDK?=/opt/android/sdk
+ANDROID_SDK=${ANDROID_SDK:=/opt/android/sdk}
 
 [ x$ANDROID_SDK == x ] && {
    printf '\e[31mANDROID_SDK not set\e[30m\n'
