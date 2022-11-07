@@ -23,7 +23,7 @@
             (define output (list
                (if (m/#version +120/ shader) "#version 100\n" "")
                "#define GL2ES 1\n"
-               "precision mediump float;"
+               "precision highp float;"
                ; attributes
                (if (m/gl_Vertex/ shader) "attribute vec4 g2_Vertex;" "")
                (if (m/gl_Color/ shader) "attribute vec4 g2_Color;" "")
@@ -95,7 +95,6 @@
                (if (m/#version +120/ shader) "\n" "")
                "#extension GL_EXT_geometry_shader: enable\n"
                "#define GL2ES 1\n"
-               ;;"precision mediump float;"
                ; attributes
                "\n"
                (fold (lambda (source regex)
@@ -115,7 +114,7 @@
             (define output (list
                (if (m/#version +120/ shader) "#version 100\n" "")
                "#define GL2ES 1\n"
-               "precision mediump float;"
+               "precision highp float;" ; mediump в 3d нам портит картинку
                ; attributes
                (if (m/gl_Color/ shader) "varying vec4 g2_FrontColor;" "")
                (if (m/gl_SecondaryColor/ shader) "varying vec4 g2_SecondaryColor;" "")

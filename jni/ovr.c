@@ -374,6 +374,27 @@ void begin()
 	eyeViewMatrixTransposed[0] = ovrMatrix4f_Transpose(&tracking.Eye[0].ViewMatrix);
 	eyeViewMatrixTransposed[1] = ovrMatrix4f_Transpose(&tracking.Eye[1].ViewMatrix);
 
+	// ILOG("-------------------------------------");
+	// ILOG("tracking.Eye[0].ProjectionMatrix[0] = [%f %f %f %f]",
+	// 	tracking.Eye[0].ProjectionMatrix.M[0][0],
+	// 	tracking.Eye[0].ProjectionMatrix.M[0][1],
+	// 	tracking.Eye[0].ProjectionMatrix.M[0][2],
+	// 	tracking.Eye[0].ProjectionMatrix.M[0][3]);
+	// ILOG("tracking.Eye[0].ProjectionMatrix[1] = [%f %f %f %f]",
+	// 	tracking.Eye[0].ProjectionMatrix.M[1][0],
+	// 	tracking.Eye[0].ProjectionMatrix.M[1][1],
+	// 	tracking.Eye[0].ProjectionMatrix.M[1][2],
+	// 	tracking.Eye[0].ProjectionMatrix.M[1][3]);
+	// ILOG("tracking.Eye[0].ProjectionMatrix[2] = [%f %f %f %f]",
+	// 	tracking.Eye[0].ProjectionMatrix.M[2][0],
+	// 	tracking.Eye[0].ProjectionMatrix.M[2][1],
+	// 	tracking.Eye[0].ProjectionMatrix.M[2][2],
+	// 	tracking.Eye[0].ProjectionMatrix.M[2][3]);
+	// ILOG("tracking.Eye[0].ProjectionMatrix[3] = [%f %f %f %f]",
+	// 	tracking.Eye[0].ProjectionMatrix.M[3][0],
+	// 	tracking.Eye[0].ProjectionMatrix.M[3][1],
+	// 	tracking.Eye[0].ProjectionMatrix.M[3][2],
+	// 	tracking.Eye[0].ProjectionMatrix.M[3][3]);
 	projectionMatrixTransposed[0] = ovrMatrix4f_Transpose(&tracking.Eye[0].ProjectionMatrix);
 	projectionMatrixTransposed[1] = ovrMatrix4f_Transpose(&tracking.Eye[1].ProjectionMatrix);
 
@@ -392,7 +413,6 @@ void update(int eye)
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer->FrameBuffers[frameBuffer->TextureSwapChainIndex]); // _SetCurrent
 
 	glViewport(0, 0, frameBuffer->Width, frameBuffer->Height);
-	glScissor (0, 0, frameBuffer->Width, frameBuffer->Height); // remove?
 
 	// ---------------------------------------
 	// Загрузим наши матрицы в движок
