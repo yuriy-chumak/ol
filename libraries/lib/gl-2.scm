@@ -43,7 +43,9 @@
                (if (m/gl_ModelViewProjectionMatrix/ shader) "uniform mat4 g2_ModelViewProjectionMatrix;" "")
                (if (m/gl_ProjectionMatrix/ shader)          "uniform mat4 g2_ProjectionMatrix;" "")
                (if (m/gl_TextureMatrix/ shader)             "uniform mat4 g2_TextureMatrix[8];" "")
-               ;; (if (m/gl_LightSource/ shader) "struct g2_LightSourceParameters {
+               ;; todo: ...Inverse, ...Transpose; ...InverseTranspose
+               (if (m/gl_NormalMatrix/ shader)              "uniform mat4 g2_NormalMatrix;" "")
+               ;; todo: (if (m/gl_LightSource/ shader) "struct g2_LightSourceParameters {
                ;;    // ...
                ;;    vec4 position;
                ;;    // ...
@@ -79,6 +81,7 @@
                      s/gl_ModelViewProjectionMatrix/g2_ModelViewProjectionMatrix/g
                      s/gl_ProjectionMatrix/g2_ProjectionMatrix/g
                      s/gl_TextureMatrix/g2_TextureMatrix/g
+                     s/gl_NormalMatrix/g2_NormalMatrix/g
                      ;; s/gl_LightSource/g2_LightSource/g
                      ; output
                      s/gl_FrontColor/g2_FrontColor/g
