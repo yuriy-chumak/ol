@@ -5,10 +5,6 @@
 (define-library (owl io)
 
    (export
-      current-input-port
-      current-output-port
-      current-error-port
-
       ;; thread-oriented non-blocking io
       open-input-file         ;; path → fd | #false
       open-binary-input-file   
@@ -81,10 +77,6 @@
       (define stdin  (vm:cast 0 type-port))
       (define stdout (vm:cast 1 type-port))
       (define stderr (vm:cast 2 type-port))
-
-      (define (current-input-port) stdin)
-      (define (current-output-port) stdout)
-      (define (current-error-port) stderr)
 
       (define (sys:read fd maxlen)         (syscall 0 fd maxlen))
       (define (sys:write fd buffer length) (syscall 1 fd buffer length))

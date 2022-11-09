@@ -67,9 +67,9 @@
    cond
 ;  cond-expand    * builtin, (lang eval)
    cons cons*
-   current-error-port  ; * (owl io)
-   current-input-port  ; * (owl io)
-   current-output-port ; * (owl io)
+   current-error-port
+   current-input-port
+   current-output-port
    define
    define-record-type
 ;  define-syntax  * builtin (lang eval)
@@ -437,14 +437,14 @@
       ; ...
 
 
-      ; 6.13.2.  Input
+      ; 6.13.  Input and output
       ; read
       (define (eof-object) #eof)
       (define (eof-object? o) (eq? o #eof))
 
-      ;; (define current-input-port (make-parameter stdin))
-      ;; (define current-output-port (make-parameter stdout))
-      ;; (define current-error-port (make-parameter stderr))
+      (define (current-input-port) stdin)
+      (define (current-output-port) stdout)
+      (define (current-error-port) stderr)
 
       (define write-u8 (case-lambda
          ((u8)      (syscall 1 stdout (bytevector u8) 1))
