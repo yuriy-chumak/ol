@@ -7,3 +7,10 @@ checkout() {
 checkout gl2es
 checkout GLU
 checkout SOIL
+checkout newton-dynamics
+
+cd newton-dynamics
+git submodule init
+git submodule update --depth 1
+touch stub.c
+cd ..
