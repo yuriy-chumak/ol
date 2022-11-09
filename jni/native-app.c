@@ -9,10 +9,18 @@
 #define FLOG(...) __android_log_print(ANDROID_LOG_FATAL,   APP_NAME, __VA_ARGS__)
 /////////////////////////////////////////////////////////////////////////////////
 
-// Public API
+#include <stdbool.h>
+
+// Public ANL (Android Native Level) API
+__attribute__((visibility("default")))
 void anlSwapBuffers();
+__attribute__((visibility("default")))
 void anlProcessEvents();
+__attribute__((visibility("default")))
+bool anlKeyPressed(int keycode);
+
 #include <GLES/gl.h>
+__attribute__((visibility("default")))
 void anlBindFramebuffer(GLenum target, GLuint framebuffer);
 
 // public api: get left eye matrix
@@ -73,10 +81,6 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
 // To allow easier porting to android, we allow the user to define a
 // main function which we call from android_main, defined by ourselves
 extern int main(int argc, char *argv[]);
-
-typedef int bool;
-#define true 1
-#define false 0
 
 #include <dlfcn.h>
 
@@ -161,6 +165,16 @@ void anlProcessEvents(void)
 	}
 }
 
+#define KEYCODE_MAX 512
+static char keys[KEYCODE_MAX/8 + 1];
+bool anlKeyPressed(int keycode)
+{
+	int byte = keycode / 8;
+	int bit = keycode % 8;
+	return (byte < sizeof(keys))
+		&& (keys[byte] & (1 << bit));
+}
+
 // ANDROID: Process activity lifecycle commands
 // упростим код по максимуму, а значит не будем обрабатывать команды
 // типа APP_CMD_GAINED_FOCUS и т.д.
@@ -209,45 +223,62 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
     int type = AInputEvent_getType(event);
     int source = AInputEvent_getSource(event);
 
-	DLOG("type: %d, source: %d", type, source);
-    if (type == AINPUT_EVENT_TYPE_MOTION)
-    {
-        if (((source & AINPUT_SOURCE_JOYSTICK) == AINPUT_SOURCE_JOYSTICK) ||
-            ((source & AINPUT_SOURCE_GAMEPAD) == AINPUT_SOURCE_GAMEPAD))
-        {
-			// ...
-            return 1; // Handled gamepad axis motion
+	// DLOG("type: %d, source: %d", type, source);
+	switch (type) {
+		case AINPUT_EVENT_TYPE_KEY: {
+			// Handle gamepad button presses and releases
+			if (((source & AINPUT_SOURCE_JOYSTICK) == AINPUT_SOURCE_JOYSTICK) ||
+				((source & AINPUT_SOURCE_GAMEPAD) == AINPUT_SOURCE_GAMEPAD))
+			{
+				// ...
+				return 1; // Handled gamepad axis motion
+			}
+
+			int action = AKeyEvent_getAction(event);
+			int32_t keycode = AKeyEvent_getKeyCode(event);
+			// DLOG("action: %d, keycode: %d", action, keycode);
+
+			switch (action) {
+				case AKEY_EVENT_ACTION_DOWN: { // todo: push "key pressed event"
+					int byte = keycode / 8, bit = keycode % 8;
+					if (byte < sizeof(keys))
+						keys[byte] |= (1 << bit);
+					break;
+				}
+				case AKEY_EVENT_ACTION_MULTIPLE: //todo: push repeat_count "key pressed event"s
+					break;
+				case AKEY_EVENT_ACTION_UP: {
+					int byte = keycode / 8, bit = keycode % 8;
+					if (byte < sizeof(keys))
+						keys[byte] &= ~(1 << bit);
+					break;
+				}
+			};
+
+			switch (keycode) {
+				case AKEYCODE_POWER: // default OS behaviour
+				case AKEYCODE_VOLUME_UP:
+				case AKEYCODE_VOLUME_DOWN:
+					return 0;
+				case AKEYCODE_BACK:  // disable
+				case AKEYCODE_MENU:
+					return 1;
+			}
+
+			return 0;
 		}
+
+		case AINPUT_EVENT_TYPE_MOTION: {
+			if (((source & AINPUT_SOURCE_JOYSTICK) == AINPUT_SOURCE_JOYSTICK) ||
+				((source & AINPUT_SOURCE_GAMEPAD) == AINPUT_SOURCE_GAMEPAD))
+			{
+				// ...
+				return 1; // Handled gamepad axis motion
+			}
+			break;
+		}
+
 	}
-    else if (type == AINPUT_EVENT_TYPE_KEY)
-    {
-        int32_t keycode = AKeyEvent_getKeyCode(event);
-
-        // Handle gamepad button presses and releases
-        if (((source & AINPUT_SOURCE_JOYSTICK) == AINPUT_SOURCE_JOYSTICK) ||
-            ((source & AINPUT_SOURCE_GAMEPAD) == AINPUT_SOURCE_GAMEPAD))
-        {
-			// ...
-            return 1; // Handled gamepad axis motion
-        }
-
-        if (keycode == AKEYCODE_POWER)
-        {
-            return 0;
-        }
-        else if ((keycode == AKEYCODE_BACK) || (keycode == AKEYCODE_MENU))
-        {
-            // Eat BACK_BUTTON and AKEYCODE_MENU, just do nothing... and don't let to be handled by OS!
-            return 1;
-        }
-        else if ((keycode == AKEYCODE_VOLUME_UP) || (keycode == AKEYCODE_VOLUME_DOWN))
-        {
-            // Set default OS behaviour
-            return 0;
-        }
-
-        return 0;
-    }
 
     // Register touch points count
     int pointCount = AMotionEvent_getPointerCount(event);

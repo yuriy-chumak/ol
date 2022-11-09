@@ -1,5 +1,5 @@
 (define-library (lib keyboard)
-   (version 1.0)
+   (version 1.2)
    (license MIT/LGPL3)
    (description "keyboard support library")
 (import
@@ -18,8 +18,6 @@
    KEY_A KEY_S KEY_D KEY_F KEY_G KEY_H KEY_J KEY_K KEY_L
    KEY_Z KEY_X KEY_C KEY_V KEY_B KEY_N KEY_M
 
-   ;vkStar vkPlus vkMinus vkEqual
-   
    key-pressed?)
 
 (cond-expand
@@ -48,17 +46,23 @@
          )) 
    (Android
       (begin
-         (define (key-pressed? key)
-            #f)
+         (setq this (load-dynamic-library "libmain.so"))
+         (setq anlKeyPressed (this fft-bool "anlKeyPressed" fft-int))
 
-         ; todo: change this to actual
-         (define KEY_ENTER #x0D) (define KEY_ESC #x1B)
-         (define KEY_LEFTCTRL #x11) (define KEY_LEFTALT #x12) (define KEY_LEFTSHIFT #x10)
-         (define KEY_UP #x26) (define KEY_DOWN #x28) (define KEY_LEFT #x25) (define KEY_RIGHT #x27)
+         (define key-pressed? anlKeyPressed)
 
-         (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35)
-         (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
-         (define KEY_MINUS #xBD) (define KEY_EQUAL #xBB) (define KEY_BACKSPACE #x08) (define KEY_TAB #x09)
+         ; https://android.googlesource.com/platform/frameworks/native/+/refs/heads/master/include/android/keycodes.h
+         (define KEY_ENTER 66) (define KEY_ESC 111)
+         (define KEY_LEFTCTRL 113) (define KEY_LEFTALT 57) (define KEY_LEFTSHIFT 59)
+         (define KEY_UP 19) (define KEY_DOWN 20) (define KEY_LEFT 21) (define KEY_RIGHT 22)
+
+         (define KEY_MINUS 69) (define KEY_PLUS 81) (define KEY_EQUAL 70) (define KEY_BACKSPACE 67) (define KEY_TAB 61) (define KEY_HOME 122)
+         (define KEY_1 8) (define KEY_2 9) (define KEY_3 10) (define KEY_4 11) (define KEY_5 12) (define KEY_6 13) (define KEY_7 14) (define KEY_8 15) (define KEY_9 16) (define KEY_0 7)
+
+         (define KEY_Q 45) (define KEY_W 51) (define KEY_E 33) (define KEY_R 46) (define KEY_T 48) (define KEY_Y 53) (define KEY_U 49) (define KEY_I 37) (define KEY_O 43) (define KEY_P 44)
+         (define KEY_A 29) (define KEY_S 47) (define KEY_D 32) (define KEY_F 34) (define KEY_G 35) (define KEY_H 36) (define KEY_J 38) (define KEY_K 39) (define KEY_L 40)
+         (define KEY_Z 54) (define KEY_X 52) (define KEY_C 31) (define KEY_V 50) (define KEY_B 30) (define KEY_N 42) (define KEY_M 41)
+
          ))
    (Linux
       (begin
