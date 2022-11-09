@@ -16,9 +16,6 @@
 
 // Libc and Unicode: http://www.tldp.org/HOWTO/Unicode-HOWTO-6.html
 //
-// The Plan9 operating system, a variant of Unix, uses UTF-8 as character encoding
-//   in all applications. Its wide character type is called `Rune', not `wchar_t'.
-//
 // Design Issues for Foreign Function Interfaces
 // http://autocad.xarch.at/lisp/ffis.html
 
@@ -27,7 +24,7 @@
 // TODO: utf-8 notes https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 
 #ifndef OLVM_FFI
-#define OLVM_FFI HAS_DLOPEN // ffi have no sense without dlopen/dlsym
+#define OLVM_FFI HAS_DLOPEN // assume dlopen/dlsym have no sense without ffi
 #endif
 
 #if OLVM_FFI
@@ -37,7 +34,7 @@
 #define OLVM_CALLABLES 1
 #endif
 
-// use virtual machine declaration from olvm source code
+// use virtual machine declaration from the olvm source code
 #include <ol/vm.h>
 
 #define unless(...) if (! (__VA_ARGS__))

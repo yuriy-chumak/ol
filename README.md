@@ -42,15 +42,21 @@ Q/A
 1. Q. Why no **arrow keys** processing and a history in Ol command line?<br/>
    A. For the simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool: `$ rlwrap ol` .
 
-1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?<br/>
+1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
-1. Q. I want to have a Virtual Environment. Can I?
+1. Q. I want to have a Virtual Environment. Can I?  
    A. Yes. A virtual environment is an Ol environment such that the libraries and scripts installed into it are isolated from those installed in other virtual environments and your operating system. Use `--home=the-yours-venv-path` Ol command line option.
 
-1. Q. Anything else interesting?<br/>
+1. Q. Anything else interesting?  
    A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
       Just type `$ echo ,load http/server| ol`.
+
+1. Q. Why do you call characters runes?  
+   A. Because these are runes - letters in a wide set of alphabets :)  
+      The Plan 9 operating system (a flavor of Unix), for example, uses UTF-8 as character encoding,
+      and its wide character type is called "Rune", not "wide char".
+
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus_lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus_lisp) web-client) channel is available (the previous Freenode channel is closed).
