@@ -45,6 +45,7 @@
 
 #include <string.h>
 #include <stdio.h> // temp
+#include <unistd.h>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -2248,14 +2249,14 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 			int portfd = port(arg);
 			switch (portfd) {
-			case 0: // stdin
-				args[i] = (word) stdin;
+			case 0:
+				args[i] = (word) STDIN_FILENO;
 				break;
-			case 1: // stdout
-				args[i] = (word) stdout;
+			case 1:
+				args[i] = (word) STDOUT_FILENO;
 				break;
-			case 2: // stderr
-				args[i] = (word) stderr;
+			case 2:
+				args[i] = (word) STDERR_FILENO;
 				break;
 			default:
 				args[i] = portfd;
