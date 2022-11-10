@@ -236,6 +236,54 @@ double   CV_DOUBLE(ret_t* got) { return *(double*)  got; }
 word d2ol(struct heap_t* ol, double v);      // implemented in olvm.c
 double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 
+
+// -=( PTR and REF )=------------------------------------------------------
+// notes:
+//	* empty arrays will be sent as nullptr
+// TODOs:
+//	* handle TVECTORLEAF
+#define SERIALIZE_LIST(type, convert)\
+	case TPAIR: {\
+		int c = llen(arg);\
+		type* p = (type*) &new_bytevector(c * sizeof(type))[1];\
+		args[i] = (word)p;\
+		\
+		word l = arg;\
+		while (c--)\
+			*p++ = (type)convert(car(l)), l = cdr(l);\
+		break;\
+	}
+#if OLVM_FFI_VECTORS
+#	define SERIALIZE_VECTOR(type, convert)\
+	case TVECTOR: {\
+		int c = reference_size(arg);\
+		type* p = (type*) &new_bytevector(c * sizeof(type))[1];\
+		args[i] = (word)p;\
+		\
+		word* l = &car(arg);\
+		while (c--)\
+			*p++ = (char)convert(*l++);\
+		break;\
+	}
+#else
+#	define SERIALIZE_VECTOR(type, convert)
+#endif
+#define SERIALIZE(type, convert)\
+	{\
+		if (arg == INULL) /*empty array will be sent as nullptr*/\
+			break;\
+		assert (is_reference(arg));\
+		\
+		switch (reference_type(arg)) {\
+			SERIALIZE_LIST(type, convert)\
+			SERIALIZE_VECTOR(type, convert)\
+			default:\
+				E("unsupported type %d", reference_type(arg));\
+		}\
+	}
+
+// служебные функции
+
 static
 unsigned int llen(word list) 
 {
@@ -1712,90 +1760,43 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 #endif
 
-		//
+		// целочисленные ссылочные типы
+		// (макросы вверху файла)
 		case TINT8+REF:
 		case TUINT8+REF: writeback = 1;
 			// fall through
 		case TINT8+PTR:
 		case TUINT8+PTR:
-		tint8ptr: {
-			// todo: add vectors pushing
-			if (arg == INULL) // empty array will be sent as nullptr
-				break;
-			assert (is_reference(arg));
-
-			int c = llen(arg); // todo: remove this precounting
-			char* p = (char*) &new_bytevector(c * sizeof(char))[1];
-			args[i] = (word)p;
-
-			word l = arg;
-			while (c--)
-				*p++ = (char)to_int(car(l)), l = cdr(l);
+		tint8ptr:
+			SERIALIZE(int8_t, to_int)
 			break;
-		}
 
 		case TINT16+REF:
 		case TUINT16+REF: writeback = 1;
 			// fall through
 		case TINT16+PTR:
 		case TUINT16+PTR:
-		tint16ptr: {
-			// todo: add vectors pushing
-			if (arg == INULL) // empty array will be sent as nullptr
-				break;
-			assert (is_reference(arg));
-
-			int c = llen(arg);
-			short* p = (short*) &new_bytevector(c * sizeof(short))[1];
-			args[i] = (word)p;
-
-			word l = arg;
-			while (c--)
-				*p++ = (short)to_int(car(l)), l = cdr(l);
+		tint16ptr:
+			SERIALIZE(int16_t, to_int)
 			break;
-		}
 
 		case TINT32+REF:
 		case TUINT32+REF: writeback = 1;
 			// fall through
 		case TINT32+PTR:
 		case TUINT32+PTR:
-		tint32ptr: {
-			// todo: add vectors pushing
-			if (arg == INULL) // empty array will be sent as nullptr
-				break;
-			assert (is_reference(arg));
-
-			int c = llen(arg);
-			int* p = (int*) &new_bytevector(c * sizeof(int))[1];
-			args[i] = (word)p;
-
-			word l = arg;
-			while (c--)
-				*p++ = to_int(car(l)), l = cdr(l);
+		tint32ptr:
+			SERIALIZE(int32_t, to_int)
 			break;
-		}
 
 		case TINT64+REF:
 		case TUINT64+REF: writeback = 1;
 			// fall through
 		case TINT64+PTR:
 		case TUINT64+PTR:
-		tint64ptr: {
-			// todo: add vectors pushing
-			if (arg == INULL) // empty array will be sent as nullptr
-				break;
-			assert (is_reference(arg));
-
-			int c = llen(arg);
-			int64_t* p = (int64_t*) &new_bytevector(c * sizeof(int64_t))[1];
-			args[i] = (word)p;
-
-			word l = arg;
-			while (c--)
-				*p++ = to_int(car(l)), l = cdr(l); // todo: to_longlong
+		tint64ptr:
+			SERIALIZE(int64_t, to_int)
 			break;
-		}
 
 		// с плавающей запятой:
 		case TFLOAT:
@@ -1815,38 +1816,9 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TFLOAT+REF: writeback = 1;
 			// fall through
 		case TFLOAT+PTR:
-		tfloatptr: {
-			if (arg == INULL) // empty array will be sent as nullptr
-				break;
-			assert (is_reference(arg));
-
-			switch (reference_type(arg)) {
-				case TPAIR: {
-					int c = llen(arg);
-					float* p = (float*) &new_bytevector(c * sizeof(float))[1];
-					args[i] = (word)p;
-
-					word l = arg;
-					while (c--)
-						*p++ = OL2F(car(l)), l = cdr(l);
-					break;
-				}
-				// Deprecated.
-				case TVECTOR: // let's support not only lists as float*
-				case TVECTORLEAF: { // todo: bytevector?
-					int c = reference_size(arg);
-					float* p = (float*) &new_bytevector(c * sizeof(float))[1];
-					args[i] = (word)p;
-
-					word* l = &car(arg);
-					while (c--)
-						*p++ = OL2F(*l++);
-					break;
-				}
-			}
-
+		tfloatptr:
+			SERIALIZE(float, OL2F)
 			break;
-		}
 
 		case TDOUBLE:
 		tdouble:
@@ -1870,20 +1842,10 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TDOUBLE+REF: writeback = 1;
 			// fall through
 		case TDOUBLE+PTR:
-		tdoubleptr: {
-			if (arg == INULL) // empty array will be sent as nullptr
-				break;
-			assert (is_reference(arg));
-
-			int c = llen(arg);
-			double* p = (double*) &new_bytevector(c * sizeof(double))[1];
-			args[i] = (word)p;
-
-			word l = arg;
-			while (c--)
-				*p++ = OL2D(car(l)), l = cdr(l);
+		tdoubleptr:
+			SERIALIZE(double, OL2D)
 			break;
-		}
+
 
 		case TBOOL:
 			args[i] = (arg == IFALSE) ? 0 : 1;
