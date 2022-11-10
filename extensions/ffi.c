@@ -1219,15 +1219,15 @@ int_t to_int(word arg) {
 
 	switch (reference_type(arg)) {
 	case TINTP:
-		return (int)+from_uint(arg);
+		return (int_t)+from_uint(arg);
 	case TINTN:
-		return (int)-from_uint(arg);
+		return (int_t)-from_uint(arg);
 	case TRATIONAL:
-		return (int) from_rational(arg);
+		return (int_t) from_rational(arg);
 	case TCOMPLEX: // use Re part
 		return to_int(car(arg));
 	case TINEXACT: // truncate, not round
-		return (int) *(inexact_t*)&car(arg);
+		return (int_t) *(inexact_t*)&car(arg);
 	default:
 		E("can't cast type %d to (u)int", reference_type(arg));
 	}
