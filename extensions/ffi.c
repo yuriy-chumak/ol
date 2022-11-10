@@ -1472,7 +1472,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
                     reference_type(arg) == TVECTOR ? vector_length(arg) :
                     0;
                 int listq = reference_type(arg) == TPAIR;
-				int atype = type &~(FFT_REF|FFT_PTR); // c data type
+				int atype = type & ~(FFT_REF|FFT_PTR); // c data type
 
 				// TODO: add new define "FAST_STRING_CALC" (or "PRECISE_STRING_CALC") and do (len*4) insterad of utf8_len()
 				size_t len = // in bytes
@@ -1621,7 +1621,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	// 2. prepare arguments to push
 	p = (word*)C;   // ol arguments
 	t = (word*)cdr (B); // rtty
-	int has_wb = 0; // has write-back in arguments (speedup)
+	int writeback = 0; // has write-back in arguments (code speedup)
 
 	// special case of structures-by-value
 	// x86-64-psABI-1.0.pdf:
@@ -1714,8 +1714,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		//
 		case TINT8+REF:
-		case TUINT8+REF:
-			has_wb = 1;
+		case TUINT8+REF: writeback = 1;
 			// fall through
 		case TINT8+PTR:
 		case TUINT8+PTR:
@@ -1736,8 +1735,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 
 		case TINT16+REF:
-		case TUINT16+REF:
-			has_wb = 1;
+		case TUINT16+REF: writeback = 1;
 			// fall through
 		case TINT16+PTR:
 		case TUINT16+PTR:
@@ -1758,8 +1756,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 
 		case TINT32+REF:
-		case TUINT32+REF:
-			has_wb = 1;
+		case TUINT32+REF: writeback = 1;
 			// fall through
 		case TINT32+PTR:
 		case TUINT32+PTR:
@@ -1780,8 +1777,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 
 		case TINT64+REF:
-		case TUINT64+REF:
-			has_wb = 1;
+		case TUINT64+REF: writeback = 1;
 			// fall through
 		case TINT64+PTR:
 		case TUINT64+PTR:
@@ -1815,8 +1811,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			# endif
 			#endif
 			break;
-		case TFLOAT+REF:
-			has_wb = 1;
+
+		case TFLOAT+REF: writeback = 1;
 			// fall through
 		case TFLOAT+PTR:
 		tfloatptr: {
@@ -1871,8 +1867,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			#endif
 			break;
 
-		case TDOUBLE+REF:
-			has_wb = 1;
+		case TDOUBLE+REF: writeback = 1;
 			// fall through
 		case TDOUBLE+PTR:
 		tdoubleptr: {
@@ -1952,7 +1947,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				E("invalid parameter value (requested vptr)");
 			break;
 		case TVPTR+REF:
-			has_wb = 1;
+			writeback = 1;
 			// fall through
 		case TVPTR+PTR: {
 			if (arg == INULL) // empty array will be sent as nullptr
@@ -2360,7 +2355,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	C = OLVM_unpin(this, pC);
 
 	// флажок, что среди параметрво есть те, что надо заполнить
-	if (has_wb) { // todo: rename
+	if (writeback) { // todo: rename
 		// пробежимся по аргументам, может какие надо будет вернуть взад
 		p = (word*)C;   // аргументы
 		t = (word*)cdr(B); // rtti
