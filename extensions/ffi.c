@@ -1853,7 +1853,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		// поинтер на данные
 		case TUNKNOWN:
-			args[i] = &car(arg);
+			args[i] = (word) &car(arg);
 			break;
 
 		// automatically change the type to argument type, if fft-any

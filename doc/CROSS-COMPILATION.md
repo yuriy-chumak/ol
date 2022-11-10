@@ -305,5 +305,8 @@ X Binary Package System repository [README.md](https://github.com/void-linux/xbp
 [fuse-overlayfs](https://github.com/containers/fuse-overlayfs),  
 [proot](https://proot-me.github.io/) - a user-space implementation of chroot,  
 
+https://godbolt.org/
+  * "-target arm64-apple-macos11 -mmacosx-version-min=11.0 -O3" for clang to build macos code
+
 
 That's all Folks!

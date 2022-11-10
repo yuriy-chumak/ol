@@ -301,23 +301,24 @@ typedef word* R;
 #define rawstream_size(x)           ((header_size(*reference(x)) - 1) * sizeof(word) - header_pads(*reference(x)))
 
 // types:
-#define TPAIR                       (1)
-#define TVECTOR                     (2)
-#define TSTRING                     (3)
-#define TSYMBOL                     (4)
-#define TSTRINGWIDE                 (5)
+#define TPAIR                       (1)  // type-pair
+#define TVECTOR                     (2)  // type-vector
+#define TSTRING                     (3)  // type-string
+#define TSYMBOL                     (4)  // type-symbol
+#define TSTRINGWIDE                 (5)  // type-string-wide
 
-#define TPORT                       (12)
-#define TCONST                      (13)
+#define TPORT                       (12) // type-port
+#define TCONST                      (13) // type-const
 
-#define TBYTECODE                   (16) // must be RAW type
-#define TPROC                       (17)
-#define TCLOS                       (18)
+#define TBYTECODE                   (16) // type-bytecode
+#define TPROCEDURE                  (17) // type-procedure
+#define TCLOSURE                    (18) // type-closure
 #define TCONSTRUCTOR                (63) // вызываемая процедура (не байткод! не замыкание!), TODO: проверить, что точно работает
 
 #define TFF                         (24) // 26,27 same
 #	define TRIGHT                     1 // flags for TFF
 #	define TRED                       2
+// static_assert (TFF & ~3 == TFF);
 
 #define TBYTEVECTOR                 (19)
 #define TSTRINGDISPATCH             (21)
@@ -809,33 +810,34 @@ word*p = new (TVECTOR, 13);\
 #define CHAR_UNSIGNED 1
 #endif
 
-#define new_number(val) ({\
-	(__builtin_types_compatible_p (typeof(val), int8_t) ||\
-	 __builtin_types_compatible_p (typeof(val), int16_t) ||\
-	 __builtin_types_compatible_p (typeof(val), int32_t) ||\
-	 __builtin_types_compatible_p (typeof(val), int64_t) ||\
-	 __builtin_types_compatible_p (typeof(val), signed) ||\
-	(__builtin_types_compatible_p (typeof(val), char) && CHAR_SIGNED) ||\
-	 __builtin_types_compatible_p (typeof(val), signed char) ||\
-	 __builtin_types_compatible_p (typeof(val), signed short) ||\
-	 __builtin_types_compatible_p (typeof(val), signed int) ||\
-	 __builtin_types_compatible_p (typeof(val), signed long) ||\
-	 __builtin_types_compatible_p (typeof(val), signed long long)) ?\
-		new_snumber(val):\
-	(__builtin_types_compatible_p (typeof(val), uint8_t) ||\
-	 __builtin_types_compatible_p (typeof(val), uint16_t) ||\
-	 __builtin_types_compatible_p (typeof(val), uint32_t) ||\
-	 __builtin_types_compatible_p (typeof(val), uint64_t) ||\
-	 __builtin_types_compatible_p (typeof(val), unsigned) ||\
-	(__builtin_types_compatible_p (typeof(val), char) && CHAR_UNSIGNED) ||\
-	 __builtin_types_compatible_p (typeof(val), unsigned char) ||\
-	 __builtin_types_compatible_p (typeof(val), unsigned short) ||\
-	 __builtin_types_compatible_p (typeof(val), unsigned int) ||\
-	 __builtin_types_compatible_p (typeof(val), unsigned long) ||\
-	 __builtin_types_compatible_p (typeof(val), unsigned long long)) ?\
-		new_unumber(val):\
-	({ assert(0); (word*)IFALSE;});\
-})
+#define new_number(val) \
+	__builtin_choose_expr (\
+		 __builtin_types_compatible_p (typeof(val), int8_t) ||\
+		 __builtin_types_compatible_p (typeof(val), int16_t) ||\
+		 __builtin_types_compatible_p (typeof(val), int32_t) ||\
+		 __builtin_types_compatible_p (typeof(val), int64_t) ||\
+		 __builtin_types_compatible_p (typeof(val), signed) ||\
+		(__builtin_types_compatible_p (typeof(val), char) && CHAR_SIGNED) ||\
+		 __builtin_types_compatible_p (typeof(val), signed char) ||\
+		 __builtin_types_compatible_p (typeof(val), signed short) ||\
+		 __builtin_types_compatible_p (typeof(val), signed int) ||\
+		 __builtin_types_compatible_p (typeof(val), signed long) ||\
+		 __builtin_types_compatible_p (typeof(val), signed long long),\
+			new_snumber(val),\
+	__builtin_choose_expr (\
+		 __builtin_types_compatible_p (typeof(val), uint8_t) ||\
+		 __builtin_types_compatible_p (typeof(val), uint16_t) ||\
+		 __builtin_types_compatible_p (typeof(val), uint32_t) ||\
+		 __builtin_types_compatible_p (typeof(val), uint64_t) ||\
+		 __builtin_types_compatible_p (typeof(val), unsigned) ||\
+		(__builtin_types_compatible_p (typeof(val), char) && CHAR_UNSIGNED) ||\
+		 __builtin_types_compatible_p (typeof(val), unsigned char) ||\
+		 __builtin_types_compatible_p (typeof(val), unsigned short) ||\
+		 __builtin_types_compatible_p (typeof(val), unsigned int) ||\
+		 __builtin_types_compatible_p (typeof(val), unsigned long) ||\
+		 __builtin_types_compatible_p (typeof(val), unsigned long long),\
+			new_unumber(val),\
+	({ assert(0); (word*)IFALSE; })))
 
 // get unsigned/signed number
 #define unumber(num)  ({ word* n = (word*) (num); is_value(n) ? value(n) : value(car(n)) | value(cadr(n)) << VBITS; })
@@ -2238,18 +2240,18 @@ word runtime(struct olvm_t* ol)
 	// internal gc call wrapper
 #	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
 
-	// runtime entry
+	// runtime loop
 apply:;
 
 	// if it's an allocated object, not a value:
 	if (is_reference(this)) {
 		word type = reference_type (this);
-		if (type == TCLOS) { // closure, (66% for "yes")
+		if (type == TCLOSURE) { // (66% for "yes")
 			R1 = this; this = car(this);
 			R2 = this; this = car(this);
 		}
 		else
-		if (type == TPROC) { // procedure, (58% for "yes")
+		if (type == TPROCEDURE) { // (58% for "yes")
 			R1 = this; this = car(this);
 		}
 		else
