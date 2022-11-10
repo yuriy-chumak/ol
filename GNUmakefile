@@ -71,7 +71,7 @@ CFLAGS += -std=gnu99 -fno-exceptions
 CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
 CFLAGS_DEBUG   := -O0 -g2 -Wall
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
-#CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
+CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
 
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
 
@@ -206,8 +206,14 @@ debug: vm repl ol olvm
 release: CFLAGS += $(CFLAGS_RELEASE)
 release: vm repl ol olvm libol.so
 
+perf: CFLAGS += -O2 -g3 -DNDEBUG -Wall
+perf: vm repl ol olvm libol.so
+
 slim: CFLAGS += -DHAS_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
 slim: release
+
+minimal: CFLAGS += -DOLVM_FFI=0 -DHAS_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
+minimal: release
 
 ffi: CFLAGS += $(CFLAGS_DEBUG)
 ffi: src/olvm.c extensions/ffi.c tests/ffi.c

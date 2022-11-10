@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# запускаем N раз,
+# выбираем самый быстрый результат
+STAT=""
+TIME=1000000000 # large number
+
+for i in {1..10} # 10 times
+do
+   stat=$(perf stat -d $* 2>&1 >/dev/null)
+   time=$(echo "$stat" |sed -n "/seconds user/p" |tr -s ' ' |cut -d' ' -f2 |sed 's/,/./')
+   if (( $(echo "$time < $TIME" |bc) )); then
+      TIME=$time
+	  STAT=$stat
+   fi
+done
+
+echo "$STAT"
