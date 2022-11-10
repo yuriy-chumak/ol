@@ -41,7 +41,6 @@
 #define max(a,b) ((a) > (b) ? (a) : (b))
 
 #include <string.h>
-#include <stdio.h> // temp
 #include <unistd.h>
 
 #ifdef _WIN32
@@ -1070,7 +1069,7 @@ ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
 	                            args[ 4], args[ 5], args[ 6], args[ 7],
 	                            args[ 8], args[ 9], args[10], args[11]);
-	default: fprintf(stderr, "Unsupported parameters count for ffi function: %ud", fmask);
+	default: E("Unsupported parameters count for ffi function: %d", fmask);
 		return 0;
 	};
 }
@@ -1143,7 +1142,7 @@ ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
 		                 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
 		                            args[ 4], args[ 5], args[ 6], args[ 7], \
 		                            args[ 8], args[ 9], args[10], args[11]);\
-		default: fprintf(stderr, "Unsupported parameters count for ffi function: %d", i);\
+		default: E("Unsupported parameters count for ffi function: %d", i);\
 			return 0;\
 		};
 static
