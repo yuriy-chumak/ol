@@ -46,4 +46,4 @@ sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 }
 #endif
 
-#endif//_WIN32
+#endif

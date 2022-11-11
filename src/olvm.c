@@ -1220,11 +1220,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #include <dirent.h>
 #include <string.h>
 #include <setjmp.h>
+#include <alloca.h> // we have own win32 implementation
 
-// no <alloca.h>, use http://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
-#ifndef _WIN32
-#include <alloca.h>
-#endif
 #ifndef __GNUC__
 #define __builtin_alloca alloca
 #endif
