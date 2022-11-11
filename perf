@@ -1,13 +1,18 @@
 #!/bin/bash
+N=$1; shift
 
 # запускаем N раз,
 # выбираем самый быстрый результат
 STAT=""
 TIME=1000000000 # large number
 
-for i in {1..10} # 10 times
+SUDO=''
+if (( $EUID != 0 )); then
+    SUDO='sudo'
+fi
+for i in $(seq 1 $N) # N times
 do
-   stat=$(perf stat -d $* 2>&1 >/dev/null)
+   stat=$($SUDO perf stat -d $* 2>&1 >/dev/null)
    time=$(echo "$stat" |sed -n "/seconds user/p" |tr -s ' ' |cut -d' ' -f2 |sed 's/,/./')
    if (( $(echo "$time < $TIME" |bc) )); then
       TIME=$time
