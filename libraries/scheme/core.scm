@@ -712,6 +712,7 @@
       ; auxiliary syntax: =>              * ol specific
       ; auxiliary syntax: else =>         * ol specific
       ; auxiliary syntax: else is         * ol specific
+      ; todo: add (,symbol to evaluate
       (define-syntax case
          (syntax-rules (else list eqv? eq? and memv => make-vector is)
             ; precalculate case argument, if needed
@@ -1530,6 +1531,9 @@
       ; Returns a newly allocated vector whose elements contain
       ; the given arguments. It is analogous to list.
 
+      ; todo: make `vector` function
+      ;; (define (vector . args) ; the fastest vector allocator
+      ;;    (vm:make type-vector args))
       (define-syntax vector
          (syntax-rules ()
             ((vector . staff)

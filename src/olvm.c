@@ -14,7 +14,7 @@
  * ## LICENSES
  * You are free to choose an MIT or LGPLv3 license.
  * 
- * * MIT: <br/>
+ * * MIT:  
  *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  *   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  *   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -23,7 +23,7 @@
  *   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  *   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * 
- * * LGPLv3: <br/>
+ * * LGPLv3:  
  *   This program is free software;  you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License as
  *   published by the Free Software Foundation; either version 3 of
@@ -216,6 +216,7 @@ object_t
 
 
 // ------------------------------------------------------
+// ANSI integers - 
 #ifndef OLVM_ANSI_INT_LIMITS
 #define OLVM_ANSI_INT_LIMITS 0
 #endif
@@ -315,15 +316,15 @@ typedef word* R;
 #define TCLOSURE                    (18) // type-closure
 #define TCONSTRUCTOR                (63) // вызываемая процедура (не байткод! не замыкание!), TODO: проверить, что точно работает
 
-#define TFF                         (24) // 26,27 same
-#	define TRIGHT                     1 // flags for TFF
+#define TFF                         (24) // 25, 26 are same
+#	define TRIGHT                     1  // flags for TFF
 #	define TRED                       2
 // static_assert (TFF & ~3 == TFF);
 
-#define TBYTEVECTOR                 (19)
-#define TSTRINGDISPATCH             (21)
+#define TBYTEVECTOR                 (19) // type-bytevector
+#define TSTRINGDISPATCH             (21) // type-string-displatch
 
-#define TVECTORLEAF                 (11)
+#define TVECTORLEAF                 (11) // type-vector-leaf
 #define TVECTORDISPATCH             (15) // type-vector-dispatch
 
 #define TTHREAD                     (31) // type-thread-state
@@ -331,14 +332,14 @@ typedef word* R;
 // numbers (value type)
 // A FIXNUM is an exact integer that is small enough to fit in a machine word.
 // todo: rename TFIX to TSHORT or TSMALLINT, TINT to TLARGE or TLARGEINT
-#define TENUMP                       (0)  // type-enum+ // small integer
-#define TENUMN                      (32)  // type-enum-
+#define TENUMP                       (0) // type-enum+ // small integer
+#define TENUMN                      (32) // type-enum-
 // numbers (reference type)
-#define TINTP                       (40)  // type-int+ // large integer
-#define TINTN                       (41)  // type-int-
-#define TRATIONAL                   (42)
-#define TCOMPLEX                    (43)
-#define TINEXACT                    (44)  // IEEE-754
+#define TINTP                       (40) // type-int+ // large integer
+#define TINTN                       (41) // type-int-
+#define TRATIONAL                   (42) // type-rational
+#define TCOMPLEX                    (43) // type-complex
+#define TINEXACT                    (44) // type-inexact, IEEE-754
 
 #define TVPTR                       (49) // void*, only RAW
 #define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
@@ -504,8 +505,8 @@ word*_port = new (TPORT, 1, 0);\
 
 // -= new_pair =----------------------------------------
 
-// a1 и a2 надо предвычислить перед тем, как выделим память,
-// так как они в свою очередь могут быть аллоцируемыми объектами.
+// предвычисляем a1 и a2 перед тем, как выделим память, так
+// как они в свою очередь могут быть аллоцируемыми объектами.
 #define NEW_TYPED_PAIR(type, a1, a2) ({\
 	word data1 = (word) a1;\
 	word data2 = (word) a2;\

@@ -34,6 +34,11 @@
 #define OLVM_CALLABLES 1
 #endif
 
+#ifndef OLVM_FFI_VECTORS
+#define OLVM_FFI_VECTORS 1
+#endif
+
+
 // use virtual machine declaration from the olvm source code
 #include <ol/vm.h>
 
@@ -58,21 +63,6 @@
 #	pragma GCC diagnostic ignored "-Wunused-label"
 #endif
 
-
-#ifdef __ANDROID__
-#	include <android/log.h>
-#	define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, "ol", __VA_ARGS__)
-#	define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "ol", __VA_ARGS__)
-#	define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, "ol", __VA_ARGS__)
-#else
-#	define LOGE(...)
-#	define LOGI(...)
-#	define LOGD(...)
-#endif
-
-#ifndef OLVM_FFI_VECTORS
-#define OLVM_FFI_VECTORS 1
-#endif
 
 #define TVOID         (48)
 //efine TSTRING       (3)
@@ -2317,7 +2307,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	C = OLVM_unpin(this, pC);
 
 	// флажок, что среди параметрво есть те, что надо заполнить
-	if (writeback) { // todo: rename
+	if (writeback) {
 		// пробежимся по аргументам, может какие надо будет вернуть взад
 		p = (word*)C;   // аргументы
 		t = (word*)cdr(B); // rtti
@@ -2336,7 +2326,6 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			wbagain: // writeback again
 			switch (type) {
 
-			// simplest cases - all shorts are fits as value
 			case TINT8+REF: {
 			tint8ref:;
 				// вот тут попробуем заполнить переменные назад
