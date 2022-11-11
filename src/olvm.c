@@ -80,13 +80,12 @@
  * ## Otus Lisp Virtual Machine
  * ### Source file: src/olvm.c
  */
-#include <stdint.h>
-#include <assert.h>
 #include <stdlib.h>
+
+#include <stdint.h>
 
 // unsigned int that is capable of storing a pointer
 // основной data type, зависит от разрядности машины
-//   based on C99 standard, <stdint.h>
 typedef uintptr_t word;
 
 // arm, armv7-a, armv8-a: 4;  arch64: 8;
@@ -95,7 +94,9 @@ typedef uintptr_t word;
 // x86:       4;              x86-64: 8;
 // mips:      4;              mips64: 8;
 // ppc:       4;      ppc64, ppc64le: 8;
-// raspbian:  4;
+
+// raspberty pi:  armv-8
+// apple m1: arch64
 
 
 // OL Virtual Machine type
@@ -233,6 +234,7 @@ object_t
 #endif
 
 #include <limits.h>
+#include <assert.h>
 
 // only 32-bit and 64-bit machines supported.
 // http://www.delorie.com/gnu/docs/gcc/gccint_53.html
