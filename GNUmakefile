@@ -17,6 +17,8 @@ describe: all
 # default toolchain
 CC ?= gcc
 LD ?= ld
+ol32.exe: CC := i686-w64-mingw32-gcc
+ol64.exe: CC:=x86_64-w64-mingw32-gcc
 
 # cleanup while insuccessfull builds
 # ----------------------------------
@@ -24,29 +26,10 @@ $(shell [ -s tmp/repl.c ] || rm -rf tmp/repl.c)
 
 # source code dependencies and flags
 # ----------------------------------
+include dependencies.mk
 
-# posix
-vm: src/olvm.c
-vm: extensions/ffi.c
-ol: src/olvm.c
-ol: extensions/ffi.c
-ol: tmp/repl.c
-libol.so: src/olvm.c
-libol.so: extensions/ffi.c
-libol.so: tmp/repl.c
-
-# win/wine
-ol%.exe: src/olvm.c
-ol%.exe: extensions/ffi.c
-ol%.exe: tmp/repl.c
-
-# experimental
-olvm: vm
-	cp vm olvm
-
-# sources
-extensions/ffi.c: CFLAGS += -Iincludes
-extensions/ffi.c: includes/ol/vm.h
+# autogenerations
+# ----------------------------------
 
 includes/ol/vm.h: src/olvm.c
 	sed -e '/\/\/ <!--/,/\/\/ -->/d' $^ >$@
@@ -61,17 +44,30 @@ tmp/repl.c: repl
 #	   -e 's/^/unsigned char repl[] = {/' \
 #	   -e 's/$$/};/'> $@
 
-ol32.exe: CC=i686-w64-mingw32-gcc
-ol64.exe: CC=x86_64-w64-mingw32-gcc
-
 doc/olvm.md: src/olvm.c extensions/ffi.c
 	cat src/olvm.c extensions/ffi.c| tools/makedoc >doc/olvm.md
+
+libraries/owl/unicode-char-folds.scm:
+	echo "(define char-folds '(" >libraries/owl/unicode/char-folds.scm
+	curl https://www.unicode.org/Public/14.0.0/ucd/CaseFolding.txt |\
+	   grep "[0-9A-F]* [SFC]; " |\
+	   sed -re 's/ #.*//' -e 's/( [SFC])?;//g' -e 's/^/ /' -e 's/ / #x/g' -e 's/ /(/' -e 's/$$/)/' |\
+	   tr "[A-F]" "[a-f]" >> libraries/owl/unicode/char-folds.scm
+	echo '))' >>libraries/owl/unicode/char-folds.scm
+
+# compiler flags
+# ----------------------------------
+## 'os independent' flags
 
 CFLAGS += -std=gnu99 -fno-exceptions
 CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
 CFLAGS_DEBUG   := -O0 -g2 -Wall
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
+
+CFLAGS += -DHAS_SOCKETS=$(if $(HAS_SOCKETS),1,0)
+CFLAGS += -DHAS_DLOPEN=$(if $(HAS_DLOPEN),1,0)
+CFLAGS += -DHAS_SANDBOX=$(if $(HAS_SECCOMP),1,0)
 
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
 
@@ -90,12 +86,8 @@ endif
 #    CFLAGS_RELEASE += -Wno-tautological-constant-out-of-range-compare
 # endif
 
-CFLAGS += -DHAS_SOCKETS=$(if $(HAS_SOCKETS),1,0) \
-		  -DHAS_DLOPEN=$(if $(HAS_DLOPEN),1,0)   \
-          -DHAS_SANDBOX=$(if $(HAS_SECCOMP),1,0)
+## 'os dependent' flags
 
-# ===============================================
-## 'os dependent' part
 UNAME ?= $(shell uname -s)
 
 # Linux
@@ -130,84 +122,29 @@ ifeq ($(UNAME),Darwin)
   CFLAGS += -DSYSCALL_SYSINFO=0
   PREFIX ?= /usr/local
 endif
+
 # -----------------------------------------------
 
 ## 'clean/install' part
-# http://www.gnu.org/prep/standards/html_node/DESTDIR.html
-# http://pubs.opengroup.org/onlinepubs/009695399/basedefs/xbd_chap03.html#tag_03_266
-# "Multiple successive slashes are considered to be the same as one slash."
-DESTDIR?=
-PREFIX ?= /usr
-
 clean:
 	rm -f boot.fasl
-	rm -f ./vm ./ol
+	rm -f ./vm ./ol ./olvm ./libol.so
 	rm -r tmp/*
 
-install: ol includes/ol/vm.h
-	# install Ol executable(s) to $(DESTDIR)$(PREFIX)/bin:
-	@echo Installing main binary...
-	install -d $(DESTDIR)$(PREFIX)/bin
-	install ol $(DESTDIR)$(PREFIX)/bin/ol
-	@echo Installing ol virtual machine binary...
-	install -d $(DESTDIR)$(PREFIX)/bin
-	install vm $(DESTDIR)$(PREFIX)/bin/olvm
-	@echo Installing libol.so...
-	install libol.so $(DESTDIR)$(PREFIX)/lib/libol.so
-	@echo Installing headers...
-	install -d $(DESTDIR)$(PREFIX)/include/ol
-	install -m 644 includes/ol/vm.h $(DESTDIR)$(PREFIX)/include/ol/vm.h
-	install -m 644 includes/ol/ol.h $(DESTDIR)$(PREFIX)/include/ol/ol.h
-	# and libraries to $(DESTDIR)$(PREFIX)/lib/ol:
-	@echo Installing basic libraries...
-	cd libraries && find * -type d -exec install -d "{}" "$(DESTDIR)$(PREFIX)/lib/ol/{}" \;
-	cd libraries && find * -type f -exec install -m 644 "{}" "$(DESTDIR)$(PREFIX)/lib/ol/{}" \;
-	# install Ol binary REPL to $(DESTDIR)$(PREFIX)/lib/ol:
-	@echo Installing REPL...
-	install -d $(DESTDIR)$(PREFIX)/lib/ol
-	install -m 644 repl $(DESTDIR)$(PREFIX)/lib/ol/repl
-	@echo Installing man page...
-	install -d $(DESTDIR)$(PREFIX)/share/man/man1
-	gzip <ol.1 >$(DESTDIR)$(PREFIX)/share/man/man1/ol.1.gz
-	@echo Ok.
+-include extras/setup.mk
 
-install-dev:
-	@echo Linking main binary...
-	install -d $(DESTDIR)$(PREFIX)/bin
-	ln -s `pwd`/ol $(DESTDIR)$(PREFIX)/bin/ol
-	@echo Installing ol virtual machine binary...
-	install -d $(DESTDIR)$(PREFIX)/bin
-	ln -s `pwd`/olvm $(DESTDIR)$(PREFIX)/bin/olvm
-	@echo Installing libol.so...
-	ln -s `pwd`/libol.so $(DESTDIR)$(PREFIX)/lib/libol.so
-	@echo Installing headers...
-	install -d $(DESTDIR)$(PREFIX)/include/ol
-	ln -s `pwd`/includes/ol $(DESTDIR)$(PREFIX)/include/ol
-	# and libraries to $(DESTDIR)$(PREFIX)/lib/ol:
-	@echo Installing basic libraries...
-	ln -s `pwd`/libraries $(DESTDIR)$(PREFIX)/lib/ol
-	@echo Installing REPL...
-	install -d $(DESTDIR)$(PREFIX)/lib/ol
-	ln -s `pwd`/repl $(DESTDIR)$(PREFIX)/lib/ol/repl
+# -----------------------------------------------
+## builds
 
-uninstall:
-	-rm -rf $(DESTDIR)$(PREFIX)/bin/ol
-	-rm -rf $(DESTDIR)$(PREFIX)/bin/olvm
-	-rm -rf $(DESTDIR)$(PREFIX)/lib/libol.so
-	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol/repl
-	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
-	-rm -rf $(DESTDIR)$(PREFIX)/include/ol
-	-rm -rf $(DESTDIR)$(PREFIX)/share/man/man1/ol.1.gz
-
-## actual 'building' part
 debug: CFLAGS += $(CFLAGS_DEBUG)
-debug: vm repl ol olvm
+debug: vm ol olvm libol.so
 
 release: CFLAGS += $(CFLAGS_RELEASE)
-release: vm repl ol olvm libol.so
+release: vm ol olvm libol.so
 
 perf: CFLAGS += -O2 -g3 -DNDEBUG -Wall
-perf: vm repl ol olvm libol.so
+perf: vm ol olvm libol.so
+
 
 slim: CFLAGS += -DHAS_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
 slim: release
@@ -215,6 +152,7 @@ slim: release
 minimal: CFLAGS += -DOLVM_FFI=0 -DHAS_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
 minimal: release
 
+# ffi test build
 ffi: CFLAGS += $(CFLAGS_DEBUG)
 ffi: src/olvm.c extensions/ffi.c tests/ffi.c
 	$(CC) src/olvm.c -o $@ \
@@ -223,12 +161,10 @@ ffi: src/olvm.c extensions/ffi.c tests/ffi.c
 	   $(CFLAGS) $(L)
 	@echo Ok.
 
-
+## android build
 NDK_ROOT ?=/opt/android/ndk
 android: jni/*.c tmp/repl.c
 	$(NDK_ROOT)/ndk-build
-#jni/repl.c: repl vm
-#	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> jni/repl.c
 
 # ol
 vm:
@@ -252,6 +188,10 @@ libol.so:
 	   -DOLVM_NOMAIN -shared -fPIC
 	@echo Ok.
 
+# experimental
+olvm: vm
+	cp vm olvm
+
 # emscripten version 1.37.40+
 ol.wasm: src/olvm.c tmp/repl.c
 	emcc src/olvm.c \
@@ -264,6 +204,7 @@ ol.wasm: src/olvm.c tmp/repl.c
 	   -s ALLOW_MEMORY_GROWTH=1 \
 	   -s FORCE_FILESYSTEM=0 \
 	   -s WASM=1 && \
+	# fix bugs in emscripten code
 	sed -i -r -e 's/(if\(result===undefined&&bytesRead===0\)\{)(throw)/\1bytesRead=-1;\2/g' \
 	          -e 's/(Input: "\);if\(result!==null)/\1\&\&result!==undefined/' \
 	          -e 's/(if\(!result\)\{return )null/\1result/' \
@@ -331,14 +272,6 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm
 	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
 	   cp -b $@ repl ;$(MAKE) $@ ;\
 	fi
-
-libraries/owl/unicode-char-folds.scm:
-	echo "(define char-folds '(" >libraries/owl/unicode/char-folds.scm
-	curl https://www.unicode.org/Public/14.0.0/ucd/CaseFolding.txt |\
-	   grep "[0-9A-F]* [SFC]; " |\
-	   sed -re 's/ #.*//' -e 's/( [SFC])?;//g' -e 's/^/ /' -e 's/ / #x/g' -e 's/ /(/' -e 's/$$/)/' |\
-	   tr "[A-F]" "[a-f]" >> libraries/owl/unicode/char-folds.scm
-	echo '))' >>libraries/owl/unicode/char-folds.scm
 
 # compiling infix math notation
 libraries/owl/math/infix.scm: tools/make-math-infix.scm vm
