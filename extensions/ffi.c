@@ -231,6 +231,8 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 // notes:
 //	* empty arrays will be sent as nullptr
 // TODOs:
+//  * make memory allocator configurable new_bytevector/builtin_alloca
+//    (because in case of callback GC will move data)
 //	* handle TVECTORLEAF
 #define SERIALIZE_LIST(type, convert)\
 	case TPAIR: {\
@@ -267,6 +269,101 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 		switch (reference_type(arg)) {\
 			SERIALIZE_LIST(type, convert)\
 			SERIALIZE_VECTOR(type, convert)\
+			default:\
+				E("unsupported type %d", reference_type(arg));\
+		}\
+	}
+
+// -=( DESERIALIZE )=------------------------------------------
+#if OLVM_INEXACTS
+#	define DESERIALIZE_INEXACT()\
+				case TINEXACT:\
+					*(inexact_t*)&car(num) = (inexact_t)value;\
+					break;
+#else
+#	define DESERIALIZE_INEXACT()
+#endif
+
+// todo: modify DESERIALIZE_INT for different types
+#define DESERIALIZE_INT()\
+				case TINTP:\
+				case TINTN:\
+					if (value > VMAX) {\
+						if (value < 0) {\
+							*(word*)num = make_header(value < 0 ? TINTN : TINTP, 3);\
+							value = -value;\
+						}\
+						else\
+							*(word*)num = make_header(TINTP, 3);\
+						*(word*)&car(num) = I((long)value & VMAX);\
+						*(word*)&cadr(num) = I((long)value >> VBITS);\
+					}\
+					else\
+						*(word*)l = make_enum(value);
+
+// TODO: DESERIALIZE_RATIONAL()
+// case TRATIONAL: {
+// 	// максимальная читабельность (todo: change like fto..)
+// 	long n = value * 10000;
+// 	long d = 10000;
+// 	car(num) = make_enum(n);
+// 	cdr(num) = make_enum(d);
+// 	// максимальная точность (fixme: пока не работает как надо)
+// 	//car(num) = make_enum(value * VMAX);
+// 	//cdr(num) = I(VMAX);
+// 	break;
+// }
+
+#define DESERIALIZE_TYPED(type, convert)\
+			type value = *p++;\
+			word num = convert(l);\
+			if (is_value(num))\
+				convert(l) = make_enum(value);\
+			else\
+			switch (reference_type(num)) {\
+				DESERIALIZE_INT()\
+				DESERIALIZE_INEXACT()\
+				default:\
+					(void) value;\
+					assert (0 && "Invalid return variables.");\
+					break;\
+			}\
+
+#define DESERIALIZE_LIST(type)\
+	case TPAIR: {\
+		int c = llen(arg);\
+		type* p = (type*) args[i];\
+		\
+		word l = arg;\
+		while (c--) {\
+			DESERIALIZE_TYPED(type, car)\
+			l = cdr(l);\
+		}\
+		break;\
+	}
+#if OLVM_FFI_VECTORS
+#	define DESERIALIZE_VECTOR(type)\
+	case TVECTOR: {\
+		int c = reference_size(arg);\
+		type* p = (type*) args[i];\
+		\
+		word* l = &car(arg);\
+		while (c--) {\
+			DESERIALIZE_TYPED(type, *)\
+			l++;\
+		}\
+		break;\
+	}
+#else
+#	define DESERIALIZE_VECTOR(type)
+#endif
+
+#define DESERIALIZE(type)\
+	{\
+		if (is_reference(arg))\
+		switch (reference_type(arg)) {\
+			DESERIALIZE_LIST(type)\
+			DESERIALIZE_VECTOR(type)\
 			default:\
 				E("unsupported type %d", reference_type(arg));\
 		}\
@@ -2328,133 +2425,35 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 			case TINT8+REF: {
 			tint8ref:;
-				// вот тут попробуем заполнить переменные назад
-				int c = llen(arg);
-				signed char* f = (signed char*)args[i];
-
-				word l = arg;
-				while (c--) {
-					signed char value = *f++;
-					word* ptr = &car(l);
-
-					*ptr = make_enum(value);
-					l = cdr(l);
-				}
+				DESERIALIZE(signed char)
 				break;
 			}
 			case TUINT8+REF: {
 			tuint8ref:;
-				// вот тут попробуем заполнить переменные назад
-				int c = llen(arg);
-				unsigned char* f = (unsigned char*)args[i];
-
-				word l = arg;
-				while (c--) {
-					unsigned char value = *f++;
-					word* ptr = &car(l);
-
-					*ptr = I(value);
-					l = cdr(l);
-				}
+				DESERIALIZE(unsigned char)
 				break;
 			}
 
 			case TINT16+REF: {
 			tint16ref:;
-				// вот тут попробуем заполнить переменные назад
-				int c = llen(arg);
-				signed short* f = (signed short*)args[i];
-
-				word l = arg;
-				while (c--) {
-					short value = *f++;
-					word* ptr = &car(l);
-
-					*ptr = make_enum(value);
-					l = cdr(l);
-				}
+				DESERIALIZE(signed short)
 				break;
 			}
 			case TUINT16+REF: {
 			tuint16ref:;
-				// вот тут попробуем заполнить переменные назад
-				int c = llen(arg);
-				unsigned short* f = (unsigned short*)args[i];
-
-				word l = arg;
-				while (c--) {
-					unsigned short value = *f++;
-					word* ptr = &car(l);
-
-					*ptr = I(value);
-					l = cdr(l);
-				}
+				DESERIALIZE(unsigned short)
 				break;
 			}
 
 			case TINT32+REF: {
 			tint32ref:;
-				// вот тут попробуем заполнить переменные назад
-				int c = llen(arg);
-				int* f = (int*)args[i];
-
-				word l = arg;
-				while (c--) {
-					int value = *f++;
-					word* ptr = &car(l);
-
-				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
-					if (value > VMAX) {
-						if (is_value(*ptr))
-							E("got too large number to store");
-						else {
-							assert (is_npairp(ptr) || is_npairn(ptr));
-							if (value < 0) {
-								*ptr = make_header(value < 0 ? TINTN : TINTP, 3);
-								value = -value;
-							}
-							else
-								*ptr = make_header(TINTP, 3);
-							*(word*)&car(ptr) = I(value & VMAX);
-							*(word*)&cadr(ptr) = I(value >> VBITS);
-						}
-					}
-					else
-				#endif
-					*ptr = make_enum(value);
-					l = cdr(l);
-				}
+				DESERIALIZE(signed int)
 				break;
 			}
 
 			case TUINT32+REF: {
 			tuint32ref:;
-				// вот тут попробуем заполнить переменные назад
-				int c = llen(arg);
-				unsigned int* f = (unsigned int*)args[i];
-
-				word l = arg;
-				while (c--) {
-					unsigned int value = *f++;
-					word* ptr = &car(l);
-
-				#if UINTPTR_MAX != 0xffffffffffffffff  // 32-bit machines
-					if (value > VMAX) {
-						if (is_value(*ptr))
-							E("got too large number to store");
-						else {
-							assert (is_npairp(ptr) || is_npairn(ptr));
-							*ptr = make_header(TINTP, 3);
-							*(word*)&car(ptr) = I(value & VMAX);
-							*(word*)&cadr(ptr) = I(value >> VBITS);
-						}
-					}
-					else
-				#endif
-					*ptr = I(value);
-
-					l = cdr(l);
-				}
+				DESERIALIZE(unsigned int)
 				break;
 			}
 			// TODO:
@@ -2462,127 +2461,12 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 			case TFLOAT+REF: {
 			tfloatref:;
-				if (is_reference(arg))
-				switch (reference_type(arg)) {
-					case TPAIR: {
-						int c = llen(arg);
-						float* f = (float*)args[i];
-
-						word l = arg;
-						while (c--) {
-							float value = *f++;
-							word num = car (l);
-							if (is_reference(num))
-							switch (reference_type(num)) {
-								// case TRATIONAL: {
-								// 	// максимальная читабельность (todo: change like fto..)
-								// 	long n = value * 10000;
-								// 	long d = 10000;
-								// 	car(num) = make_enum(n);
-								// 	cdr(num) = make_enum(d);
-								// 	// максимальная точность (fixme: пока не работает как надо)
-								// 	//car(num) = make_enum(value * VMAX);
-								// 	//cdr(num) = I(VMAX);
-								// 	break;
-								// }
-#if OLVM_INEXACTS
-								case TINEXACT:
-									*(inexact_t*)&car(num) = (inexact_t)value;
-									break;
-#endif
-								default:
-									(void) value;
-									assert (0 && "Invalid return variables."); // todo: log debug error
-									break;
-							}
-							l = cdr(l);
-						}
-						break;
-					}
-					case TVECTOR: {
-						int c = reference_size(arg);
-						float* f = (float*) args[i];
-
-						word* l = &car(arg);
-						while (c--) {
-							float value = *f++;
-							word num = *l;
-							if (is_reference(num))
-							switch (reference_type(num)) {
-#if OLVM_INEXACTS
-								case TINEXACT:
-									*(inexact_t*)&car(num) = (inexact_t)value;
-									break;
-#endif
-								default:
-									(void) value;
-									assert (0 && "Invalid return variables.");
-									break;
-							}
-							l++;
-						}
-					}
-					default: break; // не должны сюда попасть
-				}
+				DESERIALIZE(float)
 				break;
 			}
 			case TDOUBLE+REF: {
 			tdoubleref:;
-				if (is_reference(arg))
-				switch (reference_type(arg)) {
-					case TPAIR: {
-						int c = llen(arg);
-						double* f = (double*)args[i];
-
-						word l = arg;
-						while (c--) {
-							double value = *f++;
-							word num = car(l);
-							if (is_reference(num))
-							switch (reference_type(num)) {
-								// case TRATIONAL: {
-								// 	self->heap.fp = fp;
-								// 	word v = D2OL(self, value);
-								// 	fp = self->heap.fp;
-#if OLVM_INEXACTS
-								case TINEXACT:
-									*(inexact_t*)&car(num) = (inexact_t)value;
-									break;
-#endif
-								default:
-									(void) value;
-									assert (0 && "Invalid return variables.");
-									break;
-							}
-							l = cdr(l);
-						}
-						break;
-					}
-					case TVECTOR: {
-						int c = reference_size(arg);
-						double* f = (double*) args[i];
-
-						word* l = &car(arg);
-						while (c--) {
-							double value = *f++;
-							word num = *l;
-							if (is_reference(num))
-							switch (reference_type(num)) {
-#if OLVM_INEXACTS
-								case TINEXACT:
-									*(inexact_t*)&car(num) = (inexact_t)value;
-									break;
-#endif
-								default:
-									(void) value;
-									assert (0 && "Invalid return variables.");
-									break;
-							}
-							l++;
-						}
-					}
-					default: break; // не должны сюда попасть
-				}
+				DESERIALIZE(double)
 				break;
 			}
 
