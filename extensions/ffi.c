@@ -2456,8 +2456,18 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				DESERIALIZE(unsigned int)
 				break;
 			}
-			// TODO:
-			// case TUINT64+REF: {
+
+			case TINT64+REF: {
+			tint64ref:;
+				DESERIALIZE(signed long long)
+				break;
+			}
+
+			case TUINT64+REF: {
+			tuint64ref:;
+				DESERIALIZE(unsigned long long)
+				break;
+			}
 
 			case TFLOAT+REF: {
 			tfloatref:;
