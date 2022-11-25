@@ -252,7 +252,7 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 		\
 		word* l = &car(arg);\
 		while (c--)\
-			*p++ = (char)convert(*l++);\
+			*p++ = (type)convert(*l++);\
 		break;\
 	}
 #else
