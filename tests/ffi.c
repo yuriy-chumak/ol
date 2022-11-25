@@ -45,7 +45,13 @@
 // d: double
 
 // simple type->type mirroring functions
-#define v2v(index, p, type) PUBLIC type index##2##index(type x) { type y = x; printf(" [" p " => " p "] ", x, y); fflush(stdout); return y; }
+#define v2v(index, p, type) PUBLIC \
+type index##2##index(type x) \
+{ \
+	type y = x; \
+	printf(" [" p " => " p "] ", x, y); fflush(stdout); \
+	return y; \
+}
 
 v2v(c, "%u", unsigned char)
 v2v(C, "%d", signed char)
@@ -221,38 +227,48 @@ double cCfdsSfdiIfdlLfdqQfdfd2d(unsigned char c, signed char C,
 
 // new pack of referencing ffi test functions
 // simple (fft* type)->type mirroring functions
-#define r2v(index, type) PUBLIC type r##index##2##index(type* x) { return index##2##index(*x); }
+#define pv2v(index, type) PUBLIC \
+type p##index##2##index(type* x) \
+{ \
+	return index##2##index(*x); \
+}
 
-r2v(c, unsigned char)
-r2v(C, signed char)
-r2v(s, unsigned short)
-r2v(S, signed short)
-r2v(i, unsigned int)
-r2v(I, signed int)
-r2v(l, unsigned long)
-r2v(L, signed long)
-r2v(q, unsigned long long)
-r2v(Q, signed long long)
-r2v(f, float)
-r2v(d, double)
+pv2v(c, unsigned char)
+pv2v(C, signed char)
+pv2v(s, unsigned short)
+pv2v(S, signed short)
+pv2v(i, unsigned int)
+pv2v(I, signed int)
+pv2v(l, unsigned long)
+pv2v(L, signed long)
+pv2v(q, unsigned long long)
+pv2v(Q, signed long long)
+pv2v(f, float)
+pv2v(d, double)
 
 // simple (fft* type)->type mirroring functions
-#define p2v(index, p, type) PUBLIC type rp##index##2##index(type* x) { printf(" [" p " => ", *x); *x = *x - 1; printf(p "] ", *x); fflush(stdout); return *x; }
+#define rv2v(index, p, type) PUBLIC \
+type r##index##2##index(type* x) \
+{ \
+	printf(" [" p " => ", *x); *x -= 1; \
+	printf(p "] ", *x); fflush(stdout); \
+	return *x + 2; \
+}
 
-p2v(c, "%u", unsigned char)
-p2v(C, "%d", signed char)
-p2v(s, "%u", unsigned short)
-p2v(S, "%d", signed short)
-p2v(i, "%u", unsigned int)
-p2v(I, "%d", signed int)
-p2v(l, "%lu", unsigned long)
-p2v(L, "%ld", signed long)
+rv2v(c, "%u", unsigned char)
+rv2v(C, "%d", signed char)
+rv2v(s, "%u", unsigned short)
+rv2v(S, "%d", signed short)
+rv2v(i, "%u", unsigned int)
+rv2v(I, "%d", signed int)
+rv2v(l, "%lu", unsigned long)
+rv2v(L, "%ld", signed long)
 #ifndef __ARM_EABI__
-p2v(q, "%llu", unsigned long long)
-p2v(Q, "%lld", signed long long)
+rv2v(q, "%llu", unsigned long long)
+rv2v(Q, "%lld", signed long long)
 #endif
-p2v(f, "%f", float)
-p2v(d, "%f", double)
+rv2v(f, "%f", float)
+rv2v(d, "%f", double)
 
 // extended (fft* type)->type mirroring functions
 #define p2v3(index, p, type) PUBLIC \
