@@ -77,35 +77,39 @@
                (62000
                   `(too ,(if (less? a b) 'few 'many) arguments to syscall))
 
-               (62001
+               (62001 ; port
                   `(syscall argument ,a is not a port))
-               (62002
+               (62002 ; number
                   `(syscall argument ,a is not a number))
-               (62003
-                  `(syscall argument ,a is not a reference))
-               (62004
-                  `(syscall argument ,a is not a binary sequence))
-               (62005
-                  `(syscall argument ,a is not a string))
-               (62006
-                  `(syscall argument ,a is not a string or port))
-               (62006
+               (62003 ; positive number
                   `(syscall argument ,a is not a positive number))
+               (62004 ; reference
+                  `(syscall argument ,a is not a reference))
+               (62005 ; rawstream
+                  `(syscall argument ,a is not a binary sequence))
+               (62006 ; string
+                  `(syscall argument ,a is not a string))
+               (62007 ; vptr
+                  `(syscall argument ,a is not a vptr))
+               (62008 ; #t/#f
+                  `(syscall argument ,a is not a boolean))
+
+               (62020
+                  `(syscall argument ,a is not a number or #false))
+               (62030
+                  `(syscall argument ,a is not a positive number or #false))
+               (62016
+                  `(syscall argument ,a is not a port or string))
+               (62076
+                  `(syscall argument ,a is not a vptr or string))
+               (62026
+                  `(syscall argument ,a is not a number or string))
+               (62060
+                  `(syscall argument ,a is not a string or #false))
 
 
-               ;; (62000 ; syscall number is not a number
-               ;;    `(syscall "> " ,a is not a number))
-               ;; ;; 0, read
-               ;; (62001 ; too few/many arguments given to
-               ;;    `(syscall "> " too ,(if (> a b) 'many 'few) arguments given to))
-               ;; (62002 ;
-               ;;    `(syscall "> " ,a is not a port))
                (else
                   (if (less? code 256)
                      `(,(primop-name code) reported error ": " ,a " " ,b)
                      `(,code " .. " ,a " " ,b)))))))
-   ;   ;((eq? opcode 52)
-   ;   ;   `(trying to get car of a non-pair ,a))
-   ;   (else
-   ;      `("error: instruction" ,(primop-name opcode) "reported error: " ,a " " ,b)))
 ))
