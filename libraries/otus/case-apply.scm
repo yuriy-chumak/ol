@@ -1,5 +1,6 @@
 (define-library (otus case-apply)
    (export
+      arity
       case-apply)
    (import
       (src vm)
@@ -20,6 +21,7 @@
             (get-arity (ref func 1)))
          (else
             #false)))
+   (define arity get-arity)
 
    (define (case-apply f . args)
       (define arity (get-arity f))
