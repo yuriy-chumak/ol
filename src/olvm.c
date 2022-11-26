@@ -296,12 +296,14 @@ typedef word* R;
 #define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
 #define object_size(x)              (header_size(x))
 #define header_pads(x)              (unsigned char) ((((word)(x)) >> VPOS) & 7) // header_t(x).padding
+#define object_payload(x)           (((word)(x)) + 1)
 
 #define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
 #define reference_type(x)           (value_type (*reference(x)))
 
 #define reference_size(x)           ((header_size(*reference(x)) - 1))
 #define rawstream_size(x)           ((header_size(*reference(x)) - 1) * sizeof(word) - header_pads(*reference(x)))
+
 
 // types:
 #define TPAIR                       (1)  // type-pair
@@ -380,6 +382,7 @@ typedef word* R;
 #define ref(ob, n)                  ((reference(ob))[n])
 #define car(ob)                     (ref(ob, 1))
 #define cdr(ob)                     (ref(ob, 2))
+#define payload(o)                  (&car(o))
 
 #define caar(o)                     car(car (o))
 #define cadr(o)                     car(cdr (o))
@@ -3448,7 +3451,10 @@ loop:;
 		ip += 2; break;
 	}
 
-	/*! #### OLVM Syscalls
+	/*! - - -
+	 */
+
+	/*! ### OLVM Syscalls
 	 * `(syscall number ...) -> val|ref`
 	 *
 	 * A system call is the way in which an Ol requests a service
@@ -3464,33 +3470,35 @@ loop:;
 		--argc; // skip syscall number
 		word* r = (R) IFALSE;  // by default returning #false
 
-		// ----------------------------------------------------------------------------------
-		// safety checking macro
+		// -----------------------------------------------------------------------------------
+		// arguments count checking macro
 		#define CHECK_ARGC_EQ(n)  if (argc - n) ERROR(62000, I(argc), I(n)); // === (arg != n)
 		#define CHECK_ARGC(a, b)  if (argc < a) ERROR(62000, I(argc), I(a))\
                              else if (argc > b) ERROR(62000, I(argc), I(b));
-		// numbers checking
+		// arguments type checking macro
 		#define CHECK_TYPE(arg, type, error) if (argc >= arg) if (!is_##type(A##arg)) ERROR(error, I(arg), A##arg)
 		#define CHECK_TYPE_OR_FALSE(arg, type, error) \
 		                                     if (argc >= arg) if (!is_##type(A##arg) && !(A##arg == IFALSE)) ERROR(error, I(arg), A##arg)
 		#define CHECK_TYPE_OR_TYPE2(arg, type, type2, error) \
 		                                     if (argc >= arg) if (!is_##type(A##arg) && !is_##type2(A##arg)) ERROR(error, I(arg), A##arg)
 
+		#define CHECK_TRUE_OR_FALSE(arg)     if (argc >= arg) if (A##arg != ITRUE && A##arg != IFALSE) FAIL(62008, I(arg), A##arg)
+
 		#define CHECK_PORT(arg)      CHECK_TYPE(arg, port, 62001)
 		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)
-		#define CHECK_NUMBERP(arg)   CHECK_TYPE(arg, numberp, 62008)
-		#define CHECK_REFERENCE(arg) CHECK_TYPE(arg, reference, 62003)
-		#define CHECK_RAWSTREAM(arg) CHECK_TYPE(arg, rawstream, 62004)
-		#define CHECK_STRING(arg)    CHECK_TYPE(arg, string, 62005)
+		#define CHECK_NUMBERP(arg)   CHECK_TYPE(arg, numberp, 62003)
+		#define CHECK_REFERENCE(arg) CHECK_TYPE(arg, reference, 62004)
+		#define CHECK_RAWSTREAM(arg) CHECK_TYPE(arg, rawstream, 62005)
+		#define CHECK_STRING(arg)    CHECK_TYPE(arg, string, 62006)
 		#define CHECK_VPTR(arg)      CHECK_TYPE(arg, vptr, 62007)
 
-		#define CHECK_NUMBER_OR_FALSE(arg)  CHECK_TYPE_OR_FALSE(arg, number, 62002)
-		#define CHECK_NUMBERP_OR_FALSE(arg) CHECK_TYPE_OR_FALSE(arg, numberp, 62009)
-		#define CHECK_PORT_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, port, string, 62006)
-		#define CHECK_VPTR_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, vptr, string, 62011)
-		#define CHECK_NUMBER_OR_STRING(arg) CHECK_TYPE_OR_TYPE2(arg, number, string, 62010)
-		#define CHECK_STRING_OR_FALSE(arg)  CHECK_TYPE_OR_FALSE(arg, string, 62011)
-		#define CHECK_TRUE_OR_FALSE(arg)    if (argc >= arg) if (A##arg != ITRUE && A##arg != IFALSE) FAIL(62020, I(arg), A##arg)
+		#define CHECK_NUMBER_OR_FALSE(arg)  CHECK_TYPE_OR_FALSE(arg, number, 62020)
+		#define CHECK_NUMBERP_OR_FALSE(arg) CHECK_TYPE_OR_FALSE(arg, numberp, 62030)
+		#define CHECK_PORT_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, port, string, 62016)
+		#define CHECK_VPTR_OR_STRING(arg)   CHECK_TYPE_OR_TYPE2(arg, vptr, string, 62076)
+		#define CHECK_NUMBER_OR_STRING(arg) CHECK_TYPE_OR_TYPE2(arg, number, string, 62026)
+		#define CHECK_STRING_OR_FALSE(arg)  CHECK_TYPE_OR_FALSE(arg, string, 62060)
+
 		// ------------------------------------------------------------------------------
 
 		// continue syscall handler:
@@ -3501,20 +3509,20 @@ loop:;
 
 			// I/O FUNCTIONS
 
-			/*! ##### read
-			* * `(syscall 0 port) --> bytevector | #t | #eof`
-            * * `(syscall 0 port count) --> bytevector | #t | #eof`
+			/*! #### READ
+			* * `(syscall 0 port) -> bytevector | #t | #eof`
+            * * `(syscall 0 port count) -> bytevector | #t | #eof`
 			*
 			* Attempts to read up to *count* bytes from input port *port*
 			* into the bytevector.
 			*
 			* - *port*: input port
-			* - *count*: count, negative value means "all available"
+			* - *count*: count (negative value means "all available")
 			*
 			* Return:
-			* - *bytevector* if success,
-			* - *#true* if file not ready,
-			* - *#eof* if file was ended
+			* - *bytevector*, if success
+			* - *#true*, if file not ready
+			* - *#eof*, if file was ended
 			*
 			* http://man7.org/linux/man-pages/man2/read.2.html
 			*/
@@ -3559,24 +3567,26 @@ loop:;
 				break;
 			}
 
-			/*! \subsection write
-			* \brief (syscall **1** port object count) -> number | #false
+			/*! #### WRITE
+			* * `(syscall 1 port object) -> number | #false`
+			* * `(syscall 1 port object count) -> number | #false`
 			*
 			* Writes up to *count* bytes from the binary *object* to the output port *port*.
 			*
-			* \param port output port
-			* \param object binary object data to write
-			* \param count count bytes to write, negative value means "whole object"
+			* - *port*: output port,
+			* - *object*: binary object data to write,
+			* - *count*: count bytes to write (negative value means "whole object", default is object size)
 			*
-			* \return count of written data bytes if success,
-			*         0 if file busy,
-			*         #false if error
+			* Return:
+			* - *count of written data bytes*, if success
+			* - *0*, if file busy
+			* - *#false*, if error
 			*
 			* http://man7.org/linux/man-pages/man2/write.2.html
 			*/
 			case SYSCALL_WRITE + SECCOMP:
 			case SYSCALL_WRITE: {
-				CHECK_ARGC(2, 3); // (port object ?count)
+				CHECK_ARGC(2, 3);
 				CHECK_PORT(1);
 				CHECK_RAWSTREAM(2); // we write only binary objects
 				CHECK_NUMBER_OR_FALSE(3);
@@ -3602,25 +3612,29 @@ loop:;
 				break;
 			}
 
-			/*! \subsection open
-			* \brief (syscall **2** pathname mode blocking flags) -> port | #false
+			/*! #### OPEN
+			* * `(syscall **2** pathname mode) -> port | #false`
+			* * `(syscall **2** pathname mode blocking?) -> port | #false`
+			* * `(syscall **2** pathname mode blocking? flags) -> port | #false`
 			*
 			* Open port to the file specified by *pathname* (and, possibly,
-			*  create) using specified *mode* and *flags*.
+			*  create) using specified *mode*, *blocking?* and *flags*.
 			*
-			* \param pathname filename with/without path, c-like string(!)
-			* \param mode open mode (0 for read, #o100 for write, for example)
-            * \param blocking blocking mode (default 0, non-blocking)
-			* \param flags additional flags in POSIX sence
+			* - *pathname*: filename with/without path as c-like string(!)
+			*   - Note: use `(c-string "filename.ext")` function or just `"filename.ext\0"`
+			* - *mode*: open mode (0 for read, #o100 for write, for example)
+			* - *blocking?*: blocking mode (default is non-blocking)
+			* - *flags*: additional flags in POSIX sence
 			*
-			* \return port if success,
-			*         #false if error
+			* Return:
+			* - *port*, if success
+			* - *#false*, if error
 			*
 			* http://man7.org/linux/man-pages/man2/open.2.html
 			*/
 			case SYSCALL_OPEN: {
 				CHECK_ARGC(2, 4);
-				CHECK_STRING(1); // name
+				CHECK_STRING(1); // pathname
 				CHECK_NUMBER(2); // mode
 				CHECK_TRUE_OR_FALSE(3);   // blocking
 				CHECK_NUMBER_OR_FALSE(4); // flags
@@ -3658,15 +3672,16 @@ loop:;
 				break;
 			}
 
-			/*! \subsection close
-			* \brief (syscall **3** port) -> #true | #false
+			/*! #### CLOSE
+			* `(syscall **3** port) -> #true | #false`
 			*
-			* Closes a port, so that it no longer refers to any file and may be used.
+			* Closes a port, so that it no longer refers to any file.
 			*
-			* \param port valid port
+			* - *port*, valid port
 			*
-			* \return #true if success,
-			*         #false if error
+			* Return:
+			* - *#true*, if success
+			* - *#false*, if error
 			*
 			* http://man7.org/linux/man-pages/man2/close.2.html
 			*/
@@ -3678,29 +3693,32 @@ loop:;
 
 				if (ol->close(portfd, ol) == 0)
 					r = (R)ITRUE;
-#ifdef _WIN32
-#	if HAS_SOCKETS
+#if defined(_WIN32) && HAS_SOCKETS
 				// Win32 socket workaround
 				else if (errno == EBADF) {
 					if (closesocket(portfd) == 0)
 						r = (R)ITRUE;
 				}
-#	endif
 #endif
 				break;
 			}
 
-			/*! \subsection lseek
-			* \brief 8: (lseek port offset whence) -> offset|#f
+			/*! #### LSEEK
+			* `(syscall **8** port offset whence) -> offset | #f`
 			*
-			* Reposition read/write file offset
+			* Repositions the file offset of the *port* to the *offset* according to the directive *whence*.
 			*
-			* \param port
-			* \param offset
-			* \param whence
+			* - *port*: valid port
+			* - *offset*: offset
+			* - *whence*:
+			*   - 0 - from beginning of file,
+			*   - 1 - from current file position,
+			*   - 2 - from end of file (in negative direction)
 			*
-			* \return resulting offset location as measured in bytes
-			*         from the beginning of the file
+			* Return:
+			* - *resulting offset location as measured in bytes
+			*         from the beginning of the file*, if success
+			* - *#false*, if error
 			*
 			* http://man7.org/linux/man-pages/man2/lseek.2.html
 			*/
@@ -3711,23 +3729,45 @@ loop:;
 				CHECK_NUMBER(2);
 				CHECK_NUMBER(3);
 
-				off_t offset = lseek(port(A1), number(A2), number(A3));
-				if (offset < 0)
-					break;
+				int whence = number(A3);
+				off_t offset = lseek(port(A1), number(A2),
+					whence == 0 ? SEEK_SET :
+					whence == 1 ? SEEK_CUR :
+					whence == 2 ? SEEK_END : 0);
 
-				r = new_number(offset);
+				if (offset >= 0)
+					r = new_number(offset);
 				break;
 			}
 
-			/*! \subsection stat
-			* \brief (syscall **4** port/path) -> #(. stats .) | #false
+			/*! #### STAT
+			* `(syscall **4** port/path) -> #(. stats .) | #false`
 			*
 			* Returns information about a file or port.
 			*
-			* \param port/path
+			* - *port/path*: valid port of filename
 			*
-			* \return vector if success,
-			*         #false if error
+			* Return:
+			* - *vector*, if success  
+			*   (vector
+            *     - ID of device containing file
+			*     - Inode number
+			*     - File type and mode
+			*     - Number of hard links
+			*     - User ID of owner
+			*     - Group ID of owner
+			*     - Device ID (if special file)
+			*     - **Total size, in bytes**
+			*     - #false, reserved
+			*     - #false, reserved
+			*     - Time of last access
+			*     - Time of last modification
+			*     - Time of last status change
+			*   )
+			* - *#false*, if error
+			*
+			* Note:
+			* - Use `(ref (syscall 4 file) 8)` to get the file size
 			*
 			* http://man7.org/linux/man-pages/man2/stat.2.html
 			*/
@@ -3743,15 +3783,8 @@ loop:;
 				}
 				else
 				if (is_string(A1)) {
-					/* temporary removed (up to check for which OSes it's work)
-					if (b == ITRUE) {
-						if (lstat((char*) &car (a), &st) < 0)
-							break;
-					}
-					else {*/
-						if (stat(string(A1), &st) < 0)
-							break;
-					//}
+					if (stat(string(A1), &st) < 0)
+						break;
 				}
 				else
 					break;
@@ -3764,12 +3797,11 @@ loop:;
 						new_number(st.st_uid),    // идентификатор пользователя-владельца
 						new_number(st.st_gid),    // идентификатор группы-владельца
 						new_number(st.st_rdev),   // тип устройства (если это устройство)
-						new_number(st.st_size),   // общий размер в байтах
+						new_number(st.st_size),   // ** общий размер в байтах **
 						IFALSE, // new_number(st.st_blksize),// размер блока ввода-вывода в файловой системе
 						IFALSE, // new_number(st.st_blocks), // количество выделенных блоков
 						// Since Linux 2.6, the kernel supports nanosecond
 						//   precision for the following timestamp fields.
-						// but we do not support this for a while
 						new_number(st.st_atime),  // время последнего доступа (в секундах)
 						new_number(st.st_mtime),  // время последней модификации (в секундах)
 						new_number(st.st_ctime)   // время последнего изменения (в секундах)
