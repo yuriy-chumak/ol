@@ -1,4 +1,4 @@
-(define-library (otus features)
+(define-library (olvm features)
    (export
       vm:feature?
 
