@@ -149,6 +149,12 @@
             ;; (print output)
             output)
 
+         ; no geometry shaders support yet
+         (define (glProgramParameteri . args) #false)
+         (define GL_GEOMETRY_INPUT_TYPE 0)
+         (define GL_GEOMETRY_OUTPUT_TYPE 0)
+         (define GL_GEOMETRY_VERTICES_OUT 0)
+
          #true))
    (else
       (import (OpenGL EXT geometry_shader4))
@@ -243,9 +249,9 @@
                   (compile gs (geometry-preprocessor gstext inputType outputType outputCount))
                   (compile fs (fragment-preprocessor fstext))
 
-                  ;; (glProgramParameteri program GL_GEOMETRY_INPUT_TYPE inputType)
-                  ;; (glProgramParameteri program GL_GEOMETRY_OUTPUT_TYPE outputType) ; only POINTS, LINE_STRIP and TRIANGLE_STRIP is allowed:
-                  ;; (glProgramParameteri program GL_GEOMETRY_VERTICES_OUT outputCount)
+                  (glProgramParameteri program GL_GEOMETRY_INPUT_TYPE inputType)
+                  (glProgramParameteri program GL_GEOMETRY_OUTPUT_TYPE outputType) ; only POINTS, LINE_STRIP and TRIANGLE_STRIP is allowed:
+                  (glProgramParameteri program GL_GEOMETRY_VERTICES_OUT outputCount)
 
                   (link program gs vs fs)
                   program))))
