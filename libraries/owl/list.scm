@@ -3,7 +3,7 @@
    ; todo: move fold to srfi-1
    (export
       for ; deprecated
-      getq last drop-while
+      getq drop-while
       mem
       fold-map foldr-map ; deprecated
       keep remove
@@ -16,6 +16,7 @@
 
    (import
       (scheme core)
+      (scheme srfi-1)
       (scheme list))
 
    (begin
@@ -52,9 +53,6 @@
             ((null? lst) #false)
             ((eq? k (car (car lst))) (car lst))
             (else (getq (cdr lst) k))))
-
-      (define (last l def)
-         (fold (λ (a b) b) def l))
 
       (define (mem cmp lst elem)
          (cond

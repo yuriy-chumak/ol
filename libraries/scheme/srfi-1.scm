@@ -15,6 +15,7 @@
       xcons iota
 
       first second third fourth fifth sixth seventh eighth ninth tenth
+      last
 
       filter
 )
@@ -58,7 +59,26 @@
    (define (tenth li)
       (car (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr li)))))))))))
 
+   ; 
+   (define last
+      (define (last l def)
+         (let loop ((state def) (l l))
+            (if (null? l)
+               state
+               (loop (car l) (cdr l)))))
 
+      (case-lambda
+         ((li def)
+            (last li def))
+         ((li)
+            (last li #null))))
+
+   (assert (last '(1 2 3))      ===> 3)
+   (assert (last '(1 2 3) 77)   ===> 3)
+   (assert (last '())           ===> #null)
+   (assert (last '() 77)        ===> 77)
+
+   ; 
    (define iota
       (define (iota count start step)
          (let loop ((i 0) (n start) (r '()))
