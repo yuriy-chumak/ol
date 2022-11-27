@@ -26,7 +26,7 @@
       '((0 . 0) (1 . 0) (1 . 1) (0 . 1)))
 (glEnd)
 (glDisable GL_TEXTURE_2D)
-(gl:SwapBuffers (await (mail 'opengl ['get 'context]))) ; todo: make a function
+(gl:redisplay)
 (glDeleteTextures 1 (list id)) ; и спокойно удалим сплеш текстуру
 
 (define numbers
