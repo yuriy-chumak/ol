@@ -61,13 +61,34 @@ $('#terminal').mousewheel(function(event) {
       return false;
 });
 
+// FILE SYSTEM
+var Libraries = [
+   // { path: "otus", name: "ffi.scm",    file: "https://raw.githubusercontent.com/otus-lisp/ol/master/libraries/otus/ffi.scm" },
+];
+
+// WASM
 var Module = {
 //   arguments: ['#', '-', '--embed'],
 //   arguments: ['platform', '-'],
 //   dynamicLibraries: [], //, 'olvm.js', 'repl.wasm', 'oljs.wasm'],
    INITIAL_MEMORY: 67108864,
 
-   preRun: [],
+   preRun: [
+      function() {
+         terminal.echo("");
+
+         Libraries.forEach( function(i) {
+            terminal.echo("attaching fs file " + i.name + "...");
+            console.log("i: ", i.path + "/" + i.name);
+            if (i.path != "/")
+               FS.createPath("/", i.path, true, true);
+            FS.createPreloadedFile(i.path, i.name, i.file, true, false);
+         });
+
+         // done.
+         terminal.echo("Starting Ol ...");
+      }
+   ],
 	// function() {
    //    console.log("preRun");
    //    //LibraryManager.library = Module;
@@ -85,13 +106,6 @@ var Module = {
    //    var stdout = null;
    //    var stderr = null;
    //    FS.init(stdin, stdout, stderr);
-
-   //    // Libraries.forEach( function(i) {
-   //    //    console.log("i: ", i.path + "/" + i.name);
-   //    //    if (i.path != "/")
-   //    //       FS.createPath("/", i.path, true, true);
-   //    //    FS.createDataFile(i.path + "/", i.name, i.data, true, false);
-   //    // });
    // },
    postRun: [
 		function() {
@@ -199,75 +213,29 @@ window.onerror = function(event) {
 };
 
 window.prompt = function(event) {
-//	console.log("prompt:", stdInput);
-	if (stdInput.length == 0) {
+	if (stdInput.length == 0)
 		return undefined;
-	}
 
-	let string = stdInput;
+   let string = stdInput;
 	stdInput = "";
 	return string;
 };
 
-// FILE SYSTEM
-var Libraries = [
-      //{ path: "/otus", name: "ffi.scm",    file: "https://rawgit.com/yuriy-chumak/ol/master/libraries/otus/ffi.scm" },
-      //{ path: "/otus", name: "ffi.scm",    file: "lib/otus/ffi.scm" },
-      //{ path: "/lib",  name: "opengl.scm", file: "lib/opengl.scm" },
 
-      //{ path: "/EGL",       name: "version-1-1.scm", file: "https://rawgit.com/yuriy-chumak/ol/master/libraries/EGL/version-1-1.scm" },
+// LOAD OLVM
+var script = document.createElement('script');
+script.src = "ol.js"; //javascripts/emscripten-1.37.35.js";
 
-      //{ path: "/OpenGL",    name: "platform.scm", file: "https://rawgit.com/yuriy-chumak/ol/master/libraries/OpenGL/platform.scm" },
-      //{ path: "/OpenGL",    name: "platform.scm",    file: "lib/OpenGL/platform.scm" },
-      //{ path: "/OpenGL",    name: "version-1-0.scm", file: "lib/OpenGL/version-1-0.scm" },
-      //{ path: "/OpenGL",    name: "version-1-0.scm", file: "https://rawgit.com/yuriy-chumak/ol/master/libraries/OpenGL/version-1-0.scm" },
-      //{ path: "/lib/gl",  name: "config.scm", file: "lib/lib/gl/config.scm" },
-      //{ path: "/lib",     name: "gl.scm",     file: "lib/lib/gl.scm" },
+script.addEventListener('load', function(me) {
+      terminal.set_prompt('');
+      if (!wasmSupported())
+         return;
 
-//      { path: "/OpenGL/ES", name: "version-2-0.scm", file: "https://rawgit.com/yuriy-chumak/ol/master/libraries/OpenGL/ES/version-2-0.scm" },
-//      { path: "/OpenGL/ES", name: "version-2-0.scm", file: "lib/version-2-0.scm" },
+      terminal.echo("Booting Virtual Machine...")
+}, false);
+script.addEventListener('error', function(event) {
+      terminal.set_prompt('');
+      terminal.echo("Can't find olvm. Build it first and try again.")
+}, false);
 
-      //{ path: "/", name: "test.lisp", file: "test.lisp" },
-      //{ path: "/", name: "repl", file: "https://rawgit.com/yuriy-chumak/ol/master/repl" }
-   ];
-var Downloaded = 0;
-
-/*Libraries.forEach( function(item) {
-   $.ajax({
-      url: item.file,
-      type: 'GET',
-      beforeSend: function (xhr) {
-         xhr.overrideMimeType("text/plain; charset=x-user-defined");
-         console.log("let's download ", item.file);
-      },
-      error: function(a, b, c) {
-         console.log(a);
-         console.log(b);
-         console.log(c);
-      },
-      success: function( data ) {
-         console.log("ok: ", item.path + "/" + item.name)
-         item.data = data;
-
-         if (++Downloaded == Libraries.length) {*/
-            // load olvm
-            var script = document.createElement('script');
-            script.src = "ol.js"; //javascripts/emscripten-1.37.35.js";
-
-            script.addEventListener('load', function(me) {
-                terminal.set_prompt('');
-                if (!wasmSupported())
-                    return;
-
-                terminal.echo("Booting Virtual Machine...")
-            }, false);
-            script.addEventListener('error', function(event) {
-                terminal.set_prompt('');
-                terminal.echo("Can't find olvm. Build it first and try again.")
-            }, false);
-
-            document.body.appendChild(script);
-/*         }
-      }
-   });
-});*/
+document.body.appendChild(script);
