@@ -5,9 +5,5 @@ description: Otus Lisp project page
 baseurl: "/ol"
 url: "http://yuriy-chumak.github.io"
 
-plugins:
-  - jekyll-sitemap
-  - jemoji
-
 # Build settings
 markdown: kramdown
