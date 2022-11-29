@@ -198,13 +198,14 @@ ol.wasm: src/olvm.c tmp/repl.c
 	     tmp/repl.c -DREPL=repl \
 	     -O3 -o ol.html \
 	         -Iincludes \
+	   --use-preload-plugins \
 	   -DHAS_DLOPEN=0 -DHAS_SOCKETS=0\
 	   -s ASYNCIFY \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \
 	   -s FORCE_FILESYSTEM=0 \
 	   -s WASM=1 && \
-	# fix bugs in emscripten code
+	# fix bugs in emscripten code\
 	sed -i -r -e 's/(if\(result===undefined&&bytesRead===0\)\{)(throw)/\1bytesRead=-1;\2/g' \
 	          -e 's/(Input: "\);if\(result!==null)/\1\&\&result!==undefined/' \
 	          -e 's/(if\(!result\)\{return )null/\1result/' \

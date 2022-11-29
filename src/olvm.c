@@ -1011,7 +1011,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #	define SYSCALL_PRCTL 0
 
 #	define HAS_SOCKETS 0
-#	define HAS_STRFTIME 0 // why?
 
 #	define SYSCALL_MEMFD 0
 #endif
