@@ -22,7 +22,9 @@ For example, you can use Sqlite library without including support for that libra
   * [Other cases](#other-cases-1)
 * [C Types Default Mapping](#c-types-default-mapping)
 * [Advanced usage](#advanced-usage)
-  * [Examples](#examples)
+  * [Variable Arguments](#variable-arguments)
+  * [Multiplatform](#multiplatform)
+  * [More Examples](#more-examples)
 
 
 
@@ -255,6 +257,38 @@ This is the table of correspondence C types to Ol types, with the internal type 
 
 ## Advanced usage
 
+### Variable Arguments
+
+Simply push additional arguments in form `'(type . argument)`.
+```scheme
+> (import (otus ffi))
+> ;; Library (otus ffi) added
+> ;; Imported (otus ffi)
+> (define libc (load-dynamic-library "libc.so.6"))
+;; Defined libc
+> (define printf (libc fft-int "printf" type-string))
+;; Defined printf
+
+> (printf "%c\n" (cons fft-char #\A))
+A
+2
+> (let*((a 17)
+        (b 42)
+        (c (+ a b)))
+     (printf "%d + %d = %d\n" (cons fft-int a) (cons fft-int b) (cons fft-int c)))
+17 + 42 = 59
+13
+> (printf "%s\n" (cons type-string "hello!"))
+hello!
+7
+> (printf "%f\n" (cons fft-double 123.456))
+123.456000
+11
+```
+
+
+### Multiplatform
+
 An OS-independent solution requires loading different libraries for different OSes.
 You can do this with `or`, for example:
 ```scheme
@@ -294,7 +328,7 @@ Then very simple usage like any other ol functions:
 (print (asin 0.5))
 ```
 
-### Examples
+### More Examples
 
 Examples in form of "C declaration, Ol declaration, maybe usage example(s)".
 Both Linux, *BSD, macOS, and Windows are supported.

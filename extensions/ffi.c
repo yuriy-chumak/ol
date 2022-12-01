@@ -19,8 +19,6 @@
 // Design Issues for Foreign Function Interfaces
 // http://autocad.xarch.at/lisp/ffis.html
 
-// TODO: OLVM_cast function that converts void* into strings or something etc.
-// TODO: remove any kind of mallocs
 // TODO: utf-8 notes https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 
 #ifndef OLVM_FFI
@@ -480,7 +478,6 @@ size_t utf8_len(word widestr)
 // http://www.angelcode.com/dev/callconv/callconv.html
 #if __amd64__ // x86-64 (LP64/LLP64)
 
-// value returned in the rax
 # if _WIN64 // Windows
 // The x64 Application Binary Interface (ABI) uses a four register fast-call
 // calling convention by default. Space is allocated on the call stack as a
