@@ -188,24 +188,25 @@ libol.so:
 	   -DOLVM_NOMAIN -shared -fPIC
 	@echo Ok.
 
-# experimental
+# real name of
 olvm: vm
 	cp vm olvm
 
-# emscripten version 1.37.40+
+# emscripten version 1.37.40+ needed
 ol.wasm: src/olvm.c tmp/repl.c
 	emcc src/olvm.c \
 	     tmp/repl.c -DREPL=repl \
+	     extensions/ffi.c \
 	     -O3 -o ol.html \
 	         -Iincludes \
 	   --use-preload-plugins \
-	   -DHAS_DLOPEN=0 -DHAS_SOCKETS=0\
+	   -DHAS_DLOPEN=1 -DHAS_SOCKETS=0 \
 	   -s ASYNCIFY \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \
 	   -s FORCE_FILESYSTEM=0 \
 	   -s WASM=1 && \
-	# fix bugs in emscripten code\
+	# fix bugs in emscripten code \
 	sed -i -r -e 's/(if\(result===undefined&&bytesRead===0\)\{)(throw)/\1bytesRead=-1;\2/g' \
 	          -e 's/(Input: "\);if\(result!==null)/\1\&\&result!==undefined/' \
 	          -e 's/(if\(!result\)\{return )null/\1result/' \

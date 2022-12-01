@@ -51,6 +51,10 @@
 #include <windows.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <sys/mman.h> // we have own win32 implementation
 
 #ifndef WARN_ALL
