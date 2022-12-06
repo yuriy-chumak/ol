@@ -1379,9 +1379,9 @@ int64_t to_int64(word arg) {
 
 	switch (reference_type(arg)) {
 	case TINTP:
-		return +from_ulong(arg);
+		return (int64_t)+from_ulong(arg);
 	case TINTN:
-		return -from_ulong(arg);
+		return (int64_t)-from_ulong(arg);
 	case TRATIONAL:
 		return (int64_t) from_rational(arg);
 	case TCOMPLEX: // use Re part
@@ -1395,27 +1395,6 @@ int64_t to_int64(word arg) {
 	return 0;
 }
 #endif
-/*
-static
-long to_long(word arg) {
-	if (is_enum(arg))
-		return enum(arg);
-
-	switch (reference_type(arg)) {
-	case TINTP:
-		return (long)+from_int(arg);
-	case TINTN:
-		return (long)-from_int(arg);
-	case TRATIONAL:
-		return (long) from_rational(arg);
-	case TCOMPLEX:
-		return to_long(car(arg)); // return real part of value
-	default:
-		E("can't get int from %d", reference_type(arg));
-	}
-
-	return 0;
-}*/
 
 static
 char* chars2ol(char* ptr, word string)
@@ -1653,51 +1632,51 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 			else
 			switch (type) {
-				case TANY:
-					type = car(arg);
-					if (is_enump(type)) {
-						type = value(type);
-						arg = cdr(arg);
-						goto again;
-					}
-					break;
-				case TSTRING:
-					switch (reference_type (arg)) {
-						case TSTRING:
-							words += WALIGN(reference_size(arg)) + 1;
-							break;
-						case TSTRINGWIDE:
-							words += WALIGN(utf8_len(arg)) + 1;
-							break;
-                        case TSTRINGDISPATCH:
-                            words += WALIGN(number(ref(arg, 1))) + 1; // todo: process whole string as utf8_len and use FAST_STRING_CALC macro
-                            break;
-					}
-					break;
-				case TSTRINGWIDE:
-					switch (reference_type (arg)) {
-						case TSTRING:
-							words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
-							break;
-						case TSTRINGWIDE:
-							words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
-							break;
-                        case TSTRINGDISPATCH:
-                            words += WALIGN(sizeof(widechar) * number(ref(arg, 1))) + 1;
-                            break;
-					}
-					break;
-				case TPAIR: // structures
-					if (reference_type(arg) == TPAIR) {
-						size_t size = structure_size((word)t);
+			case TANY:
+				type = car(arg);
+				if (is_enump(type)) {
+					type = value(type);
+					arg = cdr(arg);
+					goto again;
+				}
+				break;
+			case TSTRING:
+				switch (reference_type (arg)) {
+					case TSTRING:
+						words += WALIGN(reference_size(arg)) + 1;
+						break;
+					case TSTRINGWIDE:
+						words += WALIGN(utf8_len(arg)) + 1;
+						break;
+					case TSTRINGDISPATCH:
+						words += WALIGN(number(ref(arg, 1))) + 1; // todo: process whole string as utf8_len and use FAST_STRING_CALC macro
+						break;
+				}
+				break;
+			case TSTRINGWIDE:
+				switch (reference_type (arg)) {
+					case TSTRING:
+						words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
+						break;
+					case TSTRINGWIDE:
+						words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
+						break;
+					case TSTRINGDISPATCH:
+						words += WALIGN(sizeof(widechar) * number(ref(arg, 1))) + 1;
+						break;
+				}
+				break;
+			case TPAIR: // structures
+				if (reference_type(arg) == TPAIR) {
+					size_t size = structure_size((word)t);
 
-						// TODO: сюда тоже добавить кеширование
-						if (size > 16)
-							l += WALIGN(size);
-						else
-							i += WALIGN(size);
-					}
-					break;
+					// TODO: сюда тоже добавить кеширование
+					if (size > 16)
+						l += WALIGN(size);
+					else
+						i += WALIGN(size);
+				}
+				break;
 			}
 		}
 
@@ -1959,8 +1938,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			case TBYTEVECTOR: // address of bytevector data (no copying to stack)
 				args[i] = (word) &car(arg);
 				break;
-			// (cons fft-xxx '(...))
-			case TPAIR: // sending type override
+			// (cons type argument)
+			case TPAIR:
 				type = car(arg);
 				if (is_enump(type)) {
 					type = value(type);
@@ -1980,14 +1959,15 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 
 		// vptr should accept only vptr!
-		case TVPTR: tvptr:
+		case TVPTR:
+		tvptr:
 			// temporary. please, change to "if (is_reference(arg) && reference_type(arg) == TVPTR)"
 			if (is_reference(arg))
 				switch (reference_type(arg)) {
 				case TVPTR:
 					args[i] = car(arg);
 					break;
-				case TBYTEVECTOR: // can be used instead of vptr
+				case TBYTEVECTOR: // can be used instead of vptr, dangerous!
 					args[i] = (word) &car(arg);
 					break;
 				default:
@@ -2015,7 +1995,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						*p++ = 0;
 					else
 					if (is_reference(car(l)))
-					switch (reference_type(car(l))) {
+						switch (reference_type(car(l))) {
 						case TVPTR:
 							*p++ = (void*)car(l);
 							break;
@@ -2033,7 +2013,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						}
 						default:
 							E("invalid parameter type (requested vptr*)");
-					}
+						}
 					else
 						E("invalid parameter type (requested vptr*)");
 					l = cdr(l);
@@ -2098,7 +2078,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 							offset = (offset + 3) & -4;
 							break;
 						case TINT64: case TUINT64:
-						case TDOUBLE: case 0:
+						case TDOUBLE: case 0: // 0 means no more arguments
 							offset = (offset + 7) & -8;
 							break;
 					}
@@ -2119,7 +2099,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						}
 						general = 0;
 					}
-					// аргументы закончилисьs
+					// аргументы закончились
 					if (p == INULL)
 						break;
 					assert (a != INULL);

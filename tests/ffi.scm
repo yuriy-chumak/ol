@@ -30,6 +30,11 @@
 ;;    f - float
 ;;    d - double
 
+;; note:
+;;    fft-char is signed by default
+;;    we don't support rational numbers as fft&
+
+; --------------------------------------
 (print "type limits checking:")
 
 (define INT8_MIN -128)
@@ -49,7 +54,6 @@
 (define UINT32_MAX 4294967295)
 (define UINT64_MAX 18446744073709551615)
 
-; note: char is signed by default
 (for-each (lambda (v)
       (cond
       ((eq? (size v) 5)
@@ -62,14 +66,8 @@
                (define mirror (this type-value name type-value))
                (try type-name mirror v))))))
    (list
-      ["char"                 fft-char "C2C" INT8_MIN INT8_MAX]
-      ;; ["invalid! char (must got -1)" fft-char "C2C" UINT8_MAX]
-      ;; ["invalid! char"         fft-unsigned-char "C2C" UINT8_MAX]
+      ["good char"            fft-char "C2C" INT8_MIN INT8_MAX]
       ["unsinged char"        fft-unsigned-char "c2c" INT8_MAX UINT8_MAX]
-      ;; ["invalid! unsinged char (must got max)" fft-unsigned-char "c2c" -1]
-      ;; ["invalid! unsinged char (must got positive)" fft-unsigned-char "c2c" INT8_MIN]
-      ;; ["invalid! unsinged char" fft-char "c2c" -1]
-      ;; ["invalid! unsinged char" fft-char "c2c" INT8_MIN]
 
       ["short"                fft-short "S2S" INT16_MIN INT16_MAX]
       ["unsinged short"       fft-unsigned-short "s2s" INT16_MAX UINT16_MAX]
@@ -81,7 +79,7 @@
       ["unsinged long long"   fft-unsigned-long-long "q2q" INT64_MAX UINT64_MAX]
    ))
 
-; - simple type -> type mirroring functions ------------------------
+; - type -> type mirroring functions ------------------------
 (print "type function(type arg) { return arg; }")
 
 (for-each (lambda (x)
@@ -118,7 +116,7 @@
       (try "d2d" mirror arg))
    '(0.0 #i0.0 125.125 #i125.125 -125.125 #i-125.125))
 
-; - simple type* -> type mirroring functions ------------------------
+; - type* -> type mirroring functions ------------------------
 (print "type function(type* arg) { return *arg; }")
 
 (for-each (lambda (x)
@@ -157,10 +155,8 @@
       (try& "pd2d" mirror arg))
    '((0.0) (#i0.0) (125.125) (#i125.125) (-125.125) (#i-125.125)))
 
-; - simple type* -> type mirroring functions ------------------------
+; - type* -> type changing functions ------------------------
 (print "type function(type* arg) { *arg -= 1; return *arg + 2; }")
-
-;; note: we don't support rational numbers as fft&
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
@@ -308,14 +304,10 @@
       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long)))
    (try "too much arguments" function
-      1 2 3 4
-      5 6 7 8
-      1 2 3 4
-      5 6 7 8
-      1 2 3 4
-      5 6 7 8
-      1 2 3 4
-      5 6 7 8))
+      1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8))
 
 ;; ; ---------------------------------------------------------------
 ;; ; callbacks
