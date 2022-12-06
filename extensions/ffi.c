@@ -65,6 +65,14 @@
 #	pragma GCC diagnostic ignored "-Wunused-label"
 #endif
 
+#ifdef __ILP32__
+#	define IF32(x) x
+#	define IFN32(x)
+#else
+#	define IF32(x)
+#	define IFN32(x) x
+#endif
+
 
 #define TVOID         (48)
 //efine TSTRING       (3)
@@ -2025,7 +2033,6 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 
 		// special case of a structure by value
-#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
 		case TPAIR:
 			// todo: check a types of structure
 			switch (reference_type(arg)) {
@@ -2055,12 +2062,13 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				size = (size + sizeof(word)-1) & -sizeof(word);
 
 				int j = i;
+#ifndef __ILP32__
 				if (size > 16) // should send using stack
 					j = max(i, 6, l);
-				char* ptr = (char*)&args[j];
-
-				size_t offset = 0;
 				int general = 0; // 8-bit block should go to general register
+#endif
+				char* ptr = (char*)&args[j];
+				size_t offset = 0;
 
 				for (word p = car(t), a = arg; ; p = cdr(p), a = cdr(a)) {
 					word subtype = (p != INULL) ? car(p) : I(0);
@@ -2077,15 +2085,22 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 							break;
 						case TINT32: case TUINT32:
 						case TFLOAT:
+#ifdef __ILP32__
+						case TINT64: case TUINT64:
+						case TDOUBLE: case 0: // 0 means "no more arguments"
+#endif
 							offset = (offset + 3) & -4;
 							break;
+#ifndef __ILP32__
 						case TINT64: case TUINT64:
-						case TDOUBLE: case 0: // 0 means no more arguments
+						case TDOUBLE: case 0: // 0 means "no more arguments"
 							offset = (offset + 7) & -8;
 							break;
+#endif
 					}
-					if (offset == 8) { // пришло время сложить данные в регистр
-						offset = 0;
+					if (offset >= sizeof(word)) { // пришло время сложить данные в регистр
+						assert (offset % sizeof(word) == 0);
+#ifndef __ILP32__
 						if (general || (size > 16)) { // в регистр общего назначения
 							j++; floatsmask <<= 1;
 							ptr += 8;
@@ -2100,6 +2115,11 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 							floatsmask |= 1;
 						}
 						general = 0;
+#else
+						j += offset / sizeof(word);
+						ptr += sizeof(word);
+#endif
+						offset %= sizeof(word);
 					}
 					// аргументы закончились
 					if (p == INULL)
@@ -2111,22 +2131,25 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					switch (stv) {
 						case TINT8:  case TUINT8: {
 							*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
-							offset += 1; general = 1;
+							offset += 1; IFN32(general = 1);
 							break;
 						}
 						case TINT16: case TUINT16: {
 							*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
-							offset += 2; general = 1;
+							offset += 2; IFN32(general = 1);
 							break;
 						}
 						case TINT32: case TUINT32: {
 							*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
-							offset += 4; general = 1;
+							offset += 4; IFN32(general = 1);
 							break;
 						}
 						case TINT64: case TUINT64: {
 							*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
-							offset += 8; general = 1;
+							offset += 8; IFN32(general = 1);
+#ifdef __ILP32__
+							j++; ptr += 4; offset -= 4;
+#endif
 							break;
 						}
 
@@ -2138,14 +2161,19 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						case TDOUBLE: {
 							*(double*)&ptr[offset] = OL2D(car(a));
 							offset += 8;
+#ifdef __ILP32__
+							j++; ptr += 4; offset -= 4;
+#endif
 							break;
 						}
 					}
 				}
 
+#ifndef __ILP32__
 				if (size > 16 && i < 6)
 					l = j;
 				else
+#endif
 					i = j;
 
 				--i; // because after break we already have ++i;
@@ -2156,7 +2184,6 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				E("invalid parameter values (requested bytevector)");
 			}
 			break;
-#endif // LP64
 
 		case TBYTEVECTOR:
 //		case TBYTEVECTOR+PTR:
