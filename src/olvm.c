@@ -4847,36 +4847,36 @@ loop:;
 		A2 = (word) new_alloc(TINEXACT, sizeof(inexact_t));
 		switch (fn) {
 		case 0xFA: // fsqrt
-			*(inexact_t*)&car(A2) = __builtin_sqrt(a);
+			*(inexact_t*)&car(A2) = sqrt(a);
 			break;
 		case 0xFE: // fsin
-			*(inexact_t*)&car(A2) = __builtin_sin(a);
+			*(inexact_t*)&car(A2) = sin(a);
 			break;
 		case 0xFF: // fcos
-			*(inexact_t*)&car(A2) = __builtin_cos(a);
+			*(inexact_t*)&car(A2) = cos(a);
 			break;
 		case 0xF2: // ftan
-			*(inexact_t*)&car(A2) = __builtin_tan(a);
+			*(inexact_t*)&car(A2) = tan(a);
 			break;
 		case 0xF3: // fatan
-			*(inexact_t*)&car(A2) = __builtin_atan(a);
+			*(inexact_t*)&car(A2) = atan(a);
 			break;
 		case 0xF1: // flog
-			*(inexact_t*)&car(A2) = __builtin_log(a);
+			*(inexact_t*)&car(A2) = log(a);
 			break;
 
 		case 0x81: // fexp
-			*(inexact_t*)&car(A2) = __builtin_exp(a);
+			*(inexact_t*)&car(A2) = exp(a);
 			break;
 		case 0x8E: // fasin
-			*(inexact_t*)&car(A2) = __builtin_asin(a);
+			*(inexact_t*)&car(A2) = asin(a);
 			break;
 		case 0x8F: // facos
-			*(inexact_t*)&car(A2) = __builtin_acos(a);
+			*(inexact_t*)&car(A2) = acos(a);
 			break;
 
 		case 0xFC: // ffloor
-			*(inexact_t*)&car(A2) = __builtin_floor(a);
+			*(inexact_t*)&car(A2) = floor(a);
 			break;
 
 		default:
@@ -4914,14 +4914,14 @@ loop:;
 			break;
 	#if OLVM_BUILTIN_FMATH
 		case 0xF3: // fatan2
-			*(inexact_t*)&car(A3) = __builtin_atan2(a, b);
+			*(inexact_t*)&car(A3) = atan2(a, b);
 			break;
 		case 0xF1: // flog2
-			*(inexact_t*)&car(A3) = __builtin_log(a) / __builtin_log(b);
+			*(inexact_t*)&car(A3) = log(a) / log(b);
 			break;
 
 		case 0x81: // fexpt
-			*(inexact_t*)&car(A3) = __builtin_pow(a, b);
+			*(inexact_t*)&car(A3) = pow(a, b);
 			break;
 	#endif
 		default:
