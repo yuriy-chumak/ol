@@ -608,6 +608,36 @@ item20 iistruct202struct20(int x, int y, item20 z)
 	return i;
 }
 
+
+#define STRUCT2(name, type1, type2, format) \
+struct name \
+{\
+	type1 x;\
+	type2 y;\
+};\
+PUBLIC \
+int name ## 2i(struct name a)\
+{\
+	printf(" = { " format " } -> ", a.x, a.y); fflush(stdout);\
+	return a.x + a.y;\
+}
+
+#define STRUCT2DECL(name, type, format) \
+STRUCT2(_ ## name ## c_, type, char, format " " "%d")\
+STRUCT2(_ ## name ## s_, type, short, format " " "%d")\
+STRUCT2(_ ## name ## i_, type, int, format " " "%d")\
+STRUCT2(_ ## name ## q_, type, long long, format " " "%lld")\
+STRUCT2(_ ## name ## f_, type, float, format " " "%f")\
+STRUCT2(_ ## name ## d_, type, double, format " " "%f")
+
+STRUCT2DECL(c, char, "%d")
+STRUCT2DECL(s, short, "%d")
+STRUCT2DECL(i, int, "%d")
+STRUCT2DECL(q, long long, "%lld")
+STRUCT2DECL(f, float, "%f")
+STRUCT2DECL(d, double, "%f")
+
+
 // -----------------------------------------------------------------------------------
 #include <stdarg.h>
 

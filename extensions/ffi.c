@@ -1394,6 +1394,8 @@ int64_t to_int64(word arg) {
 
 	return 0;
 }
+#else
+#	define to_int64 to_int
 #endif
 
 static
@@ -2123,7 +2125,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 							break;
 						}
 						case TINT64: case TUINT64: {
-							*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
+							*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
 							offset += 8; general = 1;
 							break;
 						}

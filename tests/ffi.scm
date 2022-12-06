@@ -387,6 +387,25 @@
 ;; ;;    (if callback
 ;; ;;       (callback_call_ii callback)))
 
+
+; -----------------------------
+; structures
+; -----------------------------
+
+(print "int function(struct { type x, type y } a) { return a.x + a.y; }")
+(for-each (lambda (name type)
+         (for-each (lambda (subname subtype)
+               (define realname (string-append "_" name subname "_2i"))
+               (define function (this fft-int realname (list type subtype)))
+               (for-each (lambda (arg)
+                     (try realname function arg))
+                  '((1 2))))
+            (list    "c"      "s"       "i"     "q"           "f"       "d")
+            (list fft-char fft-short fft-int fft-long-long fft-float fft-double)))
+   (list    "c"      "s"       "i"     "q"           "f"       "d")
+   (list fft-char fft-short fft-int fft-long-long fft-float fft-double))
+
+
 ; -----------------------------
 ; -=( fft-any )=---------------
 ; - simple type->type mirroring functions ------------------------
