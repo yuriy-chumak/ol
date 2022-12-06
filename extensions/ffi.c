@@ -74,6 +74,20 @@
 # endif
 #endif
 
+// ubuntu 18.04 fix for LP64/ILP32
+#ifndef __LP64__
+# if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
+#	define __LP64__ 1
+# endif
+#endif
+
+#ifndef __ILP32__
+# if (__i386__ && __unix__)
+#	define __ILP32__ 1
+# endif
+#endif
+
+
 // 32/64 help macro
 #ifdef __ILP32__
 #	define IF32(x) x
