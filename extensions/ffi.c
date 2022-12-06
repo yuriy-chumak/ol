@@ -65,6 +65,16 @@
 #	pragma GCC diagnostic ignored "-Wunused-label"
 #endif
 
+// win32/mingw fix for ILP32/LLP64
+#ifdef _WIN32
+# ifdef _WIN64
+#	define __LLP64__ 1
+# else
+#	define __ILP32__ 1
+# endif
+#endif
+
+// 32/64 help macro
 #ifdef __ILP32__
 #	define IF32(x) x
 #	define IFN32(x)
@@ -1554,7 +1564,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
 #endif
 
-#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
+// (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64/LLP64
+#if defined(__LP64__) || defined(__LLP64__)
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[18];
 	int d = 0;     // количество аргументов для ad
