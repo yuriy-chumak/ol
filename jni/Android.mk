@@ -336,6 +336,8 @@ else
 LOCAL_CFLAGS += -fPIC \
                 -D_POSIX_VER \
                 -DDG_DISABLE_ASSERT \
+				\
+				-DHAVE_ARM_NEON_H -DHAVE_NEON=1 \
                 -mfloat-abi=hard -include "arm_neon.h"
 
 # core
