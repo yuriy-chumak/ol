@@ -1229,7 +1229,12 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #include <alloca.h> // we have own win32 implementation
 
 #ifndef __GNUC__
+#if defined(__TINYC__) && defined(__riscv)
+// TCC does not have alloca support for RISC-V as of 2022-12
+#define __builtin_alloca malloc
+#else
 #define __builtin_alloca alloca
+#endif
 #endif
 
 #include <errno.h>
