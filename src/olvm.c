@@ -1255,6 +1255,20 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 
 #include <time.h>
 #include <math.h>
+#ifdef __TINYC__
+#	define __builtin_sqrt  sqrt
+#	define __builtin_sin   sin
+#	define __builtin_cos   cos
+#	define __builtin_tan   tan
+#	define __builtin_atan  atan
+#	define __builtin_log   log
+#	define __builtin_exp   exp
+#	define __builtin_asin  asin
+#	define __builtin_acos  acos
+#	define __builtin_floor floor
+#	define __builtin_atan2 atan2
+#	define __builtin_pow   pow
+#endif
 
 #include <sys/mman.h> // we have own win32 implementation
 #include <sys/utsname.h> // we have own win32 implementation
