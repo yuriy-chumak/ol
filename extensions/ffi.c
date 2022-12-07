@@ -45,6 +45,13 @@
 
 #include <string.h>
 #include <unistd.h>
+#include <alloca.h>
+
+#ifndef __GNUC__
+#define __builtin_alloca alloca
+#define __builtin_memcpy memcpy
+#endif
+
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -76,7 +83,7 @@
 
 // ubuntu 18.04 fix for LP64/ILP32
 #ifndef __LP64__
-# if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
+# if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
 #	define __LP64__ 1
 # endif
 #endif
@@ -512,7 +519,7 @@ size_t utf8_len(word widestr)
 // https://en.wikibooks.org/wiki/Embedded_Systems/Mixed_C_and_Assembly_Programming
 
 // http://www.angelcode.com/dev/callconv/callconv.html
-#if __amd64__ // x86-64 (LP64/LLP64)
+#if __x86_64__ // x86-64 (LP64/LLP64)
 
 # if _WIN64 // Windows
 // The x64 Application Binary Interface (ABI) uses a four register fast-call
@@ -690,7 +697,7 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 	"movq   0(%rdi), %rdi",
 
 	"movq  -8(%rbp), %rax",
-	"callq *-16(%rbp)",
+	"call *-16(%rbp)",
 
 	// вернем результат
 	"cmpl $46, 16(%rbp)", // TFLOAT
@@ -1578,7 +1585,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
 #endif
 
-// (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64/LLP64
+// (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64/LLP64
 #if defined(__LP64__) || defined(__LLP64__)
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[18];
@@ -1813,7 +1820,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		// #endif
 
 		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
-#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
+#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
 		floatsmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
@@ -1827,7 +1834,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			args[++i] = 0; 	// double and longlong fills two words
 			break;
 #endif // 64-bit
-#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
+#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
 		case TFLOAT:
 		case TDOUBLE:
 			ad[d++] = 0;
@@ -1902,7 +1909,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		// с плавающей запятой:
 		case TFLOAT:
-			#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
+			#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
 				*(float*)&ad[d++] = OL2F(arg); --i;
 				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
@@ -1928,7 +1935,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				i = (i+1)&-2; // dword align
 			#endif
 
-			#if (__amd64__ && (__unix__ || __APPLE__)) || __aarch64__
+			#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
 				*(double*)&ad[d++] = OL2D(arg); --i;
 				floatsmask|=1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?) // todo: check varargs
@@ -2365,7 +2372,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	ret_t got = 0; // результат вызова функции
 	int returntype = is_value(car(B)) ? value(car(B)) : reference_type(car(B));
 
-#if  __amd64__
+#if  __x86_64__
 #	if (__unix__ || __APPLE__)
 		got = nix64_call(args, ad, max(i, l), d, floatsmask, function, returntype & 0x3F);
 #	elif _WIN64
@@ -2816,7 +2823,7 @@ word OLVM_sizeof(olvm_t* self, word* arguments)
 // ret is ret address to the caller function
 static
 int64_t callback(olvm_t* ol, size_t id, int_t* argi
-	#if __amd64__ || __aarch64__
+	#if __x86_64__ || __aarch64__
 		, inexact_t* argf, int_t* rest
 	#endif
 	);
@@ -2869,7 +2876,7 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 	*(int32_t*)&ptr[7] = pin;
 	*(uint32_t*)&ptr[12] = (uint32_t)self;
 	*(uint32_t*)&ptr[17] = (uint32_t)&callback;
-#elif __amd64__
+#elif __x86_64__
 	// Windows x64
 # ifdef _WIN32
 	//long long callback(olvm_t* ol, int id, long long* argi, double* argf, long long* rest)
@@ -3048,7 +3055,7 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 static
 __attribute__((used))
 int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "this"
-#if __amd64__ || __aarch64__
+#if __x86_64__ || __aarch64__
 		, inexact_t* argf, int_t* rest //win64
 #endif
 		)
@@ -3080,10 +3087,10 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 	fp = heap->fp;
 
 	int i = 0;
-#if (__amd64__ || __aarch64__) && (__unix__ || __APPLE__)
+#if (__x86_64__ || __aarch64__) && (__unix__ || __APPLE__)
 	int j = 0;
 #endif
-/*#if __amd64__  // !!!
+/*#if __x86_64__  // !!!
 	#if _WIN64
 //	rest -= 4;
 	#else
@@ -3094,7 +3101,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 	while (types != INULL) {
 		--a;
 		// шаблон транслятора аргументов C -> OL
-		#if __amd64__
+		#if __x86_64__
 			#if _WIN64
 			# define c2ol_value(type) \
 			type value = i < 5 \
@@ -3166,7 +3173,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 
 		case I(TFLOAT): {
 			float
-			#if __amd64__ || __aarch64__
+			#if __x86_64__ || __aarch64__
 				#if _WIN64
 				value = i < 4
 				        ? *(float*) &argf[i]
@@ -3188,7 +3195,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 		}
 		case I(TDOUBLE): {
 			double
-			#if __amd64__ || __aarch64__
+			#if __x86_64__ || __aarch64__
 				#if _WIN64
 				value = i <= 4
 				        ? *(double*) &argf[i]
@@ -3210,7 +3217,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 		}
 		case I(TSTRING): {
 			void*
-			#if __amd64__
+			#if __x86_64__
 				#if _WIN64
 				value = i <= 4
 				        ? *(void**) &argi[i]
@@ -3239,7 +3246,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 //			break;
 		default: {
 			void*
-			#if __amd64__
+			#if __x86_64__
 				#if _WIN64
 				value = i <= 4
 				        ? *(void**) &argi[i]
@@ -3306,7 +3313,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 			return number(r);
 		case TFLOAT: {
 			float f = OL2F(r);
-#if __amd64__ || __i386__  // x86/64
+#if __x86_64__ || __i386__  // x86/64
 			__asm__("flds %0" :: "m" (f));
 #elif __aarch64__
 			__asm__("fmov s0, %w0" :: "r" (f));
@@ -3321,7 +3328,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 		}
 		case TDOUBLE: {
 			double d = OL2D(r);
-#if __amd64__ || __i386__  // x86/64
+#if __x86_64__ || __i386__  // x86/64
 			__asm__("fldl %0" :: "m" (d));
 #elif __aarch64__
 			__asm__("fmov d0, %0" :: "r" (d));
