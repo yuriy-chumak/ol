@@ -92,8 +92,12 @@ UNAME ?= $(shell uname -s)
 
 # Linux
 ifeq ($(UNAME),Linux)
+ifeq ($(CC), tcc)
+  L := $(if $(HAS_DLOPEN), -ldl)
+else
   L := $(if $(HAS_DLOPEN), -ldl) \
        -Xlinker --export-dynamic
+endif
 
 #Debian i586 fix
 ifeq ($(CC),gcc)
