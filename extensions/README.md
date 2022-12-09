@@ -6,7 +6,23 @@ provided by the OS (Operation System) or thirdparty libraries.
 
 For example, you can use Sqlite library without including support for that library in Ol.
 
-#### TOC
+### Glossary
+
+* `value`, integer number fits in machine word.
+* `reference`, any other Ol object (big and floating point numbers, strings, vectors, etc.)
+* `callable`, special formed Ol function that can be called from the external (native) code.
+
+We use some common names for types in tables:
+  * `integer-types` means type-enum+, type-enum-, type-int+, and type-int-.
+  * `number-types` means integer-types, type-rational, type-inexact, and type-complex
+  * `string-types` means type-string, type-string-wide, and type-string-dispatch.
+  * `structure-type` means list (possibly a tree) of structure types in consistent order.
+
+You can get the type of Ol object using `type` function ((type -12) produces 32),
+you can get type name for integer value using `typename` function ((typename 32) produces 'type-enum-).
+
+
+## TOC
 * [Basic example](#basic-example)
 * [Function declaration](#function-declaration)
 * [Function result types](#function-result-types)
@@ -25,7 +41,6 @@ For example, you can use Sqlite library without including support for that libra
   * [Variable Arguments](#variable-arguments)
   * [Multiplatform](#multiplatform)
   * [More Examples](#more-examples)
-
 
 
 ## Basic Example
@@ -59,6 +74,7 @@ type ',help' to help, ',quit' to end session.
 bye-bye.
 ```
 
+
 ## Function declaration
 
 Function declaration (linking occurs at the time of declaration, so library should be loaded and valid at this point) consists of:
@@ -67,11 +83,6 @@ Function declaration (linking occurs at the time of declaration, so library shou
 1. the function name (`"asin"` in the example above),
 1. the function parameters, if any (`fft-double` in the example above).
 
-We use some common names for types in tables:
-  * `integer-types` means type-enum+, type-enum-, type-int+, and type-int-.
-  * `number-types` means integer-types, type-rational, type-inexact, and type-complex
-  * `string-types` means type-string, type-string-wide, and type-string-dispatch.
-  * `structure-type` means list (possibly a tree) of structure types in consistent order.
 
 ## Function result types
 
@@ -114,6 +125,7 @@ List of result types that ffi supports, with a short description:
 | boolean         | fft-bool  | type-const | Returns `#false` for a zero result, otherwise `#true` |
 | any pointer     | type-vptr | type-vptr | |
 | structure       | type-pair | type-pair | Note 3 below. |
+
 
 ## Argument Types
 
@@ -187,7 +199,7 @@ Some pointer/reference types already defined in (otus ffi), `fft-int8*` as `(fft
 |------------------|-------------|-----------------------------|----------|
 | void             | fft-void    | any | argument ignored, always interpret as 0 |
 | system pointer   | type-vptr   | type-vptr, type-bytevector | Note 2.|
-| port             | type-port   | type-port (value or reference) | |
+| port             | type-port   | type-port | |
 | boolean          | fft-bool    | type-const | `#false` interpreted as false, all others as `#true` |
 | any              | fft-any     | any | Note 1. |
 | raw olvm pointer | fft-unknown | any | Don't use, because for internal purposes and can be changed at any moment. |
@@ -199,9 +211,10 @@ Some pointer/reference types already defined in (otus ffi), `fft-int8*` as `(fft
   * string-types interpret as utf8 string,
   * type-vptr interpret as system pointer,
   * type-callable interpret as ol callable (platform function pointer),
-  * dot-pair '(type . argument) as type.
+  * dot pair '(type . argument) as type.
 * Note 2. Bytevectors interpret as pointer to this bytevector. Please don't use because of risky.
 * Note 3. Structures TBD a bit later.
+
 
 ## C Types Default Mapping
 
@@ -286,6 +299,7 @@ hello!
 11
 ```
 
+Note: for the integers, strings and floats you can omit type declaration in form of dot-pair.
 
 ### Multiplatform
 
