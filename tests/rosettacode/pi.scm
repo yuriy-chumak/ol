@@ -5,14 +5,14 @@
       (unless (eq? numbers 0)
          (if (< (- (+ (* 4 q) r) t) (* n t))
             (begin
-               (display n)
+               (display n) (if (eq? q 1) (display "."))
                (loop (* q  10)
                      (* 10 (- r (* n t)))
                      t
                      k
                      (- (div (* 10 (+ (* 3 q) r)) t) (* 10 n))
                      l
-                     (if numbers (- numbers 1))))
+                     (- numbers 1)))
             (begin
                (loop (* q k)
                      (* (+ (* 2 q) r) l)
@@ -20,7 +20,7 @@
                      (+ k 1)
                      (div (+ (* q (* 7 k)) 2 (* r l)) (* t l))
                      (+ l 2)
-                     (if numbers (- numbers 1))))))))
+                     numbers))))))
 
-(pi 5000)
+(pi 1024)
 (print) ; just newline
