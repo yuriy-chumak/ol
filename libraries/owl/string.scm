@@ -375,8 +375,21 @@
       (define (i x) x)
 
       (define substring (case-lambda
-         ((str start)     (runes->string (ldrop (str-iter str) start)))
-         ((str start end) (runes->string (ltake (ldrop (str-iter str) start) (- end start))))))
+         ((str start) (runes->string
+               (let ((start (if (negative? start) (+ (string-length str) start) start)))
+                  (ldrop (str-iter str) start))))
+         ((str start end) (runes->string
+               (let ((start (if (negative? start) (+ (string-length str) start) start))
+                     (end   (if (negative?   end) (+ (string-length str)   end)   end)))
+                  (ltake (ldrop (str-iter str) start) (- end start)))))))
+
+      (assert (substring "123456789" 0)                 ===> "123456789")
+      (assert (substring "123456789" 2)                 ===>   "3456789")
+      (assert (substring "123456789" -2)                ===>        "89")
+      (assert (substring "123456789" 0 2)               ===> "12")
+      (assert (substring "123456789" 0 -2)              ===> "1234567")
+      (assert (substring "123456789" 2 -2)              ===>   "34567")
+
 
       ;; lexicographic comparison with end of string < lowest code point
       ;; 1 = sa smaller, 2 = equal, 3 = sb smaller

@@ -239,6 +239,10 @@ R<sup>7</sup>RS DIFFERENCES
     - note: Ol supports full Unicode 14.0.0 (2021 Sep 14) character set.
     - note: If you want to print a character in the form of a letter (or a digit, etc.), use a function 'string', i.e. instead of `(print #\λ)` use `(print (string #\λ))`, otherwise you will get a number 955.
 
+* 6.7. Strings
+  * NEGATIVE indices of `substring` is **valid** in Ol, but *invalid* in Scheme.
+    - note: "-1" is the last rune of the string, "-2" is before the last element, etc.
+
 * 6.8. Vectors
   * NEGATIVE indices of a vector is **valid** in Ol, but *invalid* in Scheme.
     - note: Negative vector indices can be used to access the n-th element from the end of the vector. This means that "-1" is the last element of the vector, "-2" is before the last element, "-n" is the n-th element from the end of the vector.
