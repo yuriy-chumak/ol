@@ -450,7 +450,6 @@
                         (0  (DIS 1 "ERROR"))
                         (62 (DIS 1 "INVALID"))
 
-                        (17 (DIS 1 "ARITY-ERROR"))
                         (24 (DIS 2 "RET"))
                         
                         (21 (DIS 1 "NOP"))
@@ -498,9 +497,14 @@
                         (10 (DIS 5 "SETREF"))
                         (74 (DIS 5 "SETREF!"))
 
-                        (23 (DIS (+ (caddr src) 5) "NEW"))
-                        (18 (DIS (+ (cadr src) 3) "MAKE"))
-                        (82 (DIS (+ (cadr src) 3) "ALLOC"))
+                        ; memory allocators
+                        (23 (DIS (if (null? (cdr src)) 1 (+ (caddr src) 5)) "NEW"))
+                        (18 (DIS (if (null? (cdr src)) 1 (+ (cadr src) 3)) "MAKE"))
+                        (82 (DIS (if (null? (cdr src)) 1 (+ (cadr src) 3)) "ALLOC"))
+                        ; special
+                        (20 (DIS 1 "APPLY"))
+                        (17 (DIS 1 "ARITY-ERROR"))
+                        (84 (DIS 1 "APPLY/CC"))
 
                         (32 (DIS (+ (caddr src) 3) "VECTOR-APPLY"))
 
@@ -541,7 +545,7 @@
                         (37 (DIS 3 "EXIT"))
 
                         (else
-                           (DIS 1 "?"))))))))
+                           (DIS "?"))))))))
 
 
       (define repl-ops-help (symbol->string '
