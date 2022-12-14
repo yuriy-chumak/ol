@@ -1669,7 +1669,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		return delta;
 	} else {
 		E("Heap adjustment failed");
-		// longjmp(heap->fail, IFALSE); todo: manage memory issues
+		// longjmp(heap->ret, IFALSE); todo: manage memory issues
 	}
 	return 0;
 }
@@ -1915,8 +1915,8 @@ void set_signal_handler()
  */
 struct olvm_t
 {
-	heap_t heap; // MUST be first (!!)
-	jmp_buf fail;   // аварийный выход
+	heap_t heap; // MUST be first!
+	jmp_buf ret; // emergency exit
 
 	// word max_heap_size; // max heap size in MiB
 
@@ -2125,15 +2125,16 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 	word* r = ol->rps;
 	int p = 0, N = NR + ol->cr;
 
-	// попробуем освободить ненужные регистры?
-	for (int i = ol->arity + 3; i < NR; i++)
-		r[i] = IFALSE;
+	// попробуем освободить ненужные регистры
+    // (но не pins*)
+	for (int i = 3 + ol->arity; i < NR; i++)
+		r[i] = IFALSE; // todo: use wmemset?
 
 	// assert (fp + N + 3 < ol->heap.end);
 
 	// создадим в топе временный объект со значениями всех регистров
 	word *regs = new (TVECTOR, N + 1); // N for regs, 1 for this
-	while (++p <= N) regs[p] = r[p-1];
+	while (++p <= N) regs[p] = r[p-1]; // todo: use memcpy?
 	regs[p] = ol->this;
 	// выполним сборку мусора
 	ol->heap.fp = fp;
@@ -2150,7 +2151,7 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 
 // ff's get implementation
 static
-word get(word *ff, word key, word def, jmp_buf fail)
+word get(word *ff, word key, word def, jmp_buf ret)
 {
 	while ((word) ff != IEMPTY) { // ff = [header key value [maybe left] [maybe right]]
 		word this = ff[1], hdr;
@@ -2169,18 +2170,33 @@ word get(word *ff, word key, word def, jmp_buf fail)
 			continue;
 		default:
 			E("assert! header_size(ff) == %d", (int)header_size(hdr));
-			longjmp(fail, IFALSE); // todo: return error code
+			longjmp(ret, IFALSE); // todo: return error code
 		}
 	}
 	return def;
 }
 
+#define R0  rps[0]
+#define R1  rps[1]
+#define R2  rps[2]
+#define R3  rps[3]
+#define R4  rps[4]
+#define R5  rps[5]
+#define R6  rps[6]
+
+#define A0  rps[ip[0]]
+#define A1  rps[ip[1]]
+#define A2  rps[ip[2]]
+#define A3  rps[ip[3]]
+#define A4  rps[ip[4]]
+#define A5  rps[ip[5]]
+
 // generate errors and crashes
 #define ERROR5(type,value, code,a,b) { \
 	D("VM " type " AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code,a,b); \
-	rps[4] = I(code);    rps[3] = I(value);\
-	rps[5] = (word) (a);\
-	rps[6] = (word) (b);\
+	R4 = I(code);    R3 = I(value);\
+	R5 = (word) (a);\
+	R6 = (word) (b);\
 	goto error; \
 }
 #define ERROR_MACRO(_1, _2, _3, NAME, ...) NAME
@@ -2200,21 +2216,6 @@ word get(word *ff, word key, word def, jmp_buf fail)
 
 // # of function calls in a thread quantum
 #define TICKS  10000
-
-#define R0  rps[0]
-#define R1  rps[1]
-#define R2  rps[2]
-#define R3  rps[3]
-#define R4  rps[4]
-#define R5  rps[5]
-#define R6  rps[6]
-
-#define A0  rps[ip[0]]
-#define A1  rps[ip[1]]
-#define A2  rps[ip[2]]
-#define A3  rps[ip[3]]
-#define A4  rps[ip[4]]
-#define A5  rps[ip[5]]
 
 static
 void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char** ip0, word** fp, word* this)
@@ -2279,12 +2280,12 @@ apply:;
             word key = R4;
 			switch (acc) {
 			case 2:
-				R3 = get((word*)this, key,  0, ol->fail); // 0 is "not found"
+				R3 = get((word*)this, key,  0, ol->ret); // 0 is "not found"
 				if (!R3)
 					ERROR(260, this, key);
 				break;
 			case 3:
-				R3 = get((word*)this, key, R5, ol->fail);
+				R3 = get((word*)this, key, R5, ol->ret);
 				break;
 			default:
 				ERROR(259, this, I(acc));
@@ -4980,16 +4981,16 @@ loop:;
 
 	// (vm:exit value)
 	case VMEXIT:
-		this = rps[3];
-		rps[3] = A0;
+		this = R3;
+		R3 = A0;
 		goto done;
 	}
 	goto loop;
 
 
 error:; // R4-R6 set, and call mcp (if any)
-	this = rps[0];
-	rps[0] = IFALSE;
+	this = R0;
+	R0 = IFALSE;
 	if (is_reference(this)) {
 		acc = 4;
 		goto apply;
@@ -5615,7 +5616,7 @@ word
 OLVM_run(OL* ol, int argc, char** argv)
 {
 #ifndef __EMSCRIPTEN__
-	int r = setjmp(ol->fail);
+	int r = setjmp(ol->ret);
 	if (r != 0) {
 		// TODO: restore old values
 		// TODO: if IFALSE - it's error
@@ -5647,7 +5648,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 	sandboxp = 0;  // static variable
 
 #ifndef __EMSCRIPTEN__
-	longjmp(ol->fail,
+	longjmp(ol->ret,
 		(int)runtime(ol));
 #else
 	runtime(ol);
@@ -5659,7 +5660,7 @@ word
 OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 {
 #ifndef __EMSCRIPTEN__
-	int r = setjmp(ol->fail);
+	int r = setjmp(ol->ret);
 	if (r != 0) {
 		return ol->rps[3];
 	}
@@ -5684,7 +5685,7 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 	ol->arity = acc;
 
 #ifndef __EMSCRIPTEN__
-	longjmp(ol->fail,
+	longjmp(ol->ret,
 		(int)runtime(ol));
 #else
 	runtime(ol);
