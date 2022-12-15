@@ -114,9 +114,11 @@ void*OLVM_userdata(olvm_t* ol, void* userdata);
 void*OLVM_allocate(olvm_t* ol, unsigned words);
 
 // pinned objects support functions
+#ifndef OLVM_NOPINS
 size_t OLVM_pin(olvm_t* ol, word ref); // pin can realloc RPS (Register and Pin Set)
 word OLVM_deref(olvm_t* ol, size_t p);
 word OLVM_unpin(olvm_t* ol, size_t p);
+#endif
 
 // ffi callbacks support
 word OLVM_apply(olvm_t* ol, word function, word args);
@@ -1333,6 +1335,11 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
 #define OLVM_FFI HAS_DLOPEN // ffi have no sense without dlopen/dlsym
 #endif
 
+#if OLVM_FFI && defined(OLVM_NOPINS)
+#error "FFI requires PINS support"
+#endif
+
+
 #ifndef OLVM_CALLABLES
 #define OLVM_CALLABLES OLVM_FFI
 #endif
@@ -1921,14 +1928,16 @@ struct olvm_t
 	// word max_heap_size; // max heap size in MiB
 
 	// 0 - mcp, 1 - this, 2 - clos-this, 3 - a0, often cont, 4 - a1, ..., NR - pin0, ...
-	// todo: перенести в конец кучи?
-	// registers (including pins)
-	word* rps;
+	// registers
+    word reg[NR];
 
+#ifndef OLVM_NOPINS
 	// pinned objects support
-	size_t cr;
+    word* pin;
+	size_t cr;  // pins count
 	size_t ffpin; // first free pin
 	size_t lfpin; // last free pin
+#endif
 
 	// текущий контекст с арностью
 	word this;
@@ -2122,30 +2131,42 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 	if ((ws >= 0) && ((fp + ws) < ol->heap.end))
 		return 0;
 
-	word* r = ol->rps;
-	int p = 0, N = NR + ol->cr;
+	word* r = ol->reg;
 
 	// попробуем освободить ненужные регистры
-    // (но не pins*)
+    // (но не пины)
 	for (int i = 3 + ol->arity; i < NR; i++)
 		r[i] = IFALSE; // todo: use wmemset?
 
 	// assert (fp + N + 3 < ol->heap.end);
+	int p = 0, N = NR;
 
-	// создадим в топе временный объект со значениями всех регистров
-	word *regs = new (TVECTOR, N + 1); // N for regs, 1 for this
+	// создадим в топе два временных объекта со значениями всех регистров и пинов
+#ifndef OLVM_NOPINS
+    word pin = (word)new(TVECTOR, ol->cr);
+    memcpy(payload(pin), ol->pin, ol->cr * sizeof(word));
+#else
+    word pin = IFALSE;
+#endif
+
+	word *regs = new (TVECTOR, N + 2); // N for regs, 1 for this, 1 for pins
 	while (++p <= N) regs[p] = r[p-1]; // todo: use memcpy?
 	regs[p] = ol->this;
-	// выполним сборку мусора
-	ol->heap.fp = fp;
+    regs[p + 1] = pin;
+
+	ol->heap.fp = fp; // выполним сборку мусора
 	regs = (word*)gc(&ol->heap, ws, (word)regs);
-	// и восстановим все регистры, уже подкорректированные сборщиком
+
+    pin = regs[p + 1];         // и восстановим все пины и регистры, уже подкорректированные сборщиком
 	ol->this = regs[p];
 	while (--p >= 1) r[p-1] = regs[p];
 
+#ifndef OLVM_NOPINS
+    memcpy(ol->pin, payload(pin), ol->cr * sizeof(word));
+#endif
+
 	// закончили, почистим за собой:
 	ol->heap.fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
-
 	return 1;
 }
 
@@ -2176,20 +2197,20 @@ word get(word *ff, word key, word def, jmp_buf ret)
 	return def;
 }
 
-#define R0  rps[0]
-#define R1  rps[1]
-#define R2  rps[2]
-#define R3  rps[3]
-#define R4  rps[4]
-#define R5  rps[5]
-#define R6  rps[6]
+#define R0  reg[0]
+#define R1  reg[1]
+#define R2  reg[2]
+#define R3  reg[3]
+#define R4  reg[4]
+#define R5  reg[5]
+#define R6  reg[6]
 
-#define A0  rps[ip[0]]
-#define A1  rps[ip[1]]
-#define A2  rps[ip[2]]
-#define A3  rps[ip[3]]
-#define A4  rps[ip[4]]
-#define A5  rps[ip[5]]
+#define A0  reg[ip[0]]
+#define A1  reg[ip[1]]
+#define A2  reg[ip[2]]
+#define A3  reg[ip[3]]
+#define A4  reg[ip[4]]
+#define A5  reg[ip[5]]
 
 // generate errors and crashes
 #define ERROR5(type,value, code,a,b) { \
@@ -2241,7 +2262,7 @@ word runtime(struct olvm_t* ol)
 {
 	heap_t* heap = &ol->heap; // global vm heap
 	word *fp = heap->fp; // memory allocation pointer
-	word *rps = ol->rps; // virtual machine registers
+	word *reg = ol->reg; // virtual machine registers
 
 //	int breaked = 0;
 	int ticker = TICKS; // any initial value ok
@@ -2296,25 +2317,25 @@ apply:;
 			goto apply;
 		}
 		else
-#if HAS_DLOPEN // unsafe must be enabled
+#if OLVM_FFI // unsafe must be enabled
 		// running ffi function
 		if (type == TVPTR) { // todo: change to special type or/and add a second word - function name (== [ptr function-name])
 			word* args = (word*)INULL;
 			for (int i = acc; i > 1; i--)
-				args = new_pair(rps[i+2], args);
+				args = new_pair(reg[i+2], args);
 
 			word (*function)(struct olvm_t*, word*) = (word (*)(struct olvm_t*, word*)) car(this);  assert (function);
-			size_t cont = OLVM_pin(ol, rps[3]);
-			rps = ol->rps; // pin can realloc registers!
+			size_t cont = OLVM_pin(ol, reg[3]); // assert (reg[3] == this) ??
+			reg = ol->reg; // pin can realloc registers!
 
 			heap->fp = fp;
 			word x = function(ol, args);
 			fp = heap->fp;
 
 			this = OLVM_unpin(ol, cont);
-			rps = ol->rps; // don't remove!
+			reg = ol->reg; // don't remove!
 
-			rps[3] = x;
+			reg[3] = x;
 			acc = 1;
 			goto apply;
 		}
@@ -2343,9 +2364,9 @@ apply:;
 
 				thread = new (TTHREAD, acc-1);
 				for (ptrdiff_t pos = 1; pos < acc-1; pos++)
-					thread[pos] = rps[pos];
+					thread[pos] = reg[pos];
 
-				rps[acc] = this;
+				reg[acc] = this;
 				thread[acc-1] = this;
 				this = R0; // mcp
 
@@ -2435,7 +2456,7 @@ apply:;
 	}
 
 	if (this == IRETURN) {
-		// в rps[3] находится код возврата
+		// в reg[3] находится код возврата
 		goto done;       // колбек закончен! надо просто выйти наверх
 	}
 	
@@ -2444,7 +2465,7 @@ apply:;
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	#	define MODD(i, n) ((i) + ((n)<<6))
-	// Rn - регистр машины (rps[n])
+	// Rn - регистр машины (reg[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
 	// todo: exchange NOP and APPLY operation codes
@@ -2690,32 +2711,32 @@ loop:;
 	 */
 	// todo:? include apply-tuple, apply-values? and apply-ff to the APPLY
 	case APPLY: { // (0%)
-		int reg = 4;   // normal apply: cont=r3, func=r4, a0=r5,
+		int r = 4;   // normal apply: cont=r3, func=r4, a0=r5,
 		int arity = 1;
 		acc -= 3; // ignore cont, function and stop before last one (the list)
 
 		if (op == APPLYCONT) {    // (_sans_cps apply): func=r3, a0=r4
-			reg = 3;
+			r = 3;
 			arity = 0;
 			acc += 1;
 		}
 
 		if (acc < 0)
 			ERROR(APPLY, I(0));
-		this = rps[reg];
+		this = reg[r];
 
 		// copy args down
 		while (acc--) { // move explicitly given arguments down by one to correct positions
-			rps[reg] = rps[reg+1];
-			reg++;
+			reg[r] = reg[r+1];
+			r++;
 			arity++;
 		}
-		word *lst = (word *) rps[reg+1];
+		word *lst = (word *) reg[r+1];
 
 		while (is_pair(lst)) { // unwind argument list
-			if (reg > NR)
-				ERROR(APPLY, I(reg));
-			rps[reg++] = car (lst);
+			if (r > NR)
+				ERROR(APPLY, I(r));
+			reg[r++] = car (lst);
 			lst = (word *) cdr(lst);
 			arity++;
 		}
@@ -2745,7 +2766,7 @@ loop:;
 	// the type of quantum is ignored, for now.
 	// todo: add quantum type checking
 	//			if (ip[0] != 4 || ip[1] != 5)
-	//				STDERR("run rps[%d], rps[%d]", ip[0], ip[1]);
+	//				STDERR("run reg[%d], reg[%d]", ip[0], ip[1]);
 		this = A0;
 		R0 = R3;
 		ticker = bank ? bank : (int) value(A1);
@@ -2759,7 +2780,7 @@ loop:;
 			word code = ref(this, pos);
 			acc = pos - 3;
 			while (--pos)
-				rps[pos] = ref(this, pos);
+				reg[pos] = ref(this, pos);
 			ip0 = ip = (unsigned char *) &car(code);
 			break;  // no apply, continue
 		}
@@ -2790,12 +2811,12 @@ loop:;
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
 	case LD: // (5%)
-		A1 = I(ip[0]); // I(ip[0]) -> rps[ip[1]]
+		A1 = I(ip[0]); // I(ip[0]) -> reg[ip[1]]
 		ip += 2; break;
 
 
 	/*! #### REFI a p t
-	 * Rt = (ref rps[a] rps[p]), p is unsinged
+	 * Rt = (ref reg[a] reg[p]), p is unsinged
 	 */
 	case REFI: { // (24%)
 		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
@@ -2856,10 +2877,10 @@ loop:;
 		if (acc >= arity) {
 			word tail = INULL;
 			while (acc > arity) {
-				tail = (word)new_pair (rps[acc + 2], tail);
+				tail = (word)new_pair (reg[acc + 2], tail);
 				acc--;
 			}
-			rps[acc + 3] = tail;
+			reg[acc + 3] = tail;
 		}
 		else
 			ip += (ip[1] << 8) | ip[2];
@@ -2873,12 +2894,12 @@ loop:;
 		word size = *ip++;
 		word *T = new (type, size-1);
 
-		word vec = rps[*ip++];
-		T[1] = ((word *) vec)[*ip++]; // (ref rps[r] i)
+		word vec = reg[*ip++];
+		T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
 
 		for (size_t i = 2; i < size; )
-			T[i++] = rps[*ip++];
-		rps[*ip++] = (word) T; // rps[ret] = T
+			T[i++] = reg[*ip++];
+		reg[*ip++] = (word) T; // reg[ret] = T
 		break;
 	}
 
@@ -2895,10 +2916,10 @@ loop:;
 		word size = *ip++ + 1; // the argument is n-1 to allow making a 255-tuple with 255, and avoid 0 length objects
 		word *p = new (type, size), i = 0; // s fields + header
 		while (i < size) {
-			p[i+1] = rps[*ip++];
+			p[i+1] = reg[*ip++];
 			i++;
 		}
-		rps[*ip++] = (word) p;
+		reg[*ip++] = (word) p;
 		break;
 	}
 
@@ -2945,7 +2966,7 @@ loop:;
 				word *ptr = (op == VMMAKE)
 					? new (type, len)
 					: new_alloc(type, len);
-				rps[ip[size]] = (word)ptr;
+				reg[ip[size]] = (word)ptr;
 
 				if (is_numberp(value)) { // no list, just
 					if (op == VMMAKE) {
@@ -2987,7 +3008,7 @@ loop:;
 				}
 				else {
 					// invalid parameters
-					rps[ip[size]] = IFALSE;
+					reg[ip[size]] = IFALSE;
 				}
 				break;
 			}
@@ -3359,14 +3380,14 @@ loop:;
 
 	// bind vector to registers
 	case VECTORAPPLY: { /* bind <vector > <n> <r0> .. <rn> */
-		word *vector = (word *) rps[*ip++];
+		word *vector = (word *) reg[*ip++];
 		ASSERT(is_reference(vector), vector, I(10101));
 
 		word pos = 1, n = *ip++;
 		//word hdr = *tuple;
 		//CHECK(!(is_raw(hdr) || header_size(hdr)-1 != n), vector, BIND);
 		while (n--)
-			rps[*ip++] = vector[pos++];
+			reg[*ip++] = vector[pos++];
 
 		break;
 	}
@@ -4849,7 +4870,7 @@ loop:;
 		}
 
 		++argc; // restore real arguments count
-		rps[ip[argc]] = (word)r; // result
+		reg[ip[argc]] = (word)r; // result
 		ip += argc + 1; break;
 	}// end of syscalls
 
@@ -4949,11 +4970,12 @@ loop:;
 		ip += 4; break;
 	}
 
+#ifndef OLVM_NOPINS
 	case VMPIN: {  // (vm:pin object) /pin object/ => pin id
 		word object = A0;
 
 		int id = OLVM_pin(ol, object);
-		rps = ol->rps; // pin can realloc registers!
+		reg = ol->reg; // pin can realloc registers!
 
         A1 = (id > 3) ? I(id) : IFALSE;
 		ip += 2; break;
@@ -4964,7 +4986,7 @@ loop:;
 
 		int id = value(pin);
         word o = OLVM_unpin(ol, id);
-		rps = ol->rps; // don't remove
+		reg = ol->reg; // don't remove
 
 		A1 = o;
 		ip += 2; break;
@@ -4978,6 +5000,7 @@ loop:;
         A1 = OLVM_deref(ol, id);
 		ip += 2; break;
 	}
+#endif
 
 	// (vm:exit value)
 	case VMEXIT:
@@ -5485,22 +5508,29 @@ OLVM_new(unsigned char* bootstrap)
 	}
 
 	// подготовим регистры и закрепленные объекты (regs + pins):
+#ifndef OLVM_NOPINS
 	handle->cr = CR;
-	handle->rps = malloc((NR+CR) * sizeof(word));
+	handle->pin = malloc(CR * sizeof(word));
 	if (!heap->begin) {
-		E("Error: can't allocate %d", (NR+CR) * sizeof(word));
+		E("Error: can't allocate %d", CR * sizeof(word));
 		goto fail;
 	}
+    word* pin = handle->pin;
+	for (ptrdiff_t i = 0; i < CR; i++)
+		pin[i] = IFALSE;
+#endif
 
 	// регистры виртуальной машины
-	word* rps = handle->rps;
-	for (ptrdiff_t i = 0; i < NR+CR; i++)
-		rps[i] = IFALSE;
-	rps[0] = IFALSE; // MCP - master control program (NO mcp for now)
-	rps[3] = IHALT;  // continuation, just finish job
-	rps[4] = INULL;  // first argument
+	word* reg = handle->reg;
+	for (ptrdiff_t i = 0; i < NR; i++)
+		reg[i] = IFALSE;
+	reg[0] = IFALSE; // MCP - master control program (NO mcp for now)
+	reg[3] = IHALT;  // continuation, just finish job
+	reg[4] = INULL;  // first argument
 
+#ifndef OLVM_NOPINS
 	handle->ffpin = 4; // first four pins are used internally
+#endif
 
 	// i/o overrides
 	handle->open = os_open;
@@ -5542,7 +5572,7 @@ OLVM_new(unsigned char* bootstrap)
 		fp = deserialize(&p[1], no, construction, fp);
 
 		handle->this = p[no]; // (construction constructors main args)
-		handle->rps[5] = ptrs[nobjs];
+		handle->reg[5] = ptrs[nobjs];
 		handle->arity = 3; // two arguments
 	}
 
@@ -5554,9 +5584,11 @@ fail:
 	if (heap->begin)
 		free (heap->begin);
 	heap->begin = 0;
-	if (handle->rps)
-		free (handle->rps);
-	handle->rps = 0;
+#ifndef OLVM_NOPINS
+	if (handle->pin)
+		free (handle->pin);
+	handle->pin = 0;
+#endif
 	OLVM_delete(handle);
 	return 0;
 }
@@ -5620,12 +5652,12 @@ OLVM_run(OL* ol, int argc, char** argv)
 	if (r != 0) {
 		// TODO: restore old values
 		// TODO: if IFALSE - it's error
-		return ol->rps[3]; // returned value
+		return ol->reg[3]; // returned value
 	}
 #endif
 
 	// подготовим аргументы:
-	word userdata = ol->rps[4];
+	word userdata = ol->reg[4];
 	{
 		word* fp = ol->heap.fp;
 
@@ -5643,7 +5675,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 
 		ol->heap.fp = fp;
 	}
-	ol->rps[4] = userdata;
+	ol->reg[4] = userdata;
 
 	sandboxp = 0;  // static variable
 
@@ -5652,7 +5684,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 		(int)runtime(ol));
 #else
 	runtime(ol);
-	return ol->rps[3];
+	return ol->reg[3];
 #endif
 }
 
@@ -5662,7 +5694,7 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 #ifndef __EMSCRIPTEN__
 	int r = setjmp(ol->ret);
 	if (r != 0) {
-		return ol->rps[3];
+		return ol->reg[3];
 	}
 #endif
 	if (argc + 3 > NR) {
@@ -5676,9 +5708,9 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 	// подготовим аргументы
 	unsigned short acc = 1;
 	for (ptrdiff_t i = 0; i < argc; i++)
-		ol->rps[acc++ + 3] = (word)argv[i];
+		ol->reg[acc++ + 3] = (word)argv[i];
 
-	ol->rps[3] = IRETURN; // continuation
+	ol->reg[3] = IRETURN; // continuation
 
 	// теперь все готово для запуска главного цикла виртуальной машины
 	ol->this = this;
@@ -5689,10 +5721,11 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 		(int)runtime(ol));
 #else
 	runtime(ol);
-	return ol->rps[3];
+	return ol->reg[3];
 #endif
 }
 
+#ifndef OLVM_NOPINS
 // [0..3] - errors
 // 0 means "no space left"
 // 1 means "not a pinnable object"
@@ -5703,25 +5736,25 @@ size_t OLVM_pin(struct olvm_t* ol, word ref)
 	size_t id = ol->ffpin;
 	size_t cr = ol->cr;
 	for (; id < cr; id++) {
-		if (ol->rps[NR+id] == IFALSE)
+		if (ol->pin[id] == IFALSE)
 			goto ok;
 	}
 
-	// больше нету места, попробуем увеличить
+	// нету места, попробуем увеличить
 	size_t ncr = cr + cr / 3 + 1;
 
-	word* p = realloc(ol->rps, (NR + ncr) * sizeof(word));
+	word* p = realloc(ol->pin, ncr * sizeof(word));
 	if (!p)
 		return 0; // no space left
-	ol->rps = p;
-	ol->cr = ncr;
-	ol->heap.padding = GCPAD(NR + ncr) + MEMPAD;
+	ol->pin = p;
+	ol->cr = cr = ncr;
+	ol->heap.padding = GCPAD(NR + cr) + MEMPAD;
 
 	for (size_t i = id; i < ncr; i++)
-		p[NR+i] = IFALSE;
+		p[i] = IFALSE;
 
 ok:
-	ol->rps[NR+id] = ref;
+	ol->pin[id] = ref;
 	ol->ffpin = id + 1;
 	return id;
 }
@@ -5730,7 +5763,7 @@ word OLVM_deref(struct olvm_t* ol, size_t p)
 {
 	size_t id = p;
 	if (id > 3 && id < ol->cr)
-		return ol->rps[NR + id];
+		return ol->pin[id];
 	else
 		return IFALSE;
 }
@@ -5740,8 +5773,8 @@ word OLVM_unpin(struct olvm_t* ol, size_t p)
     word re = IFALSE;
     size_t id = p;
     if (id > 3 && id < ol->cr) {
-        re = ol->rps[NR+id];
-        ol->rps[NR+id] = IFALSE;
+        re = ol->pin[id];
+        ol->pin[id] = IFALSE;
 
 		if (ol->ffpin > id)
 			ol->ffpin = id;
@@ -5749,6 +5782,7 @@ word OLVM_unpin(struct olvm_t* ol, size_t p)
 
     return re;
 }
+#endif
 
 // ffi callbacks support
 word OLVM_apply(struct olvm_t* ol, word object, word args)
@@ -5761,21 +5795,21 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
 
 	// надо сохранить значения, иначе их уничтожит GC
 	// todo: складывать их в память! и восстанавливать оттуда же
-	word* rps = ol->rps;
+	word* reg = ol->reg;
 
-//	rps[NR + 0] = rps[0]; // не надо, mcp
-//	rps[NR + 1] = rps[1]; // не надо
-//	rps[NR + 2] = rps[2]; // не надо
-	rps[NR + 3] = rps[3]; // continuation/result
+//	reg[NR + 0] = reg[0]; // не надо, mcp
+//	reg[NR + 1] = reg[1]; // не надо
+//	reg[NR + 2] = reg[2]; // не надо
+	reg[NR + 3] = reg[3]; // continuation/result
 
 	// вызовем колбек:
-//	rps[0] = IFALSE;  // не надо, продолжаем использовать mcp
-	rps[3] = IRETURN; // команда выхода из колбека
+//	reg[0] = IFALSE;  // не надо, продолжаем использовать mcp
+	reg[3] = IRETURN; // команда выхода из колбека
 	ol->arity = 1;
 
 	size_t a = 4;
 	while (args != INULL) {
-		rps[a] = car(args);
+		reg[a] = car(args);
 		a++,
 		ol->arity++;
 		args = cdr(args);
@@ -5783,13 +5817,13 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
 
 	runtime(ol);
 
-	word r = rps[3]; // callback result
+	word r = reg[3]; // callback result
 	// возврат из колбека,
-	// rps, NR могли измениться
-	rps[3] = rps[NR + 3];
-//	rps[2] = rps[NR + 2]; // не надо
-//	rps[1] = rps[NR + 1]; // не надо
-//	rps[0] = rps[NR + 0]; // не надо, продолжаем использовать MCP
+	// reg, NR могли измениться
+	reg[3] = reg[NR + 3];
+//	reg[2] = reg[NR + 2]; // не надо
+//	reg[1] = reg[NR + 1]; // не надо
+//	reg[0] = reg[NR + 0]; // не надо, продолжаем использовать MCP
 
 	return r;
 }
