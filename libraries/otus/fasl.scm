@@ -387,7 +387,7 @@
                            (loop (car obj))
                            (loop (cdr obj))))
                      ((or (vector? obj)
-                          (procedure? obj))
+                          (function? obj))
                         (vm:make (type obj)
                            (let subloop ((pos (size obj)) (tail #null))
                               (if (eq? pos 0)
