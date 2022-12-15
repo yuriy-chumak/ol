@@ -5742,13 +5742,16 @@ size_t OLVM_pin(struct olvm_t* ol, word ref)
 
 	// нету места, попробуем увеличить
 	size_t ncr = cr + cr / 3 + 1;
+    ol->heap.gc(ol, ncr - cr);
 
 	word* p = realloc(ol->pin, ncr * sizeof(word));
 	if (!p)
 		return 0; // no space left
 	ol->pin = p;
-	ol->cr = cr = ncr;
-	ol->heap.padding = GCPAD(NR + cr) + MEMPAD;
+	ol->cr = ncr;
+
+    ol->heap.end -= ncr - cr;
+	ol->heap.padding += ncr - cr;
 
 	for (size_t i = id; i < ncr; i++)
 		p[i] = IFALSE;
