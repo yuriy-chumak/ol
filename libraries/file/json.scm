@@ -86,15 +86,15 @@
             (skip (imm #\\))
             (char (either
                      (let-parse* (
-                           (char (byte-if (lambda (byte) (quoted-values byte)))))
-                        (quoted-values char))
+                           (ch (byte-if (lambda (byte) (quoted-values byte #f)))))
+                        (quoted-values ch))
                      (let-parse* (
                            (skip (imm #\u))
-                           (h1 get-rune)
-                           (h2 get-rune)
-                           (h3 get-rune)
-                           (h4 get-rune))
-                        (list->number (list h1 h2 h3 h4) 16)))))
+                           (c1 byte)
+                           (c2 byte)
+                           (c3 byte)
+                           (c4 byte))
+                        (list->number (list c1 c2 c3 c4) 16)))))
          char))
 
    (define string
