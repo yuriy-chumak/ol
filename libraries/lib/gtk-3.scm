@@ -7,6 +7,8 @@
       gtk_init
       gtk_main
       gtk_main_quit
+      gtk_main_iteration
+      gtk_events_pending
 
       gtk_check_version
 
@@ -89,6 +91,8 @@
    (define gtk_init (GTK3 fft-void "gtk_init" fft-int& (fft& (fft* type-string))))
    (define gtk_main (GTK3 fft-void "gtk_main"))
    (define gtk_main_quit  (GTK3 fft-void "gtk_main_quit"))
+   (define gtk_main_iteration (GTK3 gboolean "gtk_main_iteration"))
+   (define gtk_events_pending (GTK3 gboolean "gtk_events_pending"))
 
    (define gtk_check_version (GTK3 type-string "gtk_check_version" guint guint guint))
 
