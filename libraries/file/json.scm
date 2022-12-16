@@ -42,6 +42,7 @@
                      (loop (mod i n) (/ n 10))))))
             ((inexact? L)
                (display L))
+
             ((vector? L)
                (display "[")
                (let ((len (size L)))
@@ -64,7 +65,10 @@
                      ((function? L)
                         (loop (L) #t))))
                (display "}"))
-            )))
+
+            ((null? L)
+               (display "null"))
+         )))
 
    (define whitespace (byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
    (define maybe-whitespaces (greedy* whitespace))
