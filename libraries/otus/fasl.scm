@@ -68,7 +68,7 @@
          (values-apply (vm:add a b) (lambda (n carry) n))))
 
       (define (send-biggish-num num tail)
-         (if (less? num 127)
+         (if (less? num 128)
             (cons (vm:cast num type-enum+) tail) ; highest chunk must have a bit 8 clear
             (cons (vm:ior (band num 127) 128)
                   (send-biggish-num (>> num 7) tail))))
@@ -137,8 +137,8 @@
                (encode-integer val tail))
             ((eq? (type val) type-inexact)
                (encode-inexact val tail copybytes))
-            ((ref val 0) ; ==(raw object? val), 0 in ref works only for binary objects
-               (let ((t (type val))
+            ((ref val 0) ; == (raw? val), 0 in ref works only for non empty binary objects
+               (let ((t (type val))       ; special case: 0-sized objects should be encoded as objects, not raws
                      (s (size val)))
                   (cons* 2 t
                      (send-number s
