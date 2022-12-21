@@ -11,6 +11,7 @@ Glossary
 * integer, little-endian multibyte sequence with signaling high bit.
 * longint_t, integer with unlimited accuracy.
 
+Workable fasl->sexp and sexp->fasl source codes can be found in the [special Ol branch](https://github.com/yuriy-chumak/ol/tree/bootstrapping/samples/bootstrapping).
 
 ### Integer's Encoding
 
@@ -33,6 +34,21 @@ Pseudocode:
 	return nat;
 ```
 
+Encodinh examples (first '0' means "number", second '0' means "positive integer", other numbers are the encoded integer):
+```scheme
+> (fasl-encode 1)
+'(0 0 1)
+> (fasl-encode 127)
+'(0 0 127)
+> (fasl-encode 128)
+'(0 0 128 1)
+> (fasl-encode 256)
+'(0 0 128 2)
+> (fasl-encode 11111111111111111111111111111111)
+'(0 0 199 227 241 184 172 197 191 194 185 219 199 253 222 135 35)
+> (fasl-decode '(0 0 199 227 241 184 172 197 191 194 185 219 199 253 222 135 35) #f)
+11111111111111111111111111111111
+```
 
 Format
 ------
@@ -128,4 +144,8 @@ You can convert type value into typename using `typename` function. For example,
 ```scheme
 > (typename 3)
 'type-string
+> (typename 18)
+'type-closure
+> (typename 63)
+'type-constructor
 ```
