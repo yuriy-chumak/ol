@@ -94,9 +94,9 @@
       ;;  компилятором, которые не экспозятся на сам язык
 
       ; procedure/closure support
-      (setq GOTO 2) ; jmp a, nargs - call Ra with nargs args
-      (setq CLOS 3) ; clos type, size, o, nenv, e0 ... en, t
-      (setq RET 24)
+      (setq GOTO  2) ; jmp a, nargs - call Ra with nargs args
+      (setq CLOS  3) ; clos type, size, o, nenv, e0 ... en, t
+      (setq RET  24)
 
       ; set
       (setq MOVE  9) ; move a, t:      Ra -> Rt

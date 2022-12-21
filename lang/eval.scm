@@ -461,7 +461,7 @@
                         (36 (DIS 3 "SIZE"))
 
                         (2  (DIS 3 "GOTO"))
-                        (3  (DIS (+ (caddr src) 4) "CLOS"))
+                        (3  (DIS (+ (caddr src) 4) "CLOS")) ; todo: decode first closure argument in type
 
                         (16 (DIS 4 "JZ"))
                         (80 (DIS 4 "JN"))

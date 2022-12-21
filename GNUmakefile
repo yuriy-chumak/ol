@@ -2,7 +2,7 @@ export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
 
-# detect required packages
+# detect external features
 -include configure.mk
 
 .PHONY: all debug release check slim config recompile install uninstall clean android

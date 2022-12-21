@@ -8,13 +8,13 @@ FASL formnat is internal and can be changed in the feature.
 Glossary
 --------
 * byte, just an 8-bit octet.
-* integer, big-endian multibyte sequence with signaling high bit.
+* integer, little-endian multibyte sequence with signaling high bit.
 * longint_t, integer with unlimited accuracy.
 
 
 ### Integer's Encoding
 
-All integers are encoded in a big-endian multibyte sequence with signaling high bit.
+All integers are encoded in a little-endian multibyte sequence with signaling high bit.
 That means a continuous stream of bytes with the least significant 6 bits and the most highest (7th) bit as a sequence flag. The last byte of sequence must have the 7th bit set to zero.
 
 In other words, you should read a byte, if high bit is zero then return a value, if high bit is set then use 6 bits as part of result and repeat with next byte.
