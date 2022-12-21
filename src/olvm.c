@@ -2320,23 +2320,23 @@ apply:;
 #if OLVM_FFI // unsafe must be enabled
 		// running ffi function
 		if (type == TVPTR) { // todo: change to special type or/and add a second word - function name (== [ptr function-name])
+                             // todo: use same type by longer size, with function name
 			word* args = (word*)INULL;
 			for (int i = acc; i > 1; i--)
 				args = new_pair(reg[i+2], args);
 
 			word (*function)(struct olvm_t*, word*) = (word (*)(struct olvm_t*, word*)) car(this);  assert (function);
-			size_t cont = OLVM_pin(ol, reg[3]); // assert (reg[3] == this) ??
-			reg = ol->reg; // pin can realloc registers!
 
 			heap->fp = fp;
+
+			size_t c = OLVM_pin(ol, R3);
 			word x = function(ol, args);
+			reg = ol->reg; // pin can realloc registers!
 			fp = heap->fp;
 
-			this = OLVM_unpin(ol, cont);
-			reg = ol->reg; // don't remove!
+			this = OLVM_unpin(ol, c);
 
-			reg[3] = x;
-			acc = 1;
+			R3 = x; acc = 1;
 			goto apply;
 		}
 		else
