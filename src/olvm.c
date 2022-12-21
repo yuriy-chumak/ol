@@ -2489,7 +2489,7 @@ mainloop:;
 	#	define MCP   27
 
 	#	define JAF   11
-	#	define JAFX  12
+	#	define JAX   12
 	#	define LDI   13      // LDE (13), LDN (77), LDT (141), LDF (205)
 	#	  define LDE MODD(LDI, 0)
 	#	  define LDN MODD(LDI, 1)
@@ -2636,7 +2636,7 @@ loop:;
 	 * | #o/8 | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
 	 * |:-----|:----------:|:---------:|:-------:|:-----:|:-------:|:-------:|:--------:|:------:|
 	 * |**0o**| JIT        | REFI      | GOTO    | CLOS  |  -----  | MOV2    |  ------  |  ----  |
-	 * |**1o**| JEQ        | MOVE      | set-ref*| JAF   | JAFX    | LD*     | LD       | TYPE   |
+	 * |**1o**| JEQ        | MOVE      | set-ref*| JAF   | JAX     | LD*     | LD       | TYPE   |
 	 * |**2o**| JP         |ARITY-ERROR| vm:make*|  ---  | APPLY   | NOP     | CAST     | NEW    |
 	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION | FEATURES| VMAX     | VSIZE  |
 	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE    | EXIT    | ADD      | MUL    |
@@ -2861,8 +2861,8 @@ loop:;
 		ip += 3; break;
 	}
 
-	// (13%) for JAF and JAFX
-	// NOTE: Do not combine JAF and JAFX for the gods of speed!
+	// (13%) for JAF and JAX
+	// NOTE: Don't combine JAF and JAX for the gods of speed
 	case JAF: {
 		long arity = ip[0];
 		if (acc != arity)
@@ -2871,8 +2871,8 @@ loop:;
 		ip += 3; break;
 	}
 
-	// additionally packs extra arguments list
-	case JAFX: {
+	// JAF eXtended, additionally packs extra arguments list
+	case JAX: {
 		long arity = ip[0];
 		if (acc >= arity) {
 			word tail = INULL;

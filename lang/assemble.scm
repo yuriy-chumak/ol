@@ -293,7 +293,7 @@
                                     (if (null? tail)
                                        (list ARITY-ERROR)
                                        tail)))
-                              (cons* JAFX (if fixed? arity (- arity 1))
+                              (cons* JAX (if fixed? arity (- arity 1))
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes

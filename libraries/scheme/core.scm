@@ -1259,7 +1259,7 @@
       ; question:
       ;  why list is a macro, not a procedure?
       ; answer:
-      ;  the function unwraps to LD/LD/LD/LD/LD/MOV2/MOV2/MOV2/GOTO/JAFX 
+      ;  the function unwraps to LD/LD/LD/LD/LD/MOV2/MOV2/MOV2/GOTO/JAX
       ;  sequnce, but macro unwraps to LD/CONS/LD/CONS/LD/CONS.
       ;  So, we have a good speedup, yeah?
 

@@ -470,7 +470,7 @@
 
                         (8  (DIS 5 "JEQ"))
                         (11 (DIS 4 "JAF"))
-                        (12 (DIS 4 "JAFX"))
+                        (12 (DIS 4 "JAX"))
 
 
                         (54 (DIS 4 "EQ?"))

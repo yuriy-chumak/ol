@@ -21,7 +21,7 @@
 
       ; low level (assembly) commands
       GOTO RET ARITY-ERROR  ; used by (lang assemply) etc.
-      JEQ JZ JE JN JF JAF JAFX
+      JEQ JZ JE JN JF JAF JAX
       CLOS
       LD LDE LDN LDT LDF
       MOVE REFI MOV2
@@ -117,7 +117,7 @@
       (setq JE  144)  ; (+ 16 (<< 2 6))) ; jump-imm[0] if empty
       (setq JF  208)  ; (+ 16 (<< 3 6))) ; jump-imm[0] if false
       (setq JAF  11)  ; jump if arity failed
-      (setq JAFX 12)  ; JAF with packing extra arguments in list
+      (setq JAX  12)  ; JAF with packing extra arguments in list
 
 
       ; -------------------------------------------
