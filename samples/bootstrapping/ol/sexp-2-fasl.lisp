@@ -12,8 +12,14 @@
 ; write either a byte or a bytestream
 (define (@ x)
    (if (list? x)
-      (write-bytestream x)
-      (write-bytestream (list x))))
+      (for-each (lambda (i) (display i) (display " ")) x)
+   else
+      (@ (list x))))
+
+   ;; (if (list? x)
+   ;;    (write-bytes stdout x)
+   ;; else
+   ;;    (write-bytes stdout (list x))))
 
 (define (tag object)
    (if (ref object 0) 2 1))
@@ -119,7 +125,6 @@
                   ((equal? opcode 'XOR) 57)
                   ((equal? opcode 'SHR) 58)
                   ((equal? opcode 'SHL) 59)
-
                   ((equal? opcode 'FP1) 33)
                   ((equal? opcode 'FP2) 34)
 
@@ -170,14 +175,17 @@
    (for-each encode-item items))       ; vector items
 
 ; main
+(print) ; debug newline
 (for-each (lambda (record)
       (define what (car record))
       (cond
-         ; (STRING "display")
          ((equal? what 'STRING)
             ; decode string
             ; strings encoded using '2 for " character and '1 for '.
-            (define str (s/'1/'/g (s/'2/"/g (cadr record)))) ;"
+            (define str (fold str-replace (cadr record)
+                  '("'3" "'2" "'1")
+                  '("\n" "\"" "'")) ) ;"
+
 
             (case (type str)
                ; ansi strings, no encoding required
@@ -262,6 +270,7 @@
 
 
          (else
-            (runtime-error "Unhandled record" record))))
+            (runtime-error "Unhandled record" record)))
+      (print))
    (read))
-(display "\0")
+;(display "\0")

@@ -15,7 +15,7 @@
       (define Q (string #\"))
       (define (->string o)
          (let ((o (if (symbol? o) (symbol->string o) o)))
-            (string-append Q (s/"/'2/g (s/'/'1/g o)) Q))) ;" o) Q)))
+            (string-append Q (s/\n/'3/g (s/"/'2/g (s/'/'1/g o))) Q))) ;" o)) Q)))
 
       (define (encode-number num tail)
          (cons (list "N" num) tail))

@@ -11338,8 +11338,7 @@
 (BLACK ((N -8369) (N -8)))
 (BLACK ((N -8371) (N -11) (N -2) (N -1)))
 (PAIR ((N -264) (N -1)))
-(STRING "
-")
+(STRING "'3")
 (STRING "-")
 (PAIR ((N -10290) NULL))
 (PAIR ((N -10313) (N -1)))
@@ -15503,8 +15502,7 @@
 (STRING "'1")
 (STRING "'1?")
 (STRING "What is ")
-(STRING " 
-/if you want to quit just type ,quit or (exit)/")
+(STRING " '3/if you want to quit just type ,quit or (exit)/")
 (STRING "What is ")
 (STRING "The symbol")
 (STRING "has a funny value: '1")
@@ -15653,13 +15651,11 @@
 (STRING "Funny result for compiler ")
 (STRING ";; ")
 (STRING " ")
-(STRING "
-")
+(STRING "'3")
 (STRING "lambda")
 (STRING "#<")
 (STRING ">")
-(STRING "
-")
+(STRING "'3")
 (STRING "Session restored.")
 (STRING "(end of input)")
 (STRING ">>> ")
@@ -15743,20 +15739,8 @@
 (STRING "DEREF")
 (STRING "EXIT")
 (STRING "?")
-(STRING "Commands:
-   ,help             - show this
-   ,words            - list all current definitions                 (,w)
-   ,find [regex/sym] - list all defined words matching regex or m/<sym>/
-   ,expand <expr>    - expand macros in the expression
-   ,disassembly func - show disassembled function binary code  (,d ,dis)
-   ,libraries        - show all currently loaded libraries       (,libs)
-   ,load '2sexp-file'2 - (re)load a text ol file             (,l ,include)
-   ,save '2file-name'2 - save current state, restart with $ ol <file-name>
-   ,quit             - exit ol
-")
-(STRING "Usage:
-   ,save '2filename'2
-")
+(STRING "Commands:'3   ,help             - show this'3   ,words            - list all current definitions                 (,w)'3   ,find [regex/sym] - list all defined words matching regex or m/<sym>/'3   ,expand <expr>    - expand macros in the expression'3   ,disassembly func - show disassembled function binary code  (,d ,dis)'3   ,libraries        - show all currently loaded libraries       (,libs)'3   ,load '2sexp-file'2 - (re)load a text ol file             (,l ,include)'3   ,save '2file-name'2 - save current state, restart with $ ol <file-name>'3   ,quit             - exit ol'3")
+(STRING "Usage:'3   ,save '2filename'2'3")
 (STRING "Not loadable: ")
 (STRING "Words: ")
 (STRING "I would have preferred a regex or a symbol.")
@@ -18831,14 +18815,11 @@
 (CLOSURE ((N -12279) (INTEGER 45)))
 (PROCEDURE ((N -16694) (N -1)))
 (CLOSURE ((N -12257) FALSE (N -1)))
-(STRING "Failed to enter the sandbox.
-You must have SECCOMP support enabled in the OS kernel.
-")
+(STRING "Failed to enter the sandbox.'3You must have SECCOMP support enabled in the OS kernel.'3")
 (STRING "Welcome to Otus Lisp ")
 (STRING ", you feel restricted")
 (STRING "")
-(STRING "
-")
+(STRING "'3")
 (STRING "")
 (STRING "type '1,help'1 to help, '1,quit'1 to end session.")
 (STRING "error: ")
