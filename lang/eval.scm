@@ -58,6 +58,7 @@
       (define meta-tag '*owl-metadata*) ; key for object metadata
       (define name-tag '*owl-names*)    ; key for reverse function/object → name mapping
       (define current-library-key '*owl-source*) ; toplevel value storing what is being loaded atm
+      (define error-tag ['syntax-error])
 
 
       (define (ok? x) (eq? (ref x 1) 'ok))
@@ -351,7 +352,7 @@
                      (return #null))))
 
             ; no, this is not a last one whitespace or comment
-            (cons #false msg)))) ; #false for "invalid stream" and msg for reason
+            (cons error-tag msg)))) ; error-tag for "invalid stream" and msg for reason
 
       (define (syntax-fail pos info lst)
          (list syntax-error-mark info
@@ -1111,7 +1112,7 @@
                ((null? in)
                   (repl-ok env last))
                ((pair? in)
-                  (lets ((this in (uncons in #false)))
+                  (lets ((this in (uncons in #f)))
                      (cond
                         ;; ((eof? this) ; ??? TODO: remove this
                         ;;    (print-to stderr "eof detected, last: " last)
@@ -1121,15 +1122,15 @@
                         ((repl-op? this)
                            (repl-op repl__ (cadr this) in env)) ; todo: add last
                         (else
-                           (if this
+                           (if (eq? this error-tag)
+                              (repl-error env (list ";; syntax error" #|in|#))
                               (case (eval-repl this env repl__ evaluator)
                                  (['ok result env]
                                     (prompt env result)
                                     (loop env in result "> "))
                                  (['fail reason]
-                                    (repl-error env reason)))
-                           else
-                              (repl-error env (list ";; syntax error" #|in|#)))))))
+                                    (repl-error env reason))))))))
+                              
                (else
                   (loop env (in) last #false)))))
 
