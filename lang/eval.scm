@@ -903,9 +903,9 @@
                               ((eq? status 'ok)
                                  (library-import env exps fail repl))
                               ((eq? status 'error)
-                                 (fail (list "Failed to load" lib "because" env)))
+                                 (fail (list env)))
                               (else
-                                 (fail (list "I didn't have or find library" (any->string lib)))))))
+                                 (fail (list (any->string lib) "could not be found."))))))
                      ((eq? status 'ok)
                         (env-fold env-put-raw env lib)) ;; <- TODO env op, should be in (owl env)
                      ((eq? status 'circular)
