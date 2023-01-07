@@ -7,15 +7,21 @@
 (define-library (owl math-extra)
 
    (export
-      exact-integer-sqrt ;; n → m r, m^2 + r = n
-      isqrt              ;; n → (floor (sqrt n))
-      expt expt-mod
+      isqrt iroot iexpt
+      ilog               ;; integer log a b
+
+      expt expt-mod 
       ncr npr
       !
       dlog dlog-simple
       fib
       histogram
+      bisect
       ; inv-mod mod-solve
+
+      ; r7rs
+      exact-integer-sqrt ;; n → m r, m^2 + r = n
+
       )
 
    (import
@@ -89,8 +95,46 @@
 
       (assert (let*((x y (exact-integer-sqrt 17))) (list x y))  ===> '(4 1))
 
-      ;;; exponentiation
+      ;; ------------------------------------
+      ;; Bisect
+      (define (bisect-fini op lo hi pos last)
+         (cond
+            ((= pos hi) last)
+            ((op pos)
+               (let ((next (+ pos 1)))
+                  (cond
+                     ((= next hi) pos)
+                     ((op next)
+                        (bisect-fini op lo hi (+ next 1) pos))
+                     (else
+                        pos))))
+            ((= pos lo)
+               #false)
+            (else
+               (bisect-fini op lo hi (- pos 1) last))))
 
+      ; find the match or it's close neighbour by halving jump to correct direction
+      (define (bisect-seek op lo hi pos step last)
+         (cond
+            ((eq? step 1)
+               (bisect-fini op lo hi pos last))
+            ((op pos)
+               (bisect-seek op lo hi (+ pos step) (>> step 1) pos))
+            (else
+               (bisect-seek op lo hi (- pos step) (>> step 1) last))))
+
+      ; search the last position in [lo ... hi-1] where op(x) is true
+      (define (bisect op lo hi)
+         (when (< lo hi)
+            (let*((range (- hi lo))
+                  (step (max 1 (>> range 1))))
+               (bisect-seek op lo hi
+                  (+ lo step) ;; move to middle of range
+                  (max 1 (>> step 1)) ;; quarter step
+                  #false))))
+
+
+      ;;; exponentiation
       ; the usual O(lg n) exponentiation
 
       (define (expt-loop ap p out)
@@ -101,6 +145,27 @@
             (else
                (expt-loop (* ap ap) (>> p 1) (* out ap)))))
 
+      (define (iexpt a p)
+         (cond
+            ((eq? p 0) 1)
+            ((eq? a 1) 1)
+            (else
+               (expt-loop a (- p 1) a))))
+
+      (define (iroot i n)
+         (cond
+            ((eq? i 0) 0)
+            ((eq? i 1) 1)
+            ((eq? n 1) i)
+            ((negative? i)
+               (complex 0 (iroot (* i -1) n)))
+            (else
+               (or
+                  (bisect
+                     (lambda (q) (<= (iexpt q n) i))
+                     1 i)
+                  1))))
+
       (define (expt a b)
          (cond
             ((eq? b 0) 1)
@@ -110,6 +175,9 @@
             ((eq? (type b) type-int+) (expt-loop a (sub b 1) a))
             ((eq? (type b) type-enum-) (/ 1 (expt a (negate b))))
             ((eq? (type b) type-int-) (/ 1 (expt a (negate b))))
+            ((eq? (type b) type-rational)
+               ;; inexact if cannot be solved exactly
+               (expt (iroot a (ref b 2)) (ref b 1)))
             (else (big-bad-args 'expt a b))))
 
       ; (mod (expt a b) m) = (expt-mod a b m)
@@ -169,7 +237,6 @@
                   ((eq? mp 0) 1)
                   ((> m mp) (ncr n mp))
                   (else (/ (npr n m) (! m)))))))
-
 
 
       ;;;

@@ -38,21 +38,29 @@
    (assert (nan? 1+2i)        ===> #false)
 
    (define (infinite? z)
-      (or
-         (nan-or-inf? z)
-         (when (eq? (type z) type-complex)
-            (or (nan-or-inf? (car z))
-                (nan-or-inf? (cdr z))))))
+      (cond
+         ((eq? (type z) type-inexact)
+            (or (equal? z +inf.0)
+               (equal? z -inf.0)))
+         ((eq? (type z) type-complex)
+            (or (infinite? (car z))
+               (infinite? (cdr z))))))
 
    (define (finite? z)
-      (when (number? z)
-         (not (infinite? z))))
+      (cond
+         ((eq? (type z) type-inexact)
+            (not (nan-or-inf? z)))
+         ((eq? (type z) type-complex)
+            (and (finite? (car z))
+                 (finite? (cdr z))))
+         (else
+            (number? z))))
 
 
    ;; sqrt n → m such that m^2 = n
    ; как посчитать корень квадратный:
    ; 1. попытаться найти целочисленный результат,
-   ; 2. если не вышло, то используя итерационный алгоритм Ньютона с указанной точностью попытаться найти более удовлетворительный
+   ; 2. если не вышло, то используя итерационный алгоритм Ньютона и с указанной точностью попытаться найти более удовлетворительный
 
    (define (good-enough? guess1 guess0 precision)
       (< (abs (- guess1 guess0)) (abs (* guess0 precision))))
@@ -70,7 +78,6 @@
                   (else
                      (let loop ((s s))
                         (let ((t (better-guess s n)))
-                           ;(print "s: " s ", t: t")
                            (if (good-enough? t s precision)
                               t
                               (loop t))))))))
@@ -84,7 +91,6 @@
                   (else
                      (let loop ((s s))
                         (let ((t (better-guess s n)))
-                           ;(print "s: " s ", t: t")
                            (if (good-enough? t s precision)
                               t
                               (loop t))))))))

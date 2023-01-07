@@ -20,6 +20,7 @@
 (import
    (scheme char)
    (scheme cxr))
+(import (scheme inexact))
 
 (define ok '(#true))
 (for-each (lambda (filename)

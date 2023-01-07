@@ -22,9 +22,10 @@
    (export
       = < > <= >=
       zero? positive? negative? odd? even?
+      natural?
       square
 
-      + - * = /
+      + - * /
       << >>
       band bor bxor
       div ediv rem mod quotrem divmod
@@ -51,24 +52,22 @@
       (owl ff))
 
    (begin
-      (define o (λ (f g) (λ (x) (f (g x)))))
 
-      (define-syntax ncons; if no sign significant
+      ; numeric constructors
+      (define-syntax ncons ; no sign significant
          (syntax-rules ()
             ((ncons a d) (vm:new type-int+ a d))))
+      (define-syntax ncons+   ; positive integer
+         (syntax-rules ()
+            ((ncons+ a d) (vm:new type-int+ a d))))
+      (define-syntax ncons-   ; negative integer
+         (syntax-rules ()
+            ((ncons- a d) (vm:new type-int- a d))))
 
       (define ncar car)
       (define ncdr cdr)
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
-
-      ; numeric constructors
-      (define-syntax ncons+   ; * internal
-         (syntax-rules ()
-            ((ncons+ a d) (vm:new type-int+ a d))))
-      (define-syntax ncons-   ; * internal
-         (syntax-rules ()
-            ((ncons- a d) (vm:new type-int- a d))))
 
       (define (int+ x)        ; * internal
          (ncons+ (ncar x) (ncdr x)))
@@ -80,11 +79,11 @@
          (syntax-rules ()
             ((rational a b) (vm:new type-rational a b))))
 
-      (define-syntax complex  ; public
+      (define-syntax complex  ; * public
          (syntax-rules ()
             ((complex a b) (vm:new type-complex a b))))
 
-      ; --- numerical constants ------------
+      ; --- internal numerical constants ------------
       ; biggest enum value (that can be stored as a value)
       (define-syntax max-enum-value
          (syntax-rules ()
@@ -118,7 +117,7 @@
                ; platform-dependent floating point constants
                (vm:set! +nan.0 0 (fsqrt -1) 0 (size +nan.0))
             #T)))
-      (math-constructor! #null)
+      (math-constructor! '())
 
       ; ==========================================================
       ; procedure:  (zero? z)
@@ -187,6 +186,10 @@
       (assert (negative? +nan.0)   ===> #false)
       (assert (negative? #i0)      ===> #false)
 
+
+      ; procedure:  (natural? z), ol specific
+      (define (natural? x)
+         (and (integer? x) (positive? x) (not (eq? x 0))))
 
       ; ------------------------
       (define (negate num) ; * internal
