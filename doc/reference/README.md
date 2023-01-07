@@ -27,7 +27,7 @@ List of Standard procedures
 - [Characters](characters.md).
 - [Vectors](vectors.md).
 - [Lazy Lists](lazy-lists.md).
-- [Numbers](numbers.md), TBD.
+- [Numerical Operations](numerical-operations.md), TBD.
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.
@@ -94,6 +94,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [cddddr](pairs-and-lists.md#caar--cddr)
 [char?](characters.md#char)
 [char->integer](characters.md#char-integer)
+[complex?](numerical-operations#complex)
 [cons](pairs-and-lists.md#cons)
 [cons*](pairs-and-lists.md#cons-1)
 ## D
@@ -106,14 +107,19 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [eq?](equivalence-predicates.md#eq)
 [eqv?](equivalence-predicates.md#eqv)
 [equal?](equivalence-predicates.md#equal)
+[exact?](numerical-operations#exact)
 ## F
 [fasl-decode](serialization-deserialization.md#fasl-decode)
 [fasl-encode](serialization-deserialization.md#fasl-encode)
+[finite?](numerical-operations#finite)
 [fold](pairs-and-lists.md#fold)
 [foldr](pairs-and-lists.md#foldr)
 ## G
 ## H
 ## I
+[inexact?](numerical-operations#inexact)
+[infinite?](numerical-operations#infinite)
+[integer?](numerical-operations#integer)
 [integer->char](characters.md#integer-char)
 [iota](pairs-and-lists.md#iota)
 ## J
@@ -136,13 +142,18 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [memv](pairs-and-lists.md#memv)
 [member](pairs-and-lists.md#member)
 ## N
+[nan?](numerical-operations#nan)
+[natural?](numerical-operations#natural)
 [not](pairs-and-lists.md#not)
 [null?](pairs-and-lists.md#null-1)
+[number?](numerical-operations#number)
 ## O
 ## P
 [pair?](pairs-and-lists.md#pair)
 ## Q
 ## R
+[rational?](numerical-operations#rational)
+[real?](numerical-operations#real)
 [repeat](pairs-and-lists.md#repeat)
 [reverse](pairs-and-lists.md#reverse)
 ## S
