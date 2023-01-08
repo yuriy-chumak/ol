@@ -38,11 +38,11 @@
 
 ;; core implementation features, used by cond-expand
 (define *features* '(
-   r7rs
+   otus-lisp r7rs
    srfi-16 ; case-lambda
    srfi-87 ; <= in cases
    srfi-71 ; extended LET-syntax for multiple values
-   otus-lisp)) ; scheme-compliant naming
+)) ; scheme-compliant naming
 
 (define *loaded* '())   ;; can be removed soon, used by old ,load and ,require
 
@@ -84,7 +84,6 @@
                   ; second argument is a non-negative integer produce exact
                   ; values given exact inputs.
    exact-complex  ; Exact complex numbers are provided.
-   ieee-float     ; Inexact numbers are IEEE 754 binary floating point values.
    ratios         ; / with exact arguments produces an exact result when
                   ; the divisor is nonzero.
 
@@ -276,10 +275,8 @@
                      (cons '*vm-args* vm-args) ; deprecated
                      (cons '*version* version)
                      ; 
-                     (cons '*features* (let*((*features* (cons*
-                                                            (string->symbol "otus-lisp")
-                                                            (string->symbol (string-append "ol-" (car (c/-/ (cdr version)))))
-                                                            *features*))
+                     (cons '*features* (let*((*features* (cons* '|ol-2.3| *features*))
+                                             ; endiannes
                                              (*features* (let ((one (vm:cast 1 type-vptr)))
                                                             (cond
                                                                ((eq? (ref one 0) 1)
@@ -290,11 +287,18 @@
                                                                   (append *features* '(middle-endian)))
                                                                (else
                                                                   *features*))))
+                                             ; posix, string-port, ieee-float
                                              (*features* (let ((features (vm:features)))
-                                                            (if (not (eq? (band features #o1000000) 0))
-                                                               (append *features* '(posix))
-                                                            else
-                                                               *features*)))
+                                                            (append *features* (reverse
+                                                               (fold (lambda (l symbol mask)
+                                                                        (if (eq? (band features mask) 0)
+                                                                           l
+                                                                           (cons symbol l)))
+                                                                  #null
+                                                                  '(posix      string-port  ieee-float)
+                                                                  '(#o1000000  #o0400       #o0020    ))))))
+
+                                             ; OS/Platform
                                              (*features* (let ((uname (syscall 63)))
                                                             (if uname
                                                                (append *features* (list

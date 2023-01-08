@@ -3341,11 +3341,14 @@ loop:;
 		#if SYSCALL_PIPE
 			| 000000200
 		#endif
-		#if SYSCALL_GETRLIMIT
+        #if SYSCALL_MEMFD
 			| 000000400
+        #endif
+		#if SYSCALL_GETRLIMIT
+			| 000001000
 		#endif
 		#if SYSCALL_GETRUSAGE
-			| 000001000
+			| 000002000
 		#endif
 		// has's
 		#if HAS_DLOPEN

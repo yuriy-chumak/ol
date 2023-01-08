@@ -105,7 +105,7 @@
    for-each
    gcd
       ;; get-output-bytevector
-      ;; get-output-string
+   get-output-string
       ;; guard
    has?       ; * ol specific
    if
@@ -158,9 +158,9 @@
    numerator
    odd?
       ;; open-input-bytevector
-      ;; open-input-string
+   open-input-string
       ;; open-output-bytevector
-      ;; open-output-string
+   open-output-string
    or
       ;; output-port-open?
       ;; output-port?

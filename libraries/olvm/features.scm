@@ -10,6 +10,7 @@
       OLVM_BUILTIN_FMATH
       SYSCALL_SYSINFO
       SYSCALL_PIPE
+      SYSCALL_MEMFD
       SYSCALL_GETRLIMIT
       SYSCALL_GETRUSAGE
       HAS_DLOPEN
@@ -30,8 +31,9 @@
    (define OLVM_BUILTIN_FMATH   #o40)
    (define SYSCALL_SYSINFO     #o100)
    (define SYSCALL_PIPE        #o200)
-   (define SYSCALL_GETRLIMIT   #o400)
-   (define SYSCALL_GETRUSAGE  #o1000)
+   (define SYSCALL_MEMFD       #o400)
+   (define SYSCALL_GETRLIMIT  #o1000)
+   (define SYSCALL_GETRUSAGE  #o2000)
    (define HAS_DLOPEN        #o10000)
    (define HAS_SOCKETS       #o20000)
    (define HAS_UNSAFES       #o40000)
