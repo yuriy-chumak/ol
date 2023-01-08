@@ -23,7 +23,6 @@
       = < > <= >=
       zero? positive? negative? odd? even?
       natural?
-      square
 
       + - * /
       << >>
@@ -31,7 +30,8 @@
       div ediv rem mod quotrem divmod
       add nat+1 sub mul big-bad-args negate
       gcd gcdl lcm
-      min max minl maxl
+      square
+      min max
       quotient quot
       floor ceiling ceil abs
       sum product
@@ -1082,11 +1082,6 @@
 
       (define (min a b) (if (< a b) a b))
       (define (max a b) (if (< a b) b a))
-
-      (define (minl as) (fold min (car as) (cdr as)))
-      (define (maxl as) (fold max (car as) (cdr as)))
-
-
 
 
 
