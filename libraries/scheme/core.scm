@@ -1038,8 +1038,8 @@
       ; procedure:  (/ z)          * implemented in (owl math)
       ; procedure:  (/ z1 z2 ...)  * implemented in (owl math)
       ; procedure:  (abs x)        * implemented in (owl math)
-      ; floor/, floor-quotient, floor-remainder
-      ; truncate/, truncate-quotient, truncate-remainder
+      ; no floor/, no floor-quotient, no floor-remainder
+      ; no truncate/, no truncate-quotient, no truncate-remainder
       ; procedure:  (quotient n1 n2)
       ; procedure:  (remainder n1 n2)
       ; procedure:  (modulo n1 n2) * implemented in (owl math)

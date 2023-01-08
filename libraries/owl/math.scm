@@ -20,29 +20,33 @@
 (define-library (owl math)
 
    (export
-      = < > <= >=
+      = < <= > >=
       zero? positive? negative? odd? even?
       natural?
 
       + - * /
+      quotient remainder modulo
       numerator denominator
+      
+
       << >>
       band bor bxor
       div ediv rem mod quotrem divmod
-      add nat+1 sub mul big-bad-args negate
+      add nat+1 sub mul negate
       gcd gcdl lcm
       square
       min max
-      quotient quot
+      quot
       floor ceiling ceil abs
       sum product
       
       ilog ilog2
       render-number
-      remainder modulo
+      
       truncate round
       complex
 
+      big-bad-args
       math-constructor!)
 
    (import
@@ -113,7 +117,7 @@
             ((enum-bit-width) (vm:vsize))))
 
 
-      ; --------------------------------------------------
+      ; ----------------------------------------------------
       ; a special internal "numbers" that is not a numbers
       ; should be a type-pair, not a type-int+
 
@@ -130,7 +134,8 @@
             #T)))
       (math-constructor! '())
 
-      ; ==========================================================
+      ; ====================================================
+
       ; procedure:  (zero? z)
       (define (zero? x)
          (or
@@ -200,6 +205,7 @@
       ; procedure:  (natural? z), ol specific
       (define (natural? x)
          (and (integer? x) (positive? x) (not (eq? x 0))))
+
 
       ; ------------------------
       (define (negate num) ; * internal
