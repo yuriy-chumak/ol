@@ -25,6 +25,7 @@
       natural?
 
       + - * /
+      numerator denominator
       << >>
       band bor bxor
       div ediv rem mod quotrem divmod
@@ -35,10 +36,9 @@
       quotient quot
       floor ceiling ceil abs
       sum product
-      numerator denumerator
+      
       ilog ilog2
       render-number
-      denominator numerator
       remainder modulo
       truncate round
       complex
@@ -82,6 +82,17 @@
       (define-syntax complex  ; * public
          (syntax-rules ()
             ((complex a b) (vm:new type-complex a b))))
+
+      ; n == (/ (numerator n) (denominator n)), for all numbers
+      (define (numerator n)
+         (case (type n)
+            (type-rational (ncar n)) ;; has the sign if negative
+            (else n)))
+
+      (define (denominator n)
+         (case (type n)
+            (type-rational (ncdr n)) ;; always positive
+            (else 1)))
 
       ; --- internal numerical constants ------------
       ; biggest enum value (that can be stored as a value)
@@ -144,7 +155,6 @@
             (type-inexact
                (or
                   (fless? #i0 x)
-                  (equal? x #i0)
                   (equal? x +inf.0)))))
 
       (assert (positive? -1)       ===> #false)
@@ -157,7 +167,7 @@
       (assert (positive? -inf.0)   ===> #false)
       (assert (positive? +inf.0)   ===> #true)
       (assert (positive? +nan.0)   ===> #false)
-      (assert (positive? #i0)      ===> #true)
+      (assert (positive? #i0)      ===> #false)
 
 
       ; procedure:  (negative? z)
@@ -1064,15 +1074,6 @@
             (else
                (int< a b))))
 
-      (define (denominator n)
-         (if (eq? (type n) type-rational)
-            (ncdr n)  ;; always positive
-            1))
-
-      (define (numerator n)
-         (if (eq? (type n) type-rational)
-            (ncar n)  ;; has the sign if negative
-            1))
 
       (define (<= a b)
          (or (< a b) (= a b)))
@@ -2060,19 +2061,6 @@
       (define quot div) ; switch the other way around later
       (define ceil ceiling)
       (define quotient quot)
-
-      ; for all numbers n == (/ (numerator n) (denumerator n))
-
-      (define (numerator n)
-         (case (type n)
-            (type-rational (ncar n))
-            (else n)))
-
-      (define (denumerator n)
-         (case (type n)
-            (type-rational (ncdr n))
-            (else 1)))
-
 
 
       ;;;
