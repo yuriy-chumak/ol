@@ -208,7 +208,7 @@ R<sup>7</sup>RS DIFFERENCES
 
 * 4.3. Macros
   * **No** `let-syntax` and `letrec-syntax` in Ol.
-    - note: Use `define-macro` instead.
+    - note: Use `define-syntax` instead.
 
 * 5.5. Record-type definitions
   * **No** `define-record-type` in Ol.
@@ -219,7 +219,6 @@ R<sup>7</sup>RS DIFFERENCES
 * 6.2.5. Syntax of numerical constants
   * `Numbers without precision` considered to be **exact** in Ol, but *inexact* in Scheme.
     - explanation: Inexactness can be disabled by compiler features or/and unsupported by platform. Ol designed with respect for the same functionality of the program, independently of inexactness support (unless we directly use inexact numbers, sure).
-  * **No** `#e` and `#i` prefixes in Ol. Use `exact` and `inexact` functions instead.
 
 * 6.2.6. Numerical operations
   * note: `complex?` is the same as `number?`, like in Scheme.
