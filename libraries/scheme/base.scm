@@ -191,7 +191,7 @@
    set-car!
    set-cdr!
    square
-   sqrt ;; * not included in standard (scheme base), but we include due to frequent use
+   sqrt ;; * not included in r7rs (scheme base), but we do because it's often used
    string
    string->list
    string->number  ; (scheme misc)

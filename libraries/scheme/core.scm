@@ -1051,7 +1051,7 @@
       ; procedure:  (ceiling x)    * implemented in (owl math)
       ; procedure:  (truncate x)   * implemented in (owl math)
       ; procedure:  (round x)      * implemented in (owl math)
-      ; procedure:  (rationalize x y)
+      ; procedure:  (rationalize x y) * implemented in (owl math-extra)
       
       ; procedure:  (exp z)      * implemented in (scheme inexact)
       ; procedure:  (log z)      * implemented in (scheme inexact)
