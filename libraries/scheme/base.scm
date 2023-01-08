@@ -63,6 +63,7 @@
       ;; close-input-port
       ;; close-output-port
    close-port
+   complex      ; * ol specific
    complex?
    cond
 ;  cond-expand    * builtin, (lang eval)
@@ -147,6 +148,7 @@
    memv
    min
    modulo
+   natural?   ; * ol specific
    negative?
    newline
    not
@@ -174,6 +176,7 @@
    quotient
    raise
    raise-continuable
+   rational   ; * ol specific
    rational?
    rationalize
       ;; read-bytevector
@@ -221,7 +224,7 @@
       ;; syntax-error
       ;; syntax-rules
       ;; textual-port?
-      ;; truncate
+   truncate
       ;; truncate-quotient
       ;; truncate-remainder
       ;; truncate/
