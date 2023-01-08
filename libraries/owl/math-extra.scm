@@ -21,7 +21,7 @@
 
       ; r7rs
       exact-integer-sqrt ;; n → m r, m^2 + r = n
-
+      rationalize
       )
 
    (import
@@ -383,5 +383,30 @@
                            (loop data 0 (+ limit bin))))
                      (else
                         (loop (cdr data) (+ count 1) limit)))))))
+
+   (define rationalize
+      ; Alan Bawden's algorithm
+      (letrec
+         ((rat1 ; x < y
+         (lambda (x y)
+            (cond
+               ((> x 0) (rat2 x y))
+               ((< y 0) (- (rat2 (- y) (- x))))
+               (else (if (and (exact? x) (exact? y)) 0 0.0)))))
+         (rat2 ; 0 < x < y
+         (lambda (x y)
+            (let ((fx (floor x)) (fy (floor y)))
+               (cond
+                  ((= fx x) fx)
+                  ((= fx fy) (+ fx (/ (rat2 (/ (- y fy)) (/ (- x fx))))))
+                  (else (+ fx 1)))))))
+         (lambda (x e)
+            (unless (real? x) (runtime-error 'rationalize x))
+            (unless (real? e) (runtime-error 'rationalize e))
+            (let ((x (- x e)) (y (+ x e)))
+            (cond
+               ((< x y) (rat1 x y))
+               ((< y x) (rat1 y x))
+               (else x))))))
 
 ))

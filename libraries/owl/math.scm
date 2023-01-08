@@ -1652,14 +1652,14 @@
       ;;;
 
       ; normalize, fix sign and construct rational
-      (define (rationalize a b)
+      (define (do-a-rational a b)
          (let ((f (gcd a b)))
             (if (eq? f 1)
                (cond
                   ((eq? (type b) type-enum-) (rational (negate a) (negate b)))
                   ((eq? (type b) type-int-) (rational (negate a) (negate b)))
                   (else (rational a b)))
-               (rationalize (div a f) (div b f)))))
+               (do-a-rational (div a f) (div b f)))))
 
       ;; if dividing small fixnums, do it with primops
       (define (divide-simple a b)

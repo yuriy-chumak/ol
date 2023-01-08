@@ -175,7 +175,7 @@
    raise
    raise-continuable
    rational?
-      ;; rationalize
+   rationalize
       ;; read-bytevector
       ;; read-bytevector!
       ;; read-char
