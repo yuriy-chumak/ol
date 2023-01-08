@@ -56,9 +56,14 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [<=](numerical-operations.md#-3)
 [>](numerical-operations.md#-2)
 [>=](numerical-operations.md#-4)
+[+](numerical-operations.md#-5)
+[-](numerical-operations.md#-)
+[*](numerical-operations.md#-6)
+[/](numerical-operations.md#-7)
 ## <a name="#"></a>#
 [#null](pairs-and-lists.md#null)
 ## A
+[abs](numerical-operations.md#abs)
 [append](pairs-and-lists.md#append)
 [assq](pairs-and-lists.md#assq)
 [assv](pairs-and-lists.md#assv)
@@ -104,6 +109,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [cons*](pairs-and-lists.md#cons-1)
 ## D
 [decode2](serialization-deserialization.md#decode2)
+[denominator](numerical-operations.md#denominator)
 [deserialize](serialization-deserialization.md#deserialize)
 [digit-value](characters.md#digit-value)
 [drop](pairs-and-lists.md#drop)
@@ -144,9 +150,12 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [make-list](pairs-and-lists.md#make-list)
 [make-vector](vectors.md#make-vector)
 [map](pairs-and-lists.md#map)
+[max](numerical-operations.md#max)
 [memq](pairs-and-lists.md#memq)
 [memv](pairs-and-lists.md#memv)
 [member](pairs-and-lists.md#member)
+[min](numerical-operations.md#min),
+[modulo](numerical-operations.md#modulo)
 ## N
 [nan?](numerical-operations.md#nan)
 [natural?](numerical-operations.md#natural)
@@ -154,15 +163,18 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [not](pairs-and-lists.md#not)
 [null?](pairs-and-lists.md#null-1)
 [number?](numerical-operations.md#number)
+[numerator](numerical-operations.md#numerator)
 ## O
 [odd?](numerical-operations.md#odd)
 ## P
 [pair?](pairs-and-lists.md#pair)
 [positive?](numerical-operations.md#positive)
 ## Q
+[quotient](numerical-operations.md#quotient)
 ## R
 [rational?](numerical-operations.md#rational)
 [real?](numerical-operations.md#real)
+[remainder](numerical-operations.md#remainder)
 [repeat](pairs-and-lists.md#repeat)
 [reverse](pairs-and-lists.md#reverse)
 ## S

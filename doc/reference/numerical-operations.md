@@ -15,8 +15,10 @@ Mathematically, numbers are arranged into a tower of subtypes in which each leve
 [zero?](#zero), [positive?](#positive), [negative?](#negative), [odd?](#odd), [even?](#even),
 [=](#=), [<](#-1), [>](#-2), [<=](#-3), [>=](#-4),
 [max](#max), [min](#min),
-[+](#-5),[-](#-6),[*](#-8),[/](#-10),
-
+[+](#-5),[-](#-),[*](#-6),[/](#-7),
+[abs](#abs),
+[quotient](#quotient), [remainder](#remainder),
+[modulo](#modulo), [numerator](#numerator), [denominator](#denominator),
 
 # number?
 `(number? obj)`, *procedure*
@@ -231,6 +233,8 @@ Returns #true if z is a zero.
 (zero? 0)                     ==>  #true
 (zero? #i0)                   ==>  #true
 (zero? #i0.0000000000000001)  ==>  #false
+(zero? (- 7 7))               ==>  #true
+(zero? (+ 7 7))               ==>  #false
 ```
 
 # positive?
@@ -239,11 +243,41 @@ Returns #true if z is a zero.
 Returns #true if x is positive.  
 Note that complex numbers are not applicable.
 
+```scheme
+(positive? 0)                 ==>  #false
+(positive? -1)                ==>  #false
+(positive? -11111111111111111111111)  ==>  #false
+(positive? 42)                ==>  #true
+(positive? 111111111111111111111111)  ==>  #true
+(positive? -3/7)              ==>  #false
+(positive? 3/-7)              ==>  #false
+(positive? 17/9)              ==>  #true
+(positive? -inf.0)            ==>  #false
+(positive? +inf.0)            ==>  #true
+(positive? +nan.0)            ==>  #false
+(positive? #i0)               ==>  #false
+```
+
 # negative?
 `(negative? x)`, *procedure*
 
 Returns #true if x is negative.
 Note that complex numbers are not applicable.
+
+```scheme
+(negative? 0)                 ==>  #false
+(negative? -1)                ==>  #true
+(negative? -11111111111111111111111)  ==>  #true
+(negative? 42)                ==>  #false
+(negative? 111111111111111111111111)  ==>  #false
+(negative? -3/7)              ==>  #true
+(negative? 3/-7)              ==>  #true
+(negative? 17/9)              ==>  #false
+(negative? -inf.0)            ==>  #true
+(negative? +inf.0)            ==>  #false
+(negative? +nan.0)            ==>  #false
+(negative? #i0)               ==>  #false
+```
 
 # odd?
 `(odd? n)`, *procedure*
@@ -353,5 +387,21 @@ Returns the absolute value of its argument.
 (abs -3333333333333333333333) ==>  3333333333333333333333
 (abs -7/11)                   ==>  7/11
 (abs #i-17.33)                ==>  #i17.33
+```
+
+# quotient
+`(quotient n1 n2)`, *procedure*
+
+# remainder
+`(remainder n1 n2)`, *procedure*
+
+# modulo
+`(modulo n1 n2)`, *procedure*
+
+# numerator
+`(numerator q)`, *procedure*
+
+# denominator
+`(denominator q)`, *procedure*
 
 ```
