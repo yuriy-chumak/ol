@@ -102,6 +102,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [cddadr](pairs-and-lists.md#caar--cddr)
 [cdddar](pairs-and-lists.md#caar--cddr)
 [cddddr](pairs-and-lists.md#caar--cddr)
+[ceiling](numerical-operations.md#ceiling)
 [char?](characters.md#char)
 [char->integer](characters.md#char-integer)
 [complex?](numerical-operations.md#complex)
@@ -124,6 +125,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [fasl-decode](serialization-deserialization.md#fasl-decode)
 [fasl-encode](serialization-deserialization.md#fasl-encode)
 [finite?](numerical-operations.md#finite)
+[floor](numerical-operations.md#floor)
 [fold](pairs-and-lists.md#fold)
 [foldr](pairs-and-lists.md#foldr)
 ## G
@@ -154,7 +156,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [memq](pairs-and-lists.md#memq)
 [memv](pairs-and-lists.md#memv)
 [member](pairs-and-lists.md#member)
-[min](numerical-operations.md#min),
+[min](numerical-operations.md#min)
 [modulo](numerical-operations.md#modulo)
 ## N
 [nan?](numerical-operations.md#nan)
@@ -173,10 +175,12 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [quotient](numerical-operations.md#quotient)
 ## R
 [rational?](numerical-operations.md#rational)
+[rationalize](numerical-operations.md#rationalize)
 [real?](numerical-operations.md#real)
 [remainder](numerical-operations.md#remainder)
 [repeat](pairs-and-lists.md#repeat)
 [reverse](pairs-and-lists.md#reverse)
+[round](numerical-operations.md#round)
 ## S
 [set-car!](pairs-and-lists.md#set-car)
 [set-cdr!](pairs-and-lists.md#set-cdr)
@@ -184,11 +188,14 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [string->symbol](symbols.md#string-symbol)
 [string->uninterned-symbol](symbols.md#string-uninterned-symbol)
 [string->vector](vectors.md#string-vector)
+[square](numerical-operations.md#square)
+[sqrt](numerical-operations.md#sqrt)
 [symbol?](symbols.md#symbol)
 [symbol=?](symbols.md#symbol-1)
 [symbol->string](symbols.md#symbol-string)
 ## T
 [take](pairs-and-lists.md#take)
+[truncate](numerical-operations.md#truncate)
 ## U
 ## V
 [vector](vectors.md#vector)

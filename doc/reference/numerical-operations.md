@@ -17,8 +17,11 @@ Mathematically, numbers are arranged into a tower of subtypes in which each leve
 [max](#max), [min](#min),
 [+](#-5),[-](#-),[*](#-6),[/](#-7),
 [abs](#abs),
-[quotient](#quotient), [remainder](#remainder),
-[modulo](#modulo), [numerator](#numerator), [denominator](#denominator),
+[quotient](#quotient), [remainder](#remainder), [modulo](#modulo),
+[numerator](#numerator), [denominator](#denominator),
+[floor](#floor), [ceiling](#ceiling), [truncate](#truncate), [round](#round),
+[rationalize](#rationalize),
+[square](#square), [sqrt](#sqrt)
 
 # number?
 `(number? obj)`, *procedure*
@@ -246,12 +249,9 @@ Note that complex numbers are not applicable.
 ```scheme
 (positive? 0)                 ==>  #false
 (positive? -1)                ==>  #false
-(positive? -11111111111111111111111)  ==>  #false
 (positive? 42)                ==>  #true
-(positive? 111111111111111111111111)  ==>  #true
 (positive? -3/7)              ==>  #false
 (positive? 3/-7)              ==>  #false
-(positive? 17/9)              ==>  #true
 (positive? -inf.0)            ==>  #false
 (positive? +inf.0)            ==>  #true
 (positive? +nan.0)            ==>  #false
@@ -267,12 +267,9 @@ Note that complex numbers are not applicable.
 ```scheme
 (negative? 0)                 ==>  #false
 (negative? -1)                ==>  #true
-(negative? -11111111111111111111111)  ==>  #true
 (negative? 42)                ==>  #false
-(negative? 111111111111111111111111)  ==>  #false
 (negative? -3/7)              ==>  #true
 (negative? 3/-7)              ==>  #true
-(negative? 17/9)              ==>  #false
 (negative? -inf.0)            ==>  #true
 (negative? +inf.0)            ==>  #false
 (negative? +nan.0)            ==>  #false
@@ -311,6 +308,15 @@ Returns #true if arguments are equal in a mathematical sense.
 
 Returns #true if arguments monotonically increasing.  
 Note that complex numbers are not applicable.
+
+```scheme
+(< 1)                         ==>  #true
+(< 1 2 3)                     ==>  #true
+(< 3 2 1)                     ==>  #false
+(< -1)                        ==>  #true
+(< 1 2 3 1)                   ==>  #false
+(< -2 0 4)                    ==>  #true
+```
 
 # >
 `(> x1 x2 ...)`, *procedure*
@@ -404,4 +410,80 @@ Returns the absolute value of its argument.
 # denominator
 `(denominator q)`, *procedure*
 
+# floor
+`(floor x)`, *procedure*
+
+```scheme
+(floor -4.3)                  ==> -5
+(floor 3.5)                   ==>  3
 ```
+
+# ceiling
+`(ceiling x)`, *procedure*
+
+```scheme
+(ceiling -4.3)                ==> -4
+(ceiling 3.5)                 ==>  4
+```
+
+# truncate
+`(truncate x)`, *procedure*
+
+```scheme
+(truncate -4.3)               ==> -4
+(truncate 3.5)                ==>  3
+```
+
+# round
+`(round x)`, *procedure*
+
+```scheme
+(round -4.3)                  ==> -4
+(round 3.5)                   ==>  4
+```
+
+# rationalize
+`(rationalize x y)`, *procedure*
+
+Returns the simplest rational number differing from *x* by no more than *y*.
+
+```scheme
+(rationalize 0.723 1/10)      ==>  2/3)
+(rationalize 0.723 1/100)     ==>  5/7)
+(rationalize -0.723 1/100)    ==> -5/7)
+(rationalize 10197734562406803221/17452826108659293487 1/10)     ==>   1/2)
+(rationalize 10197734562406803221/17452826108659293487 1/100)    ==>   7/12)
+(rationalize 10197734562406803221/17452826108659293487 1/1000)   ==>   7/12)
+(rationalize 10197734562406803221/17452826108659293487 1/10000)  ==>  52/89)
+```
+
+# square
+`(square z)`, *procedure*
+
+Returns the square of *z*.
+
+```scheme
+(square 2)                    ==>  4)
+(square -2)                   ==>  4)
+(square 3/7)                  ==>  9/49)
+(square 1+2i)                 ==>  -3+4i)
+```
+
+# sqrt
+`(sqrt x)`, *procedure*
+`(sqrt x n)`, *procedure*
+
+Returns the principal square root of *x*. For exact numbers precision *n* can be provided. Default precision is 1/10000.  
+The `sqrt` of rational and inexact number ignores precision and produces inexact result.
+Note that complex numbers are not applicable.
+
+```scheme
+(sqrt 4)                      ==>  2)
+(sqrt -4)                     ==>  0+2i)
+(sqrt 0)                      ==>  0)
+(sqrt 4/125)                  ==>  0.178885438)
+(sqrt #i1/3)                  ==>  0.577350269)
+(sqrt 5)                      ==>  51841/23184)
+(sqrt 5 0.000001)             ==>  5374978561/2403763488)
+```
+
