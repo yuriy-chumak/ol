@@ -44,7 +44,7 @@
       ilog ilog2
       render-number
       
-      complex
+      rational complex
 
       big-bad-args
       math-constructor!)
