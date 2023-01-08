@@ -50,8 +50,13 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 | [M](#m) | [N](#n) | [O](#o) | [P](#p) | [Q](#q) | [R](#r) | [S](#s) |
 | [T](#t) | [U](#u) | [V](#v) | [W](#w) | [X](#x) | [Y](#y) | [Z](#z) |
 
-## !
-## #
+## <a name="!"></a>!
+[=](numerical-operations.md#-)
+[<](numerical-operations.md#-1)
+[<=](numerical-operations.md#-3)
+[>](numerical-operations.md#-2)
+[>=](numerical-operations.md#-4)
+## <a name="#"></a>#
 [#null](pairs-and-lists.md#null)
 ## A
 [append](pairs-and-lists.md#append)
@@ -94,7 +99,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [cddddr](pairs-and-lists.md#caar--cddr)
 [char?](characters.md#char)
 [char->integer](characters.md#char-integer)
-[complex?](numerical-operations#complex)
+[complex?](numerical-operations.md#complex)
 [cons](pairs-and-lists.md#cons)
 [cons*](pairs-and-lists.md#cons-1)
 ## D
@@ -107,19 +112,20 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [eq?](equivalence-predicates.md#eq)
 [eqv?](equivalence-predicates.md#eqv)
 [equal?](equivalence-predicates.md#equal)
-[exact?](numerical-operations#exact)
+[even?](numerical-operations.md#even)
+[exact?](numerical-operations.md#exact)
 ## F
 [fasl-decode](serialization-deserialization.md#fasl-decode)
 [fasl-encode](serialization-deserialization.md#fasl-encode)
-[finite?](numerical-operations#finite)
+[finite?](numerical-operations.md#finite)
 [fold](pairs-and-lists.md#fold)
 [foldr](pairs-and-lists.md#foldr)
 ## G
 ## H
 ## I
-[inexact?](numerical-operations#inexact)
-[infinite?](numerical-operations#infinite)
-[integer?](numerical-operations#integer)
+[inexact?](numerical-operations.md#inexact)
+[infinite?](numerical-operations.md#infinite)
+[integer?](numerical-operations.md#integer)
 [integer->char](characters.md#integer-char)
 [iota](pairs-and-lists.md#iota)
 ## J
@@ -142,18 +148,21 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [memv](pairs-and-lists.md#memv)
 [member](pairs-and-lists.md#member)
 ## N
-[nan?](numerical-operations#nan)
-[natural?](numerical-operations#natural)
+[nan?](numerical-operations.md#nan)
+[natural?](numerical-operations.md#natural)
+[negative?](numerical-operations.md#negative)
 [not](pairs-and-lists.md#not)
 [null?](pairs-and-lists.md#null-1)
-[number?](numerical-operations#number)
+[number?](numerical-operations.md#number)
 ## O
+[odd?](numerical-operations.md#odd)
 ## P
 [pair?](pairs-and-lists.md#pair)
+[positive?](numerical-operations.md#positive)
 ## Q
 ## R
-[rational?](numerical-operations#rational)
-[real?](numerical-operations#real)
+[rational?](numerical-operations.md#rational)
+[real?](numerical-operations.md#real)
 [repeat](pairs-and-lists.md#repeat)
 [reverse](pairs-and-lists.md#reverse)
 ## S
@@ -185,3 +194,4 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 ## X
 ## Y
 ## Z
+[zero?](numerical-operations.md#zero)
