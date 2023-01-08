@@ -150,6 +150,7 @@
 
       ; procedure:  (positive? z)
       (define (positive? x)
+         (if (eq? x 0) #false ; zero is not a positive, nor a negative
          (case (type x)
             (type-enum+ #true)
             (type-int+ #true)
@@ -160,7 +161,7 @@
             (type-inexact
                (or
                   (fless? #i0 x)
-                  (equal? x +inf.0)))))
+                  (equal? x +inf.0))))))
 
       (assert (positive? -1)       ===> #false)
       (assert (positive? -11111111111111111111111) ===> #false)

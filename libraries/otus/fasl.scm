@@ -88,7 +88,7 @@
       ;; encode the integer number
       (define (encode-integer val tail)
          (cons 0
-            (cons (if (positive? val) type-enum+ type-enum-)
+            (cons (if (negative? val) type-enum- type-enum+)
                (send-number (abs val) tail))))
 
 
