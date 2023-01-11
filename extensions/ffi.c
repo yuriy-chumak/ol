@@ -1731,8 +1731,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		if (type == TINT64 || type == TUINT64 || type == TDOUBLE)
 			i++;
 #endif
-		p = (word*)cdr(p); // (cdr p)
-		t = (t == RNULL) ? RNULL : (word*)cdr(t); // (cdr t)
+		p = (word*)cdr(p);
+		t = (t == RNULL) ? t : (word*)cdr(t);
 	}
 	if (t != RNULL || p != RNULL) {
 		E("Arguments count mismatch", 0);
@@ -1804,7 +1804,6 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			 : is_value(car(t))
 			 	? value(car(t))
 				: reference_type(car(t));
-
 		word arg = (word) car(p);
 
 /*		// todo: add argument overriding as PAIR as argument value
@@ -2354,8 +2353,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		}
 
 		i++;
-		p = (word*)cdr(p); // (cdr p)
-		t = (t == RNULL) ? RNULL : (word*)cdr(t); // (cdr t)
+		p = (word*)cdr(p);
+		t = (t == RNULL) ? t : (word*)cdr(t);
 	}
 #ifdef __EMSCRIPTEN__
 	fmask |= 1 << i;
@@ -2454,9 +2453,13 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		i = 0;
 		while ((word)p != INULL) { // пока есть аргументы
 			assert (reference_type(p) == TPAIR); // assert(list)
-			assert (reference_type(t) == TPAIR); // assert(list)
-
-			int type = value(car(t));
+    		assert (t == RNULL || reference_type(t) == TPAIR); // assert(list)
+	
+            int type = ((word)t == INULL) // destination type
+                ? TANY
+                : is_value(car(t))
+                    ? value(car(t))
+                    : reference_type(car(t));
 			word arg = (word) car(p);
 
 
@@ -2557,8 +2560,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			} }
 
-			p = (word*) cdr(p);
-			t = (word*) cdr(t);
+			p = (word*)cdr(p);
+            t = (t == RNULL) ? t : (word*)cdr(t);
 			i++;
 		}
 	}
