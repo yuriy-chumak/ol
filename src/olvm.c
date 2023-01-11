@@ -6,7 +6,7 @@
  *         \)  )            purely
  *       ---"-"---       functional!
  * 
- * Copyright(c) 2014 - 2022 Yuriy Chumak
+ * Copyright(c) 2014 - 2023 Yuriy Chumak
  * ```
  * *Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
  * - - -
@@ -922,7 +922,7 @@ inexact_t f = (inexact_t) a;\
 #define __OLVM_VERSION__ "2.3"
 #endif
 #ifndef lint
-__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2022 Yuriy Chumak";
+__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif//lint
 
 #define unless(...) if (! (__VA_ARGS__))
@@ -5283,7 +5283,7 @@ int main(int argc, char** argv)
 	}
 	if (argc == 2 && strcmp(argv[1], "--version") == 0) {
 		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
-		E("Copyright (c) 2014-2022 Yuriy Chumak");
+		E("Copyright (c) 2014-2023 Yuriy Chumak");
 		E("License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>");
 		E("License MIT: <https://en.wikipedia.org/wiki/MIT_License>");
 		E("This is free software: you are free to change and redistribute it.");

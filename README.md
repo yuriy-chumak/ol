@@ -452,7 +452,7 @@ Otus Lisp is available under 2 licenses:
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
 
 Copyright (c) 2011-2014 Aki Helin                         <br/>
-Copyright (c) 2014-2022 Yuriy Chumak                      <br/>
+Copyright (c) 2014-2023 Yuriy Chumak                      <br/>
 
 
 ----------------------------------------------------------------------

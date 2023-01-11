@@ -1,5 +1,5 @@
 ;; Copyright(c) 2012 Aki Helin
-;; Copyright(c) 2014 - 2022 Yuriy Chumak
+;; Copyright(c) 2014 - 2023 Yuriy Chumak
 ;;
 ;; Otus Lisp is available under 2 licenses:
 ;; 'MIT License' or 'GNU LGPLv3 License'.
@@ -189,7 +189,7 @@
                      (halt 0))
                   ((string-eq? (car args) "--version")
                      (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
-                     (print "Copyright (c) 2014-2022 Yuriy Chumak")
+                     (print "Copyright (c) 2014-2023 Yuriy Chumak")
                      (print "License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>")
                      (print "License MIT: <https://en.wikipedia.org/wiki/MIT_License>")
                      (print "This is free software: you are free to change and redistribute it.")
