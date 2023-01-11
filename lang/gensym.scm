@@ -26,7 +26,7 @@
          (if (symbol? exp)
             (let ((str (symbol->string exp)))
                (let ((len (string-length str)))
-                  (if (and (> len 1) (eq? (ref str 0) 103))
+                  (if (and (> len 1) (eq? (ref str 0) #\g))
                      (count-gensym-id str 1 len 0)
                      #false)))
             #false))
@@ -73,7 +73,7 @@
 
       (define (gensym exp)
          (let*((id (+ 1 (if (vector? exp) (max-ast-id exp 0) (max-gensym-id exp 0))))
-               (digits (cons 103 (render id null))))
+               (digits (cons #\g (render id null))))
             (string->symbol (runes->string digits))))
 
       ;(gensym 1)
