@@ -11,6 +11,7 @@
 (export
    gl:set-window-title gl:set-window-size
    gl:set-renderer ; OpenGL rendering function
+   gl:set-prerenderer ; OpenGL pre-rendering function
    gl:set-calculator ; Math and Phys calculations
 
    ; event handlers
@@ -160,8 +161,9 @@
 
             ; блок непосредственно рабочего цикла окна
             ((this 'context #f) => (lambda (context)
-               (let ((calculator (this 'calculator #f))
-                     (renderer (this 'renderer #f)))
+               (let ((renderer (this 'renderer #f))
+                     (prerenderer (this 'prerenderer #f))
+                     (calculator (this 'calculator #f)))
                   ; 1. обработаем сообщения (todo: не более чем N за раз)
                   (native:process-events context (lambda (event)
                      (case event
@@ -176,6 +178,8 @@
                   (if calculator
                      (calculator))
                   ; 3. и нарисуем его
+                  (if prerenderer
+                     (prerenderer))
                   (when renderer
                      (define mouse (gl:GetMousePos (this 'context #f)))
                      (define (draw)
@@ -234,6 +238,9 @@
 ; just change a function
 (define (gl:set-renderer renderer)
    (mail 'opengl ['set 'renderer renderer]))
+
+(define (gl:set-prerenderer renderer)
+   (mail 'opengl ['set 'prerenderer renderer]))
 
 (define (gl:set-calculator calculator)
    (mail 'opengl ['set 'calculator calculator]))
