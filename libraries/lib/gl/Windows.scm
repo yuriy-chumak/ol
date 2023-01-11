@@ -103,23 +103,22 @@
 (setq GetMessage       (user32 fft-int "GetMessageA"      fft-void* fft-void* fft-int fft-int))
 (setq DispatchMessage  (user32 fft-int "DispatchMessageA" fft-void*))
 
+(setq sizeof-MSG       (if (eq? (size nullptr) 4) 28 48));sizeof(MSG)
+
 (define (native:process-events context handler)
-   (define MSG (make-bytevector 48)) ; 28 for x32
+   (define MSG (make-bytevector sizeof-MSG))
 
    (let loop ()
       (when (= (PeekMessage MSG #false 0 0 1) 1)
          (let*((w (size nullptr))
-               (message (bytevector->int32 MSG w)))      ; 4 for x32
-            ;(print message ": " message)
+               (message (bytevector->int32 MSG w)))
+            (define wParam (bytevector->int32 MSG (+ w w)))
             (cond
                ((and (eq? message 273) ; WM_COMMAND
-                     (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
-                              (<< (ref MSG (+ 1 (* w 2))) 8)) 2)) ; wParam, IDCANCEL
-                  (handler ['quit])) ; EXIT
-               ;; ((and (eq? message 256) ; WM_KEYDOWN (?)
-               ;;       (eq? (+ (<< (ref MSG (+ 0 (* w 2))) 0)
-               ;;               (<< (ref MSG (+ 1 (* w 2))) 8)) #x51)) ; Q key
-               ;;    (handler ['keyboard Q]))
+                     (eq? wParam 2))   ; IDCANCEL
+                  (handler ['quit]))
+               ((and (eq? message 256)); WM_KEYDOWN
+                  (handler ['keyboard wParam]))
                (else
                   (TranslateMessage MSG)
                   (DispatchMessage MSG)

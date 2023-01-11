@@ -17,6 +17,7 @@
 (setq XSelectInput   (X11 fft-void "XSelectInput" fft-void* fft-void* fft-long))
 (setq XMapWindow     (X11 fft-void "XMapWindow" fft-void* fft-void*))
 (setq XStoreName     (X11 fft-void "XStoreName" fft-void* fft-void* type-string))
+(setq XKeycodeToKeysym  (X11 fft-unsigned-long "XKeycodeToKeysym" fft-void* fft-unsigned-char fft-int))
 
 (setq GLX GL_LIBRARY)
 (setq glXChooseVisual   (GLX fft-void* "glXChooseVisual" fft-void* fft-int fft-int*))
@@ -80,8 +81,9 @@
             ; https://tronche.com/gui/x/xlib/events/types.html
             (case (bytevector->int32 XEvent 0)
                (2 ; KeyPress
-                  (handler ['keyboard (bytevector->int32 XEvent (x11config '|XKeyEvent.keycode|))]))
-               (3 #f) ; KeyRelease
+                  (handler ['keyboard (XKeycodeToKeysym dpy
+                        (bytevector->int32 XEvent (x11config '|XKeyEvent.keycode|)) 0)]))
+               (3 #f) ; KeyRelease, skip
                (4 ; ButtonPress
                   (let ((x (bytevector->int32 XEvent (x11config '|XButtonEvent.x|)))
                         (y (bytevector->int32 XEvent (x11config '|XButtonEvent.y|)))
