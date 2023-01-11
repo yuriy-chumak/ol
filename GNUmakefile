@@ -201,6 +201,7 @@ olvm: vm
 # You can debug ol.exe using "winedbg --gdb ol.exe"
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
 %.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
+%.exe: MINGWCFLAGS += -Wno-shift-count-overflow
 %.exe: MINGWCFLAGS += -DHAS_DLOPEN=1
 %.exe: MINGWCFLAGS += -DHAS_SOCKES=1
 %.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
