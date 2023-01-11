@@ -98,6 +98,7 @@
 
       vptr->bytevector
       bytevector->void*
+      bytevector->int16
       bytevector->int32
       bytevector->int64
 
@@ -324,6 +325,9 @@
 (cond-expand
    (little-endian
       (begin
+         (define (bytevector->int16 bvec offset)
+            (+     (ref bvec    offset   )
+               (<< (ref bvec (+ offset 1))  8)))
          (define (bytevector->int32 bvec offset)
             (+     (ref bvec    offset   )
                (<< (ref bvec (+ offset 1))  8)
@@ -341,6 +345,9 @@
 
    (big-endian
       (begin
+         (define (bytevector->int16 bvec offset)
+            (+     (ref bvec (+ offset 3))
+               (<< (ref bvec (+ offset 2))  8)))
          (define (bytevector->int32 bvec offset)
             (+     (ref bvec (+ offset 3))
                (<< (ref bvec (+ offset 2))  8)
