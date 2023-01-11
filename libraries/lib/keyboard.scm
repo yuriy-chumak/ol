@@ -6,17 +6,16 @@
    (otus lisp) (otus ffi))
 
 (export
-   KEY_ENTER KEY_ESC
-   KEY_LEFTCTRL KEY_LEFTALT KEY_LEFTSHIFT
+   KEY_ENTER KEY_ESC KEY_TILDE
    KEY_UP KEY_DOWN KEY_LEFT KEY_RIGHT
-   KEY_MINUS KEY_PLUS KEY_EQUAL KEY_BACKSPACE KEY_TAB
-   KEY_HOME
+   KEY_BACKSPACE KEY_TAB KEY_HOME KEY_END
 
    KEY_1 KEY_2 KEY_3 KEY_4 KEY_5 KEY_6 KEY_7 KEY_8 KEY_9 KEY_0
-
    KEY_Q KEY_W KEY_E KEY_R KEY_T KEY_Y KEY_U KEY_I KEY_O KEY_P
    KEY_A KEY_S KEY_D KEY_F KEY_G KEY_H KEY_J KEY_K KEY_L
    KEY_Z KEY_X KEY_C KEY_V KEY_B KEY_N KEY_M
+
+   KEY_F1 KEY_F2 KEY_F3 KEY_F4 KEY_F5 KEY_F6 KEY_F7 KEY_F8 KEY_F9
 
    key-pressed?)
 
@@ -31,19 +30,19 @@
                (eq? #x8000 (band state #x8000)))) ;(<< 1 15)
 
          ; https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
-         (define KEY_ENTER #x0D) (define KEY_ESC #x1B)
-         (define KEY_LEFTCTRL #x11) (define KEY_LEFTALT #x12) (define KEY_LEFTSHIFT #x10)
-         (define KEY_UP #x26) (define KEY_DOWN #x28) (define KEY_LEFT #x25) (define KEY_RIGHT #x27)
+         (define KEY_ENTER 13) (define KEY_ESC 27) (define KEY_TILDE 192)
+         (define KEY_LEFTCTRL 17) (define KEY_LEFTALT 00) (define KEY_LEFTSHIFT 16)
+         (define KEY_UP 38) (define KEY_DOWN 40) (define KEY_LEFT 37) (define KEY_RIGHT 39)
 
-         (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35)
-         (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
-         (define KEY_MINUS #xBD) (define KEY_EQUAL #xBB) (define KEY_BACKSPACE #x08) (define KEY_TAB #x09)
+         (define KEY_BACKSPACE 8) (define KEY_TAB 9) (define KEY_HOME 36) (define KEY_END 36)
 
-         ;; (define vkQ 24) (define vkW 25) (define vkE 26) (define vkR 27) (define vkT 28) (define vkY 29) (define vkU 30) (define vkI 31) (define vkO 32) (define vkP 33)
-         ;; (define vkA 38) (define vkS 39) (define vkD 40) (define vkF 41) (define vkG 42) (define vkH 43) (define vkJ 44)(define vkK 45) (define vkL 46)
-         ;; (define vkZ 52) (define vkX 53) (define vkC 54) (define vkV 55) (define vkB 56) (define vkN 57) (define vkM 58)
-         ;; (define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
-         )) 
+         (define KEY_1 49) (define KEY_2 50) (define KEY_3 51) (define KEY_4 52) (define KEY_5 53) (define KEY_6 54) (define KEY_7 55) (define KEY_8 56) (define KEY_9 57) (define KEY_0 48)
+         (define KEY_Q 81) (define KEY_W 87) (define KEY_E 69) (define KEY_R 82) (define KEY_T 84) (define KEY_Y 89) (define KEY_U 85) (define KEY_I 73) (define KEY_O 79) (define KEY_P 80)
+         (define KEY_A 65) (define KEY_S 83) (define KEY_D 68) (define KEY_F 70) (define KEY_G 71) (define KEY_H 72) (define KEY_J 74) (define KEY_K 75) (define KEY_L 76)
+         (define KEY_Z 90) (define KEY_X 88) (define KEY_C 3167) (define KEY_V 86) (define KEY_B 66) (define KEY_N 78) (define KEY_M 77)
+
+         (define KEY_F1 112) (define KEY_F2 113) (define KEY_F3 114) (define KEY_F4 115) (define KEY_F5 116) (define KEY_F6 117) (define KEY_F7 118) (define KEY_F8 119) (define KEY_F9 120)
+      ))
    (Android
       (begin
          (setq this (load-dynamic-library "libmain.so"))
@@ -84,19 +83,16 @@
                         (ref keys (>> code 3)))))))
 
          ; /usr/include/X11/keysymdef.h
-         (define KEY_ENTER #xff52) (define KEY_ESC #xff1b)
-         (define KEY_LEFTCTRL #xffe3) (define KEY_LEFTALT #xffe9) (define KEY_LEFTSHIFT #xffe1)
+         (define KEY_ENTER #xff0d) (define KEY_ESC #xff1b) (define KEY_TILDE #x0060)
          (define KEY_UP #xff52) (define KEY_DOWN #xff54) (define KEY_LEFT #xff51) (define KEY_RIGHT #xff53)
-
-         (define KEY_MINUS #x2D) (define KEY_PLUS #x3D) (define KEY_EQUAL #x2B) (define KEY_BACKSPACE #xff08) (define KEY_TAB #xff09) (define KEY_HOME #xff50)
+         (define KEY_BACKSPACE #xff08) (define KEY_TAB #xff09) (define KEY_HOME #xff50) (define KEY_END #xff57)
 
          (define KEY_1 #x31) (define KEY_2 #x32) (define KEY_3 #x33) (define KEY_4 #x34) (define KEY_5 #x35) (define KEY_6 #x36) (define KEY_7 #x37) (define KEY_8 #x38) (define KEY_9 #x39) (define KEY_0 #x30)
-
          (define KEY_Q #x71) (define KEY_W #x77) (define KEY_E #x65) (define KEY_R #x72) (define KEY_T #x74) (define KEY_Y #x79) (define KEY_U #x75) (define KEY_I #x69) (define KEY_O #x6f) (define KEY_P #x70)
          (define KEY_A #x61) (define KEY_S #x73) (define KEY_D #x64) (define KEY_F #x66) (define KEY_G #x67) (define KEY_H #x68) (define KEY_J #x6a) (define KEY_K #x6b) (define KEY_L #x6c)
          (define KEY_Z #x7a) (define KEY_X #x78) (define KEY_C #x63) (define KEY_V #x76) (define KEY_B #x62) (define KEY_N #x6e) (define KEY_M #x6d)
 
-         ;; (define vkStar 63) (define vkPlus 86) (define vkMinus 82) (define vkEqual 21)
+         (define KEY_F1 #xffbe) (define KEY_F2 #xffbf) (define KEY_F3 #xffc0) (define KEY_F4 #xffc1) (define KEY_F5 #xffc2) (define KEY_F6 #xffc3) (define KEY_F7 #xffc4) (define KEY_F8 #xffc5) (define KEY_F9 #xffc6)
       ))
    (Darwin
       (begin
