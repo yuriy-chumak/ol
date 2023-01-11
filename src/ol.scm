@@ -38,7 +38,8 @@
 
 ;; core implementation features, used by cond-expand
 (define *features* '(
-   otus-lisp r7rs
+   otus-lisp
+   r7rs ; R7RS-small standard
    srfi-16 ; case-lambda
    srfi-87 ; <= in cases
    srfi-71 ; extended LET-syntax for multiple values
