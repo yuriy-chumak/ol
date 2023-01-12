@@ -6,6 +6,7 @@
       gchar* gboolean
 
       TRUE FALSE NULL
+      g_free
 
       G_APPLICATION_FLAGS_NONE
 
@@ -29,6 +30,13 @@
       g_value_get_char
       g_value_set_int64
       g_value_get_int64
+
+      GDateTime*
+      g_date_time_new_from_unix_utc
+      g_date_time_format
+      g_date_time_unref
+
+
 
       G_CALLBACK
       G_TYPE_GTYPE
@@ -76,6 +84,8 @@
    (load-dynamic-library "libgio-2.0.so")
    (load-dynamic-library "libgio-2.0.so.0")))
 
+(define g_free (GLIB void "g_free" gpointer))
+
 (define GObject* type-vptr)
 (define g_object_ref (GOBJECT gpointer "g_object_ref" gpointer))
 (define g_object_unref (GOBJECT void "g_object_unref" gpointer))
@@ -88,6 +98,11 @@
    (g_signal_connect_data instance detailed_signal c_handler data #false 0))
 (define g_application_run (GIO gint "g_application_run" GApplication* gint (fft* fft-void*)))
 (define g_application_quit (GIO void "g_application_quit" GApplication*))
+
+(define GDateTime* type-vptr)
+(define g_date_time_new_from_unix_utc (GLIB GDateTime* "g_date_time_new_from_unix_utc" gint64))
+(define g_date_time_format (GLIB type-vptr "g_date_time_format" GDateTime* gchar*))
+(define g_date_time_unref (GLIB void "g_date_time_unref" GDateTime*))
 
 ; --=( GType )=---------------
 (define GType fft-unsigned-long)
