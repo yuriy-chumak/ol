@@ -2526,6 +2526,11 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 
 			case TVPTR+REF: {
+				if (arg == INULL) // empty array will be sent as nullptr
+					break;
+				if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
+					break; // nothing to do
+
 				int c = llen(arg);
 				void** f = (void**)args[i];
 
