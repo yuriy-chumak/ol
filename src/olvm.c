@@ -2595,11 +2595,11 @@ mainloop:;
 	#		define SYSCALL_SLEEP 35
 	#		endif//
 
+    #		define SYSCALL_ERRNO 60  // errno
 	#		define SYSCALL_SENDFILE 40
-	#		define SYSCALL_EXIT 60
 	#		define SYSCALL_GETDENTS 78
-	#		define SYSCALL_CHDIR 80
-	#		define SYSCALL_MKDIR 83 // todo: move SYSCALL_MKDIR as part of SYSCALL_SYSCALL, remove redundant code
+	#		define SYSCALL_CHDIR 80 // deprecated
+	#		define SYSCALL_MKDIR 83 // deprecated
 
 	#		ifndef SYSCALL_MEMFD
 	#		define SYSCALL_MEMFD 85
@@ -3980,6 +3980,11 @@ loop:;
 			}
 #endif
 
+            case SYSCALL_ERRNO: {
+				CHECK_ARGC_EQ(0);
+                r = (R) I(errno);
+                break;
+            }
 			// FOLDERS
 
 			case SYSCALL_CHDIR: {
