@@ -36,6 +36,7 @@
       (owl list))
 
    (begin
+      (print-to stderr "(owl sys) is deprecated and will be removed soon! Use (lib c) instead.")
 
       ;;;
       ;;; Unsafe operations not to be exported

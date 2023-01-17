@@ -96,8 +96,8 @@
 
 ;; -------------
 
-(import (only (owl sys) getenv))
-(import (only (owl io) system-stderr))
+(import (only (owl io)
+   system-stderr))
 
 (print "Code loaded at " (- (time-ms) build-start) " ms.")
 
@@ -254,12 +254,12 @@
 
 
          (sandbox? (getf options 'sandbox))
-         (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty()
+         (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty
          (embed? (getf options 'embed))
 
          (home (or (getf options 'home) ; via command line
-                     (getenv "OL_HOME")   ; guessed by olvm if not exists
-                     "")) ; standalone?
+                   (syscall 1016 "OL_HOME")   ; guessed by olvm if not exists
+                   #null)) ; standalone?
          (command-line vm-args)
 
          (version (cons "OL" (get options 'version (cdr *version*))))
