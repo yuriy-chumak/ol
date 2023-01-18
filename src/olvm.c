@@ -1312,7 +1312,17 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 #ifdef __APPLE__
-#	define SYSCALL_MEMFD 0  // no macOS implementation yet
+static // not a real memfd_create, but only compatibility wrapper
+int memfd_create (char* name, unsigned int flags)
+{
+	(void) name;
+	assert (flags == 0);
+
+	char tmp_m[] = "/tmp/memfd_olvmXXXXXX";
+	int fd = mkstemp(tmp_m); unlink(tmp_m);
+
+	return fd;
+}
 #endif
 
 #if HAS_SENDFILE
