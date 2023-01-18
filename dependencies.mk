@@ -3,7 +3,7 @@ vm: src/olvm.c
 vm: extensions/ffi.c
 ol: src/olvm.c
 ol: extensions/ffi.c
-ol: tmp/repl.c
+ol: tmp/repl.c ol/vm.h
 libol.so: src/olvm.c
 libol.so: extensions/ffi.c
 libol.so: tmp/repl.c
@@ -16,4 +16,3 @@ ol%.exe: tmp/repl.c
 # extensions
 extensions/ffi.c: CFLAGS += -Iincludes
 extensions/ffi.c: includes/ol/vm.h
-

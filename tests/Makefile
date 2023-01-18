@@ -207,7 +207,7 @@ vm-release-64: vm-release
 endif
 
 # -- binaries ---------------------
-testing-binaries:
+testing-binaries: includes/ol/vm.h
 	@echo "Building test binaries:"
 ifeq ($(UNAME),Linux) # main development platform, try to do a maximal testings
 ifeq ($(HAS_32CDEFS),1)
