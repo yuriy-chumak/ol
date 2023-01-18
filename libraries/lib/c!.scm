@@ -4,17 +4,27 @@
       Experimental libc library interface.")
 
    (export
-      errno stat
-
+      errno strerror
+      stat
+      ;; 14.1 Working Directory
       getcwd chdir
+      ;; 14.2 Accessing Directories
       opendir readdir closedir
       rewinddir telldir seekdir
       scandir alphasort versionsort
       make-selector make-comparer
-
       file? folder?
       file-selector folder-selector
-
+      ;; 14.6 Deleting Files
+      unlink rmdir remove
+      ;; 14.7 Renaming Files
+      rename
+      ;; 14.8 Creating Directories
+      mkdir
+      ;; 14.9 File Attributes
+      chown chmod
+      truncate
+      ;; some olvm syscalls
       uname
       isatty
       getenv)
@@ -74,6 +84,7 @@
 (cond-expand
    ((or Linux Darwin)
       (begin
+         (setq :strerror (SO type-string "strerror" fft-int))
          ; Working Directory
          (setq :getcwd (SO type-string "getcwd" type-string fft-int))
          (setq :chdir (SO fft-int "chdir" type-string)) ; todo: fchdir
@@ -85,6 +96,21 @@
          (setq :telldir (SO fft-long "telldir" DIR*))
          (setq :seekdir (SO fft-void "seekdir" DIR* fft-long))
          (setq :scandir (SO fft-int "scandir" type-string (fft& type-vptr) type-callable type-callable))
+         ; Deleting Files
+         (setq :unlink (SO fft-int "unlink" type-string))
+         (setq :rmdir (SO fft-int "rmdir" type-string))
+         (setq :remove (SO fft-int "remove" type-string))
+         ; Renaming Files
+         (setq :rename (SO fft-int "rename" type-string type-string))
+         ; 
+         (setq :mkdir (SO fft-int "mkdir" type-string fft-unsigned-int))
+         (setq :chown (SO fft-int "chown" type-string fft-unsigned-int fft-unsigned-int))
+         (setq :fchown (SO fft-int "fchown" type-port fft-unsigned-int fft-unsigned-int))
+         (setq :chmod (SO fft-int "chmod" type-string fft-unsigned-int))
+         (setq :fchmod (SO fft-int "fchmod" type-port fft-unsigned-int))
+         ;; (setq :access (SO fft-int "access" type-string fft-int))
+         ;; (setq :truncate (SO fft-int "truncate" type-string fft-signed-long))
+
 
          ;; (setq :mkdir (SO ))
          (setq free (SO fft-void "free" type-vptr))
@@ -93,13 +119,18 @@
       (begin
          (setq :getcwd (SO type-string-wide "_wgetcwd" type-string-wide fft-int))
          (setq :chdir (SO fft-int "_wchdir" type-string-wide))
+         (runtime-error
+            "Windows platform supported in progress" #n)
       )) )
 
 (begin
    (define (errno) (syscall 60))
    (define (uname) (syscall 63))
 
-   (define (stat filename) (syscall 4 (c-string filename)))
+   (define strerror :strerror)
+   (define stat (case-lambda
+      ((filename) (syscall 4 (c-string filename)))
+      ((filename follow) (syscall 4 (c-string filename) follow))))
 
    ; -- libc --------------------------------------
    (define (getcwd)
@@ -167,6 +198,29 @@
             (define string (dirent->string dirent))
             (free dirent)
             (loop (-- n) (cons string out)))))
+
+   (define unlink :unlink)
+   (define rmdir :rmdir)
+   (define remove :remove)
+   (define rename :rename)
+
+   (define mkdir (case-lambda
+      ((filename) (:mkdir filename #o755)) ; drwxr-xr-x
+      ((filename mode) (:mkdir filename mode))))
+
+   (define (chown file owner group)
+      (cond
+         ((port? file)  (:fchown file owner group))
+         ((string? file) (:chown file owner group))))
+
+   (define (chmod file mode)
+      (cond
+         ((port? file)  (:fchmod file mode))
+         ((string? file) (:chmod file mode))))
+
+   ;; (define access :access)
+
+   ;; 14.8 Creating Directories
 
    ; -- olvm --------------------
    (define (isatty fd)
