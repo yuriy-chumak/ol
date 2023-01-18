@@ -2570,8 +2570,8 @@ mainloop:;
 	#		define SYSCALL_STAT 4    // same for fstat and lstat
 	#		define SYSCALL_LSEEK 8   // 
 	#		define SYSCALL_MMAP 9    // 
-	#		define SYSCALL_FSYNC 74  // 
-	#		define SYSCALL_UNLINK 87 // 
+	#		define SYSCALL_FSYNC 74  // deprecated
+	#		define SYSCALL_UNLINK 87 // deprecated
 	#		define SYSCALL_EXECVE 59 //
 	// 5, 6 - free
 	//#		define SYSCALL_POLL 7
@@ -3952,6 +3952,7 @@ loop:;
 			*
 			* http://man7.org/linux/man-pages/man2/unlink.2.html
 			*/
+			// DEPRECATED
 			case SYSCALL_UNLINK: { //
 				CHECK_ARGC_EQ(1);
 				CHECK_STRING(1);
@@ -3987,6 +3988,7 @@ loop:;
             }
 			// FOLDERS
 
+			// DEPRECATED!
 			case SYSCALL_CHDIR: {
 				CHECK_ARGC_EQ(1);
 				CHECK_STRING(1);
@@ -3996,6 +3998,7 @@ loop:;
 					r = (word*) ITRUE;
 				break;
 			}
+			// DEPRECATED!
 			case SYSCALL_MKDIR: {
 				CHECK_ARGC(1,2);
 				CHECK_STRING(1);
