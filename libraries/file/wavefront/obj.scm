@@ -15,6 +15,11 @@
          (skip (get-imm 10))) ;; <- note that this won't match if line ends to eof
       chars))
 
+(define get-inexact
+   (let-parse* (
+         (number get-number))
+      (inexact number)))
+
 (define get-comment
    (let-parses(
          (sign (get-imm #\#))
@@ -54,29 +59,29 @@
 (define get-v
    (let-parses(
          (skip (get-word "v " #t))
-         (x get-number)
+         (x get-inexact)
          (skip (get-imm #\space))
-         (y get-number)
+         (y get-inexact)
          (skip (get-imm #\space))
-         (z get-number)
+         (z get-inexact)
          (skip (get-imm #\newline)))
       [x y z]))
 (define get-vt
    (let-parses(
          (skip (get-word "vt " #t))
-         (x get-number)
+         (x get-inexact)
          (skip (get-imm #\space))
-         (y get-number)
+         (y get-inexact)
          (skip (get-imm #\newline)))
       [x y]))
 (define get-vn
    (let-parses(
          (skip (get-word "vn " #t))
-         (x get-number)
+         (x get-inexact)
          (skip (get-imm #\space))
-         (y get-number)
+         (y get-inexact)
          (skip (get-imm #\space))
-         (z get-number)
+         (z get-inexact)
          (skip (get-imm #\newline)))
       [x y z]))
 (define get-v-vt-vn
