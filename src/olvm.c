@@ -377,6 +377,8 @@ typedef word* R;
 #define is_number(ob)               (is_numberp(ob) || is_numbern(ob))
 #define is_integer(ob)              (is_numberp(ob) || is_numbern(ob))
 
+#define is_boolean(ob)              ((ob == ITRUE) || (ob == IFALSE))
+
 // взять значение аргумента:
 #define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> VPOS); })
 #define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
@@ -3531,6 +3533,7 @@ loop:;
 		#define CHECK_RAWSTREAM(arg) CHECK_TYPE(arg, rawstream, 62005)
 		#define CHECK_STRING(arg)    CHECK_TYPE(arg, string, 62006)
 		#define CHECK_VPTR(arg)      CHECK_TYPE(arg, vptr, 62007)
+		#define CHECK_BOOLEAN(arg)   CHECK_TYPE(arg, boolean, 62008)
 
 		#define CHECK_NUMBER_OR_FALSE(arg)  CHECK_TYPE_OR_FALSE(arg, number, 62020)
 		#define CHECK_NUMBERP_OR_FALSE(arg) CHECK_TYPE_OR_FALSE(arg, numberp, 62030)
@@ -3812,8 +3815,9 @@ loop:;
 			* http://man7.org/linux/man-pages/man2/stat.2.html
 			*/
 			case SYSCALL_STAT: {
-				CHECK_ARGC_EQ(1);
+				CHECK_ARGC(1,2);
 				CHECK_PORT_OR_STRING(1);
+				CHECK_BOOLEAN(2);
 
 				struct stat st;
 
@@ -3823,7 +3827,7 @@ loop:;
 				}
 				else
 				if (is_string(A1)) {
-					if (stat(string(A1), &st) < 0)
+					if (((argc == 2 && A2 == ITRUE) ? lstat : stat)(string(A1), &st) < 0)
 						break;
 				}
 				else
