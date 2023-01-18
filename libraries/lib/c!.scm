@@ -24,6 +24,8 @@
       ;; 14.9 File Attributes
       chown chmod
       truncate
+      ;; 14.11 Temporary Files
+      mktemp mkstemp
       ;; some olvm syscalls
       uname
       isatty
@@ -110,6 +112,9 @@
          (setq :fchmod (SO fft-int "fchmod" type-port fft-unsigned-int))
          ;; (setq :access (SO fft-int "access" type-string fft-int))
          ;; (setq :truncate (SO fft-int "truncate" type-string fft-signed-long))
+         ; Temporary Files
+         (setq :mktemp (SO type-string "mktemp" type-string))
+         (setq :mkstemp (SO type-port "mkstemp" type-string))
 
 
          ;; (setq :mkdir (SO ))
@@ -217,6 +222,9 @@
       (cond
          ((port? file)  (:fchmod file mode))
          ((string? file) (:chmod file mode))))
+
+   (define mktemp :mktemp)
+   (define mkstemp :mkstemp)
 
    ;; (define access :access)
 

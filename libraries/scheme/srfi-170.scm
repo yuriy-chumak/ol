@@ -38,11 +38,13 @@
    open-directory
    read-directory
    close-directory
+
+   create-temp-file
 )
 
 (import
    (scheme core)
-   (owl ff)
+   (owl ff) (owl string)
    (lib c!))
 
 (begin
@@ -184,7 +186,15 @@
 
    ;; (real-path path)  → string   POSIX realpath()
    ;; (file-space path-or-port)  → exact integer   POSIX statvfs(), fstatvfs()
-   ;; (create-temp-file [prefix])  → string  
+
+   (define tempfile-prefix "/tmp/ol2_")
+   (define (create-temp-file prefix)
+      (mktemp (string-append prefix "XXXXXX")))
+
+   (define create-temp-file (case-lambda
+      ((prefix) (create-temp-file prefix))
+      (() (create-temp-file tempfile-prefix))))
+
    ;; (call-with-temporary-filename maker [prefix])  → object+  
 
    ;; (current-directory)  → string   POSIX getcwd()
