@@ -3,7 +3,7 @@ vm: src/olvm.c
 vm: extensions/ffi.c
 ol: src/olvm.c
 ol: extensions/ffi.c
-ol: tmp/repl.c ol/vm.h
+ol: tmp/repl.c
 libol.so: src/olvm.c
 libol.so: extensions/ffi.c
 libol.so: tmp/repl.c
