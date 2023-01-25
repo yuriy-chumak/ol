@@ -3,7 +3,8 @@
 ;; (setq GLESv2 (load-dynamic-library "libGLESv2.so"))
 
 (setq THIS (load-dynamic-library "libmain.so")) ; android shared code (todo: move to gl4es)
-(setq anlProcessEvents (THIS fft-void "anlProcessEvents"))
+(setq anlPollEvents (THIS fft-void "anlPollEvents"))
+(setq anlNextEvent (THIS fft-unsigned-int "anlNextEvent"))
 (setq anlSwapBuffers (THIS fft-void "anlSwapBuffers"))
 
 ; functions
@@ -55,7 +56,20 @@
    (anlSwapBuffers))
 
 (define (native:process-events context handler)
-   (anlProcessEvents))
+   (anlPollEvents) ; collect events
+   ; process events:
+   (let loop ()
+      (define event (anlNextEvent))
+      (define t (>> event 16))
+      (define v (band event #xFFFF))
+      (unless (zero? t)
+         (case t
+            (2 ; AKEY_EVENT_ACTION_DOWN
+                  (handler ['keyboard v]))
+            (3 ; AKEY_EVENT_ACTION_UP
+                  #false)
+            (else #f))
+         (loop))))
 
 ; -=( gl functions )=--------------------------------
 

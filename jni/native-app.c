@@ -15,13 +15,44 @@
 __attribute__((visibility("default")))
 void anlSwapBuffers();
 __attribute__((visibility("default")))
-void anlProcessEvents();
+void anlPollEvents();
+__attribute__((visibility("default")))
+uint anlNextEvent();
 __attribute__((visibility("default")))
 bool anlKeyPressed(int keycode);
 
 #include <GLES/gl.h>
 __attribute__((visibility("default")))
 void anlBindFramebuffer(GLenum target, GLuint framebuffer);
+
+// keyboard events queue
+#define TYPE_KEYWPRESS 2
+#define TYPE_KEYWRELEASE 3
+struct event_t {
+	int type;
+	int value;
+};
+
+// one producer, one consumer
+struct events_t {
+	struct event_t* begin;
+	struct event_t* end;
+	
+	struct event_t* push;
+	struct event_t* pop;
+};
+
+struct events_t events;
+static void event_push(int type, int value)
+{
+	if (events.push == events.pop - 1 || (events.push == events.end && events.pop == events.begin))
+		return;
+	*events.push++ = (struct event_t) {
+						.type = type,
+						.value = (unsigned short) value };
+	if (events.push == events.end)
+		events.push = events.begin;
+}
 
 // public api: get left eye matrix
 // public api: get right eye matrix
@@ -36,6 +67,11 @@ extern int opengles_init(struct android_app *app);
 static void init(struct android_app *app)
 {
 	ILOG("Init.");
+	size_t count = 64;
+	events.begin = malloc(sizeof(struct event_t) * count);
+	events.end = events.begin + count;
+	events.push = events.pop = events.begin;
+
 	if ((Oculus = oculusgo_init(app)))
 		return;
 	if ((Opengl = opengles_init(app)))
@@ -151,7 +187,7 @@ void anlSwapBuffers(void)
 	swap();
 }
 
-void anlProcessEvents(void)
+void anlPollEvents(void)
 {
     // Android ALooper_pollAll() variables
     int pollResult = 0;
@@ -163,6 +199,16 @@ void anlProcessEvents(void)
         if (poll_source != NULL)
 			poll_source->process(application, poll_source);
 	}
+}
+
+uint anlNextEvent(void)
+{
+	struct event_t event = {0};
+	if (events.pop != events.push)
+		event = *events.pop++;
+		if (events.pop == events.end)
+			events.pop = events.begin;
+	return (event.type << 16) + event.value;
 }
 
 #define KEYCODE_MAX 512
@@ -243,6 +289,7 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
 					int byte = keycode / 8, bit = keycode % 8;
 					if (byte < sizeof(keys))
 						keys[byte] |= (1 << bit);
+					event_push(2, keycode);
 					break;
 				}
 				case AKEY_EVENT_ACTION_MULTIPLE: //todo: push repeat_count "key pressed event"s
@@ -251,6 +298,7 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
 					int byte = keycode / 8, bit = keycode % 8;
 					if (byte < sizeof(keys))
 						keys[byte] &= ~(1 << bit);
+					event_push(3, keycode);
 					break;
 				}
 			};
