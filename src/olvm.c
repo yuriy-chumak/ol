@@ -1953,7 +1953,7 @@ struct olvm_t
 
 	// текущий контекст с арностью
 	word this;
-	long arity;
+	long arity; // arguments count + 1
 
 	// i/o polymorphism
 	open_t* open;
@@ -2269,6 +2269,10 @@ void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char
 	return;
 }
 
+#ifdef DEBUG_COUNT_OPS
+static unsigned long long ops[256];
+#endif
+
 static //__attribute__((aligned(8)))
 word runtime(struct olvm_t* ol)
 {
@@ -2290,6 +2294,10 @@ word runtime(struct olvm_t* ol)
 	unsigned char *ip = 0, *ip0;
 	// internal gc call wrapper
 #	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
+
+#ifdef DEBUG_COUNT_OPS
+    bzero(ops, sizeof(ops));
+#endif
 
 	// runtime loop
 apply:;
@@ -2660,6 +2668,10 @@ loop:;
 	 * * vm:make*: `vm:make`, `vm:alloc`
 	 * * LD*: `LDE`, `LDN`, `LDT`, `LDF`
 	 */
+#ifdef DEBUG_COUNT_OPS
+    ops[*ip]++;
+#endif
+
 	switch ((op = *ip++) & 0x3F) {
 	/*! #### JIT
 	 * Reserved for feature use.
@@ -4323,7 +4335,7 @@ loop:;
 				word function = (word)dlsym(module, name);
 				if (function)
                     r = new_vptr(function);
-					// r = new_dlsym(function, symbol);
+					// todo: in DEBUG mode : r = new_vptr(function, b);
 #ifdef OLVM_DLSYM_DEBUG
 				else
 					D("dlsym failed: %s", dlerror());
@@ -5427,6 +5439,15 @@ int main(int argc, char** argv)
 
 #if	HAS_SOCKETS && defined(_WIN32)
 	WSACleanup();
+#endif
+
+#ifdef DEBUG_COUNT_OPS
+    for (int j = 0; j < 16; j++) {
+        for (int i = 0; i < 16; i++) {
+            printf("%8lld ", ops[i+j*16]);
+        }
+        printf("\n");
+    }
 #endif
 
 	return (int) v;
