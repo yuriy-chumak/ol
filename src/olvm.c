@@ -5341,6 +5341,7 @@ int main(int argc, char** argv)
 		argv++, argc--;
 	}
 
+	int v = 0;
 	if (file == 0) { // входной файл не указан
 #ifndef REPL
 		goto no_binary_script;
@@ -5354,9 +5355,11 @@ int main(int argc, char** argv)
 
 		if (stat(file, &st))
 			goto can_not_stat_file;		// не найден файл или нет доступа
-#ifndef REPL
 		if (st.st_size == 0)
+#ifndef REPL
 			goto invalid_binary_script;
+#else
+            goto ok;
 #endif
 
 		char bom;
@@ -5427,7 +5430,6 @@ int main(int argc, char** argv)
 		free(bootstrap);
 
 	// so, let's rock?
-	int v = 0;
 	if (olvm) {
 		word r = OLVM_run(olvm, argc, argv);
         // convert result to appropriate system value
@@ -5450,6 +5452,7 @@ int main(int argc, char** argv)
     }
 #endif
 
+ok:
 	return (int) v;
 
 // FAILS:
