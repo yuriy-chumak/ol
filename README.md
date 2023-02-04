@@ -59,7 +59,8 @@ Q/A
 
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
-Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available (the previous Freenode channel is closed).
+~~Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available (the previous Freenode channel is closed).~~
+Libera.Chat channel temporary unavailable.
 
 [The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
