@@ -241,6 +241,12 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|))
                   ((string-eq? (car args) "--embed")
                      (loop (put options 'embed #t) (cdr args)))
 
+                  ;; new option: compile into binary
+                  ((starts-with? (car args) "--compile-to=")
+                     (loop (put options 'compile
+                              (substring (car args) 13))
+                           (cdr args)))
+
                   ;; home
                   ((string-eq? (car args) "--home")
                      (print "use --home=<path>")
@@ -279,6 +285,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|))
          (sandbox? (getf options 'sandbox))
          (interactive? (get options 'interactive (syscall 16 file 19))) ; isatty
          (embed? (getf options 'embed))
+         (compile? (getf options 'compile))
 
          (home (or (getf options 'home) ; via command line
                    (syscall 1016 "OL_HOME")   ; guessed by olvm if not exists
@@ -377,9 +384,19 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|))
          else
             ; regular repl:
             (actor ['repl] (lambda ()
-               ;; repl
-               (exit-thread
-                  (repl-loop env file)))))))
+               (let*((lastone (repl-loop env file))
+                     (lastone (if compile?
+                                 (let*((path compile?)
+                                       (port (open-output-file path)))
+                                    (if (not port)
+                                    then
+                                       (print-to stderr "Could not open " path " for write")
+                                       #false ; error
+                                    else
+                                       (write-bytes port (fasl-encode (make-entry lastone)))
+                                       (close-port port)))
+                                 lastone)))
+               (exit-thread lastone)))))))
 
 ;;;
 ;;; Dump the new repl
@@ -396,7 +413,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|))
          (fasl-encode (make-entry main))))
    (if (not port)
    then
-      (print "Could not open " path " for writing")
+      (print "Could not open " path " for write")
       (exit -1) ; error
    else ;; just save the fasl dump
       (write-bytes port bytes)
