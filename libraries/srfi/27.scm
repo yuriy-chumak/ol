@@ -1,4 +1,4 @@
-(define-library (scheme 27)
+(define-library (srfi 27)
 ; http://srfi.schemers.org/srfi-27/srfi-27.html
 
 ;; Abstract
