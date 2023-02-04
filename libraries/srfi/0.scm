@@ -13,6 +13,4 @@
 
 ; NOTES: srfi-0 fully included into lang/eval.scm library
 ; -----
-(export *features*)
-(import
-   (scheme core)) )
+(export))
