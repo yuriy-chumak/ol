@@ -215,11 +215,19 @@
 
       ; exp env free -> status exp' free'
 
-      (define toplevel-macro-definition?
+      (define toplevel-syntax-definition?
          (let
             ((pattern
                `(quote syntax-operation add #false (,symbol? ,list? ,list? ,list?))))
             ;; -> keyword literals patterns templates
+            (lambda (exp)
+               (match pattern exp))))
+
+      (define toplevel-macro-definition?
+         (let 
+            ((pattern
+               `(quote macro-operation eval #false (,symbol? ,function?))))
+            ;; -> name handler
             (lambda (exp)
                (match pattern exp))))
 
@@ -276,7 +284,7 @@
 
          ; (print "expand: " exp)
 
-         (define (expand-list exps env free)
+         (define (expand-list exps env free) ; todo: handle 'env' changes
             (if (null? exps)
                (values null free)
                (lets
@@ -350,10 +358,15 @@
                         (['undefined]
                            ;; can be a literal
                            (values exp free))
-                        (['macro transformer]
+                        (['syntax transformer]
                            (let ((result (transformer exp free)))
                               (if result
                                  (expand (ref result 1) env (ref result 2) abort)
+                                 (abort exp))))
+                        (['macro transformer]
+                           (let ((result (transformer exp env)))
+                              (if result
+                                 (expand (ref result 1) (ref result 2) free abort)
                                  (abort exp))))
                         (else is node
                            ; usually bad module exports, since those are not checked atm
@@ -362,6 +375,8 @@
                      (expand-list exp env free))))
             ((symbol? exp)
                (case (lookup env exp)
+                  (['syntax transformer]
+                     (abort (list "Macro being used as a value: " exp)))
                   (['macro transformer]
                      (abort (list "Macro being used as a value: " exp)))
                   (['undefined]
@@ -376,7 +391,7 @@
 
       (define (post-macro-expand exp env fail)
          (cond
-            ((toplevel-macro-definition? exp)
+            ((toplevel-syntax-definition? exp)
                (lets
                   ((rules (lref exp 4))
                    (keyword (lref rules 0))
@@ -389,8 +404,14 @@
                            (not (env-get-raw env sym #false)))))
                    (transformer
                      (make-transformer (cons keyword literals) rules)))
-                  (let ((env (env-set-macro env keyword transformer)))
+                  (let ((env (env-set-syntax env keyword transformer)))
                      (ok (list 'quote keyword) env))))
+            ((toplevel-macro-definition? exp)
+               (define body (lref exp 4))
+               (define name (car body))
+               (define func (cadr body))
+               (let ((env (env-set-macro env name func)))
+                  (ok (list 'quote name) env)))
             (else
                (ok exp env))))
 

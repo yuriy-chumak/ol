@@ -15,6 +15,7 @@
       bind-toplevel
       library-import                ; env exps fail-cont → env' | (fail-cont <reason>)
       *src-olvm*
+      *special-forms* ; special forms with macro
       ; 6.5 Eval
       eval eval-repl
       evaluate disassembly)
@@ -60,7 +61,6 @@
       (define current-library-key '*owl-source*) ; toplevel value storing what is being loaded atm
       (define error-tag ['syntax-error])
 
-
       (define (ok? x) (eq? (ref x 1) 'ok))
       (define (ok exp env) ['ok exp env])
       (define (fail reason) ['fail reason])
@@ -72,25 +72,6 @@
       (define (debug env . msg)
          (if (env-get env '*debug* #false)
             (apply print msg)))
-
-      ;; library (just the value of) containing only special forms, primops and define-syntax macro
-      (define *src-olvm*
-         (fold
-            (λ (env thing)
-               (env-set env (ref thing 1) (ref thing 5))) ; add primitives to the end of list
-            (env-set-macro
-               *special-forms* ;; from (owl primop), env with only special form tags, no primops
-               'define-syntax
-               (make-transformer
-                  '(define-syntax syntax-rules add quote)
-                  '(
-                     ((define-syntax keyword
-                        (syntax-rules literals (pattern template) ...))
-                      ()
-                      (quote syntax-operation add #false
-                        (keyword literals (pattern ...)
-                        (template ...)))) )))
-            *primops*))
 
       (define (execute exp env)
          (values-apply (exp)
@@ -168,6 +149,42 @@
             ;;    (fail (list "breaked")))
             (else is foo
                (fail (list "Funny result for compiler " foo)))))
+
+      ;; macro system
+      (define *special-forms* (put *special-forms*
+         'define-syntax ['syntax (make-transformer
+               '(define-syntax syntax-rules add quote)
+               '(
+                  ((define-syntax keyword
+                     (syntax-rules literals (pattern template) ...))
+                  ()
+                  (quote syntax-operation add #false
+                     (keyword literals (pattern ...)
+                     (template ...))))) )]))
+
+      (define *special-forms* (put *special-forms*
+         ; form: (define-macro (name args) body)
+         'define-macro ['macro (lambda (form venv)
+               (define name (caadr form))
+               (define args (cdadr form))
+               (define body (caddr form))
+               (define expanded (macro-expand `(lambda ,args ,body) venv))
+               (define evaluated (ref (evaluate (ref expanded 2) venv) 2))
+
+               [`(quote macro-operation eval #false (
+                  ,name
+                  ,(lambda (form venv)
+                     [(apply evaluated (cdr form)) venv]) )) venv] )]))
+
+      ;; library (just the value of) containing only special forms, primops and define-syntax macro
+      (define *src-olvm*
+         (fold
+            (λ (env thing)
+               (env-set env (ref thing 1) (ref thing 5))) ; add primitives to the end of list
+            *special-forms*
+            *primops*))
+
+
 
       ; ----------------------------------
       ; exp streams reader (with prompt)

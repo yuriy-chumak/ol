@@ -5,7 +5,8 @@
       lookup env-bind
       empty-env
       apply-env env-fold
-      env-set-macro env-del
+      env-set-syntax env-set-macro
+      env-del
       env-get     ;; env key default → val | default
       env-del     ;; env key → env'
       env-set     ;; env-set env key val → env'
@@ -54,6 +55,10 @@
       (define (env-set env key val)
          (put env key
             ['defined ['value val]]))
+
+      (define (env-set-syntax env key transformer)
+         (put env key
+            ['syntax transformer]))
 
       (define (env-set-macro env key transformer)
          (put env key

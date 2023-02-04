@@ -133,7 +133,9 @@
             then
                (print (cdr sym))
                (case (cdr sym)
-                  (['macro func]
+                  (['syntax func]
+                     (dump func 0))
+                  (['macro func] ;; ?
                      (dump func 0))
                   (['defined val]
                      (print val)
