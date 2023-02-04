@@ -8,7 +8,7 @@
 
    (import
       (scheme base)
-      (scheme srfi-1)
+      (srfi 1)
 
       (owl list-extra)
       (owl math)

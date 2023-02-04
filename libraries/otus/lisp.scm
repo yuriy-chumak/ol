@@ -5,7 +5,7 @@
       (exports (scheme base))
       
       ; all Ol functions, not only (scheme base) profile:
-      (exports (scheme srfi-1))  ; * List Library
+      (exports (srfi 1))  ; * List Library
 ;      (exports (scheme r5rs iteration)) ; 4.2.4 Iteration (do)
       
       (exports (scheme vector))
@@ -43,7 +43,7 @@
 
    (import
       (scheme core)
-      (scheme srfi-1)
+      (srfi 1)
       (scheme srfi-87)
       (scheme base)
       ;(scheme read)

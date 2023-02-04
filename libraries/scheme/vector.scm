@@ -49,7 +49,7 @@
 
    (import
       (scheme core)
-      (scheme srfi-1)
+      (srfi 1)
       (scheme list)
       (owl string)
       (owl math))

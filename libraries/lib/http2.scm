@@ -5,7 +5,7 @@
     http:run)
     ;http:parse-url)
 
-  (import (scheme base) (scheme srfi-1)
+  (import (scheme base) (srfi 1)
       (file http)
       (otus case-apply)
       (otus async)

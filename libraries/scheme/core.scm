@@ -1762,7 +1762,7 @@
 
       ; 4.2.6  Quasiquotation
 
-      (define-syntax cons* ; * MIT/GNU Scheme, srfi-1
+      (define-syntax cons* ; * MIT/GNU Scheme, srfi 1
          (syntax-rules ()
             ((cons* a) a)
             ((cons* a . b)

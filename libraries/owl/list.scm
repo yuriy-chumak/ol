@@ -1,6 +1,6 @@
 (define-library (owl list)
 
-   ; todo: move fold to srfi-1
+   ; todo: move fold to srfi 1
    (export
       for ; deprecated
       getq drop-while
@@ -16,7 +16,7 @@
 
    (import
       (scheme core)
-      (scheme srfi-1)
+      (srfi 1)
       (scheme list))
 
    (begin

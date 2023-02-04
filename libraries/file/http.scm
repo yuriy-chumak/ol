@@ -5,7 +5,7 @@
       http-parser)
 ;      http-url-parser)
 
-   (import (scheme base) (scheme srfi-1)
+   (import (scheme base) (srfi 1)
       (owl parse) (owl ff)
       (owl list-extra)
       (owl string)

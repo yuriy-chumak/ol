@@ -35,7 +35,7 @@
    (import
       (scheme core)
       (scheme list)
-      (scheme srfi-1)
+      (srfi 1)
       (owl parse)
       (owl ff)
       (owl list)
