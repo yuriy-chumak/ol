@@ -171,12 +171,12 @@
 (define help (symbol->string '
 |Usage: ol [OPTION]... [input-file] [file-options]
 
-   --home=<path(es)>   run in virtual environment, divide pathes by ':'
+   --home=<path(s)>    run in virtual environment, divide paths by ':'
    --sandbox           run in sandboxed environment (if supported)
    --sandbox=<number>  run sandboxed with <number> Megs heap allocated
 
-   --interactive       make execution envorinment interactive
-   --no-interactive    make execution envorinment non interactive
+   --interactive       make execution environment interactive
+   --no-interactive    make execution environment non-interactive
 
    --help              this help
    -v, --version       print short or long version info
@@ -184,6 +184,8 @@
    --                  end of options
 
 Otus Lisp homepage: <https://github.com/otus-lisp/>.|))
+;; --compile-to=<filename> new experimental option to compile input-file
+;;                     result /must be (lambda (args) ...)/ into binary.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
