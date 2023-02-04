@@ -109,14 +109,12 @@
    (when (> megs 0)
       (define word-size (size (vm:cast 0 type-vptr)))
       (define blocksize (<< 1 (* (- word-size 1) 8)))
-      (let loop ((megs (* megs 1048576)) (out #null))
-         (print "megs: " megs ", blocksize: " blocksize)
-         (if (zero? megs)
+      (let loop ((bytes (* megs 1048576)) (out #null))
+         (if (<= bytes 0)
             out
          else
-            (define bytes (min megs blocksize))
-            (print "bytes: " bytes)
-            (loop (- megs bytes) (cons (make-bytevector bytes) out))))))
+            (define block (min bytes blocksize))
+            (loop (- bytes block) (cons (make-bytevector block) out))))))
 
 (define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
 
@@ -162,6 +160,31 @@
 (import (lang primop))
 
 
+;; help strings
+(define copyright (symbol->string '
+|Copyright (c) 2014-2023 Yuriy Chumak
+   License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>
+   License MIT: <https://en.wikipedia.org/wiki/MIT_License>
+   This is free software: you are free to change and redistribute it.
+   There is NO WARRANTY, to the extent permitted by law.|))
+
+(define help (symbol->string '
+|Usage: ol [OPTION]... [input-file] [file-options]
+
+   --home=<path(es)>   run in virtual environment, divide pathes by ':'
+   --sandbox           run in sandboxed environment (if supported)
+   --sandbox=<number>  run sandboxed with <number> Megs heap allocated
+
+   --interactive       make execution envorinment interactive
+   --no-interactive    make execution envorinment non interactive
+
+   --help              this help
+   -v, --version       print short or long version info
+   --version=<string>  override internal version string
+   --                  end of options
+
+Otus Lisp homepage: <https://github.com/otus-lisp/>.|))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; new repl image
@@ -183,18 +206,18 @@
                   ((null? args)
                      (values options #null))
 
+                  ((string-eq? (car args) "--help")
+                     (print help)
+                     (halt 0))
                   ;; version manipulation
                   ((string-eq? (car args) "-v")
                      (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
                      (halt 0))
                   ((string-eq? (car args) "--version")
                      (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
-                     (print "Copyright (c) 2014-2023 Yuriy Chumak")
-                     (print "License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>")
-                     (print "License MIT: <https://en.wikipedia.org/wiki/MIT_License>")
-                     (print "This is free software: you are free to change and redistribute it.")
-                     (print "There is NO WARRANTY, to the extent permitted by law.")
+                     (print copyright)
                      (halt 0))
+
 
                   ((starts-with? (car args) "--version=")
                      (loop (put options 'version
@@ -313,7 +336,7 @@
          ; go:
          (if sandbox?
             (unless (sandbox sandbox?)
-               (system-stderr "Failed to enter the sandbox.\nYou must have SECCOMP support enabled in the OS kernel.\n")
+               (system-stderr "Failed to enter the sandbox.\nYou must have SECCOMP support enabled.\n")
                (halt exit-seccomp-failed)))
 
 
