@@ -110,7 +110,7 @@
       1)))
 
 
-(import (scheme srfi-27))
+(import (srfi 27)) ; random
 (define w (- W 3))
 (define h (- H 3))
 (define s 3)
