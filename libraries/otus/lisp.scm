@@ -44,7 +44,7 @@
    (import
       (scheme core)
       (srfi 1)
-      (scheme srfi-87)
+      (srfi 87)
       (scheme base)
       ;(scheme read)
 

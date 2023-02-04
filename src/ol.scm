@@ -22,8 +22,8 @@
 ; (иначе импорт сбойнет)
 (import (src vm))         ;; olvm high level interface
 (import (srfi 16))        ;; case-lambda
-(import (scheme srfi-87)) ;; "=>" clauses in case
 (import (scheme core))    ;; core Scheme functions and primitives
+(import (srfi 87))      ;; "=>" clauses in case
 (import (srfi 71))      ;; extended LET-syntax for multiple values
 
 ;; todo: вообще-то тут надо бы интернер очистить ??

@@ -43,7 +43,7 @@
       ; let-eval ifeq brae values-apply
 
       (srfi 16)  ; case-lambda, 4.2.9
-      (scheme srfi-87)  ; <= in cases
+      (srfi 87)  ; <= in cases
       (srfi 71)) ; (let* ((a b (values..
 
    ; -----------------------------------------------------------------
