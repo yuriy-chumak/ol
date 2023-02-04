@@ -1,2 +1,11 @@
-42
-ok
+declarations:
+  generated name: test-2
+  a list: (list a b)
+  macro result: (define test-2 (lambda (a b) (apply + (list a b))))
+
+  generated name: test-3
+  a list: (list a b c)
+  macro result: (define test-3 (lambda (a b c) (apply + (list a b c))))
+teting:
+11
+18

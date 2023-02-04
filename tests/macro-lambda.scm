@@ -1,12 +1,18 @@
+(define-macro (smart-define name . args)
+   (let*((count (length args))
+         (realname (string->symbol (string-append (symbol->string name) "-" (number->string count))))
+         (eval (cons 'list args))
+         (output `(define ,realname (lambda ,args (apply + ,eval)))))
+      (print "  generated name: " realname)
+      (print "  a list: " eval)
+      (print "  macro result: " output)
+      output))
+      
+(print "declarations:")
+(smart-define test a b)
+(print)
+(smart-define test a b c)
 
-(define foo 42)
-
-(define-syntax mac 
-   (syntax-rules ()
-      ((mac x) (list x (lambda (x) x)))))
-
-(define res (mac foo))
-
-(print (car res))         ; -> 42
-(print ((cadr res) 'ok))  ; -> ok
-
+(print "teting:")
+(print (test-2 3 8))
+(print (test-3 5 6 7))
