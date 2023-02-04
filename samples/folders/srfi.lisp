@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 
-(import (scheme srfi-170))
+(import (srfi 170))
 
 (define dir (open-directory "."))
 (let loop ()
