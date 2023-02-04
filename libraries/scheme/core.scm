@@ -44,7 +44,7 @@
 
       (srfi 16)  ; case-lambda, 4.2.9
       (scheme srfi-87)  ; <= in cases
-      (scheme srfi-71)) ; (let* ((a b (values..
+      (srfi 71)) ; (let* ((a b (values..
 
    ; -----------------------------------------------------------------
    ; internal ol staff
