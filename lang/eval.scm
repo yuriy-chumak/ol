@@ -14,7 +14,7 @@
       print-repl-error
       bind-toplevel
       library-import                ; env exps fail-cont → env' | (fail-cont <reason>)
-      *src-olvm*
+      *otus-core*
       *special-forms* ; special forms with macro
       ; 6.5 Eval
       eval eval-repl
@@ -176,7 +176,7 @@
                      [(apply evaluated (cdr form)) venv]) )) venv] )]))
 
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
-      (define *src-olvm*
+      (define *otus-core*
          (fold
             (λ (env thing)
                (env-set env (ref thing 1) (ref thing 5))) ; add primitives to the end of list
@@ -997,7 +997,7 @@
             (else
                (fail (list "unknown library term: " (car exp))))))
 
-      ;; variables which are added to *src-olvm* when evaluating libraries
+      ;; variables which are added to *otus-core*(?) when evaluating libraries
       (define library-exports
          (list
             '*libraries*   ;; loaded libraries
@@ -1071,7 +1071,7 @@
                   ;;    (lets ((module (build-export (cdr exp) env (λ (x) x)))) ; <- to be removed soon, dummy fail cont
                   ;;       (ok module env)))
                   ((library-definition? exp)
-                     ;; evaluate libraries in a blank *src-olvm* env (only primops, specials and define-syntax)
+                     ;; evaluate libraries in a blank *otus-core* env (only primops, special-forms, and macros)
                      ;; include just loaded *libraries* and *include-paths* from the current one to share them
                      (let*/cc ret (
                            (exps (map cadr (cdr exp))) ;; drop the quotes
@@ -1085,7 +1085,7 @@
                            (lib-env
                               (fold
                                  (λ (lib-env key) (env-set lib-env key (env-get env key #null)))
-                                 *src-olvm* library-exports))
+                                 *otus-core* library-exports))
                            (lib-env
                               (bind-toplevel
                                  (env-set lib-env current-library-key name))))

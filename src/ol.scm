@@ -8,12 +8,12 @@
 (print "Loading code...")
 (define build-start (time-ms))
 
-; drop all libraries except (src olvm) which is
+; drop all libraries except (otus core) which is
 ; a virtual olvm language primitives library.
 (define *libraries*
    (keep
       (λ (lib)
-         (equal? (car lib) '(src olvm)))
+         (equal? (car lib) '(otus core)))
       *libraries*))
 
 ; reimport core language:
@@ -31,7 +31,7 @@
 ;; forget everything except these and core values (later list also them explicitly)
 ,forget-all-but (*libraries* *version* *path* stdin stdout stderr build-start)
 
-(import (src olvm))     ;; olvm and core ol primitives
+(import (otus core))    ;; olvm promops and ol special forms
 (import (scheme core))  ;; базовый языковый ...
 (import (scheme base))  ;; ... набор Scheme
 (import (otus lisp))    ;; а теперь загрузим ВСЕ, чтобы успешно отработал bytecode-interner (и сократил размер образа)
@@ -68,13 +68,13 @@
 (import (lang eval))
 (import (lang embed))
 
-; replace old (src olvm) to the new one - (only (lang eval) *src-olvm*)
-(define *libraries* ; заменим старую (src olvm) на новую из (lang eval)
+; replace old (otus core) to the new one, (only (lang eval) *otus-core*)
+(define *libraries* ; заменим старую (otus core) на новую из (lang eval)
    (cons
-      (cons '(src olvm) *src-olvm*)
+      (cons '(otus core) *otus-core*)
       (keep
          (λ (x)
-            (not (equal? (car x) '(src olvm))))
+            (not (equal? (car x) '(otus core))))
          *libraries*)))
 
 ;
@@ -146,7 +146,7 @@
 (define initial-environment-sans-macros
    (fold
       (λ (env pair) (env-put-raw env (car pair) (cdr pair)))
-      *src-olvm*
+      *otus-core*
       shared-bindings))
 
 (define initial-environment
