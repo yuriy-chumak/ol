@@ -241,6 +241,7 @@ MAKEFILE_MAIN=1
 
 # documentation samples check
 check: ol check-reference
-check-reference: $(wildcard doc/reference/*.md) ol
+check-reference: ol
+check-reference: $(wildcard doc/reference/*.md)
 	@echo "Testing reference samples:"
-	@./ol tools/check-reference.lisp $^ && echo $(ok) || echo $(failed)
+	@./ol tools/check-reference.lisp $(filter %.md,$^) && echo $(ok) || echo $(failed)
