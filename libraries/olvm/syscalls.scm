@@ -8,7 +8,7 @@
 
    (import
       (scheme core)
-      (scheme srfi-16))
+      (srfi 16))
 
 (begin
    (define read (case-lambda

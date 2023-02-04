@@ -1,4 +1,4 @@
-(define-library (scheme srfi-16)
+(define-library (scheme case-lambda)
 (import (scheme core) (srfi 16))
 (export
    (exports (srfi 16))) )

@@ -42,7 +42,7 @@
       ; quote values lambda setq
       ; let-eval ifeq brae values-apply
 
-      (scheme srfi-16)  ; case-lambda, 4.2.9
+      (srfi 16)  ; case-lambda, 4.2.9
       (scheme srfi-87)  ; <= in cases
       (scheme srfi-71)) ; (let* ((a b (values..
 
@@ -851,7 +851,7 @@
                (quasiquote _work () . stuff))))
 
       ; 4.2.9. Case-lambda
-      ; * declared in (scheme srfi-16)
+      ; * declared in (srfi 16)
 
       ; 4.3  Macros
       ; 4.3.1  Binding constructs for syntactic keywords
@@ -1894,7 +1894,7 @@
       ; 4.2.8  Quasiquotation
       quasiquote
       ; 4.2.9  Case-lambda
-      case-lambda ;  * (scheme srfi-16)
+      case-lambda ;  * (srfi 16)
       ; 6.2.1  Numerical types
       type-enum+ type-enum- type-int+ type-int-
       type-rational type-complex type-inexact

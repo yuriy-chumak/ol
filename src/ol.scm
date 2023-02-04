@@ -21,7 +21,7 @@
 ; предварительная загрузка зависимостей scheme core,
 ; (иначе импорт сбойнет)
 (import (src vm))         ;; olvm high level interface
-(import (scheme srfi-16)) ;; case-lambda
+(import (srfi 16))        ;; case-lambda
 (import (scheme srfi-87)) ;; "=>" clauses in case
 (import (scheme srfi-71)) ;; extended LET-syntax for multiple values
 (import (scheme core))    ;; core Scheme functions and primitives
