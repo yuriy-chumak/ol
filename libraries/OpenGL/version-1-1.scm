@@ -1,7 +1,4 @@
 ; OpenGL 1.1 (4 Mar 1997)
-(define-library (OpenGL version-1-1)
-(export
-      (exports (OpenGL version-1-0))
 ; + EXT_vertex_array
 ; + EXT_polygon_offset
 ; + EXT_blend_logic_op
@@ -9,6 +6,10 @@
 ; + EXT_copy_texture
 ; + EXT_subtexture
 ; + EXT_texture_object
+
+(define-library (OpenGL version-1-1)
+(export
+      (exports (OpenGL version-1-0))
 
    GL_VERSION_1_1
 

@@ -244,7 +244,7 @@
                            (val-eq? (ref exp 2) '_sans_cps)
                            (eq? (length (ref exp 3)) 1))
                         (ok
-                           (mklambda (list cont-sym) 
+                           (mklambda (list cont-sym)
                               (mkcall (mkvar cont-sym)
                                  (list (car (ref exp 3)))))
                            env)

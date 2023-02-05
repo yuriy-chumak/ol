@@ -189,7 +189,6 @@ void anlSwapBuffers(void)
 
 void anlPollEvents(void)
 {
-    // Android ALooper_pollAll() variables
     int pollResult = 0;
     int pollEvents = 0;
 

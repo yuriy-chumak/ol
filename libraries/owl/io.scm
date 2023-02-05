@@ -7,7 +7,7 @@
    (export
       ;; thread-oriented non-blocking io
       open-input-file         ;; path → fd | #false
-      open-binary-input-file   
+      open-binary-input-file
       open-output-file        ;; path → fd | #false
       open-binary-output-file
       flush-port              ;; fd → _

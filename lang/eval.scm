@@ -840,7 +840,7 @@
                      (string->list (cond
                                     ((symbol? thing) (symbol->string thing))
                                     ((string? thing) thing)
-                                    ((integer? thing) (list->string (render-number thing #null 10)))
+                                    ((integer? thing) (number->string thing))
                                     (else
                                        (runtime-error "Invalid library name part" thing))))
                      (if (null? tl)

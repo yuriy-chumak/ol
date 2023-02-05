@@ -21,7 +21,7 @@
       ;   binary:
       ;     vm:and vm:ior vm:xor
       ; floating-point math (OLVM_INEXACTS and OLVM_BUILTIN_FMATH required):
-      ;   vm:fp1 (fsqrt, fsin, fcos, ftan, fatan, flog, fexp, fasin, facos, ffloor),
+      ;   vm:fp1 (fsqrt, fsin, fcos, ftan, fatan, flog, fexp, fasin, facos, ffloor)
       ;   vm:fp2 (fless?, fadd, fsub, fmul, fdiv, fatan2, flog2, fexpt)
       ; special:
       ;   vm:pin, vm:unpin, vm:deref
@@ -133,120 +133,6 @@
       ; restrictions on how they are composed, suffice to form a practical
       ; and efficient programming language that is flexible enough to support
       ; most of the major programming paradigms in use today.
-
-
-      ;                      DESCRIPTION OF THE LANGUAGE
-      ;
-      ;;; ---------------------------------------------------------------
-      ;;; Chapter 1
-      ;;; Overview of Scheme
-
-      ; 1.1  Semantics
-      ;
-      ; Scheme is a statically scoped programming language. Each
-      ; use of a variable is associated with a lexically apparent
-      ; binding of that variable.
-      ;
-      ; Scheme is a dynamically typed language. Types are asso-
-      ; ciated with values (also called objects) rather than with
-      ; variables. Statically typed languages, by contrast, asso-
-      ; ciate types with variables and expressions as well as with
-      ; values.
-      ;
-      ; All objects created in the course of a Scheme computation,
-      ; including procedures and continuations, have unlimited extent.
-      ; No Scheme object is ever destroyed. The reason that
-      ; implementations of Scheme do not (usually!) run out of
-      ; storage is that they are permitted to reclaim the storage
-      ; occupied by an object if they can prove that the object
-      ; cannot possibly matter to any future computation.
-      ;
-      ; Scheme procedures are objects in their own right. Procedures
-      ; can be created dynamically, stored in data structures,
-      ; returned as results of procedures, and so on.
-      ;
-      ; Arguments to Scheme procedures are always passed by
-      ; value, which means that the actual argument expressions
-      ; are evaluated before the procedure gains control, regardless
-      ; of whether the procedure needs the result of the evaluation.
-
-      ; 1.2  Syntax
-
-      ; 1.3  Notation and terminology
-      ; 1.3.1  Base and optional features
-      ; 1.3.2  Error situations and unspecified behavior
-      ; 1.3.3  Entry format
-      ; 1.3.4  Evaluation examples
-
-      ; 1.3.5  Naming conventions
-      ;
-      ; By convention, ? is the final character of the names of
-      ; procedures that always return a boolean value. Such pro-
-      ; cedures are called predicates. Predicates are generally
-      ; understood to be side-effect free, except that they may
-      ; raise an exception when passed the wrong type of argument.
-      ;
-      ; Similarly, ! is the final character of the names of proce-
-      ; dures that store values into previously allocated locations
-      ; (see section 3.4). Such procedures are called mutation pro-
-      ; cedures. The value returned by a mutation procedure is
-      ; unspecified.
-      ;
-      ; By convention, “->” appears within the names of proce-
-      ; dures that take an object of one type and return an anal-
-      ; ogous object of another type. For example, list->vector
-      ; takes a list and returns a vector whose elements are the
-      ; same as those of the list.
-      ;
-      ; A command is a procedure that does not return useful val-
-      ; ues to its continuation.
-      ; A thunk is a procedure that does not accept arguments.
-
-
-      ;;; ---------------------------------------------------------------
-      ;;; Chapter 2
-      ;;; Lexical conventions
-      ;
-      ; This section gives an informal account of some of the lexical
-      ; conventions used in writing Scheme programs. For a formal
-      ; syntax of Scheme, see section 7.1.
-
-      ; 2.1  Identifiers
-      ;
-      ; All implementations of Scheme must support the following
-      ; extended identifier characters:
-      ;
-      ; ! $ % & * + - . / : < = > ? @ ^ _ ~
-      
-      ; 2.2  Whitespace and comments
-      ;
-      ; Whitespace characters include the space, tab, and new-
-      ; line characters. (Implementations may provide additional
-      ; whitespace characters such as page break.)
-      ;
-      ; The lexical syntax includes several comment forms. Com-
-      ; ments are treated exactly like whitespace.
-      ;
-      ; A semicolon (;) indicates the start of a line comment. The
-      ; comment continues to the end of the line on which the
-      ; semicolon appears.
-      ;
-      ; Block comments are indicated with properly nested #| and
-      ; |# pairs.
-
-      ; 2.3  Other notations
-      ; 2.4  Datum labels
-
-
-      ;;; ---------------------------------------------------------------
-      ;;; Chapter 3
-      ;;; Basic concepts
-
-      ; 3.1  Variables, syntactic keywords, and regions
-      ; 3.2  Disjointness of types
-      ; 3.3  External representations
-      ; 3.4  Storage model
-      ; 3.5  Proper tail recursion
 
 
       ;;; ---------------------------------------------------------------

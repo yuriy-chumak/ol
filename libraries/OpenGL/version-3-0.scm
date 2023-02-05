@@ -2,8 +2,8 @@
 (define-library (OpenGL version-3-0)
 (export
 ; this version provides new functionality over old
-; so, OpenGL 1.0, 1.1, ..., 2.1 still available
-; first disabling of old functionality was introduced in 3.2
+; so, OpenGL 1.0, 1.1, ..., 2.1 still available.
+; disabling of old functionality was introduced in 3.2
    gl:CreateContextAttribs ; os independent context creation function
 
    GL_VERSION_3_0
