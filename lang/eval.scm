@@ -162,18 +162,21 @@
                      (template ...))))) )]))
 
       (define *special-forms* (put *special-forms*
-         ; form: (define-macro (name args) body)
+         ; legacy form: (define-macro name (lambda (args) body))
+         ; modern form: (define-macro (name args) body)
          'define-macro ['macro (lambda (form venv)
-               (define name (caadr form))
-               (define args (cdadr form))
-               (define body (caddr form))
-               (define expanded (macro-expand `(lambda ,args ,body) venv))
-               (define evaluated (ref (evaluate (ref expanded 2) venv) 2))
+               (define legacy-form (symbol? (cadr form)))
+               (let*((name expression
+                        (if legacy-form
+                           (values (cadr form) (caddr form))
+                           (values (caadr form) `(lambda ,(cdadr form) ,(caddr form)))))
+                     (expanded (macro-expand expression venv)))
+                  (define evaluated (ref (evaluate (ref expanded 2) venv) 2))
 
-               [`(quote macro-operation eval #false (
-                  ,name
-                  ,(lambda (form venv)
-                     [(apply evaluated (cdr form)) venv]) )) venv] )]))
+                  [`(quote macro-operation eval #false (
+                     ,name
+                     ,(lambda (form venv)
+                        [(apply evaluated (cdr form)) venv]) )) venv] ))]))
 
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
       (define *otus-core*
