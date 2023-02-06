@@ -16,7 +16,7 @@
       ;; (fasl-save (make-portable-entry main) "bytecode")
 
    (import
-      (scheme core)
+      (otus lisp)
       (otus ffi)
       (otus async)
       (lang embed)
