@@ -233,7 +233,7 @@ libraries/owl/math/infix.scm: tools/make-math-infix.scm vm
 
 # additional targets (like packaging, tests, etc.)
 MAKEFILE_MAIN=1
--include extras/Makefile.wasm
+-include extras/wasm.mk
 
 -include tests/Makefile
 -include tests/rosettacode/Makefile
