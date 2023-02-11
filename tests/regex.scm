@@ -2,26 +2,20 @@
 ;;; Testing
 ;;;
 
-;,r "owl/regex.l" 
 ; (import (owl regex)) ;; when testing without a heap rebuild
 (import (scheme base))
 
 ;; regex str → did-match-ok?
 (define (test regex input should?)
-   (cond
-      ((string->regex regex) =>
-         (λ (rex)
-            (let ((res (rex input)))
-               (cond
-                  ((equal? res should?)
-                     (print " | '" regex "' + '" input "' = '" should? "'")
-                     #true)
-                  (else
-                     (print " +---> '" regex "' + '" input "' = '" res "' instead of '" should? "'(FAAAAAAAAAAAIL)")
-                     #false)))))
-      (else
-         (print " - ERROR: failed to even compile '" regex "'")
-         #false)))
+   (let*((rex (if (string? regex) (string->regex regex) regex)))
+      (let ((res (rex input)))
+         (cond
+            ((equal? res should?)
+               (print " | '" regex "' + '" input "' = '" should? "'")
+               #true)
+            (else
+               (print " +---> '" regex "' + '" input "' = '" res "' instead of '" should? "'(FAAAAAAAAAAAIL)")
+               #false)))))
 
 ;; note that slashes must be quoted in strings. no need to do that in embedded regexps.
 (define regex-tests
@@ -158,11 +152,12 @@
       ("s/<.*>/xxx/"  "<foo> <bar>" "xxx")
       ("s/(\\w+) (\\w+)/\\2 \\1/g" "it was a fine day" "was it fine a day")
       ("s/(.)*/\\1/" "abc" "c")
-      ;("s/(.)+/\\1/" "abc" "c")
       ("s/((\\w+) (\\w+) )*/\\2 \\3 /" "it was a fine day" "a fine day")
       ("s/(..)(?:.*)(.)/\\1\\2/" "quel chance" "que")
-      ("c/foo/" "franzfoolisp" ("franz" "lisp"))
+      (c/foo/ "franzfoolisp" ("franz" "lisp"))
+      (c/(\d)\1/ "121121221121221" ("12" "21" "" "21" "1"))
       ("c/(\\d)\\1/" "121121221121221" ("12" "21" "" "21" "1"))
+      (c/λ/ "fooλbarλbaz" ("foo" "bar" "baz"))
       ("c/λ/" "fooλbarλbaz" ("foo" "bar" "baz"))
       ;("c/^foo/" "foofoo" ("" "foo")) ; <- does not work yet
       ("m/foo(?=bar)/" "foobarbaz" #true)

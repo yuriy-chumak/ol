@@ -632,10 +632,10 @@
 
       ;; strings are already sequences of unicode code points, so no need to decode here
       ;; accept any non-special char
-      (define plain-char
-         (let-parse*(
-               (val rune) ;; really get-code-point since the input is already decoded
-               (verify (not (has? special-chars val)) "bad special char"))
+      (define get-plain-char
+         (let-parses
+            ((val get-rune) ;; really get-code-point since the input is already decoded
+             (verify (not (has? special-chars val)) "bad special char"))
             (imm val)))
 
       (define (quoted-imm val)
@@ -936,15 +936,15 @@
 
       ;; str -> rex|#false, for conversion of strings to complete matchers
       (define (string->complete-match-regex str)
-         (parse get-body-regex (str-iter str) #false #false #false))
+         (parse get-body-regex (str-iter-bytes str) #false #false #false))
 
       ;; str → rex|#false, same as is used in owl parser
       (define (string->extended-regexp str)
-         (parse get-sexp-regex (str-iter str) #false #false #false))
+         (parse get-sexp-regex (str-iter-bytes str) #false #false #false))
 
       ;; testing
       (define (string->replace-regex str)
-         (parse get-replace-regex (str-iter str) #false #false #false))
+         (parse get-replace-regex (str-iter-bytes str) #false #false #false))
 
       ;; POSIX (ERE)
       (define string->regex
