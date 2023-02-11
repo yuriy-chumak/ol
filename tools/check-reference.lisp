@@ -2,6 +2,7 @@
 
 (import (owl parse))
 (import (lang sexp))
+(import (scheme repl))
 
 ; collects all ```scheme ... ``` code blocks
 (define parser
@@ -15,6 +16,9 @@
                      (skip (word "```" #f)))
                   code)))
       code)))
+(define red "\x1B;[22;31m")
+(define green "\x1B;[22;32m")
+(define end "\x1B;[0m")
 
 (import (lang eval))
 (import
@@ -34,11 +38,11 @@
                      (let*((query tail sexps)
                            (arrow tail tail)
                            (answer tail tail))
-                        (define a (eval query *toplevel*))
-                        (define b (eval answer *toplevel*))
+                        (define a (eval query (interaction-environment)))
+                        (define b (eval answer (interaction-environment)))
                         (unless (equal? a b)
                            (print "test error:")
-                           (print "  " query " IS NOT EQUAL TO " answer)
+                           (print "  " red query " IS NOT EQUAL TO " answer end)
                            (set-car! ok #false))
                         (unless (null? tail)
                            (subloop tail))))
