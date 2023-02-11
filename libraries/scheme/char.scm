@@ -47,12 +47,12 @@
    (begin
 
       (define (left a b) a)
-      (define (putT a) (cons a #T))
+      (define (putT ff a) (put ff a #T))
 
       ; unicode symbols
-      (define alphabetic-chars (alist->ff alphabetic-chars-alist))
+      (define alphabetic-chars (fold putT {} alphabetic-chars-alist))
       (define numeric-chars (alist->ff numeric-chars-alist))
-      (define whitespace-chars (alist->ff whitespace-chars-alist))
+      (define whitespace-chars (fold putT {} whitespace-chars-alist))
 
 
       (define (char-alphabetic? ch)
