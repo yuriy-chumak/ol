@@ -392,26 +392,25 @@
       (define (post-macro-expand exp env fail)
          (cond
             ((toplevel-syntax-definition? exp)
-               (lets
-                  ((rules (lref exp 4))
-                   (keyword (lref rules 0))
-                   (literals (lref rules 1))
-                   (patterns (lref rules 2))
-                   (templates (lref rules 3))
-                   (rules
-                     (make-pattern-list literals patterns templates
-                        (lambda (sym)
-                           (not (env-get-raw env sym #false)))))
-                   (transformer
-                     (make-transformer (cons keyword literals) rules)))
+               (let*((rules (lref exp 4))
+                     (keyword (lref rules 0))
+                     (literals (lref rules 1))
+                     (patterns (lref rules 2))
+                     (templates (lref rules 3))
+                     (rules
+                        (make-pattern-list literals patterns templates
+                           (lambda (sym)
+                              (not (env-get-raw env sym #false)))))
+                     (transformer
+                        (make-transformer (cons keyword literals) rules)))
                   (let ((env (env-set-syntax env keyword transformer)))
                      (ok (list 'quote keyword) env))))
             ((toplevel-macro-definition? exp)
-               (define body (lref exp 4))
-               (define name (car body))
-               (define func (cadr body))
-               (let ((env (env-set-macro env name func)))
-                  (ok (list 'quote name) env)))
+               (let*((body (lref exp 4))
+                     (keyword (car body)) ; name
+                     (function (cadr body)))
+                  (let ((env (env-set-macro env keyword function)))
+                     (ok (list 'quote keyword) env))))
             (else
                (ok exp env))))
 
@@ -419,9 +418,9 @@
 
       (define (macro-expand exp env)
          (let*/cc exit
-            ((abort (lambda (why) (exit (fail why))))
-             (free (gensym exp))
-             (exp free (expand exp env free abort)))
+               ((abort (lambda (why) (exit (fail why))))
+                (free (gensym exp))
+                (exp free (expand exp env free abort)))
             (post-macro-expand exp env abort)))
 
 

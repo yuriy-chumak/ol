@@ -171,11 +171,11 @@
                            (values (cadr form) (caddr form))
                            (values (caadr form) `(lambda ,(cdadr form) ,(caddr form)))))
                      (expanded (macro-expand expression venv)))
-                  (define evaluated (ref (evaluate (ref expanded 2) venv) 2))
 
                   [`(quote macro-operation eval #false (
                      ,name
                      ,(lambda (form venv)
+                        (define evaluated (ref (evaluate (ref expanded 2) venv) 2))
                         [(apply evaluated (cdr form)) venv]) )) venv] ))]))
 
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
