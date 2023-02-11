@@ -214,6 +214,10 @@ R<sup>7</sup>RS DIFFERENCES
 * 5.5. Record-type definitions
   * **No** `define-record-type` in Ol.
 
+* 5.6.1. Library Syntax
+  * **No** `include-ci` due to fundamental ambiguity.
+  * **Additional** library terms `prefix`, `version`, `license`, `keywords`, `description`.
+
 * 6.1. Equivalence predicate `eqv?`
   * `(eqv? +nan.0 +nan.0)` is **#true** in Ol, but *unspecified* in Scheme. The same is for `+inf.0` and `-inf.0`.
 
