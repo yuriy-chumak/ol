@@ -1,23 +1,21 @@
 (define-library (scheme repl)
    (export 
       interaction-environment
+
+      ; *ol specific:
       defined?
-      env-get) ; env-get from (lang env)
+   )
 
    (import
-      (scheme core)
-      (lang env))
+      (scheme core))
+      ;(only (lang env) env-get))
 
 (begin
 
-   (define-syntax interaction-environment
-      (syntax-rules (*toplevel*)
-         ((interaction-environment)
-            *toplevel*)))
+   (define-lazy-macro (interaction-environment)
+      current-environment)
 
-   (define-syntax defined?
-      (syntax-rules (interaction-environment)
-         ((defined? symbol)
-            (env-get (interaction-environment) symbol #false))))
+   (define-lazy-macro (defined? symbol)
+      (if (get current-environment symbol #false) #true))
 
 ))
