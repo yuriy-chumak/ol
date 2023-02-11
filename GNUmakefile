@@ -47,14 +47,6 @@ tmp/repl.c: repl
 doc/olvm.md: src/olvm.c extensions/ffi.c
 	cat src/olvm.c extensions/ffi.c| tools/makedoc >doc/olvm.md
 
-libraries/owl/unicode-char-folds.scm:
-	echo "(define char-folds '(" >$@
-	curl https://www.unicode.org/Public/14.0.0/ucd/CaseFolding.txt |\
-	   grep "[0-9A-F]* [SFC]; " |\
-	   sed -re 's/ #.*//' -e 's/( [SFC])?;//g' -e 's/^/ /' -e 's/ / #x/g' -e 's/ /(/' -e 's/$$/)/' |\
-	   tr "[A-F]" "[a-f]" >> $@
-	echo '))' >>$@
-
 # compiler flags
 # ----------------------------------
 ## 'os independent' flags

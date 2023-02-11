@@ -1,17 +1,22 @@
 # http://www.unicode.org/reports/tr44/#Other_Alphabetic
 UNICODE_SERVER=https://www.unicode.org/Public
-UNICODE_VERSION=14.0.0
+UNICODE_VERSION=15.0.0
 
 $(shell mkdir -p tmp)
 tmp/PropList.txt:
 	curl $(UNICODE_SERVER)/$(UNICODE_VERSION)/ucd/PropList.txt -o $@
 tmp/UnicodeData.txt:
 	curl $(UNICODE_SERVER)/$(UNICODE_VERSION)/ucd/UnicodeData.txt -o $@
+tmp/CaseFolding.txt:
+	curl $(UNICODE_SERVER)/$(UNICODE_VERSION)/ucd/CaseFolding.txt -o $@
 
 unicode: numeric-chars.scm \
+         whitespace-chars.scm \
          alphabetic-chars.scm \
-         whitespace-chars.scm
+         unicode-char-folds.scm
 
+clean:
+	rm -rf ./tmp/
 # Nd + Nl + No:
 # Nd - Number, Decimal Digit
 # Nl - Number, Letter
@@ -34,6 +39,21 @@ numeric-chars.scm: tmp/UnicodeData.txt
 	    |sed '/DIGIT EIGHT/s/^\([^;]*\).*$$/(#x\1 . 8)/' \
 	    |sed '/DIGIT NINE/s/^\([^;]*\).*$$/(#x\1 . 9)/' \
 	    |sed '/;/s/^\([^;]*\).*$$/(#x\1 . #T)/' \
+	    |tee -a $@ >/dev/null
+	echo '))' |tee -a $@ >/dev/null
+
+# White_Space, spaces
+whitespace-chars.scm: tmp/PropList.txt
+	echo "(define whitespace-chars-alist '(" | tee $@ >/dev/null
+	echo '; White_Space' \
+	    | tee -a $@ >/dev/null
+	cat tmp/PropList.txt \
+	    |sed -n '/; White_Space/p' \
+	    |cut -d' ' -f1   \
+	    |cut -d'_' -f1,3 \
+	    |sed 's/\.\./_/' \
+	    |sed 's/^/_/' \
+	    |awk -f ../../../tools/translate_unicode_codes.awk \
 	    |tee -a $@ >/dev/null
 	echo '))' |tee -a $@ >/dev/null
 
@@ -65,17 +85,12 @@ alphabetic-chars.scm: tmp/UnicodeData.txt tmp/PropList.txt
 	    |tee -a $@ >/dev/null
 	echo '))' |tee -a $@ >/dev/null
 
-# White_Space, spaces
-whitespace-chars.scm: tmp/PropList.txt
-	echo "(define whitespace-chars-alist '(" | tee $@ >/dev/null
-	echo '; White_Space' \
-	    | tee -a $@ >/dev/null
-	cat tmp/PropList.txt \
-	    |sed -n '/; White_Space/p' \
-	    |cut -d' ' -f1   \
-	    |cut -d'_' -f1,3 \
-	    |sed 's/\.\./_/' \
-	    |sed 's/^/_/' \
-	    |awk -f ../../../tools/translate_unicode_codes.awk \
-	    |tee -a $@ >/dev/null
-	echo '))' |tee -a $@ >/dev/null
+# Folds
+unicode-char-folds.scm: tmp/CaseFolding.txt
+	# legacy code
+	echo "(define char-folds '(" >$@
+	curl https://www.unicode.org/Public/14.0.0/ucd/CaseFolding.txt |\
+	   grep "[0-9A-F]* [SFC]; " |\
+	   sed -re 's/ #.*//' -e 's/( [SFC])?;//g' -e 's/^/ /' -e 's/ / #x/g' -e 's/ /(/' -e 's/$$/)/' |\
+	   tr "[A-F]" "[a-f]" >> $@
+	echo '))' >>$@

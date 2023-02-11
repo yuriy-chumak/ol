@@ -39,10 +39,10 @@
       (owl math)
       (owl string)
       (owl ff) (owl iff))
-   (include "owl/unicode-char-folds.scm")
-   (include "scheme/unicode/alphabetic-chars.scm")
    (include "scheme/unicode/numeric-chars.scm")
    (include "scheme/unicode/whitespace-chars.scm")
+   (include "scheme/unicode/alphabetic-chars.scm")
+   (include "scheme/unicode/unicode-char-folds.scm")
 
    (begin
 
