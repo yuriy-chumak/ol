@@ -178,6 +178,38 @@
                         (define evaluated (ref (evaluate (ref expanded 2) venv) 2))
                         [(apply evaluated (cdr form)) venv]) )) venv] ))]))
 
+      ; fast macro, compiled at declaration moment
+      (define *special-forms* (put *special-forms*
+         ; legacy form: (define-macro name (lambda (args) body))
+         ; modern form: (define-macro (name args) body)
+         'define-fast-macro ['macro (lambda (form venv)
+               (define legacy-form (symbol? (cadr form)))
+               (let*((name expression
+                        (values (caadr form) `(lambda ,(cdadr form) ,(caddr form))))
+                     (expanded (macro-expand expression venv)))
+                  (define evaluated (ref (evaluate (ref expanded 2) venv) 2))
+
+                  [`(quote macro-operation eval #false (
+                     ,name
+                     ,(lambda (form venv)
+                        [(apply evaluated (cdr form)) venv]) )) venv] ))]))
+
+      ; lazy macro, that recompiles every time it's used
+      (define *special-forms* (put *special-forms*
+         ; (define-lazy-macro (name args) body)
+         'define-lazy-macro ['macro (lambda (form venv)
+               (define legacy-form (symbol? (cadr form)))
+               (let*((name expression
+                        (values (caadr form) `(lambda ,(cdadr form) ,(caddr form)))) )
+                  [`(quote macro-operation eval #false (
+                     ,name
+                     ,(lambda (form venv)
+                        (define env (env-set venv 'current-environment venv))
+
+                        (define expanded (macro-expand expression env))
+                        (define evaluated (ref (evaluate (ref expanded 2) (ref expanded 3)) 2))
+                        [(apply evaluated (cdr form)) venv]) )) venv] ))]))
+
       ;; library (just the value of) containing only special forms, primops and define-syntax macro
       (define *otus-core*
          (fold

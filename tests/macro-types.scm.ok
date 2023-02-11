@@ -2,11 +2,11 @@ legacy macro system:
 9
 16
 16
-modern macro system:
+modern macro system (lazy-macro):
 9
 16
 8
-modern macro system:
+modern macro system (fast-macro):
 16
 16
 16
