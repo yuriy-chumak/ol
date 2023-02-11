@@ -126,9 +126,4 @@
                      (mail sender symbol)
                      (loop codes)))))))
 
-      ; fixme: invalid
-      ;(define-syntax defined?
-      ;   (syntax-rules (*toplevel*)
-      ;      ((defined? symbol)
-      ;         (get *toplevel* symbol #false))))
 ))

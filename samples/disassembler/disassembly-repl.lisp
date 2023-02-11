@@ -57,9 +57,9 @@
       (define dis (disassembly value))
       (if dis
       then
-         (step level) (print "name: " (decode-value *toplevel* value))
+         (step level) (print "name: " (decode-value (interaction-environment) value))
          (step level) (print "type: " (dis 'type))
-         (step level) (print "code: " (decode-value *toplevel* (dis 'code)))
+         (step level) (print "code: " (decode-value (interaction-environment) (dis 'code)))
          (step level) (print "disassembly '(length command . args):")
          (for-each (lambda (line)
                (step level)
@@ -76,7 +76,7 @@
    (if (car seen)
    then
       (step level) (print "seen as --" (cdr seen) "--")
-      (step level) (print "name: " (decode-value *toplevel* func))
+      (step level) (print "name: " (decode-value (interaction-environment) func))
    else
       (step level) (print "NEW ONE --" (cdr seen) "--")
       (case (type func)

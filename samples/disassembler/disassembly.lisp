@@ -4,7 +4,7 @@
 
 ; ----------------------------------------------------------------
 ; -- cache --
-(define env *toplevel*)
+(define env (interaction-environment))
 (define (->name env obj)
    (call/cc (lambda (return)
       (let loop ((kvs (ff-iter env)))
@@ -155,4 +155,4 @@
 ;;    (dump (deserialize-file (or (list-ref *vm-args* 0) "test") #f) ))
 
 (print
-   (dump *toplevel* ))
+   (dump (interaction-environment) ))

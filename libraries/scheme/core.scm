@@ -39,8 +39,8 @@
 
       ; special forms declared in lang/env.scm:
       ;
-      ; quote values lambda setq
-      ; let-eval ifeq brae values-apply
+      ; setq let-eval ifeq brae
+      ; quote values lambda values-apply
 
       (srfi 16)  ; case-lambda, 4.2.9
       (srfi 87)  ; <= in cases
