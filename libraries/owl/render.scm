@@ -152,9 +152,9 @@
                   (render-number obj (delay (k sh)) 10))
 
                ((string? obj)
-                  (cons #\" ;"
+                  (cons #\"
                      (render-quoted-string obj  ;; <- all eager now
-                        (lcons #\" (k sh))))) ;"
+                        (lcons #\" (k sh)))))
 
                ((pair? obj)
                   (cons #\(

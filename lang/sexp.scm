@@ -340,7 +340,7 @@
          #\r  #x000d
          #\e  #x001B
          #\0  #x0000
-         #\"  #x0022 ;"
+         #\"  #x0022
          #\\  #x005c
       })
 
@@ -361,13 +361,13 @@
 
       (define string
          (let-parse*
-            ((skip (imm #\")) ;"
+            ((skip (imm #\"))
              (chars
                (greedy*
                   (either
                      quoted-string-char
-                     (rune-if (lambda (x) (not (has? '(#\" #\\) x))))))) ;"
-             (skip (imm #\"))) ;"
+                     (rune-if (lambda (x) (not (has? '(#\" #\\) x)))))))
+             (skip (imm #\")))
             (runes->string chars)))
 
       (define quotations {

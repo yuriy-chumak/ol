@@ -69,9 +69,9 @@
       (let-parses (
             (name (get-greedy+ (get-rune-if character?)))
             (= (get-imm #\=))
-            (* (get-imm #\")) ;"
-            (value (get-greedy* (get-rune-if (lambda (x) (not (eq? x #\")))))) ;"
-            (* (get-imm #\")) ;"
+            (* (get-imm #\"))
+            (value (get-greedy* (get-rune-if (lambda (x) (not (eq? x #\"))))))
+            (* (get-imm #\"))
             (* skip-whitespaces))
          (cons
             (string->symbol (runes->string name))

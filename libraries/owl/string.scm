@@ -178,7 +178,7 @@
 
       ;; quote just ":s for now
       (define (encode-quoted-point p tl)
-         (if (eq? p #\") ;"
+         (if (eq? p #\")
             (cons* #\\ p tl)
             (encode-point p tl)))
 

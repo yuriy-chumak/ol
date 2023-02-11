@@ -159,17 +159,18 @@
 (import (src vm))
 (import (lang primop))
 
-
 ;; help strings
-(define copyright (symbol->string '
-|Copyright (c) 2014-2023 Yuriy Chumak
-   License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>
-   License MIT: <https://en.wikipedia.org/wiki/MIT_License>
-   This is free software: you are free to change and redistribute it.
-   There is NO WARRANTY, to the extent permitted by law.|))
+(define copyright
+   (substring (symbol->string '|
+Copyright (c) 2014-2023 Yuriy Chumak
+License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>
+License MIT: <https://en.wikipedia.org/wiki/MIT_License>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.|) 1))
 
-(define help (symbol->string '
-|Usage: ol [OPTION]... [input-file] [file-options]
+(define help
+   (substring (symbol->string '|
+Usage: ol [OPTION]... [input-file] [file-options]
 
    --home=<path(s)>    run in virtual environment, divide paths by ':'
    --sandbox           run in sandboxed environment (if supported)
@@ -183,7 +184,8 @@
    --version=<string>  override internal version string
    --                  end of options
 
-Otus Lisp homepage: <https://github.com/otus-lisp/>.|))
+Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
+
 ;; --compile-to=<filename> new experimental option to compile input-file
 ;;                     result /must be (lambda (args) ...)/ into binary.
 
