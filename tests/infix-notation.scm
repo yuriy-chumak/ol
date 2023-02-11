@@ -58,7 +58,7 @@
                            (values a (cdr queue)))
                         ((and (pair? (cadr queue)) (eq? (caadr queue) 'unquote)) ; stop on comma
                            (values a (cdr queue)))
-                        (else ; function()
+                        ((pair? (cadr queue)) ; function ()
                            (define args (cadr queue))
                            (if (null? args) ; no arguments
                               (values (list a) (cddr queue)) ; always cddr
@@ -74,13 +74,23 @@
                                              (assert (pair? args))
                                              (let* ((arg args (math args)))
                                                 (loop (cons arg out) args)))))
-                                    (cddr queue))))))) ))) )
-         (math args)) ))
+                                    (cddr queue)))))
+                        (else ; variable, not a function
+                           (values a (cdr queue))))) ))) )
+
+         (math args))))
       (assert (null? tail))
       expr) ))
 
-(define (f x) (* x x))
-(define (g x y) (* (f x) y))
-(define x 3)
 
-(print (M -3 + g(x, 2 + 1 * 3)))
+(define (f x) (M
+   x * x
+))
+(define (g x y) (M
+   f(x) * y
+))
+
+(define x 3)
+(print (M
+   -3 + g(x, 2 + 1 * 3)
+))
