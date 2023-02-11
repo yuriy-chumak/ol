@@ -632,10 +632,10 @@
 
       ;; strings are already sequences of unicode code points, so no need to decode here
       ;; accept any non-special char
-      (define get-plain-char
-         (let-parses
-            ((val get-byte) ;; really get-code-point since the input is already decoded
-             (verify (not (has? special-chars val)) "bad special char"))
+      (define plain-char
+         (let-parse*(
+               (val rune) ;; really get-code-point since the input is already decoded
+               (verify (not (has? special-chars val)) "bad special char"))
             (imm val)))
 
       (define (quoted-imm val)
@@ -721,7 +721,7 @@
          (get-either
             parse-quoted-char
             (let-parses
-               ((char get-byte)
+               ((char get-rune)
                 (verify (not (eq? char #\])) #false))
                char)))
 
@@ -905,7 +905,7 @@
                 (char (get-imm #\b)))
                char)
             (let-parses ;; something other than /
-               ((char get-byte)
+               ((char get-rune)
                 (verify (not (eq? char #\/)) #false))
                char)))
 
