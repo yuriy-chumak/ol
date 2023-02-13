@@ -377,9 +377,9 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                                     (exp args (uncons expression #f)))
                                  (case (type exp)
                                     (type-string
-                                       (eval (eval-string env exp) args))
+                                       (eval (eval-string exp env) args))
                                     (type-string-wide
-                                       (eval (eval-string env exp) args))
+                                       (eval (eval-string exp env) args))
                                     (type-enum+
                                        (eval (eval-repl (vm:deref exp) env #f evaluate) args))
                                     (type-bytevector

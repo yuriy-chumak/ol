@@ -785,18 +785,6 @@
 
       ;; a simple eval
 
-      (define (eval exp env)
-         (case (macro-expand exp env)
-            (['ok exp env]
-               (define uniq ['evaluating])
-               (case (evaluate-as exp env uniq)
-                  (['ok value env]
-                     value)
-                  (['fail reason]
-                     #false)))
-            (['fail reason]
-               #false)))
-
       (define (bind-toplevel env)
          (env-set env '*toplevel*
             (env-del env '*toplevel*)))
@@ -1196,13 +1184,6 @@
                (repl-port env fd)
                (repl-error env "can't open file"))))
 
-      (define (eval-string env str)
-         (let ((exps (parse get-padded-sexps (str-iter str) #false syntax-fail #false))) ; todo: change syntax-fail
-            ;; list of sexps
-            (if exps
-               (repl env exps evaluate)
-               (repl-error env "not parseable"))))
-
       ;; run the repl on a fresh input stream, report errors and catch exit
       (define (repl-loop env in)
          (let boing ((env env))
@@ -1232,4 +1213,25 @@
                ; well, someone called an (exit-thread .)?
                (else is foo
                   foo))))
+
+      ; --- eval ---------------------------
+      (define (eval exp env)
+         (eval-repl exp env
+                  (lambda (env in)
+                     (repl env in evaluate))
+                  evaluate))
+
+      (define (eval-string str env)
+         (define exps (try-parse get-padded-sexps (str-iter str) #false))
+         (if exps
+            (let loop ((exps (car exps)) (env env))
+               (define exp (car exps))
+               (define out (eval exp env))
+               (if (eq? (ref out 1) 'ok)
+                  (if (null? (cdr exps))
+                     out
+                     (loop (cdr exps) env))
+                  out))
+            (runtime-error "invalid sexp" str)))
+
 ))
