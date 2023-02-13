@@ -13,7 +13,8 @@ install: ol includes/ol/vm.h
 	install -d $(DESTDIR)$(PREFIX)/bin
 	install vm $(DESTDIR)$(PREFIX)/bin/olvm
 	@echo Installing libol.so...
-	install libol.so $(DESTDIR)$(PREFIX)/lib/libol.so
+	install -d $(DESTDIR)$(PREFIX)/lib
+	install -m 644 libol.so $(DESTDIR)$(PREFIX)/lib/libol.so
 	@echo Installing headers...
 	install -d $(DESTDIR)$(PREFIX)/include/ol
 	install -m 644 includes/ol/vm.h $(DESTDIR)$(PREFIX)/include/ol/vm.h
