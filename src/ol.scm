@@ -170,19 +170,19 @@ There is NO WARRANTY, to the extent permitted by law.|) 1))
 
 (define help
    (substring (symbol->string '|
-Usage: ol [OPTION]... [input-file] [file-options]
+Usage: ol [OPTION]... [--] [input-file [file-options]]
 
    --home=<path(s)>    run in virtual environment, divide paths by ':'
    --sandbox           run in sandboxed environment (if supported)
    --sandbox=<number>  run sandboxed with <number> Megs heap allocated
 
-   --interactive       make execution environment interactive
-   --no-interactive    make execution environment non-interactive
-
    --help              this help
    -v, --version       print short or long version info
    --version=<string>  override internal version string
-   --                  end of options
+
+   --interactive       make execution environment interactive
+   --no-interactive    make execution environment non-interactive
+   -                   stdin
 
 Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
 
