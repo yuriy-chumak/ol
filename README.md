@@ -13,7 +13,7 @@
 [![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/build%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 
-Otus Lisp, Version 2.3
+Otus Lisp, Version 2.4
 ======================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
@@ -80,7 +80,7 @@ BUILD / INSTALL
 ```
 $ make
 $ ./ol
-Welcome to Otus Lisp 2.3
+Welcome to Otus Lisp 2.4
 type ',help' to help, ',quit' to end session.
 >
 ```
@@ -277,7 +277,7 @@ DEPRECATIONS
 
 ### DISASSEMBLY
 
-Ol 2.3 contains built-in tool for inspecting the Otus Lisp language.
+Ol contains built-in tool for inspecting the Otus Lisp language.
 
 You can use the REPL `,expand` command to expand high-level Ol instructions into low-level (core) Otus Lisp.
 ```scheme

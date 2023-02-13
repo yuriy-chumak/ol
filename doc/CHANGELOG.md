@@ -11,7 +11,11 @@
 CHANGELOG
 =========
 
-### Otus Lisp, Version 2.3 RC2
+### Otus Lisp, Version 2.4 RC1
+
+2.4 changelog:
+ * `define-macro`,
+ * tbd.
 
 2.3 changelog:
  * Ol got it's own [twitter account](https://twitter.com/otus_lisp)
