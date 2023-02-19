@@ -2155,26 +2155,26 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 
 	// создадим в топе два временных объекта со значениями всех регистров и пинов
 #ifndef OLVM_NOPINS
-    word pin = (word)new(TVECTOR, ol->cr);
-    memcpy(payload(pin), ol->pin, ol->cr * sizeof(word));
+    word pins = (word)new(TVECTOR, ol->cr);
+    memcpy(payload(pins), ol->pin, ol->cr * sizeof(word));
 #else
-    word pin = IFALSE;
+    word pins = IFALSE;
 #endif
 
 	word *regs = new (TVECTOR, N + 2); // N for regs, 1 for this, 1 for pins
 	while (++p <= N) regs[p] = r[p-1]; // todo: use memcpy?
 	regs[p] = ol->this;
-    regs[p + 1] = pin;
+    regs[p + 1] = pins;
 
 	ol->heap.fp = fp; // выполним сборку мусора
 	regs = (word*)gc(&ol->heap, ws, (word)regs);
 
-    pin = regs[p + 1];         // и восстановим все пины и регистры, уже подкорректированные сборщиком
+    pins = regs[p + 1];         // и восстановим все пины и регистры, уже подкорректированные сборщиком
 	ol->this = regs[p];
 	while (--p >= 1) r[p-1] = regs[p];
 
 #ifndef OLVM_NOPINS
-    memcpy(ol->pin, payload(pin), ol->cr * sizeof(word));
+    memcpy(ol->pin, payload(pins), ol->cr * sizeof(word));
 #endif
 
 	// закончили, почистим за собой:
