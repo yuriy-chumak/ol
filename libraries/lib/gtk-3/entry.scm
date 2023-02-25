@@ -1,4 +1,5 @@
 (define-library (lib gtk-3 entry)
+   (description "A single line text entry field")
    (export
       GtkEntry*
       GTK_TYPE_ENTRY

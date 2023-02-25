@@ -36,10 +36,16 @@
                (cons gint (list gpointer))
                (lambda (userdata)
                   .rest))))
-         ((GTK_CALLBACK (app userdata) . rest)
+         ((GTK_CALLBACK (object userdata) . rest)
             (vm:pin (cons
                (cons gint (list GObject* gpointer))
-               (lambda (app userdata)
-                  .rest))))))
+               (lambda (object userdata)
+                  .rest))))
+         ((GTK_CALLBACK (object arg1 userdata) . rest)
+            (vm:pin (cons
+               (cons gint (list GObject* GObject* gpointer))
+               (lambda (object arg1 userdata)
+                  .rest))))
+      ))
 
 ))
