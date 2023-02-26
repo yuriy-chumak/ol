@@ -1,8 +1,8 @@
 #!/usr/bin/env ol
-
 (import
-   (lib glib-2)
-   (lib gtk-3))
+      (lib glib-2)
+      (lib gtk-3))
+
 (import (only (otus syscall) strftime))
 
 ; main:

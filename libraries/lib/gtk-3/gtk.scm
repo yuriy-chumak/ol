@@ -5,13 +5,60 @@
       GtkCallback
       GTK_CALLBACK
 
-      ; 
+      ; GtkAlign
+      ; GtkArrowType
+      ; GtkBaselinePosition
+      ; GtkDeleteType
+      ; GtkDirectionType
+      ; GtkIconSize
+      ; GtkSensitivityType
+      ; GtkTextDirection
+      ; GtkJustification
+      ; GtkMenuDirectionType
+      ; GtkMessageType
+      ; GtkMovementStep
+      ; GtkScrollStep
       GtkOrientation
       GTK_ORIENTATION_HORIZONTAL
       GTK_ORIENTATION_VERTICAL
+      ; GtkPackType
+      ; GtkPositionType
+      ; GtkReliefStyle
+      ; GtkScrollType
+      ; GtkSelectionMode
+      ; GtkShadowType
+      ; GtkStateType
+      ; GtkToolbarStyle
+      ; GtkWrapMode
+      ; GtkSortType
+      ; GtkIMPreeditStyle
+      ; GtkIMStatusStyle
+      ; GtkPackDirection
+      ; GtkPrintPages
+      ; GtkPageSet
+      ; GtkNumberUpLayout
+      ; GtkPageOrientation
+      ; GtkPrintQuality
+      ; GtkPrintDuplex
+      ; GtkUnit
+      ; GtkTreeViewGridLines
+      ; GtkDragResult
+      ; GtkSizeGroupMode
+      ; GtkSizeRequestMode
+      ; GtkScrollablePolicy
+      ; GtkStateFlags
+      ; GtkRegionFlags
+      ; GtkJunctionSides
+      ; GtkBorderStyle
+      ; GtkLevelBarMode
+      ; GtkInputPurpose
+      ; GtkInputHints
+      ; GtkPropagationPhase
+      ; GtkEventSequenceState
+      ; GtkPanDirection
+      ; GtkPopoverConstraint
 
-      GType
-
+      GtkStyleContext*
 
       (exports (lib glib-2)))
    (import
@@ -26,7 +73,8 @@
    (define GTK_ORIENTATION_HORIZONTAL 0)
    (define GTK_ORIENTATION_VERTICAL 1)
 
-   (define GType gint)
+   ; (lib gtk-3 style-context)
+   (define GtkStyleContext* type-vptr)
 
    (define GtkCallback type-callable)
    (define-syntax GTK_CALLBACK

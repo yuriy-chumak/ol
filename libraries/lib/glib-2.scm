@@ -36,7 +36,7 @@
       g_date_time_format
       g_date_time_unref
 
-
+      GType
 
       G_CALLBACK
       G_TYPE_GTYPE

@@ -3,6 +3,8 @@
       GSourceFunc
       gdk_threads_add_idle
       gdk_threads_add_timeout
+
+      GdkGLContext*
    )
    (import
       (scheme core)
@@ -17,4 +19,5 @@
    (define gdk_threads_add_idle (GDK guint "gdk_threads_add_idle" GSourceFunc gpointer))
    (define gdk_threads_add_timeout (GDK guint "gdk_threads_add_timeout" guint GSourceFunc gpointer))
 
+   (define GdkGLContext* fft-void*)
 ))

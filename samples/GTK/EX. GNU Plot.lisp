@@ -50,7 +50,7 @@
 
 (plot "set terminal x11 window '"
       (number->string (gtk_socket_get_id socket) 16) "'")
-(plot "set title 'Trigonometry'")
+(plot "set title 'Press a button below to draw a sine'")
 (plot "set xzeroaxis\nset xtics axis")
 (plot "set yzeroaxis\nset ytics axis")
 (plot "plot '-' with lines")
@@ -58,9 +58,10 @@
 
 (define draw-gnuplot
    (GTK_CALLBACK (self userdata)
+      (plot "set title 'Trigonometry'")
       (plot "plot '-' with lines")
       (for-each (lambda (i)
-            (plot i " " (cos (/ i #i100))))
+            (plot (/ i #i100) " " (sin (/ i #i100))))
          (iota 628 -314))
       (plot "e")
       TRUE))

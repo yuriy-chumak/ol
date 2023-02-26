@@ -1,7 +1,6 @@
 #!/usr/bin/env ol
-(import
-      (lib glib-2)
-      (lib gtk-3))
+(import (lib glib-2)
+   (lib gtk-3))
 
 ; create an application
 (define app (gtk_application_new "org.gtk.example" G_APPLICATION_FLAGS_NONE))

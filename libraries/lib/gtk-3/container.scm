@@ -5,7 +5,10 @@
       GTK_TYPE_CONTAINER
       gtk_container_get_type
 
+      gtk_container_add
       gtk_container_remove
+
+      gtk_container_foreach
    )
    (import
       (scheme core)
@@ -20,6 +23,8 @@
 
    (define gtk_container_add (GTK3 void "gtk_container_add" GtkContainer* GtkWidget*))
    (define gtk_container_remove (GTK3 void "gtk_container_remove" GtkContainer* GtkWidget*))
+
+   (define gtk_container_foreach (GTK3 fft-void "gtk_container_foreach" GtkContainer* GtkCallback gpointer))
 
    (define (GtkContainer props)
       ;...
