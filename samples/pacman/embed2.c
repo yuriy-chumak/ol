@@ -59,7 +59,8 @@ extern unsigned char REPL[];
 void ol_new_ol()
 {
 	OL_new(&ol, REPL);
-	eval("(import (main)) (born-blinky)");
+	eval("(import (main))");
+        eval("(born-blinky)");
 }
 
 void ol_delete_ol()
