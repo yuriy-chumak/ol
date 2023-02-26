@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (lib gl3))
+(import (lib gl-3))
 (gl:set-window-title "1. Creating an OpenGL 3.0 Window")
 
 ; change OpenGL config

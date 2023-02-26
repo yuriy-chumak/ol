@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (lib gl3))
+(import (lib gl-3))
 (gl:set-window-title "4. Shaders")
 
 (gl:set-context-version 3 0) ; use OpenGL version 3.0

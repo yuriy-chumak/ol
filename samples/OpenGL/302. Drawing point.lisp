@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (lib gl3))
+(import (lib gl-3))
 (gl:set-window-title "2. Drawing a Point")
 
 (gl:set-context-version 3 0) ; use OpenGL version 3.0
@@ -24,7 +24,7 @@
 (glBindBuffer GL_ARRAY_BUFFER VBO)
 (define fft-float* (fft* fft-float))
 
-(define Vertices '((0 0 0) (0.1 0 0)  (0.1 0.1 0)  (0 0.1 0)))
+(define Vertices '((-0.7 -0.7 0) (0.7 -0.7 0)  (0.7 0.7 0)  (-0.7 0.7 0)))
 (glBufferData GL_ARRAY_BUFFER (* (sizeof fft-float) 3 (length Vertices)) (cons fft-float* (apply append Vertices)) GL_STATIC_DRAW) ; 3 for x,y,z
    (glEnableVertexAttribArray 0)
 
@@ -35,4 +35,4 @@
 
    (glBindBuffer GL_ARRAY_BUFFER VBO)
    (glVertexAttribPointer 0 3 GL_FLOAT GL_FALSE 0 nullptr) ; 3 for x,y,z
-   (glDrawArrays GL_POINTS 0 4))) ; totally 4 points
+   (glDrawArrays GL_LINE_LOOP 0 4))) ; totally 4 points
