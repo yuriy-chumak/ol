@@ -1617,6 +1617,28 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 // Other models are rare. For example, ILP64 or 8/8/8: int, long and pointer — 64 bits)
 //  only in some older 64-bit Unix-systems (Unicos for Cray, etc.)
 
+// win32/mingw fix for ILP32/LLP64
+#ifdef _WIN32
+# ifdef _WIN64
+#	define __LLP64__ 1
+# else
+#	define __ILP32__ 1
+# endif
+#endif
+// ubuntu 18.04 fix for LP64/ILP32
+#ifndef __LP64__
+# if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
+#	define __LP64__ 1
+# endif
+#endif
+// older unixes
+#ifndef __ILP32__
+# if (__i386__ && __unix__) || __ARMEL__
+#	define __ILP32__ 1
+# endif
+#endif
+
+
 #if SIZE_MAX == 0xffffffffffffffff
 #	define MATH_64BIT 1
 #	define MATH_32BIT 0

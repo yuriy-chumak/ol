@@ -72,36 +72,14 @@
 #	pragma GCC diagnostic ignored "-Wunused-label"
 #endif
 
-// win32/mingw fix for ILP32/LLP64
-#ifdef _WIN32
-# ifdef _WIN64
-#	define __LLP64__ 1
-# else
-#	define __ILP32__ 1
-# endif
-#endif
-
-// ubuntu 18.04 fix for LP64/ILP32
-#ifndef __LP64__
-# if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
-#	define __LP64__ 1
-# endif
-#endif
-
-#ifndef __ILP32__
-# if (__i386__ && __unix__)
-#	define __ILP32__ 1
-# endif
-#endif
-
 
 // 32/64 help macro
-#ifdef __ILP32__
-#	define IF32(x) x
-#	define IFN32(x)
-#else
+#if __LP64__ || __LLP64__
 #	define IF32(x)
 #	define IFN32(x) x
+#else // __ILP32__
+#	define IF32(x) x
+#	define IFN32(x)
 #endif
 
 
@@ -2093,7 +2071,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				size = (size + sizeof(word)-1) & -sizeof(word);
 
 				int j = i;
-#ifndef __ILP32__
+#if __LP64__ || __LLP64__
 				if (size > 16) // should send using stack
 					j = max(i, 6, l);
 				int general = 0; // 8-bit block should go to general register
@@ -2116,13 +2094,13 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 							break;
 						case TINT32: case TUINT32:
 						case TFLOAT:
-#ifdef __ILP32__
+#if __ILP32__
 						case TINT64: case TUINT64:
 						case TDOUBLE: case 0: // 0 means "no more arguments"
 #endif
 							offset = (offset + 3) & -4;
 							break;
-#ifndef __ILP32__
+#if __LP64__ || __LLP64__
 						case TINT64: case TUINT64:
 						case TDOUBLE: case 0: // 0 means "no more arguments"
 							offset = (offset + 7) & -8;
@@ -2131,7 +2109,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					}
 					if (offset >= sizeof(word)) { // пришло время сложить данные в регистр
 						assert (offset % sizeof(word) == 0);
-#ifndef __ILP32__
+#if __LP64__ || __LLP64__
 						if (general || (size > 16)) { // в регистр общего назначения
 							j++; floatsmask <<= 1;
 							ptr += 8;
@@ -2178,7 +2156,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 						case TINT64: case TUINT64: {
 							*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
 							offset += 8; IFN32(general = 1);
-#ifdef __ILP32__
+#if __ILP32__
 							j++; ptr += 4; offset -= 4;
 #endif
 							break;
