@@ -3,6 +3,7 @@
 (import (owl parse))
 (import (lang sexp))
 (import (scheme repl))
+(import (lang intern))
 
 ; collects all ```scheme ... ``` code blocks
 (define parser
