@@ -60,6 +60,7 @@ CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
 CFLAGS += -DHAS_SOCKETS=$(if $(HAS_SOCKETS),1,0)
 CFLAGS += -DHAS_DLOPEN=$(if $(HAS_DLOPEN),1,0)
 CFLAGS += -DHAS_SANDBOX=$(if $(HAS_SECCOMP),1,0)
+CFLAGS += -DOLVM_BUILTIN_FMATH=$(if $(OLVM_BUILTIN_FMATH),1,0)
 
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
 
