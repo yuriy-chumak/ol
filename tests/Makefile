@@ -16,11 +16,9 @@ WINEQ    := $(shell which wine 1>/dev/null 2>/dev/null && echo 1)
 ok:="\033[1;32mok\033[0m"
 failed:="\033[1;31mfailed\033[0m"
 
-# GNU/Linux (base development system) specific defines:
-ifeq ($(UNAME),Linux)
+# 32-/64-bit test environment setup
 HAS_32CDEFS   ?= $(call exists,-m32,sys/cdefs.h,exit)
 HAS_64CDEFS   ?= $(call exists,-m64,sys/cdefs.h,exit)
-endif
 
 ifeq ($(HAS_64CDEFS),1)
 vm64 = printf "64 " && ./vm64 repl <$$F | diff - $$F.ok
