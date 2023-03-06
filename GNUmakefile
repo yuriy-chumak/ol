@@ -60,15 +60,16 @@ CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
 CFLAGS += -DHAS_SOCKETS=$(if $(HAS_SOCKETS),1,0)
 CFLAGS += -DHAS_DLOPEN=$(if $(HAS_DLOPEN),1,0)
 CFLAGS += -DHAS_SANDBOX=$(if $(HAS_SECCOMP),1,0)
-CFLAGS += -DOLVM_BUILTIN_FMATH=$(if $(OLVM_BUILTIN_FMATH),1,0)
 
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
 
 # builtin "sin", "cos", "sqrt", etc. functions support
-# can be disabled using -DOLVM_NO_BUILTIN_FMATH=1
+# can be disabled using "-DOLVM_BUILTIN_FMATH=0"
 ifneq ($(OLVM_BUILTIN_FMATH),0)
    CFLAGS += -lm
 #  CFLAGS += -ffast-math -mfpmath=387
+else
+   CFLAGS += -DOLVM_BUILTIN_FMATH=0
 endif
 
 #  clang is not a primary compiler and clang have no ability to remove
@@ -80,7 +81,7 @@ endif
 # endif
 
 ## 'os dependent' flags
-
+# ------------------------------------------------------
 UNAME ?= $(shell uname -s)
 
 # Linux
@@ -101,13 +102,13 @@ endif
 
 # BSD
 ifeq ($(UNAME),FreeBSD)
-  L := $(if $(HAS_DLOPEN), -lc) -lm \
+  L := $(if $(HAS_DLOPEN), -lc) \
        -Xlinker --export-dynamic
 
   LD := ld.bfd
 endif
 ifeq ($(UNAME),NetBSD)
-  L := $(if $(HAS_DLOPEN), -lc) -lm \
+  L := $(if $(HAS_DLOPEN), -lc) \
        -Xlinker --export-dynamic
 endif
 ifeq ($(UNAME),OpenBSD)
