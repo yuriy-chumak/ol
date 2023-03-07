@@ -9,7 +9,7 @@ jobs:
   win-build:
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-22.04 ]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
@@ -18,7 +18,7 @@ jobs:
     - name: Install MinGW toolchain
       run: 'sudo apt install gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev -y'
 
-    - name: Build with CI build script
+    - name: Build (64-bit)
       run: 'make ol64.exe'
 
 # todo: add 32-bit build
