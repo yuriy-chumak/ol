@@ -154,4 +154,4 @@ which is another way of
 * <a name="42kb"></a>Real virtual machine size depends on parget platform and enabled features. 42kb is typical size for Linux without including debug information, ffi and experimental inexact library, but including couple of internal safe checks, sockets, native library calls and sandbox. For other operation systems size can be as bigger as lesser (i.e. 79kb for win64 x86_64, 30kb for ubuntu64 armhf).
 * <a name="sandbox"></a>Sandboxing works only under OS with [SECCOMP](https://en.wikipedia.org/wiki/Seccomp) (secure computing mode) - it's GNU/Linux (and different Linux disctributives, Ubuntu, Debian, Suse, etc.). Supporting sandboxing under *BSD is in progress.
 
-<small style="float: right">Copyright (c) 2015 - 2022 Yuriy Chumak</small>
+<small style="float: right">Copyright (c) 2015 - 2023 Yuriy Chumak</small>
