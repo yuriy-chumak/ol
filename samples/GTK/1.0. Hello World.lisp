@@ -6,12 +6,11 @@
 ; print hello
 (define print_hello (GTK_CALLBACK (widget userdata)
    (print "Hello World")
-   (define dialog (gtk_message_dialog_new
-                  (gtk_widget_get_toplevel widget)
-                  GTK_DIALOG_MODAL
-                  GTK_MESSAGE_INFO
-                  GTK_BUTTONS_CLOSE
-                  "Hello World!"))
+   (define dialog (gtk_message_dialog_new (gtk_widget_get_toplevel widget)
+                     GTK_DIALOG_MODAL
+                     GTK_MESSAGE_INFO
+                     GTK_BUTTONS_CLOSE
+                     "Hello World!"))
    (gtk_dialog_run dialog)
    (gtk_widget_destroy dialog)
    TRUE))
