@@ -1,129 +1,6 @@
 Numbers
 =======
 
-Ol's number types:
-- `type-enum+`, 0
-- `type-enum-`, 32
-- `type-int+`, 40
-- `type-int-`, 41
-- `type-rational`, 42
-- `type-complex`, 43
-- `type-inexact`, 44
-
-# number?
-`(number? obj)`, *procedure*
-
-
-# complex?
-`(complex? obj)`, *procedure*
-
-
-# real?
-`(real? obj)`, *procedure*
-
-
-# rational?
-`(rational? obj)`, *procedure*
-
-
-# integer?
-`(integer? obj)`, *procedure*
-
-
-# exact?
-`(exact? z)`, *procedure*
-
-
-# inexact?
-`(inexact? z)`, *procedure*
-
-
-# exact-integer?
-`(exact-integer? z)`, *procedure*
-
-
-# finite?
-`(finite? z)`, *procedure*, `(scheme inexact)` library
-
-
-# infinite?
-`(infinite? z)`, *procedure*, `(scheme inexact)` library
-
-
-# nan?
-`(nan? z)`, *procedure*, `(scheme inexact)` library
-
-
-# =
-`(= z1 z2 z3 ...)`, *procedure*
-
-
-# <
-`(< z1 z2 z3 ...)`, *procedure*
-
-
-# >
-`(> z1 z2 z3 ...)`, *procedure*
-
-
-# <=
-`(<= z1 z2 z3 ...)`, *procedure*
-
-
-# >=
-`(>= z1 z2 z3 ...)`, *procedure*
-
-
-# zero?
-`(zero? z)`, *procedure*
-
-
-# positive?
-`(positive? z)`, *procedure*
-
-
-# negative?
-`(negative? z)`, *procedure*
-
-
-# odd?
-`(odd? z)`, *procedure*
-
-
-# even?
-`(even? z)`, *procedure*
-
-
-# max
-`(max x1 x2 ...)`, *procedure*
-
-
-# min
-`(min x1 x2 ...)`, *procedure*
-
-
-# +
-`(+ z1 ...)`, *procedure*
-
-
-# *
-`(* z1 ...)`, *procedure*
-
-
-# -
-`(- z)`, *procedure*
-`(- z1 z2 ...)`, *procedure*
-
-
-# -
-`(/ z)`, *procedure*
-`(/ z1 z2 ...)`, *procedure*
-
-
-# abs
-`(abs x)`, *procedure*
-
-
 <!-- # floor
 `(floor/ n1 n2)`, *procedure*
 
@@ -148,18 +25,6 @@ Ol's number types:
 `(truncate-remainder n1 n2)`, *procedure* -->
 
 
-# quotient
-`(quotient n1 n2)`, *procedure*
-
-
-# remainder
-`(remainder n1 n2)`, *procedure*
-
-
-# modulo
-`(modulo n1 n2)`, *procedure*
-
-
 # gcd
 `(gcd n1 ...)`, *procedure*
 
@@ -167,13 +32,6 @@ Ol's number types:
 # lcm
 `(lcm n1 ...)`, *procedure*
 
-
-# numerator 
-`(numerator q)`, *procedure*
-
-
-# denominator
-`(denominator q)`, *procedure*
 
 
 # floor

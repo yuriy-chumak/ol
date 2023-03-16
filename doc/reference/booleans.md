@@ -1,16 +1,18 @@
 Booleans
 ========
 
-The standard boolean objects for true and false are written as *#true* and *#false*.
-Alternatively, they can be written #t, #T and #f, #F, respectively.
+The standard boolean objects for *true* and *false* are written as `#true` and `#false`.
+Alternatively, they can be written as `#t` `#T` and `#f` `#F`, respectively.
 
-Of all the Scheme values, only *#false* counts as false in conditional expressions. All other Scheme values, including *#true* and *#null* (empty list), count as true!
+All the Ol objects are treated as *true* (including empty list !), only `#false` counts as *false* in conditional expressions.
 
+Boolean constants evaluate to themselves, so they don't need to be quoted in programs.
 ```scheme
 #t       ==>  #true
 #T       ==>  #true
 #f       ==>  #false
 #F       ==>  #false
+'#true   ==>  #true
 ```
 
 [not](#not), [boolean?](#boolean), [boolean=?](#boolean-1)
@@ -18,7 +20,7 @@ Of all the Scheme values, only *#false* counts as false in conditional expressio
 # not
 `(not obj)`, *procedure*
 
-The not procedure returns #true if *obj* is false, and returns #false otherwise.
+The *not* procedure returns #true if *obj* is false, and returns #false otherwise.
 
 ```scheme
 (not #t)         ==>  #false
@@ -33,7 +35,7 @@ The not procedure returns #true if *obj* is false, and returns #false otherwise.
 # boolean?
 `(boolean? obj)`, *procedure*
 
-The boolean? predicate returns #true if *obj* is either #true or #false and returns #false otherwise.
+The *boolean?* predicate returns #true if *obj* is either #true or #false and returns #false otherwise.
 
 ```scheme
 (boolean? #f)    ==>  #true

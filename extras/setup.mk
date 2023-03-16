@@ -4,7 +4,7 @@
 DESTDIR?=
 PREFIX ?= /usr
 
-install: ol includes/ol/vm.h
+install: all includes/ol/vm.h
 	# install Ol executable(s) to $(DESTDIR)$(PREFIX)/bin:
 	@echo Installing main binary...
 	install -d $(DESTDIR)$(PREFIX)/bin
