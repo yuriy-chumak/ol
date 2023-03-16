@@ -448,13 +448,13 @@ Returns the absolute value of its argument.
 Returns the simplest rational number differing from *x* by no more than *y*.
 
 ```scheme
-(rationalize 0.723 1/10)      ==>  2/3)
-(rationalize 0.723 1/100)     ==>  5/7)
-(rationalize -0.723 1/100)    ==> -5/7)
-(rationalize 10197734562406803221/17452826108659293487 1/10)     ==>   1/2)
-(rationalize 10197734562406803221/17452826108659293487 1/100)    ==>   7/12)
-(rationalize 10197734562406803221/17452826108659293487 1/1000)   ==>   7/12)
-(rationalize 10197734562406803221/17452826108659293487 1/10000)  ==>  52/89)
+(rationalize 0.723 1/10)      ==>  2/3
+(rationalize 0.723 1/100)     ==>  5/7
+(rationalize -0.723 1/100)    ==> -5/7
+(rationalize 10197734562406803221/17452826108659293487 1/10)     ==>   1/2
+(rationalize 10197734562406803221/17452826108659293487 1/100)    ==>   7/12
+(rationalize 10197734562406803221/17452826108659293487 1/1000)   ==>   7/12
+(rationalize 10197734562406803221/17452826108659293487 1/10000)  ==>  52/89
 ```
 
 # square
@@ -463,10 +463,10 @@ Returns the simplest rational number differing from *x* by no more than *y*.
 Returns the square of *z*.
 
 ```scheme
-(square 2)                    ==>  4)
-(square -2)                   ==>  4)
-(square 3/7)                  ==>  9/49)
-(square 1+2i)                 ==>  -3+4i)
+(square 2)                    ==>  4
+(square -2)                   ==>  4
+(square 3/7)                  ==>  9/49
+(square 1+2i)                 ==> -3+4i
 ```
 
 # sqrt
@@ -478,12 +478,11 @@ The `sqrt` of rational and inexact number ignores precision and produces inexact
 Note that complex numbers are not applicable.
 
 ```scheme
-(sqrt 4)                      ==>  2)
-(sqrt -4)                     ==>  0+2i)
-(sqrt 0)                      ==>  0)
-(sqrt 4/125)                  ==>  0.178885438)
-(sqrt #i1/3)                  ==>  0.577350269)
-(sqrt 5)                      ==>  51841/23184)
-(sqrt 5 0.000001)             ==>  5374978561/2403763488)
+(sqrt 4)                      ==>  2
+(sqrt -4)                     ==>  0+2i
+(sqrt 0)                      ==>  0
+(sqrt #i27.1441)              ==>  #i5.21
+(sqrt 5)                      ==>  51841/23184
+(sqrt 5 0.000001)             ==>  5374978561/2403763488
 ```
 
