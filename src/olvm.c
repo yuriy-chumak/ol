@@ -1157,7 +1157,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 #ifndef HAS_SENDFILE
-# if defined(_WIN32) || defined(__linux__)
+# if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
 #  define HAS_SENDFILE HAS_SOCKETS
 # else
 #  define HAS_SENDFILE 0
@@ -1323,6 +1323,7 @@ int memfd_create (char* name, unsigned int flags)
 
 	return fd;
 }
+int     sendfile(int, int, off_t, off_t *, struct sf_hdtr *, int);
 #endif
 
 #if HAS_SENDFILE
