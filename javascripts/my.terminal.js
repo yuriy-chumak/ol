@@ -52,14 +52,14 @@ $('#terminal').terminal(function(command, terminal) {
    }
 });
 
-$('#terminal').mousewheel(function(event) {
-   terminal.scroll(event.deltaY);
-   // console.log(event.deltaX, event.deltaY, event.deltaFactor);
-   if (event.preventDefault)  //disable default wheel action of scrolling page
-      event.preventDefault();
-   else
-      return false;
-});
+// $('#terminal').mousewheel(function(event) {
+//    terminal.scroll(event.deltaY);
+//    // console.log(event.deltaX, event.deltaY, event.deltaFactor);
+//    if (event.preventDefault)  //disable default wheel action of scrolling page
+//       event.preventDefault();
+//    else
+//       return false;
+// });
 
 // FILE SYSTEM
 var Libraries = [
