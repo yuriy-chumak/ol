@@ -34,7 +34,20 @@ used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
 Luakit, Iceape, etc.
 
 
-* thx to [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) for the tests.
+* credits to: [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests), [nullscm](https://github.com/nullscm) (usage, tests), Odysseus (tests, ideas), mt (tests, ideas).
+
+
+PACKAGING
+---------
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
+[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
+[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
+
+**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).
+
+Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
+
 
 Q/A
 ---
@@ -59,7 +72,7 @@ Q/A
 
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
-~~Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available (the previous Freenode channel is closed).~~
+Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available (the previous Freenode channel is closed).
 Libera.Chat channel temporary unavailable.
 
 [The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
@@ -117,18 +130,6 @@ Table of Contents
 1. [Embedding](#embedding-ol)
 1. [Docs](#documentation)
 1. [License](#license)
-
-
-PACKAGING
----------
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
-[![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
-[![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
-
-**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).
-
-Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
 
 
 CHANGELOG
