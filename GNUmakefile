@@ -61,6 +61,10 @@ CFLAGS += -DHAS_SOCKETS=$(if $(HAS_SOCKETS),1,0)
 CFLAGS += -DHAS_DLOPEN=$(if $(HAS_DLOPEN),1,0)
 CFLAGS += -DHAS_SANDBOX=$(if $(HAS_SECCOMP),1,0)
 
+ifneq ($(HAS_MEMFD_CREATE),)
+CFLAGS += -DHAS_MEMFD_CREATE=$(HAS_MEMFD_CREATE)
+endif
+
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
 
 # builtin "sin", "cos", "sqrt", etc. functions support

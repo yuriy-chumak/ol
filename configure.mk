@@ -52,6 +52,8 @@ HAS_DLOPEN  ?= $(call exists,,stdlib.h, dlopen, -ldl)
 HAS_SECCOMP ?= $(call exists,,linux/seccomp.h, prctl)
 HAS_SOCKETS ?= $(call exists,,stdlib.h, socket)
 
+HAS_MEMFD_CREATE ?= $(call exists,,sys/mman.h, memfd_create)
+
 # computing native x11 variables
 ifeq ($(UNAME),Linux)
 x11_sizeof = $(shell echo "'|sizeof $1| (if x86? $(call sizeof,$1,,-m32 -include X11/Xlib.h) $(call sizeof,$1,,-m64 -include X11/Xlib.h))")

@@ -1015,8 +1015,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #	define SYSCALL_PRCTL 0
 
 #	define HAS_SOCKETS 0
-
-#	define SYSCALL_MEMFD 0
+#   define HAS_MEMFD_CREATE 0
 #endif
 
 #ifdef __ANDROID__
@@ -1035,7 +1034,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #	define SYSCALL_GETRLIMIT 0
 
 #	if __ANDROID_API__ < 30
-#		define SYSCALL_MEMFD 0
+#		define HAS_MEMFD_CREATE 0
 #	endif
 #endif
 
@@ -1274,7 +1273,28 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #	define __builtin_pow   pow
 #endif
 
-#include <sys/mman.h> // we have own win32 implementation
+#ifdef __linux__
+#   if HAS_MEMFD_CREATE
+#      include <sys/mman.h>
+#   else
+#       undef HAS_MEMFD_CREATE
+#       define HAS_MEMFD_CREATE 1
+        static // not a real memfd_create, but compatibility wrapper
+        int memfd_create (char* name, unsigned int flags)
+        {
+            (void) name;
+            assert (flags == 0);
+
+            char tmp_m[] = "/tmp/memfd_olvmXXXXXX";
+            int fd = mkstemp(tmp_m); unlink(tmp_m);
+
+            return fd;
+        }
+#   endif
+#else
+#   include <sys/mman.h> // we have own win32/macos implementation
+#endif
+
 #include <sys/utsname.h> // we have own win32 implementation
 #if HAS_DLOPEN
 #	include <dlfcn.h> // we have own win32 implementation
@@ -1312,17 +1332,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 #ifdef __APPLE__
-static // not a real memfd_create, but only compatibility wrapper
-int memfd_create (char* name, unsigned int flags)
-{
-	(void) name;
-	assert (flags == 0);
-
-	char tmp_m[] = "/tmp/memfd_olvmXXXXXX";
-	int fd = mkstemp(tmp_m); unlink(tmp_m);
-
-	return fd;
-}
 int     sendfile(int, int, off_t, off_t *, struct sf_hdtr *, int);
 #endif
 
@@ -2645,7 +2654,11 @@ mainloop:;
 	#		define SYSCALL_MKDIR 83 // deprecated
 
 	#		ifndef SYSCALL_MEMFD
-	#		define SYSCALL_MEMFD 85
+    #        ifdef HAS_MEMFD_CREATE
+	#		  define SYSCALL_MEMFD ((HAS_MEMFD_CREATE == 1) ? 85 : 0)
+    #        else
+	#		  define SYSCALL_MEMFD 85
+    #        endif
 	#		endif
 
 	#		define SYSCALL_GETTIMEOFDAY 96
