@@ -14,9 +14,10 @@ describe: all
 	./ol --version
 	echo "(print (syscall 63))"|./vm repl
 
-# default toolchain
+# default toolchain(s)
 CC ?= gcc
 LD ?= ld
+
 ol32.exe: CC := i686-w64-mingw32-gcc
 ol64.exe: CC:=x86_64-w64-mingw32-gcc
 
@@ -57,9 +58,9 @@ CFLAGS_DEBUG   := -O0 -g2 -Wall
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
 
-CFLAGS += -DHAS_SOCKETS=$(if $(HAS_SOCKETS),1,0)
-CFLAGS += -DHAS_DLOPEN=$(if $(HAS_DLOPEN),1,0)
-CFLAGS += -DHAS_SANDBOX=$(if $(HAS_SECCOMP),1,0)
+CFLAGS += -DHAS_SOCKETS=$(if $(HAS_SOCKETS),$(HAS_SOCKETS),0)
+CFLAGS += -DHAS_DLOPEN=$(if $(HAS_DLOPEN),$(HAS_DLOPEN),0)
+CFLAGS += -DHAS_SANDBOX=$(if $(HAS_SECCOMP),$(HAS_SECCOMP),0)
 
 ifneq ($(HAS_MEMFD_CREATE),)
 CFLAGS += -DHAS_MEMFD_CREATE=$(HAS_MEMFD_CREATE)
