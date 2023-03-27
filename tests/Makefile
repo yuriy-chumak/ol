@@ -21,7 +21,7 @@ MACHINE ?= $(shell uname -m)
 
 # special case, test 64- and 32-bit both
 # (maximal testings under main development platform)
-ifeq ($(MACHINE),x86_64)
+ifeq ($(UNAME)-$(MACHINE),Linux-x86_64)
 HAS_32CDEFS  ?= $(call exists,-m32,sys/cdefs.h,exit)
 HAS_64CDEFS  ?= $(call exists,-m64,sys/cdefs.h,exit)
 ifeq ($(HAS_32CDEFS),1)
