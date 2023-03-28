@@ -1149,22 +1149,23 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 #ifndef HAS_DLOPEN
-#define HAS_DLOPEN 1  // assume dlopen/dlsym support
+#define HAS_DLOPEN 1
 #endif
 
 #ifndef HAS_SANDBOX
-#define HAS_SANDBOX 0 // allows sandboxing
+#define HAS_SANDBOX 0
 #endif
 
 #ifndef HAS_UNSAFES
-#define HAS_UNSAFES 1 // allows "unsafe" memory access operations
+#define HAS_UNSAFES 1
 #endif
 
 #ifndef HAS_STRFTIME
 #define HAS_STRFTIME 1
 #endif
 
-#ifndef OLVM_BUILTIN_FMATH // builtin olvm math functions (vm:fp1)
+// builtin olvm math functions (vm:fp1)
+#ifndef OLVM_BUILTIN_FMATH
 #define OLVM_BUILTIN_FMATH 1
 #endif
 
@@ -1186,7 +1187,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 
 // posix or not:
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
-// http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system#WindowswithCygwinPOSIX
+// https://web.archive.org/web/20150816133838/http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system
 
 #ifdef __MINGW32__ // mingw bug
 #ifndef _cdecl
@@ -1261,6 +1262,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #	define __builtin_pow   pow
 #endif
 
+// memfd_create:
 #ifdef __linux__
 #   if HAS_MEMFD_CREATE
 #      include <sys/mman.h>
