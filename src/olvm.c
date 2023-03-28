@@ -1179,19 +1179,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #include <features.h>
 #endif
 
-#ifdef __unix__
-# if !defined ( __EMSCRIPTEN__ ) && HAS_CDEFS
-#	include <sys/cdefs.h>
-# endif
-# if !defined ( __EMSCRIPTEN__ )
-#	include <sched.h> // yield
-# endif
-#endif
-
-#ifdef __APPLE__
-#	include <sched.h>
-#endif
-
 
 // check this for nested functions:
 //	https://github.com/Leushenko/C99-Lambda
@@ -1331,18 +1318,36 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #	endif
 #endif
 
+
+// yield:
+#ifdef __unix__
+# if !defined (__EMSCRIPTEN__) && HAS_CDEFS
+#	include <sys/cdefs.h>
+# endif
+# if !defined (__EMSCRIPTEN__)
+#	include <sched.h> // yield
+# endif
+#endif
+
 #ifdef __APPLE__
 int     sendfile(int, int, off_t, off_t *, struct sf_hdtr *, int);
 #endif
 
-#if HAS_SENDFILE
-# if defined(__linux__)
-#	include <sys/sendfile.h>
+void yield()
+{
+#ifdef __EMSCRIPTEN__
+	emscripten_sleep(1);
+#else
+# if defined(__unix__) || defined(__APPLE__)
+	sched_yield();
 # endif
-# if defined(_WIN32)
-#	include <sys/sendfile.h>// own win32 implementation
+# ifdef _WIN32
+	Sleep(1);
 # endif
 #endif
+}
+
+
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -1459,27 +1464,6 @@ void E(char* format, ...)
 	}
 }
 #pragma GCC diagnostic pop
-
-// --------------------------------------------------
-// -=( yield )=------------------------
-void yield()
-{
-#ifdef __EMSCRIPTEN__
-	// emscripten_sleep(1);
-#else
-# if defined(__linux__) ||\
-     defined(__FreeBSD__) ||\
-     defined(__NetBSD__) ||\
-     defined(__OpenBSD__) ||\
-     defined(__DragonFly__) ||\
-	 defined(__APPLE__)
-	sched_yield();
-# endif
-# ifdef _WIN32
-	Sleep(1);
-# endif
-#endif
-}
 
 // ========================================
 //  HAS_SOCKETS 1
