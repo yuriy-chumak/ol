@@ -1133,10 +1133,19 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 
 // http://nadeausoftware.com/articles/2012/02/c_c_tip_how_detect_processor_type_using_compiler_predefined_macros
 
-// DEFAULTS.
+// DEFAULTS,
 // please don't change! use -D{OPTION}={0|1} compiler command line instead
+
 #ifndef HAS_SOCKETS
-#define HAS_SOCKETS 1 // assume system sockets support
+#define HAS_SOCKETS 1
+#endif
+
+#ifndef HAS_SENDFILE
+# if defined(__linux__) || defined(__APPLE__)
+#  define HAS_SENDFILE HAS_SOCKETS
+# else
+#  define HAS_SENDFILE 0
+# endif
 #endif
 
 #ifndef HAS_DLOPEN
@@ -1153,14 +1162,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 
 #ifndef HAS_STRFTIME
 #define HAS_STRFTIME 1
-#endif
-
-#ifndef HAS_SENDFILE
-# if defined(_WIN32) || defined(__linux__) || defined(__APPLE__)
-#  define HAS_SENDFILE HAS_SOCKETS
-# else
-#  define HAS_SENDFILE 0
-# endif
 #endif
 
 #ifndef OLVM_BUILTIN_FMATH // builtin olvm math functions (vm:fp1)
@@ -1330,7 +1331,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 #ifdef __APPLE__
-int     sendfile(int, int, off_t, off_t *, struct sf_hdtr *, int);
+#	include <sched.h>
 #endif
 
 void yield()
@@ -1348,6 +1349,63 @@ void yield()
 }
 
 
+// sendfile:
+#if HAS_SENDFILE
+#	ifdef __linux__
+#		include <sys/sendfile.h>
+#	endif
+#	ifdef __APPLE__
+#		include <sys/types.h>
+#		undef _POSIX_C_SOURCE // macos sendfile workaround
+#		include <sys/socket.h>
+#		include <sys/uio.h>
+#	endif
+#else
+#	if HAS_SOCKETS
+#	define HAS_SENDFILE 1
+		size_t
+		sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
+		{
+			char buf[2*4096];
+			size_t toRead, numRead, numSent, totSent;
+
+			totSent = 0;
+			while (count > 0) {
+				toRead = (sizeof(buf) < count) ? sizeof(buf) : count;
+
+				// read
+				numRead = read(in_fd, buf, toRead);
+				if (numRead == -1)
+					return -1;
+				if (numRead == 0) // EOF
+					break;
+
+				// write
+				resend:
+				numSent = send(out_fd, buf, numRead, 0);
+				if (numSent == -1 /*SOCKET_ERROR*/) {
+				#ifdef _WIN32
+					if (WSAGetLastError() != WSAEWOULDBLOCK)
+				#else
+					if (errno != EAGAIN && errno != EWOULDBLOCK)
+				#endif
+						return -1;
+
+					yield();
+					goto resend;
+				}
+				if (numSent == 0) // should never happen
+					return 0;
+
+				count -= numSent;
+				totSent += numSent;
+			}
+			if (shutdown(out_fd, SD_SEND) == SOCKET_ERROR)
+				return -1;
+			return totSent;
+		}
+#	endif
+#endif
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -2632,10 +2690,11 @@ mainloop:;
 	#		endif//
 
     #		define SYSCALL_ERRNO 60  // errno
-	#		define SYSCALL_SENDFILE 40
 	#		define SYSCALL_GETDENTS 78
 	#		define SYSCALL_CHDIR 80 // deprecated
 	#		define SYSCALL_MKDIR 83 // deprecated
+
+	#		define SYSCALL_SENDFILE 40
 
 	#		ifndef SYSCALL_MEMFD
     #        ifdef HAS_MEMFD_CREATE
@@ -3905,8 +3964,7 @@ loop:;
 			// 	result = (word*)ITRUE;
 			// 	break;
 			// }
-
-#if HAS_SENDFILE
+#if	HAS_SENDFILE
 			/*! \subsection sendfile
 			* \brief (syscall **40** outp inp offset count) -> number | #f
 			*
@@ -3922,9 +3980,6 @@ loop:;
 			*
 			* http://man7.org/linux/man-pages/man2/sendfile.2.html
 			*/
-			// todo: enable sendfile to the BSD
-			// todo: add sendfile() for __unix__ (like for _WIN32)
-			case SYSCALL_SENDFILE + SECCOMP:
 			case SYSCALL_SENDFILE: {
 				CHECK_ARGC_EQ(4);
 				CHECK_PORT(1);
