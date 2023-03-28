@@ -1245,6 +1245,19 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #include <windows.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
+
+// some portability issues (mainly for freebsd)
+#ifndef EWOULDBLOCK
+#define EWOULDBLOCK EAGAIN
+#endif
+
 #include <time.h>
 #include <math.h>
 #ifdef __TINYC__
@@ -1351,6 +1364,53 @@ void yield()
 }
 
 
+// sockets/sendfile:
+// sockets:
+#if HAS_SOCKETS
+
+# ifdef __unix__
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+#  ifndef __linux__
+#	include <sys/select.h>
+#  endif
+
+#	include <arpa/inet.h> // for inet_addr()
+#	include <netdb.h>     // for gethostbyname()
+
+#	ifndef PF_INET
+#	define PF_INET AF_INET
+#	endif
+
+#	ifndef INADDR_NONE
+#	define INADDR_NONE	0xffffffff
+#	endif
+# endif
+
+# ifdef _WIN32
+#	include <winsock2.h>
+#	include <ws2tcpip.h>
+
+	typedef unsigned long in_addr_t;
+#	ifndef EWOULDBLOCK
+#	define EWOULDBLOCK WSAEWOULDBLOCK
+#	endif
+# endif
+
+# ifdef __APPLE__
+#	undef _POSIX_C_SOURCE // macos sendfile workaround
+#	include <sys/socket.h>
+#	include <netinet/in.h>
+
+#	include <arpa/inet.h> // for inet_addr()
+#	include <netdb.h>     // for gethostbyname()
+# endif
+
+//#ifdef __ANDROID__
+//	typedef unsigned long in_addr_t;
+//#endif
+#endif // HAS_SOCKETS
+
 // sendfile:
 #if HAS_SENDFILE
 #	ifdef __linux__
@@ -1358,63 +1418,58 @@ void yield()
 #	endif
 #	ifdef __APPLE__
 #		include <sys/types.h>
-#		undef _POSIX_C_SOURCE // macos sendfile workaround
-#		include <sys/socket.h>
 #		include <sys/uio.h>
 #	endif
 #else
-#	if HAS_SOCKETS
+# if HAS_SOCKETS
+#	undef HAS_SENDFILE
 #	define HAS_SENDFILE 1
-		size_t
-		sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
-		{
-			char buf[2*4096];
-			size_t toRead, numRead, numSent, totSent;
-
-			totSent = 0;
-			while (count > 0) {
-				toRead = (sizeof(buf) < count) ? sizeof(buf) : count;
-
-				// read
-				numRead = read(in_fd, buf, toRead);
-				if (numRead == -1)
-					return -1;
-				if (numRead == 0) // EOF
-					break;
-
-				// write
-				resend:
-				numSent = send(out_fd, buf, numRead, 0);
-				if (numSent == -1 /*SOCKET_ERROR*/) {
-				#ifdef _WIN32
-					if (WSAGetLastError() != WSAEWOULDBLOCK)
-				#else
-					if (errno != EAGAIN && errno != EWOULDBLOCK)
-				#endif
-						return -1;
-
-					yield();
-					goto resend;
-				}
-				if (numSent == 0) // should never happen
-					return 0;
-
-				count -= numSent;
-				totSent += numSent;
-			}
-			if (shutdown(out_fd, SD_SEND) == SOCKET_ERROR)
-				return -1;
-			return totSent;
-		}
+#	ifndef _WIN32
+#		define SOCKET_ERROR -1
+#		define SD_SEND SHUT_WR
 #	endif
-#endif
+	size_t
+	sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
+	{
+		char buf[2*4096];
+		size_t toRead, numRead, numSent, totSent;
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
+		totSent = 0;
+		while (count > 0) {
+			toRead = (sizeof(buf) < count) ? sizeof(buf) : count;
 
-#ifdef __ANDROID__
-#include <android/log.h>
+			// read
+			numRead = read(in_fd, buf, toRead);
+			if (numRead == -1)
+				return -1;
+			if (numRead == 0) // EOF
+				break;
+
+			// write
+			resend:
+			numSent = send(out_fd, buf, numRead, 0);
+			if (numSent == SOCKET_ERROR) {
+			#ifdef _WIN32
+				if (WSAGetLastError() != WSAEWOULDBLOCK)
+			#else
+				if (errno != EAGAIN && errno != EWOULDBLOCK)
+			#endif
+					return -1;
+
+				yield();
+				goto resend;
+			}
+			if (numSent == 0) // should never happen
+				return 0;
+
+			count -= numSent;
+			totSent += numSent;
+		}
+		if (shutdown(out_fd, SD_SEND) == SOCKET_ERROR)
+			return -1;
+		return totSent;
+	}
+# endif
 #endif
 
 // FFI support:
@@ -1441,11 +1496,6 @@ void yield()
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic error "-Wuninitialized"
 //#pragma GCC diagnostic pop
-
-// some portability issues (mainly for freebsd)
-#ifndef EWOULDBLOCK
-#define EWOULDBLOCK EAGAIN
-#endif
 
 #ifndef VMRAW_CHECK
 #define VMRAW_CHECK 1
@@ -1524,53 +1574,6 @@ void E(char* format, ...)
 	}
 }
 #pragma GCC diagnostic pop
-
-// ========================================
-//  HAS_SOCKETS 1
-#if HAS_SOCKETS
-
-#ifdef __unix__
-#	include <sys/socket.h>
-#	include <netinet/in.h>
-# ifndef __linux__
-#	include <sys/select.h>
-# endif
-
-#	include <arpa/inet.h> // for inet_addr()
-#	include <netdb.h>     // for gethostbyname()
-
-#	ifndef PF_INET
-#	define PF_INET AF_INET
-#	endif
-
-#	ifndef INADDR_NONE
-#	define INADDR_NONE	0xffffffff
-#	endif
-#endif
-
-#ifdef _WIN32
-#	include <winsock2.h>
-#	include <ws2tcpip.h>
-
-	typedef unsigned long in_addr_t;
-#	ifndef EWOULDBLOCK
-#	define EWOULDBLOCK WSAEWOULDBLOCK
-#	endif
-#endif
-
-#ifdef __APPLE__
-#	include <sys/socket.h>
-#	include <netinet/in.h>
-
-#	include <arpa/inet.h> // for inet_addr()
-#	include <netdb.h>     // for gethostbyname()
-#endif
-
-//#ifdef __ANDROID__
-//	typedef unsigned long in_addr_t;
-//#endif
-
-#endif
 
 // --------------------------------------------------------
 // -=( i/o )=----------------------------------------------
