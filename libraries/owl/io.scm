@@ -29,6 +29,9 @@
       bytestream->port
       bytestream->file
 
+      port->string
+      file->string
+
       write-bytestream
 
       stdin stdout stderr
@@ -480,6 +483,11 @@
          (let ((stream (file->bytestream path)))
             (if stream (deserialize stream fail) fail)))
 
+      (define (port->string port)
+         (bytes->string (port->bytestream port)))
+
+      (define (file->string port)
+         (bytes->string (file->bytestream port)))
 
       (define (open-output-string)
          (syscall 85))
