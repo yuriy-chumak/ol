@@ -282,13 +282,11 @@
          ((obj port) (write-to port obj))))
 
 
-      (define (print-to to . stuff)
-         (printer (foldr render '(10) stuff) 0 null to))
+      (define (print-to to . args)
+         (printer (foldr render '(#\newline) args) 0 #null to))
 
-      (define print
-         (case-lambda
-            ((obj) (print-to stdout obj))
-            (args (printer (foldr render '(#\newline) args) 0 null stdout))))
+      (define (print . args)
+         (printer (foldr render '(#\newline) args) 0 #null stdout))
 
 
       ;; fixme: system-X do not belong here
