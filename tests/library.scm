@@ -177,7 +177,9 @@
    (begin
       (define something 211)))
 
-(import (config 50))
+(import (config 50)) ; numerical library
 (print something)
 (import (not-existent 5050)) ; not existent in tests/config forlder
+(print something)
+(import (config another-named)) ; mismatched library name
 (print something)

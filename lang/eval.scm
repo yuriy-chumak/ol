@@ -940,7 +940,11 @@
                         (lets ((status env (try-autoload env repl lib)))
                            (cond
                               ((eq? status 'ok)
-                                 (library-import env exps fail repl))
+                                 ;; file loaded, did we get the library?
+                                 (let* ((status msg (import-set->library iset (env-get env '*libraries* #n) (lambda (a b) (values a b)))))
+                                    (if (eq? status 'needed)
+                                       (fail (list "found file, but no proper library definition in it for" (bytes->string (render iset null)) "."))
+                                       (library-import env exps fail repl))))
                               ((eq? status 'error)
                                  (fail (list env)))
                               (else
