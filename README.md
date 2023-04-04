@@ -70,6 +70,9 @@ Q/A
       The Plan 9 operating system (a flavor of Unix), for example, uses UTF-8 as character encoding,
       and its wide character type is called "Rune", not "wide char".
 
+1. Q. Do you have something like 'sleep mode'?  
+   A. You can store the current REPL session with `,save "filename"` and continue it later as `ol filename`.
+
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available (the previous Freenode channel is closed).
