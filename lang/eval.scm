@@ -735,37 +735,6 @@
                (env-fold (λ (out name value) (cons name out)) null (cdr libp))
                #false)))
 
-      ;; todo: this uses direct environment access - move to lib-env or handle here?
-      ;; <export spec> = <identifier>
-      ;;               | (rename <identifier_1> <identifier_2>)
-      ;;               | (exports <lib)
-      ;; TODO - use env-keep and check bindings from result instead to avoid absraction violation
-      (define (build-export names env fail)
-         (let loop ((names names) (unbound null) (module empty-env))
-            (cond
-               ((null? names)
-                  (cond
-                     ((null? unbound) module)
-                     ((null? (cdr unbound))
-                        (fail (list "Undefined exported value: " (car unbound))))
-                     (else
-                        (fail (list "Undefined exports: " unbound)))))
-               ((env-get-raw env (car names) #false) =>
-                  (λ (value)
-                     (loop (cdr names) unbound (env-put-raw module (car names) value))))
-               ((and ;; swap name for (rename <local> <exported>)
-                   (match `(rename ,symbol? ,symbol?) (car names))
-                   (env-get-raw env (cadar names) #false)) =>
-                  (λ (value)
-                     (loop (cdr names) unbound (env-put-raw module (caddar names) value))))
-               ((match `(exports ,list?) (car names))
-                  (let ((exported (exported-names env (cadr (car names)))))
-                     (if exported
-                        (loop (append exported (cdr names)) unbound module)
-                        (fail (list "Didn't find " (cadar names) " for exporting.")))))
-               (else
-                  (loop (cdr names) (cons (car names) unbound) module)))))
-
       ; fixme, use pattern matching...
 
       (define (symbol-list? l) (and (list? l) (all symbol? l)))
@@ -781,7 +750,7 @@
             (lambda (exp) (match patternp exp))))
 
       (define (library-definition? x)
-         (and (pair? x) (list? x) (eq? (car x) '_define-library)))
+         (and (pair? x) (list? (cdr x)) (eq? (car x) '_define-library)))
 
       ;; a simple eval
 
@@ -860,12 +829,7 @@
             (foldr
                (λ (thing tl)
                   (append
-                     (string->list (cond
-                                    ((symbol? thing) (symbol->string thing))
-                                    ((string? thing) thing)
-                                    ((integer? thing) (number->string thing))
-                                    (else
-                                       (runtime-error "Invalid library name part" thing))))
+                     (string->list (symbol->string thing))
                      (if (null? tl)
                         (string->list ".scm")
                         (cons #\/ tl))))
@@ -904,7 +868,7 @@
 
       ;; nonempty list of symbols or integers
       (define (valid-library-name? x)
-         (and (list? x) (pair? x) (all (λ (x) (or (integer? x) (symbol? x))) x)))
+         (and (pair? x) (list? (cdr x)) (all symbol? x)))
 
       ;; try to load a library based on it's name and current include prefixes if
       ;; it is required by something being loaded and we don't have it yet
@@ -931,10 +895,42 @@
       (define (any->string obj)
          (list->string (render obj null)))
 
+      (define (rational->decimal thing)
+         (runes->string
+            (let loop ((n (car thing)) (d (cdr thing)) (i 1) (e 10))
+                  (if (eq? d e) ; у нас удачная дробь
+                     (let loop ((n n) (i i) (out #n))
+                        (if (zero? i)
+                           (render-number n (cons #\. out) 10)
+                        else
+                           (let* ((a b (quotrem n 10)))
+                              (loop a (-- i) (cons (+ b #\0) out)))))
+                  else
+                     (if (eq? (gcd e d) d) ; неудачная дробь, но ...
+                        ; ... мы можем привести ее к удачной
+                        (loop (* n (div e d)) e i e)
+                     else ; маловата степень, увеличим
+                        (loop n d (++ i) (* e 10)))))) )
+
+      ; convert library names to symbols
+      (define (proper-iset iset)
+         (map (lambda (i)
+               (cond
+                  ((symbol? i) i)
+                  ((string? i) (string->symbol i))
+                  ((integer? i) (string->symbol (number->string i 10)))
+                  ((rational? i) (string->symbol (rational->decimal i)))
+                  ((list? i)
+                     (proper-iset i))
+                  (else
+                     (runtime-error "Invalid library name part" i))))
+            iset))
+
       (define (library-import env exps fail repl)
          (fold
             (λ (env iset)
-               (lets ((status lib (call/cc (λ (ret) (import-set->library iset (env-get env '*libraries* null) ret)))))
+               (let*((iset (proper-iset iset))
+                     (status lib (call/cc (λ (ret) (import-set->library iset (env-get env '*libraries* null) ret)))))
                   (cond
                      ((eq? status 'needed)
                         (lets ((status env (try-autoload env repl lib)))
@@ -956,6 +952,37 @@
                      (else
                         (fail (list "BUG: bad library load status: " status))))))
             env exps))
+
+      ;; todo: this uses direct environment access - move to lib-env or handle here?
+      ;; <export spec> = <identifier>
+      ;;               | (rename <identifier_1> <identifier_2>)
+      ;;               | (exports <lib)
+      ;; TODO - use env-keep and check bindings from result instead to avoid absraction violation
+      (define (build-export names env fail)
+         (let loop ((names names) (unbound null) (module empty-env))
+            (cond
+               ((null? names)
+                  (cond
+                     ((null? unbound) module)
+                     ((null? (cdr unbound))
+                        (fail (list "Undefined exported value: " (car unbound))))
+                     (else
+                        (fail (list "Undefined exports: " unbound)))))
+               ((env-get-raw env (car names) #false) =>
+                  (λ (value)
+                     (loop (cdr names) unbound (env-put-raw module (car names) value))))
+               ((and ;; swap name for (rename <local> <exported>)
+                   (match `(rename ,symbol? ,symbol?) (car names))
+                   (env-get-raw env (cadar names) #false)) =>
+                  (λ (value)
+                     (loop (cdr names) unbound (env-put-raw module (caddar names) value))))
+               ((match `(exports ,list?) (car names))
+                  (let ((exported (exported-names env (proper-iset (cadar names)))))
+                     (if exported
+                        (loop (append exported (cdr names)) unbound module)
+                        (fail (list "Didn't find " (proper-iset (cadar names)) " for exporting.")))))
+               (else
+                  (loop (cdr names) (cons (car names) unbound) module)))))
 
       ;; temporary toplevel import doing what library-import does within libraries
       (define (toplevel-library-import env exps repl)
@@ -1103,6 +1130,7 @@
                      (let*/cc ret (
                            (exps (map cadr (cdr exp))) ;; drop the quotes
                            (name exps (uncons exps #false))
+                           (name (proper-iset name))
                            (libs (env-get env '*libraries* null))
                            ;; mark the current library as being loaded for circular dependency detection
                            (env (env-set env '*libraries* (cons (cons name 'loading) libs)))
