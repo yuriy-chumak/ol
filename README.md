@@ -17,13 +17,13 @@ Otus Lisp, Version 2.4
 ======================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
-Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
+Otus Lisp (*Ol* in short) is a purely functional dialect of Lisp.
 
 It implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
 but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
-to call code written in another language.
+to call code written in other languages.
 
 You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
 (Open/Free/Net) BSD, Solaris and other operating systems based
@@ -34,7 +34,11 @@ used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
 Luakit, Iceape, etc.
 
 
-* credits to: [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests), [nullscm](https://github.com/nullscm) (usage, tests), Odysseus (tests, ideas), mt (tests, ideas).
+* credits to:
+[the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests),
+[nullscm](https://github.com/nullscm) (usage, tests),
+Odysseus (tests, ideas),
+mt (tests, ideas).
 
 
 PACKAGING
@@ -81,43 +85,6 @@ Libera.Chat channel temporary unavailable.
 [The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
 
-BUILD / INSTALL
----------------
-
-#### BUILD REQUIREMENTS
-
-* GCC 3.2+ / CLANG 3.5+
-* GNU MAKE
-* XXD for a full build ("xxd" is usually part of "vim" package), not required for olvm.
-
-
-#### BUILD
-
-```
-$ make
-$ ./ol
-Welcome to Otus Lisp 2.4
-type ',help' to help, ',quit' to end session.
->
-```
-
-The Ol binary includes a rich set of features (lists, vectors and byte vectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, asyncs and actors, etc.) and can be used as a completely standalone.
-
-Advanced build instructions for Windows / Linux / macOS / Android / Web / etc.:
-[doc/BUILD.md](doc/BUILD.md)
-
-
-#### Install (*/usr/bin/ol* and */usr/lib/ol/* by default)
-```
-$ sudo make install
-```
-
-#### Uninstall
-```
-$ sudo make uninstall
-```
-
-
 Table of Contents
 -----------------
 1. [Build / Install](#build--install) ([Advanced](doc/BUILD.md))
@@ -133,6 +100,50 @@ Table of Contents
 1. [Embedding](#embedding-ol)
 1. [Docs](#documentation)
 1. [License](#license)
+
+
+BUILD / INSTALL
+---------------
+
+#### BUILD REQUIREMENTS
+
+* GCC 3.2+ / CLANG 3.5+
+* GNU MAKE
+* XXD for a full build ("xxd" is usually part of "vim" package), not required for olvm.
+
+
+#### BUILD
+
+```
+$ make
+```
+Advanced build instructions: [doc/BUILD.md](doc/BUILD.md)
+
+
+##### RUN
+```
+$ ./ol
+Welcome to Otus Lisp 2.4
+type ',help' to help, ',quit' to end session.
+>
+```
+
+The Ol binary includes a rich set of features (lists, vectors and byte vectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, asyncs and actors, etc.) and can be used as a completely standalone.  
+Additinally, check the advanced ["running"](#running) topic.
+
+
+##### INSTALL
+```
+$ sudo make install
+```
+
+Note: by default used */usr/bin/ol* for Ol binary, and */usr/lib/ol/* for Ol libraries.
+
+
+##### UNINSTALL
+```
+$ sudo make uninstall
+```
 
 
 CHANGELOG
