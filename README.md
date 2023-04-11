@@ -17,7 +17,7 @@ Otus Lisp, Version 2.4
 ======================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
-Otus Lisp (*Ol* in short) is a purely functional dialect of Lisp.
+Otus Lisp (**Ol** in short) is a purely functional dialect of Lisp.
 
 It implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
@@ -29,10 +29,8 @@ You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
 (Open/Free/Net) BSD, Solaris and other operating systems based
 on various hardware architectures (intel, arm, ppc, mips, etc).
 
-Also, Ol is ported to the Web (in WebAssembly form) and can be
-used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
-Luakit, Iceape, etc.
-
+Also, Ol is ported to the web (in WebAssembly form) and can be
+used in Chrome, Safari, Firefox, Edge, Opera, etc.
 
 * credits to:
 [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests),
@@ -67,15 +65,15 @@ Q/A
 
 1. Q. Anything else interesting?  
    A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
-      Just type `$ echo ,load http/server| ol`.
+      Just type `echo ,load http/server| ol` in command line.
 
-1. Q. Why do you call characters runes?  
+1. Q. Why do you call characters not "characters", but "runes"?  
    A. Because these are runes - letters in a wide set of alphabets :)  
       The Plan 9 operating system (a flavor of Unix), for example, uses UTF-8 as character encoding,
       and its wide character type is called "Rune", not "wide char".
 
-1. Q. Do you have something like 'sleep mode'?  
-   A. You can store the current REPL session with `,save "filename"` and continue it later as `ol filename`.
+1. Q. Do you have something like "sleep mode"?  
+   A. You can store the current REPL session with `,save "filename"` and continue it later as `ol filename` from the command line (but not from the other REPL session).
 
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
