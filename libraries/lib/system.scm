@@ -8,7 +8,10 @@
       (scheme list)
       (owl io) (owl string))
 (begin
-   (define (pipe) (syscall 22))
+   (define pipe (case-lambda
+      (() (syscall 22))
+      ((bytes) (syscall 22 bytes))))
+
    (define (close-pipe pp)
       (when (car pp) (close-port (car pp)))
       (when (cdr pp) (close-port (cdr pp))))

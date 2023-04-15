@@ -4071,7 +4071,13 @@ loop:;
 			// PIPES
 #if SYSCALL_PIPE
 			case SYSCALL_PIPE: {
+#ifndef F_SETPIPE_SZ
 				CHECK_ARGC_EQ(0);
+#else
+				CHECK_ARGC(0,1);
+				CHECK_NUMBERP(1);
+				int size = (argc > 0) ? (int) numberp(A1) : 0; // in kbytes
+#endif
 
 				int pipefd[2];
 				if (pipe(pipefd) == 0) {
@@ -4080,6 +4086,12 @@ loop:;
 					#ifndef _WIN32
 					fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
 					fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
+#ifdef F_SETPIPE_SZ
+					if (size) {
+						fcntl(pipefd[0], F_SETPIPE_SZ, size);
+						fcntl(pipefd[1], F_SETPIPE_SZ, size); // most important
+					}
+#endif
 					#endif
 				}
 
