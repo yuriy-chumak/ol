@@ -1240,6 +1240,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #include <sys/ioctl.h>
 #endif
 
+#include <sys/wait.h>
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -2672,6 +2674,7 @@ mainloop:;
 	#		define SYSCALL_FSYNC 74  // deprecated
 	#		define SYSCALL_UNLINK 87 // deprecated
 	#		define SYSCALL_EXECVE 59 //
+	#		define SYSCALL_WAIT 61   //
 	// 5, 6 - free
 	//#		define SYSCALL_POLL 7
 	// 12 - reserved for memory functions
@@ -4360,6 +4363,22 @@ loop:;
 					#endif
 					break;
 				}
+				break;
+			}
+
+			case SYSCALL_WAIT: {
+				CHECK_ARGC_EQ(1);
+				CHECK_NUMBER(1);
+
+				int pid = number(A1);
+				#if defined(__unix__) || defined(__APPLE__)
+					int status = 0;
+					if (waitpid(pid, &status, 0) >= 0) {
+						r = new_number(WEXITSTATUS(status));
+					}
+					else
+						r = RFALSE;
+				#endif
 				break;
 			}
 
