@@ -2,7 +2,8 @@
 	(export
       pipe
       close-pipe
-      system)
+      system
+      waitpid)
    (import
       (scheme core)
       (scheme list)
@@ -43,4 +44,6 @@
          ((commands in out err)
             (system commands in out err (list (car in) (cdr out) (cdr err))))))
 
+   (define (waitpid pid)
+      (syscall 61 pid))
 ))
