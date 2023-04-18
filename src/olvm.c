@@ -4077,24 +4077,24 @@ loop:;
 #if SYSCALL_PIPE
 			case SYSCALL_PIPE: {
 #ifndef F_SETPIPE_SZ
-				CHECK_ARGC_EQ(0);
-#else
 				CHECK_ARGC(0,1);
+#else
+				CHECK_ARGC(0,2);
 				CHECK_NUMBERP(1);
-				int size = (argc > 0) ? (int) numberp(A1) : 0; // in kbytes
+				int size = (argc > 1) ? (int) numberp(A2) : 0; // in kbytes
 #endif
-
+				int flags = (argc > 0) ? (int) numberp(A1) : 0; // 0b11
 				int pipefd[2];
 				if (pipe(pipefd) == 0) {
 					r = new_pair(make_port(pipefd[0]), make_port(pipefd[1]));
 
 					#ifndef _WIN32
-					fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
-					fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
+					if (!(flags & 1)) fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
+					if (!(flags & 2)) fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
 #ifdef F_SETPIPE_SZ
 					if (size) {
-						fcntl(pipefd[0], F_SETPIPE_SZ, size);
-						fcntl(pipefd[1], F_SETPIPE_SZ, size); // most important
+						fcntl(pipefd[0], F_SETPIPE_SZ, size * 1024);
+						fcntl(pipefd[1], F_SETPIPE_SZ, size * 1024);
 					}
 #endif
 					#endif
