@@ -9,7 +9,6 @@
       OLVM_INEXACTS
       OLVM_BUILTIN_FMATH
       SYSCALL_SYSINFO
-      SYSCALL_PIPE
       SYSCALL_MEMFD
       SYSCALL_GETRLIMIT
       SYSCALL_GETRUSAGE
@@ -30,7 +29,7 @@
    (define OLVM_INEXACTS        #o20)
    (define OLVM_BUILTIN_FMATH   #o40)
    (define SYSCALL_SYSINFO     #o100)
-   (define SYSCALL_PIPE        #o200)
+   ;                           #o200
    (define SYSCALL_MEMFD       #o400)
    (define SYSCALL_GETRLIMIT  #o1000)
    (define SYSCALL_GETRUSAGE  #o2000)

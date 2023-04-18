@@ -11,7 +11,7 @@
 (begin
    (define pipe (case-lambda
       (() (syscall 22))
-      ((bytes) (syscall 22 bytes))))
+      ((flags) (syscall 22 flags))))
 
    (define (close-pipe pp)
       (when (car pp) (close-port (car pp)))

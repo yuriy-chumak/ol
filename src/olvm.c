@@ -2689,9 +2689,7 @@ mainloop:;
 
 	#		define SYSCALL_IOCTL_TIOCGETA 19
 
-	#		ifndef SYSCALL_PIPE
 	#		define SYSCALL_PIPE 22
-	#		endif//
 
 	#		define SYSCALL_YIELD 24
 
@@ -3451,9 +3449,7 @@ loop:;
 		#if SYSCALL_SYSINFO
 			| 000000100
 		#endif
-		#if SYSCALL_PIPE
-			| 000000200
-		#endif
+			| 000000200 // reserved
         #if SYSCALL_MEMFD
 			| 000000400
         #endif
@@ -4074,7 +4070,6 @@ loop:;
 			}
 
 			// PIPES
-#if SYSCALL_PIPE
 			case SYSCALL_PIPE: {
 				CHECK_ARGC(0,1);
 				CHECK_NUMBERP(1);
@@ -4091,7 +4086,6 @@ loop:;
 
 				break;
 			}
-#endif
 
             case SYSCALL_ERRNO: {
 				CHECK_ARGC_EQ(0);

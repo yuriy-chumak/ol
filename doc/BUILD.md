@@ -155,7 +155,6 @@ Additionally you can disable the following olvm features by setting the variable
 |Variable         |Meaning |
 |-----------------|--------|
 |SYSCALL_SYSINFO  | sysinfo() function usage |
-|SYSCALL_PIPE     | pipe() function usage |
 |SYSCALL_SLEEP    | nanosleep() function usage |
 |SYSCALL_GETRLIMIT| getrlimit() function usage |
 |SYSCALL_GETRUSAGE| getrusage() function usage |
