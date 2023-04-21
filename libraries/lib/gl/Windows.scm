@@ -17,14 +17,26 @@
 (setq SetWindowLongPtr (user32 fft-void* "SetWindowLongPtrW" fft-void* fft-int type-callable))
 (setq DefWindowProc    (user32 fft-long "DefWindowProcW" fft-void* fft-unsigned-int fft-void* fft-void*))
 
+(setq SetWindowsHookEx (user32 fft-void* "SetWindowsHookExA" fft-int type-callable fft-void* fft-int))
+(setq CallNextHookEx   (user32 fft-int "CallNextHookEx" fft-void* fft-int fft-int fft-int))
+(setq GetForegroundWindow (user32 fft-void* "GetForegroundWindow"))
+
 (setq GetWindowRect    (user32 fft-int "GetWindowRect" fft-void* (fft& fft-int)))
+(setq GetClientRect    (user32 fft-int "GetClientRect" fft-void* (fft& fft-int)))
+
+(setq GetCursorPos     (user32 fft-int "GetCursorPos" fft-int&))
+(setq ScreenToClient   (user32 fft-int "ScreenToClient" type-vptr fft-int&))
+
+(setq PeekMessage      (user32 fft-bool "PeekMessageA"     fft-void* fft-void* fft-int fft-int fft-int))
+(setq PostMessage      (user32 fft-bool "PostMessageA"     fft-void* fft-int fft-int fft-int))
+(setq TranslateMessage (user32 fft-bool "TranslateMessage" fft-void*))
+(setq DispatchMessage  (user32 fft-int "DispatchMessageA" fft-void*))
 
 (setq wglCreateContext (opengl32 type-vptr "wglCreateContext" fft-void*))
 (setq wglMakeCurrent   (opengl32 fft-int "wglMakeCurrent" fft-void* fft-void*))
 
 ; functions
 (define (native:create-context title)
-   (print "native:create-context")
    (let*((window (CreateWindowEx
             #x00040100 "#32770" title ; WS_EX_APPWINDOW|WS_EX_WINDOWEDGE, #32770 is system classname for DIALOG
             #x06cf0000 ; WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
@@ -61,21 +73,49 @@
 
          (define WndProc (vm:pin (cons
                (cons fft-long (list
-                  fft-void* fft-unsigned-int fft-void* fft-void*))
+                     fft-void* fft-unsigned-int fft-void* fft-void*))
                (lambda (hWnd Msg wParam lParam)
                   (case Msg
                      (5 ;WM_SIZE
                         (define rect '(0 0 0 0))
-                        (GetWindowRect hWnd rect)
+                        (GetClientRect hWnd rect)
                         (mail 'opengl ['resize (lref rect 2) (lref rect 3)]))
-                     (else
-                        #false)) ; nothing
-                  ; pass trough to the original handler
+                     (else #false)) ; nothing
+                  ; pass through to the original handler
                   (ffi OldProc
                      (cons fft-void*
                      (list fft-void* fft-unsigned-int fft-void* fft-void*))
                      (list hWnd Msg wParam lParam))))))
          (SetWindowLongPtr window -4 (make-callback WndProc)))
+
+      (when SetWindowsHookEx
+         (define LowLevelMouseProc (vm:pin (cons
+            (cons fft-int (list
+                  fft-int fft-int fft-int))
+            (lambda (nCode wParam lParam)
+               (call/cc (lambda (ret)
+                  (when (and (eq? nCode 0) (equal? (GetForegroundWindow) window))
+                     ; mouse position inside window
+                     (define pos [0 0])
+                     (GetCursorPos pos)
+                     (ScreenToClient window pos)
+
+                     ; window client size
+                     (define rect [0 0 0 0])
+                     (GetClientRect window rect)
+
+                     (when (and (<= 0 (ref pos 1) (ref rect 3))
+                                (<= 0 (ref pos 2) (ref rect 4)))
+                        (case wParam
+                           (#x0201 ; WM_LBUTTONDOWN
+                              (PostMessage window #x0201 0 (+ (<< (ref pos 1) 16) (ref pos 2)))
+                              (ret -1))
+                           (#x0204 ; WM_RBUTTONDOWN
+                              (PostMessage window #x0204 0 (+ (<< (ref pos 1) 16) (ref pos 2)))
+                              (ret -1))
+                           (else #false)))) ; skip
+                  (CallNextHookEx #f nCode wParam lParam)))))))
+         (SetWindowsHookEx 14 (make-callback LowLevelMouseProc) #f 0)) ; WH_MOUSE_LL
 
       (ShowWindow window 5)
       (let ((hRC (wglCreateContext hDC)))
@@ -98,27 +138,31 @@
       (SwapBuffers dc))))
 
 ; -=( process events )=--------------------------------
-(setq PeekMessage      (user32 fft-int "PeekMessageA"     fft-void* fft-void* fft-int fft-int fft-int))
-(setq TranslateMessage (user32 fft-int "TranslateMessage" fft-void*))
-(setq GetMessage       (user32 fft-int "GetMessageA"      fft-void* fft-void* fft-int fft-int))
-(setq DispatchMessage  (user32 fft-int "DispatchMessageA" fft-void*))
-
 (setq sizeof-MSG       (if (eq? (size nullptr) 4) 28 48));sizeof(MSG)
 
 (define (native:process-events context handler)
    (define MSG (make-bytevector sizeof-MSG))
 
    (let loop ()
-      (when (= (PeekMessage MSG #false 0 0 1) 1)
+      (when (PeekMessage MSG #F 0 0 1) ; PM_REMOVE
          (let*((w (size nullptr))
                (message (bytevector->int32 MSG w)))
             (define wParam (bytevector->int32 MSG (+ w w)))
+            ;; (print "message: " message)
             (cond
                ((and (eq? message 273) ; WM_COMMAND
                      (eq? wParam 2))   ; IDCANCEL
                   (handler ['quit]))
                ((and (eq? message 256)); WM_KEYDOWN
                   (handler ['keyboard wParam]))
+               ((and (eq? message #x0201))
+                  (define y (bytevector->int16 MSG (+ w w w)))
+                  (define x (bytevector->int16 MSG (+ w w w 2)))
+                  (handler ['mouse 1 x y]))
+               ((and (eq? message #x0204))
+                  (define y (bytevector->int16 MSG (+ w w w)))
+                  (define x (bytevector->int16 MSG (+ w w w 2)))
+                  (handler ['mouse 2 x y]))
                (else
                   (TranslateMessage MSG)
                   (DispatchMessage MSG)
@@ -146,9 +190,6 @@
    (ShowCursor 0))
 
 ; ---
-(setq GetCursorPos (user32 fft-int "GetCursorPos" fft-int&))
-(setq ScreenToClient (user32 fft-int "ScreenToClient" type-vptr fft-int&))
-
 (define (gl:GetMousePos context)
    (vector-apply context (lambda (dc glrc window)
       (let ((pos '(0 0)))
