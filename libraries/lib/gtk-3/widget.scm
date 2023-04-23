@@ -15,9 +15,12 @@
       gtk_widget_set_sensitive
       gtk_widget_get_sensitive
 
+      gtk_widget_set_double_buffered
       gtk_widget_get_toplevel
+      gtk_widget_get_display
 
       gtk_widget_get_style_context
+      gtk_widget_get_window
       gtk_widget_get_allocated_width
       gtk_widget_get_allocated_height
 
@@ -26,6 +29,7 @@
    (import
       (scheme core)
       (otus ffi)
+      (lib gdk-3)
       (lib gtk-3 gtk))
 
 (begin
@@ -121,7 +125,7 @@
    ; gtk_widget_get_mapped
    ; gtk_widget_set_app_paintable
    ; gtk_widget_get_app_paintable
-   ; gtk_widget_set_double_buffered
+   (define gtk_widget_set_double_buffered (GTK3 void "gtk_widget_set_double_buffered" GtkWidget* gboolean))
    ; gtk_widget_get_double_buffered
    ; gtk_widget_set_redraw_on_allocate
    ; gtk_widget_set_parent
@@ -131,7 +135,7 @@
    ; gtk_widget_set_child_visible
    ; gtk_widget_get_child_visible
    ; gtk_widget_set_window
-   ; gtk_widget_get_window
+   (define gtk_widget_get_window (GTK3 GdkWindow* "gtk_widget_get_window" GtkWidget*))
    ; gtk_widget_register_window
    ; gtk_widget_unregister_window
    (define gtk_widget_get_allocated_width (GTK3 fft-int "gtk_widget_get_allocated_width" GtkWidget*))
@@ -163,7 +167,7 @@
    ; gtk_widget_get_screen
    ; gtk_widget_has_screen
    ; gtk_widget_get_scale_factor
-   ; gtk_widget_get_display
+   (define gtk_widget_get_display (GTK3 GdkDisplay* "gtk_widget_get_display" GtkWidget*))
    ; gtk_widget_get_root_window
    ; gtk_widget_get_settings
    ; gtk_widget_get_clipboard
