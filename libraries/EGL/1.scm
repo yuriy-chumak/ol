@@ -9,6 +9,13 @@
 
       EGL_VERSION_1_0
 
+      EGLBoolean
+      EGLint EGLint*
+      EGLConfig
+      EGLDisplay
+      EGLSurface
+      EGLContext
+
       EGL_FALSE
       EGL_TRUE
 
@@ -75,6 +82,7 @@
 
       EGL_CORE_NATIVE_ENGINE
 
+      ; functions
       eglGetError
 
       eglGetDisplay
@@ -106,11 +114,11 @@
       eglSwapBuffers ; (EGLDisplay dpy, EGLSurface draw);
       ;eglCopyBuffers (EGLDisplay dpy, EGLSurface surface, NativePixmapType target);
 
-      EGL_LIBRARY
+      (exports (EGL platform))
    )
    (import
       (scheme core)
-      (otus ffi))
+      (EGL platform))
 
 (begin
 
@@ -148,7 +156,6 @@
    (define EGL_NO_DISPLAY  (vm:cast 0 EGLDisplay))
    (define EGL_NO_SURFACE  (vm:cast 0 EGLSurface))
 
-
    ; Versioning and extensions
    (define EGL_VERSION_1_0 1)
 
@@ -157,20 +164,20 @@
    (define EGL_TRUE        1)
 
    ; Errors
-   (define EGL_SUCCESS               #x3000)
-   (define EGL_NOT_INITIALIZED       #x3001)
-   (define EGL_BAD_ACCESS            #x3002)
-   (define EGL_BAD_ALLOC             #x3003)
-   (define EGL_BAD_ATTRIBUTE         #x3004)
-   (define EGL_BAD_CONFIG            #x3005)
-   (define EGL_BAD_CONTEXT           #x3006)
-   (define EGL_BAD_CURRENT_SURFACE   #x3007)
-   (define EGL_BAD_DISPLAY           #x3008)
-   (define EGL_BAD_MATCH             #x3009)
-   (define EGL_BAD_NATIVE_PIXMAP     #x300A)
-   (define EGL_BAD_NATIVE_WINDOW     #x300B)
-   (define EGL_BAD_PARAMETER         #x300C)
-   (define EGL_BAD_SURFACE           #x300D)
+   (define EGL_SUCCESS                 #x3000)
+   (define EGL_NOT_INITIALIZED         #x3001)
+   (define EGL_BAD_ACCESS              #x3002)
+   (define EGL_BAD_ALLOC               #x3003)
+   (define EGL_BAD_ATTRIBUTE           #x3004)
+   (define EGL_BAD_CONFIG              #x3005)
+   (define EGL_BAD_CONTEXT             #x3006)
+   (define EGL_BAD_CURRENT_SURFACE     #x3007)
+   (define EGL_BAD_DISPLAY             #x3008)
+   (define EGL_BAD_MATCH               #x3009)
+   (define EGL_BAD_NATIVE_PIXMAP       #x300A)
+   (define EGL_BAD_NATIVE_WINDOW       #x300B)
+   (define EGL_BAD_PARAMETER           #x300C)
+   (define EGL_BAD_SURFACE             #x300D)
    ; #x300F - #x301F reserved for additional errors.
 
    ; Config attributes
@@ -232,23 +239,8 @@
    ; 0x305C-0x3FFFF reserved for future use
 )
 
-(cond-expand
-   ((or Linux Android)
-      (begin
-         (setq library-name "libEGL.so")))
-   (Windows
-      (begin
-         (setq library-name "libEGL.dll")))
-   (Emscripten
-      (begin
-         (setq library-name #false))) )
-
 (begin
-   (define EGL_LIBRARY (load-dynamic-library library-name))
-   (unless EGL_LIBRARY
-      (runtime-error "Can't load EGL library" library-name))
    (setq EGL EGL_LIBRARY)
-
 
    (define eglGetError (EGL EGLint "eglGetError"))
 
@@ -280,5 +272,4 @@
    ;GLAPI EGLBoolean APIENTRY eglWaitNative (EGLint engine);
    (define eglSwapBuffers   (EGL EGLBoolean "eglSwapBuffers" EGLDisplay EGLSurface))
    ;GLAPI EGLBoolean APIENTRY eglCopyBuffers (EGLDisplay dpy, EGLSurface surface, NativePixmapType target);
-
 ))
