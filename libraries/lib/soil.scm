@@ -38,25 +38,26 @@
 
       SOIL_FLAG_MIPMAPS
    )
+
 (cond-expand
    (Windows
       (begin
          (define libsoil (or (load-dynamic-library "soil.dll")
                              (runtime-error "Can't load libsoil"
-                                      "try to download soil.dll")))))
+                                      "try installing 'soil.dll' from https://github.com/yuriy-chumak/libol-soil/releases/")))))
    (Android
       (begin
          (define libsoil (or (load-dynamic-library "libSOIL.so")
                              (load-dynamic-library "libSOIL.so.1")
                              (runtime-error "Can't load libsoil"
-                                      "try to rebuild apk")))))
+                                      "try rebuilding apk")))))
    (else
       (begin
          (define libsoil (or (load-dynamic-library "libSOIL.so.1")
                              (runtime-error "Can't load libsoil" (list
-                                      "try to install 'libsoil1' package, or\n"
-                               "       check the home page of libsoil at https://github.com/yuriy-chumak/libol-soil\n"
-                               "       if no package available for your OS")))))))
+                                      "try installing 'libsoil1' package, or\n"
+                               "       check the libsoil homepage at https://github.com/yuriy-chumak/libol-soil\n"
+                               "       if there is no package for your OS")))))))
 
 (begin
 	; The format of images that may be loaded (force_channels)
