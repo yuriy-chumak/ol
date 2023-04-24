@@ -16,9 +16,19 @@
       (otus ffi)
       (lib glib-2))
 
-(begin
-   (define GDK (load-dynamic-library "libgdk-3.so"))
+(cond-expand
+   (Linux
+      (begin
+         (define GDK (load-dynamic-library "libgdk-3.so"))
+      ))
+   (Windows
+      (begin
+         (define GDK (load-dynamic-library "libgdk-3-0.dll"))
+         (unless GDK (runtime-error "Can't load libgdk-3-0.dll"
+            "try installing dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
+      )) )
 
+(begin
    (define GdkDisplay* type-vptr)
    (define GdkWindow* type-vptr)
 

@@ -66,9 +66,17 @@
       (otus ffi)
       (lib glib-2))
 
-(begin
-   (define GTK3 (load-dynamic-library "libgtk-3.so"))
+(cond-expand
+   (Linux
+      (begin
+         (define GTK3 (load-dynamic-library "libgtk-3.so"))
+      ))
+   (Windows
+      (begin
+         (define GTK3 (load-dynamic-library "libgtk-3-0.dll"))
+      )) )
 
+(begin
    (define GtkOrientation gint)
    (define GTK_ORIENTATION_HORIZONTAL 0)
    (define GTK_ORIENTATION_VERTICAL 1)

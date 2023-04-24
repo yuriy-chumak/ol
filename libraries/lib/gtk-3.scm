@@ -41,7 +41,7 @@
       (scheme core)
       (otus ffi)
       (lib glib-2)
-      (lib cairo)
+      ;; (lib cairo)
 
       (lib gtk-3 gtk)
       (lib gtk-3 application)

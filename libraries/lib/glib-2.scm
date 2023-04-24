@@ -51,38 +51,61 @@
       (otus ffi))
 
 (begin
-(define TRUE 1)
-(define FALSE 0)
-(define NULL (vm:cast 0 fft-void*))
+   (define TRUE 1)
+   (define FALSE 0)
+   (define NULL (vm:cast 0 fft-void*))
 
-(define G_APPLICATION_FLAGS_NONE 0)
+   (define G_APPLICATION_FLAGS_NONE 0)
 
-(define gint fft-int)
-(define guint fft-unsigned-int)
-(define gulong fft-unsigned-long)
-(define gpointer fft-void*)
-(define gdouble fft-double)
-(define gchar fft-char)
-(define gchar* type-string)
-(define gsize fft-unsigned-int)
-(define gboolean gint)
-(define gint64 fft-signed-long-long)
-(define void fft-void)
+   (define gint fft-int)
+   (define guint fft-unsigned-int)
+   (define gulong fft-unsigned-long)
+   (define gpointer fft-void*)
+   (define gdouble fft-double)
+   (define gchar fft-char)
+   (define gchar* type-string)
+   (define gsize fft-unsigned-int)
+   (define gboolean gint)
+   (define gint64 fft-signed-long-long)
+   (define void fft-void)
 
-(define GCallback type-callable) ; void (*GCallback)(void)
-(define GClosureNotify type-callable) ; void (*GClosureNotify)(gpointer, GClosure)
-(define GConnectFlags fft-int) ; enum
-(define GApplication* fft-void*)
+   (define GCallback type-callable) ; void (*GCallback)(void)
+   (define GClosureNotify type-callable) ; void (*GClosureNotify)(gpointer, GClosure)
+   (define GConnectFlags fft-int) ; enum
+   (define GApplication* fft-void*)
 
-(define G_CALLBACK make-callback)
-
-(define GLIB (load-dynamic-library "libglib-2.0.so"))
-(define GOBJECT (or
-   (load-dynamic-library "libgobject-2.0.so")
-   (load-dynamic-library "libgobject-2.0.so.0")))
-(define GIO (or
-   (load-dynamic-library "libgio-2.0.so")
-   (load-dynamic-library "libgio-2.0.so.0")))
+   (define G_CALLBACK make-callback)
+)
+(cond-expand
+   (Linux
+      (begin
+         (define GLIB (or
+            (load-dynamic-library "libglib-2.0.so") ))
+         (define GOBJECT (or
+            (load-dynamic-library "libgobject-2.0.so")
+            (load-dynamic-library "libgobject-2.0.so.0") ))
+         (define GIO (or
+            (load-dynamic-library "libgio-2.0.so")
+            (load-dynamic-library "libgio-2.0.so.0") ))
+      ))
+   (Windows
+      (begin
+         (define GLIB
+            (load-dynamic-library "libglib-2.0-0.dll"))
+         (unless GLIB (runtime-error "Can't load libglib-2.0-0.dll"
+            "try installing dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
+         (define GOBJECT
+            (load-dynamic-library "libgobject-2.0-0.dll"))
+         (unless GOBJECT (runtime-error "Can't load libgobject-2.0-0.dll"
+            "try installing dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
+         (define GIO
+            (load-dynamic-library "libgio-2.0-0.dll"))
+         (unless GIO (runtime-error "Can't load libgio-2.0-0.dll"
+            "try installing dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
+      ))
+)
+; common part
+(begin
 
 (define g_free (GLIB void "g_free" gpointer))
 
@@ -116,7 +139,7 @@
 (setq G_TYPE_STRING (G_TYPE_MAKE_FUNDAMENTAL 16))
 ;...
 
-(define G_TYPE_GTYPE ((GIO GType "g_gtype_get_type")))
+(define G_TYPE_GTYPE ((GOBJECT GType "g_gtype_get_type"))) ; GIO?
 
 
 ; --=( GValue )=---------
