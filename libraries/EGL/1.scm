@@ -242,34 +242,28 @@
 (begin
    (setq EGL EGL_LIBRARY)
 
-   (define eglGetError (EGL EGLint "eglGetError"))
-
-   (define eglGetDisplay (EGL EGLDisplay "eglGetDisplay" NativeDisplayType))
-   (define eglInitialize (EGL EGLBoolean "eglInitialize" EGLDisplay EGLint& EGLint&))
-   ;GLAPI EGLBoolean APIENTRY eglTerminate (EGLDisplay dpy);
-   (define eglQueryString (EGL type-string "eglQueryString" EGLDisplay EGLint))
-   ;GLAPI void (* APIENTRY eglGetProcAddress (const char *procname))();
-
-   (define eglGetConfigs (EGL EGLBoolean "eglGetConfigs" EGLDisplay EGLConfig& EGLint EGLint&))
    (define eglChooseConfig (EGL EGLBoolean "eglChooseConfig" EGLDisplay EGLint* EGLConfig* EGLint EGLint&))
-   ;GLAPI EGLBoolean APIENTRY eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value);
-
-   (define eglCreateWindowSurface (EGL EGLSurface "eglCreateWindowSurface" EGLDisplay EGLConfig NativeWindowType EGLint*))
-   ;GLAPI EGLSurface APIENTRY eglCreatePixmapSurface (EGLDisplay dpy, EGLConfig config, NativePixmapType pixmap, const EGLint *attrib_list);
-   ;GLAPI EGLSurface APIENTRY eglCreatePbufferSurface (EGLDisplay dpy, EGLConfig config, const EGLint *attrib_list);
-   ;GLAPI EGLBoolean APIENTRY eglDestroySurface (EGLDisplay dpy, EGLSurface surface);
-   ;GLAPI EGLBoolean APIENTRY eglQuerySurface (EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint *value);
-
+   (define eglCopyBuffers (EGL EGLBoolean "eglCopyBuffers" EGLDisplay EGLSurface EGLNativePixmapType))
    (define eglCreateContext (EGL EGLContext "eglCreateContext" EGLDisplay EGLConfig EGLContext EGLint*))
-   ;GLAPI EGLBoolean APIENTRY eglDestroyContext (EGLDisplay dpy, EGLContext ctx);
-   (define eglMakeCurrent   (EGL EGLBoolean "eglMakeCurrent" EGLDisplay EGLSurface EGLSurface EGLContext))
-   ;GLAPI EGLContext APIENTRY eglGetCurrentContext (void);
-   ;GLAPI EGLSurface APIENTRY eglGetCurrentSurface (EGLint readdraw);
-   ;GLAPI EGLDisplay APIENTRY eglGetCurrentDisplay (void);
-   ;GLAPI EGLBoolean APIENTRY eglQueryContext (EGLDisplay dpy, EGLContext ctx, EGLint attribute, EGLint *value);
-
-   ;GLAPI EGLBoolean APIENTRY eglWaitGL (void);
-   ;GLAPI EGLBoolean APIENTRY eglWaitNative (EGLint engine);
-   (define eglSwapBuffers   (EGL EGLBoolean "eglSwapBuffers" EGLDisplay EGLSurface))
-   ;GLAPI EGLBoolean APIENTRY eglCopyBuffers (EGLDisplay dpy, EGLSurface surface, NativePixmapType target);
+   (define eglCreatePbufferSurface (EGL EGLSurface "eglCreatePbufferSurface" EGLDisplay EGLConfig EGLint*))
+   (define eglCreatePixmapSurface (EGL EGLSurface "eglCreatePixmapSurface" EGLDisplay EGLConfig EGLNativePixmapType EGLint*))
+   (define eglCreateWindowSurface (EGL EGLSurface "eglCreateWindowSurface" EGLDisplay EGLConfig EGLNativeWindowType EGLint*))
+   (define eglDestroyContext (EGL EGLBoolean "eglDestroyContext" EGLDisplay EGLContext))
+   (define eglDestroySurface (EGL EGLBoolean "eglDestroySurface" EGLDisplay EGLSurface))
+   (define eglGetConfigAttrib (EGL EGLBoolean "eglGetConfigAttrib" EGLDisplay EGLConfig EGLint EGLint*))
+   (define eglGetConfigs (EGL EGLBoolean "eglGetConfigs" EGLDisplay EGLConfig* EGLint EGLint*))
+   (define eglGetCurrentDisplay (EGL EGLDisplay "eglGetCurrentDisplay"))
+   (define eglGetCurrentSurface (EGL EGLSurface "eglGetCurrentSurface" EGLint))
+   (define eglGetDisplay (EGL EGLDisplay "eglGetDisplay" EGLNativeDisplayType))
+   (define eglGetError (EGL EGLint "eglGetError"))
+   (define eglGetProcAddress (EGL type-vptr "eglGetProcAddress" type-string))
+   (define eglInitialize (EGL EGLBoolean "eglInitialize" EGLDisplay EGLint* EGLint*))
+   (define eglMakeCurrent (EGL EGLBoolean "eglMakeCurrent" EGLDisplay EGLSurface EGLSurface EGLContext))
+   (define eglQueryContext (EGL EGLBoolean "eglQueryContext" EGLDisplay EGLContext EGLint EGLint*))
+   (define eglQueryString (EGL type-string "eglQueryString" EGLDisplay EGLint))
+   (define eglQuerySurface (EGL EGLBoolean "eglQuerySurface" EGLDisplay EGLSurface EGLint EGLint*))
+   (define eglSwapBuffers (EGL EGLBoolean "eglSwapBuffers" EGLDisplay EGLSurface))
+   (define eglTerminate (EGL EGLBoolean "eglTerminate" EGLDisplay))
+   (define eglWaitGL (EGL EGLBoolean "eglWaitGL"))
+   (define eglWaitNative (EGL EGLBoolean "eglWaitNative" EGLint))
 ))
