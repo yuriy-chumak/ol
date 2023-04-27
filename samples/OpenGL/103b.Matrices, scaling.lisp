@@ -2,7 +2,7 @@
 (import (lib gl) (lib math))
 (gl:set-window-title "3. Matrices, scaling")
 
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 ; init
 (glShadeModel GL_SMOOTH)

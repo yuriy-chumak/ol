@@ -2,7 +2,7 @@
 (import (lib gl))
 (gl:set-window-title "6. Texturing")
 
-(import (OpenGL version-1-1))
+(import (OpenGL 1.1))
 (import (lib soil))
 
 

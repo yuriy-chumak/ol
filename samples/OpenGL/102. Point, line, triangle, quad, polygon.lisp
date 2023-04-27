@@ -2,7 +2,7 @@
 (import (lib gl))
 (gl:set-window-title "2. Point, line, triangle, quad, polygon")
 
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 (import (lib math))
 
 ; init
@@ -16,6 +16,7 @@
    (glLoadIdentity)
    (glOrtho -1 1 -1 1 -1 1)
 
+   ; Lines
    (glLineWidth 2.0)
    (glColor3f #xF2/255 #xE2/255 #x05/255)
    (glBegin GL_LINES)
@@ -29,6 +30,7 @@
    (glOrtho -2 2 -2 2 -2 2)
    (glColor3f 0.1 0.7 0.3)
 
+   ; Point
    (glPushMatrix)
    (glTranslatef -1 -1 0)
    (glPointSize 8)
@@ -39,6 +41,7 @@
    (glEnd)
    (glPopMatrix)
 
+   ; Triangle
    (glPushMatrix)
    (glTranslatef  1 -1 0)
    (glColor3f #xF2/255 #xCB/255 #x05/255)
@@ -49,6 +52,7 @@
    (glEnd)
    (glPopMatrix)
 
+   ; Rectangle
    (glPushMatrix)
    (glTranslatef  1  1 0)
    (glColor3f #x04/255 #xD9/255 #x76/255)
@@ -60,6 +64,7 @@
    (glEnd)
    (glPopMatrix)
 
+   ; Polygon
    (glPushMatrix)
    (glTranslatef -1  1 0)
    (glColor3f #xAF/255 #x4B/255 #xF2/255)

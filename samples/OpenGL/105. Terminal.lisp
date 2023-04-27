@@ -3,7 +3,7 @@
 (gl:set-window-title "5. Terminal")
 (import (lib gl console))
 
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 (define fps (create-window 70 24 10 1))
 (define started (time-ms)) (define time '(0))

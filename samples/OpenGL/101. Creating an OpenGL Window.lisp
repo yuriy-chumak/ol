@@ -2,8 +2,7 @@
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 
-; use OpenGL version 1.0
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 ; just init
 (glClearColor 0.3 0.3 0.3 1)

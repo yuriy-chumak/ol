@@ -2,7 +2,7 @@
 (import (lib gl))
 (gl:set-window-title "2. Mouse")
 
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 (import (lib math))
 
 ; init
@@ -28,6 +28,3 @@
       (glVertex2f x (+ y 0.02))
    (glEnd)
 ))
-
-; further reading:
-; https://stackoverflow.com/questions/6017176/gllinestipple-deprecated-in-opengl-3-1

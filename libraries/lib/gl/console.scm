@@ -12,7 +12,7 @@
             (define glClearTexImage #false)))
       (else
          (import
-            (OpenGL version-1-4))
+            (OpenGL 1.4))
             ;(OpenGL ARB clear_texture))
          (begin
             (setq FONT "fonts/Anonymous Pro.ttf"))))

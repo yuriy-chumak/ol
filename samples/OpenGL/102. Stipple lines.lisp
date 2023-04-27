@@ -2,8 +2,7 @@
 (import (lib gl))
 (gl:set-window-title "2. Lines")
 
-(import (OpenGL version-1-0))
-(import (lib math))
+(import (OpenGL 1.0))
 
 ; init
 (glShadeModel GL_SMOOTH)

@@ -2,7 +2,7 @@
 (import (lib gl))
 (gl:set-window-title "2. Drawing simple triangle")
 
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 ; init
 (glShadeModel GL_SMOOTH)
