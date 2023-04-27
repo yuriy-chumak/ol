@@ -242,5 +242,5 @@
          (if (member extension extensions)
             (begin (print-to stderr "Checking " extension " support... ok.") #true)
             (begin (print-to stderr "Checking " extension " support... not found.") #false))))
-   #true
+
 ))

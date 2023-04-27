@@ -15,11 +15,12 @@
 ;    important to be able to change the images and parameters of a texture.
 (define-library (OpenGL EXT texture_object)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;  EXT_texture3D affects the definition of this extension
-(import (scheme core)
-        (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_texture_object
@@ -37,16 +38,8 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
-;    Accepted by the <pname> parameters of TexParameteri, TexParameterf,
-;    TexParameteriv, TexParameterfv, GetTexParameteriv, and GetTexParameterfv:
    GL_TEXTURE_PRIORITY_EXT
-
-;    Accepted by the <pname> parameters of GetTexParameteriv and
-;    GetTexParameterfv:
    GL_TEXTURE_RESIDENT_EXT
-
-;    Accepted by the <pname> parameters of GetBooleanv, GetIntegerv,
-;    GetFloatv, and GetDoublev:
    GL_TEXTURE_1D_BINDING_EXT
    GL_TEXTURE_2D_BINDING_EXT
    GL_TEXTURE_3D_BINDING_EXT
@@ -57,7 +50,7 @@
 (begin
    (define EXT_texture_object (gl:QueryExtension "GL_EXT_texture_object"))
 
-   (setq GL GL_LIBRARY)
+   (setq GL gl:GetProcAddress)
    (define glGenTexturesEXT (GL GLvoid "glGenTexturesEXT" GLsizei GLuint*))
    (define glDeleteTexturesEXT (GL GLvoid "glDeleteTexturesEXT" GLsizei GLuint*))
    (define glBindTextureEXT (GL GLvoid "glBindTextureEXT" GLenum GLuint))

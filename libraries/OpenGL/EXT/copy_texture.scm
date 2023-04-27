@@ -16,16 +16,16 @@
 ;    supported only for partial replacement.
 (define-library (OpenGL EXT copy_texture)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;	  EXT_texture3D affects the definition of this extension.
 ;	  SGIS_texture_filter4 affects the definition of this extension.
 ;	  EXT_subtexture affects the definition of this extension.
-(import (scheme core)
-        (OpenGL platform))
-
-;    EXT_texture is required.
-(import (OpenGL EXT texture))
+(import
+   (OpenGL EXT texture))
 
 ; ---------------------------------------------------------------------------
 (export EXT_copy_texture
@@ -49,10 +49,11 @@
 (begin
    (define EXT_copy_texture (gl:QueryExtension "GL_EXT_copy_texture"))
 
-   (setq GL GL_LIBRARY)
+   (setq GL gl:GetProcAddress)
    (define glCopyTexImage1DEXT (GL GLvoid "glCopyTexImage1DEXT" GLenum GLint GLenum GLint GLint GLsizei GLint))
    (define glCopyTexImage2DEXT (GL GLvoid "glCopyTexImage2DEXT" GLenum GLint GLenum GLint GLint GLsizei GLsizei GLint))
    (define glCopyTexSubImage1DEXT (GL GLvoid "glCopyTexSubImage1DEXT" GLenum GLint GLint GLint GLint GLsizei))
    (define glCopyTexSubImage2DEXT (GL GLvoid "glCopyTexSubImage2DEXT" GLenum GLint GLint GLint GLint GLint GLsizei GLsizei))
    (define glCopyTexSubImage3DEXT (GL GLvoid "glCopyTexSubImage3DEXT" GLenum GLint GLint GLint GLint GLint GLint GLsizei GLsizei))
+
 ))

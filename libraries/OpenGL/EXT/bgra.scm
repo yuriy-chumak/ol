@@ -17,10 +17,12 @@
 ;  Windows API calls and OpenGL pixel API calls.
 (define-library (OpenGL EXT bgra)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;  None
-(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_bgra
@@ -32,8 +34,6 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
-;  Accepted by the <format> parameter of DrawPixels, GetTexImage,
-;  ReadPixels, TexImage1D, and TexImage2D:
    GL_BGR
    GL_BGRA
 
@@ -43,7 +43,7 @@
 (begin
    (define EXT_bgra (gl:QueryExtension "GL_EXT_bgra"))
 
-(define GL_BGR                 #x80E0)
-(define GL_BGRA                #x80E1)
+   (define GL_BGR                 #x80E0)
+   (define GL_BGRA                #x80E1)
 
 ))

@@ -9,9 +9,12 @@
 ;
 (define-library (OpenGL EXT rescale_normal)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
+;  None
 
 ; ---------------------------------------------------------------------------
 (export EXT_rescale_normal
@@ -22,10 +25,13 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
+   GL_RESCALE_NORMAL_EXT
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_rescale_normal (gl:QueryExtension "GL_EXT_rescale_normal"))
+
+   (define GL_RESCALE_NORMAL_EXT #x803A)
 
 ))

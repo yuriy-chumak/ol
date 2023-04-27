@@ -1,15 +1,14 @@
 ; OpenGL 1.1 (4 Mar 1997)
-; + EXT_vertex_array
-; + EXT_polygon_offset
-; + EXT_blend_logic_op
-; + EXT_texture
-; + EXT_copy_texture
-; + EXT_subtexture
-; + EXT_texture_object
-
-(define-library (OpenGL version-1-1)
+;  + EXT vertex_array
+;  + EXT polygon_offset
+;  + EXT blend_logic_op
+;  + EXT texture
+;  + EXT copy_texture
+;  + EXT subtexture
+;  + EXT texture_object
+(define-library (OpenGL 1.1)
 (export
-      (exports (OpenGL version-1-0))
+      (exports (OpenGL 1.0))
 
    GL_VERSION_1_1
 
@@ -21,7 +20,6 @@
 
    glEnableClientState ; void (GLenum array)
    glDisableClientState ; void (GLenum array)
-   ; InterleavedArrays
 
    GL_V2F
    GL_V3F
@@ -50,8 +48,10 @@
 
    ; DrawArrays
    glDrawElements ; void (GLenum mode, GLsizei count, GLenum type, const GLvoid *indices);
+   glInterleavedArrays ; void (GLenum format, GLsizei stride, const GLvoid *pointer)
 
- ; C.1 EXT_vertex_array, except that static array data
+
+;; C.1 EXT_vertex_array, except that static array data
    ; are not supported (because they complicated the interface, and were not
    ; being used), and the pre-defined configurations are added (both to reduce
    ; subroutine count even further, and to allow for efficient transfer of array
@@ -104,7 +104,7 @@
    glDrawArrays ; void (GLenum mode, GLint first, GLsizei count)
 
 
- ; C.2 EXT_polygon_offset
+;; C.2 EXT_polygon_offset
    glPolygonOffset ; void ( GLfloat factor, GLfloat units )
 
    GL_POLYGON_OFFSET_FILL  ; renamed from GL_POLYGON_OFFSET_EXT by 1.1
@@ -114,10 +114,12 @@
    GL_POLYGON_OFFSET_POINT ; introduced by 1.1
    GL_POLYGON_OFFSET_LINE  ; introduced by 1.1
 
- ; C.3 EXT_blend_logic_op
+
+;; C.3 EXT_blend_logic_op
    ; none
 
- ; C.4, C.5, C.6 EXT_texture
+
+;; C.4, C.5, C.6 EXT_texture
    GL_ALPHA4
    GL_ALPHA8
    GL_ALPHA12
@@ -167,19 +169,19 @@
 
 ;  GL_TEXTURE_TOO_LARGE ; excluded by 1.1
 
- ; C.7 EXT_copy_texture
+
+;; C.7 EXT_copy_texture AND EXT_subtexture
    glCopyTexImage1D
    glCopyTexImage2D ; ...
    glCopyTexSubImage1D
    glCopyTexSubImage2D
 ;  glCopyTexSubImage3D ; excluded by 1.1 (btw, introduced back by 1.2)
-
- ; C.7 EXT_subtexture
    glTexSubImage1D
    glTexSubImage2D
 ;  glTexSubImage3D     ; excluded by 1.1 (btw, introduced back by 1.2)
 
- ; C.8 EXT_texture_object
+
+;; C.8 EXT_texture_object
    glGenTextures ; void ( GLsizei n, GLuint *textures )
    glDeleteTextures ; void (GLsizei n, const GLuint *textures)
    glBindTexture ; void (GLenum target, GLuint texture)
@@ -191,13 +193,13 @@
    GL_TEXTURE_RESIDENT
    GL_TEXTURE_BINDING_1D ; renamed from TEXTURE_1D_BINDING_EXT by 1.1
    GL_TEXTURE_BINDING_2D ; renamed from TEXTURE_2D_BINDING_EXT by 1.1
-;  TEXTURE_3D_BINDING ; excluded by 1.1
+;  GL_TEXTURE_3D_BINDING ; excluded by 1.1
 )
 
 ; ============================================================================
 ; == implementation ==========================================================
 (import (scheme core)
-        (OpenGL version-1-0))
+        (OpenGL 1.0))
 
 (begin
    (define GL_VERSION_1_1 1)
@@ -213,8 +215,8 @@
 
    (define glEnableClientState (GL GLvoid "glEnableClientState" GLenum))
    (define glDisableClientState (GL GLvoid "glDisableClientState" GLenum))
-   ;WINGDIAPI void APIENTRY glInterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer);
 
+   ; glInterleavedArrays:
    (define GL_V2F                            #x2A20)
    (define GL_V3F                            #x2A21)
    (define GL_C4UB_V2F                       #x2A22)
@@ -243,6 +245,7 @@
    (define GL_MAX_CLIENT_ATTRIB_STACK_DEPTH  #x0D3B)
 
    (define glDrawElements (GL GLvoid "glDrawElements" GLenum GLsizei GLenum fft-any))
+   (define glInterleavedArrays (GL GLvoid "glInterleavedArrays" GLenum GLsizei fft-any))
 
 
  ; C.1 EXT_vertex_array
@@ -353,7 +356,6 @@
  ; C.7 EXT_subtexture
    (define glTexSubImage1D (GL GLvoid "glTexSubImage1D" GLenum GLint GLint GLsizei GLenum GLenum fft-any))
    (define glTexSubImage2D (GL GLvoid "glTexSubImage2D" GLenum GLint GLint GLint GLsizei GLsizei GLenum GLenum fft-any))
-   ;glTexSubImage3D ; removed by 1.1 (introduced back by 1.2)
 
  ; C.8 EXT_texture_object
    (define glGenTextures (GL GLvoid "glGenTextures" GLsizei GLuint&))

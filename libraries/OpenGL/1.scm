@@ -1,6 +1,6 @@
 ; OpenGL 1.0 (1 Jul 1994)
-; OpenGL base profile implementation
-(define-library (OpenGL version-1-0)
+; OpenGL base implementation
+(define-library (OpenGL 1.0)
 (export
       (exports (OpenGL platform))
 
@@ -265,8 +265,8 @@
    glBitmap ; void (GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap)
 
    ;; 3.8. Texturing
-   glTexImage2D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
    glTexImage1D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
+   glTexImage2D ; void (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
 
    glTexParameterf  ; void (GLenum target, GLenum pname, GLfloat param)
    glTexParameterfv ; void (GLenum target, GLenum pname, const GLfloat *params)

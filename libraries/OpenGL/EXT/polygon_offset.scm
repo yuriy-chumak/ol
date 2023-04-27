@@ -22,11 +22,12 @@
 ;    and applying `decals' to surfaces.
 (define-library (OpenGL EXT polygon_offset)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;    None
-(import (scheme core)
-        (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_polygon_offset
@@ -49,7 +50,7 @@
 (begin
    (define EXT_polygon_offset (gl:QueryExtension "GL_EXT_polygon_offset"))
 
-   (setq GL GL_LIBRARY)
+   (setq GL gl:GetProcAddress)
    (define glPolygonOffsetEXT (GL GLvoid "glPolygonOffsetEXT" GLfloat GLfloat))
 
    (define GL_POLYGON_OFFSET_EXT               #x8037)

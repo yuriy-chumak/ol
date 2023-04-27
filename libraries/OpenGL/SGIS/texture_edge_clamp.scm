@@ -11,7 +11,8 @@
 
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
+(import (scheme core)
+   (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export SGIS_texture_edge_clamp
@@ -22,10 +23,14 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
+   GL_CLAMP_TO_EDGE_SGIS
+
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define SGIS_texture_edge_clamp (gl:QueryExtension "GL_SGIS_texture_edge_clamp"))
+
+   (define GL_CLAMP_TO_EDGE_SGIS	  #x812F)
 
 ))

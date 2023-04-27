@@ -9,17 +9,21 @@
 ;
 (define-library (OpenGL ARB multitexture)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export ARB_multitexture
 
 ; ---------------------------------------------------------------------------
 ; New Procedures and Functions
+
 	glActiveTextureARB ; void GLenum texture)
 	glClientActiveTextureARB ; void GLenum texture)
+
 	glMultiTexCoord1dARB ; void GLenum GLdouble s)
 	glMultiTexCoord1dvARB ; void GLenum GLdouble*)
 	glMultiTexCoord1fARB ; void GLenum GLfloat s)
@@ -55,6 +59,11 @@
 
 ; ---------------------------------------------------------------------------
 ; New Tokens
+
+	GL_ACTIVE_TEXTURE_ARB
+	GL_CLIENT_ACTIVE_TEXTURE_ARB
+	GL_MAX_TEXTURE_UNITS_ARB
+
 	GL_TEXTURE0_ARB
 	GL_TEXTURE1_ARB
 	GL_TEXTURE2_ARB
@@ -87,53 +96,14 @@
 	GL_TEXTURE29_ARB
 	GL_TEXTURE30_ARB
 	GL_TEXTURE31_ARB
-	GL_ACTIVE_TEXTURE_ARB
-	GL_CLIENT_ACTIVE_TEXTURE_ARB
-	GL_MAX_TEXTURE_UNITS_ARB
+
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define ARB_multitexture (gl:QueryExtension "GL_ARB_multitexture"))
 
-   (setq GL GL_LIBRARY)
-
-	(define GL_TEXTURE0_ARB  #x84C0)
-	(define GL_TEXTURE1_ARB  #x84C1)
-	(define GL_TEXTURE2_ARB  #x84C2)
-	(define GL_TEXTURE3_ARB  #x84C3)
-	(define GL_TEXTURE4_ARB  #x84C4)
-	(define GL_TEXTURE5_ARB  #x84C5)
-	(define GL_TEXTURE6_ARB  #x84C6)
-	(define GL_TEXTURE7_ARB  #x84C7)
-	(define GL_TEXTURE8_ARB  #x84C8)
-	(define GL_TEXTURE9_ARB  #x84C9)
-	(define GL_TEXTURE10_ARB #x84CA)
-	(define GL_TEXTURE11_ARB #x84CB)
-	(define GL_TEXTURE12_ARB #x84CC)
-	(define GL_TEXTURE13_ARB #x84CD)
-	(define GL_TEXTURE14_ARB #x84CE)
-	(define GL_TEXTURE15_ARB #x84CF)
-	(define GL_TEXTURE16_ARB #x84D0)
-	(define GL_TEXTURE17_ARB #x84D1)
-	(define GL_TEXTURE18_ARB #x84D2)
-	(define GL_TEXTURE19_ARB #x84D3)
-	(define GL_TEXTURE20_ARB #x84D4)
-	(define GL_TEXTURE21_ARB #x84D5)
-	(define GL_TEXTURE22_ARB #x84D6)
-	(define GL_TEXTURE23_ARB #x84D7)
-	(define GL_TEXTURE24_ARB #x84D8)
-	(define GL_TEXTURE25_ARB #x84D9)
-	(define GL_TEXTURE26_ARB #x84DA)
-	(define GL_TEXTURE27_ARB #x84DB)
-	(define GL_TEXTURE28_ARB #x84DC)
-	(define GL_TEXTURE29_ARB #x84DD)
-	(define GL_TEXTURE30_ARB #x84DE)
-	(define GL_TEXTURE31_ARB #x84DF)
-	(define GL_ACTIVE_TEXTURE_ARB #x84E0)
-	(define GL_CLIENT_ACTIVE_TEXTURE_ARB #x84E1)
-	(define GL_MAX_TEXTURE_UNITS_ARB #x84E2)
-
+   (setq GL gl:GetProcAddress)
 	(define glActiveTextureARB (GL GLvoid "glActiveTextureARB" GLenum))
 	(define glClientActiveTextureARB (GL GLvoid "glClientActiveTextureARB" GLenum))
 	(define glMultiTexCoord1dARB (GL GLvoid "glMultiTexCoord1dARB" GLenum GLdouble))
@@ -168,4 +138,41 @@
 	(define glMultiTexCoord4ivARB (GL GLvoid "glMultiTexCoord4ivARB" GLenum GLint*))
 	(define glMultiTexCoord4sARB (GL GLvoid "glMultiTexCoord4sARB" GLenum GLshort GLshort GLshort GLshort))
 	(define glMultiTexCoord4svARB (GL GLvoid "glMultiTexCoord4svARB" GLenum GLshort*))
+
+	(define GL_ACTIVE_TEXTURE_ARB #x84E0)
+	(define GL_CLIENT_ACTIVE_TEXTURE_ARB #x84E1)
+	(define GL_MAX_TEXTURE_UNITS_ARB #x84E2)
+	(define GL_TEXTURE0_ARB  #x84C0)
+	(define GL_TEXTURE1_ARB  #x84C1)
+	(define GL_TEXTURE2_ARB  #x84C2)
+	(define GL_TEXTURE3_ARB  #x84C3)
+	(define GL_TEXTURE4_ARB  #x84C4)
+	(define GL_TEXTURE5_ARB  #x84C5)
+	(define GL_TEXTURE6_ARB  #x84C6)
+	(define GL_TEXTURE7_ARB  #x84C7)
+	(define GL_TEXTURE8_ARB  #x84C8)
+	(define GL_TEXTURE9_ARB  #x84C9)
+	(define GL_TEXTURE10_ARB #x84CA)
+	(define GL_TEXTURE11_ARB #x84CB)
+	(define GL_TEXTURE12_ARB #x84CC)
+	(define GL_TEXTURE13_ARB #x84CD)
+	(define GL_TEXTURE14_ARB #x84CE)
+	(define GL_TEXTURE15_ARB #x84CF)
+	(define GL_TEXTURE16_ARB #x84D0)
+	(define GL_TEXTURE17_ARB #x84D1)
+	(define GL_TEXTURE18_ARB #x84D2)
+	(define GL_TEXTURE19_ARB #x84D3)
+	(define GL_TEXTURE20_ARB #x84D4)
+	(define GL_TEXTURE21_ARB #x84D5)
+	(define GL_TEXTURE22_ARB #x84D6)
+	(define GL_TEXTURE23_ARB #x84D7)
+	(define GL_TEXTURE24_ARB #x84D8)
+	(define GL_TEXTURE25_ARB #x84D9)
+	(define GL_TEXTURE26_ARB #x84DA)
+	(define GL_TEXTURE27_ARB #x84DB)
+	(define GL_TEXTURE28_ARB #x84DC)
+	(define GL_TEXTURE29_ARB #x84DD)
+	(define GL_TEXTURE30_ARB #x84DE)
+	(define GL_TEXTURE31_ARB #x84DF)
+
 ))

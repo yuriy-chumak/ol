@@ -9,9 +9,12 @@
 ;
 (define-library (OpenGL ARB texture_env_add)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
+;  None
 
 ; ---------------------------------------------------------------------------
 (export ARB_texture_env_add

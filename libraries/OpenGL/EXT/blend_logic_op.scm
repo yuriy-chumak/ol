@@ -17,11 +17,12 @@
 ;    operations is allowed.
 (define-library (OpenGL EXT blend_logic_op)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;    EXT_blend_minmax affects the definition of this extension
-(import (scheme core)
-        (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_blend_logic_op

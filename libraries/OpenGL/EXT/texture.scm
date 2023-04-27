@@ -35,11 +35,12 @@
 ;    environment: REPLACE_EXT.
 (define-library (OpenGL EXT texture)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;	  None
-(import (scheme core)
-        (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export EXT_texture
@@ -50,8 +51,6 @@
 
 ; ---------------------------------------------------------------------------
 ; New Tokens
-
-;    Accepted by the <components> parameter of TexImage1D and TexImage2D:
 
    GL_ALPHA4_EXT
    GL_ALPHA8_EXT
@@ -87,9 +86,6 @@
    GL_RGBA12_EXT
    GL_RGBA16_EXT
 
-;    Accepted by the <pname> parameters of GetTexLevelParameteriv and
-;    GetTexLevelParameterfv:
-
    GL_TEXTURE_RED_SIZE_EXT
    GL_TEXTURE_GREEN_SIZE_EXT
    GL_TEXTURE_BLUE_SIZE_EXT
@@ -97,27 +93,9 @@
    GL_TEXTURE_LUMINANCE_SIZE_EXT
    GL_TEXTURE_INTENSITY_SIZE_EXT
 
-;    Accepted by the <params> parameter of TexEnvf, TexEnvi, TexEnvfv, and
-;    TexEnvfi when the <pname> parameter value is
-;    GL_TEXTURE_ENV_MODE
-
    GL_REPLACE_EXT
-
-;    Accepted by the <target> parameters of TexImage1D,
-;    GetTexLevelParameteriv, and GetTexLevelParameterfv:
-
    GL_PROXY_TEXTURE_1D_EXT
-
-;    Accepted by the <target> parameters of TexImage2D,
-;    GetTexLevelParameteriv, and GetTexLevelParameterfv:
-
    GL_PROXY_TEXTURE_2D_EXT
-
-;Additions to Chapter 2 of the GL Specification (OpenGL Operation)
-;
-;    A new error token value, TEXTURE_TOO_LARGE_EXT, is defined and added to
-;    table 2.3:
-
    GL_TEXTURE_TOO_LARGE_EXT
 
 )
@@ -171,4 +149,5 @@
    (define GL_PROXY_TEXTURE_1D_EXT             #x8063)
    (define GL_PROXY_TEXTURE_2D_EXT             #x8064)
    (define GL_TEXTURE_TOO_LARGE_EXT            #x8065)
+
 ))

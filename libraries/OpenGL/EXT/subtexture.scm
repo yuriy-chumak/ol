@@ -20,15 +20,15 @@
 ;    are not a power of 2.
 (define-library (OpenGL EXT subtexture)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
 ;	EXT_abgr affects the definition of this extension
 ;	EXT_texture3D affects the definition of this extension
-(import (scheme core)
-        (OpenGL platform))
-
-;	EXT_texture is required.
-(import (OpenGL EXT texture))
+(import
+   (OpenGL EXT texture))
 
 ; ---------------------------------------------------------------------------
 (export EXT_subtexture
@@ -50,7 +50,7 @@
 (begin
    (define EXT_subtexture (gl:QueryExtension "GL_EXT_subtexture"))
 
-   (setq GL GL_LIBRARY)
+   (setq GL gl:GetProcAddress)
    (define glTexSubImage1DEXT (GL GLvoid "glTexSubImage1DEXT" GLenum GLint GLint GLsizei GLenum GLenum fft-any))
    (define glTexSubImage2DEXT (GL GLvoid "glTexSubImage2DEXT" GLenum GLint GLint GLint GLsizei GLsizei GLenum GLenum fft-any))
    (define glTexSubImage3DEXT (GL GLvoid "glTexSubImage3DEXT" GLenum GLint GLint GLint GLint GLsizei GLsizei GLsizei GLenum GLenum fft-any))
