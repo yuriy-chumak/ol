@@ -9,9 +9,15 @@
 ;
 (define-library (OpenGL ARB shadow)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
+(import
+   (OpenGL 1.1)
+   (OpenGL ARB depth_texture)
+)
 
 ; ---------------------------------------------------------------------------
 (export ARB_shadow
@@ -22,18 +28,10 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
-;    Accepted by the <pname> parameter of TexParameterf, TexParameteri,
-;    TexParameterfv, TexParameteriv, GetTexParameterfv, and GetTexParameteriv:
+   GL_TEXTURE_COMPARE_MODE_ARB
+   GL_TEXTURE_COMPARE_FUNC_ARB
 
-    GL_TEXTURE_COMPARE_MODE_ARB
-    GL_TEXTURE_COMPARE_FUNC_ARB
-
-;    Accepted by the <param> parameter of TexParameterf, TexParameteri,
-;    TexParameterfv, and TexParameteriv when the <pname> parameter is
-;    TEXTURE_COMPARE_MODE_ARB:
-
-    GL_COMPARE_R_TO_TEXTURE_ARB
-
+   GL_COMPARE_R_TO_TEXTURE_ARB
 )
 
 ; ---------------------------------------------------------------------------

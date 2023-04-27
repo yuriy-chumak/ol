@@ -9,9 +9,11 @@
 ;
 (define-library (OpenGL NV blend_square)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
 
 ; ---------------------------------------------------------------------------
 (export NV_blend_square

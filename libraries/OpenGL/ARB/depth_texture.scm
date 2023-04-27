@@ -9,10 +9,13 @@
 ;
 (define-library (OpenGL ARB depth_texture)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
-; OpenGL 1.1 is required.
+(import
+   (OpenGL 1.1))
 
 ; ---------------------------------------------------------------------------
 (export ARB_depth_texture
@@ -23,27 +26,15 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
-;    Accepted by the <internalFormat> parameter of TexImage1D, TexImage2D,
-;    CopyTexImage1D and CopyTexImage2D:
+   GL_DEPTH_COMPONENT
    GL_DEPTH_COMPONENT16_ARB
    GL_DEPTH_COMPONENT24_ARB
    GL_DEPTH_COMPONENT32_ARB
 
-;    Accepted by the <format> parameter of GetTexImage, TexImage1D,
-;    TexImage2D, TexSubImage1D, and TexSubImage2D:
-;
-;    DEPTH_COMPONENT
-
-;    Accepted by the <pname> parameter of GetTexLevelParameterfv and
-;    GetTexLevelParameteriv:
+   GL_DEPTH_COMPONENT
 
    GL_TEXTURE_DEPTH_SIZE_ARB
-
-;    Accepted by the <pname> parameter of TexParameterf, TexParameteri,
-;    TexParameterfv, TexParameteriv, GetTexParameterfv, and GetTexParameteriv:
-
    GL_DEPTH_TEXTURE_MODE_ARB
-
 )
 
 ; ---------------------------------------------------------------------------

@@ -9,9 +9,12 @@
 ;
 (define-library (OpenGL ARB texture_mirrored_repeat)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
+;
 
 ; ---------------------------------------------------------------------------
 (export ARB_texture_mirrored_repeat
@@ -22,10 +25,12 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
+   GL_MIRRORED_REPEAT_ARB
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define ARB_texture_mirrored_repeat (gl:QueryExtension "GL_ARB_texture_mirrored_repeat"))
 
+   (define GL_MIRRORED_REPEAT_ARB                    #x8370)
 ))

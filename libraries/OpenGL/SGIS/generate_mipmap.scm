@@ -9,12 +9,14 @@
 ;
 (define-library (OpenGL SGIS generate_mipmap)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core)
-        (OpenGL platform))
+(import
+   (OpenGL EXT texture))
 
-;(import (OpenGL EXT texture)) ; note: fully integrated into OpenGL 1.1
 ; ---------------------------------------------------------------------------
 (export SGIS_generate_mipmap
 

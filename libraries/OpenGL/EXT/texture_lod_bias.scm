@@ -9,9 +9,12 @@
 ;
 (define-library (OpenGL EXT texture_lod_bias)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
+;
 
 ; ---------------------------------------------------------------------------
 (export EXT_texture_lod_bias
@@ -22,10 +25,17 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
+   GL_TEXTURE_FILTER_CONTROL_EXT
+   GL_TEXTURE_LOD_BIAS_EXT
+   GL_MAX_TEXTURE_LOD_BIAS_EXT
+
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_texture_lod_bias (gl:QueryExtension "GL_EXT_texture_lod_bias"))
 
+   (define GL_TEXTURE_FILTER_CONTROL_EXT          #x8500)
+   (define GL_TEXTURE_LOD_BIAS_EXT                #x8501)
+   (define GL_MAX_TEXTURE_LOD_BIAS_EXT            #x84FD)
 ))

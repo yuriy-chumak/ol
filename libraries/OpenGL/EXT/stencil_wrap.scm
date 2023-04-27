@@ -9,9 +9,12 @@
 ;
 (define-library (OpenGL EXT stencil_wrap)
 
+(import (scheme core)
+   (OpenGL platform))
+
 ; ---------------------------------------------------------------------------
 ; Dependencies
-(import (scheme core) (OpenGL platform))
+;  None
 
 ; ---------------------------------------------------------------------------
 (export EXT_stencil_wrap
@@ -22,10 +25,15 @@
 ; ---------------------------------------------------------------------------
 ; New Tokens
 
+   GL_INCR_WRAP_EXT
+   GL_DECR_WRAP_EXT
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define EXT_stencil_wrap (gl:QueryExtension "GL_EXT_stencil_wrap"))
+
+   (define GL_INCR_WRAP_EXT             #x8507)
+   (define GL_DECR_WRAP_EXT             #x8508)
 
 ))
