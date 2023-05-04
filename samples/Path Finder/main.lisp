@@ -59,7 +59,7 @@
 (mail hero ['look-around scheme])
 
 (gl:set-window-title "Pathfinder sample")
-(import (OpenGL version-1-1))
+(import (OpenGL 1.1))
 (import (OpenGL EXT bgra))
 
 

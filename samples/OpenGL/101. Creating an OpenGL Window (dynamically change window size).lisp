@@ -5,7 +5,7 @@
 
 (import (OpenGL 1.0))
 
-; init
+; global init
 (glClearColor 0.3 0.3 0.3 1)
 
 ; draw loop

@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 (import (lib gl) (otus random!))
-(import (OpenGL version-1-1))
+(import (OpenGL 1.1))
 
 (define WIDTH  (/ 85 1)) ;(floor (/ 854 GLYPH_WIDTH))) ; /14 = 45.7
 (define HEIGHT (/ 56 1)) ;(floor (/ 480 GLYPH_HEIGHT))) ;/16 = 30

@@ -81,7 +81,7 @@
 
 )
 
-(import (only (OpenGL version-1-1) GL_DOUBLE))
+(import (only (OpenGL 1.1) GL_DOUBLE))
 ; ---------------------------------------------------------------------------
 (begin
    (define ARB_gpu_shader_fp64 (gl:QueryExtension "GL_ARB_gpu_shader_fp64"))

@@ -9,13 +9,13 @@
 
    ; GL types
    ; https://www.opengl.org/wiki/OpenGL_Type
-   GLenum                     ; unsigned 32-bit
+   GLenum   GLenum*           ; unsigned 32-bit
    GLboolean GLboolean*       ; unsigned byte (GL_TRUE or GL_FALSE)
    GLbitfield                 ; unsigned 32-bit
    GLbyte   GLbyte*           ;   signed  8-bit
    GLshort  GLshort*          ;   signed 16-bit
    GLint    GLint*   GLint&   ;   signed 32-bit
-   GLsizei                    ;   signed 32-bit
+   GLsizei  GLsizei*          ;   signed 32-bit
    GLubyte  GLubyte*          ; unsigned  8-bit
    GLushort GLushort*         ; unsigned 16-bit
    GLuint   GLuint*  GLuint&  ; unsigned 32-bit
@@ -165,6 +165,7 @@
 
    ; pointers
    (define GLboolean* (fft* GLboolean))
+   (define GLenum*    (fft* GLenum))
    (define GLbyte*    (fft* GLbyte))
    (define GLshort*   (fft* GLshort))
    (define GLushort*  (fft* GLushort))
@@ -172,6 +173,7 @@
    (define GLuint*    (fft* GLuint))
    (define GLfloat*   (fft* GLfloat))
    (define GLdouble*  (fft* GLdouble))
+   (define GLsizei*   (fft* GLsizei))
 
    ; references
    (define GLint&     (fft& GLint))

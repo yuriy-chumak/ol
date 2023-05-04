@@ -21,7 +21,7 @@
 ;     a lot of
    (import
       (scheme core)(owl io)
-      (OpenGL version-1-1))
+      (OpenGL 1.1))
 
 ; --------------------------------------------------------------------------
    (export  EXT_framebuffer_object

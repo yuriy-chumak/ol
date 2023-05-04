@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 (import (lib gl))
-(gl:set-window-title "2. Lines")
+(gl:set-window-title "2. Stipple lines")
 
 (import (OpenGL 1.0))
 
@@ -32,5 +32,3 @@
    )
 ))
 
-; further reading:
-; https://stackoverflow.com/questions/6017176/gllinestipple-deprecated-in-opengl-3-1

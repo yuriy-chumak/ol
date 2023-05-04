@@ -7,16 +7,17 @@
       width 1280
       height 720
    })))
-; end of preconfiguration
+; end of config
 
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window (initially custom screen size)")
 
 (import (OpenGL 1.0))
 
-; init
+; global init
 (glClearColor 0.3 0.3 0.3 1)
 
 ; draw loop
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)))
+

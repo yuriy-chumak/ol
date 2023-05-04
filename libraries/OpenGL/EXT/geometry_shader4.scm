@@ -34,7 +34,7 @@
         (OpenGL platform))
 
 ;    OpenGL 1.1 is required.
-(import (OpenGL version-1-1))
+(import (OpenGL 1.1))
 
 ; ---------------------------------------------------------------------------
 (export EXT_geometry_shader4

@@ -32,7 +32,7 @@
 ;     a lot of
    (import
       (scheme core) (owl io)
-      (OpenGL version-1-1))
+      (OpenGL 1.1))
 
 ; --------------------------------------------------------------------------
    (export  ARB_framebuffer_object

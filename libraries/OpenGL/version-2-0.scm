@@ -1,7 +1,7 @@
 ; OpenGL 2.0 (7 Sep 2004), GLSL 1.1
 (define-library (OpenGL version-2-0)
 (export
-      (exports (OpenGL version-1-5))
+      (exports (OpenGL 1.5))
 ; + ARB_shader_objects, heavily modified
 ; + ARB_vertex_shader, heavily modified
 ; + ARB_fragment_shader, heavily modified
@@ -57,7 +57,7 @@ GL_CURRENT_PROGRAM
    (import (scheme core)
       (owl string) (owl io)
       (scheme bytevector)
-      (OpenGL version-1-5))
+      (OpenGL 1.5))
 (begin
    (define GL_VERSION_2_0 1)
 
@@ -70,6 +70,7 @@ GL_CURRENT_PROGRAM
 (define GLint* (fft* GLint))
 (define GLsizei* (fft* GLsizei))
 (define void* fft-void*)
+(define GLsizei& (fft& GLsizei))
 
   (define glCreateShader    (GL GLuint "glCreateShader" GLenum))
     (define GL_VERTEX_SHADER   #x8B31)
@@ -89,8 +90,8 @@ GL_CURRENT_PROGRAM
     (define GL_VALIDATE_STATUS #x8B83)
     (define GL_INFO_LOG_LENGTH #x8B84)
    (define glGetProgramiv     (GL GLvoid "glGetProgramiv" GLuint GLenum GLint&))
-  (define glGetShaderInfoLog (GL GLvoid "glGetShaderInfoLog" GLuint GLsizei GLsizei* type-bytevector))
-  (define glGetProgramInfoLog (GL GLvoid "glGetProgramInfoLog" GLuint GLsizei GLsizei* type-bytevector))
+  (define glGetShaderInfoLog (GL GLvoid "glGetShaderInfoLog" GLuint GLsizei GLsizei& type-bytevector))
+  (define glGetProgramInfoLog (GL GLvoid "glGetProgramInfoLog" GLuint GLsizei GLsizei& type-bytevector))
   (define glGetUniformLocation (GL GLint "glGetUniformLocation" GLuint GLchar*))
     (define glUniform1i     (GL GLvoid "glUniform1i" GLint GLint))
     (define glUniform1f     (GL GLvoid "glUniform1f" GLint GLfloat))
