@@ -28,6 +28,7 @@
       (scheme core)
       (scheme list)
       (owl math)
+      (owl math fp)
       (owl iff)
       (owl list-extra)
       (owl sort)
@@ -170,15 +171,17 @@
          (cond
             ((eq? b 0) 1)
             ((eq? b 1) a)
-            ((eq? b 2) (* a a))
+            ((eq? b 2) (mul a a))
+            ((eq? (type a) type-inexact) (fexpt a b))
             ((eq? (type b) type-enum+) (expt-loop a (sub b 1) a))
             ((eq? (type b) type-int+) (expt-loop a (sub b 1) a))
             ((eq? (type b) type-enum-) (/ 1 (expt a (negate b))))
             ((eq? (type b) type-int-) (/ 1 (expt a (negate b))))
-            ((eq? (type b) type-rational)
-               ;; inexact if cannot be solved exactly
+            ((eq? (type b) type-rational) ;; todo: inexact if cannot be solved exactly
                (expt (iroot a (ref b 2)) (ref b 1)))
-            (else (big-bad-args 'expt a b))))
+            ((eq? (type b) type-inexact) (fexpt a b))
+            (else
+               (big-bad-args 'expt a b))))
 
       ; (mod (expt a b) m) = (expt-mod a b m)
 
