@@ -75,6 +75,29 @@ Q/A
 1. Q. Do you have something like "sleep mode"?  
    A. You can store the current REPL session with `,save "filename"` and continue it later as `ol filename` from the command line (but not from the other REPL session).
 
+1. Q. I'm lost in prefix math notation, can you help me?  
+   A. Ol has a [thirdparty math library](https://github.com/yuriy-chumak/libol-algebra) that supports infix math notation. You can install it or just copy the "otus" folder.
+   ```scheme
+   > (import (otus algebra))
+   > ,expand (infix-notation 1 + 2 * 3 - 4)
+   (- (+ 1 (* 2 3)) 4)
+
+   > (print (infix-notation
+        1 + 2 * 3 - 4
+     ))
+   3
+   ```
+   Moreover, the Unicode character set is supported:
+   ```scheme
+   > (import (otus algebra unicode))
+   > (define-values (A₁ A₂ C) (values 12 7 111))
+   > (define x 7)
+   > (print (infix-notation
+        A₁ * (x)² + A₂ * sqrt(x) + C
+     ))
+   6384846816647/8898489952
+   ```
+
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available (the previous Freenode channel is closed).
