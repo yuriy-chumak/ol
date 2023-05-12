@@ -82,8 +82,8 @@
       ; largest m where m^2 <= n
       (define (isqrt n)
          (cond
-            ((eq? (type n) type-enum-) (sub 0 (isqrt (sub 0 n))))
-            ((eq? (type n) type-int-) (sub 0 (isqrt (sub 0 n))))
+            ((eq? (type n) type-enum-) (negate (isqrt (negate n))))
+            ((eq? (type n) type-int-) (negate (isqrt (negate n))))
             ((eq? n 0) 0)
             ((eq? n 1) 1)
             (else
