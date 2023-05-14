@@ -3044,11 +3044,9 @@ loop:;
 		word value = A1;
 
 		word el = IFALSE;
-		size_t elnum = 0;
 		switch (size) {
 			case 3:
 				el = A2;
-				elnum = (size_t) value(A2);
 				// fall through
 			case 2: {
 				unsigned len = 0;
@@ -3087,6 +3085,7 @@ loop:;
 					}
 					else { // VMALLOC
 						unsigned char* wp = (unsigned char*)&ptr[1];
+						size_t elnum = (size_t) value(el);
 						for (unsigned i = 0; i < len; i++)
 							*wp++ = (unsigned char) elnum;
 						// clear the padding bytes, don't remove!
