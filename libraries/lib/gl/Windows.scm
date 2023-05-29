@@ -12,6 +12,7 @@
 (setq SetPixelFormat   (gdi32  fft-int "SetPixelFormat" fft-void* fft-int fft-void*))
 (setq SwapBuffers      (gdi32  fft-int "SwapBuffers" fft-void*))
 
+(setq GetWindowLong    (user32 fft-long "GetWindowLongW" fft-void* fft-int))
 (setq SetWindowLong    (user32 fft-void* "SetWindowLongW" fft-void* fft-int type-callable))
 (setq GetWindowLongPtr (user32 fft-void* "GetWindowLongPtrW" fft-void* fft-int))
 (setq SetWindowLongPtr (user32 fft-void* "SetWindowLongPtrW" fft-void* fft-int type-callable))
@@ -177,12 +178,20 @@
 
 ; ---
 (setq MoveWindow (user32 fft-int "MoveWindow" fft-void* fft-int fft-int fft-int fft-int fft-int))
+(setq AdjustWindowRectEx (user32 fft-bool "AdjustWindowRectEx" fft-int& fft-int fft-int fft-int))
+   (setq GWL_STYLE -16) (setq GWL_EXSTYLE -20)
+(setq GetMenu (user32 fft-void* "GetMenu" fft-void*))
 
 (define (gl:SetWindowSize context width height)
    (vector-apply context (lambda (dc glrc window)
-      (let ((rect '(0 0 0 0)))
+      (let ((rect '(0 0 0 0))
+            (area (list 0 0 width height)))
          (GetWindowRect window rect)
-         (MoveWindow window (list-ref rect 0) (list-ref rect 1) width height 0)))))
+         (AdjustWindowRectEx area (GetWindowLong window GWL_STYLE) (if (GetMenu window) 1 0) (GetWindowLong window GWL_EXSTYLE))
+         (MoveWindow window (list-ref rect 0) (list-ref rect 1)
+            (- (list-ref area 2) (list-ref area 0))
+            (- (list-ref area 3) (list-ref area 1))
+            0)))))
 
 ; ---
 (setq ShowCursor (user32 fft-int "ShowCursor" fft-int))
