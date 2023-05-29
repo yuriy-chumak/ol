@@ -63,6 +63,9 @@ Q/A
 1. Q. I want to have a Virtual Environment. Can I?  
    A. Yes. A virtual environment is an Ol environment such that the libraries and scripts installed into it are isolated from those installed in other virtual environments and your operating system. Use `--home=the-yours-venv-path` Ol command line option.
 
+1. Q. .. fatal error: bits/libc-header-start.h: No such file or directory.  
+   A. Install gcc multilib, i.e. *sudo apt install gcc-multilib*.
+
 1. Q. Anything else interesting?  
    A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
       Just type `echo ,load http/server| ol` in command line.
