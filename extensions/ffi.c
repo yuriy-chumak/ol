@@ -1554,7 +1554,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	assert (B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
 	assert (C == INULL || (is_reference(C) && reference_type(C) == TPAIR));
 
-	void *function = (void*)car(A);  assert (function);
+	void *function = (void*)car(A);  // "0" function means IDF function
 
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
@@ -2349,6 +2349,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	ret_t got = 0; // результат вызова функции
 	int returntype = is_value(car(B)) ? value(car(B)) : reference_type(car(B));
 
+	if (function)
 #if  __x86_64__
 #	if (__unix__ || __APPLE__)
 		got = nix64_call(args, ad, max(i, l), d, floatsmask, function, returntype & 0x3F);
@@ -2416,6 +2417,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		break;
 	}*/
 #endif
+	else
+		got = *(ret_t *)args;
 
 	// где гарантия, что C и B не поменялись?
 	fp = heap->fp;
