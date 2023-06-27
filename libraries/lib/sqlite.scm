@@ -658,6 +658,8 @@
                            (sqlite3_bind_int64  statement n arg))
                         ((rational? arg)
                            (sqlite3_bind_double statement n arg))
+                        ((inexact? arg)
+                           (sqlite3_bind_double statement n arg))
                         ((string? arg)
                            (sqlite3_bind_text   statement n arg -1 SQLITE_TRANSIENT))
                         ((bytevector? arg)
