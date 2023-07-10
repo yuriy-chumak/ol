@@ -219,18 +219,46 @@
       ((f a b . c)(apply for-each (cons f (map vector->list (cons a (cons b c))))))
       ((f) #false)))
 
+   ; vector-map (optimized)
+   (define (vmap1 f a)
+      (define s (size a))
+      (let loop ((n s) (out #null))
+         (if (eq? n 0)
+            out
+         else
+            (loop (-- n) (cons (f (ref a n)) out)))))
+
+   (define (vmap2 f a b)
+      (define s (size a))
+      (let loop ((n s) (out #null))
+         (if (eq? n 0)
+            out
+         else
+            (loop (-- n) (cons (f (ref a n) (ref b n)) out)))))
+
+   (define (vmapN f q)
+      (define s (size (car q)))
+      (let loop ((n s) (out #null))
+         (if (eq? n 0)
+            out
+         else
+            (loop (-- n)
+               (cons (apply f (let loop ((q q))
+                                 (if (null? q) #null
+                                    (cons (ref (car q) n) (loop (cdr q))))))
+                     out)))))
+
    (define vector-map (case-lambda
-      ((f a)      (list->vector
-                     (map f (vector->list a))))
-      ((f a b)    (list->vector
-                     (map f (vector->list a) (vector->list b))))
-      ((f a b . c)(list->vector
-                     (apply map (cons f (map vector->list (cons a (cons b c)))))))
+      ((f a)      (list->vector (vmap1 f a)))
+      ((f a b)    (list->vector (vmap2 f a b)))
+      ((f a b . c)(list->vector (vmapN f (cons* a b c))))
       ((f) #false)))
 
       (assert (vector-map (lambda (x) x) #(1 2 3 4 5))  ===>  #(1 2 3 4 5))
       (assert (vector-map (lambda (x y) (cons x y))
                   #(1 2 3) #(9 8 7))                    ===>  #((1 . 9) (2 . 8) (3 . 7)))
+      (assert (vector-map +
+                  #(1 2 3) #(9 8 7) #(7 3 7) #(8 4 1))  ===>  #(25 17 18))
 
    ; TODO: optimize
    (define vector-fold (case-lambda
