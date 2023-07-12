@@ -104,8 +104,19 @@
                (fsqrt n)))
          (type-rational
             (if (< n 0)
-               (complex 0 (fsqrt (fsub 0 n)))
-               (fsqrt n)))
+               (complex 0 (:sqrt (negate n) precision))
+               (let*((x y n))
+                  (/ (:sqrt x precision) (:sqrt y precision)))))
+         (type-complex
+            (let*((x y n))
+               (define /z/ (:sqrt (add (mul x x) (mul y y)) precision))
+
+               (define a (:sqrt (/ (+ /z/ x) 2) precision))
+               (define b (:sqrt (/ (- /z/ x) 2) precision))
+
+               (if (negative? b)
+                  (complex a (negate b))
+                  (complex a b))))
          (else
             (runtime-error "sqrt: math not applicable: " n))))
 

@@ -474,8 +474,9 @@ Returns the square of *z*.
 `(sqrt x n)`, *procedure*
 
 Returns the principal square root of *x*. For exact numbers precision *n* can be provided. Default precision is 1/10000.  
-The `sqrt` of rational and inexact number ignores precision and produces inexact result.
-Note that complex numbers are not applicable.
+The `sqrt` of inexact numbers ignores precision and produces inexact result.
+
+Note: `sqrt` for an integer argument and precision 0 throws a run-time error if the result is non-integer.
 
 ```scheme
 (sqrt 4)                      ==>  2
@@ -484,5 +485,8 @@ Note that complex numbers are not applicable.
 (sqrt #i27.1441)              ==>  #i5.21
 (sqrt 5)                      ==>  51841/23184
 (sqrt 5 0.000001)             ==>  5374978561/2403763488
+(sqrt 9/16)                   ==>  3/4
+(sqrt -9/16)                  ==>  0+3/4i
+(sqrt 0+3/4i 0.1)             ==>  291/476+291/476i
 ```
 
