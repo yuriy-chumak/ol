@@ -2213,29 +2213,26 @@
                               (render-number imag (cons #\i tl) base))))
                      base)))
             ((eq? (type num) type-inexact)
-               (cond ; for inf and nan should use equal?, because
-                     ;  this numbers can be returned from ffi
+               (cond
                   ((equal? num #i0) (cons* #\0 #\. #\0 tl))
-
+                  ; inf and nan must be compared with `equal?`, because of possible ffi result
                   ((equal? num +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 tl))
                   ((equal? num -inf.0) (cons* #\- #\i #\n #\f #\. #\0 tl))
                   ((equal? num +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 tl))
 
                   (else
                      (let*((- sub) (* mul)
-                           (sign num (if (fless? num 0)
+                           (sign nump (if (fless? num 0)
                               (values #t (negate (exact num)))
                               (values #f (exact num)))))
-                     (cond
-                        ((< 1000000000 num)
-                           (let ((number (cons* #\B #\I #\G #\. tl)))
-                              (if sign (cons #\- number) number)))
-                        ((< num 0.00000001)
-                           (let ((number (cons* #\. #\0 #\0 #\0 #\0 #\0 #\0 #\0 #\0 #\0 tl)))
-                              (if sign (cons #\- number) number)))
-                        (else
-                           (let*((int (floor num))
-                                 (frac (- num int))
+                        (if (or (< 1000000000 nump)
+                                (< nump 0.00000001))
+                              (let ((exponent (ffloor (flog2 nump 10))))
+                                 (render-number (fmul num (fexpt 10 (negate exponent)))
+                                                (cons* #\e (render-number (exact exponent) tl base)) base))
+                        else
+                           (let*((int (floor nump))
+                                 (frac (- nump int))
                                  (number (reverse
                                     (let loop ((i (* frac 10)) (n (subi 10 (ilog 10 int))) (l #null))
                                        (cond
@@ -2244,7 +2241,7 @@
                                           (else
                                              (loop (* (- i (floor i)) 10) (- n 1) (cons (char-of (floor i)) l)))))))
                                  (number (render-number int (cons #\. (append number tl)) base)))
-                              (if sign (cons #\- number) number))))))))
+                              (if sign (cons #\- number) number)))))))
             ((< num 0)
                (cons #\-
                   (render-number (negate num) tl base)))
