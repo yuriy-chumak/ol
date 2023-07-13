@@ -1170,7 +1170,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 #ifndef OLVM_LIBRARY_SO_NAME
-#  define OLVM_LIBRARY_SO_NAME NULL
+#define OLVM_LIBRARY_SO_NAME NULL
 #endif
 
 #if HAVE_UNISTD_H
@@ -1189,7 +1189,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 //	http://stackoverflow.com/questions/11350878/how-can-i-determine-if-the-operating-system-is-posix-in-c
 // https://web.archive.org/web/20150816133838/http://nadeausoftware.com/articles/2012/01/c_c_tip_how_use_compiler_predefined_macros_detect_operating_system
 
-#ifdef __MINGW32__ // mingw bug
+#ifdef __MINGW32__ /* forkaround for mingw bug */
 #ifndef _cdecl
 #define _cdecl __cdecl
 #endif
@@ -1739,6 +1739,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
     if (heap->begin == NULL) {
         E("Fatal: heap reallocation failed! (%ld -> %ld)", heap->end - old, (long)(cells + pads));
         exit(1); // todo: manage memory issues by longjmp
+		// longjmp(heap->ret, IFALSE); todo: manage memory issues; todo: signal SIGGC
     }
 	heap->end = heap->begin + cells; // so, heap->end is not actual heap end, we have a "safe" bytes after
 
@@ -1771,7 +1772,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		return delta;
 	} else {
 		E("Heap adjustment failed");
-		// longjmp(heap->ret, IFALSE); todo: manage memory issues
+		// longjmp(heap->ret, IFALSE); todo: manage memory issues; todo: signal SIGGC
 	}
 	return 0;
 }

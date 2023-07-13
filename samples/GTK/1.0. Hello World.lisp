@@ -5,7 +5,7 @@
 
 ; print hello
 (define print_hello (GTK_CALLBACK (widget userdata)
-   (print "Hello World")
+   (print "Hello World!")
    (define dialog (gtk_message_dialog_new (gtk_widget_get_toplevel widget)
                      GTK_DIALOG_MODAL
                      GTK_MESSAGE_INFO

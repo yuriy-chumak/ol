@@ -9,7 +9,7 @@
 
 (print "simple version (A 3 6): " (A 3 6))
 
-; smart (lazt) version
+; smart (lazy) version
 (define (ints-from n)
    (cons* n (delay (ints-from (+ n 1)))))
 

@@ -19,3 +19,4 @@
 
 ; run
 (g_application_run app 0 #false)
+(g_object_unref app)

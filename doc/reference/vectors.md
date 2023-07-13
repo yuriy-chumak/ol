@@ -18,7 +18,7 @@ Vectors are written using the `#()`, `[]`, and `vector` notations:
 [vector-length](#vector-length), [vector-ref](#vector-ref),  
 [vector->list](#vector-list), [list->vector](#list-vector), [vector->string](#vector-string), [string->vector](#string-vector), [vector-copy](#vector-copy), [vector-append](#vector-append)
 
-Non functional features: [vector-set!](#vector-set), [vector-copy!](#vector-copy-1), [vector-fill!](#vector-fill)
+Non-functional features: [vector-set!](#vector-set), [vector-copy!](#vector-copy-1), [vector-fill!](#vector-fill)
 
 # vector
 `(vector obj ...)`, *procedure*
@@ -79,8 +79,7 @@ The vector-ref procedure returns the content of element *k* of vector *vector*.
 - `1` is for first element (not a `0`!!).
 - `vector-length - 1` is for last element.
 
-> Note: The *primop* `ref` is another way to access vector elements indexed by **one**.  
-> Negative indices are for counting from the last element to the first.
+> Note: The *primop* `ref` is another way to access vector elements indexed by **one**, negative indices are for counting from the last element to the first.
 
 ```scheme
 (vector-ref [1 2 3 4 5] 0)       ==>  1
@@ -185,7 +184,7 @@ Returns a newly allocated vector whose elements are the concatenation of the ele
 (vector-append [7])                   ==>  [7]
 ```
 
-Non functional features
+Non-functional features
 =======================
 
 Ol provides limited support for non-functional (in sense of [paradigm](https://en.wikipedia.org/wiki/Functional_programming)) features.

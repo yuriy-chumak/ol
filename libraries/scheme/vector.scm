@@ -63,7 +63,7 @@
    ; by zero, and the last element is indexed by one less than
    ; the length of the vector.
 
-   ; internal helpers
+   ; * internal helpers
    (define (make vec start end)
       ; makes a list from vector part
       (let loop ((pos end) (tail #null))
@@ -198,6 +198,7 @@
       ((to at from)           (copy! to at from     0 (size from)))))
 
    ; procedure:  (vector-append vector ...)
+   ; TODO: optimize
    (define (vector-append vector . tail)
       (list->vector
          (fold append (vector->list vector)
@@ -213,10 +214,11 @@
 
    ; additional
    ; 6.10  Control features
+   ; TODO: optimize
    (define vector-for-each (case-lambda
       ((f a)      (for-each f (vector->list a)))
       ((f a b)    (for-each f (vector->list a) (vector->list b)))
-      ((f a b . c)(apply for-each (cons f (map vector->list (cons a (cons b c))))))
+      ((f a b . c)(apply for-each (cons f (map vector->list (cons* a b c)))))
       ((f) #false)))
 
    ; vector-map (optimized)
@@ -264,7 +266,7 @@
    (define vector-fold (case-lambda
       ((f z a)       (fold f z (vector->list a)))
       ((f z a b)     (fold f z (vector->list a) (vector->list b)))
-      ((f z a b . c) (apply fold (cons* f z (map vector->list (cons a (cons b c))))))
+      ((f z a b . c) (apply fold (cons* f z (map vector->list (cons* a b c)))))
       ((f z) z)))
 
       (assert (vector-fold + 7 [1 2 3 4 5])  ===>  22)
