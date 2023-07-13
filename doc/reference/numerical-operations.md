@@ -243,8 +243,8 @@ Returns #true if z is a zero.
 # positive?
 `(positive? x)`, *procedure*
 
-Returns #true if x is positive.  
-Note that complex numbers are not applicable.
+Returns #true if x is positive. Complex numbers are not applicable.  
+Note that zero is neither positive nor negative.
 
 ```scheme
 (positive? 0)                 ==>  #false
@@ -261,8 +261,8 @@ Note that complex numbers are not applicable.
 # negative?
 `(negative? x)`, *procedure*
 
-Returns #true if x is negative.
-Note that complex numbers are not applicable.
+Returns #true if x is negative. Complex numbers are not applicable.  
+Note that zero is neither negative nor positive.
 
 ```scheme
 (negative? 0)                 ==>  #false
@@ -279,12 +279,24 @@ Note that complex numbers are not applicable.
 # odd?
 `(odd? n)`, *procedure*
 
-Returns #true if *n* is odd, *n* must be integer.
+Returns #true if *n* is odd, *n* must be natural or zero.
+
+```scheme
+(odd? 1)                      ==>  #true
+(odd? 77)                     ==>  #true
+(odd? 1234567890)             ==>  #false
+```
 
 # even?
 `(even? n)`, *procedure*
 
-Returns #true if n is even, *n* must be integer.
+Returns #true if n is even, *n* must be natural or zero.
+
+```scheme
+(even? 1)                     ==>  #false
+(even? 77)                    ==>  #false
+(even? 1234567890)            ==>  #true
+```
 
 # <a name="="></a>=
 `(= z1 z2 ...)`, *procedure*
@@ -301,6 +313,8 @@ Returns #true if arguments are equal in a mathematical sense.
 (= 123 +nan.0)                ==>  #false
 (= 7/11 14/22)                ==>  #true
 (= 7/10 21/30 0.7)            ==>  #true
+(= 0.7 #i0.7)                 ==>  #true
+(= 3+8i #i3+#i8i)             ==>  #true
 ```
 
 # <
@@ -339,12 +353,14 @@ Note that complex numbers are not applicable.
 # max
 `(max x1 x2 ...)`, *procedure*
 
-Returns the maximum of arguments.
+Returns the maximum of arguments.  
+Note that complex numbers are not applicable.
 
 # min
 `(min x1 x2 ...)`, *procedure*
 
-Returns the minimum of arguments.
+Returns the minimum of arguments.  
+Note that complex numbers are not applicable.
 
 # +
 
@@ -415,7 +431,9 @@ Returns the absolute value of its argument.
 
 ```scheme
 (floor -4.3)                  ==> -5
-(floor 3.5)                   ==>  3
+(floor -4.6)                  ==> -5
+(floor  4.3)                  ==>  4
+(floor  4.6)                  ==>  4
 ```
 
 # ceiling
@@ -423,7 +441,9 @@ Returns the absolute value of its argument.
 
 ```scheme
 (ceiling -4.3)                ==> -4
-(ceiling 3.5)                 ==>  4
+(ceiling -4.6)                ==> -4
+(ceiling  4.3)                ==>  5
+(ceiling  4.6)                ==>  5
 ```
 
 # truncate
@@ -431,7 +451,9 @@ Returns the absolute value of its argument.
 
 ```scheme
 (truncate -4.3)               ==> -4
-(truncate 3.5)                ==>  3
+(truncate -4.6)               ==> -4
+(truncate  4.3)               ==>  4
+(truncate  4.6)               ==>  4
 ```
 
 # round
@@ -439,7 +461,9 @@ Returns the absolute value of its argument.
 
 ```scheme
 (round -4.3)                  ==> -4
-(round 3.5)                   ==>  4
+(round -4.6)                  ==> -5
+(round  4.3)                  ==>  4
+(round  4.6)                  ==>  5
 ```
 
 # rationalize

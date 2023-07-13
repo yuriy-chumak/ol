@@ -2024,7 +2024,7 @@
             (type-enum- (vm:cast n type-enum+))
             (type-int+ n)
             (type-int- (ncons (ncar n) (ncdr n)))
-            (type-rational (if (negative? n) (sub 0 n) n))
+            (type-rational (if (negative? n) (sub 0 n) n)) ; todo: speedup
             (type-inexact (if (negative? n) (fsub 0 n) n))
             (else (runtime-error "bad math: " (list 'abs n)))))
 
@@ -2041,30 +2041,33 @@
                n)))
 
       (define (ceiling n)
-         (if (eq? (type n) type-rational)
-            (lets ((a b n))
-               (if (negative? a)
-                  (div a b)
-                  (nat+1 (floor n))))
-            n))
+         (case (type n)
+            (type-rational
+               (let* ((a b n))
+                  (if (negative? a)
+                     (div a b)
+                     (nat+1 (div a b))))) ;(floor n)
+            (type-inexact
+               (fadd (ffloor n) 1))
+            (else
+               n)))
 
       (define (truncate n)
-         (if (eq? (type n) type-rational)
-            (lets ((a b n))
-               (if (negative? a)
-                  (negate (div (negate a) b))
-                  (div a b)))
-            n))
+         (case (type n)
+            (type-rational
+               (let* ((a b n))
+                  (if (negative? a)
+                     (negate (div (abs a) b))
+                     (div a b))))
+            (type-inexact
+               (if (fless? n #i0)
+                  (fadd (ffloor n) 1)
+                  (ffloor n)))
+            (else
+               n)))
 
       (define (round n)
-         (if (eq? (type n) type-rational)
-            (lets ((a b n))
-               (if (eq? b 2)
-                  (if (negative? a)
-                     (>> (sub a 1) 1)
-                     (>> (nat+1 a) 1))
-                  (div a b)))
-            n))
+         (floor (add n 0.5)))
 
       (define (sum l) (fold add (car l) (cdr l)))
       (define (product l) (fold mul (car l) (cdr l)))
