@@ -27,8 +27,7 @@ It implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
 but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
 and cross-platform.  Provides a portable, high-level interface
-to call code written in other languages.
-
+to call code written in other languages.  
 You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
 (Open/Free/Net) BSD, Solaris and other operating systems based
 on various hardware architectures (intel, arm, ppc, mips, etc).
@@ -39,8 +38,9 @@ used in Chrome, Safari, Firefox, Edge, Opera, etc.
 * credits to:
 [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests),
 [nullscm](https://github.com/nullscm) (usage, tests),
-Odysseus (tests, ideas),
+Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
+* note: please check [differences](#r7rs-differences) between Ol and R<sup>7</sup>RS.
 
 
 PACKAGING
@@ -100,7 +100,7 @@ Q/A
    > (define-values (A₁ A₂ C) (values 12 7 111))
    > (define x 7)
    > (print (infix-notation
-        A₁ * (x)² + A₂ * sqrt(x) + C
+        A₁ * (x)² + A₂ * √(x) + C
      ))
    6384846816647/8898489952
    ```

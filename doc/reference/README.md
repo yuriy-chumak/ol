@@ -27,6 +27,7 @@ List of Standard procedures
 - [Characters](characters.md).
 - [Vectors](vectors.md).
 - [Lazy Lists](lazy-lists.md).
+- [Sorting](sorting.md).
 - [Numerical Operations](numerical-operations.md), TBD.
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
@@ -135,6 +136,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [infinite?](numerical-operations.md#infinite)
 [integer?](numerical-operations.md#integer)
 [integer->char](characters.md#integer-char)
+[isort](sorting.md#isort)
 [iota](pairs-and-lists.md#iota)
 ## J
 ## K
@@ -156,6 +158,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [memq](pairs-and-lists.md#memq)
 [memv](pairs-and-lists.md#memv)
 [member](pairs-and-lists.md#member)
+[mergesort](sorting.md#mergesort)
 [min](numerical-operations.md#min)
 [modulo](numerical-operations.md#modulo)
 ## N
@@ -172,6 +175,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [pair?](pairs-and-lists.md#pair)
 [positive?](numerical-operations.md#positive)
 ## Q
+[quicksort](sorting.md#quicksort)
 [quotient](numerical-operations.md#quotient)
 ## R
 [rational?](numerical-operations.md#rational)
@@ -185,11 +189,12 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [set-car!](pairs-and-lists.md#set-car)
 [set-cdr!](pairs-and-lists.md#set-cdr)
 [serialize](serialization-deserialization.md#serialize)
+[sort](sorting.md#sort)
+[square](numerical-operations.md#square)
+[sqrt](numerical-operations.md#sqrt)
 [string->symbol](symbols.md#string-symbol)
 [string->uninterned-symbol](symbols.md#string-uninterned-symbol)
 [string->vector](vectors.md#string-vector)
-[square](numerical-operations.md#square)
-[sqrt](numerical-operations.md#sqrt)
 [symbol?](symbols.md#symbol)
 [symbol=?](symbols.md#symbol-1)
 [symbol->string](symbols.md#symbol-string)
