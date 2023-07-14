@@ -411,10 +411,18 @@
       ;;          (append mapping tail)
       ;;          (cons mapping tail)))) ;; self or changed
 
-
-      ;; fixme: O(n) temp string-ref! walk the tree later
       (define (string-ref str p)
-         (llref (str-iter str) p))
+         (case (type str)
+            (type-string      (ref str p))
+            (type-string-wide (ref str (++ p)))
+            (type-string-dispatch
+                              (let loop ((i 2) (p p))
+                                 (define s (ref str i))
+                                 (define l (string-length s))
+                                 (when s
+                                    (if (< p l)
+                                       (string-ref s p)
+                                       (loop (++ i) (- p l))))))))
 
       ; fixme: incomplete, added because needed for ascii range elsewhere
       (define string=? string-eq?)
