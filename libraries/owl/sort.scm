@@ -15,6 +15,14 @@
       ;;; quicksort, never use this, worst case O(n^2) on sorted data
       ;;;
 
+      ; slow, but clearer version:
+      ;; (define (quicksort l op)
+      ;; (if (null? l)
+      ;;       '()
+      ;;       (append (quicksort (filter (lambda (x) (op (car l) x)) (cdr l)) op)
+      ;;               (list (car l))
+      ;;               (quicksort (filter (lambda (x) (not (op (car l) x))) (cdr l)) op))))
+
       (define (quicksort op lst)
          (let loop ((x lst))
             (if (null? x) null
