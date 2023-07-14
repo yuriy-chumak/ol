@@ -99,7 +99,8 @@
    ;; (truncate-file fname/port len)  → undefined   POSIX truncate()
 
    ;; (file-info fname/port follow?)  → file-info-record   POSIX stat()
-   (define file-info stat)
+   (define (file-info port/file)
+      (stat (if (string? port/file) (c-string port/file) port/file)))
    (define (file-info? obj)
       (and (vector? obj)
            (eq? (size obj) 13)))
