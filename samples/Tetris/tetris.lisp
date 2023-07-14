@@ -5,7 +5,7 @@
    (lib keyboard))
 
 (gl:set-window-title "Tetris")
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 ; -- фигуры -----------------------
 (define схеми (pairs->ff `(

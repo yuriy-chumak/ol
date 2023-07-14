@@ -10,7 +10,7 @@
 (define f 1000)
 
 (gl:set-window-title "Drossel and Schwabl 'forest-fire'")
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)

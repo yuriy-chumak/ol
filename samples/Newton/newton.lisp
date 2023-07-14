@@ -8,7 +8,7 @@
 (define (gettimeofday) (syscall 96))
 
 (gl:set-window-title "Newton-dynamics library usage example")
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 (print "NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 

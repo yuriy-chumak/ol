@@ -5,7 +5,7 @@
    (lib gdk-3)
    (lib gtk-3))
 (import (EGL 1.4))
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 ; create an application
 (define app (gtk_application_new "org.gtk.example" G_APPLICATION_FLAGS_NONE))

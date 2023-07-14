@@ -16,7 +16,7 @@
 (import
    (scheme core)
 ;  (OpenGL WGL ...)
-   (OpenGL version-1-0))
+   (OpenGL 1.0))
 
 ; --------------------------------------------------------------------------
 (export  WGL_ARB_create_context

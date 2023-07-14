@@ -4,7 +4,7 @@
 (import (lib gl))
 
 (gl:set-window-title "301. Getting started")
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 (define (gettimeofday) (syscall 96))
 

@@ -2,7 +2,7 @@
 (import (lib gl))
 (gl:set-window-title "Rosettacode OpenGL example")
 
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)

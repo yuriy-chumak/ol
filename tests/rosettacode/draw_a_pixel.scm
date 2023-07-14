@@ -1,7 +1,7 @@
 #!/usr/bin/env ol
 
 (import (lib gl))
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 ; init
 (glClearColor 0.3 0.3 0.3 1)

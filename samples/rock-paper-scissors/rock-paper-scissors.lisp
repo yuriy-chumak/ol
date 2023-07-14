@@ -4,7 +4,7 @@
 (gl:set-window-title "Rock Paper Scissors")
 (let ((ws 80))
    (gl:set-window-size (* 16 ws) (* 9 ws)))
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 
 (import (lib GLU))
 (import (lib newton-dynamics))

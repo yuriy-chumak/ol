@@ -1,5 +1,6 @@
 #!/usr/bin/env ol
-(import (lib gl-2))
+(import (lib gl-2)
+        (lib GLU))
 (import (otus random!))
 (import (scheme inexact))
 

@@ -3,7 +3,7 @@
 ; http://www.freedesktop.org/wiki/Software/Beignet/
 ; https://01.org/beignet
 (define *path* (cons ".." *path*))
-(import (OpenCL version-1-0))
+(import (OpenGL 1.0))
 
 (define (new-size_t) (make-bytevector (size nullptr)))
 (define (new-int)    (make-bytevector '(0 0 0 0)))

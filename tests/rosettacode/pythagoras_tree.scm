@@ -1,7 +1,7 @@
 ; http://rosettacode.org/wiki/Pythagoras_tree#Ol
 
 (import (lib gl))
-(import (OpenGL version-1-0))
+(import (OpenGL 1.0))
 (gl:set-window-size 700 600)
 (gl:set-window-title "http://rosettacode.org/wiki/Pythagoras_tree")
 
