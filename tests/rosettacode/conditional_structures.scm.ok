@@ -1,9 +1,18 @@
 if-then: equal
 if-then-else: equal
-if-then-else: i don't know
+if-then-else: non equal
+when: ..just do something..
 when: equal
+unless: ..just do something..
 unless: not equal
+if-then-else*: equal
+if-then-else*: ..just do something..
+if-then-else*: equal
+if-then-else*: ..just do something..
+if-then-else*: equal
 case: 4
+case: real value is 4
+case: real value is 4
 case: selector 1, 2, 3
 cond: equal
 1, -, -
