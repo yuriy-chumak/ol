@@ -223,7 +223,7 @@ R<sup>7</sup>RS DIFFERENCES
   * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
 
 * 4.1.5. Conditionals
-  * Ol provides **extended *if*** with `then` and `else` keywords in forms:
+  * Ol provides **extended `if`** with `then` and `else` keywords in forms:
     * `(if <condition> then <then1-clause>..<thenN-clause>)`,
     * `(if <condition> <then-clause> else <else1-clause>..<elseN-clause>)`,
     * `(if <condition> then <then1-clause>..<thenN-clause> else <else1-clause>..<elseN-clause>)`.
@@ -232,8 +232,8 @@ R<sup>7</sup>RS DIFFERENCES
   * **No** `set!` in Ol.
     - explanation: Ol is a purely functional language.
     - note: Use `define` instead.
-    - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions is provided.
-    - note: Dynamic variables is available via `(scheme dynamic-bindings)` library. With some speed impact, sure.
+    - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions are provided.
+    - note: Dynamic variables are available via `(scheme dynamic-bindings)` library. With some speed impact, sure.
 
 * 4.1.7. Inclusion
   * **No** `include` and `include-ci` in Ol.

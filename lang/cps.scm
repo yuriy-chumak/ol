@@ -72,6 +72,7 @@
 
       ;; fixme: check - assuming tuple exp is already cps'd
       (define (cps-bind cps rator rands env cont free)
+         (define bad-arguments-for-vector-bind "bad arguments for vector bind: ")
          (if (eq? (length rands) 2)
             (case (cadr rands)
                (['lambda-var fixed? formals body]
@@ -82,8 +83,8 @@
                         (list (mklambda formals body) rator)
                         env free)))
                (else
-                  (runtime-error "bad arguments for vector bind: " rands)))
-            (runtime-error "bad arguments for vector bind: " rands)))
+                  (runtime-error bad-arguments-for-vector-bind rands)))
+            (runtime-error bad-arguments-for-vector-bind rands)))
 
 
       ;; (a0 .. an) → (cons a0 (cons .. (cons an null))), modulo AST

@@ -131,6 +131,15 @@
       ; rtl -> list of bytes
       ;; ast fail-cont → code' | (fail-cont <reason>)
       (define (assemble code fail)
+         (define need-a-bigger-jump-instruction "need a bigger jump instruction: length is ")
+         (define (jx OP a then else)
+            (let*((then (assemble then fail))
+                  (else (assemble else fail))
+                  (len (length else)))
+               (cond
+                  ((< len #xffff) (cons* OP (reg a) (band len #xff) (>> len 8) (append else then)))
+                  (else (fail (list need-a-bigger-jump-instruction len))))))
+
          (case code
             (['ret a]
                (list RET (reg a)))
@@ -233,35 +242,15 @@
                      (len (length else)))
                   (cond
                      ((< len #xffff) (cons* JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
-                     (else (fail (list "need a bigger jump instruction: length is " len))))))
+                     (else (fail (list need-a-bigger-jump-instruction len))))))
             (['jz a then else] ; todo: merge next four cases into one
-               (let*((then (assemble then fail))
-                     (else (assemble else fail))
-                     (len (length else)))
-                  (cond
-                     ((< len #xffff) (cons* JZ (reg a) (band len #xff) (>> len 8) (append else then)))
-                     (else (fail (list "need a bigger jump instruction: length is " len))))))
+               (jx JZ a then else))
             (['jn a then else]
-               (let*((then (assemble then fail))
-                     (else (assemble else fail))
-                     (len (length else)))
-                  (cond
-                     ((< len #xffff) (cons* JN (reg a) (band len #xff) (>> len 8) (append else then)))
-                     (else (fail (list "need a bigger jump instruction: length is " len))))))
+               (jx JN a then else))
             (['je a then else]
-               (let*((then (assemble then fail))
-                     (else (assemble else fail))
-                     (len (length else)))
-                  (cond
-                     ((< len #xffff) (cons* JE (reg a) (band len #xff) (>> len 8) (append else then)))
-                     (else (fail (list "need a bigger jump instruction: length is " len))))))
+               (jx JE a then else))
             (['jf a then else]
-               (let*((then (assemble then fail))
-                     (else (assemble else fail))
-                     (len (length else)))
-                  (cond
-                     ((< len #xffff) (cons* JF (reg a) (band len #xff) (>> len 8) (append else then)))
-                     (else (fail (list "need a bigger jump instruction: length is " len))))))
+               (jx JF a then else))
             (else
                ;(print "assemble: what is " code)
                (fail (list "Unknown opcode " code)))))
