@@ -1655,6 +1655,7 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
 #define MEMPAD                     (1024) // space after end of heap to guarantee apply
+#define FREESPACE                  (4096) // expected working memory buffer (in words)
 
 // 1024 - некое магическое число, подразумевающее количество
 // памяти, используемой между вызовами apply. мои тесты пока показывают максимальное число 32
@@ -1878,6 +1879,8 @@ word gc(heap_t *heap, long query, word regs)
 		query = 0;
 		heap->genstart = heap->begin; // reset generations
 	}
+	else
+		query += 4096; // expected temp objects buffer
 
 	fp = heap->fp;
 	{
@@ -1926,7 +1929,7 @@ word gc(heap_t *heap, long query, word regs)
 
 	nused += query; // сколько у нас должно скоро стать занятого места
 	if (heap->genstart == heap->begin) {
-		// напоминаю, сюда мы попадаем только после полной(!) сборки
+		// сюда мы попадаем только после полной сборки (или первый раз)
 
 		// Please grow your buffers exponentially:
 		//  https://blog.mozilla.org/nnethercote/2014/11/04/please-grow-your-buffers-exponentially/
@@ -1934,13 +1937,15 @@ word gc(heap_t *heap, long query, word regs)
 
 		// выделим на "старое" поколение не более 50% кучи, при этом кучу будем увеличивать на 33%
 		// note!: множитель регулярного увеличения кучи должен быть меньше золотого сечения: 1.618
-		if (nused > (hsize / 2)) {
+		if (nused > (hsize * 2 / 3)) {
 			if (nused < hsize)
 				nused = hsize;
 #if DEBUG_GC
 			fprintf(stderr, "Growing GC from %ld(%ld) to %ld(%ld), queried %ld\n",
 					hsize, hsize*W, nused + nused / 3, (nused + nused / 3) * W, query);
 #endif
+			// TODO: ограничить рост 300 мегабайтами
+			//       (после гигабайта растем линейно, а не экспоненциально)
 			regs += resize_heap(heap, nused + nused / 3) * W;
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
@@ -5595,6 +5600,7 @@ fail:;
 }
 #endif
 
+#define max(a,b) ((a) > (b) ? (a) : (b))
 // TODO: optional olvm without malloc
 struct olvm_t*
 OLVM_new(unsigned char* bootstrap)
@@ -5616,16 +5622,15 @@ OLVM_new(unsigned char* bootstrap)
 	word nobjs = count_fasl_objects(&words, bootstrap);
 	if (nobjs == 0)
 		goto fail;
-	words += (nobjs + 2); // for ptrs
+	// words += (nobjs + 2); // add place for ptrs (уже не надо)
 
 	// выделим память машине:
 	// int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
-	// //int required_memory_size = (INITCELLS + MEMPAD + nwords + 64 * 1024); // 64k objects for memory
 
 	// в соответствии со стратегией сборки 50*1.3-33*0.9 и так как данные в бинарнике
 	// практически гарантированно "старое" поколение, выделим в два раза больше места.
-	int required_memory_size = words * 2;
-	size_t padding = GCPAD(NR + CR) + MEMPAD;  // initial padding
+	int required_memory_size = words + max(words/4, FREESPACE);
+	size_t padding = GCPAD(NR + CR) + MEMPAD; // memory padding
 
 	fp = heap->begin = (word*) malloc((required_memory_size + padding) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
