@@ -88,8 +88,8 @@
 
       (define (blob? o) ; == raw or a variant of major type 11?
          (case (type o)
-            (type-vector-leaf #true)
-            (type-vector-dispatch #true)
+            (type-blob-leaf #true)
+            (type-blob-dispatch #true)
             (type-bytevector #true) ; bytevectors is vectors too?
             (else #false)))
 
@@ -110,7 +110,7 @@
       ;; dispatch low 8 bits of a fixnum, returning the subnode
       (define (vec-dispatch-1 v n)
          (case (type v)
-            (type-vector-dispatch ; vector dispatch node with #[Leaf D0 ... D255]
+            (type-blob-dispatch ; vector dispatch node with #[Leaf D0 ... D255]
                (lets ((n _ (vm:add (vm:and n *blob-leaf-max*) 2))) ;; jump over header and leaf
                   (ref v n)))
             (else
@@ -119,12 +119,12 @@
       ; dispatch the high half bits of a fixnum, returning the subnode
       (define (vec-dispatch-2 v d) ; -> v'
          (case (type v)
-            (type-vector-dispatch
+            (type-blob-dispatch
                (lets
                   ((p _ (vm:shr d *blob-bits*))
                    (p _ (vm:add p 2)))
                   (ref v p)))
-            (type-vector-leaf
+            (type-blob-leaf
                (runtime-error "Leaf vector in dispatch-2: " v))
             (else
                (runtime-error "Bad vector node in dispatch-2: obj " (type v)))))
@@ -145,9 +145,9 @@
          (case (type v)
             (type-bytevector
                (ref v (vm:and n *blob-leaf-max*)))
-            (type-vector-dispatch
+            (type-blob-dispatch
                 (vec-ref-digit (ref v 1) n)) ; read the leaf of the node
-            (type-vector-leaf
+            (type-blob-leaf
                 (if (eq? n *blob-leaf-max*)
                    (ref v *blob-leaf-size*)
                    (lets ((n _ (vm:add (vm:and n *blob-leaf-max*) 1)))
@@ -205,9 +205,9 @@
          (case (type vec)
             (type-bytevector
                (size vec))
-            (type-vector-dispatch
+            (type-blob-dispatch
                (ref vec 2))
-            (type-vector-leaf
+            (type-blob-leaf
                (size vec))
             (else
                (runtime-error "blob-len: not a blob " (list vec 'of 'type (type vec))))))
@@ -225,7 +225,7 @@
                ;; the leaf contains only fixnums 0-255, so make a compact leaf
                (vm:alloc type-bytevector vals) ;; make node and reverse
                ;; the leaf contains other values, so need full 4/8-byte descriptors
-               (vm:make type-vector-leaf vals))))
+               (vm:make type-blob-leaf vals))))
 
       (define (byte? val)
          (and
@@ -266,7 +266,7 @@
             (else
                (lets ((these s (grab s *blob-leaf-size*)))
                   (cons
-                     (vm:make type-vector-dispatch (cons (car l) these))
+                     (vm:make type-blob-dispatch (cons (car l) these))
                      (merge-each (cdr l) s))))))
 
       (define (merger l n)
@@ -319,7 +319,7 @@
                         (lets ((here below (cut-at below *blob-leaf-size* null)))
                            ;; attach up to 256 subtrees to this leaf
                            (cons
-                              (vm:make type-vector-dispatch (cons (car this) here))
+                              (vm:make type-blob-dispatch (cons (car this) here))
                               (loop below (cdr this))))))))
             null (levels lst *blob-leaf-max*)))
 
@@ -339,7 +339,7 @@
                   ((low (car ll))                  ;; first leaf data, places 0-255
                    (fields (cdr ll))    ;; fill in the length of the vector at dispatch position 0
                    (subtrees (merge-levels fields))) ;; construct the subtrees
-                  (vm:make type-vector-dispatch (cons* low len subtrees))))))
+                  (vm:make type-blob-dispatch (cons* low len subtrees))))))
 
 
       (define (list->blob l)
@@ -373,7 +373,7 @@
 
       (define (iter-leaf-of v tl)
          (case (type v)
-            (type-vector-dispatch (iter-leaf-of (ref v 1) tl))
+            (type-blob-dispatch (iter-leaf-of (ref v 1) tl))
             (type-bytevector
                (let ((s (size v)))
                   (if (eq? s 0)
@@ -442,9 +442,9 @@
 
       (define (iterr-any-leaf v tl)
          (case (type v)
-            (type-vector-dispatch (iterr-any-leaf (ref v 1) tl))
+            (type-blob-dispatch (iterr-any-leaf (ref v 1) tl))
             (type-bytevector (iterr-raw-leaf v (size v) tl))
-            (type-vector-leaf (iterr-leaf v (size v) tl))
+            (type-blob-leaf (iterr-leaf v (size v) tl))
             (else
                tl))) ; size field in root is a number → skip
 

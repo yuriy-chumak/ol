@@ -59,13 +59,13 @@
       ; 9
 
       ;setq type-rlist-spine  10) ; reference, used by rlist (not retested)
-      (setq type-vector-leaf  11) ; reference
+      (setq type-blob-leaf    11) ; reference
 
       (setq TPORT             12) ; value or reference
       (setq TCONST            13) ; value
 
       ;setq type-rlist-node   14) ; reference, used by rlist (not retested)
-      (setq type-vector-dispatch 15) ; reference
+      (setq type-blob-dispatch 15) ; reference
 
       (setq TBYTECODE         16) ; reference, a bytecode
       (setq TPROCEDURE        17) ; reference, pure function

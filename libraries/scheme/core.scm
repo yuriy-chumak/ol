@@ -985,13 +985,13 @@
       (define type-string-wide      TSTRINGWIDE) ; reference
 
       (define type-rlist-spine      10) ; reference
-      (define type-vector-leaf      11) ; reference
+      (define type-blob-leaf        11) ; reference
 
       (define type-port             12) ; value
       (define type-const            13) ; value
 
       (define type-rlist-node       14) ; reference
-      (define type-vector-dispatch  15) ; reference
+      (define type-blob-dispatch    15) ; reference
 
       (define type-bytecode         TBYTECODE)   ; reference, blob bytecode
       (define type-procedure        TPROCEDURE)  ; reference, pure function
@@ -1793,7 +1793,7 @@
       type-procedure type-closure
       type-constructor
       type-pair
-      type-vector-dispatch type-vector-leaf
+      type-blob-dispatch type-blob-leaf
       type-bytevector
       ;type-ff-black-leaf
       type-vector
