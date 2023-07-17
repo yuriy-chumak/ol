@@ -71,12 +71,6 @@
 
                ((vector? obj)
                   (cons #\# (render (vector->list obj) tl)))
-                  ;; (cons* #\# #\(
-                  ;;    (render (ref obj 1)
-                  ;;       (fold
-                  ;;          (λ (tl pos) (cons #\space (render (ref obj pos) tl)))
-                  ;;          (cons #\) tl)
-                  ;;          (lrange (size obj) -1 1)))))
 
                ((function? obj)
                   (render "#function" tl))

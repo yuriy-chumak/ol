@@ -178,6 +178,12 @@ vm:
 	   extensions/ffi.c -Iincludes \
 	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L)
 	@echo Ok.
+vm.asm:
+	$(CC) src/olvm.c -o $@ \
+	   -DHAS_DLOPEN=0  -Iincludes \
+	   $(CFLAGS_RELEASE) -DPREFIX=\"$(PREFIX)\" $(L) \
+	   -S -fverbose-asm
+	@echo Ok.
 
 ol:
 	$(CC) src/olvm.c -o $@ \

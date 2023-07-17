@@ -5753,6 +5753,9 @@ void OLVM_delete(OL* ol)
 	if (sandboxp)
 		return;
 
+#ifndef OLVM_NOPINS
+	free(ol->pin);
+#endif
 	free(ol->heap.begin);
 	free(ol);
 }

@@ -52,7 +52,6 @@
       (setq TSTRING            3) ; reference, raw -> 35 (#b100000 + 3)?
       (setq TSYMBOL            4) ; reference
       (setq TSTRINGWIDE        5) ; reference, raw
-      ; 5   TODO(?): (define type-string-wide      5) ; reference, raw
       ; 6
       ; 7
       ;setq type-ff-black-leaf 8) ; reference ; TODO: move to 28
