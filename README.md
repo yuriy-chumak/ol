@@ -86,23 +86,13 @@ Q/A
    A. Ol has a [thirdparty math library](https://github.com/yuriy-chumak/libol-algebra) that supports infix math notation. You can install it or just copy the "otus" folder.
    ```scheme
    > (import (otus algebra))
-   > ,expand (infix-notation 1 + 2 * 3 - 4)
-   (- (+ 1 (* 2 3)) 4)
+   > ,expand (infix-notation 1 + 2 * 3 - sqrt(4))
+   (- (+ 1 (* 2 3)) (sqrt 4))
 
    > (print (infix-notation
-        1 + 2 * 3 - 4
+        1 + 2 * 3 - sqrt(4)
      ))
-   3
-   ```
-   Moreover, the Unicode character set is supported:
-   ```scheme
-   > (import (otus algebra unicode))
-   > (define-values (A₁ A₂ C) (values 12 7 111))
-   > (define x 7)
-   > (print (infix-notation
-        A₁ * (x)² + A₂ * √(x) + C
-     ))
-   6384846816647/8898489952
+   5
    ```
 
 

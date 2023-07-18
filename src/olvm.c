@@ -1880,7 +1880,7 @@ word gc(heap_t *heap, long query, word regs)
 		heap->genstart = heap->begin; // reset generations
 	}
 	else
-		query += 4096; // expected temp objects buffer
+		query += FREESPACE; // expected tmp objects buffer
 
 	fp = heap->fp;
 	{
