@@ -1,21 +1,64 @@
 Numerical operations
 ====================
 
-Mathematically, numbers are arranged into a tower of subtypes in which each level is a subset of the level above it:
-* number
-* complex number
-* real number
-* rational number
-* integer
-* natural
+Mathematically, numbers are arranged into a tower of subtypes in which each level is a superset of the level above it:
+* natural (ℝ, positive countable numbers)
+* integer (ℤ, additionally includes negative numbers and zero)
+* rational (ℚ, a fraction of integer numbers)
+* real (ℝ, includes *inexact* numbers)
+* complex number (ℂ, includes *complex* numbers)
+* number (any number above)
 
+Please note that by default Ol works with *exact* numbers. If you want to use *inexact* numbers (machine defined numbers like *float* or *double*, if supported), you should explicitly note this using `#i` prefix or `inexact` function.
+
+```scheme
+> 1.2
+6/5
+
+> #i1.2
+1.199999999
+
+> 1.2e15
+1200000000000000
+
+> (inexact 1.2e15)
+1.2e15
+```
+
+Number notation allows the use of a radix prefix for binary (*#b*), octal (*#o*), decimal (*#d*), or hexadecimal (*#x*) numbers. The decimal prefix is used by default and can be omitted.  
+The decimal point is allowed, of course.
+
+```scheme
+#b1000001    ==>  65
+#b100.001    ==>  33/8
+#b1.01e11    ==>  125000000000
+
+#o1234567    ==>  342391
+#o-1234567   ==> -342391
+#xdeadbeef   ==>  3735928559
+#xDeADBeEf   ==>  3735928559
+
+; 17₈ + 10.00001₂
+> (+ #o17 #b10.00001)
+545/32
+
+; 17₈ + 10.00001₂ - 11.08₁₆
+> (+ #o17 #b10.00001 #x-11.08)
+0
+
+; inexact (machine double floating point) of 11100₂
+> #i#b11100
+28.0
+```
+
+## TOC
 [number?](#number), [complex?](#complex), [real?](#real), [rational?](#rational), [integer?](#integer), [natural?](#natural),
 [exact?](#exact), [inexact?](#inexact),
 [finite?](#finite), [infinite?](#infinite), [nan?](#nan),
 [zero?](#zero), [positive?](#positive), [negative?](#negative), [odd?](#odd), [even?](#even),
 [=](#=), [<](#-1), [>](#-2), [<=](#-3), [>=](#-4),
 [max](#max), [min](#min),
-[+](#-5),[-](#-),[*](#-6),[/](#-7),
+[+](#-5), [-](#-), [*](#-6), [/](#-7),
 [abs](#abs),
 [quotient](#quotient), [remainder](#remainder), [modulo](#modulo),
 [numerator](#numerator), [denominator](#denominator),
@@ -50,7 +93,7 @@ Returns #true if *obj* is a number. Any number.
 `(complex? obj)`, *procedure*
 
 Returns #true if *obj* is a complex number.  
-Note that rational, integer, and real numbers are also complex.
+Note that rational, integer, inexact, and real numbers are also complex. If you want to know if a number is exactly complex and not a real or something like, use `(eq? (type obj) type-complex)`.
 
 ```scheme
 (complex? 3+7i)               ==>  #true
@@ -61,13 +104,17 @@ Note that rational, integer, and real numbers are also complex.
 (complex? "3+7i")             ==>  #false
 (complex? 11/17)              ==>  #true
 (complex? +inf.0)             ==>  #true
+
+(eq? (type 11/7) type-complex)  ==>  #false
+(eq? (type 3+0i) type-complex)  ==>  #false
+(eq? (type 3+2i) type-complex)  ==>  #true
 ```
 
 # real?
 `(real? obj)`, *procedure*
 
-Returns #true if *obj* is a complex number.  
-Real numbers are those numbers used to measure a continuous one-dimensional quantity such as a distance, duration or temperature.
+Returns #true if *obj* is a real number.  
+Real numbers are those numbers used to measure a continuous one-dimensional quantity such as a distance, duration or temperature. Note that rational, integer, and inexact numbers, +inf.0, -inf.0, and +nan.0 are also real.
 
 ```scheme
 (real? 3)                     ==>  #true
@@ -86,7 +133,8 @@ Real numbers are those numbers used to measure a continuous one-dimensional quan
 `(rational? obj)`, *procedure*
 
 Returns #true if *obj* is a ratinal number.  
-Rational numbers are numbers that can be expressed as the quotient or fraction of two integers.
+Rational numbers are numbers that can be expressed as the quotient or fraction of two integers. Note that integer numbers are also rational.  
+If you want to know if a number is exactly rational and not an integer, use `(eq? (type obj) type-rational)`.
 
 ```scheme
 (rational? -inf.0)            ==>  #false
@@ -150,7 +198,7 @@ Exact numbers are all numbers except inexact.
 `(inexact? z)`, *procedure*
 
 Returns #true if *z* is an inexact number.  
-Inexact numbers are platform-specific floating-point numbers occupying fixed computer memory (usually 64 bits).
+Inexact numbers are platform-specific floating-point numbers occupying fixed computer memory (usually 64 bits). If supported by platform, sure.
 
 ```scheme
 (inexact? 3)                  ==>  #false
@@ -238,6 +286,8 @@ Returns #true if z is a zero.
 (zero? #i0.0000000000000001)  ==>  #false
 (zero? (- 7 7))               ==>  #true
 (zero? (+ 7 7))               ==>  #false
+(zero? (- #i1.0000000000000001 1))  ==> #true ; inexact math is so inexact
+(zero? (- 1.0000000000000001 1))    ==> #false ; but exact is exact. smile
 ```
 
 # positive?
@@ -301,7 +351,7 @@ Returns #true if n is even, *n* must be natural or zero.
 # <a name="="></a>=
 `(= z1 z2 ...)`, *procedure*
 
-Returns #true if arguments are equal in a mathematical sense.
+Returns #true if arguments are equal in a mathematical sense. Up to 249 arguments are supported.
 
 ```scheme
 (= 123)                       ==>  #true
@@ -320,71 +370,168 @@ Returns #true if arguments are equal in a mathematical sense.
 # <
 `(< x1 x2 ...)`, *procedure*
 
-Returns #true if arguments monotonically increasing.  
+Returns #true if arguments monotonically increasing. Up to 249 arguments are supported.  
 Note that complex numbers are not applicable.
 
 ```scheme
 (< 1)                         ==>  #true
-(< 1 2 3)                     ==>  #true
-(< 3 2 1)                     ==>  #false
 (< -1)                        ==>  #true
+(< 1 2 3)                     ==>  #true
+(< 1 #i2 3)                   ==>  #true
+(< 1 2 2 3)                   ==>  #false
 (< 1 2 3 1)                   ==>  #false
-(< -2 0 4)                    ==>  #true
+(< -2.1 0 4)                  ==>  #true
 ```
 
 # >
 `(> x1 x2 ...)`, *procedure*
 
-Returns #true if arguments monotonically decreasing.
+Returns #true if arguments monotonically decreasing. Up to 249 arguments are supported.  
 Note that complex numbers are not applicable.
+
+```scheme
+(> 1)                         ==>  #true
+(> -1)                        ==>  #true
+(> 3 2 1)                     ==>  #true
+(> 3 #i2 1)                   ==>  #true
+(> 3 2 2 1)                   ==>  #false
+(> 3 2 1 2)                   ==>  #false
+(> 4 0 -2.1)                  ==>  #true
+```
 
 # <=
 `(<= x1 x2 ...)`, *procedure*
 
-Returns #true if arguments monotonically non-decreasing.
+Returns #true if arguments monotonically non-decreasing. Up to 249 arguments are supported.  
 Note that complex numbers are not applicable.
+
+```scheme
+(<= 1)                         ==>  #true
+(<= -1)                        ==>  #true
+(<= 1 2 3)                     ==>  #true
+(<= 1 #i2 3)                   ==>  #true
+(<= 1 2 2 3)                   ==>  #true
+(<= 1 2 3 1)                   ==>  #false
+(<= -2.1 0 4)                  ==>  #true
+```
 
 # >=
 `(>= x1 x2 ...)`, *procedure*
 
-Returns #true if arguments monotonically non-increasing.
+Returns #true if arguments monotonically non-increasing. Up to 249 arguments are supported.  
 Note that complex numbers are not applicable.
+
+```scheme
+(>= 1)                         ==>  #true
+(>= -1)                        ==>  #true
+(>= 3 2 1)                     ==>  #true
+(>= 3 #i2 1)                   ==>  #true
+(>= 3 2 2 1)                   ==>  #true
+(>= 3 2 1 2)                   ==>  #false
+(>= 4 0 -2.1)                  ==>  #true
+```
 
 # max
 `(max x1 x2 ...)`, *procedure*
 
-Returns the maximum of arguments.  
+Returns the maximum of arguments. Up to 249 arguments are supported.  
 Note that complex numbers are not applicable.
+
+```scheme
+(max 7)                        ==>  7
+(max -100 100)                 ==>  100
+(max 1 2 3)                    ==>  3
+(max -1 -2 -3)                 ==> -1
+(max 1 #i3 2)                  ==> #i3
+```
 
 # min
 `(min x1 x2 ...)`, *procedure*
 
-Returns the minimum of arguments.  
+Returns the minimum of arguments. Up to 249 arguments are supported.  
 Note that complex numbers are not applicable.
 
-# +
+```scheme
+(min 7)                        ==>  7
+(min -100 100)                 ==> -100
+(min 1 2 3)                    ==>  1
+(min -1 -2 -3)                 ==> -3
+(min #i1 3 2)                  ==> #i1
+```
 
+# +
 `(+ z1 z2 ...)`, *procedure*
 
-Returns the sum of arguments.
+Returns the sum of arguments. Up to 249 arguments are supported.  
+Produces exact results when all given arguments are exact.
+
+```scheme
+(+)                            ==>  0
+(+ 1)                          ==>  1
+(+ 1 2 3 4)                    ==>  10
+(+ 7/2 9/2)                    ==>  8
+(+ #i9 1)                      ==>  #i10
+(+ 2+3i 11/7)                  ==>  25/7+3i
+
+> (+ 2+3i #i10.01 #b1010 #o2.2)
+24.2599999+3i
+
+> (apply + '(17 -3 45.67 111222333444555666))
+11122233344455572567/100
+```
 
 # -
-
 `(- z)`, *procedure*
 
 Returns the additive inverse of its argument.
 
-# -
+```scheme
+(- 7)                          ==> -7
+(- -9)                         ==>  9
+(- 3+2i)                       ==> -3+2i
+```
 
+# -
 `(- z1 z2 ...)`, *procedure*
 
-Returns the difference of arguments, associating to the left.
+Returns the difference of arguments, associating to the left. Up to 249 arguments are supported.  
+Produces exact results when all given arguments are exact.
+
+```scheme
+(- 1)                          ==> -1
+(- 1 2 3 4)                    ==> -8
+(- 7/2 9/2)                    ==> -1
+(- #i9 1)                      ==> #i8
+(- 2+3i 11/7)                  ==> 3/7+3i
+
+> (- 2+3i #i10.01 #b1010 #o2.2)
+-20.2599999+3i
+
+> (apply - '(17 -3 45.67 111222333444555666))
+-11122233344455569167/100
+```
 
 # *
-
 `(* z1 z2 ...)`, *procedure*
 
-Returns the product of arguments.
+Returns the product of arguments. Up to 249 arguments are supported.  
+Produces exact results when all given arguments are exact.
+
+```scheme
+(* 1)                           ==>  1
+(* 1 2 3 4 5)                   ==>  120
+(* 1 2 0 3 4 5)                 ==>  0
+(* 0+i 0+i)                     ==> -1
+(* 7 9 #i3)                     ==>  #i189
+
+; inexact numbers can't be complex
+> (* #i3 7-8i)
+21.0
+
+; but complex can be inexact
+> (* 7-8i #i3)
+21.0-24.0i
+```
 
 # /
 
@@ -392,16 +539,38 @@ Returns the product of arguments.
 
 Returns the multiplicative inverse of its argument.
 
+```scheme
+(/ 7)                           ==>  1/7
+(/ -8)                          ==> -1/8
+(/ 1+2i)                        ==>  1/5-2/5i
+(/ 1/5-2/5i)                    ==>  1+2i
+(/ 0)                           ==>  +inf.0
+(/ +inf.0)                      ==>  #i0
+```
+
 # /
 
 `(/ z1 z2 ...)`, *procedure*
 
-Returns the quotient of arguments, associating to the left.
+Returns the quotient of arguments, associating to the left. Up to 249 arguments are supported.  
+Produces exact results when all given arguments are exact.
+
+```scheme
+(/ 1 2 3 4 5)                   ==>  1/120
+(/ 1 2 0 3 4 5)                 ==>  +inf.0
+(/ 0+i 0+i)                     ==>  1
+(/ 0+i 0+i 0+i)                 ==>  0-i
+
+> (/ 7 9 #i3)
+0.259259259
+```
 
 # abs
 `(abs x)`, *procedure*
 
-Returns the absolute value of its argument.
+Returns the absolute value of its argument.  
+Note that complex numbers are not applicable.
+
 
 ```scheme
 (abs 3)                       ==>  3
@@ -414,20 +583,66 @@ Returns the absolute value of its argument.
 # quotient
 `(quotient n1 n2)`, *procedure*
 
+Returns the quotient of *n1*/*n2*.
+
+```scheme
+(quotient 7 2)                ==>  3
+(quotient 0 11)               ==>  0
+(quotient -10 -3)             ==>  3
+```
+
 # remainder
 `(remainder n1 n2)`, *procedure*
+
+Returns the remainder of *n1*/*n2*.
+
+```scheme
+(remainder 7 2)               ==>  1
+(remainder 0 11)              ==>  0
+(remainder -10 -3)            ==> -1
+```
 
 # modulo
 `(modulo n1 n2)`, *procedure*
 
+Returns the modulo of *n1*/*n2*.
+
+```scheme
+(modulo 7 2)                  ==>  1
+(modulo 0 11)                 ==>  0
+(modulo -10 -3)               ==> -1
+```
+
 # numerator
 `(numerator q)`, *procedure*
+
+Returns the numerator of *q*.
+
+```scheme
+(numerator 1)                 ==>  1
+(numerator 7/3)               ==>  7
+(numerator 3/7)               ==>  3
+(numerator 3/33)              ==>  1
+(numerator 33/3)              ==>  11
+```
 
 # denominator
 `(denominator q)`, *procedure*
 
+Returns the denominator of *q*.
+
+```scheme
+(denominator 1)               ==>  1
+(denominator 7/3)             ==>  3
+(denominator 3/7)             ==>  7
+(denominator 3/33)            ==>  11
+(denominator 33/3)            ==>  1
+```
+
 # floor
 `(floor x)`, *procedure*
+
+Returns the largest integer not larger than *x*.
 
 ```scheme
 (floor -4.3)                  ==> -5
@@ -439,6 +654,8 @@ Returns the absolute value of its argument.
 # ceiling
 `(ceiling x)`, *procedure*
 
+Returns the smallest integer not smaller than *x*.
+
 ```scheme
 (ceiling -4.3)                ==> -4
 (ceiling -4.6)                ==> -4
@@ -449,6 +666,8 @@ Returns the absolute value of its argument.
 # truncate
 `(truncate x)`, *procedure*
 
+Returns the integer closest to x whose absolute value is not larger than the absolute value of *x*
+
 ```scheme
 (truncate -4.3)               ==> -4
 (truncate -4.6)               ==> -4
@@ -458,6 +677,8 @@ Returns the absolute value of its argument.
 
 # round
 `(round x)`, *procedure*
+
+Returns the closest integer to *x*, rounding to even when *x* is halfway between two integers.
 
 ```scheme
 (round -4.3)                  ==> -4
@@ -513,4 +734,3 @@ Note: `sqrt` for an integer argument and precision 0 throws a run-time error if 
 (sqrt -9/16)                  ==>  0+3/4i
 (sqrt 0+3/4i 0.1)             ==>  291/476+291/476i
 ```
-

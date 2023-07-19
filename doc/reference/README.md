@@ -15,28 +15,29 @@ Reference
 This is an Ol reference, not a Scheme. Scheme R<sup>7</sup>RS differences decribed in the main [README](https://github.com/yuriy-chumak/ol#r7rs-differences) file.
 
 Examples are provided in two forms:
-* the equivalence ("==>") form,  
-  ```scheme
-  ; arrows mean equivalence in sence of `equal?`
-  (+ 1 2 3)  ==>  6
-  (+ 1 2 3)  <=>  (+ 3 2 1)
-  ```
-* and interactive ("> ") form.  
-  ```scheme
-  ; it shows behavior as if someone typing code
-  ; in an interactive ol session
-  > #i1.2
-  1.199999999
+the equivalence ("==>") form,  
+```scheme
+; arrows mean equivalence in sence of `equal?`
+(+ 1 2 3)  ==>  6
+(+ 1 2 3)  <=>  (+ 3 2 1)
+```
 
-  > (let ((N 10000))
-       (define (sign n)
-          (if (zero? (mod n 2)) + -))
-       (fold (lambda (f x i)
-                ((sign i) f (/ #i4 x)))
-          #i4
-          (iota N 3 2)
-          (iota N 1)))
-  3.14169264
+and interactive ("> ") form.  
+```scheme
+; it shows behavior as if someone typing code
+; in an interactive ol session
+> #i1.2
+1.199999999
+
+> (let ((N 10000))
+      (define (sign n)
+         (if (zero? (mod n 2)) + -))
+      (fold (lambda (f x i)
+               ((sign i) f (/ #i4 x)))
+         #i4
+         (iota N 3 2)
+         (iota N 1)))
+3.14169264
 ```
 
 All provided examples are tested with Ol's latest build each time the code is submitted to GitHub.
@@ -48,12 +49,12 @@ List of Standard procedures
 - [Pairs and Lists](pairs-and-lists.md).
 - [Equivalence predicates](equivalence-predicates.md).
 - [Booleans](booleans.md).
+- [Numerical Operations](numerical-operations.md).
 - [Symbols](symbols.md).
 - [Characters](characters.md).
 - [Vectors](vectors.md).
 - [Lazy Lists](lazy-lists.md).
 - [Sorting](sorting.md).
-- [Numerical Operations](numerical-operations.md), TBD.
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.

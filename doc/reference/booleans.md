@@ -23,7 +23,7 @@ All the Ol objects are treated as *true* (❗including empty list, unlike some o
 
 *False* is returned by default for functions that do not return a result value.
 ```scheme
-> (define (function x) (if (even? x) "odd"))
+> (define (function x) (if (odd? x) "odd"))
 > (function 100)
 #false
 ```
