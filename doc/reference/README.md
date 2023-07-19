@@ -39,7 +39,7 @@ Examples are provided in two forms:
   3.14169264
 ```
 
-All examples provided are tested with Ol's latest build each time the code is submitted to GitHub.
+All provided examples are tested with Ol's latest build each time the code is submitted to GitHub.
 
 
 List of Standard procedures

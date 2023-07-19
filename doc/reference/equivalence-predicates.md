@@ -1,8 +1,8 @@
 Equivalence predicates
 ======================
 
-A predicate is a procedure that always returns a boolean value (#true or #false).
-An equivalence predicate is the computational analogue of a mathematical equivalence relation; it is symmetric, reflexive, and transitive.
+A *predicate* is a procedure that always returns a boolean value (#true or #false).
+An *equivalence predicate* is the computational analogue of a mathematical equivalence relation; it is symmetric, reflexive, and transitive.
 
 [eq?](#eq), [eqv?](#eqv), [equal?](#equal)
 
@@ -32,14 +32,13 @@ Returns #true if *obj1* and *obj2* are definitely the same object or same values
      (lambda (x) x))         ==>  #true
 (eq? (lambda (x) x)
      (lambda (y) y))         ==>  #true  ; code optimizer reuses the same existing functions
-
 ```
 
 # eqv?
 `(eqv? obj1 obj2)`, *procedure*
 
-The eqv? procedure defines a useful equivalence relation on objects.
-Briefly, it returns #true if *obj1* and *obj2* are normally regarded as the same object.
+The `eqv?` procedure defines a useful equivalence relation on objects.
+Briefly, it returns #true if *obj1* and *obj2* are normally regarded as the same object (are these objects same in the sense of eq?, or are these objects same as numbers).
 
 
 ```scheme
@@ -47,8 +46,8 @@ Briefly, it returns #true if *obj1* and *obj2* are normally regarded as the same
 (eqv? 'a 'b)                 ==>  #false
 
 (eqv? 2 2)                   ==>  #true
-(eqv? 2 2.0)                 ==>  #true  ; 2.0 is exact in Ol
-(eqv? 2 #i2.0)               ==>  #false
+(eqv? 2 2.0)                 ==>  #true  ; 2.0 is exact(!) in Ol
+(eqv? 2 #i2.0)               ==>  #false ; '#i' - inexact prefix
 (eqv? 1 #i1)                 ==>  #false
 (eqv? 100000 100000)         ==>  #true
 (eqv? 222222222222222222222
@@ -90,8 +89,8 @@ Briefly, it returns #true if *obj1* and *obj2* are normally regarded as the same
 # equal?
 `(equal? obj1 obj2)`, *procedure*
 
-The equal? procedure, when applied to pairs, vectors, strings and bytevectors, recursively compares them, returning #true when the unfoldings of its arguments into (possibly
-infinite) trees are equal (in the sense of equal?) as ordered trees, and #false otherwise.
+The `equal?` procedure, when applied to pairs, vectors, strings and bytevectors, recursively compares them, returning #true when the unfoldings of its arguments into (possibly
+infinite) trees are equal (in the sense of `equal?`) as ordered trees, and #false otherwise.
 
 ```scheme
 (equal? "" "")                 ==>  #true
@@ -104,9 +103,9 @@ infinite) trees are equal (in the sense of equal?) as ordered trees, and #false 
 (equal? '(1 (2 (3 4)) 5)
         '(1 (2 (3 4)) 5))      ==>  #true
 (equal? { 'name "Yuriy"
-          'phone 33172299 }
+          'phone 33223333 }
         { 'name "Yuriy"
-          'phone 33172299 })   ==>  #true
+          'phone 33223333 })   ==>  #true
 (equal? [1 2 3] [1 2 3])       ==>  #true
 (equal? (bytevector "123")
         (string "123"))        ==>  #false

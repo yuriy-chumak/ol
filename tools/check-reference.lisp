@@ -29,13 +29,18 @@
                   (skip (greedy* whitespace-or-comment))
                   (prefix (word "> " #t)) ; строка запроса
                   (code sexp-parser)
-                  (skip (greedy+ (imm #\newline)))) ; trailing newlines
+                  (skip (imm #\newline))) ; trailing newlines
             code)))
-         (answer (let-parse* (
-               (skip (greedy* whitespace)) ; leading spaces
-               (text (lazy+ rune))
-               (skip (word "\n\n" #t)))  ; обязательный маркер конца примера
-            text)))
+         (answer (either
+            (let-parse* (
+                  (skip (greedy* (imm #\space))) ; leading spaces
+                  (skip (imm #\newline)))
+               #null)
+            (let-parse* (
+                  (skip (greedy* (imm #\space))) ; leading spaces
+                  (text (lazy* rune))
+                  (skip (word "\n\n" #t)))  ; обязательный маркер конца примера
+               text))))
       (cons code answer)))
 
 (define |code ==> answer|
@@ -89,7 +94,8 @@
                               (define buffer (open-output-string))
                               (write test buffer)
                               (define actual (get-output-string buffer))
-                              (unless (string=? answer actual)
+                              (if (and (not (null? (cdar expressions)))
+                                       (not (string=? answer actual)))
                                  (error code answer))
                               env))))
                         (loop (cdr expressions) env))))

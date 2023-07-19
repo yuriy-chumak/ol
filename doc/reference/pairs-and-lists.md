@@ -5,6 +5,8 @@ Pairs are created by the procedure `cons`. The car and cdr fields are accessed b
 
 Pairs are used primarily to represent lists. A *list* can be defined recursively as either the empty list or a pair whose cdr is a list.
 
+## TOC
+
 [cons](#cons), [pair?](#pair), [car](#car), [cdr](#cdr),  
 [list](#list), [make-list](#make-list), [list-copy](#list-copy), [#null](#null), [null?](#null-1), [cons*](#cons-1), [list?](#list-1),  
 [caar](#caar--cddr), [cadr](#caar--cddr), [cdar](#caar--cddr), [cddr](#caar--cddr),  
@@ -16,7 +18,8 @@ Pairs are used primarily to represent lists. A *list* can be defined recursively
 [memq](#memq), [memv](#memv), [member](#member), [assq](#assq), [assv](#assv), [assoc](#assoc),  
 [map](#map), [fold](#fold), [foldr](#foldr)
 
-Non functional features: [set-car!](#set-car), [set-cdr!](#set-cdr), [list-set!](#list-set)
+### Non functional features (very limited, use with care!)
+[set-car!](#set-car), [set-cdr!](#set-cdr), [list-set!](#list-set)
 
 # cons
 `(cons obj1 obj2)`, *primop*
@@ -104,7 +107,7 @@ Returns a newly allocated list of *k* elements.
 If a second argument is given, then each element is initialized to *fill*. Otherwise the initial contents of each element is #false.
 
 ```scheme
-(make-list 7)     ==>  '(#false #false #false #false #false #false #false)
+(make-list 4)     ==>  '(#false #false #false #false)
 (make-list 7 3)   ==>  '(3 3 3 3 3 3 3)
 (make-list 0)     ==>  '()
 ```
@@ -112,7 +115,7 @@ If a second argument is given, then each element is initialized to *fill*. Other
 # list-copy
 `(list-copy obj)`, *procedure*
 
-Returns a newly allocated copy of the given *obj* if it is a list.
+Returns a newly allocated shallow copy of the given *obj* if it is a list.
 Only the pairs themselves are copied; the cars of the result are the same (in the sense of `eqv?`) as the cars of *list*.
 
 ```scheme
@@ -120,11 +123,16 @@ Only the pairs themselves are copied; the cars of the result are the same (in th
 (list-copy '(1 2 (3) 4))      ==>  '(1 2 (3) 4)
 (let ((l '(1 2)))
    (eq? (list-copy l) l))     ==>  #false
+
+(let*((x '("a" ("b" "c") "d"))
+      (y (list-copy x)))
+   (eq? (lref x 1) (lref y 1))) ==>  #true ; ("b" "c")
 ```
 
 # #null
 `#null`, *constant*  
-`null` is the same as `#null` (deprecated, but still widely used)
+`null` (deprecated, but still widely used) is the same as `#null`.  
+`#n` is a one more synonym for `#null`.
 
 The empty list. Mainly known as *'()*.
 

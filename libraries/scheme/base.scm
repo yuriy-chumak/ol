@@ -381,8 +381,7 @@
       ; Returns a newly allocated copy of the given obj if it is a
       ; list. Only the pairs themselves are copied; the cars of the
       ; result are the same (in the sense of eqv?) as the cars of list.
-      (define (list-copy obj)
-         (map (lambda (o) (vm:cast o (type o))) obj))
+      (define (list-copy obj) (map idf obj))
 
       ;; 6.6.  Characters
 
