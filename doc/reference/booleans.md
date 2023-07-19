@@ -1,18 +1,37 @@
 Booleans
 ========
 
-The standard boolean objects for *true* and *false* are written as `#true` and `#false`.
+The standard boolean objects for *True* and *False* are written as `#true` and `#false`.
 Alternatively, they can be written as `#t` `#T` and `#f` `#F`, respectively.
 
-All the Ol objects are treated as *true* (including empty list !), only `#false` counts as *false* in conditional expressions.
-
-Boolean constants evaluate to themselves, so they don't need to be quoted in programs.
 ```scheme
 #t       ==>  #true
 #T       ==>  #true
 #f       ==>  #false
 #F       ==>  #false
+```
+
+All the Ol objects are treated as *true* (❗including empty list, unlike some other dialects of Lisp❗), only `#false` counts as *false* in conditional expressions.
+```scheme
+(if "hello" 2)    ==>  2
+(if 123     3)    ==>  3
+(if '()    17)    ==> 17
+(if {}      1)    ==>  1
+(if +inf.0  0)    ==>  0
+(if #false 22)    ==>  #false
+```
+
+*False* is returned by default for functions that do not return a result value.
+```scheme
+> (define (function x) (if (even? x) "odd"))
+> (function 100)
+#false
+```
+
+Boolean constants evaluate to themselves, so they don't need to be quoted in programs.
+```scheme
 '#true   ==>  #true
+'#false  ==>  #false
 ```
 
 [not](#not), [boolean?](#boolean), [boolean=?](#boolean-1)
