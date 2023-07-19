@@ -93,12 +93,12 @@ Numbers
 `(number->string z radix)`, *procedure*
 
 ```scheme
-(number->string 0)            ==> "0")
-(number->string 1.2)          ==> "6/5")
-(number->string 1.2 4)        ==> "12/11")
-(number->string -77)          ==> "-77")
-(number->string 7-4i)         ==> "7-4i")
-(number->string +inf.0)       ==> "+inf.0")
+(number->string 0)            ==> "0"
+(number->string 1.2)          ==> "6/5"
+(number->string 1.2 4)        ==> "12/11"
+(number->string -77)          ==> "-77"
+(number->string 7-4i)         ==> "7-4i"
+(number->string +inf.0)       ==> "+inf.0"
 ```
 
 # string->number

@@ -40,7 +40,7 @@ Returns #true if *obj* is a number. Any number.
 (number? #xDEAFBEEF)          ==>  #true
 (number? #b1011.1)            ==>  #true
 (number? "1234")              ==>  #false
-(number? (string->number "1234))  ==>  #true
+(number? (string->number "1234"))  ==>  #true
 (number? #i3.14)              ==>  #true
 (number? +inf.0)              ==>  #true
 (number? +nan.0)              ==>  #true

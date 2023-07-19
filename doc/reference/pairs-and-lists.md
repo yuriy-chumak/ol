@@ -45,7 +45,7 @@ Returns #true if *obj* is a pair, otherwise returns #false.
 (pair? '(a b c))              ==>  #true
 (pair? '())                   ==>  #false
 (pair? #(a b))                ==>  #false
-(pair? '{a b}                 ==>  #false
+(pair? '{a b})                ==>  #false
 (pair? #true)                 ==>  #false
 (pair? 17/121)                ==>  #false
 ```
@@ -467,16 +467,17 @@ Combine the elements of list(s) from left to right.
    '("a" "b" "c" "d")
    '("1" "2" "3" "4"))           ==>  "X/a1/b2/c3/d4"
 
-# Leibniz formula for Pi,
-#  1 - 1/3 + 1/5 - 1/7 + 1/9 - 1/11 + ...
-(let ((N 10000))
-   (define (sign n)
-      (if (zero? (mod n 2)) + -))
-   (fold (lambda (f x i)
-            ((sign i) f (/ #i4 x)))
-      #i4
-      (iota N 3 2)
-      (iota N 1)))               ==>  3.14169264
+; Leibniz formula for Pi,
+;  1 - 1/3 + 1/5 - 1/7 + 1/9 - 1/11 + ...
+> (let ((N 10000))
+     (define (sign n)
+        (if (zero? (mod n 2)) + -))
+     (fold (lambda (f x i)
+              ((sign i) f (/ #i4 x)))
+        #i4
+        (iota N 3 2)
+        (iota N 1)))
+3.14169264
 ```
 
 # foldr
@@ -500,7 +501,7 @@ Combine the elements of list(s) from right to left.
 (foldr - 9 '(1 2) '(3 4) '(5 6) '(7 8)) ; === (- 1 3 5 7 (- 2 4 6 8 9))
                                           ==> 11
 
-# Please note that the order of variables in the lambda differs than in fold!
+; Please note that the order of variables in the lambda differs than in fold!
 (foldr (lambda (x f)
          (min f x))
    100

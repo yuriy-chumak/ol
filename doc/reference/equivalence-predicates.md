@@ -24,7 +24,7 @@ Returns #true if *obj1* and *obj2* are definitely the same object or same values
    (eq? q q))                ==>  #true
 (eq? 2 2)                    ==>  #true  ; same values
 (eq? 222222222222222222222
-     222222222222222222222   ==>  #false ; long integers are objects, not values
+     222222222222222222222)  ==>  #false ; long integers are objects, not values
 (eq? #\A #\A)                ==>  #true
 (eq? car car)                ==>  #true
 
@@ -51,8 +51,8 @@ Briefly, it returns #true if *obj1* and *obj2* are normally regarded as the same
 (eqv? 2 #i2.0)               ==>  #false
 (eqv? 1 #i1)                 ==>  #false
 (eqv? 100000 100000)         ==>  #true
-(eq? 222222222222222222222
-     222222222222222222222   ==>  #true
+(eqv? 222222222222222222222
+      222222222222222222222) ==>  #true
 (eqv? 0.33 0.33)             ==>  #true
 (eqv? 7/3 14/6)              ==>  #true
 (eqv? 2+3i 2+3i)             ==>  #true
@@ -109,7 +109,7 @@ infinite) trees are equal (in the sense of equal?) as ordered trees, and #false 
           'phone 33172299 })   ==>  #true
 (equal? [1 2 3] [1 2 3])       ==>  #true
 (equal? (bytevector "123")
-        (string "123))         ==>  #false
+        (string "123"))        ==>  #false
 
 (equal? (append '(1 2) '((7)))
        '(1 2 (7)))             ==>  #true
