@@ -28,13 +28,13 @@ Returns a newly allocated pair whose car is *obj1* and whose cdr is *obj2*.
 The pair is guaranteed to be different (in the sense of `eq?` and `eqv?`) from every existing object.
 
 ```scheme
-(cons 1 2)                    ==>  '(1 . 2)
-(cons 'a 3)                   ==>  '(a . 3)
-(cons 1 '())                  ==>  '(1)
-(cons '() 1)                  ==>  '(() . 1)
-(cons '(a) '(b c d))          ==>  '((a) b c d)
-(cons "a" '(b c))             ==>  '("a" b c)
-(cons '(a b) 'c)              ==>  '((a b) . c)
+(cons 1 2)                    ==> '(1 . 2)
+(cons 'a 3)                   ==> '(a . 3)
+(cons 1 '())                  ==> '(1)
+(cons '() 1)                  ==> '(() . 1)
+(cons '(a) '(b c d))          ==> '((a) b c d)
+(cons "a" '(b c))             ==> '("a" b c)
+(cons '(a b) 'c)              ==> '((a b) . c)
 ```
 
 # pair?
@@ -61,12 +61,12 @@ Note that it is an error to take the car of the not a pair.
 
 ```scheme
 (car (cons 1 2))              ==>  1
-(car (cons 'a 3))             ==>  'a
+(car (cons 'a 3))             ==> 'a
 (car (cons 1 '()))            ==>  1
-(car (cons '() 1))            ==>  '()
-(car (cons '(a) '(b c d)))    ==>  '(a)
+(car (cons '() 1))            ==> '()
+(car (cons '(a) '(b c d)))    ==> '(a)
 (car (cons "a" '(b c)))       ==>  "a"
-(car (cons '(a b) 'c))        ==>  '(a b)
+(car (cons '(a b) 'c))        ==> '(a b)
 (car '(1 2 3 4 5))            ==>  1
 ```
 
@@ -79,12 +79,12 @@ Note that it is an error to take the cdr of the empty list.
 ```scheme
 (cdr (cons 1 2))              ==>  2
 (cdr (cons 'a 3))             ==>  3
-(cdr (cons 1 '()))            ==>  '()
+(cdr (cons 1 '()))            ==> '()
 (cdr (cons '() 1))            ==>  1
-(cdr (cons '(a) '(b c d)))    ==>  '(b c d)
-(cdr (cons "a" '(b c)))       ==>  '(b c)
-(cdr (cons '(a b) 'c))        ==>  'c
-(cdr '(1 2 3 4 5))            ==>  '(2 3 4 5)
+(cdr (cons '(a) '(b c d)))    ==> '(b c d)
+(cdr (cons "a" '(b c)))       ==> '(b c)
+(cdr (cons '(a b) 'c))        ==> 'c
+(cdr '(1 2 3 4 5))            ==> '(2 3 4 5)
 ```
 
 # list
@@ -93,10 +93,10 @@ Note that it is an error to take the cdr of the empty list.
 Returns a newly allocated *list* of its arguments.
 
 ```scheme
-(list 1 2 3 4 5 6 7)          ==>  '(1 2 3 4 5 6 7)
-(list 'a (+ 3 4) 'c)          ==>  '(a 7 c)
-(list)                        ==>  '()
-(list (list 1 2) (list 3 4))  ==>  '((1 2) (3 4))
+(list 1 2 3 4 5 6 7)          ==> '(1 2 3 4 5 6 7)
+(list 'a (+ 3 4) 'c)          ==> '(a 7 c)
+(list)                        ==> '()
+(list (list 1 2) (list 3 4))  ==> '((1 2) (3 4))
 ```
 
 # make-list
@@ -107,9 +107,9 @@ Returns a newly allocated list of *k* elements.
 If a second argument is given, then each element is initialized to *fill*. Otherwise the initial contents of each element is #false.
 
 ```scheme
-(make-list 4)     ==>  '(#false #false #false #false)
-(make-list 7 3)   ==>  '(3 3 3 3 3 3 3)
-(make-list 0)     ==>  '()
+(make-list 4)     ==> '(#false #false #false #false)
+(make-list 7 3)   ==> '(3 3 3 3 3 3 3)
+(make-list 0)     ==> '()
 ```
 
 # list-copy
@@ -119,26 +119,28 @@ Returns a newly allocated shallow copy of the given *obj* if it is a list.
 Only the pairs themselves are copied; the cars of the result are the same (in the sense of `eqv?`) as the cars of *list*.
 
 ```scheme
-(list-copy '())               ==>  '()
-(list-copy '(1 2 (3) 4))      ==>  '(1 2 (3) 4)
+(list-copy '())               ==> '()
+(list-copy '(1 2 (3) 4))      ==> '(1 2 (3) 4)
 (let ((l '(1 2)))
    (eq? (list-copy l) l))     ==>  #false
 
 (let*((x '("a" ("b" "c") "d"))
       (y (list-copy x)))
-   (eq? (lref x 1) (lref y 1))) ==>  #true ; ("b" "c")
+   (eq? (lref x 1) (lref y 1))) ==>  #true  ; ("b" "c")
 ```
 
 # #null
-`#null`, *constant*  
-`null` (deprecated, but still widely used) is the same as `#null`.  
-`#n` is a one more synonym for `#null`.
+`#null`, *constant*
 
 The empty list. Mainly known as *'()*.
+
+`null` (deprecated, but still widely used) is the same as `#null`.
+`#n` is a one more synonym for `#null`.
 
 ```scheme
 #null  ==>  '()
 null   ==>  '() ; `null` is depraceted
+#n     ==>  #null
 ```
 
 # null?
@@ -162,7 +164,8 @@ Returns #true if *obj* is the empty list, otherwise returns #false.
 Returns a newly allocated improper(!) list of its arguments.
 
 ```scheme
-(cons* 'a (+ 3 4) 'c)         ==>  '(a 7 . c)
+(cons* 1 2)                   ==> '(1 . 2)
+(cons* 'a (+ 3 4) 'c)         ==> '(a 7 . c)
 (cons* 1)                     ==>  1
 ```
 
@@ -206,7 +209,7 @@ cadr   ==>  (lambda (x) (car (cdr x)))
 cdar   ==>  (lambda (x) (cdr (car x)))
 cddr   ==>  (lambda (x) (cdr (cdr x)))
 
-(cddadr '(1 (2 3 4 5) 6))     ==>  '(4 5)
+(cddadr '(1 (2 3 4 5) 6))     ==> '(4 5)
 (cadadr '(1 (2 3 4 5) 6))     ==>  3
 ```
 
@@ -228,9 +231,9 @@ Returns the length of *list*.
 Returns the *k*th element of *list*.
 
 ```scheme
-(list-ref '(a b c) 0)      ==>  'a
+(list-ref '(a b c) 0)      ==> 'a
 (list-ref '(a b c) 8)      ==>  #false
-(list-ref '(a b c d) 2)    ==>  'c
+(list-ref '(a b c d) 2)    ==> 'c
 ```
 
 # list-tail
@@ -239,8 +242,8 @@ Returns the *k*th element of *list*.
 Returns the sublist of *list* obtained by omitting the first *k* elements.
 
 ```scheme
-(list-tail '(1 2 3 4) 2)   ==>  '(3 4)
-(list-tail '(1 2 3) 0)     ==>  '(1 2 3)
+(list-tail '(1 2 3 4) 2)   ==> '(3 4)
+(list-tail '(1 2 3) 0)     ==> '(1 2 3)
 ```
 
 # repeat
@@ -249,8 +252,8 @@ Returns the sublist of *list* obtained by omitting the first *k* elements.
 Returns a newly allocated list of *k* elements, each is initialized to *fill*.
 
 ```scheme
-(repeat 7 3)               ==>  '(7 7 7)
-(repeat "me" 6)            ==>  '("me" "me" "me" "me" "me" "me")
+(repeat 7 3)               ==> '(7 7 7)
+(repeat "me" 6)            ==> '("me" "me" "me" "me" "me" "me")
 ```
 
 # iota
@@ -262,9 +265,9 @@ Returns a newly allocated list with sequence of count numbers from *start* with 
 The default value of *start* is a 0. The default values of *step* is a 1.
 
 ```scheme
-(iota 20)                ==>  '(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
-(iota 5 -3)              ==>  '(-3 -2 -1 0 1)
-(iota 3 10 1000)         ==>  '(10 1010 2010)
+(iota 20)                ==> '(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
+(iota 5 -3)              ==> '(-3 -2 -1 0 1)
+(iota 3 10 1000)         ==> '(10 1010 2010)
 ```
 
 # lrange
@@ -273,9 +276,9 @@ The default value of *start* is a 0. The default values of *step* is a 1.
 Returns a newly allocated list with sequence of numbers from *from* to *to* with step *step*.
 
 ```scheme
-(lrange 0 1 10)          ==>  '(0 1 2 3 4 5 6 7 8 9)
-(lrange 1 3 10)          ==>  '(1 4 7)
-(lrange 5 -1 0)          ==>  '(5 4 3 2 1)
+(lrange 0 1 10)          ==> '(0 1 2 3 4 5 6 7 8 9)
+(lrange 1 3 10)          ==> '(1 4 7)
+(lrange 5 -1 0)          ==> '(5 4 3 2 1)
 ```
 
 # append
@@ -284,15 +287,15 @@ Returns a newly allocated list with sequence of numbers from *from* to *to* with
 Returns a list consisting of the elements of the first *list* followed by the elements of the other *lists*.
 
 ```scheme
-(append '(x) '(y))                ==>  '(x y)
-(append '(a) '(b c d))            ==>  '(a b c d)
-(append '(a (b)) '((c)))          ==>  '(a (b) (c))
-(append '(a b) '(c . d))          ==>  '(a b c . d)
-(append '() 'a)                   ==>  'a
-(append '(1 2 3))                 ==>  '(1 2 3)
-(append '(1) '(2) '(3 (4)) '(5))  ==>  '(1 2 3 (4) 5)
-(append '(1 2 3) 4)               ==>  '(1 2 3 . 4)
-(append)                          ==>  '()
+(append '(x) '(y))                ==> '(x y)
+(append '(a) '(b c d))            ==> '(a b c d)
+(append '(a (b)) '((c)))          ==> '(a (b) (c))
+(append '(a b) '(c . d))          ==> '(a b c . d)
+(append '() 'a)                   ==> 'a
+(append '(1 2 3))                 ==> '(1 2 3)
+(append '(1) '(2) '(3 (4)) '(5))  ==> '(1 2 3 (4) 5)
+(append '(1 2 3) 4)               ==> '(1 2 3 . 4)
+(append)                          ==> '()
 ```
 
 # reverse
@@ -301,8 +304,8 @@ Returns a list consisting of the elements of the first *list* followed by the el
 Returns a newly allocated list consisting of the elements of *list* in reverse order.
 
 ```scheme
-(reverse '(a b c))                ==>  '(c b a)
-(reverse '(a (b c) d (e (f))))    ==>  '((e (f)) d (b c) a)
+(reverse '(a b c))                ==> '(c b a)
+(reverse '(a (b c) d (e (f))))    ==> '((e (f)) d (b c) a)
 ```
 
 # take
@@ -311,9 +314,9 @@ Returns a newly allocated list consisting of the elements of *list* in reverse o
 Returns list with first *count* elements of *list*, if *count* less or equal to list length. Otherwise returns just a copy of a list.
 
 ```scheme
-(take '(1 2 3 4 5) 3)             ==>  '(1 2 3)
-(take '(1 2 3) 0)                 ==>  '()
-(take '(1 2) 777)                 ==>  '(1 2)
+(take '(1 2 3 4 5) 3)             ==> '(1 2 3)
+(take '(1 2 3) 0)                 ==> '()
+(take '(1 2) 777)                 ==> '(1 2)
 ```
 
 # drop
@@ -322,9 +325,9 @@ Returns list with first *count* elements of *list*, if *count* less or equal to 
 Returns list with last *count* elements of *list*, if *count* less or equal to list length. Otherwise returns empty list.
 
 ```scheme
-(drop '(1 2 3 4 5) 3)             ==>  '(4 5)
-(drop '(1 2 3) 0)                 ==>  '(1 2 3)
-(drop '(1 2) 777)                 ==>  '()
+(drop '(1 2 3 4 5) 3)             ==> '(4 5)
+(drop '(1 2 3) 0)                 ==> '(1 2 3)
+(drop '(1 2) 777)                 ==> '()
 ```
 
 # memq
@@ -339,8 +342,11 @@ The `memq` procedure uses `eq?` to compare obj with the elements of *list*.
 (memq 'a '(b c d))         ==>  #false
 (memq "b" '("a" "b" "c"))  ==>  #false
 (memq '(a) '(b (a) c))     ==>  #false
+; memq is not working for long numbers:
+(memq 1000000000000000000000
+   '(100 1000000000000000000000 102))  ==>  #false
+; but working for short:
 (memq 101 '(100 101 102))  ==>  '(101 102)
-(memq 1000000000000000000000 '(100 1000000000000000000000 102))  ==>  #false
 ```
 
 # memv
@@ -355,8 +361,10 @@ The `memv` procedure uses `eqv?` to compare obj with the elements of *list*.
 (memv 'a '(b c d))         ==>  #false
 (memv "b" '("a" "b" "c"))  ==>  #false
 (memv '(a) '(b (a) c))     ==>  #false
+; memv is working for any numbers:
 (memv 101 '(100 101 102))  ==>  '(101 102)
-(memv 1000000000000000000000 '(100 1000000000000000000000 102))  ==>  '(1000000000000000000000 102)
+(memv 1000000000000000000000
+   '(100 1000000000000000000000 102))  ==>  '(1000000000000000000000 102)
 ```
 
 # member
@@ -373,8 +381,8 @@ The `member` procedure uses *compare* if given, and `equal?` otherwise, to compa
 (member "b" '("a" "b" "c"))  ==>  '("b" "c")
 (member '(a) '(b (a) c))     ==>  '((a) c)
 (member 101 '(100 101 102))  ==>  '(101 102)
-(member 1000000000000000000000 '(100 1000000000000000000000 102))  ==>  '(1000000000000000000000 102)
-
+(member 1000000000000000000000
+   '(100 1000000000000000000000 102))    ==>  '(1000000000000000000000 102)
 (member "B" '("a" "b" "c"))              ==>  #false
 (member "B" '("a" "b" "c") string-ci=?)  ==>  '("b" "c")
 ```
@@ -391,8 +399,11 @@ The `assq` procedure uses `eq?` to compare obj with the car fields of the pairs 
 (assq 'd '((a 1) (b 2) (c 3)))          ==>  #false
 (assq "b" '(("a" 1) ("b" 2) ("c" 3)))   ==>  #false
 (assq '(b) '(((a) 1) ((b) 2) ((c) 3)))  ==>  #false
+; assq is not working for long numbers:
+(assq 1000000000000000000000
+   '((2 3) (1000000000000000000000 101) (102 103)))  ==>  #false
+; but working for short:
 (assq 5 '((2 3) (5 7) (11 13)))         ==>  '(5 7)
-(assq 1000000000000000000000 '((2 3) (1000000000000000000000 101) (102 103)))  ==>  #false
 ```
 
 # assv
@@ -407,8 +418,10 @@ The `assv` procedure uses `eqv?` to compare obj with the car fields of the pairs
 (assv 'd '((a 1) (b 2) (c 3)))          ==>  #false
 (assv "b" '(("a" 1) ("b" 2) ("c" 3)))   ==>  #false
 (assv '(b) '(((a) 1) ((b) 2) ((c) 3)))  ==>  #false
+; assv is working for any numbers:
 (assv 5 '((2 3) (5 7) (11 13)))         ==>  '(5 7)
-(assv 1000000000000000000000 '((2 3) (1000000000000000000000 101) (102 103)))  ==>  '(1000000000000000000000 101)
+(assv 1000000000000000000000
+   '((2 3) (1000000000000000000000 101) (102 103)))  ==>  '(1000000000000000000000 101)
 ```
 
 # assoc
@@ -426,7 +439,6 @@ The `assoc` procedure uses *compare* if given, and `equal?` otherwise, to compar
 (assoc '(b) '(((a) 1) ((b) 2) ((c) 3)))  ==>  '((b) 2)
 (assoc 5 '((2 3) (5 7) (11 13)))         ==>  '(5 7)
 (assoc 1000000000000000000000 '((2 3) (1000000000000000000000 101) (102 103)))  ==>  '(1000000000000000000000 101)
-
 (assoc "B" '(("a" 1) ("b" 2) ("c" 3)))               ==>  #false
 (assoc "B" '(("a" 1) ("b" 2) ("c" 3)) string-ci=?)   ==>  '("b" 2)
 ```
@@ -437,20 +449,20 @@ The `assoc` procedure uses *compare* if given, and `equal?` otherwise, to compar
 The `map` function uses the per-element results to create a new list.
 
 ```scheme
-(map - '(1 2 3))                 ==>  '(-1 -2 -3)
-(map sqrt '(1 4 9 16))           ==>  '(1 2 3 4)
+(map - '(1 2 3))                 ==> '(-1 -2 -3)
+(map sqrt '(1 4 9 16))           ==> '(1 2 3 4)
 (map (lambda (n i)
         ((if (zero? (mod i 2)) + -) n))
    '(1 3 5 7 9)
-   '(1 2 3 4 5))                 ==>  '(-1 3 -5 7 -9)
+   '(1 2 3 4 5))                 ==> '(-1 3 -5 7 -9)
 (map (lambda (n) (/ 1 n))
-   (iota 5 1 2))                 ==>  '(1 1/3 1/5 1/7 1/9)
+   (iota 5 1 2))                 ==> '(1 1/3 1/5 1/7 1/9)
 (map (lambda (i p)
         (string-append i p))
    '("peanuts" "popcorn" "crackerjack")
-   '("!" "?" "^"))               ==>  '("peanuts!" "popcorn?" "crackerjack^")
+   '("!"       "?"       "^"))   ==> '("peanuts!" "popcorn?" "crackerjack^")
 (map car '(
-   (1 . 2) (3 . 4) (5 . 6)))     ==>  '(1 3 5)
+   (1 . 2) (3 . 4) (5 . 6)))     ==> '(1 3 5)
 ```
 
 # fold
@@ -462,18 +474,19 @@ Combine the elements of list(s) from left to right.
 (fold + 0 '(1 2 3))           ==>  6
 (fold + 7 '(1 2 3))           ==>  13
 (fold - 7 '(1 2 3))           ==>  1
-(fold cons 3 '(5 6 7))        ==>  '(((3 . 5) . 6) . 7)
+(fold cons 3 '(5 6 7))        ==> '(((3 . 5) . 6) . 7)
 
-(fold put {} '(x y z) '(4 5 6))  ==>  { 'x 4  'y 5  'z 6 }
+(fold put {} '(x y z)
+             '(4 5 6))        ==>  { 'x 4  'y 5  'z 6 }
 (fold (lambda (f x)
          (min f x))
    100
-   '(6 7 8 4 7))                 ==>  4
+   '(6 7 8 4 7))              ==>  4
 (fold (lambda (f x y)
          (string-append f "/" x y))
    "X"
    '("a" "b" "c" "d")
-   '("1" "2" "3" "4"))           ==>  "X/a1/b2/c3/d4"
+   '("1" "2" "3" "4"))        ==>  "X/a1/b2/c3/d4"
 
 ; Leibniz formula for Pi,
 ;  1 - 1/3 + 1/5 - 1/7 + 1/9 - 1/11 + ...
@@ -525,7 +538,7 @@ Non functional features
 =======================
 
 Ol provides limited support for non-functional (in sense of [paradigm](https://en.wikipedia.org/wiki/Functional_programming)) features.
-Please only use them if you know what you are doing! This can lead to unexpected behavior in your program.
+Please only use them if you know what you are doing! This can lead to unexpected behavior of your program.
 
 # set-car!
 `(set-car! pair obj)`, *procedure*
