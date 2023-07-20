@@ -2,7 +2,7 @@ Numerical operations
 ====================
 
 Mathematically, numbers are arranged into a tower of subtypes in which each level is a superset of the level above it:
-* natural (ℝ, positive countable numbers)
+* natural (ℕ, positive countable numbers)
 * integer (ℤ, additionally includes negative numbers and zero)
 * rational (ℚ, a fraction of integer numbers)
 * real (ℝ, includes *inexact* numbers)
