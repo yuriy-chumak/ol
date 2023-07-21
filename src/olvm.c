@@ -5607,7 +5607,11 @@ OLVM_new(unsigned char* bootstrap)
 {
 	// если отсутствует исполнимый образ
 	if (bootstrap == 0)
+#ifdef REPL
+		bootstrap = REPL;
+#else
 		return 0;
+#endif
 
 	// ===============================================================
 	// создадим виртуальную машину:
