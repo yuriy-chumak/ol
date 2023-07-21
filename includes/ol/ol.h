@@ -1,3 +1,14 @@
+/*!# Otus Lisp
+ * ```
+ *                     small,
+ *         `___`           embeddable
+ *         (O,O)               and
+ *         \)  )            purely
+ *       ---"-"---       functional!
+ * 
+ * Copyright(c) 2014 - 2023 Yuriy Chumak
+ * ```
+ */
 /**
  * This program is free software;  you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -14,9 +25,9 @@
  * Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
  * 
  * It implements an extended subset of the R7RS Scheme, including
- * but not limited to some SRFIs. It is tiny (< 64KB), embeddable
- * and cross-platform.  Provides a portable, high-level interface
- * to call code written in another language.
+ * but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
+ * and cross-platform;  provides a portable, high-level interface
+ * to call code written in another language (c, python, lua, etc).
  * 
  * You can use Ol on Linux, Windows, macOS, Android, BSD (and its
  * descendants), webOS, Solaris and other operating systems based
@@ -52,6 +63,7 @@ struct olvm_t;
  * Create new OL virtual machine (olvm)
  *
  * \param[in] Bootstrap binary code to be executed by olvm.
+ *            If NULL then default REPL will be used.
  * \return Created olvm instance
  */
 struct olvm_t*
