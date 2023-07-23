@@ -6,8 +6,8 @@ Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 It implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
 but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
-and cross-platform.  Provides a portable, high-level interface
-to call code written in another language.
+and cross-platform;  provides a portable, high level interface
+to call code written in another language (c, python, lua, etc).
 
 Reference
 =========

@@ -25,9 +25,10 @@ Otus Lisp (**Ol** in short) is a purely functional dialect of Lisp.
 
 It implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
-but not limited to some SRFIs. It is tiny (~ 64KB), embeddable
-and cross-platform.  Provides a portable, high-level interface
-to call code written in other languages.  
+but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
+and cross-platform;  provides a portable, high-level interface
+to call code written in other languages (c, python, lua, etc).
+
 You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
 (Open/Free/Net) BSD, Solaris and other operating systems based
 on various hardware architectures (intel, arm, ppc, mips, etc).
@@ -457,19 +458,19 @@ So, starting from version 2.2.1 you should do:
 FILES
 -----
 
-* repl  - the compiled ol binary interpreter/compiler
-* src/olvm.c  - the ol virtual machine source code (in C)
-* includes/ol/ol.h  - the common ol header (not required by compiler, just for use as embed)
-* includes/ol/vm.h  - the ol virtual machine header (not required by compiler, just for use as embed)
-* extensions/ffi.c  - FFI implementation
-* lang/*.scm  - ol repl and compiler source codes (in Lisp)
-* libraries/**.scm - various OL libraries (in Lisp):
-  * libraries/scheme/core.scm - r7rs core implementation
-  * libraries/owl/*.scm - legacy basic libraries
-  * libraries/lib/*.scm - some external native library mappings
+* `repl`  - the compiled ol binary interpreter/compiler (olvm bytecode)
+* `src/olvm.c`  - the ol virtual machine source code (C)
+* `includes/ol/ol.h`  - the common ol header (C, not required, just for use as embed)
+* `includes/ol/vm.h`  - the ol virtual machine header (C, not required, just for use as embed)
+* `extensions/ffi.c`  - FFI implementation (C)
+* `lang/*.scm`  - ol repl and compiler source codes (Lisp)
+* `libraries/**.scm` - various OL libraries (Lisp):
+  * `libraries/scheme/core.scm` - r7rs core implementation
+  * `libraries/owl/*.scm` - legacy basic libraries
+  * `libraries/lib/*.scm` - external native library mappings
   * etc.
-* tests/** - some basic automation tests (in Lisp and C)
-* tests/rosettacode/*.scm - additional automation tests (in Lisp) that described at the [Rosetta Code](http://rosettacode.org/) programming chrestomathy site.
+* `tests/**` - some basic automation tests (Lisp, C, Txt)
+* `tests/rosettacode/*.scm` - additional automation tests (Lisp), described at the [Rosetta Code](https://rosettacode.org/wiki/Category:Ol) programming chrestomathy site.
 
 
 EMBEDDING OL
