@@ -2,6 +2,7 @@
 (import
       (lib glib-2)
       (lib gtk-3))
+(import (lib gdk-3))
 
 (import (otus ffi))
 (import (lib sqlite))
@@ -15,17 +16,18 @@
 
       url TEXT,
       preview BLOB,
-      created DATETIME DEFAULT CURRENT_TIMESTAMP
+      created DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated DATETIME DEFAULT CURRENT_TIMESTAMP
    )")
 (sqlite:query database "
    INSERT OR IGNORE INTO notes (id, name) VALUES (0, '/')")
-
 
 (import (lib gtk-3 entry))
 (import (lib gtk-3 tree-model))
 (import (lib gtk-3 tree-store))
 (import (lib gtk-3 tree-view-column))
 (import (lib gtk-3 tree-view))
+(import (lib gtk-3 image))
 
 ; main:
 ; ------------------------------------------------------------
@@ -41,6 +43,7 @@
 (define URL-EDITOR (gtk_builder_get_object builder "URL-EDITOR"))
 
 (define EDIT (gtk_builder_get_object builder "EDIT"))
+(define PREVIEW (gtk_builder_get_object builder "PREVIEW"))
 
 ; ui elements
 (define ui-treeview (gtk_builder_get_object builder "TREE"))
@@ -48,7 +51,35 @@
 ; data elements:
 (define store (gtk_builder_get_object builder "STORE"))
 
-; builder is no more required, let's free a system resource
+; screenshots actor
+(actor 'screenshots (lambda ()
+   (let loop ((this {}))
+   (let*((envelope (wait-mail))
+         (sender msg envelope))
+      (case msg
+         (['update id url]
+            (when url
+               (define pid (system (list "/usr/bin/chromium" "--headless" "--screenshot" url)))
+               (print "pid: " pid)
+               ; wait for screenshot is done
+               (let do ()
+                  (define stat (c/ / (file->string (string-append "/proc/" (number->string pid) "/stat"))))
+                  (unless (string-eq? (third stat) "Z")
+                     (display ".") (sleep 16) (do)))
+               (print "ok")
+               (define screenshot (file->bytevector "screenshot.png"))
+               (define ok (sqlite:value database
+                  "UPDATE OR FAIL notes SET preview=?2,updated=CURRENT_TIMESTAMP WHERE id=?1 RETURNING 1" id screenshot))
+               (print "ok: " ok)
+
+               (define loader (gdk_pixbuf_loader_new))
+               (print "writed: " (gdk_pixbuf_loader_write loader screenshot (size screenshot) #f))
+               (gtk_image_set_from_pixbuf PREVIEW (gdk_pixbuf_loader_get_pixbuf loader))
+               
+            )))
+      (loop this)))))
+
+
 ; ---------------------------------------------------------
 ; todo: add (urlencode) function
 (define (set-url! url)
@@ -159,8 +190,17 @@
       (define id (let ((g (make-GValue)))
          (gtk_tree_model_get_value model iter 0 g)
          (g_value_get_int g)))
-      (define url (sqlite:value database "SELECT url FROM notes WHERE id=?+0" id))
+      (define select (sqlite:value database "SELECT url,preview FROM notes WHERE id=?+0" id))
+      (define url (first select))
       (set-url! (if url url "-- // --"))
+      (define preview (second select))
+      (if preview
+      then
+         (define loader (gdk_pixbuf_loader_new))
+         (gdk_pixbuf_loader_write loader preview (size preview) #f)
+         (gtk_image_set_from_pixbuf PREVIEW (gdk_pixbuf_loader_get_pixbuf loader))
+      else
+         (gtk_image_clear PREVIEW))
 
       TRUE))
 (g_signal_connect ui-treeview "cursor-changed" (G_CALLBACK cursor-changed) NULL)
@@ -184,6 +224,26 @@
 
          TRUE))))
 (gtk_builder_add_callback_symbol builder "name-changed" (G_CALLBACK name-changed))
+
+; take preview
+(define take-preview
+   (GTK_CALLBACK (self user_data)
+      (print "take-preview")
+      (define model (gtk_tree_view_get_model ui-treeview))
+      (define path (make-vptr))
+      (gtk_tree_view_get_cursor ui-treeview path NULL)
+      (define iter (make-GtkTreeIter))
+      (gtk_tree_model_get_iter model iter path)
+      (define id (let ((g (make-GValue)))
+         (gtk_tree_model_get_value model iter 0 g)
+         (g_value_get_int g)))
+      (print "id: " id)
+
+      (define url (sqlite:value database "SELECT url FROM notes WHERE id=?" id))
+      (print "url: " url)
+      (mail 'screenshots ['update id url])
+      TRUE))
+(gtk_builder_add_callback_symbol builder "take-preview" (G_CALLBACK take-preview))
 
 (set-url! "http://google.com")
 
@@ -242,6 +302,8 @@
       TRUE))
 (g_signal_connect URL-EDITOR "activate" (G_CALLBACK activate) NULL)
 
+
+
 ; handle url rename
 
 ; todo: speedup
@@ -255,6 +317,14 @@
 
 ; finally, connect signals
 (gtk_builder_connect_signals builder #f)
+
+; idle function to be actors alive
+(define idle (vm:pin (cons
+   (list fft-int gpointer)
+   (lambda (userdata)
+      (sleep 1)
+      TRUE))))
+(gdk_threads_add_idle (G_CALLBACK idle) nullptr)
 
 ; show window and run
 (g_object_unref builder)

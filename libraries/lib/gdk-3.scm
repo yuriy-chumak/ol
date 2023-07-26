@@ -10,6 +10,12 @@
       GdkGLContext*
       GdkDisplay*
       GdkWindow*
+
+      ; todo: move to standalone library "gdk-pixbuf-2.0"
+      GdkPixbuf*
+      gdk_pixbuf_loader_new
+      gdk_pixbuf_loader_write
+      gdk_pixbuf_loader_get_pixbuf
    )
    (import
       (scheme core)
@@ -41,4 +47,11 @@
    (define gdk_x11_window_get_xid (GDK type-vptr "gdk_x11_window_get_xid" GdkWindow*))
 
    (define GdkGLContext* fft-void*)
+
+   ; Gdk Pixbuf Loader
+   (define GdkPixbuf* fft-void*)
+   (define GdkPixbufLoader* fft-void*)
+   (define gdk_pixbuf_loader_new (GDK GdkPixbufLoader* "gdk_pixbuf_loader_new"))
+   (define gdk_pixbuf_loader_write (GDK gboolean "gdk_pixbuf_loader_write" GdkPixbufLoader* type-bytevector gsize (fft& GError*)))
+   (define gdk_pixbuf_loader_get_pixbuf (GDK GdkPixbuf* "gdk_pixbuf_loader_get_pixbuf" GdkPixbufLoader*))
 ))

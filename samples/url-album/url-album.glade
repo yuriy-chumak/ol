@@ -212,11 +212,13 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToolButton" id="OPEN">
+                          <object class="GtkToolButton" id="SCREENSHOT">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="use-underline">True</property>
-                            <property name="stock-id">gtk-open</property>
+                            <property name="stock-id">gtk-refresh</property>
+                            <signal name="clicked" handler="take-preview" swapped="no"/>
+                            <accelerator key="F5" signal="clicked"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
