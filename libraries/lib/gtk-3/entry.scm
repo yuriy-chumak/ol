@@ -7,6 +7,8 @@
 
       gtk_entry_get_text
       gtk_entry_set_text
+
+      gtk_editable_set_editable ; temp
    )
    (import
       (scheme core)
@@ -20,6 +22,8 @@
 
    (define gtk_entry_get_text (GTK3 type-string "gtk_entry_get_text" GtkEntry*))
    (define gtk_entry_set_text (GTK3 void "gtk_entry_set_text" GtkEntry* type-string))
+
+   (define gtk_editable_set_editable (GTK3 void "gtk_editable_set_editable" GtkEntry* gboolean))
 
    (define (GtkEntry props)
       ;...

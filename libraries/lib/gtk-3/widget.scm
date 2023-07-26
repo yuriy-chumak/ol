@@ -11,6 +11,8 @@
       gtk_widget_destroy
       gtk_widget_realize
 
+      gtk_widget_grab_focus
+
       gtk_widget_is_sensitive
       gtk_widget_set_sensitive
       gtk_widget_get_sensitive
@@ -91,7 +93,7 @@
    ; gtk_widget_has_focus
    ; gtk_widget_is_focus
    ; gtk_widget_has_visible_focus
-   ; gtk_widget_grab_focus
+   (define gtk_widget_grab_focus (GTK3 void "gtk_widget_grab_focus" GtkWidget*))
    ; gtk_widget_set_focus_on_click
    ; gtk_widget_get_focus_on_click
    ; gtk_widget_set_can_default

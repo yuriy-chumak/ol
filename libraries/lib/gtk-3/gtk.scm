@@ -102,6 +102,11 @@
                (cons gint (list GObject* GObject* gpointer))
                (lambda (object arg1 userdata)
                   .rest))))
+         ((GTK_CALLBACK (object arg1 arg2 userdata) . rest)
+            (vm:pin (cons
+               (cons gint (list GObject* GObject* GObject* gpointer))
+               (lambda (object arg1 arg2 userdata)
+                  .rest))))
       ))
 
 ))

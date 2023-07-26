@@ -28,6 +28,8 @@
       g_value_get_gtype
       g_value_set_char
       g_value_get_char
+      g_value_set_int
+      g_value_get_int
       g_value_set_int64
       g_value_get_int64
 
@@ -134,7 +136,8 @@
    (let* ((hi lo (vm:shl x G_TYPE_FUNDAMENTAL_SHIFT)))
       lo)))
 ;...
-(setq G_TYPE_INT64 (G_TYPE_MAKE_FUNDAMENTAL 10))
+(setq G_TYPE_INT    (G_TYPE_MAKE_FUNDAMENTAL  6))
+(setq G_TYPE_INT64  (G_TYPE_MAKE_FUNDAMENTAL 10))
 ;...
 (setq G_TYPE_STRING (G_TYPE_MAKE_FUNDAMENTAL 16))
 ;...
@@ -146,11 +149,15 @@
 
 (define GValue* type-vptr)
 (define g_value_init (GIO GValue* "g_value_init" GValue* GType))
+(define g_value_unset (GIO void "g_value_unset " GValue*))
 
 (define g_value_get_gtype (GIO GType "g_value_get_gtype" GValue*))
 ; gchar
 (define g_value_set_char (GIO void "g_value_set_char" GValue* gchar))
 (define g_value_get_char (GIO gchar "g_value_get_char" GValue*))
+; gint
+(define g_value_set_int (GIO void "g_value_set_int" GValue* gint))
+(define g_value_get_int (GIO gint "g_value_get_int" GValue*))
 ; gint64
 (define g_value_set_int64 (GIO void "g_value_set_int64" GValue* gint64))
 (define g_value_get_int64 (GIO gint64 "g_value_get_int64" GValue*))
@@ -164,6 +171,9 @@
       (()   (make))
       ((x)  (let ((v (make)))
                (cond
+                  ((value? x)
+                     (g_value_init v G_TYPE_INT)
+                     (g_value_set_int v x))
                   ((integer? x)
                      (g_value_init v G_TYPE_INT64)
                      (g_value_set_int64 v x))
