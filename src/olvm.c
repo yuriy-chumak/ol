@@ -4477,7 +4477,7 @@ loop:;
 			 */
 			case SYSCALL_TIME: {
 				CHECK_ARGC(0,2);
-				CHECK_NUMBER_OR_STRING(1);
+				CHECK_STRING(1);
 				CHECK_NUMBERP_OR_FALSE(2);
 
 				time_t seconds = (argc > 1 && A2 != IFALSE)

@@ -4,10 +4,13 @@
       strftime)
 
    (import
-      (scheme core))
+      (scheme core)
+      (owl string))
 
    (begin
 
       (define (gettimeofday) (syscall 96))
-      (define (strftime fmt) (syscall 201 fmt))
+      (define strftime (case-lambda
+         ((fmt) (syscall 201 (c-string fmt)))
+         ((fmt time) (syscall 201 (c-string fmt) time))))
 ))
