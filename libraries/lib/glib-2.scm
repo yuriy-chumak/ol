@@ -146,24 +146,23 @@
 
 
 ; --=( GValue )=---------
-
 (define GValue* type-vptr)
-(define g_value_init (GIO GValue* "g_value_init" GValue* GType))
-(define g_value_unset (GIO void "g_value_unset " GValue*))
+(define g_value_init (GOBJECT GValue* "g_value_init" GValue* GType))
+(define g_value_unset (GOBJECT void "g_value_unset" GValue*))
 
-(define g_value_get_gtype (GIO GType "g_value_get_gtype" GValue*))
+(define g_value_get_gtype (GOBJECT GType "g_value_get_gtype" GValue*))
 ; gchar
-(define g_value_set_char (GIO void "g_value_set_char" GValue* gchar))
-(define g_value_get_char (GIO gchar "g_value_get_char" GValue*))
+(define g_value_set_char (GOBJECT void "g_value_set_char" GValue* gchar))
+(define g_value_get_char (GOBJECT gchar "g_value_get_char" GValue*))
 ; gint
-(define g_value_set_int (GIO void "g_value_set_int" GValue* gint))
-(define g_value_get_int (GIO gint "g_value_get_int" GValue*))
+(define g_value_set_int (GOBJECT void "g_value_set_int" GValue* gint))
+(define g_value_get_int (GOBJECT gint "g_value_get_int" GValue*))
 ; gint64
-(define g_value_set_int64 (GIO void "g_value_set_int64" GValue* gint64))
-(define g_value_get_int64 (GIO gint64 "g_value_get_int64" GValue*))
+(define g_value_set_int64 (GOBJECT void "g_value_set_int64" GValue* gint64))
+(define g_value_get_int64 (GOBJECT gint64 "g_value_get_int64" GValue*))
 ; strings
-(define g_value_set_string (GIO void "g_value_set_string" GValue* gchar*))
-(define g_value_get_string (GIO gchar* "g_value_get_string" GValue*))
+(define g_value_set_string (GOBJECT void "g_value_set_string" GValue* gchar*))
+(define g_value_get_string (GOBJECT gchar* "g_value_get_string" GValue*))
 
 (define make-GValue
    (define (make) (make-bytevector 24)) ; GType(8) + gdouble(8)
