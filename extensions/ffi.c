@@ -2873,27 +2873,26 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 			"\x90" // nop
 			"\x48\x8D\x44\x24\x28"  // lea rax, [rsp+40] (rest)
 			"\x55"                  // push rbp
-			"\x48\x89\xE5"          // mov ebp, rsp
+			"\x48\x89\xE5"          // mov rbp, rsp
 			"\x41\x51"              // push r9
 			"\x41\x50"              // push r8
 			"\x52"                  // push rdx
 			"\x51"                  // push rcx
-			"\x49\x89\xE0"          // mov r8, esp         // argi
-			// 19
-			"\x48\x83\xEC\x20"      // sub esp, 32
-			"\x67\xF2\x0F\x11\x44\x24\x00"    // movsd [esp+ 0], xmm0
-			"\x67\xF2\x0F\x11\x4C\x24\x08"    // movsd [esp+ 8], xmm1
-			"\x67\xF2\x0F\x11\x54\x24\x10"    // movsd [esp+16], xmm2
-			"\x67\xF2\x0F\x11\x5C\x24\x18"    // movsd [esp+24], xmm3
-			"\x49\x89\xE1"          // mov r9, esp         // argf
-			// 54
+			"\x49\x89\xE0"          // mov r8, rsp        // argi
+			"\x48\x83\xEC\x20"      // sub rsp, 32
+			"\xF2\x0F\x11\x44\x24\x00"    // movsd [rsp+ 0], xmm0
+			"\xF2\x0F\x11\x4C\x24\x08"    // movsd [rsp+ 8], xmm1
+			"\xF2\x0F\x11\x54\x24\x10"    // movsd [rsp+16], xmm2
+			"\xF2\x0F\x11\x5C\x24\x18"    // movsd [rsp+24], xmm3
+			"\x49\x89\xE1"          // mov r9, rsp         // argf
+			// 50
 			"\x48\xBA---id---"      // mov rdx, 0          // id
 			"\x48\xB9---ol---"      // mov rcx, 0          // ol
-			// 74
+			// 70
 			"\x50"	                // push rax // dummy
 			"\x50"                  // push rax            // rest
 			"\x48\x83\xEC\x20"      // sub rsp, 32         // free space
-			// 80
+			// 76
 			"\x48\xB8--call--"      // mov rax, callback
 			"\xFF\xD0"              // call rax
 			"\xC9"                  // leave
@@ -2910,9 +2909,9 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 		return IFALSE;
 
 	memcpy(ptr, &bytecode, sizeof(bytecode));
-	*(int64_t*)&ptr[56] = pin; // todo: change to uint64_t
-	*(uint64_t*)&ptr[66] = (uint64_t)self;
-	*(uint64_t*)&ptr[82] = (uint64_t)callback;
+	*(int64_t*)&ptr[52] = pin; // todo: change to uint64_t
+	*(uint64_t*)&ptr[62] = (uint64_t)self;
+	*(uint64_t*)&ptr[78] = (uint64_t)callback;
 
 # else // System V (linux, unix, macos, android, ...)
 	//long long callback(olvm_t* ol, int id, long long* argi, double* argf, long long* rest)
