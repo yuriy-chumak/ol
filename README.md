@@ -13,10 +13,6 @@
 [![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/build%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 
-## ⭐ Notice
-
-Jun 14 2023: I'm fine. I'm doing a side project using Ol, so Ol is still in work and I don't plan to abandon this perfect language anytime!
-
 Otus Lisp, Version 2.4
 ======================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
@@ -41,7 +37,7 @@ used in Chrome, Safari, Firefox, Edge, Opera, etc.
 [nullscm](https://github.com/nullscm) (usage, tests),
 Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
-* note: please check [differences](#r7rs-differences) between Ol and R<sup>7</sup>RS.
+* note: please check the [differences](#r7rs-differences) between Ol and Scheme R<sup>7</sup>RS.
 
 
 PACKAGING

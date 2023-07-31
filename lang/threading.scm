@@ -25,7 +25,8 @@
       (owl math)
       (owl string)
       (owl render)
-      (lang env) (lang eval)
+      (lang env)
+      (only (lang eval) print-repl-error)
       (lang error)
       (owl io))
 

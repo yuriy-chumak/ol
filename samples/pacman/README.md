@@ -3,6 +3,25 @@ EMBEDDING OL
 
 Otus Lisp, an extensible embedded language.
 
+## Simplest example
+
+```c
+#include <ol/ol.h>
+int main(int argc, char **argv)
+{
+	ol_t ol;
+	OL_new(&ol, NULL);
+	OL_eval(&ol, new_string(&ol, "(print \"hello\")"), 0);
+	OL_delete(&ol);
+}
+```
+```shell
+$ gcc file-above.c -lol -o main -O0 -g3
+$ ./main
+hello
+```
+
+## Complex example
 This folder demonstrates a usage of Otus Lisp as part of a pacman-like game.
 
 The A* path searching algorithm and Blinky state completely implemented in Otus Lisp (main.scm file). The OpenGL rendering and keyboard processing implemented in C (main.c file).
