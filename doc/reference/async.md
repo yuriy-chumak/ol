@@ -86,8 +86,8 @@ Returns the name of the coroutine (even if it's anonymous).
         (define failer (async-linked (lambda ()
            ; ok
            (+ 1 2 3)
-           ; errror
-           (0 + + +))))
+           ; error
+           ('no 123))))
 
         (await-linked failer)))
 'error-was-thrown
@@ -115,6 +115,17 @@ Stops execution until mail is received from the *coroutine*. Returns a result of
 Stops execution for *rounds* number of the current couroutine context switch.
 If no other running coroutines are found, a true sleep occurs (as far as the OS is concerned) for 10ms per round. Returns zero.
 
+```scheme
+> (define (wait-pid pid)
+     (let do ()
+        (define stat (c/ / (file->string
+                              (string-append "/proc/"
+                                             (number->string pid)
+                                             "/stat"))))
+        (unless (string-eq? (third stat) "Z")
+           (sleep 10) (do))))
+```
+
 # mail
 `(mail actor-name message)`, *procedure*
 
@@ -133,5 +144,32 @@ Stops execution until any mail is received. Returns a mail.
 `(check-mail)`, *procedure*
 
 Returns a mail if it was received, or #false if mail was not found. Doesn't stop execution.
+
+```scheme
+> (actor 'counter (lambda ()
+     (let loop ((this 0))
+        (define envelope (check-mail))
+        (if envelope
+        then
+           (let*((sender msg envelope))
+              (case msg
+                 (['reset]
+                    (loop 0))
+                 (['get]
+                    (mail sender this)
+                    (loop this))
+                 (['stop]
+                    #false)
+                 (else
+                    (runtime-error "unknown command" msg))))
+        else
+           (sleep 1)
+           (loop (+ this 1))))))
+
+> (await (mail 'counter ['get]))
+> (mail 'counter ['reset])
+> (await (mail 'counter ['get]))
+> (mail 'counter ['stop])
+```
 
 # ...

@@ -25,7 +25,7 @@ the equivalence ("==>") form,
 and interactive ("> ") form.  
 ```scheme
 ; it shows behavior as if someone typing code
-; in an interactive ol session
+; in the interactive ol session
 > #i1.2
 1.199999999
 
