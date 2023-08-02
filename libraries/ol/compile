@@ -1,0 +1,28 @@
+#!/usr/bin/env ol
+
+(import (owl parse))
+(import (lang sexp))
+(import (lang eval))
+(import (scheme repl))
+
+(define stream (file->bytestream (car *vm-args*)))
+(unless stream
+   (runtime-error "No source code found or file read error"))
+
+(define env (interaction-environment))
+(define main
+   (let loop ((exp #false) (env env) (stream stream))
+      (define sexp (try-parse sexp-parser stream #t))
+      (if sexp
+         (let*((exp stream sexp))
+            (case (eval exp env)
+               (['ok exp env]
+                  (loop exp env stream))
+               (['fail reason]
+                  (runtime-error "eval failed with" reason))
+               (else
+                  (runtime-error "unknown eval fail error") #n)))
+         exp)))
+
+(define bytes (fasl-encode main))
+(write-bytes stdout bytes)
