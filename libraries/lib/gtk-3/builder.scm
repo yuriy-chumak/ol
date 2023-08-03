@@ -12,6 +12,8 @@
 
       gtk_builder_set_application
       gtk_builder_get_application
+      
+      ;; GtkBuilder
    )
    (import
       (scheme core)
@@ -35,7 +37,26 @@
    (define gtk_builder_set_application (GTK3 void "gtk_builder_set_application" GtkBuilder* GtkApplication*))
    (define gtk_builder_get_application (GTK3 GtkApplication* "gtk_builder_get_application" GtkBuilder*))
 
-   (define (GtkBuilder props)
-      ;...
-      #false)
+   ;; (define GtkBuilder
+   ;;    (define (GtkBuilder ptr props)
+   ;;       (let ((this (cond
+   ;;                      ((eq? ptr #false)
+   ;;                         (gtk_builder_new))
+   ;;                      ((string? props)
+   ;;                         (gtk_builder_new_from_file props))
+   ;;                      (else
+   ;;                         (runtime-error "invalid GtkBuilder constructor" ptr)))))
+   ;;          {
+   ;;             'unref (lambda () (g_object_unref this))
+   ;;             'get-object (lambda (o) (gtk_builder_get_object this o))
+   ;;             'connect-signals (lambda (userdata) (gtk_builder_connect_signals this userdata))
+   ;;          }))
+
+   ;;    (case-lambda
+   ;;       ((arg)
+   ;;          (GtkBuilder arg {}))
+   ;;       ((arg1 arg2)
+   ;;          (GtkBuilder arg1 arg2))
+   ;;       (()
+   ;;          (GtkBuilder #false {})) ))
 ))

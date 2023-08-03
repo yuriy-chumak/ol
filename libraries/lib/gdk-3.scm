@@ -15,7 +15,10 @@
       GdkPixbuf*
       gdk_pixbuf_loader_new
       gdk_pixbuf_loader_write
+      gdk_pixbuf_loader_close
       gdk_pixbuf_loader_get_pixbuf
+      gdk_pixbuf_flip
+      gdk_pixbuf_scale_simple
    )
    (import
       (scheme core)
@@ -53,5 +56,14 @@
    (define GdkPixbufLoader* fft-void*)
    (define gdk_pixbuf_loader_new (GDK GdkPixbufLoader* "gdk_pixbuf_loader_new"))
    (define gdk_pixbuf_loader_write (GDK gboolean "gdk_pixbuf_loader_write" GdkPixbufLoader* type-bytevector gsize (fft& GError*)))
+   (define gdk_pixbuf_loader_close (GDK gboolean "gdk_pixbuf_loader_close" GdkPixbufLoader* (fft& GError*)))
    (define gdk_pixbuf_loader_get_pixbuf (GDK GdkPixbuf* "gdk_pixbuf_loader_get_pixbuf" GdkPixbufLoader*))
+
+   (define GdkInterpType gint)
+   ; GDK_INTERP_NEAREST 0
+   ; GDK_INTERP_TILES 1
+   ; GDK_INTERP_BILINEAR 2
+   ; GDK_INTERP_HYPER 3
+   (define gdk_pixbuf_flip (GDK GdkPixbuf* "gdk_pixbuf_flip" GdkPixbuf* gboolean))
+   (define gdk_pixbuf_scale_simple (GDK GdkPixbuf* "gdk_pixbuf_scale_simple" GdkPixbuf* gint gint GdkInterpType))
 ))

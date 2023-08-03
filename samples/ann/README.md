@@ -1,17 +1,13 @@
-Please, download source data from the http://yann.lecun.com/exdb/mnist/
-
-This example requires external library "libol-ann" (a c library that does fast math). You can build it manually or install using 'kiss' package manager.
-Please refer [this link](https://github.com/yuriy-chumak/libol-ann/) for further steps.
-
-PREPARE
--------
-
-* Download mnist sample files (train-images-idx3-ubyte.gz, train-labels-idx1-ubyte.gz, t10k-images-idx3-ubyte.gz, and t10k-labels-idx1-ubyte.gz) from http://yann.lecun.com/exdb/mnist/ (don't unpack, just download).
-* Change the database path in mnist-check.lisp and mnist-train.lisp from "/media/uri/1TB/DATA/mnist/" to path to downloaded files.
-
+Please, download training data from http://yann.lecun.com/exdb/mnist/ (or use `make` to do it automatically).
 
 USAGE
 -----
 
-1. Run mnist-train.lisp, wait, press LMB to dump an ann state ("syn0" and "syn1" files). Close mnist-train.lisp.
-2. Run mnist-check.lisp, press LMB to test new randrom image.
+1. Run mnist.lisp, wait.
+1. Press buttons to interact with:
+   1. "question mark" to test image recognition from testing set.
+   1. "play mark" to run learning process
+   1. "pause mark" to pause learning process
+   1. "circle with arrows mark" to step learning process
+   1. "save mark" to save current matrices (will be loaded automatically on next start)
+

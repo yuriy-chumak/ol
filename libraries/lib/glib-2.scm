@@ -46,6 +46,9 @@
       g_signal_connect
       g_application_run
       g_application_quit
+
+      g_object_get_data
+      g_object_set_data
    )
    (import
       (scheme core)
@@ -128,6 +131,10 @@
 (define g_date_time_new_from_unix_utc (GLIB GDateTime* "g_date_time_new_from_unix_utc" gint64))
 (define g_date_time_format (GLIB type-vptr "g_date_time_format" GDateTime* gchar*))
 (define g_date_time_unref (GLIB void "g_date_time_unref" GDateTime*))
+
+
+(define g_object_get_data (GOBJECT gpointer "g_object_get_data" GObject* type-string))
+(define g_object_set_data (GOBJECT void "g_object_set_data" GObject* gpointer))
 
 ; --=( GType )=---------------
 (define GType fft-unsigned-long)
