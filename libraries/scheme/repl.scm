@@ -12,10 +12,10 @@
 
 (begin
 
-   (define-lazy-macro (interaction-environment)
-      current-environment)
+   (define-lazy-macro interaction-environment (lambda ()
+      current-environment))
 
-   (define-lazy-macro (defined? symbol)
-      (if (get current-environment symbol #false) #true))
+   (define-lazy-macro defined? (lambda (symbol)
+      (if (get current-environment symbol #false) #true)))
 
 ))

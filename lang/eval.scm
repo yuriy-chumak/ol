@@ -180,12 +180,11 @@
 
       ; fast macro, compiled at declaration moment
       (define *special-forms* (put *special-forms*
-         ; legacy form: (define-macro name (lambda (args) body))
-         ; modern form: (define-macro (name args) body)
-         'define-fast-macro ['macro (lambda (form venv)
+         ; (define-instant-macro (name args) body)
+         'define-instant-macro ['macro (lambda (form venv)
                (define legacy-form (symbol? (cadr form)))
-               (let*((name expression
-                        (values (caadr form) `(lambda ,(cdadr form) ,(caddr form))))
+               (let*((name expression (values (cadr form) (caddr form)))
+                        ;; (values (caadr form) `(lambda ,(cdadr form) ,(caddr form))))
                      (expanded (macro-expand expression venv)))
                   (define evaluated (ref (evaluate (ref expanded 2) venv) 2))
 
@@ -199,8 +198,8 @@
          ; (define-lazy-macro (name args) body)
          'define-lazy-macro ['macro (lambda (form venv)
                (define legacy-form (symbol? (cadr form)))
-               (let*((name expression
-                        (values (caadr form) `(lambda ,(cdadr form) ,(caddr form)))) )
+               (let*((name expression (values (cadr form) (caddr form))))
+                        ;; (values (caadr form) `(lambda ,(cdadr form) ,(caddr form)))) )
                   [`(quote macro-operation eval #false (
                      ,name
                      ,(lambda (form venv)

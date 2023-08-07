@@ -1,47 +1,53 @@
 (print "legacy macro system:")
-(define-macro sq (lambda (x) `(* ,x ,x)))
-(define-macro do (lambda (x) `(define ,x ,(sq q))))
+(define q 5)
+(define-macro square (lambda (x) `(* ,x ,x)))
+(define-macro define-q-square (lambda (x)
+   `(define ,x ,(square q))))
 
 (define q 3)
-(do a)
+(define-q-square a)
 (write a) (newline)
 
 (define q 4)
-(do a)
+(define-q-square a)
 (write a) (newline)
 
-(define-macro sq (lambda (x) `(+ ,x ,x)))
-(do a)
+(define-macro square (lambda (x) `(+ ,x ,x)))
+(define-q-square a)
 (write a) (newline)
 
+; -----
 (print "modern macro system (lazy-macro):")
-(define-lazy-macro (sq x) `(* ,x ,x))
-(define-lazy-macro (do x) `(define ,x ,(sq q)))
+(define-lazy-macro square (lambda (x) `(* ,x ,x)))
+(define-lazy-macro define-q-square (lambda (x)
+   `(define ,x ,(square q))))
 
 (define q 3)
-(do a)
+(define-q-square a)
 (write a) (newline)
 
 (define q 4)
-(do a)
+(define-q-square a)
 (write a) (newline)
 
-(define-macro sq (lambda (x) `(+ ,x ,x)))
-(do a)
+(define-macro square (lambda (x) `(+ ,x ,x)))
+(define-q-square a)
 (write a) (newline)
 
-(print "modern macro system (fast-macro):")
-(define-fast-macro (sq x) `(* ,x ,x))
-(define-fast-macro (do x) `(define ,x ,(sq q)))
+; -----
+(print "modern macro system (instant-macro):")
+(define-instant-macro square (lambda (x) `(* ,x ,x)))
+(define-instant-macro define-q-square (lambda (x)
+   `(define ,x ,(square q))))
 
 (define q 3)
-(do a)
+(define-q-square a)
 (write a) (newline)
 
 (define q 4)
-(do a)
+(define-q-square a)
 (write a) (newline)
 
-(define-macro sq (lambda (x) `(+ ,x ,x)))
-(do a)
+(define-macro square (lambda (x) `(+ ,x ,x)))
+(define-q-square a)
 (write a) (newline)

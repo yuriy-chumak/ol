@@ -56,6 +56,7 @@ List of Standard procedures
 - [Lazy Lists](lazy-lists.md).
 - [Sorting](sorting.md).
 - [Coroutines and Actors](async.md).
+- [Macro System](macros.md).
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.
@@ -145,6 +146,10 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [cons*](pairs-and-lists.md#cons-1)
 ## D
 [decode2](serialization-deserialization.md#decode2)
+[define-instant-macro](#macro.md#define-instant-macro)
+[define-lazy-macro](#macro.md#define-lazy-macro)
+[define-macro](#macro.md#define-macro)
+[define-syntax](#macro.md#define-syntax)
 [denominator](numerical-operations.md#denominator)
 [deserialize](serialization-deserialization.md#deserialize)
 [digit-value](characters.md#digit-value)
