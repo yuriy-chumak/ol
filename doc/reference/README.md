@@ -19,7 +19,7 @@ the equivalence ("==>") form,
 ```scheme
 ; arrows mean equivalence in sence of `equal?`
 (+ 1 2 3)  ==>  6
-(+ 1 2 3)  <=>  (+ 3 2 1)
+(+ 1 2 3)  ===  (+ 3 2 1)
 ```
 
 and interactive ("> ") form.  
@@ -31,7 +31,7 @@ and interactive ("> ") form.
 
 > (let ((N 10000))
       (define (sign n)
-         (if (zero? (mod n 2)) + -))
+         (if (even? n) + -))
       (fold (lambda (f x i)
                ((sign i) f (/ #i4 x)))
          #i4

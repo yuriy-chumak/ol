@@ -48,7 +48,7 @@
          (skip (greedy* whitespace-or-comment))
          (code sexp-parser)
          (arrow sexp-parser)  (verify (or (equal? arrow '==>)
-                                          (equal? arrow '<=>)) 'invalid-arrow-symbol)
+                                          (equal? arrow '===)) 'invalid-arrow-symbol)
          (answer sexp-parser)
          (skip (greedy* whitespace-or-comment)))
       (cons code answer)))
