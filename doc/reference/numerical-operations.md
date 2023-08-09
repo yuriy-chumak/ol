@@ -9,7 +9,7 @@ Mathematically, numbers are arranged into a tower of subtypes in which each leve
 * complex number (ℂ, includes *complex* numbers)
 * number (any number above)
 
-Please note that by default Ol works with *exact* numbers. If you want to use *inexact* numbers (machine defined numbers like *float* or *double*, if supported), you should explicitly note this using `#i` prefix or `inexact` function.
+Please note that Ol works with *exact* numbers by default. If you want to use *inexact* numbers (machine defined numbers like *float* or *double*, if supported), you should explicitly note this using `#i` prefix or `inexact` function.
 
 ```scheme
 > 1.2

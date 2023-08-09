@@ -23,6 +23,8 @@ Returns #true if *obj1* and *obj2* are definitely the same object or same values
 (let ((q '(a)))
    (eq? q q))                ==>  #true
 (eq? 2 2)                    ==>  #true  ; same values
+(eq? 2 2.0)                  ==>  #true  ; 2.0 is exact(!) in Ol
+(eq? 2 #i2.0)                ==>  #false ; '#i' - inexact prefix
 (eq? 222222222222222222222
      222222222222222222222)  ==>  #false ; long integers are objects, not values
 (eq? #\A #\A)                ==>  #true
@@ -31,7 +33,7 @@ Returns #true if *obj1* and *obj2* are definitely the same object or same values
 (eq? (lambda (x) x)
      (lambda (x) x))         ==>  #true
 (eq? (lambda (x) x)
-     (lambda (y) y))         ==>  #true  ; code optimizer reuses the same existing functions
+     (lambda (y) y))         ==>  #true  ; code optimizer reuses same existing functions
 ```
 
 # eqv?
@@ -78,10 +80,12 @@ Briefly, it returns #true if *obj1* and *obj2* are normally regarded as the same
       (lambda (x) x))        ==>  #true
 (eqv? (lambda (x) x)
       (lambda (y) y))        ==>  #true
+
 (letrec (
       (f (lambda () (if (eqv? f g) 'both 'f)))
       (g (lambda () (if (eqv? f g) 'both 'g))))
    (eqv? f g))               ==>  #false
+
 (let ((p (lambda (x) x)))
     (eqv? p p))              ==>  #true
 ```
@@ -103,9 +107,9 @@ infinite) trees are equal (in the sense of `equal?`) as ordered trees, and #fals
 (equal? '(1 (2 (3 4)) 5)
         '(1 (2 (3 4)) 5))      ==>  #true
 (equal? { 'name "Yuriy"
-          'phone 33223333 }
+          'phone 12345678 }
         { 'name "Yuriy"
-          'phone 33223333 })   ==>  #true
+          'phone 12345678 })   ==>  #true
 (equal? [1 2 3] [1 2 3])       ==>  #true
 (equal? (bytevector "123")
         (string "123"))        ==>  #false

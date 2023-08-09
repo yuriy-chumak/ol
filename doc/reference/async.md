@@ -1,7 +1,7 @@
 (otus async)
 ============
 
-Ol itself consists of a single purely functional process, but inside it has full support for lightweight coroutines. This allows you to have non-functional features such as [dynamic bindings](dynamic-bindings.md), actors, parallel calculations.
+Ol itself consists of a single purely functional process, but inside it has full support for lightweight coroutines. This enables you to include non-functional features like [dynamic bindings](dynamic-bindings.md), actors, parallel calculations, etc.
 
 Coroutines (REPL is also a coroutine) can communicate asynchronously by sending mails consisting of a sender's name (possibly anonymous) and an arbitrary message in form *#(sender message)*.
 

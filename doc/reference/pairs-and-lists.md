@@ -1,9 +1,8 @@
 Pairs and Lists
 ===============
-A *pair* (sometimes called a *dotted pair*) is a record structure with two fields called the car and cdr fields (for historical reasons).
-Pairs are created by the procedure `cons`. The car and cdr fields are accessed by the procedures `car` and `cdr`.
+A *pair* (sometimes called a *dotted pair*) is a record structure with two fields called the *car* and *cdr* fields (for historical reasons). Pairs are created by the procedure `cons`. The car and cdr fields are accessed by the procedures `car` and `cdr`.
 
-Pairs are used primarily to represent lists. A *list* can be defined recursively as either the empty list or a pair whose cdr is a list.
+Pairs are used primarily to represent lists. A *list* can be defined recursively as either the empty list or a pair whose *car* is the first element of list and *cdr* is the remainder of list (which either the empty list or a pair whose ....).
 
 ## TOC
 
@@ -18,7 +17,7 @@ Pairs are used primarily to represent lists. A *list* can be defined recursively
 [memq](#memq), [memv](#memv), [member](#member), [assq](#assq), [assv](#assv), [assoc](#assoc),  
 [map](#map), [fold](#fold), [foldr](#foldr)
 
-### Non functional features (very limited, use with care!)
+### Non-functional features (very limited, use with care!)
 [set-car!](#set-car), [set-cdr!](#set-cdr), [list-set!](#list-set)
 
 # cons
@@ -126,7 +125,7 @@ Only the pairs themselves are copied; the cars of the result are the same (in th
 
 (let*((x '("a" ("b" "c") "d"))
       (y (list-copy x)))
-   (eq? (lref x 1) (lref y 1))) ==>  #true  ; ("b" "c")
+   (eq? (lref x 1) (lref y 1)))  ==>  #true  ; ("b" "c")
 ```
 
 # #null
@@ -153,7 +152,7 @@ Returns #true if *obj* is the empty list, otherwise returns #false.
 (null? '(a . b))              ==>  #false
 (null? '())                   ==>  #true
 (null? #null)                 ==>  #true
-(null? null)                  ==>  #true  ; `null` is depraceted
+(null? null)                  ==>  #true  ; `null` is deprecated
 (null? (cdr '(1)))            ==>  #true
 (null? #false)                ==>  #false
 ```
@@ -204,13 +203,13 @@ Returns #true if *obj* is a proper list, otherwise returns #false.
 `(cddddr list)`, *procedure*, `(scheme cxr)`
 
 ```scheme
-caar   ==>  (lambda (x) (car (car x)))
-cadr   ==>  (lambda (x) (car (cdr x)))
-cdar   ==>  (lambda (x) (cdr (car x)))
-cddr   ==>  (lambda (x) (cdr (cdr x)))
+caar   ===  (lambda (x) (car (car x)))
+cadr   ===  (lambda (x) (car (cdr x)))
+cdar   ===  (lambda (x) (cdr (car x)))
+cddr   ===  (lambda (x) (cdr (cdr x)))
 
-(cddadr '(1 (2 3 4 5) 6))     ==> '(4 5)
-(cadadr '(1 (2 3 4 5) 6))     ==>  3
+(cddadr '(1 (2 3 4 5) 6))   ==> '(4 5)
+(cadadr '(1 (2 3 4 5) 6))   ==>  3
 ```
 
 # length
@@ -261,11 +260,11 @@ Returns a newly allocated list of *k* elements, each is initialized to *fill*.
 `(iota count start)`, *procedure*
 `(iota count start step)`, *procedure*
 
-Returns a newly allocated list with sequence of count numbers from *start* with step *step*.
+Returns a newly allocated list with sequence of *count* numbers from *start* with step *step*.
 The default value of *start* is a 0. The default values of *step* is a 1.
 
 ```scheme
-(iota 20)                ==> '(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
+(iota 12)                ==> '(0 1 2 3 4 5 6 7 8 9 10 11)
 (iota 5 -3)              ==> '(-3 -2 -1 0 1)
 (iota 3 10 1000)         ==> '(10 1010 2010)
 ```
@@ -287,6 +286,7 @@ Returns a newly allocated list with sequence of numbers from *from* to *to* with
 Returns a list consisting of the elements of the first *list* followed by the elements of the other *lists*.
 
 ```scheme
+(append)                          ==> '()
 (append '(x) '(y))                ==> '(x y)
 (append '(a) '(b c d))            ==> '(a b c d)
 (append '(a (b)) '((c)))          ==> '(a (b) (c))
@@ -295,7 +295,6 @@ Returns a list consisting of the elements of the first *list* followed by the el
 (append '(1 2 3))                 ==> '(1 2 3)
 (append '(1) '(2) '(3 (4)) '(5))  ==> '(1 2 3 (4) 5)
 (append '(1 2 3) 4)               ==> '(1 2 3 . 4)
-(append)                          ==> '()
 ```
 
 # reverse
@@ -362,9 +361,9 @@ The `memv` procedure uses `eqv?` to compare obj with the elements of *list*.
 (memv "b" '("a" "b" "c"))  ==>  #false
 (memv '(a) '(b (a) c))     ==>  #false
 ; memv is working for any numbers:
-(memv 101 '(100 101 102))  ==>  '(101 102)
 (memv 1000000000000000000000
    '(100 1000000000000000000000 102))  ==>  '(1000000000000000000000 102)
+(memv 101 '(100 101 102))  ==>  '(101 102)
 ```
 
 # member
@@ -419,9 +418,9 @@ The `assv` procedure uses `eqv?` to compare obj with the car fields of the pairs
 (assv "b" '(("a" 1) ("b" 2) ("c" 3)))   ==>  #false
 (assv '(b) '(((a) 1) ((b) 2) ((c) 3)))  ==>  #false
 ; assv is working for any numbers:
-(assv 5 '((2 3) (5 7) (11 13)))         ==>  '(5 7)
 (assv 1000000000000000000000
    '((2 3) (1000000000000000000000 101) (102 103)))  ==>  '(1000000000000000000000 101)
+(assv 5 '((2 3) (5 7) (11 13)))         ==>  '(5 7)
 ```
 
 # assoc
@@ -444,29 +443,33 @@ The `assoc` procedure uses *compare* if given, and `equal?` otherwise, to compar
 ```
 
 # map
-`(map handler a ...)`, *procedure*
+`(map handler list ...)`, *procedure*
 
 The `map` function uses the per-element results to create a new list.
 
 ```scheme
 (map - '(1 2 3))                 ==> '(-1 -2 -3)
 (map sqrt '(1 4 9 16))           ==> '(1 2 3 4)
+
 (map (lambda (n i)
-        ((if (zero? (mod i 2)) + -) n))
+        ((if (even? i) + -) n))
    '(1 3 5 7 9)
    '(1 2 3 4 5))                 ==> '(-1 3 -5 7 -9)
+
 (map (lambda (n) (/ 1 n))
    (iota 5 1 2))                 ==> '(1 1/3 1/5 1/7 1/9)
+
 (map (lambda (i p)
         (string-append i p))
    '("peanuts" "popcorn" "crackerjack")
    '("!"       "?"       "^"))   ==> '("peanuts!" "popcorn?" "crackerjack^")
+
 (map car '(
    (1 . 2) (3 . 4) (5 . 6)))     ==> '(1 3 5)
 ```
 
 # fold
-`(fold handler state a ...)`, *procedure*
+`(fold handler state list ...)`, *procedure*
 
 Combine the elements of list(s) from left to right.
 
@@ -478,10 +481,12 @@ Combine the elements of list(s) from left to right.
 
 (fold put {} '(x y z)
              '(4 5 6))        ==>  { 'x 4  'y 5  'z 6 }
+
 (fold (lambda (f x)
          (min f x))
    100
    '(6 7 8 4 7))              ==>  4
+
 (fold (lambda (f x y)
          (string-append f "/" x y))
    "X"
@@ -502,7 +507,7 @@ Combine the elements of list(s) from left to right.
 ```
 
 # foldr
-`(foldr handler state a ...)`, *procedure*
+`(foldr handler state list ...)`, *procedure*
 
 Combine the elements of list(s) from right to left.
 
@@ -513,12 +518,16 @@ Combine the elements of list(s) from right to left.
 (foldr cons 3 '(5 6 7))        ==>  '(5 6 7 . 3)
 
 (foldr - 9)                               ==>  9
+
 (foldr - 9 '(1 2))                      ; === (- 1 (- 2 9))
                                           ==>  8
+
 (foldr - 9 '(1 2) '(3 4))               ; === (- 1 3 (- 2 4 9))
                                           ==>  9
+
 (foldr - 9 '(1 2) '(3 4) '(5 6))        ; === (- 1 3 5 (- 2 4 6 9))
                                           ==> 10
+
 (foldr - 9 '(1 2) '(3 4) '(5 6) '(7 8)) ; === (- 1 3 5 7 (- 2 4 6 8 9))
                                           ==> 11
 
@@ -534,7 +543,7 @@ Combine the elements of list(s) from right to left.
    '("1" "2" "3" "4"))         ==>  "X/d4/c3/b2/a1"
    ```
 
-Non functional features
+Non-functional features
 =======================
 
 Ol provides limited support for non-functional (in sense of [paradigm](https://en.wikipedia.org/wiki/Functional_programming)) features.
@@ -546,9 +555,17 @@ Please only use them if you know what you are doing! This can lead to unexpected
 Stores obj in the car field of pair. *Obj* must be enum, symbol, or constant.
 
 ```scheme
-(set-car! '(1 . 2) 8)         ==>  '(8 . 2)
-(set-car! (cons 'a 'b) 'xxx)  ==>  '(xxx . b)
-(set-car! '(a . #f) #t)       ==>  '(#true . #false)
+(let ((x '(1 . 2)))
+   (set-car! x 8)
+   x)                         ==>  '(8 . 2)
+
+(let ((y (cons 'a 'b)))
+   (set-car! y 'xxx)
+   y)                         ==>  '(xxx . b)
+
+(let ((z '(a . #f)))
+   (set-car! z #t)
+   z)                         ==>  '(#true . #false)
 ```
 
 # set-cdr!
@@ -557,9 +574,17 @@ Stores obj in the car field of pair. *Obj* must be enum, symbol, or constant.
 Stores obj in the cdr field of pair. *Obj* must be enum, symbol, or constant.
 
 ```scheme
-(set-cdr! '(1 . 2) 8)         ==>  '(1 . 8)
-(set-cdr! (cons 'a 'b) 'xxx)  ==>  '(a . xxx)
-(set-cdr! '(a . #f) #t)       ==>  '(a . #true)
+(let ((x '(1 . 2)))
+   (set-cdr! x 8)
+   x)                         ==>  '(1 . 8)
+
+(let ((y (cons 'a 'b)))
+   (set-cdr! y 'xxx)
+   y)                         ==>  '(a . xxx)
+
+(let ((z '(a . #f)))
+   (set-cdr! z #t)
+   z)                         ==>  '(a . #true)
 ```
 
 # list-set!

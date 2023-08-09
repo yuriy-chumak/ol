@@ -15,17 +15,14 @@ Reference
 This is an Ol reference, not a Scheme. Scheme R<sup>7</sup>RS differences decribed in the main [README](https://github.com/yuriy-chumak/ol#r7rs-differences) file.
 
 Examples are provided in two forms:
-the equivalence ("==>") form,  
+1. in the equivalence (in sense of [equal?](equivalence-predicates.md#equal)) form using symbols "==>" and "===",
 ```scheme
-; arrows mean equivalence in sence of `equal?`
 (+ 1 2 3)  ==>  6
 (+ 1 2 3)  ===  (+ 3 2 1)
 ```
 
-and interactive ("> ") form.  
+2. and in the interactive form using prompt symbol "> ", which shows the behavior as if someone were typing code in an interactive ol session.
 ```scheme
-; it shows behavior as if someone typing code
-; in the interactive ol session
 > #i1.2
 1.199999999
 
@@ -40,7 +37,7 @@ and interactive ("> ") form.
 3.14169264
 ```
 
-All provided examples are tested with Ol's latest build each time the code is submitted to GitHub.
+All provided examples are tested with the Ol's latest build each time the code is submitted to GitHub.
 
 
 List of Standard procedures
