@@ -42,7 +42,7 @@
                0)))) ; None
 
       ; common code
-      (XSelectInput dpy window #b100000000000000101) ; StructureNotifyMask | KeyPressMask | ButtonPressMask
+      (XSelectInput dpy window #b100000000000000111) ; StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask
       (XStoreName dpy window title)
       (XMapWindow dpy window)
       (let ((cx (glXCreateContext dpy vi #false 1)))
@@ -81,10 +81,14 @@
             (XNextEvent dpy XEvent)
             ; https://tronche.com/gui/x/xlib/events/types.html
             (case (bytevector->int32 XEvent 0)
+               ; keyboard events:
                (2 ; KeyPress
                   (handler ['keyboard (XKeycodeToKeysym dpy
-                        (bytevector->int32 XEvent (x11config '|XKeyEvent.keycode|)) 0)]))
-               (3 #f) ; KeyRelease, skip
+                        (bytevector->int32 XEvent (x11config '|XKeyEvent.keycode|)) 0) #t]))
+               (3 ; KeyRelease
+                  (handler ['keyboard (XKeycodeToKeysym dpy
+                        (bytevector->int32 XEvent (x11config '|XKeyEvent.keycode|)) 0) #f]))
+               ; mouse
                (4 ; ButtonPress
                   (let ((x (bytevector->int32 XEvent (x11config '|XButtonEvent.x|)))
                         (y (bytevector->int32 XEvent (x11config '|XButtonEvent.y|)))
