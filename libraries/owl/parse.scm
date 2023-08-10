@@ -440,10 +440,15 @@
       ;;             (else
       ;;                #n)))))
 
-      (define (try-parse parser data unused)
-         (let* ((l r p val (parser #null data 0 parser-succ)))
-            (when l
-               (cons val r)))) ; '(val . #null) in case of full match
+      (define try-parse
+         (define (try-parse parser stream)
+            (let* ((l r p val (parser #null stream 0 parser-succ)))
+               (when l
+                  (cons val r)))) ; '(val . #null) in case of full match
+         (case-lambda
+            ((parser data) (try-parse parser data))
+            ; three arguments is deprecated:
+            ((parser data unused) (try-parse parser data))))
 
       (define (parse parser data unused-path errmsg fail-val) ; todo: use path
          (let loop ((try (λ () (parser #null data 0 parser-succ))))
