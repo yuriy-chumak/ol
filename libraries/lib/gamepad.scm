@@ -1,7 +1,7 @@
-(define-library (lib joystick)
+(define-library (lib gamepad)
    (version 1.0)
    (license MIT/LGPL3)
-   (description "joystick support library")
+   (description "gamepad support library")
 (import
    (otus lisp) (otus ffi))
 
@@ -37,11 +37,13 @@
             (unbox count))
 
          (define (read-event)
-            (define bytes (syscall 0 js0 8))
-            (when (bytevector? bytes) [
-               (bytevector->int16 bytes 4)
-               (ref bytes 6) (ref bytes 7) ]))
-
+            (when (port? js0)
+               (define bytes (syscall 0 js0 8))
+               (when (bytevector? bytes) [
+                  ; 0..3 is a timestamp (is not used)
+                  (bytevector->int16 bytes 4) ; value
+                  (ref bytes 6) (ref bytes 7) ; event type and axis/button number
+               ])))
       ))
    (Darwin
       (begin

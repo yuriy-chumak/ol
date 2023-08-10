@@ -17,6 +17,8 @@
    ; event handlers
    gl:set-mouse-handler
    gl:set-keyboard-handler
+   gl:set-gamepad-handler
+
    gl:set-resize-handler
 
    ; getters
@@ -168,10 +170,15 @@
                   (native:process-events context (lambda (event)
                      (case event
                         (['quit] (halt 0))
-                        (['keyboard key]
-                           ((this 'keyboard-handler (lambda (kk) #f)) key))
                         (['mouse button x y]
                            ((this 'mouse-handler (lambda (b x y) #f)) button x y))
+                        (['keyboard key pressed]
+                           (define handler (this 'keyboard-handler #f))
+                           (case (arity handler)
+                              (1 (if pressed (handler key)))
+                              (2 (handler key pressed))))
+                        (['gamepad event key value]
+                           ((this 'gamepad-handler (lambda (e k v) #f)) event key value))
                         (else
                            #false))))
                   ; 2. вычисляем мир
@@ -268,6 +275,9 @@
 
 (define (gl:set-keyboard-handler handler)
    (mail 'opengl ['set 'keyboard-handler handler]))
+
+(define (gl:set-gamepad-handler handler)
+   (mail 'opengl ['set 'gamepad-handler handler]))
 
 (define (gl:set-resize-handler handler)
    (mail 'opengl ['set-resize-handler handler]))

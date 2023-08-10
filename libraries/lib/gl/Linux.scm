@@ -1,5 +1,3 @@
-(import (prefix (lib x11 config) x11))
-
 (setq X11 (or (load-dynamic-library "libX11.so")
               (load-dynamic-library "libX11.so.6")))
 
@@ -71,10 +69,13 @@
 (setq XPending      (X11 fft-int "XPending" type-vptr))
 (setq XNextEvent    (X11 fft-void "XNextEvent" type-vptr type-bytevector))
 
+(import (prefix (lib x11 config) x11))
+(import (lib gamepad))
+
 (define (native:process-events context handler)
    (vector-apply context (lambda (dpy screen window cx)
+      ; x11 events
       (define XEvent (make-bytevector (x11config '|sizeof XEvent|)))
-
       (let loop ()
          (when (> (XPending dpy) 0)
             (XNextEvent dpy XEvent)
@@ -90,6 +91,7 @@
                         (button (bytevector->int32 XEvent (x11config '|XButtonEvent.button|))))
                      (handler ['mouse button x y])))
                (5 #f) ; ButtonRelease
+               ; others
                (17 #f); DestroyNotify
                (19 #f) ; MapNotify
                (21 #f) ; ReparentNotify
@@ -98,7 +100,15 @@
                         (h (bytevector->int32 XEvent (x11config '|XConfigureEvent.height|))))
                      (mail 'opengl ['resize w h])))
                (else #f))
-            (loop))))))
+            (loop)))
+
+      ; gamepad events
+      (let loop ()
+         (define ev (read-event))
+         (if ev (vector-apply ev (lambda (value evtype abnumber)
+            (handler ['gamepad evtype abnumber value])
+            (loop)))))
+   )))
 
 ; ---
 (setq XInternAtom (X11 type-vptr "XInternAtom" type-vptr type-string fft-int))
