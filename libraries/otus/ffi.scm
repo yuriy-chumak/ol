@@ -305,8 +305,8 @@
 ; boxing/unboxing
 (define (box value)
    (list value))
-(define (unbox list)
-   (car list))
+(define (unbox box)
+   (car box))
 
 ; makers
 (define (make-32bit-array len)

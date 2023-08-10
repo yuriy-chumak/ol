@@ -1,4 +1,4 @@
-; minimal set of Scheme (with Ol subset)
+; minimal set of Scheme (including Ol subset)
 (define-library (scheme core)
    (version 2.0)
    (license MIT/LGPL3)
@@ -180,6 +180,7 @@
       ; syntax:  (if <test> <consequent> <alternate>)
       ; syntax:  (if <test> <consequent>)
       ; auxiliary syntax: else            * ol specific
+      ; todo: add (if (then ...) (else ...)) syntax
       (define-syntax if
          (syntax-rules (not eq? null? empty? then else begin)
             ((if val ok) (if val ok #f))

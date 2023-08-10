@@ -23,7 +23,7 @@ It implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
 but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
 and cross-platform;  provides a portable, high-level interface
-to call code written in other languages (c, python, lua, etc).
+to call code written in another language (c, python, lua, etc).
 
 You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
 (Open/Free/Net) BSD, Solaris and other operating systems based
@@ -56,20 +56,22 @@ Q/A
 ---
 
 1. Q. Why no **arrow keys** processing and a history in Ol command line?<br/>
-   A. For the simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool: `$ rlwrap ol` .
+   A. For the gods of simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool
+      (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your .bashrc and run just as `ol`.
 
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
 1. Q. I want to have a Virtual Environment. Can I?  
-   A. Yes. A virtual environment is an Ol environment such that the libraries and scripts installed into it are isolated from those installed in other virtual environments and your operating system. Use `--home=the-yours-venv-path` Ol command line option.
+   A. Yes. Use `--home=the-yours-venv-path` Ol command line option.
+      [More about venv](#virtual-env).
 
 1. Q. .. fatal error: bits/libc-header-start.h: No such file or directory.  
    A. Install gcc multilib, i.e. *sudo apt install gcc-multilib*.
 
 1. Q. Anything else interesting?  
    A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
-      Just type `echo ,load http/server| ol` in command line.
+      Just type `echo ,load http/server| ol` in command line, or type `,l http/server` inside Ol session.
 
 1. Q. Why do you call characters not "characters", but "runes"?  
    A. Because these are runes - letters in a wide set of alphabets :)  
@@ -81,6 +83,7 @@ Q/A
 
 1. Q. I'm lost in prefix math notation, can you help me?  
    A. Ol has a [thirdparty math library](https://github.com/yuriy-chumak/libol-algebra) that supports infix math notation. You can install it or just copy the "otus" folder.
+      (infix-nonation is planned to be included as a standard Ol library into the next release)
    ```scheme
    > (import (otus algebra))
    > ,expand (infix-notation 1 + 2 * 3 - sqrt(4))
@@ -449,6 +452,15 @@ So, starting from version 2.2.1 you should do:
 
 (fasl-save (vm:new 63 main) "out.bl")
 ```
+
+VIRTUAL ENV
+-----------
+
+A virtual environment is an Ol environment such that the libraries and scripts installed into it are isolated from those installed in other virtual environments and your operating system.
+
+Use `--home=folder` or `--home=folder1:folder2:...:folderN` Ol command line option, where ':' is a folder divider. Folder names '.' and '..' are allowed.
+
+These folders are linked to the Ol's `*path*` global symbol and can be used and changed at runtime freely.
 
 
 FILES
