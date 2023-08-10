@@ -140,16 +140,18 @@
 
       (define (times n parser)
          (lambda (l r p ok)
-            (let loop ((l l) (r r) (p p) (n n) (v #null))
-               (cond
-                  ((null? r) (backtrack l r p eof-error))
-                  ((pair? r)
-                     (let* ((l r p val (parser l r p (lambda (l r p v) (values l r p v)))))
-                        (if (eq? n 1)
-                           (ok l r p (reverse (cons val v)))
-                           (loop l r p (- n 1) (cons val v)))))
-                  (else
-                     (loop l (r) p n v))))))
+            (if (eq? n 0)
+               (ok l r p #n)
+               (let loop ((l l) (r r) (p p) (n n) (v #null))
+                  (cond
+                     ((null? r) (backtrack l r p eof-error))
+                     ((pair? r)
+                        (let* ((l r p val (parser l r p (lambda (l r p v) (values l r p v)))))
+                           (if (eq? n 1)
+                              (ok l r p (reverse (cons val v)))
+                              (loop l r p (- n 1) (cons val v)))))
+                     (else
+                        (loop l (r) p n v)))))))
 
       ; line up to #\newline (with #\newline) or to the end-of-file
       (define (rest-of-line l r p ok) ; always do "ok"
