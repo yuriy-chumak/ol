@@ -219,7 +219,7 @@
 (define P (gtk_builder_get_object builder "NUMBER"))
 
 (define (test)
-   (define p (random-integer (size test-images)))
+   (define p (+ (random-integer (size test-images)) 1))
    (gtk_label_set_text P (string-append "test" (number->string p)))
    ; draw the source image:
    (define texture (ref test-images p))
@@ -268,7 +268,7 @@
 
 
 (define (step)
-   (define p (random-integer (size images)))
+   (define p (+ (random-integer (size images)) 1))
    (gtk_label_set_text P (number->string p))
    ; draw the source image:
    (define texture (ref images p))
