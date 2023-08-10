@@ -1,32 +1,88 @@
 #!/usr/bin/env ol
 
-(import (lib openal) (otus ffi))
+(import (file wav))
 
+(import (lib ALC))
 (define device (alcOpenDevice #false))
 (define context (alcCreateContext device #false))
 (alcMakeContextCurrent context)
 
-(print "OpenAL version: " (alGetString AL_VERSION))
-(print "OpenAL vendor: " (alGetString AL_VENDOR))
-(print "OpenAL renderer: " (alGetString AL_RENDERER))
-;(print (alGetString AL_EXTENSIONS))
+(import (OpenAL 1.1))
 
-(define buffer (make-32bit-array 1))
+(print-to stderr "OpenAL version: " (alGetString AL_VERSION))
+(print-to stderr "OpenAL vendor: " (alGetString AL_VENDOR))
+(print-to stderr "OpenAL renderer: " (alGetString AL_RENDERER))
+(print-to stderr "OpenAL extensions: " (alGetString AL_EXTENSIONS))
+
+(define buffer (box 0))
 (alGenBuffers 1 buffer)
 (print "buffer id: " buffer)
 
-(al:decode-file buffer "helloworld.snd")
-;al:decode-fd buffer (open-input-file "helloworld.snd");
-
-(define source (make-32bit-array 1))
+(define source (box 0))
 (alGenSources 1 source)
 (print "source id: " source)
+(alSourcei (unbox source) AL_LOOPING 1)
 
-(alSourcei (list-ref source 0) AL_BUFFER (list-ref buffer 0))
-(alSourcei (list-ref source 0) AL_LOOPING 1)
+; ------------------------------------------------
+; PCM
+(print "  * testing pcm media data:")
+(define sound (read-wav-file "media/pcm.wav"))
+(unless sound (runtime-error "invalid source file" "media/pcm.wav"))
+(assert (eq? (sound 'format) 'pcm))
 
-(alSourcePlay (list-ref source 0))
-(print "play error: " (alGetError))
+(print (del sound 'samples))
+(alBufferData (unbox buffer)
+   (case (sound 'channels)
+      (1 (case (sound 'bits-per-sample)
+            (8 AL_FORMAT_MONO8)
+            (16 AL_FORMAT_MONO16)))
+      (2 (case (sound 'bits-per-sample)
+            (8 AL_FORMAT_STEREO8)
+            (16 AL_FORMAT_STEREO16)))
+      (else (runtime-error "unsupported channels count" (sound 'channels))))
+   (sound 'samples)  (size (sound 'samples))
+   (sound 'sample-rate))
 
-(display "> ")
-(read)
+(alSourcei (unbox source) AL_BUFFER (unbox buffer))
+(alSourcePlay (unbox source))
+(let loop ((stop (+ (time-ms) 5000))) ; 5 seconds
+   (sleep 1)
+   (if (< (time-ms) stop) (loop stop)))
+(alSourceStop (unbox source))
+(alSourcei (unbox source) AL_BUFFER #f)
+; ------------------------------------------------
+; aLaw
+(print "  * testing aLaw media data:")
+(import (OpenAL EXT ALAW))
+(if AL_EXT_ALAW
+then
+   (define sound (read-wav-file "media/alaw.wav"))
+   (unless sound (runtime-error "invalid source file" "media/alaw.wav"))
+   (assert (eq? (sound 'format) 'alaw))
+
+   (print (del sound 'samples))
+   (alBufferData (unbox buffer)
+      (case (sound 'channels)
+         (1 AL_FORMAT_MONO_ALAW_EXT)
+         (2 AL_FORMAT_STEREO_ALAW_EXT)
+         (else (runtime-error "unsupported channels count" (sound 'channels))))
+      (sound 'samples)  (size (sound 'samples))
+      (sound 'sample-rate))
+
+   (alSourcei (unbox source) AL_BUFFER (unbox buffer))
+   (alSourcePlay (unbox source))
+   (let loop ((stop (+ (time-ms) 5000))) ; 5 seconds
+      (sleep 1)
+      (if (< (time-ms) stop) (loop stop)))
+   (alSourceStop (unbox source))
+   (alSourcei (unbox source) AL_BUFFER #f)
+else
+   (print "no aLaw media is supported."))
+
+; -----------------------------------------------
+; done.
+(print)
+(alcMakeContextCurrent #f)
+(alcDestroyContext context)
+(alcCloseDevice device)
+(print "done.")

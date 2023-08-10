@@ -6,28 +6,14 @@
 ; Version 1.0 Draft Edition
 ; Published June 2000 (by Loki Software)
 
-(define-library (OpenAL version-1-1)
-   (export
-    AL_VERSION_1_0
-    AL_VERSION_1_1
+(define-library (OpenAL 1.1)
+(export
+      (exports (OpenAL platform))
 
-      AL_LIBRARY  ;internal variable
+   AL_VERSION_1_0
+   AL_VERSION_1_1
 
-      ; AL base types
-      ;ALboolean   ;  boolean  8-bit
-      ;ALchar      ;     char  8-bit
-      ;ALbyte      ;   signed  8-bit
-      ;ALubyte     ; unsigned  8-bit
-      ;ALshort     ;   signed 16-bit
-      ;ALushort    ; unsigned 16-bit
-      ;ALint       ;   signed 32-bit
-      ;ALuint      ; unsigned 32-bit
-      ;ALsizei     ; unsigned 32-bit
-      ;ALenum      ; unsigned 32-bit
-      ;
-      ;ALfloat     ; floating 32-bit
-      ;ALdouble    ; floating 64-bit
-      ;ALvoid
+   AL_LIBRARY  ; * internal
 
       alGetError
 
@@ -36,12 +22,6 @@
          AL_VERSION
          AL_RENDERER
          AL_EXTENSIONS
-
-      alcOpenDevice
-      alcCloseDevice
-
-      alcCreateContext
-      alcMakeContextCurrent
 
       alGenSources
       alGenBuffers
@@ -57,81 +37,32 @@
          AL_FORMAT_STEREO8 AL_FORMAT_STEREO16
 
       alSourcePlay
+      alSourceStop
       alSourceQueueBuffers
       alSourceUnqueueBuffers
 
       ; Source:
       AL_BUFFER AL_LOOPING
 
-      alcGetError
-      alcCaptureOpenDevice
-      alcCaptureCloseDevice
-      alcCaptureStart
-      alcCaptureStop
-      alcCaptureSamples
-
-      alcGetIntegerv
-
-      ALC_CAPTURE_SAMPLES
-
+      box unbox
    )
 ; ============================================================================
 ; == implementation ==========================================================
-   (import
-      (scheme core) (owl io)
-      (owl math) (otus async)
-      (owl string)
+(import (scheme core)
+        (OpenAL platform))
+      ;;  (owl io)
+      ;; (owl math) (otus async)
+      ;; (owl string)
 
-      (otus ffi)
-      (owl list))
+      ;; (otus ffi)
+      ;; (owl list))
 
 (begin
+   (setq AL AL_LIBRARY)
+
    (define AL_VERSION_1_0 1)
    (define AL_VERSION_1_1 1)
 
-   (define ALboolean fft-char)
-   (define ALchar    fft-char)  (define  ALchar* type-string)
-   (define ALbyte    fft-char)
-   (define ALubyte   fft-unsigned-char)
-   (define ALshort   fft-short)
-   (define ALushort  fft-unsigned-short)
-   (define ALint     fft-int)
-      (define ALint*  (fft* ALint))
-      (define ALint&  (fft& ALint))
-   (define ALuint    fft-unsigned-int)
-      (define ALuint* (fft* ALuint))
-      (define ALuint& (fft& ALuint))
-   (define ALsizei   fft-int)
-   (define ALenum    fft-int)
-   (define ALfloat   fft-float)  ; 32-bit IEEE754 floating-point
-   (define ALdouble  fft-double) ; 64-bit IEEE754 floating-point
-
-   (define ALvoid    fft-void)
-   (define ALvoid*   type-vptr)
-
-   ; https://en.wikipedia.org/wiki/Uname
-   (define uname (syscall 63))
-
-   (define AL_LIBRARY
-      (let ((os (ref uname 1)))
-      (cond
-         ((string-ci=? os "Windows") "openal32")
-         ((string-ci=? os "Linux")   "libopenal.so.1")
-         ;"HP-UX"
-         ;"SunOS"
-         ;"Darwin"
-         ;"FreeBSD"
-         ;"CYGWIN_NT-5.2-WOW64"
-         ;"MINGW32_NT-5.2"
-         ;...
-         (else
-            (runtime-error "Unknown platform" uname)))))
-
-   (define openal (or
-      (load-dynamic-library AL_LIBRARY)
-      (runtime-error "Can't load OpenAL library" AL_LIBRARY)))
-
-   ; ======================================================
    (define AL_INVALID -1)
    (define AL_NONE 0)
    (define AL_FALSE 0)
@@ -224,7 +155,7 @@
    ; alIsEnabled
 
    ; State retrieval
-   (define alGetString (openal ALchar* "alGetString" ALenum))
+   (define alGetString (AL ALchar* "alGetString" ALenum))
       (define AL_VENDOR      #xB001)
       (define AL_VERSION     #xB002)
       (define AL_RENDERER    #xB003)
@@ -240,7 +171,7 @@
 
    ; Error support.
    ; Obtain the most recent error generated in the AL state machine.
-   (define alGetError   (openal ALenum "alGetError"))
+   (define alGetError   (AL ALenum "alGetError"))
 
    ; Extension support.
    ; Query for the presence of an extension, and obtain any appropriate
@@ -309,14 +240,14 @@
    ; * Buffers Queued (Query only)       AL_BUFFERS_QUEUED       ALint
    ; * Buffers Processed (Query only)    AL_BUFFERS_PROCESSED    ALint
 
-   (define alGenSources (openal fft-void "alGenSources" ALsizei ALuint&))
-   (define alDeleteSources (openal fft-void "alDeleteSources" ALsizei ALuint*))
-   (define alIsSource (openal ALboolean "alIsSource" ALuint))
+   (define alGenSources (AL fft-void "alGenSources" ALsizei ALuint&))
+   (define alDeleteSources (AL fft-void "alDeleteSources" ALsizei ALuint*))
+   (define alIsSource (AL ALboolean "alIsSource" ALuint))
 
    ;alSourcef
    ;alSource3f
    ;alSourcefv
-   (define alSourcei (openal fft-void "alSourcei" ALuint ALenum ALint))
+   (define alSourcei (AL fft-void "alSourcei" ALuint ALenum ALint))
 
    ;alSource3i
    ;alSourceiv
@@ -325,7 +256,7 @@
    ;alGetSourcef
    ;alGetSource3f
    ;alGetSourcefv
-   (define alGetSourcei (openal fft-void "alGetSourcei" ALuint ALenum ALint&))
+   (define alGetSourcei (AL fft-void "alGetSourcei" ALuint ALenum ALint&))
    ;alGetSource3i
    ;alGetSourceiv
 
@@ -360,14 +291,14 @@
    ;alSourcePausev
 
    ; Source based playback calls
-   (define alSourcePlay (openal fft-void "alSourcePlay" ALuint))
-   ;alSourceStop
+   (define alSourcePlay (AL fft-void "alSourcePlay" ALuint))
+   (define alSourceStop (AL fft-void "alSourceStop" ALuint))
    ;alSourceRewind
    ;alSourcePause
 
    ; Source Queuing
-   (define alSourceQueueBuffers (openal fft-void "alSourceQueueBuffers" ALuint ALsizei ALuint*))
-   (define alSourceUnqueueBuffers (openal fft-void "alSourceUnqueueBuffers" ALuint ALsizei ALuint&))
+   (define alSourceQueueBuffers (AL fft-void "alSourceQueueBuffers" ALuint ALsizei ALuint*))
+   (define alSourceUnqueueBuffers (AL fft-void "alSourceUnqueueBuffers" ALuint ALsizei ALuint&))
 
 
    ; * BUFFER
@@ -382,10 +313,10 @@
    ; * Bits (Query only)         AL_BITS           ALint
    ; * Channels (Query only)     AL_CHANNELS       ALint
 
-   (define alGenBuffers (openal fft-void "alGenBuffers" ALsizei ALuint&))
+   (define alGenBuffers (AL fft-void "alGenBuffers" ALsizei ALuint&))
    ;alDeleteBuffers
    ;alIsBuffer
-   (define alBufferData (openal fft-void "alBufferData"
+   (define alBufferData (AL fft-void "alBufferData"
             ALuint  #|bid|#
             ALenum  #|format|#
             ALvoid* #|data|#
@@ -426,70 +357,11 @@
      (define AL_BUFFER      #x1009)
 
    ; ============================
-   (define ALCdevice* type-vptr)
-   (define ALCcontext* type-vptr)
-
-   (define ALCboolean fft-char)
-   (define ALCchar    fft-char)           (define ALCchar* type-string)
-   (define ALCbyte    fft-char)
-   (define ALCubyte   fft-unsigned-char)
-   (define ALCshort   fft-short)
-   (define ALCushort  fft-unsigned-short)
-   (define ALCint     fft-int)
-      (define ALCint*  (fft* ALCint))
-      (define ALCint&  (fft& ALCint))
-   (define ALCuint    fft-unsigned-int)
-      (define ALCuint*  (fft* ALCuint))
-      (define ALCuint&  (fft& ALCuint))
-   (define ALCsizei   fft-int)
-   (define ALCenum    fft-int)
-   (define ALCfloat   fft-float)
-   (define ALCdouble  fft-double)
-
-   (define ALCvoid    fft-void)
-   (define ALCvoid*   type-vptr)
 
 
-   (define ALC_FALSE 0)
-   (define ALC_TRUE  1)
 
 
    ; Context Management
 
-   (define alcCreateContext (openal ALCcontext* "alcCreateContext" ALCdevice* ALCint*))
-   (define alcMakeContextCurrent (openal type-int+ "alcMakeContextCurrent" ALCcontext*))
-   ;alcProcessContext
-   ;alcSuspendContext
-   ;alcDestroyContext
-   ;alcGetCurrentContext
-   ;alcGetContextsDevice
 
-
-   ; Device Management
-
-   (define alcOpenDevice (openal ALCdevice* "alcOpenDevice" ALCchar*))
-   (define alcCloseDevice (openal ALCboolean "alcCloseDevice" ALCdevice*))
-
-   (define alcGetError (openal ALCenum "alcGetError" ALCdevice*))
-
-   ; * Extension support.
-   ; * Query for the presence of an extension, and obtain any appropriate
-   ; * function pointers and enum values.
-
-   ;alcIsExtensionPresent
-   ;alcGetProcAddress
-   ;alcGetEnumValue
-   
-   ; Query functions
-   ;alcGetString
-   (define alcGetIntegerv (openal ALvoid "alcGetIntegerv" ALCdevice* ALCenum ALCsizei ALCint&))
-
-   ; Capture functions
-   (define alcCaptureOpenDevice (openal ALCdevice* "alcCaptureOpenDevice" ALCchar* ALCuint ALCenum ALCsizei))
-   (define alcCaptureCloseDevice (openal ALCboolean "alcCaptureCloseDevice" ALCdevice*))
-   (define alcCaptureStart (openal ALvoid "alcCaptureStart" ALCdevice*))
-   (define alcCaptureStop (openal ALvoid "alcCaptureStop" ALCdevice*))
-   (define alcCaptureSamples (openal ALvoid "alcCaptureSamples" ALCdevice*))
-
-   (define ALC_CAPTURE_SAMPLES #x312)
 ))
