@@ -5432,6 +5432,7 @@ int main(int argc, char** argv)
 	}
 #endif
 
+	int autoremove = 0;
 	char* file = 0;
 
 #ifdef SELFEXEC
@@ -5442,41 +5443,29 @@ int main(int argc, char** argv)
 
 	int fp = open(argv[0], O_RDONLY | O_BINARY, S_IRUSR);
 	if (fp) {
-		Elf64_Ehdr elf_header;
+		struct stat sb;
+		fstat(fp, &sb);
+
+		char* ptr = (char*) mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fp, 0);
+
+		Elf64_Ehdr* elf = (Elf64_Ehdr*) ptr;
 		Elf64_Shdr* sym_table;
+		sym_table = (Elf64_Shdr*) (ptr + elf->e_shoff);
 
-		lseek(fp, 0, SEEK_SET);
-		read(fp, &elf_header, sizeof(Elf64_Ehdr));
-		sym_table = malloc(elf_header.e_shentsize * elf_header.e_shnum);
+		char* names = ptr + sym_table[elf->e_shstrndx].sh_offset;
 
-		lseek(fp, elf_header.e_shoff, SEEK_SET);
-		read(fp, sym_table, elf_header.e_shentsize * elf_header.e_shnum);
-
-		char* buff;
-		Elf64_Ehdr eh = elf_header; // todo: optimize
-
-		buff = malloc(sym_table[eh.e_shstrndx].sh_size);
-		if (buff != NULL)
-		{
-			lseek(fp, sym_table[eh.e_shstrndx].sh_offset, SEEK_SET);
-			read(fp, buff, sym_table[eh.e_shstrndx].sh_size);
-
-			char* sh_str = buff;
-
-			for (int i = 0; i < eh.e_shnum; i++)
-			{
-				if (!strcmp(".lisp", (sh_str + sym_table[i].sh_name)))
-				{
-					int fd = mkstemp(tmp_f);
-					off_t offset = sym_table[i].sh_offset;
-					sendfile(fd, fp, &offset, sym_table[i].sh_size);
-					close(fd);
-					file = argv[0] = tmp_f;
-					break;
-				}
+		for (int i = 0; i < elf->e_shnum; i++) {
+			if (!strcmp(".lisp", (names + sym_table[i].sh_name))) {
+				int fd = mkstemp(tmp_f);
+				write(fd, ptr + sym_table[i].sh_offset, sym_table[i].sh_size);
+				close(fd);
+				file = argv[0] = tmp_f;
+				autoremove = 1;
+				break;
 			}
 		}
 
+		munmap(ptr, sb.st_size);
 		close(fp);
 	}
 #endif
@@ -5607,6 +5596,7 @@ int main(int argc, char** argv)
 #endif
 
 ok:
+	if (autoremove) unlink(file);
 	return (int) v;
 
 // FAILS:
@@ -5644,6 +5634,7 @@ ok:
 fail:;
 	int e = errno;
 	E("%s (errno: %d, %s)", message, errno, strerror(errno));
+	if (autoremove) unlink(file);
 	return e;
 }
 #endif
