@@ -5469,7 +5469,7 @@ int main(int argc, char** argv)
 #endif
 
 		char bom;
-		int bin = open(file, O_RDONLY | O_BINARY, (S_IRUSR | S_IWUSR));
+		int bin = open(file, O_RDONLY | O_BINARY, S_IRUSR);
 		if (!bin)
 			goto can_not_open_file;				// не смогли файл открыть
 
