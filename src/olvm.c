@@ -5433,7 +5433,55 @@ int main(int argc, char** argv)
 #endif
 
 	char* file = 0;
-	if ((argc > 1) && (strcmp(argv[1], "--") == 0)) {
+
+#ifdef SELFEXEC
+	#include <elf.h>
+
+	// TODO: use mmap
+	char tmp_f[] = "/tmp/.lisp_olvmXXXXXX";
+
+	int fp = open(argv[0], O_RDONLY | O_BINARY, S_IRUSR);
+	if (fp) {
+		Elf64_Ehdr elf_header;
+		Elf64_Shdr* sym_table;
+
+		lseek(fp, 0, SEEK_SET);
+		read(fp, &elf_header, sizeof(Elf64_Ehdr));
+		sym_table = malloc(elf_header.e_shentsize * elf_header.e_shnum);
+
+		lseek(fp, elf_header.e_shoff, SEEK_SET);
+		read(fp, sym_table, elf_header.e_shentsize * elf_header.e_shnum);
+
+		char* buff;
+		Elf64_Ehdr eh = elf_header; // todo: optimize
+
+		buff = malloc(sym_table[eh.e_shstrndx].sh_size);
+		if (buff != NULL)
+		{
+			lseek(fp, sym_table[eh.e_shstrndx].sh_offset, SEEK_SET);
+			read(fp, buff, sym_table[eh.e_shstrndx].sh_size);
+
+			char* sh_str = buff;
+
+			for (int i = 0; i < eh.e_shnum; i++)
+			{
+				if (!strcmp(".lisp", (sh_str + sym_table[i].sh_name)))
+				{
+					int fd = mkstemp(tmp_f);
+					off_t offset = sym_table[i].sh_offset;
+					sendfile(fd, fp, &offset, sym_table[i].sh_size);
+					close(fd);
+					file = argv[0] = tmp_f;
+					break;
+				}
+			}
+		}
+
+		close(fp);
+	}
+#endif
+
+	if ((file == 0) && (argc > 1) && (strcmp(argv[1], "--") == 0)) {
 		argc--; argv++;
 		if (argc > 1) {
 			file = argv[1];
@@ -5442,7 +5490,7 @@ int main(int argc, char** argv)
 	}
 	else
 	// ./ol - если первая команда - не имя файла, то использовать repl
-	if ((argc > 1) && (strncmp(argv[1], "-", 1) != 0)) {
+	if ((file == 0) && (argc > 1) && (strncmp(argv[1], "-", 1) != 0)) {
 		file = argv[1];
 		argv++, argc--;
 	}
