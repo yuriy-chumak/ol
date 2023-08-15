@@ -166,6 +166,7 @@
 (define test-images (list->vector test-images))
 (print "ok.")
 
+(define zero #i0.0)
 
 ; -=( show the image using gtk )=------------------------------
 (import (lib gdk-3))
@@ -191,18 +192,127 @@
       ; Palette
       bw-palette
       ; Image
-      (map (lambda (i) (exact (floor (* i #xFF)))) image))))
+      (map (lambda (i) (exact (floor (* (+ i #i1.0) #x7F)))) image))))
 
    (define loader (gdk_pixbuf_loader_new))
    (gdk_pixbuf_loader_write loader TGA (size TGA) #f)
    (gdk_pixbuf_loader_close loader #f)
 
-   (gtk_image_set_from_pixbuf widget
-      (gdk_pixbuf_scale_simple
-         (gdk_pixbuf_flip (gdk_pixbuf_loader_get_pixbuf loader) 0)
+   (define flip (gdk_pixbuf_flip (gdk_pixbuf_loader_get_pixbuf loader) 0))
+   (define scaled (gdk_pixbuf_scale_simple
+         flip
          (gtk_widget_get_allocated_width widget)
-         (gtk_widget_get_allocated_height widget) 0)))
+         (gtk_widget_get_allocated_height widget) 0))
+   (gtk_image_set_from_pixbuf widget scaled)
 
+   (g_object_unref scaled)
+   (g_object_unref flip)
+   (g_object_unref loader))
+
+; --------------------------------------------------------
+; Modifier
+(define (reshift texture)
+   ; let's try move this texture in random direction
+   ; (avaibale moves find by black cells)
+   (define in (list->vector texture))
+
+   (define left-space
+      (fold min 28
+         (map (lambda (from)
+               (let loop ((n 28) (p from))
+                  (if (and (less? 1 n)
+                           (equal? (ref in p) #i0))
+                     (loop (-- n) (++ p))
+                     (- 28 n))))
+            (iota 28 1 28))))
+   ;; (print "left-space: " left-space)
+
+   (define right-space
+      (fold min 28
+         (map (lambda (from)
+               (let loop ((n 28) (p from))
+                  (if (and (less? 1 n)
+                           (equal? (ref in p) #i0))
+                     (loop (-- n) (-- p))
+                     (- 28 n))))
+            (iota 28 28 28))))
+   ;; (print "right-space: " right-space)
+
+   (define top-space
+      (fold min 28
+         (map (lambda (from)
+               (let loop ((n 28) (p from))
+                  (if (and (less? 1 n)
+                           (equal? (ref in p) #i0))
+                     (loop (-- n) (+ p 28))
+                     (- 28 n))))
+            (iota 28 1 1))))
+   ;; (print "top-space: " top-space)
+
+   (define bottom-space
+      (fold min 28
+         (map (lambda (from)
+               (let loop ((n 28) (p from))
+                  (if (and (less? 1 n)
+                           (equal? (ref in p) #i0))
+                     (loop (-- n) (- p 28))
+                     (- 28 n))))
+            (iota 28 (- (* 28 28) 27) 1))))
+   ;; (print "bottom-space: " bottom-space)
+
+   ; let's move?
+   (define horizontal-move (-
+      (random-integer (+ left-space right-space 1)) left-space))
+   ;; (print "horizontal-move: " horizontal-move)
+
+   (cond
+      ((< horizontal-move 0)
+         (define dx (negate horizontal-move))
+         (for-each (lambda (y)
+               (for-each (lambda (x)
+                     (set-ref! in x (ref in (+ x dx))))
+                  (iota (- 28 dx) y +1))
+               (for-each (lambda (x)
+                     (set-ref! in x zero))
+                  (iota dx (+ y 27) -1)))
+            (iota 28 1 28)))
+      ((> horizontal-move 0)
+         (define dx horizontal-move)
+         (for-each (lambda (y)
+               (for-each (lambda (x)
+                     (set-ref! in x (ref in (- x dx))))
+                  (iota (- 28 dx) y -1))
+               (for-each (lambda (x)
+                     (set-ref! in x zero))
+                  (iota dx (- y 27) +1)))
+            (iota 28 28 28))) )
+
+   (define vertical-move (-
+      (random-integer (+ top-space bottom-space 1)) top-space))
+   ;; (print "vertical-move: " vertical-move)
+
+   (cond
+      ((< vertical-move 0)
+         (define dy (abs vertical-move))
+         (for-each (lambda (x)
+               (for-each (lambda (y)
+                     (set-ref! in y (ref in (+ y (* dy 28)))))
+                  (iota (- 28 dy) x +28))
+               (for-each (lambda (y)
+                     (set-ref! in y zero))
+                  (iota dy (+ x (* 28 27)) -28)))
+            (iota 28 1 1)))
+      ((> vertical-move 0)
+         (define dy (abs vertical-move))
+         (for-each (lambda (x)
+               (for-each (lambda (y)
+                     (set-ref! in y (ref in (- y (* dy 28)))))
+                  (iota (- 28 dy) (+ x (* 28 27)) -28))
+               (for-each (lambda (y)
+                     (set-ref! in y zero))
+                  (iota dy x +28)))
+            (iota 28 1 1))) )
+   in)
 
 ; --------------------------------------------------------
 ; UI:
@@ -222,8 +332,10 @@
    (define p (+ (random-integer (size test-images)) 1))
    (gtk_label_set_text P (string-append "test" (number->string p)))
    ; draw the source image:
-   (define texture (ref test-images p))
-   (set-image INPUT texture 28 28)
+   (define texture (ref test-images p)) ; слева-направо и сверху-вниз
+   (define shifted (reshift texture))
+
+   (set-image INPUT (vector->list shifted) 28 28)
 
    (define label (ref test-labels p))
    (for-each (lambda (l)
@@ -233,7 +345,7 @@
       '(0 1 2 3 4 5 6 7 8 9))
 
    ; calculations:
-   (define input (list->vector texture))
+   (define input shifted) ; (list->vector texture)
    (define layer0 input)
    (define matrix1 (neuron1))   ; выход нейрона 1 (входного слоя)
    (define layer1 (vector-map sigmoid (vector*matrix layer0 matrix1)))
@@ -272,7 +384,10 @@
    (gtk_label_set_text P (number->string p))
    ; draw the source image:
    (define texture (ref images p))
-   (set-image INPUT texture 28 28)
+   ;(set-image INPUT texture 28 28)
+
+   (define shifted (reshift texture))
+   (set-image INPUT (vector->list shifted) 28 28)
 
    ; todo: output correct label
    (define label (ref labels p))
@@ -283,7 +398,7 @@
       '(0 1 2 3 4 5 6 7 8 9))
 
    ; calculations:
-   (define input (list->vector texture))
+   (define input shifted) ;(list->vector texture))
    (define layer0 input)
 
    (define matrix1 (neuron1))   ; выход нейрона 1 (входного слоя)
