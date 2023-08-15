@@ -18,6 +18,7 @@
    alcCaptureStop
    alcCaptureSamples
 
+   alcGetString
    alcGetIntegerv
 )
 
@@ -58,10 +59,42 @@
    ; ----------------------------------
    (setq ALC ALC_LIBRARY)
 
+   (define ALC_VERSION_0_1 1)
+
    (define ALC_FALSE 0)
    (define ALC_TRUE  1)
 
-   (define ALC_CAPTURE_SAMPLES #x312)
+   (define ALC_FREQUENCY                            #x1007)
+   (define ALC_REFRESH                              #x1008)
+   (define ALC_SYNC                                 #x1009)
+   (define ALC_MONO_SOURCES                         #x1010)
+   (define ALC_STEREO_SOURCES                       #x1011)
+
+   (define ALC_NO_ERROR                             0)
+   (define ALC_INVALID_DEVICE                       #xA001)
+   (define ALC_INVALID_CONTEXT                      #xA002)
+   (define ALC_INVALID_ENUM                         #xA003)
+   (define ALC_INVALID_VALUE                        #xA004)
+   (define ALC_OUT_OF_MEMORY                        #xA005)
+
+   (define ALC_MAJOR_VERSION                        #x1000)
+   (define ALC_MINOR_VERSION                        #x1001)
+
+   (define ALC_ATTRIBUTES_SIZE                      #x1002)
+   (define ALC_ALL_ATTRIBUTES                       #x1003)
+
+   (define ALC_DEFAULT_DEVICE_SPECIFIER             #x1004)
+   (define ALC_DEVICE_SPECIFIER                     #x1005)
+   (define ALC_EXTENSIONS                           #x1006)
+
+   (define ALC_EXT_CAPTURE 1)
+   (define ALC_CAPTURE_DEVICE_SPECIFIER             #x310)
+   (define ALC_CAPTURE_DEFAULT_DEVICE_SPECIFIER     #x311)
+   (define ALC_CAPTURE_SAMPLES                      #x312)
+
+   (define ALC_ENUMERATE_ALL_EXT 1)
+   (define ALC_DEFAULT_ALL_DEVICES_SPECIFIER        #x1012)
+   (define ALC_ALL_DEVICES_SPECIFIER                #x1013)
 
 
    (define alcCreateContext (ALC ALCcontext* "alcCreateContext" ALCdevice* ALCint*))
@@ -89,7 +122,7 @@
    ;alcGetEnumValue
    
    ; Query functions
-   ;alcGetString
+   (define alcGetString (ALC ALchar* "alcGetString"  ALCdevice* ALenum))
    (define alcGetIntegerv (ALC ALvoid "alcGetIntegerv" ALCdevice* ALCenum ALCsizei ALCint&))
 
    ; Capture functions
