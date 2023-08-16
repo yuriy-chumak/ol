@@ -24,7 +24,7 @@ exists = $(shell echo "\
 	\
 	int main() {\
 	   return $3();\
-	}" |$(CC) -xc - $4\
+	}" |$(CC) -xc - $1 $4\
 	          -include $2\
 	          -o /dev/null 2>/dev/null && echo 1 || echo 0)
 
