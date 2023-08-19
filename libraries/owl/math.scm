@@ -34,7 +34,7 @@
       << >>
       band bor bxor
       div ediv rem mod quotrem divmod
-      add nat+1 sub mul negate
+      add nat+1 sub mul negate divide
       gcd gcdl lcm
       square
       quot
@@ -1683,10 +1683,10 @@
 
       ; fixme, to change real soon now
 
-      (define (divide a b)
+      (define (divide-rational a b)
          (cond
-            ((eq? (type b) type-enum-) (divide (negate a) (negate b)))
-            ((eq? (type b) type-int-) (divide (negate a) (negate b)))
+            ((eq? (type b) type-enum-) (divide-rational (negate a) (negate b)))
+            ((eq? (type b) type-int-) (divide-rational (negate a) (negate b)))
             ; todo: change next one to (and (eq? (type b) type-enum+) (eq?...)
             ((divide-simple a b) => (lambda (x) x))
             (else
@@ -1762,9 +1762,9 @@
                      (let ((ad (ncdr a)) (bd (ncdr b)))
                         (if (eq? ad bd)
                            ; a/x + b/x = (a+b)/x, x within fixnum range
-                           (divide (add (ncar a) (ncar b)) ad)
+                           (divide-rational (add (ncar a) (ncar b)) ad)
                            (let ((an (ncar a)) (bn (ncar b)))
-                              (divide
+                              (divide-rational
                                  (add (muli an bd) (muli bn ad))
                                  (muli ad bd))))))
                   (type-inexact  (fadd a b))
@@ -1844,9 +1844,9 @@
                      (let ((ad (ncdr a)) (bd (ncdr b)))
                         (if (eq? ad bd)
                            ; a/x - b/x = (a-b)/x, x within fixnum range
-                           (divide (subi (ncar a) (ncar b)) ad)
+                           (divide-rational (subi (ncar a) (ncar b)) ad)
                            (let ((an (ncar a)) (bn (ncar b)))
-                              (divide
+                              (divide-rational
                                  (subi (muli an bd) (muli bn ad))
                                  (muli ad bd))))))
                   (type-inexact  (fsub a b))
@@ -1890,7 +1890,7 @@
                   (type-int+ (mult-num-big a b 0))               ; +a * +B
                   (type-enum- (negative (mult-fixnums a b)))      ; +a * -b
                   (type-int- (negative (mult-num-big a b 0)))    ; +a * -B
-                  (type-rational  (divide (mul a (ncar b)) (ncdr b)))
+                  (type-rational  (divide-rational (mul a (ncar b)) (ncdr b)))
                   (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
@@ -1902,7 +1902,7 @@
                   (type-int+ (vm:cast (mult-num-big a b 0) type-int-))   ; -a * +B -> -C
                   (type-enum- (mult-fixnums a b))                  ; -a * -b -> +c | +C
                   (type-int- (mult-num-big a b 0))            ; -a * -B -> +C
-                  (type-rational  (divide (mul a (ncar b)) (ncdr b)))
+                  (type-rational  (divide-rational (mul a (ncar b)) (ncdr b)))
                   (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
@@ -1914,7 +1914,7 @@
                   (type-int+ (mult-big a b))               ; +A * +B -> +C
                   (type-enum- (vm:cast (mult-num-big b a 0) type-int-))    ; +A * -b -> -C
                   (type-int- (vm:cast (mult-big a b) type-int-))      ; +A * -B -> -C
-                  (type-rational  (divide (mul a (ncar b)) (ncdr b)))
+                  (type-rational  (divide-rational (mul a (ncar b)) (ncdr b)))
                   (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
@@ -1926,7 +1926,7 @@
                   (type-int+ (vm:cast (mult-big a b) type-int-))      ; -A * +B -> -C
                   (type-enum- (mult-num-big b a 0))               ; -A * -b -> +C
                   (type-int- (mult-big a b))                  ; -A * -B -> +C
-                  (type-rational  (divide (mul a (ncar b)) (ncdr b)))
+                  (type-rational  (divide-rational (mul a (ncar b)) (ncdr b)))
                   (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
@@ -1935,13 +1935,13 @@
             (type-rational
                (case (type b)
                   (type-rational
-                     (divide (mul (ncar a) (ncar b)) (mul (ncdr a) (ncdr b))))
+                     (divide-rational (mul (ncar a) (ncar b)) (mul (ncdr a) (ncdr b))))
                   (type-inexact  (fmul a b))
                   (type-complex
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
                         (if (eq? i 0) r (make-complex r i))))
                   (else
-                     (divide (mul (ncar a) b) (ncdr a)))))
+                     (divide-rational (mul (ncar a) b) (ncdr a)))))
             (type-inexact
                (fmul a b)) ; casting inexact -> inexact is ok
             (type-complex
@@ -1965,7 +1965,7 @@
                (big-bad-args '* a b)))))
 
       ;; todo: division lacks short circuits
-      (define (/ a b)
+      (define (divide a b)
          (cond
             ; any inexact division always produces inexact number
             ((eq? (type a) type-inexact)
@@ -1985,33 +1985,33 @@
                   (let*((ar ai a)
                         (br bi b)
                         (x (add (mul br br) (mul bi bi)))
-                        (r (/ (add (mul ar br) (mul ai bi)) x))
-                        (i (/ (sub (mul ai br) (mul ar bi)) x)))
+                        (r (divide (add (mul ar br) (mul ai bi)) x))
+                        (i (divide (sub (mul ai br) (mul ar bi)) x)))
                      (if (eq? i 0) r (make-complex r i)))
                   (let*((ar ai a)
                         (x (mul b b))
-                        (r (/ (mul ar b) x))
-                        (i (/ (mul ai b) x)))
+                        (r (divide (mul ar b) x))
+                        (i (divide (mul ai b) x)))
                      (if (eq? i 0) r (make-complex r i)))))
             ((eq? (type b) type-complex)
                (let*((br bi b)
                      (x (add (mul br br) (mul bi bi)))
-                     (re (/ (mul a br) x))
-                     (im (/ (sub 0 (mul a bi)) x)))
+                     (re (divide (mul a br) x))
+                     (im (divide (sub 0 (mul a bi)) x)))
                   (if (eq? im 0) re (make-complex re im))))
             ((eq? (type a) type-rational)
                (if (eq? (type b) type-rational)
                   ; a'/a" / b'/b" = a'b" / a"b'
-                  (divide
+                  (divide-rational
                      (mul (ncar a) (ncdr b))
                      (mul (ncdr a) (ncar b)))
                   ; a'/a" / b = a'/ba"
-                  (divide (ncar a) (mul (ncdr a) b))))
+                  (divide-rational (ncar a) (mul (ncdr a) b))))
             ((eq? (type b) type-rational)
                ; a / b'/b" = ab"/n
-               (divide (mul a (ncdr b)) (ncar b)))
+               (divide-rational (mul a (ncdr b)) (ncar b)))
             (else
-               (divide a b))))
+               (divide-rational a b))))
 
 
       ;;;
@@ -2279,13 +2279,11 @@
          ((a . xs)
             (fold sub a xs))))
 
-      (define bin-div /)
-
       (define /
          (case-lambda
-            ((a b) (bin-div a b))
-            ((a) (bin-div 1 a))
-            ((a . bs) (bin-div a (product bs)))))
+            ((a b) (divide a b))
+            ((a) (divide 1 a))
+            ((a . bs) (divide a (product bs)))))
 
       ;; fold but stop on first false
       (define (each op x xs)
