@@ -54,6 +54,7 @@ List of Standard procedures
 - [Sorting](sorting.md).
 - [Coroutines and Actors](async.md).
 - [Macro System](macros.md).
+- [Fixed Functions](ffs.md).
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.
@@ -92,6 +93,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [abs](numerical-operations.md#abs)
 [actor](async.md#actor)
 [actor-linked](async.md#actor-linked)
+[alist->ff](ffs.md#alist-ff)
 [append](pairs-and-lists.md#append)
 [assq](pairs-and-lists.md#assq)
 [assv](pairs-and-lists.md#assv)
@@ -147,6 +149,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [define-lazy-macro](#macro.md#define-lazy-macro)
 [define-macro](#macro.md#define-macro)
 [define-syntax](#macro.md#define-syntax)
+[del](ffs.md#del)
 [denominator](numerical-operations.md#denominator)
 [deserialize](serialization-deserialization.md#deserialize)
 [digit-value](characters.md#digit-value)
@@ -161,11 +164,23 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 ## F
 [fasl-decode](serialization-deserialization.md#fasl-decode)
 [fasl-encode](serialization-deserialization.md#fasl-encode)
+[ff->alist](ffs.md#alist-ff)
+[ff->list](ffs.md#ff-list)
+[ff->pairs](ffs.md#ff-pairs)
+[ff-diff](ffs.ms#ff-diff)
+[ff-fold](ffs.md#ff-fold)
+[ff-foldr](ffs.md#ff-foldr)
+[ff-map](ffs.md#ff-map)
+[ff-for-each](ffs.md#ff-for-each)
+[ff-replace](ffs.md#ff-replace)
+[ff-union](ffs.md#ff-union)
 [finite?](numerical-operations.md#finite)
 [floor](numerical-operations.md#floor)
 [fold](pairs-and-lists.md#fold)
 [foldr](pairs-and-lists.md#foldr)
 ## G
+[get](ffs.md#get)
+[getf](ffs.md#getf)
 ## H
 ## I
 [inexact?](numerical-operations.md#inexact)
@@ -176,10 +191,12 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [iota](pairs-and-lists.md#iota)
 ## J
 ## K
+[keys](ffs.md#keys)
 ## L
 [length](pairs-and-lists.md#length)
 [list](pairs-and-lists.md#list)
 [list?](pairs-and-lists.md#list-1)
+[list->ff](ffs.md#list-ff)
 [list->vector](vectors.md#list-vector)
 [list-copy](pairs-and-lists.md#list-copy)
 [list-ref (lref)](pairs-and-lists.md#list-ref-lref)
@@ -188,6 +205,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [lrange](pairs-and-lists.md#lrange)
 ## M
 [mail](async.md#mail)
+[make-ff](ffs.md#make-ff)
 [make-list](pairs-and-lists.md#make-list)
 [make-vector](vectors.md#make-vector)
 [map](pairs-and-lists.md#map)
@@ -210,7 +228,10 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [odd?](numerical-operations.md#odd)
 ## P
 [pair?](pairs-and-lists.md#pair)
+[pairs->ff](ffs.md#pairs-ff)
 [positive?](numerical-operations.md#positive)
+[put](ffs.md#put)
+[put!](ffs.md#put-1)
 ## Q
 [quicksort](sorting.md#quicksort)
 [quotient](numerical-operations.md#quotient)
