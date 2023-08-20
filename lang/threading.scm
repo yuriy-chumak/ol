@@ -53,7 +53,7 @@
             (cond
                ((pair? st) ;; currently working, leave a mail to inbox queue
                   (values
-                     (fupd state to (qsnoc envelope st))
+                     (ff-update state to (qsnoc envelope st))
                      #false))
                ((not st) ;; no such thread, or just no inbox
                   (system-stderr "ol: dropping envelope to missing thread: ")
@@ -63,7 +63,7 @@
                   (values state #false))
                (else ;; activate the state function
                   (values
-                     (fupd state to qnull) ;; leave an inbox
+                     (ff-update state to qnull) ;; leave an inbox
                      [to (λ () (st envelope))]))))) ;; activate it
 
       (define (deliver-messages todo done state subs msg tc)
@@ -96,7 +96,7 @@
                (tc todo done (del state id))
             else
                (deliver-messages todo done
-                  (del (fupd state link-tag (del (get state link-tag empty) id)) id)
+                  (del (ff-update state link-tag (del (get state link-tag empty) id)) id)
                   subs msg tc))))
 
       ;; thread dropping, O(n)
@@ -253,7 +253,7 @@
                   (cond
                      (valp      ;; envelope popped from inbox
                         (tc (cons [id (λ () (cont valp))] todo) done
-                           (fupd state id queue)))
+                           (ff-update state id queue)))
                      (nonblock? ;; just tell there is no mail with #false
                         (tc (cons [id (λ () (cont #false))] todo) done state))
                      (else      ;; leave thread continuation waiting
@@ -361,7 +361,7 @@
                 (prof (get state 'prof #false))
                 (count (get prof bcode 0))
                 (prof (put prof bcode (+ count 1)))
-                (state (fupd state 'prof prof)))
+                (state (ff-update state 'prof prof)))
                state)
             ;; don't record anything for now for the rare thread starts and resumes with interop results
             state))

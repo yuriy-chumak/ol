@@ -20,7 +20,7 @@
       make-ff     ; like make-vector, generates a ff from a flat list
 
       ff-update   ; O(log2 n), ff x key x value -> ff' | fail if key not in ff
-      fupd        ; alias for ff-update
+      fupd        ; alias for ff-update, deprecated
                   ;    - no rebalancing, just walk to leaf and update value
       ff-union ff-diff ; TEMP
       ff-replace
@@ -28,12 +28,12 @@
       ff-for-each
       ff-map      ; like list map but (op key val) -> val'
       ff-iter     ; ff -> ((key . value) ...) stream (in order)
-      ff-singleton? ; ff → bool (has just one key?)
+      ff-singleton?       ; deprecated
       list->ff ff->list
       pairs->ff ff->pairs ; deprecated
       alist->ff ff->alist
-      ff->sexp
-      ff-ok?
+      ff->sexp            ; deprecated
+      ff-ok?              ; deprecated
       empty
       empty?
 
@@ -335,7 +335,7 @@
       ;; ff key val -> ff', *key must be in ff*
       (define (ff-update ff key val)
          (if (eq? ff #empty)
-            (runtime-error "fupd: not there: " key)
+            (runtime-error "ff-update: key not found: " key)
             (let ((this (ref ff 1)))
                (if (eq? key this)
                   (set-ref ff 2 val) ;; key and value have fixed position
@@ -357,7 +357,7 @@
             (if (eq? res tag)         ;; not there → insert and rebalance
                (let ((ff (putn ff key val)))
                   (if (red? ff) (ff:toggle ff) ff))
-               (fupd ff key val))))   ;; path copy and update only
+               (ff-update ff key val))))   ;; path copy and update only
 
 
       ;;;
@@ -620,7 +620,7 @@
          (ff-fold (λ (a b _) (if (get a b #false) (del a b) a)) a b))
 
       ;; just one value? == is the root-node a black key-value pair
-      (define (ff-singleton? ff)
+      (define (ff-singleton? ff) ; deprecated
          (eq? (size ff) 2))
 
       (define-syntax getf
