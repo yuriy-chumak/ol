@@ -51,7 +51,7 @@
 
 (begin
 
-   (vm:set! ffi 0 (make-vptr) 0 8)
+   (vm:set! ffi (make-vptr))
 
    (define (kore type name . prototype)
       (let ((rtti (cons type prototype))
@@ -168,10 +168,10 @@
          (define kore (dlopen #false))
          (define svptr (size nullptr))
 
-         (vm:set! ffi 0 (dlsym kore "OLVM_ffi") 0 svptr)
+         (vm:set! ffi (dlsym kore "OLVM_ffi"))
 
          (define (set! function name)
-            (vm:set! (ref function 3) 0 (dlsym kore name) 0 svptr))
+            (vm:set! (ref function 3) (dlsym kore name)))
 
          (set! http_populate_get "http_populate_qs")
          (set! http_response     "http_response")

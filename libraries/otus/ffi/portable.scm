@@ -52,12 +52,12 @@
       ;(vm:new type-constructor (lambda (args)
       (make-entry (lambda (args)
          ; update `ffi`
-         (vm:set! ffi 0 (dlsym (dlopen) "OLVM_ffi") 0 (size nullptr))
+         (vm:set! ffi (dlsym (dlopen) "OLVM_ffi"))
          ; update all functions
          (for-each (lambda (function)
                (define lib (ref function 2))
                (define name (ref function 3))
-               (vm:set! (ref function 5) 0 (dlsym (dlopen lib) name) 0 (size nullptr)))
+               (vm:set! (ref function 5) (dlsym (dlopen lib) name)))
             functions)
 
          ; finally, run entry

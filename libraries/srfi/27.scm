@@ -75,13 +75,13 @@
 
          (define sizeof-inexact (size #i0))
          ; shift
-         (vm:set! s10 0 s11 0 sizeof-inexact)
-         (vm:set! s11 0 s12 0 sizeof-inexact)
-         (vm:set! s12 0 p1 0 sizeof-inexact)
+         (vm:set! s10 s11)
+         (vm:set! s11 s12)
+         (vm:set! s12 p1)
 
-         (vm:set! s20 0 s21 0 sizeof-inexact)
-         (vm:set! s21 0 s22 0 sizeof-inexact)
-         (vm:set! s22 0 p2 0 sizeof-inexact)
+         (vm:set! s20 s21)
+         (vm:set! s21 s22)
+         (vm:set! s22 p2)
 
          ; combination
          (if (fless? p2 p1)
@@ -96,13 +96,12 @@
       (exact (floor (* (random-real) n))))
 
    (define (random-reset! v_1 v_2 v_3 v_4 v_5 v_6)
-      (define len (size s11))
-      (vm:set! s10 0 (inexact v_1) 0 len)
-      (vm:set! s11 0 (inexact v_2) 0 len)
-      (vm:set! s12 0 (inexact v_3) 0 len)
-      (vm:set! s20 0 (inexact v_4) 0 len)
-      (vm:set! s21 0 (inexact v_5) 0 len)
-      (vm:set! s22 0 (inexact v_6) 0 len))
+      (vm:set! s10 (inexact v_1))
+      (vm:set! s11 (inexact v_2))
+      (vm:set! s12 (inexact v_3))
+      (vm:set! s20 (inexact v_4))
+      (vm:set! s21 (inexact v_5))
+      (vm:set! s22 (inexact v_6)))
    (define random-reset! (case-lambda
       ((a b c d e f)
             (random-reset! a b c b d e))
