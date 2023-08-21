@@ -56,14 +56,14 @@ Q/A
 ---
 
 1. Q. Why no **arrow keys** processing and a history in Ol command line?<br/>
-   A. For the gods of simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool
-      (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your .bashrc and run just as `ol`.
+   A. For the gods of simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
+      (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and run as just `ol`).
 
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
 1. Q. I want to have a Virtual Environment. Can I?  
-   A. Yes. Use `--home=the-yours-venv-path` Ol command line option.
+   A. Yes. Use `--home=the-yours-venv-path` Ol command line option.  
       [More about venv](#virtual-env).
 
 1. Q. .. fatal error: bits/libc-header-start.h: No such file or directory.  
