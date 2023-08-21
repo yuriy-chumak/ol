@@ -122,7 +122,7 @@
       (define math-constructor!
          (vm:new type-constructor (lambda (args)
                ; platform-dependent floating point constants
-               (vm:set! +nan.0 0 (fsqrt -1) 0 (size +nan.0))
+               (vm:set! +nan.0 (fsqrt -1))
             #T)))
       (math-constructor! '())
 

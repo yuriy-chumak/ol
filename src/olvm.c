@@ -3248,26 +3248,38 @@ loop:;
 
 	// todo: reference objects (with check for 'less?')
 	// * experimental feature, do not use!
+	// (vm:set! dst src)
 	// (vm:set! dst from src from to)
 	case VMSETE: {
-		char *p = (char *)A0;
-		word result = IFALSE;
+		word argc = *ip++;
 
-		char *q = (char *)A2;
-		if (is_reference(p) && is_reference(q))
-		if (is_rawstream(p) && is_rawstream(q)) {
-			word to = value(A1);    assert(is_enump(A1));
-			word start = value(A3); assert(is_enump(A3));
-			word end = value(A4);   assert(is_enump(A4));
+		char *p = (char*)A0;
+		word setok = IFALSE;
 
-			if (end <= rawstream_size(q) && end - start + to <= rawstream_size(p)) {
-				memcpy(&p[W + to], &q[W + start], end - start);
-				result = (word) p;
+		// word to, start, end;
+		if (is_reference(p)) {
+			word to    = (argc == 5) ? value (A1) : 0;
+			char* q    = (argc == 5) ?(char*) A2  : (argc == 2) ?(char*) A1 : 0;
+			word start = (argc == 5) ? value (A3) : 0;
+			word end   = (argc == 5) ? value (A4) : (argc == 2 && is_reference(q)) ?
+													rawstream_size(q) : 0;
+
+			if (is_reference(q)
+				&& end <= rawstream_size(q)
+				&& end - start + to <= rawstream_size(p))
+			{
+				if (end - start == sizeof(word)) // speedup for inexact numbers and simple objects
+					((word*)p)[++to] = ((word*)q)[++start];
+				else
+					memcpy(&p[W + to], &q[W + start], end - start);
+				setok = (word) p;
 			}
 		}
 
-		A5 = result;
-		ip += 6; break;
+		reg[ip[argc]] = setok;
+		ip += argc + 1; break;
+		// A5 = result;
+		// ip += 6; break;
 	}
 
 	// speed version of (ref a 1)
