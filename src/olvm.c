@@ -298,7 +298,7 @@ typedef word* R;
 		(word*) _reference; })
 
 // всякая всячина:
-#define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size // todo: rename to object_size
+#define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size
 #define object_size(x)              (header_size(x))
 #define header_pads(x)              (unsigned char) ((((word)(x)) >> VPOS) & 7) // header_t(x).padding
 #define object_payload(x)           (((word)(x)) + 1)
@@ -1761,7 +1761,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		// fix_pointers
 		while (pos < end) {
 			word hdr = *pos;
-			int sz = header_size(hdr);
+			int sz = object_size(hdr);
 			if (is_rawstream(pos))
 				pos += sz; // no pointers in raw objects
 			else {
@@ -1826,7 +1826,7 @@ void mark(word *pos, word *end, heap_t* heap)
 				*ptr = ((word)pos | 1);
 
 				unless (hdr & (RAWBIT|1))
-					pos = ((word *) val) + header_size(hdr);
+					pos = ((word *) val) + object_size(hdr);
 			}
 		}
 		--pos;
@@ -1853,7 +1853,7 @@ word *sweep(word* end, heap_t* heap)
 				val = *newobject;
 			}
 
-			word h = header_size(val);
+			word h = object_size(val);
 			if (old == newobject) {
 				old += h;
 				newobject += h;
@@ -1866,7 +1866,7 @@ word *sweep(word* end, heap_t* heap)
 			}
 		}
 		else
-			old += header_size(*old);
+			old += object_size(*old);
 	}
 	return newobject;
 }
@@ -2284,7 +2284,7 @@ word get(word *ff, word key, word def, jmp_buf ret)
 		if (this == key)
 			return ff[2];
 		hdr = ff[0];
-		switch (header_size(hdr)) {
+		switch (object_size(hdr)) {
 		case 5: ff = (word *) ((key < this) ? ff[3] : ff[4]);
 			continue;
 		case 3: return def;
@@ -2295,7 +2295,7 @@ word get(word *ff, word key, word def, jmp_buf ret)
 				ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
 			continue;
 		default:
-			E("assert! header_size(ff) == %d", (int)header_size(hdr));
+			E("assert! object_size(ff) == %d", (int)object_size(hdr));
 			longjmp(ret, IFALSE); // todo: return error code
 		}
 	}
@@ -2897,7 +2897,7 @@ loop:;
 
 		word hdr = ref(this, 0);
 		if (value_type (hdr) == TTHREAD) {
-			int pos = header_size(hdr) - 1;
+			int pos = object_size(hdr) - 1;
 			word code = ref(this, pos);
 			acc = pos - 3;
 			while (--pos)
@@ -3232,7 +3232,7 @@ loop:;
 				// make an object clone with new type
 				word* ob = (word*)T;
 				word hdr = *ob++;
-				int size = header_size(hdr)-1; // (-1) for header
+				int size = object_size(hdr)-1; // (-1) for header
 				word *newobj = new (size);
 				word *res = newobj;
 				*newobj++ = (hdr & (~252)) | (type << TPOS);
@@ -3302,7 +3302,7 @@ loop:;
 					A2 = IFALSE;
 			}
 			else {
-				word size = header_size(hdr);
+				word size = object_size(hdr);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos && pos < size) // objects are indexed from 1
 					A2 = p[pos];
@@ -3323,7 +3323,7 @@ loop:;
 
 		if (is_reference(p) && is_enum(A1)) {
 			word hdr = *p;
-			word size = header_size (hdr) - 1; // -1 for header
+			word size = object_size (hdr) - 1; // -1 for header
 			word *newobj;
 			if (op == SETREF) { // __builtin_expect((x),1)
 				newobj = new (size);
@@ -3506,7 +3506,7 @@ loop:;
 
 		word pos = 1, n = *ip++;
 		//word hdr = *tuple;
-		//CHECK(!(is_raw(hdr) || header_size(hdr)-1 != n), vector, BIND);
+		//CHECK(!(is_raw(hdr) || object_size(hdr)-1 != n), vector, BIND);
 		while (n--)
 			reg[*ip++] = vector[pos++];
 
@@ -3522,7 +3522,7 @@ loop:;
 		word hdr = *ff++;
 		A2 = *ff++; // key
 		A3 = *ff++; // value
-		switch (header_size(hdr)) {
+		switch (object_size(hdr)) {
 		case 3: A1 = A4 = IEMPTY; break;
 		case 4:
 			if (hdr & (1 << TPOS)) // has right?
@@ -3579,7 +3579,7 @@ loop:;
 
 		word h = *node++;
 		*p++ = (h ^ (TRED << TPOS));
-		switch (header_size(h)) {
+		switch (object_size(h)) {
 			case 5:  *p++ = *node++; // fall through
 			case 4:  *p++ = *node++; // fall through
 			default: *p++ = *node++;
