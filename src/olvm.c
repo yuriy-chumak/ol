@@ -263,11 +263,12 @@ object_t
 #define BINARY                      (RAWBIT >> TPOS)
 
 // create a value
-#define make_value(type, value)     (2 | ((word)(value) << VPOS) | ((type) << TPOS))
+#define make_value(type, value)     (2 | ((type) << TPOS) | ((word)(value) << VPOS))
 
 // header making macro
-#define header3(type, size, padding)(2 | ((word)(size) << SPOS) | ((type) << TPOS) | ((padding) << PPOS))
-#define header2(type, size)         header3(type, size, 0)
+#define header3(type, size, padding)(2 | ((type) << TPOS) | ((word) (size) << SPOS) | RAWBIT | ((padding) << PPOS))
+#define header2(type, size)         (2 | ((type) << TPOS) | ((word) (size) << SPOS))
+
 #define HEADER_MACRO(_1, _2, _3, NAME, ...) NAME
 #define make_header(...)            HEADER_MACRO(__VA_ARGS__, header3, header2, NOTHING, NOTHING)(__VA_ARGS__)
 
@@ -277,8 +278,10 @@ object_t
 #define is_reference(x)             (!is_value(x))
 #define is_rawstream(x)             ((*(R)(x)) & RAWBIT) //((struct object_t*)(x))->rawness // ((*(word*)(x)) & RAWBIT)
 
-#define W                           (sizeof (word)) // todo: change to WSIZE
+#define W                           (sizeof (word))
+
 #define WALIGN(x)                   (((x) + W - 1) / W)
+#define WPADS(x)                    (WALIGN(x) * W - x) // (W - (x % W));
 
 // V means Value
 typedef word V;
@@ -363,14 +366,15 @@ typedef word* R;
 #define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
 #define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
 #define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
+#define is_inexact(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TINEXACT,  1+WALIGN(sizeof(inexact_t)), WPADS(sizeof(inexact_t))))
 
 #define is_string(ob)               (is_reference(ob) && reference_type (ob) == TSTRING)
 #define is_vector(ob)               (is_reference(ob) && reference_type (ob) == TVECTOR)
 #define is_thread(ob)               (is_reference(ob) && reference_type (ob) == TTHREAD)
 
-#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TVPTR,     2))
-#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(BINARY|TCALLABLE, 2))
-#define is_dlsym(ob)                (is_reference(ob) && (*(word*) (ob)) == make_header(       TDLSYM,    3))
+#define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TVPTR,     2, 0))
+#define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TCALLABLE, 2, 0))
+#define is_dlsym(ob)                (is_reference(ob) && (*(word*) (ob)) == make_header(TDLSYM,    3, 0))
 
 #define is_numberp(ob)              (is_enump(ob) || is_npairp(ob))
 #define is_numbern(ob)              (is_enumn(ob) || is_npairn(ob))
@@ -463,16 +467,16 @@ typedef struct heap_t heap_t;
 // аллоцировать новый объект (указанного типа)
 #define NEW_OBJECT(type, size) ({\
 word*_o = NEW (size);\
-	*_o = make_header(type, (size)+1, 0);\
+	*_o = make_header(type, 1+(size));\
 	/*return*/ _o;\
 })
 
 // аллоцировать новый "бинарный" объект (указанного типа),
 //  данные объекта не проверяются сборщиком мусора и не
 //  могут содержать другие объекты!
-#define NEW_BLOB(type, size, pads) ({\
+#define NEW_BINARY(type, size, pads) ({\
 word*_b = NEW (size);\
-	*_b = make_header(BINARY|type, (size)+1, pads);\
+	*_b = make_header(type, 1+(size), pads);\
 	/*return*/ _b;\
 })
 
@@ -480,15 +484,15 @@ word*_b = NEW (size);\
 //             size is payload size, not whole object with header size
 //             so, we can't create real 0-sized invalid objects
 // new(type, size) - allocate object, with type
-// new(type, size, pads) - allocate BLOB, with type, size in words and pads
+// new(type, size, pads) - allocate binary, with type, size in words and pads
 #define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
-#define new(...) NEW_MACRO(__VA_ARGS__, NEW_BLOB, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_BINARY, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
 
 // allocate raw memory block
 #define new_alloc(type, length) ({\
 	int _size = (length);\
 	int _words = WALIGN(_size);\
-	int _pads = (_words * W - _size);\
+	int _pads = WPADS(_size);\
 	\
 word* p = new (type, _words, _pads);\
 	/*return*/ p;\
@@ -5283,7 +5287,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			size = get_nat(&hp);
 
 			int words = WALIGN(size);
-			int pads = words * W - size;//(W - (size % W));
+			int pads = WPADS(size);
 
 			unsigned char *p = (unsigned char*)&car(new (type, words, pads));
 
