@@ -267,7 +267,7 @@
                ((value? obj) seen)
                ((not (pred obj)) seen)
                ((getf seen obj) =>
-                  (λ (n) (fupd seen obj (+ n 1))))
+                  (λ (n) (ff-update seen obj (+ n 1))))
                (else
                   (let ((seen (put seen obj 1)))
                      (if (ref obj 0) ; ==(blob? obj), 0 in ref works only for blobs
