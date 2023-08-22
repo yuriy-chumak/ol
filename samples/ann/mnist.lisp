@@ -13,109 +13,53 @@
 (define INPUT-LEN 784) ; every input image has 28 * 28 pixels,
 (define OUTPUT-LEN 10) ; and only 10 possible numbers (0 .. 9)
 
-(define LAYER1-LEN 64) ; the size of an intermediate layer
+(define LAYER1-LEN 64) ; size of intermediate (hidden) layer I
 
 ; neural math functions:
+(import (otus algebra))
+(import (otus algebra infix-notation))
+(import (otus algebra print))
+
+(define T matrix-transpose)
+
 (import (srfi 27)) ; randomizer
 (define (new-matrix rows columns)
-   (list->vector (map (lambda (_)
-         (list->vector (map (lambda (_)
-               (- (random-real) #i0.5))
-            (iota columns))))
-      (iota rows))))
-
-(import (scheme inexact))
-(define (sigmoid x)
-   (/ #i1 (+ #i1 (exp (negate x)))))
-(define (sigmoid/ sx) ; sx == sigmoid(x)
-   (* sx (- 1 sx)))
+   (Fill (Matrix~ rows columns)
+      (lambda ()
+         (- (random-real) #i0.5))))
 
 ; neurons
 (import (scheme dynamic-bindings))
-(define neuron1 (make-parameter (or
+(define neuron1 (make-parameter (or ; neuron 1 weights (sinapses)
+   ;(Matrix~ (fasl-load "neuron1.fasl" #f))
    (fasl-load "neuron1.fasl" #f)
    (new-matrix INPUT-LEN  LAYER1-LEN))))
-(define neuron2 (make-parameter (or
+(define neuron2 (make-parameter (or ; neuron 2 weights (sinapses)
+   ;(Matrix~ (fasl-load "neuron2.fasl" #f))
    (fasl-load "neuron2.fasl" #f)
    (new-matrix LAYER1-LEN OUTPUT-LEN))))
 
-; matrix * matrix
-(define (matrix-product A B)
-   (define m (size A))
-   (define n (size (ref A 1)))
-   (assert (eq? (size B) n) ===> #true)
-   (define q (size (ref B 1)))
-   (define (at m x y)
-      (ref (ref m x) y))
-
-   (let mloop ((i m) (rows #null))
-      (if (eq? i 0)
-         (list->vector rows)
-      else
-         (mloop (-- i)
-            (cons
-               (let rloop ((j q) (row #null))
-                  (if (eq? j 0)
-                     (list->vector row)
-                  else
-                     (rloop (-- j)
-                        (cons
-                           (let loop ((k 1) (c 0))
-                              (if (less? n k)
-                                 c
-                              else
-                                 (loop (++ k) (+ c (* (at A i k) (at B k j))))))
-                           row))))
-               rows)))))
-
-(define (matrix-transpose A)
-   (list->vector
-      (map (lambda (i)
-            (vector-map (lambda (row)
-                  (ref row i))
-               A))
-         (iota (size (ref A 1)) 1))))
-
-(define (vector*matrix A B)
-   (define n (size A))
-   (assert (eq? (size B) n) ===> #true)
-   (define q (size (ref B 1)))
-   (define (at m x y)
-      (ref (ref m x) y))
-
-   (let rloop ((j q) (row #null))
-      (if (eq? j 0)
-         (list->vector row)
-      else
-         (rloop (-- j)
-            (cons
-               (let loop ((k 1) (c 0))
-                  (if (less? n k)
-                     c
-                  else
-                     (loop (++ k) (+ c (* (ref A k) (at B k j))))))
-               row)))))
-
-(define (mmap f array1 array2)
-   (let loop ((array1 array1) (array2 array2))
-      (if (vector? (ref array1 1))
-         (vector-map loop array1 array2)
-      else
-         (vector-map f array1 array2))))
-
 (define (matrix->list matrix)
-   (define m (size matrix))
-   (define n (size (ref matrix 1)))
+   (rfoldr cons #n matrix))
 
-   (let loopn ((j m) (out #n))
-      (if (eq? j 0)
-         out
-      else
-         (define row (ref matrix j))
-         (loopn (- j 1) (let loopm ((i n) (out out))
-                           (if (eq? i 0)
-                              out
-                              (loopm (- i 1) (cons (ref row i) out))))))))
+
+; -=( plot )=----------------------------------------------
+; gnuplot:
+(import (otus ffi))
+(define FILE* type-vptr)
+(define this (load-dynamic-library #f))
+(define popen (this FILE* "popen" type-string type-string))
+(define fprintf (this fft-int "fprintf" FILE* type-string))
+(define fflush (this fft-void "fflush" FILE*))
+; start gnuplot
+(define gnuplot (popen "gnuplot" "w"))
+(define (plot . args)
+   (define buffer (open-output-string))
+   (for-each (lambda (a)
+         (display-to buffer a))
+      args)
+   (fprintf gnuplot "%s\n" (get-output-string buffer))
+   (fflush gnuplot))
 
 ; -=( main )=-------------------------------------------------------------
 (print "Please wait while we are loading a train database, if not exist.")
@@ -125,46 +69,47 @@
    (file gzip))
 ; train labels
 (display "loading train labels file...")
-(define labels-file (try-parse gzip-parser (file->bytestream (string-append mnist-root
-                        "train-labels-idx1-ubyte.gz")) #f))
+(define labels-file (try-parse gzip-parser (file->bytestream "train-labels-idx1-ubyte.gz") #f))
 (define labels (try-parse train-labels-parser ((car labels-file) 'stream) #f))
 (define labels (list->vector ((car labels) 'labels)))
 (print "ok.")
 
 ; train images
 (display "loading train images file...")
-(define images-file (try-parse gzip-parser (file->bytestream (string-append mnist-root
-                        "train-images-idx3-ubyte.gz")) #f))
+(define images-file (try-parse gzip-parser (file->bytestream "train-images-idx3-ubyte.gz") #f))
 (define images (try-parse train-images-parser ((car images-file) 'stream) #f))
 ; let's convert raw bytearray into floats
 (define images (map (lambda (image)
-      (map (lambda (v)
-            (/ v #i255))
-         image))
+      ; make an 28*28 image from bytevector
+      (Reshape (Vector~ (list->vector
+         (map (lambda (v)
+               (/ v #i255))
+            image)))
+         '(28 28)))
    ((car images) 'images)))
 ; .. and a vector of images (to simplify random access)
 (define images (list->vector images))
-(print "ok.")
+(print " " (size images) " images loaded.")
 
 ; testing dataset...
 (display "loading test labels file...")
-(define test-labels-file (try-parse gzip-parser (file->bytestream (string-append mnist-root
-                        "t10k-labels-idx1-ubyte.gz")) #f))
+(define test-labels-file (try-parse gzip-parser (file->bytestream "t10k-labels-idx1-ubyte.gz") #f))
 (define test-labels (try-parse train-labels-parser ((car test-labels-file) 'stream) #f))
 (define test-labels (list->vector ((car test-labels) 'labels)))
 (print "ok.")
 
-(display "loading train images file...")
-(define test-images-file (try-parse gzip-parser (file->bytestream (string-append mnist-root
-                        "t10k-images-idx3-ubyte.gz")) #f))
+(display "loading test images file...")
+(define test-images-file (try-parse gzip-parser (file->bytestream "t10k-images-idx3-ubyte.gz") #f))
 (define test-images (try-parse train-images-parser ((car test-images-file) 'stream) #f))
 (define test-images (map (lambda (image)
-      (map (lambda (v)
-            (/ v #i255))
-         image))
+      (Reshape (Vector~ (list->vector
+         (map (lambda (v)
+               (/ v #i255))
+            image)))
+         '(28 28)))
    ((car test-images) 'images)))
 (define test-images (list->vector test-images))
-(print "ok.")
+(print " " (size test-images) " test images loaded.")
 
 (define zero #i0.0)
 
@@ -178,7 +123,10 @@
       (if (eq? i 0)
          (cons* 0 0 0 out)
          (loop (-- i) (cons* i i i out)))))
-(define (set-image widget image width height)
+(define (set-image widget image width height normalize)
+   (define byte (if normalize
+      (lambda (float) (exact (floor (* (+ float #i1.0) #x7F))))
+      (lambda (float) (exact (floor (* float #xFF))))))
    ; create B/W TGA image
    (define TGA (list->bytevector (append
       ; Image header
@@ -192,7 +140,7 @@
       ; Palette
       bw-palette
       ; Image
-      (map (lambda (i) (exact (floor (* (+ i #i1.0) #x7F)))) image))))
+      (map byte image))))
 
    (define loader (gdk_pixbuf_loader_new))
    (gdk_pixbuf_loader_write loader TGA (size TGA) #f)
@@ -209,110 +157,6 @@
    (g_object_unref flip)
    (g_object_unref loader))
 
-; --------------------------------------------------------
-; Modifier
-(define (reshift texture)
-   ; let's try move this texture in random direction
-   ; (avaibale moves find by black cells)
-   (define in (list->vector texture))
-
-   (define left-space
-      (fold min 28
-         (map (lambda (from)
-               (let loop ((n 28) (p from))
-                  (if (and (less? 1 n)
-                           (equal? (ref in p) #i0))
-                     (loop (-- n) (++ p))
-                     (- 28 n))))
-            (iota 28 1 28))))
-   ;; (print "left-space: " left-space)
-
-   (define right-space
-      (fold min 28
-         (map (lambda (from)
-               (let loop ((n 28) (p from))
-                  (if (and (less? 1 n)
-                           (equal? (ref in p) #i0))
-                     (loop (-- n) (-- p))
-                     (- 28 n))))
-            (iota 28 28 28))))
-   ;; (print "right-space: " right-space)
-
-   (define top-space
-      (fold min 28
-         (map (lambda (from)
-               (let loop ((n 28) (p from))
-                  (if (and (less? 1 n)
-                           (equal? (ref in p) #i0))
-                     (loop (-- n) (+ p 28))
-                     (- 28 n))))
-            (iota 28 1 1))))
-   ;; (print "top-space: " top-space)
-
-   (define bottom-space
-      (fold min 28
-         (map (lambda (from)
-               (let loop ((n 28) (p from))
-                  (if (and (less? 1 n)
-                           (equal? (ref in p) #i0))
-                     (loop (-- n) (- p 28))
-                     (- 28 n))))
-            (iota 28 (- (* 28 28) 27) 1))))
-   ;; (print "bottom-space: " bottom-space)
-
-   ; let's move?
-   (define horizontal-move (-
-      (random-integer (+ left-space right-space 1)) left-space))
-   ;; (print "horizontal-move: " horizontal-move)
-
-   (cond
-      ((< horizontal-move 0)
-         (define dx (negate horizontal-move))
-         (for-each (lambda (y)
-               (for-each (lambda (x)
-                     (set-ref! in x (ref in (+ x dx))))
-                  (iota (- 28 dx) y +1))
-               (for-each (lambda (x)
-                     (set-ref! in x zero))
-                  (iota dx (+ y 27) -1)))
-            (iota 28 1 28)))
-      ((> horizontal-move 0)
-         (define dx horizontal-move)
-         (for-each (lambda (y)
-               (for-each (lambda (x)
-                     (set-ref! in x (ref in (- x dx))))
-                  (iota (- 28 dx) y -1))
-               (for-each (lambda (x)
-                     (set-ref! in x zero))
-                  (iota dx (- y 27) +1)))
-            (iota 28 28 28))) )
-
-   (define vertical-move (-
-      (random-integer (+ top-space bottom-space 1)) top-space))
-   ;; (print "vertical-move: " vertical-move)
-
-   (cond
-      ((< vertical-move 0)
-         (define dy (abs vertical-move))
-         (for-each (lambda (x)
-               (for-each (lambda (y)
-                     (set-ref! in y (ref in (+ y (* dy 28)))))
-                  (iota (- 28 dy) x +28))
-               (for-each (lambda (y)
-                     (set-ref! in y zero))
-                  (iota dy (+ x (* 28 27)) -28)))
-            (iota 28 1 1)))
-      ((> vertical-move 0)
-         (define dy (abs vertical-move))
-         (for-each (lambda (x)
-               (for-each (lambda (y)
-                     (set-ref! in y (ref in (- y (* dy 28)))))
-                  (iota (- 28 dy) (+ x (* 28 27)) -28))
-               (for-each (lambda (y)
-                     (set-ref! in y zero))
-                  (iota dy x +28)))
-            (iota 28 1 1))) )
-   in)
 
 ; --------------------------------------------------------
 ; UI:
@@ -320,22 +164,39 @@
 (define builder (gtk_builder_new_from_file "mnist.glade"))
 (define window (gtk_builder_get_object builder "window"))
 
-(define INPUT  (gtk_builder_get_object builder "INPUT" ))
-(define LAYER1 (gtk_builder_get_object builder "LAYER1"))
+(define INPUT (gtk_builder_get_object builder "INPUT"))
+;; (define LAYER1 (gtk_builder_get_object builder "LAYER1"))
 
 (define NEURON1 (gtk_builder_get_object builder "NEURON1"))
 (define NEURON2 (gtk_builder_get_object builder "NEURON2"))
 
+(define LOSS (gtk_builder_get_object builder "LOSS"))
+
+(import (lib gtk-3 socket))
+(define socket (gtk_socket_new))
+(gtk_widget_show socket)
+(gtk_container_add LOSS socket)
+(gtk_widget_realize socket) ; if one of ancestors is not yet visible.
+(define plug-added ; connect notification
+   (GTK_CALLBACK (self userdata)
+      (print "A widget (most likley gnuplot) has just been jacked in!")
+      TRUE))
+(g_signal_connect socket "plug-added" (G_CALLBACK plug-added) NULL)
+
 (define P (gtk_builder_get_object builder "NUMBER"))
 
 (define (test)
+   ; let's select random test image
    (define p (+ (random-integer (size test-images)) 1))
-   (gtk_label_set_text P (string-append "test" (number->string p)))
-   ; draw the source image:
-   (define texture (ref test-images p)) ; слева-направо и сверху-вниз
-   (define shifted (reshift texture))
+   (gtk_label_set_text P (string-append " (test) " (number->string p)))
 
-   (set-image INPUT (vector->list shifted) 28 28)
+   ; draw the source image:
+   (define test-image (ref test-images p)); слева-направо и сверху-вниз
+   (define shifted (Shift test-image (map (lambda (lr)
+                                             (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
+                                        (Paddings test-image))))
+
+   (set-image INPUT (matrix->list shifted) 28 28 #false)
 
    (define label (ref test-labels p))
    (for-each (lambda (l)
@@ -345,148 +206,194 @@
       '(0 1 2 3 4 5 6 7 8 9))
 
    ; calculations:
-   (define input shifted) ; (list->vector texture)
-   (define layer0 input)
-   (define matrix1 (neuron1))   ; выход нейрона 1 (входного слоя)
-   (define layer1 (vector-map sigmoid (vector*matrix layer0 matrix1)))
-   (define layer1/ (vector-map sigmoid/ layer1)) ; speedup
-   ; note: we can calculate vector*matrix, and then f and f/ from it
+   (define matrix1 (neuron1))   ; матрица нейрона 1 (hidden layer)
+   (define matrix2 (neuron2))   ; матрица нейрона 2 (output layer)
 
-   (define matrix2 (neuron2))   ; выход нейрона 2 (выходной слой)
-   (define layer2 (vector-map sigmoid (vector*matrix layer1 matrix2)))
-   (define layer2/ (vector-map sigmoid/ layer2))
+   ; let's make a vector from the input texture
+   (define layer0 (Reshape shifted (list 1 (Size shifted))))
+   (define layer1 (Logistic (matrix·matrix layer0 matrix1)))
+   (define layer2 (Logistic (matrix·matrix layer1 matrix2)))
 
-   (define output layer2)
+   (define output (Reshape layer2 (list (Size layer2))))
 
-   (set-image LAYER1 (vector->list layer1) 8 8) ; (size layer1) 1
+   ;; (gtk_widget_show LAYER1)
+   ;; (gtk_widget_hide LOSS)
+   ;; (set-image LAYER1 (matrix->list layer1) 8 8 #f) ; (size layer1) 1
 
    ; show the output:
-   (define select (vector-fold max 0 output))
-   (for-each (lambda (l)
+   (define select (fold max 0 (matrix->list output)))
+   (for-each (lambda (l i)
          (define s (string-append "o" (number->string l)))
-         (define v (substring (number->string (vector-ref output l)) 0 3))
+         (define v (if (< (Ref output i) #i0.00001)
+                     "0"
+                     (substring (number->string (Ref output i)) 0 3)))
          (gtk_label_set_markup (gtk_builder_get_object builder s)
-            (if (= (vector-ref output l) select)
+            (if (= (Ref output i) select)
                (if (= l label)
                   (string-append "<span color='green'>" v "</span>")
                   (string-append "<span color='red'>" v "</span>"))
                v)))
-      '(0 1 2 3 4 5 6 7 8 9))
+      (iota 10 0)
+      (iota 10 1))
 
    ; нарисуем новые нейроны
-   (set-image NEURON1 (matrix->list matrix1) (size matrix1) (size (ref matrix1 1)))
-   (set-image NEURON2 (matrix->list matrix2) (size matrix2) (size (ref matrix2 1)))
+   (set-image NEURON1 (matrix->list matrix1) (first (Shape matrix1)) (second (Shape matrix1)) #true)
+   (set-image NEURON2 (matrix->list matrix2) (first (Shape matrix2)) (second (Shape matrix2)) #true)
 )
 
 
-(define (step)
-   (define p (+ (random-integer (size images)) 1))
-   (gtk_label_set_text P (number->string p))
-   ; draw the source image:
-   (define texture (ref images p))
-   ;(set-image INPUT texture 28 28)
+(define acc (make-parameter 0))
+(define loss (make-parameter (fasl-load "loss.fasl" '())))
 
-   (define shifted (reshift texture))
-   (set-image INPUT (vector->list shifted) 28 28)
+(define (step N)
+   ;(define old (time-ms))
 
-   ; todo: output correct label
-   (define label (ref labels p))
-   (for-each (lambda (l)
-         (define s (number->string l))
-         (gtk_label_set_markup (gtk_builder_get_object builder s)
-            (if (eq? l label) (string-append "<b>" s "</b>") s)))
-      '(0 1 2 3 4 5 6 7 8 9))
+   (let loop ((input #false)
+              (matrix1 (neuron1)) ; матрица нейрона 1 (hidden layer)
+              (matrix2 (neuron2)) ; матрица нейрона 2 (output layer)
+              (n N))
+      (if (zero? n)
+      then
+         ; последняя картинка батча
+         (set-image INPUT (matrix->list input) 28 28 #f)
+         ; нарисуем новые нейроны
+         (set-image NEURON1 (matrix->list matrix1) (first (Shape matrix1)) (second (Shape matrix1)) #true)
+         (set-image NEURON2 (matrix->list matrix2) (first (Shape matrix2)) (second (Shape matrix2)) #true)
 
-   ; calculations:
-   (define input shifted) ;(list->vector texture))
-   (define layer0 input)
+         ; и обновимся
+         (neuron1 matrix1)
+         (neuron2 matrix2)
+      else
+         (define p (+ (random-integer (size images)) 1))
+         (gtk_label_set_text P (number->string p))
+         ; draw the source image:
+         (define image (ref images p))
 
-   (define matrix1 (neuron1))   ; выход нейрона 1 (входного слоя)
-   (define layer1 (vector-map sigmoid (vector*matrix layer0 matrix1)))
-   (define layer1/ (vector-map sigmoid/ layer1)) ; speedup
-   ; note: we can calculate vector*matrix, and then f and f/ from it
+         (define shifted (Shift image
+               (map (lambda (lr)
+                       (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
+                  (Paddings image))))
 
-   (define matrix2 (neuron2))   ; выход нейрона 2 (выходной слой)
-   (define layer2 (vector-map sigmoid (vector*matrix layer1 matrix2)))
-   (define layer2/ (vector-map sigmoid/ layer2))
+         ; todo: output correct label
+         (define label (ref labels p))
+         (for-each (lambda (l)
+               (define s (number->string l))
+               (gtk_label_set_markup (gtk_builder_get_object builder s)
+                  (if (eq? l label) (string-append "<b>" s "</b>") s)))
+            '(0 1 2 3 4 5 6 7 8 9))
 
-   (define output layer2)
+         ; calculations:
 
-   (set-image LAYER1 (vector->list layer1) 8 8) ; (size layer1) 1
+         ; let's make a vector (one-row matrix) from input texture
+         (define layer0 (Reshape shifted (list 1 (Size shifted))))  ; input layer
+         (define layer1 (Logistic (matrix·matrix layer0 matrix1)))
+         (define layer2 (Logistic (matrix·matrix layer1 matrix2)))  ; todo: change to matrix*vectorT
 
-   ; show the output:
-   (define select (vector-fold max 0 output))
-   (for-each (lambda (l)
-         (define s (string-append "o" (number->string l)))
-         (define v (substring (number->string (vector-ref output l)) 0 3))
-         (gtk_label_set_markup (gtk_builder_get_object builder s)
-            (if (= (vector-ref output l) select)
-               (if (= l label)
-                  (string-append "<span color='green'>" v "</span>")
-                  (string-append "<span color='red'>" v "</span>"))
-               v)))
-      '(0 1 2 3 4 5 6 7 8 9))
+         (define output (Reshape layer2 (list (Size layer2)))) ; output vector
 
-   ; learning
-   ; 'ok' is a right answer
-   (define ok (list->vector (map (lambda (i)
-         (if (eq? i label) #i1 #i0))
-      (iota 10))))
+         ; show the output:
+         (define select (fold max 0 (matrix->list output)))
+         (for-each (lambda (l i)
+               (define s (string-append "o" (number->string l)))
+               (define v (if (< (Ref output i) #i0.00001)
+                           "0"
+                           (substring (number->string (Ref output i)) 0 3)))
+               (gtk_label_set_markup (gtk_builder_get_object builder s)
+                  (if (= (Ref output i) select)
+                     (if (= l label)
+                        (string-append "<span color='green'>" v "</span>")
+                        (string-append "<span color='red'>" v "</span>"))
+                     v)))
+            (iota 10 0)
+            (iota 10 1))
 
-   (define e (vector-map - output ok))
-   ;(define err (/ (vector-fold + 0 (vector-map * e e)) 2))
+         ; --------------------------------------------------
+         ; learning (back propagation)
+         ; 'ok' is a right answer
+         (define ok (Matrix~ 1 (list->vector (map (lambda (i) ; cirrect answer
+               (if (eq? i label) #i1 #i0))
+            (iota 10)))))
 
-   (define delta2 (vector-map * e layer2/))
+         (define alpha 1.0) ; learning rate
 
-   (define delta1 (vector-map *
-      (vector*matrix delta2 (matrix-transpose matrix2))
-      layer1/))
+         ; layer2 calculations
+         (define layer2/ (DLogisticDx_Logistic layer2)) ; dOut/dNet, because layer2 already Logisticised
+         (define delta2 (- layer2 ok)) ; dEtotal/dOut (error)
+         (define error2 (* delta2 layer2/)) ; dEtotal/dOut * dOut/dNet, покомпонентное умножение векторов
+         ; dEtotal/dWi * dEtotal/dOut * dOut/dNet
+         (define new-matrix2 (infix-notation
+            matrix2 - alpha * T(layer1) • error2
+         ))
 
-   (define alpha 1.0) ; learning rate
+         ; layer1 calculations
+         (define layer1/ (DLogisticDx_Logistic layer1)) ; dOut/dNet
+         (define delta1
+            ;(matrix·matrix error2 (T matrix2)))    ; slower - need to T matrix (expensive)
+            (T (matrix·matrix matrix2 (T error2)))) ; faster - need to T two vectors (a very fast operation, zero-copy)
+         (define error1 (* delta1 layer1/))
 
-   ; новая матрица весов
-   ;; todo: optimize this code
-   (define D2 (matrix-product (matrix-transpose [layer1]) [delta2]))
-   (define new-matrix2 (mmap (lambda (x y) (- x (* y alpha))) matrix2 D2))
-   
-   (define D1 (matrix-product (matrix-transpose [layer0]) [delta1]))
-   (define new-matrix1 (mmap (lambda (x y) (- x (* y alpha))) matrix1 D1))
+         (define new-matrix1 (infix-notation
+            matrix1 - alpha * T(layer0) • error1
+         ))
 
-   (neuron1 new-matrix1)
-   (neuron2 new-matrix2)
+         ; увеличим счетчик
+         (define c (string->number (gtk_label_get_text (gtk_builder_get_object builder "COUNTER"))))
+         (gtk_label_set_text (gtk_builder_get_object builder "COUNTER") (number->string (+ c 1) 10))
 
-   ; нарисуем новые нейроны
-   (set-image NEURON1 (matrix->list matrix1) (size matrix1) (size (ref matrix1 1)))
-   (set-image NEURON2 (matrix->list matrix2) (size matrix2) (size (ref matrix2 1)))
+         ; посчитаем loss (и выведем на график, если пришло время)
+         (define err (let ((delta (matrix->list delta2)))
+            (/ (fold + 0 (map * delta delta)) (length delta))))
+         (acc (+ (acc) err))
 
-   (define n (string->number (gtk_label_get_text (gtk_builder_get_object builder "COUNTER"))))
-   (gtk_label_set_text (gtk_builder_get_object builder "COUNTER") (number->string (+ n 1) 10))
+         (define epoch 1000)
+         (define c1 (+ c 1))
+         (when (and (> c1 1) (eq? (mod c1 epoch) 1))
+            (define v (/ (acc 0) epoch))
+            (loss (append (loss) (list v))))
+
+         (when (eq? (mod c1 epoch) 1)
+            (define l (loss))
+            (unless (null? l)
+               (plot "plot '-' with lines title 'Loss', '-' smooth bezier lt rgb 'black' title 'approx', 0.03 title '3%' lt rgb 'green'") ; linesp
+               (for-each plot l) (plot "e")
+               (for-each plot l) (plot "e")))
+
+         (loop shifted new-matrix1 new-matrix2 (- n 1))))
+
+   ;(define new (time-ms)) (print new "-" old " = " (- new old))
 )
 
 (actor 'walker (lambda ()
+   (define batch-size '(1))
    (let loop ((envelope (wait-mail)))
       (if envelope
       then
          (let*((sender msg envelope))
             (case msg
                ('play
+                  (set-car! batch-size 1)
+                  (loop #f))
+               ('batch
+                  (set-car! batch-size 100)
                   (loop #f))
                ('pause
                   (loop (wait-mail)))
+
                ('step
-                  (step)
+                  (step 1)
                   (mail sender 'ok)
                   (loop (wait-mail)))
                ('test
                   (test)
                   (mail sender 'ok)
                   (loop (wait-mail)))
+
                ('quit
                   (mail sender 'ok))
                (else
                   (runtime-error "unknown command" msg))))
       else
-         (step)
+         (step (car batch-size))
          (loop (check-mail))))))
 
 ; do one neural network step:
@@ -502,6 +409,12 @@
       (mail 'walker 'play)
       TRUE))
 (gtk_builder_add_callback_symbol builder "play" (G_CALLBACK do-play))
+
+(define do-batch
+   (GTK_CALLBACK (widget userdata)
+      (mail 'walker 'batch)
+      TRUE))
+(gtk_builder_add_callback_symbol builder "batch" (G_CALLBACK do-batch))
 
 (define do-test
    (GTK_CALLBACK (widget userdata)
@@ -519,6 +432,7 @@
    (GTK_CALLBACK (widget userdata)
       (fasl-save (neuron1) "neuron1.fasl")
       (fasl-save (neuron2) "neuron2.fasl")
+      (fasl-save (loss) "loss.fasl")
       (print "saved.") TRUE))
 (gtk_builder_add_callback_symbol builder "save" (G_CALLBACK do-save))
 
@@ -531,13 +445,22 @@
 (gtk_builder_connect_signals builder #f)
 (gtk_widget_show_all window)
 
+; init plot
+(plot "set terminal x11 window '"
+      (number->string (gtk_socket_get_id socket) 16) "'")
+(plot "set notitle")
+(plot "unset mouse")
+(plot "set yrange [0:]")
+(plot "clear")
+
 ; idle function to be actors alive
 (define idle (GTK_CALLBACK (userdata)
-   (sleep 1) TRUE))
+   (sleep 0) TRUE))
 (gdk_threads_add_idle (G_CALLBACK idle) nullptr)
 
 (define quit
    (GTK_CALLBACK (widget userdata)
+      (await (mail 'walker 'quit))
       (gtk_main_quit)))
 (g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
 
