@@ -204,6 +204,11 @@ libol.so:
 olvm: vm
 	cp vm olvm
 
+# selfexec feature test
+selfexec: ol
+	objcopy --add-section .lisp=selfexec.lisp \
+	        --set-section-flags .lisp=noload,readonly $^ $@
+
 # windows
 
 # You can debug ol.exe using "winedbg --gdb ol.exe"

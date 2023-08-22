@@ -20,7 +20,7 @@ The finite functions (ffs) are internally represented as red-black trees, so per
 > (numbers 1)
 "one"
 
-; the optional second argument will be returned is the key is not found
+; the optional second argument will be returned if the key is not found
 > (numbers 7 #f)
 "seven"
 

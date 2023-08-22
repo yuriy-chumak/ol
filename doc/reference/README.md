@@ -54,7 +54,7 @@ List of Standard procedures
 - [Sorting](sorting.md).
 - [Coroutines and Actors](async.md).
 - [Macro System](macros.md).
-- [Fixed Functions](ffs.md).
+- [Finite Functions](ffs.md).
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.
