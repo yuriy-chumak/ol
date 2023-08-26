@@ -1439,7 +1439,7 @@ void yield()
 	size_t
 	sendfile(int out_fd, int in_fd, off_t *offset, size_t count)
 	{
-		char buf[2*4096];
+		char buf[8*1024];
 		size_t toRead, numRead, numSent, totSent;
 
 		totSent = 0;
@@ -1472,9 +1472,8 @@ void yield()
 
 			count -= numSent;
 			totSent += numSent;
+			offset += numSent;
 		}
-		if (shutdown(out_fd, SD_SEND) == SOCKET_ERROR)
-			return -1;
 		return totSent;
 	}
 # endif
@@ -4042,9 +4041,8 @@ loop:;
 					if (wrote == 0)
 						break;
 					else {
-					ok:
-						offset += wrote;
-						count -= wrote;
+						// "offset += wrote" is NOT REQUIRED
+					ok:	count -= wrote;
 					}
 				}
 				if (wrote < 0)
