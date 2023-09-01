@@ -82,17 +82,19 @@ Q/A
    A. You can store the current REPL session with `,save "filename"` and continue it later as `ol filename` from the command line (but not from the other REPL session).
 
 1. Q. I'm lost in prefix math notation, can you help me?  
-   A. Ol has a [thirdparty math library](https://github.com/yuriy-chumak/libol-algebra) that supports infix math notation. You can install it or just copy the "otus" folder.
-      (infix-nonation is planned to be included as a standard Ol library into the next release)
+   A. Ol has a special math library that provides infix math notation. Just use the `(math infix-notation)` library.  
    ```scheme
-   > (import (otus algebra))
-   > ,expand (infix-notation 1 + 2 * 3 - sqrt(4))
-   (- (+ 1 (* 2 3)) (sqrt 4))
-
+   > (import (math infix-notation))
    > (print (infix-notation
         1 + 2 * 3 - sqrt(4)
      ))
    5
+
+   ; you can view result of transformations with ",expand":
+   > ,expand (infix-notation
+        1 + 2 * 3 - sqrt(4) )
+
+   (- (+ 1 (* 2 3)) (sqrt 4))
    ```
 
 
@@ -334,7 +336,7 @@ disassembly '(length command . args):
 
 > ,dis (lambda (x y) (+ x y))
 type: procedure
-code: (11 3 0 7 1 1 2 6 2 6 3 17)
+code: #((11 3 0 7 1 1 2 6 2 6 3 17) #<+>)
 disassembly '(length command . args):
 (4 JAF 3 0 7)
 (4 REFI 1 2 6)
@@ -355,27 +357,29 @@ Advanced functionality (i.e. OpenGL support) requires a complete installation of
 
 
 Ol command line is:
-$ ol [options] [filename] [arguments]
+`ol [options] [filename] [arguments]`
 
 * if no filename given ol will use stdin as source
 * if you want to use stdin as source but must provide an arguments, use "-" instead
+  * i.e. `echo '(print *vm-args*)' | ol - arg1 arg2`
 * if you want to break vm-options scanning and provide filename like option (i.e. '--version' as a real file name), use "--" for 'end-of-option' flag and then a filename
+  * i.e. `echo '(print *vm-args*)' > --version; ol -- --version arg1 arg2 arg3`
 
 Olvm command line options available:
-* '-v': print olvm version then exit
-* '--version': print olvm version and licensing information then exit
+* `-v`: print olvm version then exit
+* `--version`: print olvm version and licensing information then exit
 
 Ol command line options available:
-* '-v': print ol version then exit
-* '--version': print ol version and licensing information then exit
-* '--version=...": overwrite ol version string
-* '--sandbox': enable execution in the sandbox (if OS supports)
-* '--interactive': force REPL interactive mode
-* '--no-interactive': disable REPL interactive mode
-* '--embed': run special reduced REPL for embed usage
-* '--home=...': overwrite path where to search for the ol libraries
-* '--': end-of-options sign
-
+* `-v`: print ol version then exit
+* `--version`: print ol version and licensing information then exit
+* `--version=...`: overwrite ol version string
+* `--home=...`: overwrite path where to search for the ol libraries
+* `--sandbox`: enable execution in the sandbox (if OS supports)
+* `--sandbox=...`: execution in the sandbox with "..." Megs of memory preallocated
+* `--interactive`: force REPL interactive mode
+* `--no-interactive`: disable REPL interactive mode
+* `--embed`: run special reduced REPL for embed usage
+* `--`: end-of-options sign
 
 Ol can be executed interactively or in the unattended mode.
 
