@@ -5654,7 +5654,11 @@ fail:;
 }
 #endif
 
+#ifdef max
+#undef max
+#endif
 #define max(a,b) ((a) > (b) ? (a) : (b))
+
 // TODO: optional olvm without malloc
 struct olvm_t*
 OLVM_new(unsigned char* bootstrap)
