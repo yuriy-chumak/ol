@@ -1529,9 +1529,9 @@ void E(char* format, ...)
 
 	for(;;)
 	switch (*format++) {
-	case 0: { // exit
+	case 0: { // done
 		char newline[] = "\n";
-		(void)write(fd, newline, sizeof(newline));
+		(void)write(fd, newline, sizeof(newline)-1);
 		// fsync(fd);
 		va_end(args);
 		return;
