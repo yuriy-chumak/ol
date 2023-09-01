@@ -67,7 +67,7 @@
       (define symbol-lead-chars (ff-union left
          alphabetic-chars
          (alist->ff ; no ', digits and /
-            (map putT (string->runes "!$%&*+-:<=>?@^_~"))
+            (map putT (string->runes "!$%&*+-:<=>?@^_~\\"))
       )))
       (define symbol-lead-chars/
          (put symbol-lead-chars #\/ #T))
