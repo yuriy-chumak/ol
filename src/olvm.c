@@ -1045,11 +1045,12 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 // https://msdn.microsoft.com/en-us/library/b0084kay.aspx
 // WIN32: Defined for Win32 and Win64 applications, always defined.
 #ifdef _WIN32
-#	define SYSCALL_PRCTL 0     // no sandbox for windows yet, sorry
+#	define SYSCALL_PRCTL 0    // no sandbox for windows yet, sorry
 #	define SYSCALL_GETRLIMIT 0
 // qemu for windows: https://qemu.weilnetz.de/
 // images for qemu:  https://4pda.ru/forum/index.php?showtopic=318284
 
+#   define HAS_MEMFD_CREATE 1 // we have own win32 implementation!
 #endif
 
 #ifdef __APPLE__
@@ -1284,26 +1285,22 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 // memfd_create:
-#ifdef __linux__
-#   if HAS_MEMFD_CREATE
-#      include <sys/mman.h>
-#   else
-#       undef HAS_MEMFD_CREATE
-#       define HAS_MEMFD_CREATE 1
-        static // not a real memfd_create, but compatibility wrapper
-        int memfd_create (char* name, unsigned int flags)
-        {
-            (void) name;
-            assert (flags == 0);
-
-            char tmp_m[] = "/tmp/memfd_olvmXXXXXX";
-            int fd = mkstemp(tmp_m); unlink(tmp_m);
-
-            return fd;
-        }
-#   endif
+#if HAS_MEMFD_CREATE
+#	include <sys/mman.h>
 #else
-#   include <sys/mman.h> // we have own win32/macos implementation
+#	undef HAS_MEMFD_CREATE
+#	define HAS_MEMFD_CREATE 1
+	static // not a real memfd_create, but compatibility wrapper
+	int memfd_create (char* name, unsigned int flags)
+	{
+		(void) name;
+		assert (flags == 0);
+
+		char tmp_m[] = "/tmp/memfd_olvmXXXXXX";
+		int fd = mkstemp(tmp_m); unlink(tmp_m);
+
+		return fd;
+	}
 #endif
 
 #include <sys/utsname.h> // we have own win32 implementation
