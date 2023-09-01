@@ -5484,10 +5484,11 @@ int main(int argc, char** argv)
 	}
 #endif
 
+	// in case of "ol -- --script", "--script" may be a binary code
 	if ((file == 0) && (argc > 1) && (strcmp(argv[1], "--") == 0)) {
-		argc--; argv++;
-		if (argc > 1) {
-			file = argv[1];
+		argc -= 2; argv += 2;
+		if (argc > 0) {
+			file = argv[0];
 			argc--; argv++;
 		}
 	}
