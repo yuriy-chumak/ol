@@ -55,6 +55,7 @@ List of Standard procedures
 - [Coroutines and Actors](async.md).
 - [Macro System](macros.md).
 - [Finite Functions](ffs.md).
+- [Infix Notation](infix-notation.md).
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.
@@ -185,6 +186,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 ## I
 [inexact?](numerical-operations.md#inexact)
 [infinite?](numerical-operations.md#infinite)
+[infix-notation](infix-notation.md)
 [integer?](numerical-operations.md#integer)
 [integer->char](characters.md#integer-char)
 [isort](sorting.md#isort)
