@@ -36,6 +36,7 @@ Note the use of spaces!
 
 ; some operators have right associativity:
 (\\  2 ^ 3 ^ 4)             ==>  2417851639229258349412352
+(\\  2 ^ (3 ^ 4))           ==>  2417851639229258349412352
 (\\  (2 ^ 3) ^ 4)           ==>  4096
 
 ; symbols are supported, sure:
@@ -77,7 +78,7 @@ We may add custom operators:
 ; let's define "power" operator
 > (define (⊡ a b) (expt a b))
 
-; add this operator with corrent priority (+ has 2, * has 3)
+; add this operator with higher priority (+ has 2, * has 3)
 > (define \\operators (put \\operators '⊡ 4))
 
 ; now use it
@@ -90,7 +91,7 @@ We may extend our math with custom suffixes:
 ```scheme
 > (import (math infix-notation))
 
-; set's define "Fourth power" function
+; let's define "Fourth power" function
 > (define (⁴ x) (* x x x x))
 
 ; add this function to the postfix dictionary
