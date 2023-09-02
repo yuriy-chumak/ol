@@ -2,7 +2,7 @@ Infix Notation
 ==============
 
 Lisp is a very simple and elegant language.
-Unfortunately, the generally accepted mathematical notation contradicts the Lisp one, which brings some inconvenience in the transfer of formulas into the language. So, the `infix-notation` macro was inctroduced.
+Unfortunately, the generally accepted mathematical notation contradicts the Lisp one, which brings some inconvenience in the transfer of formulas into the language. So, the `infix-notation` macro was introduced.
 
 # infix-notation
 `(infix-notation expression)`, *macro*
@@ -18,9 +18,6 @@ Note the use of spaces!
 * but `18!` is a number `18` and a function `!`,
 * spaces before and after `(` and `)` may be ommited,
 * spaces around `,` may be ommited,
-
- "18 !" is 
-;  and 18! is a symbol |18!| which is not bound to anything in this sample.
 
 ```scheme
 ; preamble:

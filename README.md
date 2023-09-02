@@ -89,12 +89,15 @@ Q/A
         1 + 2 * 3 - sqrt(4)
      ))
    5
+   ; '\\' is a short for infix-notation
+   > (print (\\  1 + 2 * 3 - sqrt(4) ))
+   5
 
-   ; you can view result of transformations with ",expand":
-   > ,expand (infix-notation
-        1 + 2 * 3 - sqrt(4) )
-
+   ; you can view result of transformations with ",expand"
+   > ,expand (\\  1 + 2 * 3 - sqrt(4) )
    (- (+ 1 (* 2 3)) (sqrt 4))
+   > ,expand (\\  a * x ^ 2 + b * x + c )
+   (+ (+ (* a (^ x 2)) (* b x)) c)
    ```
 
 
