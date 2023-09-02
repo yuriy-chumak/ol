@@ -228,6 +228,6 @@
       (car s-exp)
    ))
 
-   (define-lazy-macro \\ (lambda args
-      `(infix-notation ,args)))
+   (define-macro \\ (lambda args
+      (cons 'infix-notation args)))
 ))
