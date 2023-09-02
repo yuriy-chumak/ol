@@ -10,6 +10,9 @@ Infix Notation
 > (define b 5)
 > (define c 7)
 
+
+; simple arithmetic:
+
 (infix-notation
    a + b
 )
@@ -50,5 +53,9 @@ Infix Notation
 )
 ==> (- (* (+ a b) c) d)
 
+; few math functions
+> (define (f x) (+ x 3))
+
+(\\ f(4)) ==> 7
 
 ```

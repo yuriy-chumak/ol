@@ -3,47 +3,63 @@
    (license MIT/LGPL3)
 (import
    (scheme core)
-   (scheme list)
-   (owl ff))
+   (scheme list))
 
 (export
-   infix-notation
-   ;; @: ; математический макрос, позволяющий инфиксную нотацию
-   ;;    ; кроме того, 2 выступает первым символом специальных математических функций
-   ;;    ; (типа @summ, сами названия надо взять из TeX, там они начинаются с \)
+   infix-notation \\
+
+   ; infix notation options
+   \\operators
+   \\right-operators
+   \\postfix-functions
 )
 
 (begin
-   ; todo: add unary function (like -)
+   (import (owl ff))
+   ; todo: add unary functions (like -)
+   ; todo: add ∧,or, xor
+
+   (define \\operators {
+      '+ 2 '- 2 '− 3
+      '* 3 '/ 3
+      '· 3 '× 3 ; dot and cross
+      '^ 4 ; power
+
+      ; additional synonyms
+      ': 3 '÷ 3 ; same as /
+      '• 3 '⨯ 3 ; dot and cross
+      '** 4 ; same as power
+   })
+   ; todo: <<, >>
+
+   (define \\right-operators {
+      '* #t ; multiplication (?)
+      '^ #t ; power
+      '** #t ; same as power
+   })
+
+   (define \\postfix-functions {
+      '! #t
+      ; additional unicode synonyms
+      '¹ #t  '² #t  '³ #t  '⁴ #t  '⁵ #t
+      'ᵀ #t
+   })
 
    (define-macro infix-notation (lambda args
-      ;; (print "args: " args)
-      (define priority {
-         '+ 2 '- 2 '− 3
-         '* 3 '⨯ 3 '× 3
-         '/ 3 ': 3 '÷ 3
-         '• 3 '· 3 ; dot-product
-         '^ 4 '** 4 ; power
-      })
+      (define priority \\operators)
       (define (operator? op)
-         (priority op #false))
+         (\\operators op #false))
 
       ; без правой ассоциативности мы никуда,
       ; иначе матричная арифметика, например,
       ; может стать очень тяжелой.
       (define (right-operator? op)
-         ({
-            '* #t ; multiplication
-            '^ #t  '** #t ; powers
-         } op #f))
+         (\\right-operators op #false))
       (define (left-operator? op)
          (and (operator? op) (not (right-operator? op))))
+
       (define (postfix-function? op)
-         ({
-            '! #t
-            '¹ #t  '² #t  '³ #t  '⁴ #t  '⁵ #t
-            'ᵀ #t
-         } op #f))
+         (\\postfix-functions op #false))
 
       ;..
       ; infix -> postfix
@@ -211,4 +227,7 @@
       ;; (print "s-exp: " (car s-exp))
       (car s-exp)
    ))
+
+   (define-lazy-macro \\ (lambda args
+      `(infix-notation ,args)))
 ))
