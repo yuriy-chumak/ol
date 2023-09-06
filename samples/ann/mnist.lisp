@@ -13,13 +13,18 @@
 (define INPUT-LEN 784) ; every input image has 28 * 28 pixels,
 (define OUTPUT-LEN 10) ; and only 10 possible numbers (0 .. 9)
 
-(define LAYER1-LEN 64) ; size of intermediate (hidden) layer I
+(define LAYER1-LEN 99) ; size of intermediate (hidden) layer I
+;; (define LAYER2-LEN 32) ; size of intermediate (hidden) layer 2
 
 ; neural math functions:
 (import (otus algebra))
 (import (otus algebra infix-notation))
 (import (otus algebra print))
+; let's shorten infix-notation
+(define-macro @ (lambda args
+   `(infix-notation ,args)))
 
+(import (otus algebra unicode))
 (define T matrix-transpose)
 
 (import (srfi 27)) ; randomizer
@@ -30,18 +35,29 @@
 
 ; neurons
 (import (scheme dynamic-bindings))
-(define neuron1 (make-parameter (or ; neuron 1 weights (sinapses)
-   ;(Matrix~ (fasl-load "neuron1.fasl" #f))
+(define neuron1 (make-parameter (or
    (fasl-load "neuron1.fasl" #f)
    (new-matrix INPUT-LEN  LAYER1-LEN))))
-(define neuron2 (make-parameter (or ; neuron 2 weights (sinapses)
-   ;(Matrix~ (fasl-load "neuron2.fasl" #f))
+(define neuron2 (make-parameter (or
    (fasl-load "neuron2.fasl" #f)
    (new-matrix LAYER1-LEN OUTPUT-LEN))))
 
-(define (matrix->list matrix)
-   (rfoldr cons #n matrix))
+;; (define neuron3 (make-parameter (or ; output neuron weights (sinapses)
+;;    ;(Matrix~ (fasl-load "neuronH.fasl" #f))
+;;    (fasl-load "neuron3.fasl" #f)
+;;    (new-matrix LAYER2-LEN OUTPUT-LEN))))
 
+; --------------------------
+(define (tensor? t)    ; c vector
+   (and (eq? (type t) type-pair)
+        (eq? (type (cdr t)) type-bytevector)))
+
+(define (matrix->list matrix)
+   (cond
+      ((vector? matrix) ; builtin array
+         (vector->list (Reshape matrix (list (Size matrix)))))
+      ((tensor? matrix) ; external data
+         (rfoldr cons #n matrix))))
 
 ; -=( plot )=----------------------------------------------
 ; gnuplot:
@@ -117,6 +133,7 @@
 (import (lib gdk-3))
 (import (lib gtk-3 image))
 (import (lib gtk-3 tool-button))
+(import (lib gtk-3 bin))
 
 (define bw-palette
    (let loop ((i #xFF) (out #n))
@@ -127,6 +144,7 @@
    (define byte (if normalize
       (lambda (float) (exact (floor (* (+ float #i1.0) #x7F))))
       (lambda (float) (exact (floor (* float #xFF))))))
+
    ; create B/W TGA image
    (define TGA (list->bytevector (append
       ; Image header
@@ -188,37 +206,35 @@
 (define (test)
    ; let's select random test image
    (define p (+ (random-integer (size test-images)) 1))
+   ;; (define p 2)
    (gtk_label_set_text P (string-append " (test) " (number->string p)))
 
    ; draw the source image:
-   (define test-image (ref test-images p)); слева-направо и сверху-вниз
-   (define shifted (Shift test-image (map (lambda (lr)
-                                             (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
-                                        (Paddings test-image))))
-
+   (define image (ref test-images p)); слева-направо и сверху-вниз
+   (define shifted (Shift image (map (lambda (lr)
+                                        (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
+                                   (Paddings image))))
    (set-image INPUT (matrix->list shifted) 28 28 #false)
 
    (define label (ref test-labels p))
    (for-each (lambda (l)
          (define s (number->string l))
-         (gtk_label_set_markup (gtk_builder_get_object builder s)
+         (gtk_label_set_markup (gtk_bin_get_child (gtk_builder_get_object builder s))
             (if (eq? l label) (string-append "<b>" s "</b>") s)))
       '(0 1 2 3 4 5 6 7 8 9))
 
-   ; calculations:
+   ;; ; calculations:
    (define matrix1 (neuron1))   ; матрица нейрона 1 (hidden layer)
-   (define matrix2 (neuron2))   ; матрица нейрона 2 (output layer)
+   (define matrix2 (neuron2))   ; матрица нейрона 2 (hidden layer)
+   ;; (define matrix3 (neuron3))   ; матрица нейрона 3 (output layer)
 
-   ; let's make a vector from the input texture
-   (define layer0 (Reshape shifted (list 1 (Size shifted))))
-   (define layer1 (Logistic (matrix·matrix layer0 matrix1)))
-   (define layer2 (Logistic (matrix·matrix layer1 matrix2)))
+   ; let's make a one-row matrix [vector] from input texture
+   (define layer0 (Reshape shifted (list 1 (Size shifted)))) ; input layer
 
-   (define output (Reshape layer2 (list (Size layer2))))
+   (define layer1 (Logistic (· layer0 matrix1)))
+   (define layer2 (Logistic (· layer1 matrix2)))
 
-   ;; (gtk_widget_show LAYER1)
-   ;; (gtk_widget_hide LOSS)
-   ;; (set-image LAYER1 (matrix->list layer1) 8 8 #f) ; (size layer1) 1
+   (define output (Reshape layer2 (list (Size layer2))))  ; back to vector
 
    ; show the output:
    (define select (fold max 0 (matrix->list output)))
@@ -242,15 +258,16 @@
 )
 
 
-(define acc (make-parameter 0))
-(define loss (make-parameter (fasl-load "loss.fasl" '())))
+;; (define acc (make-parameter 0))
+(define Loss (make-parameter (fasl-load "Loss.fasl" '())))
 
 (define (step N)
    ;(define old (time-ms))
 
    (let loop ((input #false)
               (matrix1 (neuron1)) ; матрица нейрона 1 (hidden layer)
-              (matrix2 (neuron2)) ; матрица нейрона 2 (output layer)
+              (matrix2 (neuron2)) ; матрица нейрона 2 (hidden layer)
+            ;;   (matrix3 (neuron3)) ; матрица нейрона 3 (output layer)
               (n N))
       (if (zero? n)
       then
@@ -263,6 +280,7 @@
          ; и обновимся
          (neuron1 matrix1)
          (neuron2 matrix2)
+         ;; (neuron3 matrix3)
       else
          (define p (+ (random-integer (size images)) 1))
          (gtk_label_set_text P (number->string p))
@@ -273,23 +291,29 @@
                (map (lambda (lr)
                        (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
                   (Paddings image))))
+         ;; (define shifted image)
 
-         ; todo: output correct label
+         ; output correct label:
          (define label (ref labels p))
          (for-each (lambda (l)
                (define s (number->string l))
-               (gtk_label_set_markup (gtk_builder_get_object builder s)
+               (gtk_label_set_markup (gtk_bin_get_child (gtk_builder_get_object builder s))
                   (if (eq? l label) (string-append "<b>" s "</b>") s)))
             '(0 1 2 3 4 5 6 7 8 9))
 
          ; calculations:
 
-         ; let's make a vector (one-row matrix) from input texture
-         (define layer0 (Reshape shifted (list 1 (Size shifted))))  ; input layer
-         (define layer1 (Logistic (matrix·matrix layer0 matrix1)))
-         (define layer2 (Logistic (matrix·matrix layer1 matrix2)))  ; todo: change to matrix*vectorT
+         ; let's make a one-row matrix [vector] from input texture
+         (define layer0 (Reshape shifted (list 1 (Size shifted)))) ; input layer
 
-         (define output (Reshape layer2 (list (Size layer2)))) ; output vector
+         (define layer1 (infix-notation
+            Logistic (layer0 · matrix1)
+         ))
+         (define layer2 (infix-notation
+            Logistic (layer1 · matrix2)
+         ))
+
+         (define output (Reshape layer2 (list (Size layer2))))  ; back to vector
 
          ; show the output:
          (define select (fold max 0 (matrix->list output)))
@@ -314,24 +338,32 @@
                (if (eq? i label) #i1 #i0))
             (iota 10)))))
 
-         (define alpha 1.0) ; learning rate
+         ; learning rate
+         (define alpha (+ 0.1 (* (random-real) 0.2)))
 
-         ; layer2 calculations
-         (define layer2/ (DLogisticDx_Logistic layer2)) ; dOut/dNet, because layer2 already Logisticised
-         (define delta2 (- layer2 ok)) ; dEtotal/dOut (error)
-         (define error2 (* delta2 layer2/)) ; dEtotal/dOut * dOut/dNet, покомпонентное умножение векторов
-         ; dEtotal/dWi * dEtotal/dOut * dOut/dNet
+         ; layer3 calculations
+         (define deltaO (- layer2 ok)) ; dEtotal/dOut (output error)
+
+         ;; (define layer3/ (DLogisticDx_Logistic layer3)) ; dOut/dNet, because layer2 already Logisticised
+         ;; (define error3 (* deltaO layer3/)) ; dEtotal/dOut * dOut/dNet, покомпонентное умножение векторов
+         ;; ; dEtotal/dWi * dEtotal/dOut * dOut/dNet
+         ;; (define new-matrix3 (infix-notation
+         ;;    matrix3 - alpha * T(layer2) • error3
+         ;; ))
+
+         ;; ; layer2 calculations
+         ;; (define delta2 (T (matrix·matrix matrix3 (T error3)))) ; dEtotal/dOut (error) / (matrix·matrix error3 (T matrix3)))
+
+         (define layer2/ (DLogisticDx_Logistic layer2)) ; dOut/dNet
+         (define error2 (* deltaO layer2/))
          (define new-matrix2 (infix-notation
             matrix2 - alpha * T(layer1) • error2
          ))
 
          ; layer1 calculations
+         (define delta1 (T (matrix·matrix matrix2 (T error2)))) ; faster - need to T two vectors (a very fast operation, zero-copy)
          (define layer1/ (DLogisticDx_Logistic layer1)) ; dOut/dNet
-         (define delta1
-            ;(matrix·matrix error2 (T matrix2)))    ; slower - need to T matrix (expensive)
-            (T (matrix·matrix matrix2 (T error2)))) ; faster - need to T two vectors (a very fast operation, zero-copy)
          (define error1 (* delta1 layer1/))
-
          (define new-matrix1 (infix-notation
             matrix1 - alpha * T(layer0) • error1
          ))
@@ -340,28 +372,90 @@
          (define c (string->number (gtk_label_get_text (gtk_builder_get_object builder "COUNTER"))))
          (gtk_label_set_text (gtk_builder_get_object builder "COUNTER") (number->string (+ c 1) 10))
 
-         ; посчитаем loss (и выведем на график, если пришло время)
-         (define err (let ((delta (matrix->list delta2)))
-            (/ (fold + 0 (map * delta delta)) (length delta))))
-         (acc (+ (acc) err))
+         ;; ; посчитаем loss (и выведем на график, если пришло время)
+         ;; (define err (let ((delta (matrix->list deltaO)))
+         ;;    (/ (fold + 0 (map * delta delta)) (length delta))))
+         ;; (acc (+ (acc) err))
+
+         ;; (define epoch 1000)
+         ;; (define c1 (+ c 1))
+         ;; (when (and (> c1 1) (eq? (mod c1 epoch) 1))
+         ;;    (define v (/ (acc 0) epoch))
+         ;;    (loss (append (loss) (list v))))
+
+         ; посчитаем loss на тестовых данных и выведем на график (если пришло время)
+         ;; (define err (let ((delta (matrix->list deltaO)))
+         ;;    (/ (fold + 0 (map * delta delta)) (length delta))))
+         ;; (acc (+ (acc) err))
 
          (define epoch 1000)
          (define c1 (+ c 1))
+
+         ; считаем только если минимум одна эпоха прошла
          (when (and (> c1 1) (eq? (mod c1 epoch) 1))
-            (define v (/ (acc 0) epoch))
-            (loss (append (loss) (list v))))
+            (define N 100)
+            (define loss (/
+               (fold (lambda (S _)
+                        (define p (+ (random-integer (size test-images)) 1))
+                        (define test-label (ref test-labels p))
+                        (define test-image (ref test-images p)); слева-направо и сверху-вниз
+                        (define shifted (Shift test-image (map (lambda (lr)
+                                                                  (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
+                                                            (Paddings test-image))))
+
+                        (define layer0 (Reshape shifted (list 1 (Size shifted)))) ; input layer
+
+                        (define layer1 (Logistic (matrix·matrix layer0 matrix1)))
+                        (define layer2 (Logistic (matrix·matrix layer1 matrix2)))
+                        ;; (define layer3 (Logistic (matrix·matrix layer2 matrix3)))
+
+                        (define output (Reshape layer2 (list (Size layer2))))  ; back to vector
+                        (define ok (Matrix~ 1 (list->vector (map (lambda (i) ; cirrect answer
+                              (if (eq? i test-label) #i1 #i0))
+                           (iota 10)))))
+                        (+ S 
+                           (sqrt (fold (lambda (dx ok out)
+                                          (+ dx (* (- ok out) (- ok out))))
+                                    0
+                                    (matrix->list ok)
+                                    (matrix->list output))) ))
+                  0
+                  (iota N))
+               N))
+            (Loss (append (Loss) (list loss))))
 
          (when (eq? (mod c1 epoch) 1)
-            (define l (loss))
+            (define l (Loss))
             (unless (null? l)
-               (plot "plot '-' with lines title 'Loss', '-' smooth bezier lt rgb 'black' title 'approx', 0.03 title '3%' lt rgb 'green'") ; linesp
+               (plot "plot '-' with lines title '" (last l) "' lt rgb 'yellow', "
+                          "'-' smooth bezier title 'approx' lt rgb 'black', "
+                          "0.2 title '0.2' lt rgb 'green'")
                (for-each plot l) (plot "e")
                (for-each plot l) (plot "e")))
 
-         (loop shifted new-matrix1 new-matrix2 (- n 1))))
+         (loop shifted new-matrix1 new-matrix2 #|new-matrix3|# (- n 1))))
 
    ;(define new (time-ms)) (print new "-" old " = " (- new old))
 )
+
+(define (regen n)
+   ;; (define vec (list->vector (map
+   ;;    (lambda (i)
+   ;;       (if (= i n) 1 0))
+   ;;    (iota 10))))
+
+   ;; (define out (Matrix~ 1 vec))
+
+   ;; (define matrix1 (neuron1)) ; матрица нейрона 1 (hidden layer)
+   ;; (define matrix2 (neuron2)) ; матрица нейрона 2 (output layer)
+
+   ;; (define layer2 (T out))
+   ;; (define layer1 (matrix·matrix matrix2 layer2))
+   ;; (define layer0 (matrix·matrix matrix1 layer1))
+   ;; (define inp layer0)
+
+   ;; (set-image INPUT (matrix->list inp) 28 28 #f)
+   #false)
 
 (actor 'walker (lambda ()
    (define batch-size '(1))
@@ -377,6 +471,10 @@
                   (set-car! batch-size 100)
                   (loop #f))
                ('pause
+                  (loop (wait-mail)))
+
+               (['regen n]
+                  (regen n)
                   (loop (wait-mail)))
 
                ('step
@@ -428,11 +526,19 @@
       TRUE))
 (gtk_builder_add_callback_symbol builder "pause" (G_CALLBACK do-pause))
 
+(define do-regen ; merge with "step"
+   (GTK_CALLBACK (widget userdata)
+      (define n (string->number (gtk_label_get_text (gtk_bin_get_child widget))))
+      (mail 'walker ['regen n])
+      TRUE))
+(gtk_builder_add_callback_symbol builder "regen" (G_CALLBACK do-regen))
+
 (define do-save
    (GTK_CALLBACK (widget userdata)
       (fasl-save (neuron1) "neuron1.fasl")
       (fasl-save (neuron2) "neuron2.fasl")
-      (fasl-save (loss) "loss.fasl")
+      ;; (fasl-save (neuron3) "neuron3.fasl")
+      (fasl-save (Loss) "Loss.fasl")
       (print "saved.") TRUE))
 (gtk_builder_add_callback_symbol builder "save" (G_CALLBACK do-save))
 
