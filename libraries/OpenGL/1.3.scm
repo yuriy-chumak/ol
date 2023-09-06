@@ -67,76 +67,76 @@
    GL_SAMPLE_COVERAGE_INVERT
 
 ;; F.4 ARB_multitexture
-	glActiveTexture
-	glClientActiveTexture
-	glMultiTexCoord1d
-	glMultiTexCoord1dv
-	glMultiTexCoord1f
-	glMultiTexCoord1fv
-	glMultiTexCoord1i
-	glMultiTexCoord1iv
-	glMultiTexCoord1s
-	glMultiTexCoord1sv
-	glMultiTexCoord2d
-	glMultiTexCoord2dv
-	glMultiTexCoord2f
-	glMultiTexCoord2fv
-	glMultiTexCoord2i
-	glMultiTexCoord2iv
-	glMultiTexCoord2s
-	glMultiTexCoord2sv
-	glMultiTexCoord3d
-	glMultiTexCoord3dv
-	glMultiTexCoord3f
-	glMultiTexCoord3fv
-	glMultiTexCoord3i
-	glMultiTexCoord3iv
-	glMultiTexCoord3s
-	glMultiTexCoord3sv
-	glMultiTexCoord4d
-	glMultiTexCoord4dv
-	glMultiTexCoord4f
-	glMultiTexCoord4fv
-	glMultiTexCoord4i
-	glMultiTexCoord4iv
-	glMultiTexCoord4s
-	glMultiTexCoord4sv
+   glActiveTexture
+   glClientActiveTexture
+   glMultiTexCoord1d
+   glMultiTexCoord1dv
+   glMultiTexCoord1f
+   glMultiTexCoord1fv
+   glMultiTexCoord1i
+   glMultiTexCoord1iv
+   glMultiTexCoord1s
+   glMultiTexCoord1sv
+   glMultiTexCoord2d
+   glMultiTexCoord2dv
+   glMultiTexCoord2f
+   glMultiTexCoord2fv
+   glMultiTexCoord2i
+   glMultiTexCoord2iv
+   glMultiTexCoord2s
+   glMultiTexCoord2sv
+   glMultiTexCoord3d
+   glMultiTexCoord3dv
+   glMultiTexCoord3f
+   glMultiTexCoord3fv
+   glMultiTexCoord3i
+   glMultiTexCoord3iv
+   glMultiTexCoord3s
+   glMultiTexCoord3sv
+   glMultiTexCoord4d
+   glMultiTexCoord4dv
+   glMultiTexCoord4f
+   glMultiTexCoord4fv
+   glMultiTexCoord4i
+   glMultiTexCoord4iv
+   glMultiTexCoord4s
+   glMultiTexCoord4sv
 
-	GL_ACTIVE_TEXTURE
-	GL_CLIENT_ACTIVE_TEXTURE
-	GL_MAX_TEXTURE_UNITS
-	GL_TEXTURE0
-	GL_TEXTURE1
-	GL_TEXTURE2
-	GL_TEXTURE3
-	GL_TEXTURE4
-	GL_TEXTURE5
-	GL_TEXTURE6
-	GL_TEXTURE7
-	GL_TEXTURE8
-	GL_TEXTURE9
-	GL_TEXTURE10
-	GL_TEXTURE11
-	GL_TEXTURE12
-	GL_TEXTURE13
-	GL_TEXTURE14
-	GL_TEXTURE15
-	GL_TEXTURE16
-	GL_TEXTURE17
-	GL_TEXTURE18
-	GL_TEXTURE19
-	GL_TEXTURE20
-	GL_TEXTURE21
-	GL_TEXTURE22
-	GL_TEXTURE23
-	GL_TEXTURE24
-	GL_TEXTURE25
-	GL_TEXTURE26
-	GL_TEXTURE27
-	GL_TEXTURE28
-	GL_TEXTURE29
-	GL_TEXTURE30
-	GL_TEXTURE31
+   GL_ACTIVE_TEXTURE
+   GL_CLIENT_ACTIVE_TEXTURE
+   GL_MAX_TEXTURE_UNITS
+   GL_TEXTURE0
+   GL_TEXTURE1
+   GL_TEXTURE2
+   GL_TEXTURE3
+   GL_TEXTURE4
+   GL_TEXTURE5
+   GL_TEXTURE6
+   GL_TEXTURE7
+   GL_TEXTURE8
+   GL_TEXTURE9
+   GL_TEXTURE10
+   GL_TEXTURE11
+   GL_TEXTURE12
+   GL_TEXTURE13
+   GL_TEXTURE14
+   GL_TEXTURE15
+   GL_TEXTURE16
+   GL_TEXTURE17
+   GL_TEXTURE18
+   GL_TEXTURE19
+   GL_TEXTURE20
+   GL_TEXTURE21
+   GL_TEXTURE22
+   GL_TEXTURE23
+   GL_TEXTURE24
+   GL_TEXTURE25
+   GL_TEXTURE26
+   GL_TEXTURE27
+   GL_TEXTURE28
+   GL_TEXTURE29
+   GL_TEXTURE30
+   GL_TEXTURE31
 
 ;; F.5 ARB_texture_env_add
    ; None
@@ -246,76 +246,76 @@
    (define GL_SAMPLE_COVERAGE_INVERT          #x80AB)
 
  ; F.4 ARB_multitexture
-	(define glActiveTexture (GL GLvoid "glActiveTexture" GLenum))
-	(define glClientActiveTexture (GL GLvoid "glClientActiveTexture" GLenum))
-	(define glMultiTexCoord1d (GL GLvoid "glMultiTexCoord1d" GLenum GLdouble))
-	(define glMultiTexCoord1dv (GL GLvoid "glMultiTexCoord1dv" GLenum GLdouble*))
-	(define glMultiTexCoord1f (GL GLvoid "glMultiTexCoord1f" GLenum GLfloat))
-	(define glMultiTexCoord1fv (GL GLvoid "glMultiTexCoord1fv" GLenum GLfloat*))
-	(define glMultiTexCoord1i (GL GLvoid "glMultiTexCoord1i" GLenum GLint))
-	(define glMultiTexCoord1iv (GL GLvoid "glMultiTexCoord1iv" GLenum GLint*))
-	(define glMultiTexCoord1s (GL GLvoid "glMultiTexCoord1s" GLenum GLshort))
-	(define glMultiTexCoord1sv (GL GLvoid "glMultiTexCoord1sv" GLenum GLshort*))
-	(define glMultiTexCoord2d (GL GLvoid "glMultiTexCoord2d" GLenum GLdouble GLdouble))
-	(define glMultiTexCoord2dv (GL GLvoid "glMultiTexCoord2dv" GLenum GLdouble*))
-	(define glMultiTexCoord2f (GL GLvoid "glMultiTexCoord2f" GLenum GLfloat GLfloat))
-	(define glMultiTexCoord2fv (GL GLvoid "glMultiTexCoord2fv" GLenum GLfloat*))
-	(define glMultiTexCoord2i (GL GLvoid "glMultiTexCoord2i" GLenum GLint GLint))
-	(define glMultiTexCoord2iv (GL GLvoid "glMultiTexCoord2iv" GLenum GLint*))
-	(define glMultiTexCoord2s (GL GLvoid "glMultiTexCoord2s" GLenum GLshort GLshort))
-	(define glMultiTexCoord2sv (GL GLvoid "glMultiTexCoord2sv" GLenum GLshort*))
-	(define glMultiTexCoord3d (GL GLvoid "glMultiTexCoord3d" GLenum GLdouble GLdouble GLdouble))
-	(define glMultiTexCoord3dv (GL GLvoid "glMultiTexCoord3dv" GLenum GLdouble*))
-	(define glMultiTexCoord3f (GL GLvoid "glMultiTexCoord3f" GLenum GLfloat GLfloat GLfloat))
-	(define glMultiTexCoord3fv (GL GLvoid "glMultiTexCoord3fv" GLenum GLfloat*))
-	(define glMultiTexCoord3i (GL GLvoid "glMultiTexCoord3i" GLenum GLint GLint GLint))
-	(define glMultiTexCoord3iv (GL GLvoid "glMultiTexCoord3iv" GLenum GLint*))
-	(define glMultiTexCoord3s (GL GLvoid "glMultiTexCoord3s" GLenum GLshort GLshort GLshort))
-	(define glMultiTexCoord3sv (GL GLvoid "glMultiTexCoord3sv" GLenum GLshort*))
-	(define glMultiTexCoord4d (GL GLvoid "glMultiTexCoord4d" GLenum GLdouble GLdouble GLdouble GLdouble))
-	(define glMultiTexCoord4dv (GL GLvoid "glMultiTexCoord4dv" GLenum GLdouble*))
-	(define glMultiTexCoord4f (GL GLvoid "glMultiTexCoord4f" GLenum GLfloat GLfloat GLfloat GLfloat))
-	(define glMultiTexCoord4fv (GL GLvoid "glMultiTexCoord4fv" GLenum GLfloat*))
-	(define glMultiTexCoord4i (GL GLvoid "glMultiTexCoord4i" GLenum GLint GLint GLint GLint))
-	(define glMultiTexCoord4iv (GL GLvoid "glMultiTexCoord4iv" GLenum GLint*))
-	(define glMultiTexCoord4s (GL GLvoid "glMultiTexCoord4s" GLenum GLshort GLshort GLshort GLshort))
-	(define glMultiTexCoord4sv (GL GLvoid "glMultiTexCoord4sv" GLenum GLshort*))
+   (define glActiveTexture (GL GLvoid "glActiveTexture" GLenum))
+   (define glClientActiveTexture (GL GLvoid "glClientActiveTexture" GLenum))
+   (define glMultiTexCoord1d (GL GLvoid "glMultiTexCoord1d" GLenum GLdouble))
+   (define glMultiTexCoord1dv (GL GLvoid "glMultiTexCoord1dv" GLenum GLdouble*))
+   (define glMultiTexCoord1f (GL GLvoid "glMultiTexCoord1f" GLenum GLfloat))
+   (define glMultiTexCoord1fv (GL GLvoid "glMultiTexCoord1fv" GLenum GLfloat*))
+   (define glMultiTexCoord1i (GL GLvoid "glMultiTexCoord1i" GLenum GLint))
+   (define glMultiTexCoord1iv (GL GLvoid "glMultiTexCoord1iv" GLenum GLint*))
+   (define glMultiTexCoord1s (GL GLvoid "glMultiTexCoord1s" GLenum GLshort))
+   (define glMultiTexCoord1sv (GL GLvoid "glMultiTexCoord1sv" GLenum GLshort*))
+   (define glMultiTexCoord2d (GL GLvoid "glMultiTexCoord2d" GLenum GLdouble GLdouble))
+   (define glMultiTexCoord2dv (GL GLvoid "glMultiTexCoord2dv" GLenum GLdouble*))
+   (define glMultiTexCoord2f (GL GLvoid "glMultiTexCoord2f" GLenum GLfloat GLfloat))
+   (define glMultiTexCoord2fv (GL GLvoid "glMultiTexCoord2fv" GLenum GLfloat*))
+   (define glMultiTexCoord2i (GL GLvoid "glMultiTexCoord2i" GLenum GLint GLint))
+   (define glMultiTexCoord2iv (GL GLvoid "glMultiTexCoord2iv" GLenum GLint*))
+   (define glMultiTexCoord2s (GL GLvoid "glMultiTexCoord2s" GLenum GLshort GLshort))
+   (define glMultiTexCoord2sv (GL GLvoid "glMultiTexCoord2sv" GLenum GLshort*))
+   (define glMultiTexCoord3d (GL GLvoid "glMultiTexCoord3d" GLenum GLdouble GLdouble GLdouble))
+   (define glMultiTexCoord3dv (GL GLvoid "glMultiTexCoord3dv" GLenum GLdouble*))
+   (define glMultiTexCoord3f (GL GLvoid "glMultiTexCoord3f" GLenum GLfloat GLfloat GLfloat))
+   (define glMultiTexCoord3fv (GL GLvoid "glMultiTexCoord3fv" GLenum GLfloat*))
+   (define glMultiTexCoord3i (GL GLvoid "glMultiTexCoord3i" GLenum GLint GLint GLint))
+   (define glMultiTexCoord3iv (GL GLvoid "glMultiTexCoord3iv" GLenum GLint*))
+   (define glMultiTexCoord3s (GL GLvoid "glMultiTexCoord3s" GLenum GLshort GLshort GLshort))
+   (define glMultiTexCoord3sv (GL GLvoid "glMultiTexCoord3sv" GLenum GLshort*))
+   (define glMultiTexCoord4d (GL GLvoid "glMultiTexCoord4d" GLenum GLdouble GLdouble GLdouble GLdouble))
+   (define glMultiTexCoord4dv (GL GLvoid "glMultiTexCoord4dv" GLenum GLdouble*))
+   (define glMultiTexCoord4f (GL GLvoid "glMultiTexCoord4f" GLenum GLfloat GLfloat GLfloat GLfloat))
+   (define glMultiTexCoord4fv (GL GLvoid "glMultiTexCoord4fv" GLenum GLfloat*))
+   (define glMultiTexCoord4i (GL GLvoid "glMultiTexCoord4i" GLenum GLint GLint GLint GLint))
+   (define glMultiTexCoord4iv (GL GLvoid "glMultiTexCoord4iv" GLenum GLint*))
+   (define glMultiTexCoord4s (GL GLvoid "glMultiTexCoord4s" GLenum GLshort GLshort GLshort GLshort))
+   (define glMultiTexCoord4sv (GL GLvoid "glMultiTexCoord4sv" GLenum GLshort*))
 
-	(define GL_ACTIVE_TEXTURE                  #x84E0)
-	(define GL_CLIENT_ACTIVE_TEXTURE           #x84E1)
-	(define GL_MAX_TEXTURE_UNITS               #x84E2)
-	(define GL_TEXTURE0                        #x84C0)
-	(define GL_TEXTURE1                        #x84C1)
-	(define GL_TEXTURE2                        #x84C2)
-	(define GL_TEXTURE3                        #x84C3)
-	(define GL_TEXTURE4                        #x84C4)
-	(define GL_TEXTURE5                        #x84C5)
-	(define GL_TEXTURE6                        #x84C6)
-	(define GL_TEXTURE7                        #x84C7)
-	(define GL_TEXTURE8                        #x84C8)
-	(define GL_TEXTURE9                        #x84C9)
-	(define GL_TEXTURE10                       #x84CA)
-	(define GL_TEXTURE11                       #x84CB)
-	(define GL_TEXTURE12                       #x84CC)
-	(define GL_TEXTURE13                       #x84CD)
-	(define GL_TEXTURE14                       #x84CE)
-	(define GL_TEXTURE15                       #x84CF)
-	(define GL_TEXTURE16                       #x84D0)
-	(define GL_TEXTURE17                       #x84D1)
-	(define GL_TEXTURE18                       #x84D2)
-	(define GL_TEXTURE19                       #x84D3)
-	(define GL_TEXTURE20                       #x84D4)
-	(define GL_TEXTURE21                       #x84D5)
-	(define GL_TEXTURE22                       #x84D6)
-	(define GL_TEXTURE23                       #x84D7)
-	(define GL_TEXTURE24                       #x84D8)
-	(define GL_TEXTURE25                       #x84D9)
-	(define GL_TEXTURE26                       #x84DA)
-	(define GL_TEXTURE27                       #x84DB)
-	(define GL_TEXTURE28                       #x84DC)
-	(define GL_TEXTURE29                       #x84DD)
-	(define GL_TEXTURE30                       #x84DE)
-	(define GL_TEXTURE31                       #x84DF)
+   (define GL_ACTIVE_TEXTURE                  #x84E0)
+   (define GL_CLIENT_ACTIVE_TEXTURE           #x84E1)
+   (define GL_MAX_TEXTURE_UNITS               #x84E2)
+   (define GL_TEXTURE0                        #x84C0)
+   (define GL_TEXTURE1                        #x84C1)
+   (define GL_TEXTURE2                        #x84C2)
+   (define GL_TEXTURE3                        #x84C3)
+   (define GL_TEXTURE4                        #x84C4)
+   (define GL_TEXTURE5                        #x84C5)
+   (define GL_TEXTURE6                        #x84C6)
+   (define GL_TEXTURE7                        #x84C7)
+   (define GL_TEXTURE8                        #x84C8)
+   (define GL_TEXTURE9                        #x84C9)
+   (define GL_TEXTURE10                       #x84CA)
+   (define GL_TEXTURE11                       #x84CB)
+   (define GL_TEXTURE12                       #x84CC)
+   (define GL_TEXTURE13                       #x84CD)
+   (define GL_TEXTURE14                       #x84CE)
+   (define GL_TEXTURE15                       #x84CF)
+   (define GL_TEXTURE16                       #x84D0)
+   (define GL_TEXTURE17                       #x84D1)
+   (define GL_TEXTURE18                       #x84D2)
+   (define GL_TEXTURE19                       #x84D3)
+   (define GL_TEXTURE20                       #x84D4)
+   (define GL_TEXTURE21                       #x84D5)
+   (define GL_TEXTURE22                       #x84D6)
+   (define GL_TEXTURE23                       #x84D7)
+   (define GL_TEXTURE24                       #x84D8)
+   (define GL_TEXTURE25                       #x84D9)
+   (define GL_TEXTURE26                       #x84DA)
+   (define GL_TEXTURE27                       #x84DB)
+   (define GL_TEXTURE28                       #x84DC)
+   (define GL_TEXTURE29                       #x84DD)
+   (define GL_TEXTURE30                       #x84DE)
+   (define GL_TEXTURE31                       #x84DF)
 
  ; F.5 ARB_texture_env_add
  ; F.6 ARB_texture_env_combine
