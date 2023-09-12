@@ -163,19 +163,22 @@
                                        (null? (car (cdr queue)))))
                            then ; function
                               (define arguments
-                                 (foldr (lambda (x out)
-                                       ; handle functions in arguments
+                                 (let cycle ((in (reverse (cadr queue)))
+                                             (cursor '())
+                                             (out '()))
+                                    (if (null? in)
+                                       (if (null? cursor)
+                                          out
+                                          (cons cursor out))
+                                    else
+                                       (define x (car in))
                                        (if (and (pair? x)
-                                                (eq? (car x) 'unquote)
-                                                (pair? out)
-                                                (pair? (car out))
-                                                (not (eq? (caar out) 'unquote)))
-                                          (cons
-                                             (list 'unquote (cadr x) (car out))
-                                             (cdr out))
-                                          (cons x out)))
-                                    '()
-                                    (cadr queue)))
+                                                (eq? (car x) 'unquote))
+                                          (if (null? cursor)
+                                             (cycle (cdr in) '() (cons x out))
+                                             (cycle (cdr in) '() (cons (cons* 'unquote (cadr x) cursor) out)))
+                                       else
+                                          (cycle (cdr in) (cons x cursor) out)))))
                               (continue (cons
                                        arguments
                                        (cddr queue))
