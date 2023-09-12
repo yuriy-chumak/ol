@@ -18,10 +18,10 @@ Examples are provided in two forms:
 1. in the equivalence (in sense of [equal?](equivalence-predicates.md#equal)) form using symbols "==>" and "===",
 ```scheme
 (+ 1 2 3)  ==>  6
-(+ 1 2 3)  ===  (+ 3 2 1)
+[1 2 3 4]  ===  (make-vector '(1 2 3 4))
 ```
 
-2. and in the interactive form using prompt symbol "> ", which shows the behavior as if someone were typing code in an interactive ol session.
+2. in the interactive form using prompt symbol "> ", which shows the behavior as if someone were typing code in an interactive ol session.
 ```scheme
 > #i1.2
 1.199999999
@@ -88,6 +88,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [-](numerical-operations.md#-)
 [*](numerical-operations.md#-6)
 [/](numerical-operations.md#-7)
+[\\\\](infix-notation.md)
 ## <a name="#"></a>#
 [#null](pairs-and-lists.md#null)
 ## A
