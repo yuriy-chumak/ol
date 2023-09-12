@@ -33,7 +33,6 @@
    ; todo: <<, >>
 
    (define \\right-operators {
-      '* #t ; multiplication (?)
       '^ #t ; power
       '** #t ; same as power
    })
