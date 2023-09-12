@@ -98,6 +98,34 @@ This is incomplete list of Ol features:
 You can immediately try Otus Lisp in the provided terminal on the left of this page without downloading and installing any binaries. For the more information please refer to the "Learn" paragraph at the bottom of this page.
 
 
+### New features
+
+#### Infix Notation
+
+You can use traditional math notation while coding in Ol. `(\\ )` is a shortcut for "infix-notation" macro.
+
+Try few examples:
+<pre><code id="infix1" data-language="ol">(import (math infix-notation))
+
+(print (\\ 2 + 3 * 5 - 7))
+</code><button class="doit" onclick="doit(infix1.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix2" data-language="ol">(import (math infix-notation))
+
+(print (\\ (2 + 3) * (5 - 7)))
+</code><button class="doit" onclick="doit(infix2.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix4" data-language="ol">(import (math infix-notation))
+
+(print (\\ 2 + sqrt(16)))
+</code><button class="doit" onclick="doit(infix4.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix5" data-language="ol">(import (math infix-notation))
+
+(print (\\ 7! - 2/3))
+</code><button class="doit" onclick="doit(infix5.textContent)">send to the terminal</button></pre>
+
+
 ### Learn
 
    You can immediately try Otus Lisp (ol) in the provided terminal on the left pane of this page. For example, type

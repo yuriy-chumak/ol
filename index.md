@@ -25,6 +25,17 @@ Also, Ol is ported to the Web (in WebAssembly form) and can be
 used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
 Luakit, Iceape, etc.
 
+
+### Language reference
+
+[Link to the Ol reference](https://github.com/yuriy-chumak/ol/blob/master/doc/reference/README.md)
+
+
+### Source code
+Source codes can be accessed at the [official github repo](https://github.com/yuriy-chumak/ol)
+(check the README).
+
+
 ### Already tested platforms
 - [x] x86: 80486, pentium, pentium 2, pentium 3, athlon, core 2 quad, core i3, core i5, core i7.
 - [x] x86_64: core 2 quad, core i3, core i5, core i7.
@@ -59,11 +70,6 @@ Luakit, Iceape, etc.
 - [x] Iceape 2.7.12 / Debian 6.0
 
 
-### Source code
-Source codes can be accessed at the [official github repo](https://github.com/yuriy-chumak/ol)
-(check the README).
-
-
 ### About
 Otus Lisp is available under 2 licenses:
 [MIT License](https://github.com/yuriy-chumak/ol/blob/master/LICENSE) and
@@ -71,7 +77,7 @@ Otus Lisp is available under 2 licenses:
 
 This is incomplete list of Ol features:
 
-* small and fast virtual machine (only 42kb[\*](#42kb) in binary code)
+* small and fast virtual machine (only 64kb[\*](#64kb) in binary code)
 * high efficient (thanks for pure language functionality) garbage collector
 * cross-platform (Linux, Windows, Unix, different BSD flavors, Android, macOS, etc.)
 * cross-architecture (i586, amd64, arm, mips, etc.)
@@ -90,6 +96,34 @@ This is incomplete list of Ol features:
 * and, at least, it's a real Lisp!
 
 You can immediately try Otus Lisp in the provided terminal on the left of this page without downloading and installing any binaries. For the more information please refer to the "Learn" paragraph at the bottom of this page.
+
+
+### New features
+
+#### Infix Notation
+
+You can use traditional math notation while coding in Ol. `(\\ )` is a shortcut for "infix-notation" macro.
+
+Try few examples:
+<pre><code id="infix1" data-language="ol">(import (math infix-notation))
+
+(print (\\ 2 + 3 * 5 - 7))
+</code><button class="doit" onclick="doit(infix1.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix2" data-language="ol">(import (math infix-notation))
+
+(print (\\ (2 + 3) * (5 - 7)))
+</code><button class="doit" onclick="doit(infix2.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix4" data-language="ol">(import (math infix-notation))
+
+(print (\\ 2 + sqrt(16)))
+</code><button class="doit" onclick="doit(infix4.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix5" data-language="ol">(import (math infix-notation))
+
+(print (\\ 7! - 2/3))
+</code><button class="doit" onclick="doit(infix5.textContent)">send to the terminal</button></pre>
 
 
 ### Learn

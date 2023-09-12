@@ -91,6 +91,31 @@ Otus Lisp досупен под двумя лицензиями:
 ### Новости разработки <a name="news"></a>
 * Смотрите акутальные новости на официальном [Twitter стриме](https://twitter.com/otus_lisp).
 
+#### Infix Notation
+
+Теперь вы можете использовать традиционную математическую нотацию пока программируете в Ol. `(\\ )` - сокращение для макроса "infix-notation".
+
+Попробуйте несколько примеров:
+<pre><code id="infix1" data-language="ol">(import (math infix-notation))
+
+(print (\\ 2 + 3 * 5 - 7))
+</code><button class="doit" onclick="doit(infix1.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix2" data-language="ol">(import (math infix-notation))
+
+(print (\\ (2 + 3) * (5 - 7)))
+</code><button class="doit" onclick="doit(infix2.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix4" data-language="ol">(import (math infix-notation))
+
+(print (\\ 2 + sqrt(16)))
+</code><button class="doit" onclick="doit(infix4.textContent)">send to the terminal</button></pre>
+
+<pre><code id="infix5" data-language="ol">(import (math infix-notation))
+
+(print (\\ 7! - 2/3))
+</code><button class="doit" onclick="doit(infix5.textContent)">send to the terminal</button></pre>
+
 
 ### Сборка проекта и другие мелочи
 
