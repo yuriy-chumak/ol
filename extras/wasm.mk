@@ -4,7 +4,30 @@ ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
 else
 
-# emscripten version 1.37.40+ needed
+# emscripten version 1.37.0 required:
+# (fastcomp for asm.js)
+# $ apt install cmake node node-acorn
+# $ git clone https://github.com/kripken/emscripten /opt/emscripten
+# $ git clone https://github.com/kripken/emscripten-fastcomp /opt/emscripten/fastcomp
+# $ git clone https://github.com/kripken/emscripten-fastcomp-clang /opt/emscripten/fastcomp/tools/clang
+# $ mkdir -p /opt/emscripten/fastcomp/build; cd /opt/emscripten/fastcomp/build; \
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD="X86;JSBackend" \
+             -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_INCLUDE_TESTS=OFF -DCLANG_INCLUDE_EXAMPLES=OFF -DCLANG_INCLUDE_TESTS=OFF; \
+    make -j2
+# $ rm -f ~/.emscripten
+# $ /opt/emscripten/emcc -v 2> /dev/null
+# $ sed -i "/LLVM_ROOT/c\LLVM_ROOT = '/opt/emscripten/fastcomp/build/bin'" ~/.emscripten
+olvm.js: src/olvm.c extensions/ffi.c
+	emcc src/olvm.c extensions/ffi.c -Os \
+	     -o $@ -DOLVM_NOMAIN=1 \
+		 -DHAS_DLOPEN=1 -DOLVM_FFI=1 \
+	     -s WASM=0  -s SIDE_MODULE=1 \
+		 -s EXPORT_ALL=1 \
+	     --memory-init-file 0
+# DISABLE_EXCEPTION_CATCHING ?
+
+# latest emscripten version required:
+# $ source /opt/emsdk/emsdk_env.sh && make ol.wasm
 ol.wasm: src/olvm.c tmp/repl.c
 	emcc src/olvm.c \
 	     tmp/repl.c -DREPL=repl \

@@ -1169,9 +1169,17 @@ ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
 	case 0b100:
 		return (ret_t)(word)((word (*)  (int_t, int_t))
 		             function) (args[ 0], args[ 1]);
+	case 0b111:
+		return (ret_t)(word)((word (*)  (float, float))
+		             function) ((float)args[ 0], (float)args[ 1]);
+
 	case 0b1000:
 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t))
 		             function) (args[ 0], args[ 1], args[ 2]);
+	case 0b1111:
+		return (ret_t)(word)((word (*)  (float, float, float))
+		             function) ((float)args[ 0], (float)args[ 1], (float)args[ 2]);
+
 	case 0b10000:
 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t))
 		             function) (args[ 0], args[ 1], args[ 2], args[ 3]);

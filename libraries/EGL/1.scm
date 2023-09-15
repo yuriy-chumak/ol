@@ -95,11 +95,11 @@
       eglChooseConfig
       ;eglGetConfigAttrib (EGLDisplay dpy, EGLConfig config, EGLint attribute, EGLint *value);
 
-      eglCreateWindowSurface ; EGLSurface (EGLDisplay dpy, EGLConfig config, NativeWindowType window, const EGLint *attrib_list);
+      eglCreateWindowSurface
       ;eglCreatePixmapSurface ; EGLSurface (EGLDisplay dpy, EGLConfig config, NativePixmapType pixmap, const EGLint *attrib_list);
       ;eglCreatePbufferSurface ; EGLSurface (EGLDisplay dpy, EGLConfig config, const EGLint *attrib_list);
       ;eglDestroySurface (EGLDisplay dpy, EGLSurface surface);
-      ;eglQuerySurface (EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint *value);
+      eglQuerySurface
 
       eglCreateContext ; (EGLDisplay dpy, EGLConfig config, EGLContext share_list, const EGLint *attrib_list);
       ;eglDestroyContext (EGLDisplay dpy, EGLContext ctx);
@@ -242,7 +242,7 @@
 (begin
    (setq EGL EGL_LIBRARY)
 
-   (define eglChooseConfig (EGL EGLBoolean "eglChooseConfig" EGLDisplay EGLint* EGLConfig* EGLint EGLint&))
+   (define eglChooseConfig (EGL EGLBoolean "eglChooseConfig" EGLDisplay EGLint* EGLConfig& EGLint EGLint&))
    (define eglCopyBuffers (EGL EGLBoolean "eglCopyBuffers" EGLDisplay EGLSurface EGLNativePixmapType))
    (define eglCreateContext (EGL EGLContext "eglCreateContext" EGLDisplay EGLConfig EGLContext EGLint*))
    (define eglCreatePbufferSurface (EGL EGLSurface "eglCreatePbufferSurface" EGLDisplay EGLConfig EGLint*))
@@ -251,17 +251,17 @@
    (define eglDestroyContext (EGL EGLBoolean "eglDestroyContext" EGLDisplay EGLContext))
    (define eglDestroySurface (EGL EGLBoolean "eglDestroySurface" EGLDisplay EGLSurface))
    (define eglGetConfigAttrib (EGL EGLBoolean "eglGetConfigAttrib" EGLDisplay EGLConfig EGLint EGLint*))
-   (define eglGetConfigs (EGL EGLBoolean "eglGetConfigs" EGLDisplay EGLConfig* EGLint EGLint*))
+   (define eglGetConfigs (EGL EGLBoolean "eglGetConfigs" EGLDisplay EGLConfig* EGLint EGLint&))
    (define eglGetCurrentDisplay (EGL EGLDisplay "eglGetCurrentDisplay"))
    (define eglGetCurrentSurface (EGL EGLSurface "eglGetCurrentSurface" EGLint))
    (define eglGetDisplay (EGL EGLDisplay "eglGetDisplay" EGLNativeDisplayType))
    (define eglGetError (EGL EGLint "eglGetError"))
    (define eglGetProcAddress (EGL type-vptr "eglGetProcAddress" type-string))
-   (define eglInitialize (EGL EGLBoolean "eglInitialize" EGLDisplay EGLint* EGLint*))
+   (define eglInitialize (EGL EGLBoolean "eglInitialize" EGLDisplay EGLint& EGLint&))
    (define eglMakeCurrent (EGL EGLBoolean "eglMakeCurrent" EGLDisplay EGLSurface EGLSurface EGLContext))
    (define eglQueryContext (EGL EGLBoolean "eglQueryContext" EGLDisplay EGLContext EGLint EGLint*))
    (define eglQueryString (EGL type-string "eglQueryString" EGLDisplay EGLint))
-   (define eglQuerySurface (EGL EGLBoolean "eglQuerySurface" EGLDisplay EGLSurface EGLint EGLint*))
+   (define eglQuerySurface (EGL EGLBoolean "eglQuerySurface" EGLDisplay EGLSurface EGLint EGLint&))
    (define eglSwapBuffers (EGL EGLBoolean "eglSwapBuffers" EGLDisplay EGLSurface))
    (define eglTerminate (EGL EGLBoolean "eglTerminate" EGLDisplay))
    (define eglWaitGL (EGL EGLBoolean "eglWaitGL"))

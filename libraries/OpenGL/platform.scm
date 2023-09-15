@@ -84,11 +84,13 @@
          ;; (define (GetProcAddress name)
          ;;    (dlsym GL2 (string-append name))) ))
    ; -=( WebGL )=-----------
-;;    (Emscripten
-;;       (begin
-;;          (setq gl4es (dlopen))
+   (Emscripten
+      (begin
+         (setq GL_LIBRARY
+            (load-dynamic-library #false))
+         (print "GL_LIBRARY: " GL_LIBRARY)
 
-;;          ;; gl4es hack: add "gl4es_" prefix to all opengl functions
+;;          ;; old gl4es hack: add "gl4es_" prefix to all opengl functions
 ;;          (define (GL_LIBRARY type name . prototype)
 ;;             (let ((rtti (cons type prototype))
 ;;                   (function (dlsym gl4es (string-append "gl4es_" name))))
@@ -97,14 +99,15 @@
 ;;                      (ffi function rtti args)))))
 
 
-;;          (setq GLX GL_LIBRARY)
-;;          (setq GetProcAddress (GLX type-vptr "glXGetProcAddress" type-string))
+         (setq GL2 GL_LIBRARY)
+         (setq GetProcAddress (GL2 type-vptr "gl2GetProcAddress" type-string))
+         (print "GetProcAddress: " GetProcAddress)
          
 ;;          ; unsupported
 ;;          (define (gl:CreateContext . args) #false)
 ;;          (define (gl:MakeCurrent . args) #false)
 ;;          (define (gl:SwapBuffers . args) #false)
-;;    ))
+   ))
 
 ;;    ; -=( macOS )=--------------------------------------
 ;;    (Darwin
