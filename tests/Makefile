@@ -10,12 +10,12 @@ else
 FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
 
 # win32 tests:
-MINGW32Q := $(shell which i686-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
-MINGW64Q := $(shell which x86_64-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
+HAS_MINGW32 ?= $(shell which i686-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
+HAS_MINGW64 ?= $(shell which x86_64-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
 WINEQ    := $(shell which wine 1>/dev/null 2>/dev/null && echo 1)
 
-ok:="\033[1;32mok\033[0m"
-failed:="\033[1;31mfailed\033[0m"
+ok:="\033[1;32m ok \033[0m"
+fail:="\033[1;31mfail\033[0m"
 
 MACHINE ?= $(shell uname -m)
 
@@ -35,7 +35,6 @@ HAS_32CDEFS  ?= 0
 HAS_64CDEFS  ?= 0
 endif
 
-
 # -------------
 # win
 define winbuild
@@ -47,7 +46,7 @@ define winbuild
 	   $2
 endef
 
-ifeq ($(MINGW32Q),1)
+ifeq ($(HAS_MINGW32),1)
 tmp/vm32d.exe: CC=i686-w64-mingw32-gcc
 tmp/vm32d.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_DEBUG))
@@ -55,7 +54,7 @@ tmp/vm32r.exe: CC=i686-w64-mingw32-gcc
 tmp/vm32r.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_RELEASE))
 endif
-ifeq ($(MINGW64Q),1)
+ifeq ($(HAS_MINGW64),1)
 tmp/vm64d.exe: CC=x86_64-w64-mingw32-gcc
 tmp/vm64d.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_DEBUG))
@@ -114,7 +113,7 @@ test-ffi:
 	@if $(ffi)$(affix)$(bits) repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
 	   echo $(ok);\
 	else \
-	   echo $(failed) ;\
+	   echo $(fail) ;\
 	   touch $(FAILED);\
 	fi
 ffi=tmp/ffi
@@ -227,13 +226,13 @@ ifeq ($(HAS_64CDEFS),1)
 	@$(MAKE) -s vm-release-64
 	@echo $(ok)
 endif
-ifeq ($(MINGW32Q),1)
+ifeq ($(HAS_MINGW32),1)
 	@printf "    mingw 32-bit debug and release versions... "
 	@$(MAKE) -s $(vm)32d.exe
 	@$(MAKE) -s $(vm)32r.exe
 	@echo $(ok)
 endif
-ifeq ($(MINGW64Q),1)
+ifeq ($(HAS_MINGW64),1)
 	@printf "    mingw 64-bit debug and release versions... "
 	@$(MAKE) -s $(vm)64d.exe
 	@$(MAKE) -s $(vm)64r.exe
@@ -261,7 +260,7 @@ ifeq ($(HAS_32CDEFS),1)
 	@if tmp/embed32d >/dev/null; then\
 	   printf $(ok) ;\
 	else \
-	   printf $(failed) ;\
+	   printf $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 	@printf ", release-32: "
@@ -271,7 +270,7 @@ ifeq ($(HAS_32CDEFS),1)
 	@if tmp/embed32r >/dev/null; then\
 	   printf $(ok) ;\
 	else \
-	   printf $(failed) ;\
+	   printf $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
@@ -283,7 +282,7 @@ ifeq ($(HAS_64CDEFS),1)
 	@if tmp/embed64d >/dev/null; then\
 	   printf $(ok) ;\
 	else \
-	   printf $(failed) ;\
+	   printf $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 	@printf ", release-64: "
@@ -293,7 +292,7 @@ ifeq ($(HAS_64CDEFS),1)
 	@if tmp/embed64r >/dev/null; then\
 	   printf $(ok) ;\
 	else \
-	   printf $(failed) ;\
+	   printf $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
@@ -305,7 +304,7 @@ else # regular case
 	@if tmp/embedd >/dev/null; then\
 	   printf $(ok) ;\
 	else \
-	   printf $(failed) ;\
+	   printf $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 	@printf ", release: "
@@ -315,7 +314,7 @@ else # regular case
 	@if tmp/embedr >/dev/null; then\
 	   printf $(ok) ;\
 	else \
-	   printf $(failed) ;\
+	   printf $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
@@ -363,56 +362,74 @@ endif
 # -- scm ------------------------------------------
 define scmtestok
 	@if ([ -f $1 ]); then\
-		printf ", $2: ";\
 		if ([ -f $^.in ] && $3 $1 repl --home=libraries $^ <$^.in 2>&1 || $3 $1 repl --home=libraries $^ 2>&1) | diff $4 - $^.ok >/dev/null; then\
-			printf $(ok) ;\
+			printf \|$(ok) ;\
 		else \
-			printf $(failed);\
+			printf \|$(fail);\
 			touch $(FAILED);\
 		fi;\
 	fi
 endef
 
 %.scm.ok: %.scm
-	@printf "Testing $^ ..."
-	$(call scmtestok,$(vm)d,debug)
+ifeq ($(DEV_MACHINE),1) # main development platform, special case
+ifeq ($(HAS_32CDEFS),1)
 	$(call scmtestok,$(vm)d32,debug-32)
-	$(call scmtestok,$(vm)d64,debug-64)
-	$(call scmtestok,$(vm)r,release)
 	$(call scmtestok,$(vm)r32,release-32)
+endif
+ifeq ($(HAS_64CDEFS),1)
+	$(call scmtestok,$(vm)d64,debug-64)
 	$(call scmtestok,$(vm)r64,release-64)
+endif
+ifeq ($(HAS_MINGW32),1)
 	$(call scmtestok,$(vm)32d.exe,win-debug-32,wine,--strip-trailing-cr)
 	$(call scmtestok,$(vm)32r.exe,win-release-32,wine,--strip-trailing-cr)
+endif
+ifeq ($(HAS_MINGW64),1)
 	$(call scmtestok,$(vm)64d.exe,win-debug-64,wine,--strip-trailing-cr)
 	$(call scmtestok,$(vm)64r.exe,win-release-64,wine,--strip-trailing-cr)
-	@printf ".\n"
+endif
+else # default case
+	$(call scmtestok,$(vm)d,debug)
+	$(call scmtestok,$(vm)r,release)
+endif
+	@printf "|\n"
 
 # -- bin ------------------------------------------
 define bintestok
 	@if ([ -f $1 ]); then\
-		printf ", $2: ";\
 		if ([ -f $^.in ] && $3 $1 $^ --home=libraries <$^.in || $3 $1 $^ --home=libraries) | diff $4 - $^.ok >/dev/null; then\
-			printf $(ok) ;\
+			printf \|$(ok) ;\
 		else \
-			printf $(failed);\
+			printf \|$(fail);\
 			touch $(FAILED);\
 		fi;\
 	fi
 endef
 
 %.bin.ok: %.bin
-	@printf "Testing $^ ..."
-	$(call bintestok,$(vm)d,debug)
+ifeq ($(DEV_MACHINE),1) # main development platform, special case
+ifeq ($(HAS_32CDEFS),1)
 	$(call bintestok,$(vm)d32,debug-32)
-	$(call bintestok,$(vm)d64,debug-64)
-	$(call bintestok,$(vm)r,release)
 	$(call bintestok,$(vm)r32,release-32)
+endif
+ifeq ($(HAS_64CDEFS),1)
+	$(call bintestok,$(vm)d64,debug-64)
 	$(call bintestok,$(vm)r64,release-64)
+endif
+ifeq ($(HAS_MINGW32),1)
 	$(call bintestok,$(vm)32d.exe,win-debug-32,wine,--strip-trailing-cr)
 	$(call bintestok,$(vm)32r.exe,win-release-32,wine,--strip-trailing-cr)
+endif
+ifeq ($(HAS_MINGW64),1)
 	$(call bintestok,$(vm)64d.exe,win-debug-64,wine,--strip-trailing-cr)
 	$(call bintestok,$(vm)64r.exe,win-release-64,wine,--strip-trailing-cr)
-	@printf ".\n"
+endif
+else # default case
+	$(call bintestok,$(vm)d,debug)
+	$(call bintestok,$(vm)r,release)
+endif
+	@printf "|\n"
 
 # -------------------------------------------------
 # -=( tests )=-------------------------------------
@@ -422,10 +439,48 @@ tests: testing-binaries
 	$(MAKE) -s testing-internal
 	$(MAKE) -s testing-ffi
 	$(MAKE) -s testing-embed
+	$(MAKE) -s regression-tests
+
+.ONESHELL:
+define table-header
+	#     header line 1
+	printf "%-$1s " "  Test"
+	if [ $(DEV_MACHINE) = 1 ] # main development platform, special case
+	then
+		case "`expr $(HAS_32CDEFS) + $(HAS_64CDEFS)`" in
+			1) printf "| Linux   ";;
+			2) printf "| Linux             ";;
+		esac
+		case "`expr $(HAS_MINGW32) + $(HAS_MINGW64)`" in
+			1) printf "| Windows ";;
+			2) printf "| Windows           ";;
+		esac
+	else # default case
+		@printf "| %-7s " `uname`
+	fi
+	printf "|\n"
+	#     header line 2
+	printf "%-$1s " " "
+	if [ $(DEV_MACHINE) = 1 ] # main development platform, special case
+	then
+		if [ $(HAS_32CDEFS) = 1 ]; then printf "|32-d|32-r"; fi
+		if [ $(HAS_64CDEFS) = 1 ]; then printf "|64-d|64-r"; fi
+		if [ $(HAS_MINGW32) = 1 ]; then printf "|32-d|32-r"; fi
+		if [ $(HAS_MINGW64) = 1 ]; then printf "|64-d|64-r"; fi
+	else # default case
+		@printf "|dbg.|rel."
+	fi
+	printf "|\n"
+endef
+
+regression-tests: $(filter-out tests/ffi.scm, $(wildcard tests/*.scm)) $(wildcard tests/*.bin)
 	@echo " "
-	@echo "common tests"
-	@echo "---------------------------------------"
-	@for F in $(filter-out tests/ffi.scm, $(wildcard tests/*.scm)) $(wildcard tests/*.bin) ;do \
+	@echo "regression tests"
+	@echo "----------------"
+	$(eval F1LEN=$(shell for F in $^; do echo $${#F}; done |sort -n| tail -1))
+	$(call table-header, $(F1LEN))
+	@for F in $^; do
+	   printf "%-$(F1LEN)s " "$$F";\
 	   $(MAKE) -s -B $$F.ok ;\
 	done
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
