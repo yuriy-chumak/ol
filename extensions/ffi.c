@@ -1145,19 +1145,22 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 // todo: modify DESERIALIZE_INT for different types
 #define DESERIALIZE_INT()\
 				case TINTP:\
-				case TINTN:\
-					if (value > VMAX) {\
-						if (value < 0) {\
+				case TINTN: {\
+					int_t ivalue = (int_t)value;\
+					if (ivalue > VMAX || ivalue < -VMAX) {\
+						if (ivalue < 0) {\
 							*(word*)num = make_header(value < 0 ? TINTN : TINTP, 3);\
 							value = -value;\
 						}\
 						else\
 							*(word*)num = make_header(TINTP, 3);\
-						*(word*)&car(num) = I((long)value & VMAX);\
-						*(word*)&cadr(num) = I((long)value >> VBITS);\
+						*(word*)&car(num) = I(ivalue & VMAX);\
+						*(word*)&cadr(num) = I(ivalue >> VBITS);\
 					}\
 					else\
-						*(word*)l = make_enum(value);
+						*(word*)l = make_enum(value);\
+					break;\
+				}
 
 // TODO: DESERIALIZE_RATIONAL()
 // case TRATIONAL: {
@@ -1173,19 +1176,19 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 // }
 
 #define DESERIALIZE_TYPED(type, convert)\
-			type value = *p++;\
-			word num = convert(l);\
-			if (is_value(num))\
-				convert(l) = make_enum(value);\
-			else\
-			switch (reference_type(num)) {\
-				DESERIALIZE_INT()\
-				DESERIALIZE_INEXACT()\
-				default:\
-					(void) value;\
-					assert (0 && "Invalid return variables.");\
-					break;\
-			}\
+	type value = *p++;\
+	word num = convert(l);\
+	if (is_value(num))\
+		convert(l) = make_enum(value);\
+	else\
+	switch (reference_type(num)) {\
+		DESERIALIZE_INT()\
+		DESERIALIZE_INEXACT()\
+		default:\
+			(void) value;\
+			assert (0 && "Invalid return variables.");\
+			break;\
+	}\
 
 #define DESERIALIZE_LIST(type)\
 	case TPAIR: {\
@@ -1217,14 +1220,12 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 #endif
 
 #define DESERIALIZE(type)\
-	{\
-		if (is_reference(arg))\
-		switch (reference_type(arg)) {\
-			DESERIALIZE_LIST(type)\
-			DESERIALIZE_VECTOR(type)\
-			default:\
-				E("unsupported type %d", reference_type(arg));\
-		}\
+	if (is_reference(arg))\
+	switch (reference_type(arg)) {\
+		DESERIALIZE_LIST(type)\
+		DESERIALIZE_VECTOR(type)\
+		default:\
+			E("unsupported type %d", reference_type(arg));\
 	}
 
 // strings
@@ -1456,6 +1457,7 @@ char* not_a_string(char* ptr, word string)
 #define PTR FFT_PTR // just pointer
 #define REF FFT_REF // pointer with drawback
 
+static
 void arg_size(word arg, word tty, size_t *total)
 {
 	if (is_reference(arg))
@@ -1517,6 +1519,7 @@ void arg_size(word arg, word tty, size_t *total)
 }
 
 // грубый подсчет нужного размера (в словах в памяти)
+static
 size_t structure_calc(word args, word rtty, size_t* total)
 {
 	if (is_value(rtty)) // просто тип
@@ -1543,7 +1546,9 @@ size_t structure_calc(word args, word rtty, size_t* total)
 	}
 	return 0;
 }
+
 // todo: добавить структуры by-value
+static
 size_t arguments_size(word args, word rtty, size_t* total)
 {
 	size_t words = 0;
@@ -1588,6 +1593,195 @@ size_t arguments_size(word args, word rtty, size_t* total)
 		// return IFALSE; todo: do runtime-error
 	}
 	return words;
+}
+
+// ---------------------------------------------
+// storing complex arguments
+// memory: is address to store
+// str: internal string
+static
+void store_string(word** ffp, char** memory, word str)
+{
+	word* fp;
+again:;
+	// todo: add check to not copy the zero-ended string?
+	// note: no heap size checking required (done before)
+	int type = reference_type(str);
+	if (type == TSYMBOL) {
+		str = car(str); goto again;
+	}
+	else {
+		fp = *ffp;
+		char* ptr = *memory = (char*) &fp[1];
+		new_bytevector(string2ol(ptr, str,
+			type == TSTRING ? chars2ol :
+			type == TSTRINGWIDE ? wchars2utf8 :
+			type == TSTRINGDISPATCH ? stringleaf2ol :
+			not_a_string));
+		*ffp = fp;
+	}
+}
+
+static
+void store_string_array(word** ffp, char*** memory, word array)
+{
+	word* fp;
+	if (is_pair(array) || array == INULL) {
+		int size = list_length(array);
+		fp = *ffp;
+		char** p = *memory = (char**) &fp[1];
+		new (TBYTEVECTOR, size, 0);
+		*ffp = fp;
+
+		while (array != INULL) {
+			store_string(ffp, p++, car(array));
+			array = cdr(array);
+		}
+		assert (array == IFALSE);
+		return;
+	}
+	if (is_vector(array)) {
+
+		return;
+	}
+	*memory = NULL;
+}
+
+static
+void store_stringwide(word** ffp, word* memory, word str)
+{
+	word* fp;
+again:;
+	int type = reference_type(str);
+	if (type == TSYMBOL) {
+		str = car(str); goto again;
+	}
+	else {
+		switch (type) {
+		// case TBYTEVECTOR: // Deprecated(?)
+		case TSTRING: {
+			int len = rawstream_size(str);
+			fp = *ffp;
+			widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
+			*ffp = fp;
+
+			widechar* p = unicode;
+			char* s = (char*)&car(str);
+			for (int i = 0; i < len; i++)
+				*p++ = (widechar)(*s++);
+			*p = 0;
+
+			*memory = (word) unicode;
+			break;
+		}
+		case TSTRINGWIDE: {
+			int len = reference_size(str);
+			fp = *ffp;
+			widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
+			*ffp = fp;
+
+			widechar* p = unicode;
+			word* s = (word*)&car(str);
+			for (int i = 0; i < len; i++)
+				*p++ = (widechar)value(*s++);
+			*p = 0;
+
+			*memory = (word) unicode;
+			break;
+		}
+		default:
+			E("unsupported type-string-side source.");
+		}
+	}
+}
+
+// struct*
+// Structure Sending by Reference:
+// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
+size_t structure_size(size_t size, word t)
+{
+	// http://www.catb.org/esr/structure-packing/
+	while (t != INULL) {
+		word p = car(t);
+		if (is_pair(p))
+			size = structure_size(size, p);
+		else {
+			assert (is_value(p));
+			int type = value(p);
+			if (type == TINT8 || type == TUINT8)
+				size++;
+			else {
+				size_t subsize;
+				switch (type) {
+					case TINT16: case TUINT16: subsize = sizeof(int16_t); break;
+					case TINT32: case TUINT32: subsize = sizeof(int32_t); break;
+					case TINT64: case TUINT64: subsize = sizeof(int64_t); break;
+					case TFLOAT:               subsize = sizeof(float);   break;
+					case TDOUBLE:              subsize = sizeof(double);  break;
+					default:                   subsize = sizeof( word );
+				}
+				size += ((size + subsize - 1) & -subsize) + subsize; // align + size
+			}
+		}
+		t = cdr(t);
+	}
+	return size;
+}
+
+static
+size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
+{
+	word *fp;
+	#define ALIGN(ptr, type) ptr = ((ptr + sizeof(type) - 1) & -sizeof(type))
+	#define SAVE(type, conv) {\
+		ALIGN(ptr, type);\
+		*(type*)(memory+ptr) = (type)conv(v);\
+		ptr += sizeof(type); \
+	}
+	while (t != INULL && a != INULL) {
+		word p = car(t); word v = car(a);
+		if (is_pair(p))
+			ptr = store_structure(ffp, memory, ptr, p, v); // assert (is_pair v)
+		else {
+			switch (value(p)) {
+			case TINT8: case TUINT8:
+				*(int8_t*)(memory+ptr) = (int8_t)value(v); ptr += sizeof(int8_t);
+				break;
+			case TINT16: case TUINT16:
+				SAVE(int16_t, to_int);
+				break;
+			case TINT32: case TUINT32:
+				SAVE(int32_t, to_int);
+				break;
+			case TINT64: case TUINT64:
+				SAVE(int64_t, to_int64);
+				break;
+
+			case TSTRING:
+				ALIGN(ptr, char*);
+				fp = *ffp;
+				store_string(&fp, (char**)(memory+ptr), v);
+				*ffp = fp;
+				break;
+			case TSTRING+PTR: {
+				ALIGN(ptr, char**);
+				fp = *ffp;
+				store_string_array(&fp, (char***)(memory+ptr), v);
+				*ffp = fp;
+				ptr += sizeof(char**);
+				break;
+			// todo: type-string-wide, etc.
+			}
+			// 
+			default:
+				E("unhndled");
+				break;
+			}
+			//ptr += ((ptr + subsize - 1) & -subsize) + subsize;
+		}
+		t = cdr(t); a = cdr(a);
+	}
+	return ptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1676,171 +1870,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	word* fp = heap->fp;
 	word* args = __builtin_alloca(max(words, 16) * sizeof(word)); // minimum - 16 words for arguments
 	i = l = 0;
-
-	// --------------------------------------------------
-	// few heap allocators
-
-	// memory: is address to store
-	// str: internal string
-	void store_string(char** memory, word str)
-	{
-		// todo: add check to not copy the zero-ended string?
-		// note: no heap size checking required (done before)
-		int stype = reference_type(str);
-		if (stype == TSYMBOL) {
-			store_string(memory, car(str));
-		}
-		else {
-			char* ptr = *memory = (char*) &fp[1];
-			new_bytevector(string2ol(ptr, str,
-				stype == TSTRING ? chars2ol :
-				stype == TSTRINGWIDE ? wchars2utf8 :
-				stype == TSTRINGDISPATCH ? stringleaf2ol :
-				not_a_string));
-		}
-	}
-	void store_string_array(char*** memory, word array)
-	{
-		if (is_pair(array) || array == INULL) {
-			int size = list_length(array);
-			char** p = *memory = (char**) &fp[1];
-			new (TBYTEVECTOR, size, 0);
-
-			while (array != INULL) {
-				store_string(p++, car(array));
-				array = cdr(array);
-			}
-			return;
-		}
-		if (is_vector(array)) {
-
-			return;
-		}
-		assert (array == IFALSE);
-		*memory = NULL;
-	}
-
-	void store_stringwide(word* memory, word str)
-	{
-		int stype = reference_type(str);
-		if (stype == TSYMBOL) {
-			store_stringwide(memory, car(str));
-		}
-		else {
-			switch (stype) {
-			// case TBYTEVECTOR: // Deprecated(?)
-			case TSTRING: {
-				int len = rawstream_size(str);
-				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
-
-				widechar* p = unicode;
-				char* s = (char*)&car(str);
-				for (int i = 0; i < len; i++)
-					*p++ = (widechar)(*s++);
-				*p = 0;
-
-				*memory = (word) unicode;
-				break;
-			}
-			case TSTRINGWIDE: {
-				int len = reference_size(str);
-				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
-
-				widechar* p = unicode;
-				word* s = (word*)&car(str);
-				for (int i = 0; i < len; i++)
-					*p++ = (widechar)value(*s++);
-				*p = 0;
-
-				*memory = (word) unicode;
-				break;
-			}
-			default:
-				E("unsupported type-string-side source.");
-			}
-		}
-	}
-
-	// struct*
-	// Structure Sending by Reference:
-	// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
-	size_t structure_size(size_t size, word t)
-	{
-		// http://www.catb.org/esr/structure-packing/
-		while (t != INULL) {
-			word p = car(t);
-			if (is_pair(p))
-				size = structure_size(size, p);
-			else {
-				assert (is_value(p));
-				int type = value(p);
-				if (type == TINT8 || type == TUINT8)
-					size++;
-				else {
-					size_t subsize;
-					switch (type) {
-						case TINT16: case TUINT16: subsize = sizeof(int16_t); break;
-						case TINT32: case TUINT32: subsize = sizeof(int32_t); break;
-						case TINT64: case TUINT64: subsize = sizeof(int64_t); break;
-						case TFLOAT:               subsize = sizeof(float);   break;
-						case TDOUBLE:              subsize = sizeof(double);  break;
-						default:                   subsize = sizeof( word );
-					}
-					size += ((size + subsize - 1) & -subsize) + subsize; // align + size
-				}
-			}
-			t = cdr(t);
-		}
-		return size;
-	}
-	size_t push_structure(char* memory, size_t ptr, word t, word a)
-	{
-		#define ALIGN(ptr, type) ptr = ((ptr + sizeof(type) - 1) & -sizeof(type))
-		#define SAVE(type, conv) {\
-			ALIGN(ptr, type);\
-			*(type*)(memory+ptr) = (type)conv(v);\
-			ptr += sizeof(type); \
-		}
-		while (t != INULL && a != INULL) {
-			word p = car(t); word v = car(a);
-			if (is_pair(p))
-				ptr = push_structure(memory, ptr, p, v); // assert (is_pair v)
-			else {
-				switch (value(p)) {
-				case TINT8: case TUINT8:
-					*(int8_t*)(memory+ptr) = (int8_t)value(v); ptr += sizeof(int8_t);
-					break;
-				case TINT16: case TUINT16:
-					SAVE(int16_t, to_int);
-					break;
-				case TINT32: case TUINT32:
-					SAVE(int32_t, to_int);
-					break;
-				case TINT64: case TUINT64:
-					SAVE(int64_t, to_int64);
-					break;
-
-				case TSTRING:
-					ALIGN(ptr, char*);
-					store_string((char**)(memory+ptr), v);
-					break;
-				case TSTRING+PTR: {
-					ALIGN(ptr, char**);
-					store_string_array((char***)(memory+ptr), v);
-					ptr += sizeof(char**);
-					break;
-				}
-				// 
-				default:
-					E("unhndled");
-					break;
-				}
-				//ptr += ((ptr + subsize - 1) & -subsize) + subsize;
-			}
-			t = cdr(t); a = cdr(a);
-		}
-		return ptr;
-	}
 
 	// ==============================================
 	// 2. prepare arguments to push
@@ -2059,7 +2088,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					size_t size = structure_size(0, retype);
 					void* payload = alloca(size);
 					args[i] = (word) payload;
-					push_structure(payload, 0, retype, arg);
+					store_structure(&fp, payload, 0, retype, arg);
 				}
 				else
 					E("No valid retype found");
@@ -2067,10 +2096,10 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			}
 			case TSTRING:
 			case TSTRINGDISPATCH:
-				store_string((char**)&args[i], arg);
+				store_string(&fp, (char**)&args[i], arg);
 				break;
 			case TSTRINGWIDE:
-				store_stringwide(&args[i], arg);
+				store_stringwide(&fp, &args[i], arg);
 				break;
 			}
 			break;
@@ -2109,7 +2138,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				size_t size = structure_size(0, car(arg));
 				void* payload = alloca(size);
 				args[i] = (word) payload;
-				push_structure(payload, 0, car(arg), cdr(arg));
+				store_structure(&fp, payload, 0, car(arg), cdr(arg));
 
 				// word l = arg;
 				// while (c--) {
@@ -2317,7 +2346,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 		case TSTRING:
 		tstring:
-			store_string((char**)&args[i], arg);
+			store_string(&fp, (char**)&args[i], arg);
 			break;
 		case TSTRING+PTR: {
 			int size = list_length(arg);
@@ -2346,7 +2375,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 		case TSTRINGWIDE:
 		tstringwide:
-			store_stringwide(&args[i], arg);
+			store_stringwide(&fp, &args[i], arg);
 			break;
 
 		case TCALLABLE: { // todo: maybe better to merge type-callable and type-vptr ?
