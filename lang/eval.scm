@@ -134,7 +134,7 @@
                result)
 
             ; (VM::FAIL ...), vm pushed an error
-            (['crashed opcode a b]
+            (['crash opcode a b]
                ;; (print-to stderr "crashed")
                (fail (describe-error opcode a b)))
 

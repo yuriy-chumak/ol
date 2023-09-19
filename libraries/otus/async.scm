@@ -152,7 +152,7 @@
                result)
 
             ; (VM::FAIL ...), vm pushed an error
-            (['crashed opcode a b]
+            (['crash opcode a b]
                (runtime-error "vm error" (verbose-ol-error opcode a b)))
 
             ; (runtime-error ...)

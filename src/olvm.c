@@ -2323,18 +2323,18 @@ word get(word *ff, word key, word def, jmp_buf ret)
 }
 #define ERROR_MACRO(_1, _2, _3, NAME, ...) NAME
 
+// "ERROR" is an error (produces 'error, mcp #5)
 #define ERROR3(code, a, b) ERROR5("ERROR", 5, code,a,b)
 #define ERROR2(code, a) ERROR3(code, a, INULL)
 #define ERROR(...) ERROR_MACRO(__VA_ARGS__, ERROR3, ERROR2,, NOTHING)(__VA_ARGS__)
 
+// "CRASH" is a critical error (produces 'crash, mcp #3)
 #define CRASH3(code, a, b) ERROR5("CRASH", 3, code,a,b)
 #define CRASH2(code, a) CRASH3(code, a, INULL)
 #define CRASH(...) ERROR_MACRO(__VA_ARGS__, CRASH3, CRASH2,, NOTHING)(__VA_ARGS__)
 
-#define CHECK(exp,val,errorcode)    if (!(exp)) ERROR(errorcode, val, ITRUE);
-#define FAIL(a,b,c) ERROR(a,b,c)    // deprecated
-
 #define ASSERT(exp, code, a)        if (!(exp)) CRASH(code, a, INULL);
+#define CHECK(exp, val, errorcode)  if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 // # of function calls in a thread quantum
 #define TICKS  10000
@@ -3129,7 +3129,7 @@ loop:;
 				break;
 			}
 			default: fail:
-				FAIL(op, this, I(size));
+				ERROR(op, this, I(size));
 		}
 
 	 	ip += size + 1; break;
@@ -3648,7 +3648,7 @@ loop:;
 		#define CHECK_TYPE_OR_TYPE2(arg, type, type2, error) \
 		                                     if (argc >= arg) if (!is_##type(A##arg) && !is_##type2(A##arg)) ERROR(error, I(arg), A##arg)
 
-		#define CHECK_TRUE_OR_FALSE(arg)     if (argc >= arg) if (A##arg != ITRUE && A##arg != IFALSE) FAIL(62008, I(arg), A##arg)
+		#define CHECK_TRUE_OR_FALSE(arg)     if (argc >= arg) if (A##arg != ITRUE && A##arg != IFALSE) ERROR(62008, I(arg), A##arg)
 
 		#define CHECK_PORT(arg)      CHECK_TYPE(arg, port, 62001)
 		#define CHECK_NUMBER(arg)    CHECK_TYPE(arg, number, 62002)

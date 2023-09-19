@@ -36,7 +36,7 @@
             result)
 
          ; (VM::FAIL ...), vm pushed an error
-         (['crashed opcode a b]
+         (['crash opcode a b]
             (handler (verbose-ol-error opcode a b)))
 
          ; (raise info)

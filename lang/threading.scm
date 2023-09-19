@@ -155,7 +155,7 @@
                ;; set crashed exit value proposal
                (let ((state (put state return-value-tag 127)))
                   (drop-delivering todo done state id
-                     [id ['crashed a b c]] tc)))
+                     [id ['crash a b c]] tc)))
 
             ; 4, fork
             (λ (id cont opts thunk todo done state tc)
@@ -265,7 +265,7 @@
                (system-println "interop 14 - memlimit exceeded, dropping a thread")
                ; for now, kill the currently active thread (a bit dangerous)
                (drop-delivering todo done state id
-                  [id ['crashed 'memory-limit b c]] tc))
+                  [id ['crash 'memory-limit b c]] tc))
 
             ; 15, drop local thread
             (λ (id cont target c todo done state tc)
