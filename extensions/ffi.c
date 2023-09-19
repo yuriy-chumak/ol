@@ -1637,13 +1637,13 @@ void store_string_array(word** ffp, char*** memory, word array)
 			store_string(ffp, p++, car(array));
 			array = cdr(array);
 		}
-		assert (array == IFALSE);
 		return;
 	}
 	if (is_vector(array)) {
 
 		return;
 	}
+	assert (array == IFALSE);
 	*memory = NULL;
 }
 
