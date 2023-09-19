@@ -379,7 +379,7 @@
 
 (begin
 
-   (define ffi:idf (make-vptr)); //(dlsym (dlopen) "OLVM_idf"))
+   (define ffi:idf (make-vptr))
    (define (cast x t) ; cast vptr to the type t
       (ffi ffi:idf (list t type-vptr) (list x)))
 

@@ -341,7 +341,7 @@ endif
 	@echo " "
 
 # -- ffi ------------------------------------------
-testing-ffi:
+testing-ffi: 
 	@echo "ffi testing"
 	@echo "----------------------------------------"
 ifeq ($(DEV_MACHINE),1) # main development platform, special case

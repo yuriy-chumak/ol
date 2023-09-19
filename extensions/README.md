@@ -4,13 +4,13 @@ An FFI (Foreign Function Interface) is an OLVM (Otus Lisp Vurtual Machine) exten
 by which a program written in Ol (Otus Lisp) can call routines or make use of services
 provided by the OS (Operation System) or thirdparty libraries.
 
-For example, you can use Sqlite library without including support for that library in Ol.
+For example, you can use Sqlite library without including support for that library in Olvm.
 
 ### Glossary
 
-* `value`, integer number fits in machine word.
-* `reference`, any other Ol object (big and floating point numbers, strings, vectors, etc.)
-* `callable`, special formed Ol function that can be called from the external (native) code.
+* `value` is an integer number fits in machine word,
+* `reference` is any other Ol object (big and floating point numbers, strings, vectors, etc.),
+* `callable` is a special formed Ol function that can be called from the external (native) code.
 
 We use some common names for types in tables:
   * `integer-types` means type-enum+, type-enum-, type-int+, and type-int-.
@@ -18,8 +18,8 @@ We use some common names for types in tables:
   * `string-types` means type-string, type-string-wide, and type-string-dispatch.
   * `structure-type` means list (possibly a tree) of structure types in consistent order.
 
-You can get the type of Ol object using `type` function ((type -12) produces 32),
-you can get type name for integer value using `typename` function ((typename 32) produces 'type-enum-).
+You can get the type of Ol object using `type` function (`(type -12)` produces 32),
+you can get type name for integer type value using `typename` function (`(typename 32)` produces 'type-enum-).
 
 
 ## TOC
@@ -45,13 +45,13 @@ you can get type name for integer value using `typename` function ((typename 32)
 
 ## Basic Example
 
-If you want to import some functions from the system library, follow these steps:
+If you want to import function(s) from the native dynamic library, follow these steps:
 
-1. Import the ffi library: `(import (otus ffi))`
-1. Load a system dynamic library: `(define libm (load-dynamic-library "libm.so.6"))`
-   (I assume we use kind of Linux or any Unix flavor, for Windows use "user32.dll" library name).
-1. Link an external function: `(define asin (libm fft-double "asin" fft-double))`
-1. Use external function like regular: `(print (asin 0.5))`
+1. Import the ffi library: `(import (otus ffi))`,
+1. Load a native dynamic library: `(define libm (load-dynamic-library "libm.so.6"))`,
+   (I assume we use kind of Linux or any Unix flavor, for Windows use "user32.dll" library name). Now "libm" became a function loader for "libm.so" shared library.
+1. Link an external function: `(define asin (libm fft-double "asin" fft-double))`,
+1. Use external function in a regular way: `(print (asin 0.5))`
 
 Easy, huh?
 
@@ -272,7 +272,7 @@ This is the table of correspondence C types to Ol types, with the internal type 
 
 ### Variable Arguments
 
-Simply push additional arguments in form `'(type . argument)`.
+Simply push additional arguments in form `'(type . argument)`. Any "extra" arguments got type "fft-any".
 ```scheme
 > (import (otus ffi))
 > ;; Library (otus ffi) added

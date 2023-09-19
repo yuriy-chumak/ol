@@ -343,6 +343,7 @@
 
 ; ------------------------------------
 ; wide characters
+(print)
 (define reverse_string ((load-dynamic-library #f) type-string "reverse_string" type-string))
 (define reverse_string_wide ((load-dynamic-library #f) type-string-wide "reverse_string_wide" type-string-wide))
 
@@ -391,19 +392,50 @@
 ; -----------------------------
 ; structures
 ; -----------------------------
+(print "
+struct args_t
+{
+	int argc;
+	struct {
+		char** argv;
+	} x;
+	char c;
+};")
+; by reference
+(define struct_t (list
+   fft-int ; argc
+   (list
+      (fft* type-string)) ; array of strings
+   fft-char)) ; char
 
-(print "int function(struct { type x, type y } a) { return a.x + a.y; }")
-(for-each (lambda (name type)
-         (for-each (lambda (subname subtype)
-               (define realname (string-append "_" name subname "_2i"))
-               (define function (this fft-int realname (list type subtype)))
-               (for-each (lambda (arg)
-                     (try realname function arg))
-                  '((1 2))))
-            (list    "c"      "s"       "i"     "q"           "f"       "d")
-            (list fft-char fft-short fft-int fft-long-long fft-float fft-double)))
-   (list    "c"      "s"       "i"     "q"           "f"       "d")
-   (list fft-char fft-short fft-int fft-long-long fft-float fft-double))
+; struct
+(define debug (this fft-void "debug_args" struct_t))
+(debug      (list 3
+                  (list
+                     (list "only" "three" "arguments" "from" "the" "six"))
+                  #\C))
+
+(define debug (this fft-void "debug_args" fft-any))
+(debug (cons struct_t ;(list fft-int (list (fft* type-string)) fft-char)
+            (list 6
+                  (list
+                     (list "a" "lot" "of" "аргументов" (string-append "incl" "uding")
+                           "very-very-very-very-very-very-very-very-long-argument"))
+                  #\C)))
+
+; by value
+;; (print "int function(struct { type x, type y } a) { return a.x + a.y; }")
+;; (for-each (lambda (name type)
+;;          (for-each (lambda (subname subtype)
+;;                (define realname (string-append "_" name subname "_2i"))
+;;                (define function (this fft-int realname (list type subtype)))
+;;                (for-each (lambda (arg)
+;;                      (try realname function arg))
+;;                   '((1 2))))
+;;             (list    "c"      "s"       "i"     "q"           "f"       "d")
+;;             (list fft-char fft-short fft-int fft-long-long fft-float fft-double)))
+;;    (list    "c"      "s"       "i"     "q"           "f"       "d")
+;;    (list fft-char fft-short fft-int fft-long-long fft-float fft-double))
 
 
 ; -----------------------------

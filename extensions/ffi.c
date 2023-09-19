@@ -18,11 +18,12 @@
 //
 // Design Issues for Foreign Function Interfaces
 // http://autocad.xarch.at/lisp/ffis.html
-
-// TODO: utf-8 notes https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+//
+// Utf-8 https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 
 #ifndef OLVM_FFI
-#define OLVM_FFI HAS_DLOPEN // assume dlopen/dlsym have no sense without ffi
+// ffi have no sense without dlopen/dlsym
+#define OLVM_FFI HAS_DLOPEN
 #endif
 
 #if OLVM_FFI
@@ -72,7 +73,6 @@
 #	pragma GCC diagnostic ignored "-Wunused-label"
 #endif
 
-
 // 32/64 help macro
 #if __LP64__ || __LLP64__
 #	define IF32(x)
@@ -83,16 +83,13 @@
 #endif
 
 
+// ffi type system
 #define TVOID         (48)
-//efine TSTRING       (3)
-//efine TSTRINGWIDE   (5)
-//efine TBYTEVECTOR   (19)
 
 #define TBOOL         (60) // 0 is #false, everything else is #true
-#define TUNKNOWN      (62) // only for ffi, direct sending argument without processing
-#define TANY          (63) // automatic conversion based on actual argument type
+#define TUNKNOWN      (62) // direct sending argument without any processing
+#define TANY          (63) // automatic conversion based on actual argument type, can be overriden
 
-// ffi type system
 #define TFLOAT        (46)
 #define TDOUBLE       (47)
 
@@ -108,22 +105,22 @@
 #define TUINT64       (58)
 // 59 for 128 ?
 
-#define TMASK     0x00FFF
+#define TMASK      0x00FFF
 
-#define TCDECL    0x01000
+#define TCDECL     0x01000
 //efine TSYSCALL    // OS/2, not supported/required
 //efine TOPTLINK    // VisualAge, not supported/required
 //efine TPASCAL     // Pascal, not supported/required
-#define TSTDCALL  0x02000
-#define TFASTCALL 0x03000
+#define TSTDCALL   0x02000
+#define TFASTCALL  0x03000
 //efine TVECTORCALL // VS2013, not supported/required
 //efine TDELPHI     // Delphi, not supported/required
 //efine TWATCOM     // Watcom, not supported/required
 //efine TSAFECALL   // Delphi/F-Pascal, not supported
 //efine TTHISCALL   // c++, use in toplevel code
 
-#define FFT_PTR   0x10000
-#define FFT_REF   0x20000
+#define FFT_PTR    0x10000
+#define FFT_REF    0x20000
 
 // sizeof(intmax_t): // same as long long
 //	arm, armv7a, armv8a, arm64: 8
@@ -136,9 +133,6 @@
 //	msp430: 8
 //	ppc, ppc64, ppc64le: 8
 //	raspbian, arduino: 8
-
-// maximal applicable return type of called functions
-typedef int64_t ret_t;
 
 #if defined(_WIN32)
 #	define PUBLIC __declspec(dllexport)
@@ -162,331 +156,43 @@ typedef int64_t ret_t;
 #endif
 
 // ------------------
-// type convertors
-#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+// maximal applicable return type of called functions
+typedef int64_t ret_t;
 
-// todo: check the word size!! if sizeof(word) == 4!
+// ------------------------------------------------------------------------------------
+// -- assembly part -------------------------------------------------------------------
 
-#define DECLARE_TYPE_CONVERTER(type, name) \
-static __inline__ \
-type name(ret_t* got) { \
-	return *(type*)(((unsigned char*)got) + sizeof(word) - sizeof(type));\
-}
-
-// // 64bit types
-// static __inline__
-// int64_t  INT64 (ret_t* got) {
-// 	return
-// 		((int64_t )(*(uint32_t*)(((unsigned char*)got) + 0))) << 32 |
-// 		           (*(uint32_t*)(((unsigned char*)got) + 4));
-// }
-// static __inline__
-// uint64_t UINT64(ret_t* got) {
-// 	return
-// 		((uint64_t)(*(uint32_t*)(((unsigned char*)got) + 0))) << 32 |
-// 		           (*(uint32_t*)(((unsigned char*)got) + 4));
-// }
-
-// static __inline__
-// double   DOUBLE(ret_t* got) { return *(double*)  got; }
-
-#else // __ORDER_LITTLE_ENDIAN__
-
-#define DECLARE_TYPE_CONVERTER(type, name) \
-static __inline__ \
-type name(ret_t* got) { \
-	return *(type*)(((unsigned char*)got) + 0);\
-}
-
-#endif
-
-// lower types
-DECLARE_TYPE_CONVERTER(int8_t, CV_INT8)
-DECLARE_TYPE_CONVERTER(uint8_t, CV_UINT8)
-DECLARE_TYPE_CONVERTER(int16_t, CV_INT16)
-DECLARE_TYPE_CONVERTER(uint16_t, CV_UINT16)
-DECLARE_TYPE_CONVERTER(int32_t, CV_INT32)
-DECLARE_TYPE_CONVERTER(uint32_t, CV_UINT32)
-//DECLARE_TYPE_CONVERTER(word*, CV_WORDP)
-DECLARE_TYPE_CONVERTER(void*, CV_VOIDP)
-DECLARE_TYPE_CONVERTER(long, CV_LONG)
-DECLARE_TYPE_CONVERTER(float, CV_FLOAT)
-
-// 64bit types
-static __inline__
-int64_t  CV_INT64 (ret_t* got) { return *(int64_t *)got; }
-static __inline__
-uint64_t CV_UINT64(ret_t* got) { return *(uint64_t*)got; }
-static __inline__
-double   CV_DOUBLE(ret_t* got) { return *(double*)  got; }
-
-
-#define max2(a,b) ({ \
-	typeof (a) _a = (a); \
-	typeof (b) _b = (b); \
-    _a > _b ? _a : _b; \
-})
-#define max3(a,b,c) max2(a, max2(b, c))
-
-#ifdef max
-#undef max
-#endif
-#define MAX_MACRO(_1, _2, _3, NAME, ...) NAME
-#define max(...) MAX_MACRO(__VA_ARGS__, max3, max2, NOTHING, NOTHING)(__VA_ARGS__)
-
-
-// https://en.wikipedia.org/wiki/Double-precision_floating-point_format
-// However, on modern standard computers (i.e., implementing IEEE 754), one may
-// in practice safely assume that the endianness is the same for floating-point
-// numbers as for integers, making the conversion straightforward regardless of
-// data type.
-// (Small embedded systems using special floating-point formats may be another
-// matter however.)
-word d2ol(struct heap_t* ol, double v);      // implemented in olvm.c
-double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
-
-
-// -=( PTR and REF )=------------------------------------------------------
-// notes:
-//	* empty arrays will be sent as nullptr
-// TODOs:
-//  * make memory allocator configurable new_bytevector/builtin_alloca
-//    (because in case of callback GC will move data)
-//	* handle TVECTORLEAF
-#define SERIALIZE_LIST(type, convert)\
-	case TPAIR: {\
-		int c = llen(arg);\
-		type* p = (type*) &new_bytevector(c * sizeof(type))[1];\
-		args[i] = (word)p;\
-		\
-		word l = arg;\
-		while (c--)\
-			*p++ = (type)convert(car(l)), l = cdr(l);\
-		break;\
-	}
-#if OLVM_FFI_VECTORS
-#	define SERIALIZE_VECTOR(type, convert)\
-	case TVECTOR: {\
-		int c = reference_size(arg);\
-		type* p = (type*) &new_bytevector(c * sizeof(type))[1];\
-		args[i] = (word)p;\
-		\
-		word* l = &car(arg);\
-		while (c--)\
-			*p++ = (type)convert(*l++);\
-		break;\
-	}
-#else
-#	define SERIALIZE_VECTOR(type, convert)
-#endif
-#define SERIALIZE(type, convert)\
-	{\
-		if (arg == INULL) /*empty array will be sent as nullptr*/\
-			break;\
-		assert (is_reference(arg));\
-		\
-		switch (reference_type(arg)) {\
-			SERIALIZE_LIST(type, convert)\
-			SERIALIZE_VECTOR(type, convert)\
-			default:\
-				E("unsupported type %d", reference_type(arg));\
-		}\
-	}
-
-// -=( DESERIALIZE )=------------------------------------------
-#if OLVM_INEXACTS
-#	define DESERIALIZE_INEXACT()\
-				case TINEXACT:\
-					*(inexact_t*)&car(num) = (inexact_t)value;\
-					break;
-#else
-#	define DESERIALIZE_INEXACT()
-#endif
-
-// todo: modify DESERIALIZE_INT for different types
-#define DESERIALIZE_INT()\
-				case TINTP:\
-				case TINTN:\
-					if (value > VMAX) {\
-						if (value < 0) {\
-							*(word*)num = make_header(value < 0 ? TINTN : TINTP, 3);\
-							value = -value;\
-						}\
-						else\
-							*(word*)num = make_header(TINTP, 3);\
-						*(word*)&car(num) = I((long)value & VMAX);\
-						*(word*)&cadr(num) = I((long)value >> VBITS);\
-					}\
-					else\
-						*(word*)l = make_enum(value);
-
-// TODO: DESERIALIZE_RATIONAL()
-// case TRATIONAL: {
-// 	// максимальная читабельность (todo: change like fto..)
-// 	long n = value * 10000;
-// 	long d = 10000;
-// 	car(num) = make_enum(n);
-// 	cdr(num) = make_enum(d);
-// 	// максимальная точность (fixme: пока не работает как надо)
-// 	//car(num) = make_enum(value * VMAX);
-// 	//cdr(num) = I(VMAX);
-// 	break;
-// }
-
-#define DESERIALIZE_TYPED(type, convert)\
-			type value = *p++;\
-			word num = convert(l);\
-			if (is_value(num))\
-				convert(l) = make_enum(value);\
-			else\
-			switch (reference_type(num)) {\
-				DESERIALIZE_INT()\
-				DESERIALIZE_INEXACT()\
-				default:\
-					(void) value;\
-					assert (0 && "Invalid return variables.");\
-					break;\
-			}\
-
-#define DESERIALIZE_LIST(type)\
-	case TPAIR: {\
-		int c = llen(arg);\
-		type* p = (type*) args[i];\
-		\
-		word l = arg;\
-		while (c--) {\
-			DESERIALIZE_TYPED(type, car)\
-			l = cdr(l);\
-		}\
-		break;\
-	}
-#if OLVM_FFI_VECTORS
-#	define DESERIALIZE_VECTOR(type)\
-	case TVECTOR: {\
-		int c = reference_size(arg);\
-		type* p = (type*) args[i];\
-		\
-		word* l = &car(arg);\
-		while (c--) {\
-			DESERIALIZE_TYPED(type, *)\
-			l++;\
-		}\
-		break;\
-	}
-#else
-#	define DESERIALIZE_VECTOR(type)
-#endif
-
-#define DESERIALIZE(type)\
-	{\
-		if (is_reference(arg))\
-		switch (reference_type(arg)) {\
-			DESERIALIZE_LIST(type)\
-			DESERIALIZE_VECTOR(type)\
-			default:\
-				E("unsupported type %d", reference_type(arg));\
-		}\
-	}
-
-// служебные функции
-
-static
-unsigned int llen(word list) 
-{
-	unsigned int i = 0;
-	while (list != INULL)
-		list = cdr(list), i++;
-	return i;
-}
-
-// note: invalid codepoint will be encoded as "?", so len is 1
-#define codepoint_len(x) ({ int cp = x; \
-	cp < 0x80 ? 1 : \
-	cp < 0x0800 ? 2 : \
-	cp < 0x10000 ? 3 : \
-	cp < 0x110000 ? 4 : 1; })
-
-static // length of wide string in utf-8 encoded bytes
-size_t utf8_len(word widestr)
-{
-	size_t len = 0;
-	for (size_t i = 1; i <= reference_size(widestr); i++)
-		len += codepoint_len(value(ref(widestr, i)));
-	return len;
-}
-
-#define list_length(x) llen(x)
-#define vector_length(x) reference_size(x)
-#define string_length(x) ({\
-    word t = reference_type(x);\
-    t == TSTRING ? rawstream_size(x) :\
-    t == TSTRINGWIDE ? utf8_len(x) :\
-    t == TSTRINGDISPATCH ? number(ref(x, 1)) :\
-    0; })
-
-
-// C preprocessor trick, some kind of "map":
+// C preprocessor trick, a MAP
 // http://jhnet.co.uk/articles/cpp_magic
 // http://stackoverflow.com/questions/319328/writing-a-while-loop-in-the-c-preprocessor
-#define FIRST(a, ...) a
-#define SECOND(a, b, ...) b
-#define EMPTY()
+// http://stackoverflow.com/questions/6707148/foreach-macro-on-macros-arguments
+#define EVAL0(...) __VA_ARGS__
+#define EVAL1(...) EVAL0 (EVAL0 (EVAL0 (__VA_ARGS__)))
+#define EVAL2(...) EVAL1 (EVAL1 (EVAL1 (__VA_ARGS__)))
+#define EVAL3(...) EVAL2 (EVAL2 (EVAL2 (__VA_ARGS__)))
+#define EVAL4(...) EVAL3 (EVAL3 (EVAL3 (__VA_ARGS__)))
+#define EVAL5(...) EVAL4 (EVAL4 (EVAL4 (__VA_ARGS__)))
+#define EVAL(...)  EVAL5 (EVAL5 (EVAL5 (__VA_ARGS__)))
 
-#define EVAL(...)     EVAL1024(__VA_ARGS__)
-#define EVAL1024(...) EVAL512(EVAL512(__VA_ARGS__))
-#define EVAL512(...)  EVAL256(EVAL256(__VA_ARGS__))
-#define EVAL256(...)  EVAL128(EVAL128(__VA_ARGS__))
-#define EVAL128(...)  EVAL64(EVAL64(__VA_ARGS__))
-#define EVAL64(...)   EVAL32(EVAL32(__VA_ARGS__))
-#define EVAL32(...)   EVAL16(EVAL16(__VA_ARGS__))
-#define EVAL16(...)   EVAL8(EVAL8(__VA_ARGS__))
-#define EVAL8(...)    EVAL4(EVAL4(__VA_ARGS__))
-#define EVAL4(...)    EVAL2(EVAL2(__VA_ARGS__))
-#define EVAL2(...)    EVAL1(EVAL1(__VA_ARGS__))
-#define EVAL1(...)    __VA_ARGS__
+#define MAP_END(...)
+#define MAP_OUT
 
-#define DEFER1(m) m EMPTY()
-#define DEFER2(m) m EMPTY EMPTY()()
-#define DEFER3(m) m EMPTY EMPTY EMPTY()()()
-#define DEFER4(m) m EMPTY EMPTY EMPTY EMPTY()()()()
+#define MAP_GET_END() 0, MAP_END
+#define MAP_NEXT0(test, next, ...) next MAP_OUT
+#define MAP_NEXT1(test, next) MAP_NEXT0 (test, next, 0)
+#define MAP_NEXT(test, next)  MAP_NEXT1 (MAP_GET_END test, next)
 
-#define IS_PROBE(...) SECOND(__VA_ARGS__, 0)
-#define PROBE() ~, 1
-
-#define CAT(a,b) a ## b
-
-#define NOT(x) IS_PROBE(CAT(_NOT_, x))
-#define _NOT_0 PROBE()
-
-#define BOOL(x) NOT(NOT(x))
-
-#define IF_ELSE(condition) _IF_ELSE(BOOL(condition))
-#define _IF_ELSE(condition) CAT(_IF_, condition)
-
-#define _IF_1(...) __VA_ARGS__ _IF_1_ELSE
-#define _IF_0(...)             _IF_0_ELSE
-
-#define _IF_1_ELSE(...)
-#define _IF_0_ELSE(...) __VA_ARGS__
-
-#define HAS_ARGS(...) BOOL(FIRST(_END_OF_ARGUMENTS_ __VA_ARGS__)())
-#define _END_OF_ARGUMENTS_() 0
-
-#define MAP(m, first, ...)           \
-  m(first)                           \
-  IF_ELSE(HAS_ARGS(__VA_ARGS__))(    \
-    DEFER2(_MAP)()(m, __VA_ARGS__)   \
-  )()
-#define _MAP() MAP
+#define MAP0(f, x, peek, ...) f(x) MAP_NEXT (peek, MAP1) (f, peek, __VA_ARGS__)
+#define MAP1(f, x, peek, ...) f(x) MAP_NEXT (peek, MAP0) (f, peek, __VA_ARGS__)
+#define MAP(f, ...) EVAL (MAP1 (f, __VA_ARGS__, (), 0))
 // end of C preprocessor trick
 
 #define NEWLINE(x) x "\n\t"
-#define __ASM__(...) __asm__(EVAL(MAP(NEWLINE, __VA_ARGS__)))
+#define __ASM__(...) __asm__(MAP(NEWLINE, __VA_ARGS__))
 
 #ifndef __GNUC__
 #define __asm__ asm
 #endif
-
 
 // platform defines:
 // https://sourceforge.net/p/predef/wiki/Architectures/
@@ -497,6 +203,8 @@ size_t utf8_len(word widestr)
 // https://en.wikibooks.org/wiki/Embedded_Systems/Mixed_C_and_Assembly_Programming
 
 // http://www.angelcode.com/dev/callconv/callconv.html
+
+// ------------------------------------------
 #if __x86_64__ // x86-64 (LP64/LLP64)
 
 # if _WIN64 // Windows
@@ -525,11 +233,11 @@ size_t utf8_len(word widestr)
 
 // http://www.gamasutra.com/view/news/171088/x64_ABI_Intro_to_the_Windows_x64_calling_convention.php
 
-// rcx - argv
-// edx - argc
-// r8  - function
-// r9d - type
-ret_t win64_call(int_t argv[], long argc, void* function, long type);
+ret_t win64_call(word argv[], long argc, void* function, long type);
+	// rcx - argv
+	// edx - argc
+	// r8  - function
+	// r9d - type
 __ASM__("win64_call:_win64_call:",  // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
@@ -586,14 +294,8 @@ __ASM__("win64_call:_win64_call:",  // "int $3",
 	"jmp   9b");
 
 # else      // System V (unix, linux, osx)
-// rdi: argv[]
-// rsi: ad[]
-// edx: i
-// ecx: d
-// r8:  mask
-// r9: function
-// 16(rbp): type
-ret_t nix64_call(int_t argv[], double ad[], long i, long d, long mask, void* function, long type);
+ret_t nix64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
+	            //    rdi            rsi      edx     ecx       r8          r9           16(rbp)
 __ASM__("nix64_call:_nix64_call:", //"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
@@ -697,6 +399,7 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 // while XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6 and XMM7 are used for floats
 # endif
 
+// ------------------------------------------
 #elif __i386__ // ILP32
 // value returned in the edx:eax
 
@@ -715,7 +418,8 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 // В нашем случае мы так или иначе восстанавливаем указатель стека, так что
 // функция x86_call у нас будет универсальная cdecl/stdcall
 // 
-ret_t x86_call(int_t argv[], long i, void* function, long type);
+ret_t x86_call(word argv[], long i, void* function, long type);
+	// all variables are in stack
 __ASM__("x86_call:_x86_call:", //"int $3",
 	"pushl %ebp",
 	"movl  %esp, %ebp",
@@ -758,6 +462,7 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 	"jmp   9b");
 
 
+// ------------------------------------------
 #elif __aarch64__
 
 // current limitation: no more than 8 integer and 8 floating point values
@@ -767,16 +472,14 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 // r9-r15: scratch registers
 // v16-v31: scratch registers
 // stack is 16-byte aligned at all times
-ret_t arm64_call(int_t argv[], double ad[],
-                    long i, long d, long mask,
-                    void* function, long type);
-// x0: argv
-// x1: ad
-// x2: i
-// x3: d
-// x4: mask <function>
-// x5: function <type>
-// x6: type
+ret_t arm64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
+	// x0: argv
+	// x1: ad
+	// x2: i
+	// x3: d
+	// x4: mask <function>
+	// x5: function <type>
+	// x6: type
 __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"stp  x29, x30, [sp, -16]!",
 	"stp  x10, x26, [sp, -16]!",
@@ -899,6 +602,7 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 );
 
 
+// ------------------------------------------
 #elif __arm__
 // http://ru.osdev.wikia.com/wiki/Категория:Архитектура_ARM
 // https://msdn.microsoft.com/ru-ru/library/dn736986.aspx - Обзор соглашений ABI ARM (Windows)
@@ -908,8 +612,8 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 # ifndef __ARM_PCS_VFP
 // gcc-arm-linux-gnueabi: -mfloat-abi=softfp options (and -mfloat-abi=soft ?)
 
-__attribute((__naked__)) // do not remove, arm32 require this form of function!
-ret_t arm32_call(int_t argv[], long i, void* function)
+static __attribute((__naked__)) // do not remove "naked", arm32 require this form of function!
+ret_t arm32_call(word argv[], long i, void* function)
 {
 __ASM__(//"arm32_call:_arm32_call:",
 	// "BKPT",
@@ -977,10 +681,8 @@ __ASM__(//"arm32_call:_arm32_call:",
 // __ARM_PCS_VFP, __ARM_PCS
 // __ARM_ARCH_7A__
 //
-__attribute((__naked__)) // do not remove, arm32 require this form of function!
-ret_t arm32_call(int_t argv[], float af[],
-                 long i, long f,
-                 void* function, long type) {
+static __attribute((__naked__)) // do not remove "naked", arm32 require this form of function!
+ret_t arm32_call(word argv[], float af[], long i, long f, void* function, long type) {
 __ASM__(// "arm32_call:_arm32_call:",
 	// "BKPT",
 	// r0: argv, r1: af, r2: i, r3: ad, f: [sp, #12], g: [sp, #16]
@@ -1088,18 +790,18 @@ __ASM__(// "arm32_call:_arm32_call:",
 }
 # endif
 
+// ------------------------------------------
 #elif __mips__ // 32-bit
 
 // https://refspecs.linuxfoundation.org/elf/mipsabi.pdf
 __attribute__((__interrupt__))
-ret_t mips32_call(int_t argv[], long i, void* function, long type);
-// $a0: argv
-// $a1: i
-// $a2: function
-// $a3: type
-__ASM__(
-".globl mips32_call", // inline assembly should start with .globl <func_name>.
-"mips32_call:",
+ret_t mips32_call(word argv[], long i, void* function, long type);
+	// $a0: argv
+	// $a1: i
+	// $a2: function
+	// $a3: type
+__ASM__(".globl mips32_call", // inline assembly should start with .globl <func_name>.
+		"mips32_call:",
 	"addiu  $sp, $sp,-16",
 	"sw     $fp, 4($sp)",
 	"sw     $ra, 8($sp)",
@@ -1151,9 +853,11 @@ __ASM__(
 	"jr     $ra",
 	"nop");
 
+// ------------------------------------------
 #elif __EMSCRIPTEN__
 
-ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
+static
+ret_t asmjs_call(word args[], int fmask, void* function, int type)
 {
 //	printf("asmjs_call(%p, %d, %p, %d)\n", args, fmask, function, type);
 
@@ -1235,6 +939,7 @@ ret_t asmjs_call(int_t args[], int fmask, void* function, int type)
 	};
 }
 
+// ------------------------------------------
 #else // other platforms
 
 // http://byteworm.com/2010/10/12/container/ (lambdas in c)
@@ -1311,6 +1016,243 @@ inline ret_t call_x(word args[], int i, void* function, int type) {
 	CALL();
 }
 #endif
+// -- end of assembly part ------------------------------------------------------------
+// ------------------------------------------------------------------------------------
+
+// ------------------
+// tools
+#define max2(a,b) ({ \
+	typeof (a) _a = (a); \
+	typeof (b) _b = (b); \
+    _a > _b ? _a : _b; \
+})
+#define max3(a,b,c) max2(a, max2(b, c))
+
+#ifdef max
+#undef max
+#endif
+#define MAX_MACRO(_1, _2, _3, NAME, ...) NAME
+#define max(...) MAX_MACRO(__VA_ARGS__, max3, max2, NOTHING, NOTHING)(__VA_ARGS__)
+
+static
+int llen(word list)  {
+	int i = 0;
+	while (list != INULL)
+		list = cdr(list), i++;
+	return i;
+}
+
+// ------------------
+// return types convertors
+// todo: check the word size!! if sizeof(word) == 4!
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+	#define DECLARE_TYPE_CONVERTER(type, name) \
+	static __inline__ \
+	type name(ret_t* got) { \
+		return *(type*)(((unsigned char*)got) + sizeof(word) - sizeof(type));\
+	}
+#else // __ORDER_LITTLE_ENDIAN__
+	#define DECLARE_TYPE_CONVERTER(type, name) \
+	static __inline__ \
+	type name(ret_t* got) { \
+		return *(type*)(((unsigned char*)got) + 0);\
+	}
+#endif
+
+// lower types
+DECLARE_TYPE_CONVERTER(int8_t, CV_INT8)
+DECLARE_TYPE_CONVERTER(uint8_t, CV_UINT8)
+DECLARE_TYPE_CONVERTER(int16_t, CV_INT16)
+DECLARE_TYPE_CONVERTER(uint16_t, CV_UINT16)
+DECLARE_TYPE_CONVERTER(int32_t, CV_INT32)
+DECLARE_TYPE_CONVERTER(uint32_t, CV_UINT32)
+DECLARE_TYPE_CONVERTER(void*, CV_VOIDP)
+DECLARE_TYPE_CONVERTER(long, CV_LONG)
+DECLARE_TYPE_CONVERTER(float, CV_FLOAT)
+
+// 64bit types
+static __inline__
+int64_t  CV_INT64 (ret_t* got) { return *(int64_t *)got; }
+static __inline__
+uint64_t CV_UINT64(ret_t* got) { return *(uint64_t*)got; }
+static __inline__
+double   CV_DOUBLE(ret_t* got) { return *(double*)  got; }
+
+// https://en.wikipedia.org/wiki/Double-precision_floating-point_format
+// However, on modern standard computers (i.e., implementing IEEE 754), one may
+// in practice safely assume that the endianness is the same for floating-point
+// numbers as for integers, making the conversion straightforward regardless of
+// data type.
+// (Small embedded systems using special floating-point formats may be another
+// matter however.)
+word d2ol(struct heap_t* ol, double v);      // implemented in olvm.c
+double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
+
+
+// -=( PTR and REF )=------------------------------------------------------
+// TODOs:
+//  * make memory allocator configurable new_bytevector/builtin_alloca
+//    (because in case of callback GC will move data)
+//	* handle TVECTORLEAF
+#define SERIALIZE_LIST(memory, type, convert)\
+	case TPAIR: {\
+		int c = list_length(arg);\
+		type* p = (type*) &new_bytevector(c * sizeof(type))[1];\
+		*memory = (word)p;\
+		\
+		word l = arg;\
+		while (c--)\
+			*p++ = (type)convert(car(l)), l = cdr(l);\
+		break;\
+	}
+#if OLVM_FFI_VECTORS
+#	define SERIALIZE_VECTOR(memory, type, convert)\
+	case TVECTOR: {\
+		int c = vector_length(arg);\
+		type* p = (type*) &new_bytevector(c * sizeof(type))[1];\
+		*memory = (word)p;\
+		\
+		word* l = &car(arg);\
+		while (c--)\
+			*p++ = (type)convert(*l++);\
+		break;\
+	}
+#else
+#	define SERIALIZE_VECTOR(type, convert)
+#endif
+#define SERIALIZE(memory, type, convert)\
+	{\
+		assert (arg == INULL || is_reference(arg));\
+		\
+		switch (reference_type(arg)) {\
+			SERIALIZE_LIST(memory, type, convert)\
+			SERIALIZE_VECTOR(memory, type, convert)\
+			default:\
+				E("unsupported type %d", reference_type(arg));\
+		}\
+	}
+
+// -=( DESERIALIZE )=------------------------------------------
+#if OLVM_INEXACTS
+#	define DESERIALIZE_INEXACT()\
+				case TINEXACT:\
+					*(inexact_t*)&car(num) = (inexact_t)value;\
+					break;
+#else
+#	define DESERIALIZE_INEXACT()
+#endif
+
+// todo: modify DESERIALIZE_INT for different types
+#define DESERIALIZE_INT()\
+				case TINTP:\
+				case TINTN:\
+					if (value > VMAX) {\
+						if (value < 0) {\
+							*(word*)num = make_header(value < 0 ? TINTN : TINTP, 3);\
+							value = -value;\
+						}\
+						else\
+							*(word*)num = make_header(TINTP, 3);\
+						*(word*)&car(num) = I((long)value & VMAX);\
+						*(word*)&cadr(num) = I((long)value >> VBITS);\
+					}\
+					else\
+						*(word*)l = make_enum(value);
+
+// TODO: DESERIALIZE_RATIONAL()
+// case TRATIONAL: {
+// 	// максимальная читабельность (todo: change like fto..)
+// 	long n = value * 10000;
+// 	long d = 10000;
+// 	car(num) = make_enum(n);
+// 	cdr(num) = make_enum(d);
+// 	// максимальная точность (fixme: пока не работает как надо)
+// 	//car(num) = make_enum(value * VMAX);
+// 	//cdr(num) = I(VMAX);
+// 	break;
+// }
+
+#define DESERIALIZE_TYPED(type, convert)\
+			type value = *p++;\
+			word num = convert(l);\
+			if (is_value(num))\
+				convert(l) = make_enum(value);\
+			else\
+			switch (reference_type(num)) {\
+				DESERIALIZE_INT()\
+				DESERIALIZE_INEXACT()\
+				default:\
+					(void) value;\
+					assert (0 && "Invalid return variables.");\
+					break;\
+			}\
+
+#define DESERIALIZE_LIST(type)\
+	case TPAIR: {\
+		int c = list_length(arg);\
+		type* p = (type*) args[i];\
+		\
+		word l = arg;\
+		while (c--) {\
+			DESERIALIZE_TYPED(type, car)\
+			l = cdr(l);\
+		}\
+		break;\
+	}
+#if OLVM_FFI_VECTORS
+#	define DESERIALIZE_VECTOR(type)\
+	case TVECTOR: {\
+		int c = vector_length(arg);\
+		type* p = (type*) args[i];\
+		\
+		word* l = &car(arg);\
+		while (c--) {\
+			DESERIALIZE_TYPED(type, *)\
+			l++;\
+		}\
+		break;\
+	}
+#else
+#	define DESERIALIZE_VECTOR(type)
+#endif
+
+#define DESERIALIZE(type)\
+	{\
+		if (is_reference(arg))\
+		switch (reference_type(arg)) {\
+			DESERIALIZE_LIST(type)\
+			DESERIALIZE_VECTOR(type)\
+			default:\
+				E("unsupported type %d", reference_type(arg));\
+		}\
+	}
+
+// strings
+
+// note: invalid codepoint will be encoded as "?", so len is 1
+#define codepoint_len(x) ({ int cp = x; \
+	cp < 0x80 ? 1 : \
+	cp < 0x0800 ? 2 : \
+	cp < 0x10000 ? 3 : \
+	cp < 0x110000 ? 4 : 1; })
+
+static // length of wide string in utf-8 encoded bytes
+size_t utf8_len(word widestr)
+{
+	size_t len = 0;
+	for (size_t i = 1; i <= reference_size(widestr); i++)
+		len += codepoint_len(value(ref(widestr, i)));
+	return len;
+}
+
+#define list_length(x) llen(x)
+#define vector_length(x) reference_size(x)
+#define string_length(x) ({ \
+    word t = reference_type(x); \
+    t == TSTRING ? rawstream_size(x) :\
+    t == TSTRINGWIDE ? utf8_len(x) :\
+    t == TSTRINGDISPATCH ? number(ref(x, 1)) :\
+    0; })
 
 
 // ol->c convertors
@@ -1511,221 +1453,197 @@ char* not_a_string(char* ptr, word string)
 	return ptr;
 }
 
-// ffi helper "Identity" function
-PUBLIC __attribute__((used)) word OLVM_idf(word x) {
-	return x;
+#define PTR FFT_PTR // just pointer
+#define REF FFT_REF // pointer with drawback
+
+void arg_size(word arg, word tty, size_t *total)
+{
+	if (is_reference(arg))
+	switch (reference_type(arg))
+	{
+	case TBYTEVECTOR:
+		*total += reference_size(arg); // in words
+		break;
+
+	case TSTRING:
+		*total += WALIGN(rawstream_size(arg)+1); // 1 for '\0'
+		break;
+	case TSTRINGWIDE:
+		*total += WALIGN(utf8_len(arg)+1);
+		break;
+	case TSTRINGDISPATCH:
+		*total += WALIGN(number(ref(arg, 1))+1); // todo: decode all as utf8_len and use FAST_STRING_CALC macro
+		break;
+
+	// fft* and fft&
+	case TPAIR: // list of arguments
+		switch (value(tty)) {
+		case TSTRING+PTR:
+			while (arg != INULL) {
+				*total += WALIGN(rawstream_size(arg)+1); // 1 for '\0'
+				arg = cdr(arg);
+			}
+			break;
+		case TSTRINGWIDE+PTR:
+			while (arg != INULL) {
+				*total += WALIGN(utf8_len(arg)+1);
+				arg = cdr(arg);
+			}
+			break;
+		case TSTRINGDISPATCH+PTR:
+			while (arg != INULL) {
+				*total += WALIGN(number(ref(arg, 1))+1); // todo: decode all as utf8_len and use FAST_STRING_CALC macro
+				arg = cdr(arg);
+			}
+			break;
+#if UINT64_MAX > UINTPTR_MAX
+		case TINT64: case TUINT64:
+		case TDOUBLE:
+			while (arg != INULL) {
+				*total += 2;
+				arg = cdr(arg);
+			}
+			break;
+#endif
+		default:
+			while (arg != INULL) {
+				*total += 1;
+				arg = cdr(arg);
+			}
+			break;
+		}
+		break;
+	}
 }
 
-////////////////////////
-// todo: return two words, one for integers, one for floats
-size_t structure_size(word t)
+// грубый подсчет нужного размера (в словах в памяти)
+size_t structure_calc(word args, word rtty, size_t* total)
 {
-	size_t size = 0;
-	// http://www.catb.org/esr/structure-packing/
-	for (word p = car(t); p != INULL; p = cdr(p)) {
-		word subtype = car(p);
+	if (is_value(rtty)) // просто тип
+		arg_size(args, rtty, total);
+	else
+	while (rtty != INULL) { // данные структуры
+		word arg = car(args);
+		word tty = car(rtty); // структукры должны совпадать по количеству аргументов с типами
 
-		assert (is_value(subtype));
-		word stv = value(subtype);
-		// внутриструктурное выравнивание (по умолчанию)
-		size_t subsize = // todo: speedup use table
-			( stv == TINT8  || stv == TUINT8  ) ? sizeof(int8_t) :
-			( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
-			( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
-			( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
-			( stv == TFLOAT                   ) ? sizeof(float) : // todo: increase df size
-			( stv == TDOUBLE                  ) ? sizeof(double) : // todo: increase df size
-		0;
-		size = ((size + subsize - 1) & -subsize) + subsize;
+		if (is_reference(arg)) {
+			if (is_pair(arg)) {
+				if (is_pair(tty)) // subscructure
+					*total += structure_calc(arg, tty, total);
+				else // list
+					arg_size(arg, tty, total);
+			}
+			else // just an argument
+				arg_size(arg, tty, total);
+		}
+		else
+			(*total)++;
+		args = cdr(args);
+		rtty = cdr(rtty);
 	}
-	return size;
+	return 0;
+}
+// todo: добавить структуры by-value
+size_t arguments_size(word args, word rtty, size_t* total)
+{
+	size_t words = 0;
+	while (args != INULL) { // пока есть аргументы
+		word arg = car(args);
+		word tty = is_pair(rtty) ? car(rtty) : I(TANY);
+
+		if (is_reference(arg)) {
+			if (is_pair(arg)) { // list, structure
+				if (is_value(tty) && (value(tty) & (FFT_PTR | FFT_REF))) // fft* and fft&
+					arg_size(arg, tty, total);
+				else
+				if (is_pair(tty)) // type as list is a structure
+					*total += structure_calc(arg, tty, total);
+				else // перегрузка типа для свободных переменных
+				if (tty == I(TANY))
+					*total += structure_calc(cdr(arg), car(arg), total);
+				else
+					E("no list is accepted");
+			}
+			else
+				arg_size(arg, tty, total);
+		}
+#if UINT64_MAX > UINTPTR_MAX
+		// 32-bit machines
+		switch (value(tty)) {
+			case TINT64: case TUINT64:
+			case TDOUBLE:
+#	if __mips__ // 32-bit mips,
+				words = (words+1)&-2; // dword align
+#	else
+				words += 1;
+#	endif
+		}
+#endif
+		words += 1;
+		args = cdr(args);
+		rtty = is_pair(rtty) ? cdr(rtty) : INULL;
+	}
+	if (rtty != INULL) {
+		E("Not enough arguments");
+		// return IFALSE; todo: do runtime-error
+	}
+	return words;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
 
-#define PTR FFT_PTR // just pointer
-#define REF FFT_REF // pointer with drawback
-
 PUBLIC
 __attribute__((used))
-word* OLVM_ffi(olvm_t* this, word* arguments)
+word* OLVM_ffi(olvm_t* this, word arguments)
 {
 	// a - function address
 	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
 	// c - '(return-type . argument-types-list)
-	word A = car(arguments); arguments = (word*)cdr(arguments); // function
-	word B = car(arguments); arguments = (word*)cdr(arguments); // rtty
-	word C = car(arguments); arguments = (word*)cdr(arguments); // args
+	register word ABC = arguments;
+	word A = car(ABC); ABC = cdr(ABC); // function
+	word B = car(ABC); ABC = cdr(ABC); // rtty
+	word C = car(ABC); ABC = cdr(ABC); // args
 
 	assert (is_vptr(A));
 	assert (B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
 	assert (C == INULL || (is_reference(C) && reference_type(C) == TPAIR));
 
-	void *function = (void*)car(A);  // "0" function means IDF function
+	void *function = (void*) car(A); // "NULL" function means IDF function
 
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
-
-#ifdef __EMSCRIPTEN__
-	int fmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
-#endif
 
 // (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64/LLP64
 #if defined(__LP64__) || defined(__LLP64__)
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[18];
 	int d = 0;     // количество аргументов для ad
-	long floatsmask = 0; // маска для аргументов с плавающей запятой (63 maximum?)
+	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
 #elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив
 	int f = 0;     // количество аргументов для af
+#elif __EMSCRIPTEN__
+	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
 #elif _WIN32
 	// nothing special for Windows (both x32 and x64)
 #endif
 
-
 	// ----------------------------------------------------------
 	// 1. do memory precalculations and count number of arguments
-	unsigned words = 0;
-	int i = 0;     // актуальное количество аргументов
+	int i = 0;  // актуальное количество аргументов
 	int l = 0;  // нижняя граница для параметров больших структур
-
-	word* p = (word*)C;   // ol arguments
-	word* t = (word*)cdr (B); // rtty
 
 	// TODO: добавить в общую структуру типов поле, куда кешировать
 	// все вот эти размеры. например, как [types cached-size]
 	// и детектировать по vector? со временем насовсем перейти
-	while ((word)p != INULL) { // пока есть аргументы
-		//int type = value(car(t)); // destination type
-		int type = (t == RNULL)
-			 ? TANY
-			 : is_value(car(t))
-			 	? value(car(t))
-				: reference_type(car(t));
-		word arg = (word)car(p);
 
-		again:
-		if (is_reference(arg)) {
-			if (type & (FFT_PTR|FFT_REF)) {
-                size_t cnt =
-                    reference_type(arg) == TPAIR ? list_length(arg) :
-                    reference_type(arg) == TVECTOR ? vector_length(arg) :
-                    0;
-                int listq = reference_type(arg) == TPAIR;
-				int atype = type & ~(FFT_REF|FFT_PTR); // c data type
+	// words for args, total + words for GC
+	size_t total = 0;
+	size_t words = arguments_size(C, cdr (B), &total);
 
-				// TODO: add new define "FAST_STRING_CALC" (or "PRECISE_STRING_CALC") and do (len*4) insterad of utf8_len()
-				size_t len = // in bytes
-                atype == TSTRING ? ({
-                    int l = 0;
-                    for (size_t i = 0; i < cnt; i++) {
-                        word str = car(arg);
-                        l += reference_type(str) == TSTRING ? rawstream_size(str) :
-                             reference_type(str) == TSTRINGWIDE ? utf8_len(str) :
-                             reference_type(str) == TSTRINGDISPATCH ? number(ref(str, 1)) : // todo: decode all as utf8_len and use FAST_STRING_CALC macro
-                             0;
-						l += 1 + W;
-                        arg = listq ? cdr(arg) : arg+1;
-                    }
-                    l + cnt*W; // size for array + size of all strings
-                }) :
-                atype == TSTRINGWIDE ? ({
-                    int l = 0;
-                    for (size_t i = 0; i < cnt; i++) {
-                        word str = car(arg);
-                        l += reference_type(str) == TSTRING ? rawstream_size(str) :
-                             reference_type(str) == TSTRINGWIDE ? reference_size(str) :
-                             reference_type(str) == TSTRINGDISPATCH ? number(ref(str, 1)) :
-                             0;
-                        arg = listq ? cdr(arg) : arg+1;
-                    }
-                    l + cnt*W; // size for array + size of all strings
-                }) : cnt;
-
-				words += WALIGN(len * (
-					( atype == TINT8  || atype == TUINT8  ) ? sizeof(int8_t) :
-					( atype == TINT16 || atype == TUINT16 ) ? sizeof(int16_t) :
-					( atype == TINT32 || atype == TUINT32 ) ? sizeof(int32_t) :
-					( atype == TINT64 || atype == TUINT64 ) ? sizeof(int64_t) :
-					( atype == TFLOAT                     ) ? sizeof(float) :
-					( atype == TDOUBLE                    ) ? sizeof(double) :
-					( atype == TVPTR                      ) ? sizeof(void*) : // removed "&& !(reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) " just for speedup
-                    ( atype == TSTRING                    ) ? sizeof(char) :
-					( atype == TSTRINGWIDE                ) ? sizeof(widechar) :
-					( atype == TBOOL                      ) ? sizeof(int32_t) : // _Bool
-					0)) + 1;
-			}
-			else
-			switch (type) {
-			case TANY:
-				type = car(arg);
-				if (is_enump(type)) {
-					type = value(type);
-					arg = cdr(arg);
-					goto again;
-				}
-				break;
-			case TSTRING:
-				switch (reference_type (arg)) {
-					case TSTRING:
-						words += WALIGN(reference_size(arg)) + 1;
-						break;
-					case TSTRINGWIDE:
-						words += WALIGN(utf8_len(arg)) + 1;
-						break;
-					case TSTRINGDISPATCH:
-						words += WALIGN(number(ref(arg, 1))) + 1; // todo: process whole string as utf8_len and use FAST_STRING_CALC macro
-						break;
-				}
-				break;
-			case TSTRINGWIDE:
-				switch (reference_type (arg)) {
-					case TSTRING:
-						words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
-						break;
-					case TSTRINGWIDE:
-						words += WALIGN(sizeof(widechar) * reference_size(arg)) + 1;
-						break;
-					case TSTRINGDISPATCH:
-						words += WALIGN(sizeof(widechar) * number(ref(arg, 1))) + 1;
-						break;
-				}
-				break;
-			case TPAIR: // structures
-				if (reference_type(arg) == TPAIR) {
-					size_t size = structure_size((word)t);
-
-					// TODO: сюда тоже добавить кеширование
-					if (size > 16)
-						l += WALIGN(size);
-					else
-						i += WALIGN(size);
-				}
-				break;
-			}
-		}
-
-		i++;
-
-#if UINT64_MAX > UINTPTR_MAX // 32-bit machines
-		#if __mips__ // 32-bit mips,
-			i = (i+1)&-2; // dword align
-		#endif
-		if (type == TINT64 || type == TUINT64 || type == TDOUBLE)
-			i++;
-#endif
-		p = (word*)cdr(p);
-		t = (t == RNULL) ? t : (word*)cdr(t);
-	}
-	if (t != RNULL || p != RNULL) {
-		E("Arguments count mismatch", 0);
-		return (word*)IFALSE;
-	}
-
-	// special case of returning a structure:
+	// special case of returning a structure by value:
 	// http://www.sco.com/developers/devspecs/abi386-4.pdf
 	//
 	// Functions Returning Structures or Unions
@@ -1734,43 +1652,207 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	// return value and places its address on the stack as argument word zero. In effect,
 	// this address becomes a ‘‘hidden’’ first argument. Having the caller supply the
 	// return object’s space allows re-entrancy.
-	if (is_pair(car(B)) &&
+	if (is_pair(car(B)) && // ???
 		value(caar(B)) == TBYTEVECTOR)
 		// && value(cdar(B)) > sizeof(ret_t) // commented for speedup
 	{
-		words += WALIGN(value(cdar(B))) + 1;
+		total += WALIGN(value(cdar(B))) + 1;
 	}
 
-	// ----------------------------------------------
-	// 1.1 ensure that all arguments will fit in heap
+	// ------------------------------------------------
+	// 1.1  ensure that all arguments will fit in heap
 	heap_t* heap = (heap_t*)this;
-	if (heap->fp + words > heap->end) {
-        size_t a = OLVM_pin(this, A);
-        size_t b = OLVM_pin(this, B);
-        size_t c = OLVM_pin(this, C);
+	if (heap->fp + total > heap->end) {
+		size_t id = OLVM_pin(this, arguments);
+		heap->gc(this, total);
+		arguments = OLVM_unpin(this, id);
 
-		heap->gc(this, words);
-
-        A = OLVM_unpin(this, a);
-        B = OLVM_unpin(this, b);
-        C = OLVM_unpin(this, c);
+		register word ABC = arguments;
+		A = car(ABC); ABC = cdr(ABC); // function
+		B = car(ABC); ABC = cdr(ABC); // rtty
+		C = car(ABC); ABC = cdr(ABC); // args
 	}
 
 	word* fp = heap->fp;
-	int_t* args = __builtin_alloca(max(i + l, 16) * sizeof(int_t)); // minimum - 16 words for arguments
+	word* args = __builtin_alloca(max(words, 16) * sizeof(word)); // minimum - 16 words for arguments
 	i = l = 0;
 
-	// ----------------------------
+	// --------------------------------------------------
+	// few heap allocators
+
+	// memory: is address to store
+	// str: internal string
+	void store_string(char** memory, word str)
+	{
+		// todo: add check to not copy the zero-ended string?
+		// note: no heap size checking required (done before)
+		int stype = reference_type(str);
+		if (stype == TSYMBOL) {
+			store_string(memory, car(str));
+		}
+		else {
+			char* ptr = *memory = (char*) &fp[1];
+			new_bytevector(string2ol(ptr, str,
+				stype == TSTRING ? chars2ol :
+				stype == TSTRINGWIDE ? wchars2utf8 :
+				stype == TSTRINGDISPATCH ? stringleaf2ol :
+				not_a_string));
+		}
+	}
+	void store_string_array(char*** memory, word array)
+	{
+		if (is_pair(array) || array == INULL) {
+			int size = list_length(array);
+			char** p = *memory = (char**) &fp[1];
+			new (TBYTEVECTOR, size, 0);
+
+			while (array != INULL) {
+				store_string(p++, car(array));
+				array = cdr(array);
+			}
+			return;
+		}
+		if (is_vector(array)) {
+
+			return;
+		}
+		assert (array == IFALSE);
+		*memory = NULL;
+	}
+
+	void store_stringwide(word* memory, word str)
+	{
+		int stype = reference_type(str);
+		if (stype == TSYMBOL) {
+			store_stringwide(memory, car(str));
+		}
+		else {
+			switch (stype) {
+			// case TBYTEVECTOR: // Deprecated(?)
+			case TSTRING: {
+				int len = rawstream_size(str);
+				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
+
+				widechar* p = unicode;
+				char* s = (char*)&car(str);
+				for (int i = 0; i < len; i++)
+					*p++ = (widechar)(*s++);
+				*p = 0;
+
+				*memory = (word) unicode;
+				break;
+			}
+			case TSTRINGWIDE: {
+				int len = reference_size(str);
+				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
+
+				widechar* p = unicode;
+				word* s = (word*)&car(str);
+				for (int i = 0; i < len; i++)
+					*p++ = (widechar)value(*s++);
+				*p = 0;
+
+				*memory = (word) unicode;
+				break;
+			}
+			default:
+				E("unsupported type-string-side source.");
+			}
+		}
+	}
+
+	// struct*
+	// Structure Sending by Reference:
+	// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
+	size_t structure_size(size_t size, word t)
+	{
+		// http://www.catb.org/esr/structure-packing/
+		while (t != INULL) {
+			word p = car(t);
+			if (is_pair(p))
+				size = structure_size(size, p);
+			else {
+				assert (is_value(p));
+				int type = value(p);
+				if (type == TINT8 || type == TUINT8)
+					size++;
+				else {
+					size_t subsize;
+					switch (type) {
+						case TINT16: case TUINT16: subsize = sizeof(int16_t); break;
+						case TINT32: case TUINT32: subsize = sizeof(int32_t); break;
+						case TINT64: case TUINT64: subsize = sizeof(int64_t); break;
+						case TFLOAT:               subsize = sizeof(float);   break;
+						case TDOUBLE:              subsize = sizeof(double);  break;
+						default:                   subsize = sizeof( word );
+					}
+					size += ((size + subsize - 1) & -subsize) + subsize; // align + size
+				}
+			}
+			t = cdr(t);
+		}
+		return size;
+	}
+	size_t push_structure(char* memory, size_t ptr, word t, word a)
+	{
+		#define ALIGN(ptr, type) ptr = ((ptr + sizeof(type) - 1) & -sizeof(type))
+		#define SAVE(type, conv) {\
+			ALIGN(ptr, type);\
+			*(type*)(memory+ptr) = (type)conv(v);\
+			ptr += sizeof(type); \
+		}
+		while (t != INULL && a != INULL) {
+			word p = car(t); word v = car(a);
+			if (is_pair(p))
+				ptr = push_structure(memory, ptr, p, v); // assert (is_pair v)
+			else {
+				switch (value(p)) {
+				case TINT8: case TUINT8:
+					*(int8_t*)(memory+ptr) = (int8_t)value(v); ptr += sizeof(int8_t);
+					break;
+				case TINT16: case TUINT16:
+					SAVE(int16_t, to_int);
+					break;
+				case TINT32: case TUINT32:
+					SAVE(int32_t, to_int);
+					break;
+				case TINT64: case TUINT64:
+					SAVE(int64_t, to_int64);
+					break;
+
+				case TSTRING:
+					ALIGN(ptr, char*);
+					store_string((char**)(memory+ptr), v);
+					break;
+				case TSTRING+PTR: {
+					ALIGN(ptr, char**);
+					store_string_array((char***)(memory+ptr), v);
+					ptr += sizeof(char**);
+					break;
+				}
+				// 
+				default:
+					E("unhndled");
+					break;
+				}
+				//ptr += ((ptr + subsize - 1) & -subsize) + subsize;
+			}
+			t = cdr(t); a = cdr(a);
+		}
+		return ptr;
+	}
+
+	// ==============================================
 	// 2. prepare arguments to push
-	p = (word*)C;   // ol arguments
-	t = (word*)cdr (B); // rtty
+	word* p = (word*)C;   // ol arguments
+	word* t = (word*)cdr (B); // rtty
 	int writeback = 0; // has write-back in arguments (code speedup)
 
 	// special case of structures-by-value
 	// x86-64-psABI-1.0.pdf:
 	// 3.2.3 Parameter Passing
 
-	// special case of returning a structure:
+	// special case of returning a structure by value
 	// allocate a space for the return value
 	if (is_pair(car(B)) &&
 		value(caar(B)) == TBYTEVECTOR &&
@@ -1781,78 +1863,72 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		args[i++] = (word) &car(result);
 	}
 
+	// ==============================================
+	// PUSH
 	while ((word)p != INULL) { // пока есть аргументы
 		assert (reference_type(p) == TPAIR); // assert(list)
 		assert (t == RNULL || reference_type(t) == TPAIR); // assert(list)
 
-		int type = ((word)t == INULL) // destination type
-			 ? TANY
-			 : is_value(car(t))
-			 	? value(car(t))
-				: reference_type(car(t));
+		// int type = ((word)t == INULL) // destination type
+		// 	 ? TANY
+		// 	 : is_value(car(t))
+		// 		? value(car(t))
+		// 		: reference_type(car(t)); // reference type? why?
+
+		int type = (is_pair(t) && is_value(car(t))) ? value(car(t)) : TANY;
 		word arg = (word) car(p);
 
-/*		// todo: add argument overriding as PAIR as argument value
-		if (thetype (p[1]) == TPAIR) {
-			type = value (((word*)p[1])[1]);
-			arg = ((word*)p[1])[2];
-		}*/
-
-		// #ifdef linux x64, struct-by-value-passing
+		// #ifdef linux x64, struct-by-value-passing (check this), todo fix
 		if (i == 6 && l) {
 			i = l;
 		}
 		// #endif
 
-		args[i] = 0; // обнулим (теперь дальше сможем симулировать обнуление через break)
+		args[i] = 0; // обнулим
+
 #if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
-		floatsmask <<= 1; // подготовим маску к следующему аргументу
+		fpmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
-		any:
-		if (arg == IFALSE) // #false is universal "0" value
+	any:if (arg == IFALSE) // #false is universal "0" value
 		switch (type) {
-#if UINT64_MAX > UINTPTR_MAX // 32-bits
-		case TINT64:
-		case TUINT64:
+#if UINT64_MAX > UINTPTR_MAX
+		// 32-bits code
+		case TINT64: case TUINT64:
 		case TDOUBLE:
-			args[++i] = 0; 	// double and longlong fills two words
+			args[++i] = 0; 	// doubles and longlongs fit two words
 			break;
 #endif // 64-bit
 #if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
 		case TFLOAT:
 		case TDOUBLE:
 			ad[d++] = 0;
-			floatsmask|=1; --i;
+			fpmask |= 1; --i;
 			break;
 #endif
 		}
 		else
 		switch (type) {
-
+		// -------------------
 		// целочисленные типы:
 		case TINT8:  case TUINT8:
 		case TINT16: case TUINT16:
 		case TINT32: case TUINT32:
-#if UINTPTR_MAX == UINT64_MAX  // 64-bit machines
-		case TINT64: case TUINT64:
-#endif
-		tint:
 			args[i] = to_int(arg);
 			break;
 
-#if UINT64_MAX > UINTPTR_MAX // 32-bit machines
-		// 32-bits: long long values fills two words
-		case TINT64: case TUINT64: {
-		tint64:
-			#if __mips__ // 32-bit mips,
-				i = (i+1)&-2; // dword align
-			#endif
-
-			*(int64_t*)&args[i++] = to_int64(arg);
-			break;
-		}
+		case TINT64: case TUINT64:
+#if UINT64_MAX > UINTPTR_MAX
+			// 32-bit machines
+#	if __mips__ // 32-bit mips
+			i = (i+1)&-2; // dword align
+#	endif
+			*(int64_t*)&args[i++] = arg;
+#else
+			// 64-bit machines
+			args[i] = to_int64(arg);
 #endif
+			break;
 
 		// целочисленные ссылочные типы
 		// (макросы вверху файла)
@@ -1862,7 +1938,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TINT8+PTR:
 		case TUINT8+PTR:
 		tint8ptr:
-			SERIALIZE(int8_t, to_int)
+			SERIALIZE(&args[i], int8_t, to_int)
 			break;
 
 		case TINT16+REF:
@@ -1871,7 +1947,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TINT16+PTR:
 		case TUINT16+PTR:
 		tint16ptr:
-			SERIALIZE(int16_t, to_int)
+			SERIALIZE(&args[i], int16_t, to_int)
 			break;
 
 		case TINT32+REF:
@@ -1880,7 +1956,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TINT32+PTR:
 		case TUINT32+PTR:
 		tint32ptr:
-			SERIALIZE(int32_t, to_int)
+			SERIALIZE(&args[i], int32_t, to_int)
 			break;
 
 		case TINT64+REF:
@@ -1889,20 +1965,21 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		case TINT64+PTR:
 		case TUINT64+PTR:
 		tint64ptr:
-			SERIALIZE(int64_t, to_int)
+			SERIALIZE(&args[i], int64_t, to_int)
 			break;
 
+		// -------------------
 		// с плавающей запятой:
 		case TFLOAT:
 			#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
 				*(float*)&ad[d++] = OL2F(arg); --i;
-				floatsmask|=1;
+				fpmask |= 1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
 				*(float*)&af[f++] = OL2F(arg); --i;
 			#else
 				*(float*)&args[i] = OL2F(arg);
 			# ifdef __EMSCRIPTEN__
-				fmask |= 1 << i;
+				fpmask |= 1 << i;
 			# endif
 			#endif
 			break;
@@ -1911,7 +1988,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			// fall through
 		case TFLOAT+PTR:
 		tfloatptr:
-			SERIALIZE(float, OL2F)
+			SERIALIZE(&args[i], float, OL2F)
 			break;
 
 		case TDOUBLE:
@@ -1922,7 +1999,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 			#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
 				*(double*)&ad[d++] = OL2D(arg); --i;
-				floatsmask|=1;
+				fpmask |= 1;
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?) // todo: check varargs
 				*(double*)&af[f++] = OL2D(arg); --i; f++;
 			#else
@@ -1937,7 +2014,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			// fall through
 		case TDOUBLE+PTR:
 		tdoubleptr:
-			SERIALIZE(double, OL2D)
+			SERIALIZE(&args[i], double, OL2D)
 			break;
 
 
@@ -1952,10 +2029,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		// automatically change the type to argument type, if fft-any
 		case TANY: {
-			// если передали какое-либо число, то автоматически надо привести к размеру
-			// машинного слова (того, что будет лежать в стеке)
-			if (is_number(arg))
-				goto tint;
+			if (is_value(arg))
+				args[i] = value(arg);
 			else
 			switch (reference_type(arg)) {
 			case TVPTR: // value of vptr
@@ -1965,27 +2040,44 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			case TBYTEVECTOR: // address of bytevector data (no copying to stack)
 				args[i] = (word) &car(arg);
 				break;
-			// (cons type argument)
-			case TPAIR:
-				type = car(arg);
-				if (is_enump(type)) {
-					type = value(type);
-					arg = cdr(arg);
+			// '(arguments...) OR
+			// (cons type '(arguments...))
+			case TPAIR: {
+				// predeclared type or extra?
+				word retype = is_pair(t) ? car(t) : I(type);
+
+				if (retype == I(TANY)) {// '(cons type args)
+					retype = car(arg); arg = cdr(arg);
+				}
+
+				if (is_value(retype)) { // simple types
+					type = value(retype);
 					goto any;
 				}
+				// structures
+				if (is_pair(retype)) {
+					size_t size = structure_size(0, retype);
+					void* payload = alloca(size);
+					args[i] = (word) payload;
+					push_structure(payload, 0, retype, arg);
+				}
 				else
-					E("No type conversion selected");
+					E("No valid retype found");
 				break;
+			}
 			case TSTRING:
 			case TSTRINGDISPATCH:
-				goto tstring;
+				store_string((char**)&args[i], arg);
+				break;
 			case TSTRINGWIDE:
-				goto tstringwide;
+				store_stringwide(&args[i], arg);
+				break;
 			}
 			break;
 		}
 
 		// vptr should accept only vptr!
+		// void*
 		case TVPTR:
 		tvptr:
 			// temporary. please, change to "if (is_reference(arg) && reference_type(arg) == TVPTR)"
@@ -2011,196 +2103,202 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				break;
 			if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
 				args[i] = (word) &car(arg);
-			else {
-				int c = llen(arg);
-				void** p = (void**) __builtin_alloca(c * sizeof(void*)); // todo: change to heap allocation
-				args[i] = (word)p;
+			// pointer to structure, instant structure declaration
+			else if (is_pair(arg))
+			{
+				size_t size = structure_size(0, car(arg));
+				void* payload = alloca(size);
+				args[i] = (word) payload;
+				push_structure(payload, 0, car(arg), cdr(arg));
 
-				word l = arg;
-				while (c--) {
-					if (car(l) == INULL)
-						*p++ = 0;
-					else
-					if (is_reference(car(l)))
-						switch (reference_type(car(l))) {
-						case TVPTR:
-							*p++ = (void*)car(l);
-							break;
-						case TSTRING: // TODO: Deprecated.
-						case TSTRINGWIDE:
-						case TSTRINGDISPATCH: {
-							char* ptr = (char*)(*p++ = &fp[1]);
-							int stype = reference_type(car(l));
-							new_bytevector(string2ol(ptr, car(l),
-								stype == TSTRING ? chars2ol :
-								stype == TSTRINGWIDE ? wchars2utf8 :
-								stype == TSTRINGDISPATCH ? stringleaf2ol :
-								not_a_string));
-							break;
-						}
-						default:
-							E("invalid parameter type (requested vptr*)");
-						}
-					else
-						E("invalid parameter type (requested vptr*)");
-					l = cdr(l);
-				}
+				// word l = arg;
+				// while (c--) {
+				// 	if (car(l) == INULL)
+				// 		*p++ = 0;
+				// 	else
+				// 	if (is_reference(car(l)))
+				// 		switch (reference_type(car(l))) {
+				// 		case TVPTR:
+				// 			*p++ = (void*)car(l);
+				// 			break;
+				// 		case TSTRING: // TODO: Deprecated.
+				// 		case TSTRINGWIDE:
+				// 		case TSTRINGDISPATCH: {
+				// 			char* ptr = (char*)(*p++ = &fp[1]);
+				// 			int stype = reference_type(car(l));
+				// 			new_bytevector(string2ol(ptr, car(l),
+				// 				stype == TSTRING ? chars2ol :
+				// 				stype == TSTRINGWIDE ? wchars2utf8 :
+				// 				stype == TSTRINGDISPATCH ? stringleaf2ol :
+				// 				not_a_string));
+				// 			break;
+				// 		}
+				// 		default:
+				// 			E("invalid parameter type (requested vptr*)");
+				// 		}
+				// 	else
+				// 		E("invalid parameter type (requested vptr*)");
+				// 	l = cdr(l);
+				// }
 			}
+			else
+				E("invalid parameter type (requested vptr*)");
 			break;
 		}
 
-		// special case of a structure by value
-		case TPAIR:
-			// todo: check a types of structure
-			switch (reference_type(arg)) {
-			// pack structure into bytevector
-			// doto: move to the standalone function named `struct2ol`
-			// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
-			case TPAIR: { // structures
-				// 1. calculate size
-				size_t size = 0;
-				// http://www.catb.org/esr/structure-packing/
-				for (word p = car(t); p != INULL; p = cdr(p)) {
-					word subtype = car(p);
+// 		// special case of a structure by value?
+// 		case TPAIR:
+// 			// todo: check a types of structure
+// 			switch (reference_type(arg)) {
+// 			// pack structure into bytevector
+// 			// doto: move to the standalone function named `struct2ol`
+// 			// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
+// 			case TPAIR: { // structures
+// 				// 1. calculate size
+// 				// todo: change to structure_size call (?)
+// 				size_t size = 0;
+// 				// http://www.catb.org/esr/structure-packing/
+// 				for (word p = car(t); p != INULL; p = cdr(p)) {
+// 					word subtype = car(p);
 
-					assert (is_value(subtype));
-					word stv = value(subtype);
-					// внутриструктурное выравнивание (по умолчанию)
-					size_t subsize = // todo: speedup use table
-						( stv == TINT8  || stv == TUINT8  ) ? sizeof(int8_t) :
-						( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
-						( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
-						( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
-						( stv == TFLOAT                   ) ? sizeof(float) :
-						( stv == TDOUBLE                  ) ? sizeof(double) : 0;
-					size = ((size + subsize - 1) & -subsize) + subsize;
-				}
-				// total size should be word aligned (to fit into registers and memory)
-				size = (size + sizeof(word)-1) & -sizeof(word);
+// 					assert (is_value(subtype));
+// 					word stv = value(subtype);
+// 					// внутриструктурное выравнивание (по умолчанию)
+// 					size_t subsize = // todo: speedup use table
+// 						( stv == TINT8  || stv == TUINT8  ) ? sizeof(int8_t) :
+// 						( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
+// 						( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
+// 						( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
+// 						( stv == TFLOAT                   ) ? sizeof(float) :
+// 						( stv == TDOUBLE                  ) ? sizeof(double) : 0;
+// 					size = ((size + subsize - 1) & -subsize) + subsize;
+// 				}
+// 				// total size should be word aligned (to fit into registers and memory)
+// 				size = (size + sizeof(word)-1) & -sizeof(word);
 
-				int j = i;
-#if __LP64__ || __LLP64__
-				if (size > 16) // should send using stack
-					j = max(i, 6, l);
-				int general = 0; // 8-bit block should go to general register
-#endif
-				char* ptr = (char*)&args[j];
-				size_t offset = 0;
+// 				int j = i;
+// #if __LP64__ || __LLP64__
+// 				if (size > 16) // should send using stack
+// 					j = max(i, 6, l);
+// 				int general = 0; // 8-bit block should go to general register
+// #endif
+// 				char* ptr = (char*)&args[j];
+// 				size_t offset = 0;
 
-				for (word p = car(t), a = arg; ; p = cdr(p), a = cdr(a)) {
-					word subtype = (p != INULL) ? car(p) : I(0);
+// 				for (word p = car(t), a = arg; ; p = cdr(p), a = cdr(a)) {
+// 					word subtype = (p != INULL) ? car(p) : I(0);
 
-					assert (is_value(subtype));
-					word stv = value(subtype);
+// 					assert (is_value(subtype));
+// 					word stv = value(subtype);
 
-					switch (stv) {
-						case TINT8:  case TUINT8:
-							// offset = offset;
-							break;
-						case TINT16: case TUINT16:
-							offset = (offset + 1) & -2;
-							break;
-						case TINT32: case TUINT32:
-						case TFLOAT:
-#if __ILP32__
-						case TINT64: case TUINT64:
-						case TDOUBLE: case 0: // 0 means "no more arguments"
-#endif
-							offset = (offset + 3) & -4;
-							break;
-#if __LP64__ || __LLP64__
-						case TINT64: case TUINT64:
-						case TDOUBLE: case 0: // 0 means "no more arguments"
-							offset = (offset + 7) & -8;
-							break;
-#endif
-					}
-					if (offset >= sizeof(word)) { // пришло время сложить данные в регистр
-						assert (offset % sizeof(word) == 0);
-#if __LP64__ || __LLP64__
-						if (general || (size > 16)) { // в регистр общего назначения
-							j++; floatsmask <<= 1;
-							ptr += 8;
+// 					switch (stv) {
+// 						case TINT8:  case TUINT8:
+// 							// offset = offset;
+// 							break;
+// 						case TINT16: case TUINT16:
+// 							offset = (offset + 1) & -2;
+// 							break;
+// 						case TINT32: case TUINT32:
+// 						case TFLOAT:
+// #if __ILP32__
+// 						case TINT64: case TUINT64:
+// 						case TDOUBLE: case 0: // 0 means "no more arguments"
+// #endif
+// 							offset = (offset + 3) & -4;
+// 							break;
+// #if __LP64__ || __LLP64__
+// 						case TINT64: case TUINT64:
+// 						case TDOUBLE: case 0: // 0 means "no more arguments"
+// 							offset = (offset + 7) & -8;
+// 							break;
+// #endif
+// 					}
+// 					if (offset >= sizeof(word)) { // пришло время сложить данные в регистр
+// 						assert (offset % sizeof(word) == 0);
+// #if __LP64__ || __LLP64__
+// 						if (general || (size > 16)) { // в регистр общего назначения
+// 							j++; fpmask <<= 1;
+// 							ptr += 8;
 
-							// если добрались до стека, а он уже что-то содержит
-							if (j == 6 && l)
-								j = l;
-						}
-						else { // в регистр с плавающей запятой
-							// move from ptr to the ad
-							*(int64_t*)&ad[d++] = args[j];
-							floatsmask |= 1;
-						}
-						general = 0;
-#else
-						j += offset / sizeof(word);
-						ptr += sizeof(word);
-#endif
-						offset %= sizeof(word);
-					}
-					// аргументы закончились
-					if (p == INULL)
-						break;
-					assert (a != INULL);
-					// если аргументов недостаточно, пушаем 0?
-					// word arg = (a != INULL) ? car(a) : I(0);
+// 							// если добрались до стека, а он уже что-то содержит
+// 							if (j == 6 && l)
+// 								j = l;
+// 						}
+// 						else { // в регистр с плавающей запятой
+// 							// move from ptr to the ad
+// 							*(int64_t*)&ad[d++] = args[j];
+// 							fpmask |= 1;
+// 						}
+// 						general = 0;
+// #else
+// 						j += offset / sizeof(word);
+// 						ptr += sizeof(word);
+// #endif
+// 						offset %= sizeof(word);
+// 					}
+// 					// аргументы закончились
+// 					if (p == INULL)
+// 						break;
+// 					assert (a != INULL);
+// 					// если аргументов недостаточно, пушаем 0?
+// 					// word arg = (a != INULL) ? car(a) : I(0);
 
-					switch (stv) {
-						case TINT8:  case TUINT8: {
-							*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
-							offset += 1; IFN32(general = 1);
-							break;
-						}
-						case TINT16: case TUINT16: {
-							*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
-							offset += 2; IFN32(general = 1);
-							break;
-						}
-						case TINT32: case TUINT32: {
-							*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
-							offset += 4; IFN32(general = 1);
-							break;
-						}
-						case TINT64: case TUINT64: {
-							*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
-							offset += 8; IFN32(general = 1);
-#if __ILP32__
-							j++; ptr += 4; offset -= 4;
-#endif
-							break;
-						}
+// 					switch (stv) {
+// 						case TINT8:  case TUINT8: {
+// 							*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
+// 							offset += 1; IFN32(general = 1);
+// 							break;
+// 						}
+// 						case TINT16: case TUINT16: {
+// 							*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
+// 							offset += 2; IFN32(general = 1);
+// 							break;
+// 						}
+// 						case TINT32: case TUINT32: {
+// 							*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
+// 							offset += 4; IFN32(general = 1);
+// 							break;
+// 						}
+// 						case TINT64: case TUINT64: {
+// 							*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
+// 							offset += 8; IFN32(general = 1);
+// #if __ILP32__
+// 							j++; ptr += 4; offset -= 4;
+// #endif
+// 							break;
+// 						}
 
-						case TFLOAT: {
-							*(float *)&ptr[offset] = OL2F(car(a));
-							offset += 4;
-							break;
-						}
-						case TDOUBLE: {
-							*(double*)&ptr[offset] = OL2D(car(a));
-							offset += 8;
-#ifdef __ILP32__
-							j++; ptr += 4; offset -= 4;
-#endif
-							break;
-						}
-					}
-				}
+// 						case TFLOAT: {
+// 							*(float *)&ptr[offset] = OL2F(car(a));
+// 							offset += 4;
+// 							break;
+// 						}
+// 						case TDOUBLE: {
+// 							*(double*)&ptr[offset] = OL2D(car(a));
+// 							offset += 8;
+// #ifdef __ILP32__
+// 							j++; ptr += 4; offset -= 4;
+// #endif
+// 							break;
+// 						}
+// 					}
+// 				}
 
-#ifndef __ILP32__
-				if (size > 16 && i < 6)
-					l = j;
-				else
-#endif
-					i = j;
+// #ifndef __ILP32__
+// 				if (size > 16 && i < 6)
+// 					l = j;
+// 				else
+// #endif
+// 					i = j;
 
-				--i; // because after break we already have ++i;
-				break;
-			}
+// 				--i; // because after break we already have ++i;
+// 				break;
+// 			}
 
-			default:
-				E("invalid parameter values (requested bytevector)");
-			}
-			break;
+// 			default:
+// 				E("invalid parameter values (requested bytevector)");
+// 			}
+// 			break;
 
 		case TBYTEVECTOR:
 //		case TBYTEVECTOR+PTR:
@@ -2217,30 +2315,14 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 			}
 			break;
 
-		// todo: change to automaticly converting to 0-ending string
 		case TSTRING:
-		tstring: {
-			// todo: add check to not copy the zero-ended string
-			// note: no heap size checking required (done before)
-			int stype = reference_type(arg);
-			if (stype == TSYMBOL) {
-				arg = car(arg); goto tstring;
-			}
-			char* ptr = (char*)(args[i] = (int_t) &fp[1]);
-			new_bytevector(string2ol(ptr, arg,
-				stype == TSTRING ? chars2ol :
-				stype == TSTRINGWIDE ? wchars2utf8 :
-				stype == TSTRINGDISPATCH ? stringleaf2ol :
-				not_a_string));
-
+		tstring:
+			store_string((char**)&args[i], arg);
 			break;
-		}
 		case TSTRING+PTR: {
-			int size = llen(arg);
+			int size = list_length(arg);
 
-			// TODO: check the available memory and run GC if necessary
-			// todo2: move to precalculation step (already done?)
-			word* p = new (TBYTEVECTOR, size); // yes, size - because this vector will store the raw system words
+			word* p = new (TBYTEVECTOR, size, 0);
 			args[i] = (word) ++p;
 
             size++;
@@ -2250,8 +2332,8 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
                 word str = car(src);
 
 				int stype = reference_type(str);
-				char* ptr = (char*)(*p++ = (word) &fp[1]);
-				new_bytevector(string2ol(ptr, str,
+				word ptr = *p++ = (word) &fp[1];
+				new_bytevector(string2ol((char*)ptr, str,
 					stype == TSTRING ? chars2ol :
 					stype == TSTRINGWIDE ? wchars2utf8 :
 					stype == TSTRINGDISPATCH ? stringleaf2ol :
@@ -2264,41 +2346,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 
 		case TSTRINGWIDE:
 		tstringwide:
-			switch (reference_type(arg)) {
-			case TBYTEVECTOR: // Deprecated(?)
-			case TSTRING: {
-				int len = rawstream_size(arg);
-				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
-
-				widechar* p = unicode;
-				char* s = (char*)&car(arg);
-				for (int i = 0; i < len; i++)
-					*p++ = (widechar)(*s++);
-				*p = 0;
-
-				args[i] = (word) unicode;
-				break;
-			}
-			case TSTRINGWIDE: {
-				int len = reference_size(arg); // for '\0'
-				widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
-
-				widechar* p = unicode;
-				word* s = (word*)&car(arg);
-				for (int i = 0; i < len; i++)
-					*p++ = (widechar)value(*s++);
-				*p = 0;
-
-				args[i] = (word) unicode;
-				break;
-			}
-			case TSYMBOL:
-				arg = car(arg);
-				goto tstringwide;
-
-			default:
-				E("invalid parameter values (requested string)");
-			}
+			store_stringwide(&args[i], arg);
 			break;
 
 		case TCALLABLE: { // todo: maybe better to merge type-callable and type-vptr ?
@@ -2343,24 +2391,24 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 		t = (t == RNULL) ? t : (word*)cdr(t);
 	}
 #ifdef __EMSCRIPTEN__
-	fmask |= 1 << i;
+	fpmask |= 1 << i;
 #endif
 	assert ((word)t == INULL); // количество аргументов совпало!
 
-	size_t pB = OLVM_pin(this, B);
-	size_t pC = OLVM_pin(this, C);
+	size_t pB = OLVM_pin(this, B); // todo: if writeback || TVOID
+	size_t pC = OLVM_pin(this, C); // todo: if writeback || TVOID
 	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
 
-//	if (floatsmask == 15)
+//	if (fpmask == 15)
 //		__asm__("int $3");
 
 	ret_t got = 0; // результат вызова функции
-	int returntype = is_value(car(B)) ? value(car(B)) : reference_type(car(B));
+	int returntype = is_value(car(B)) ? value(car(B)) : reference_type(car(B)); // TODO: why reference type??
 
 	if (function)
 #if  __x86_64__
 #	if (__unix__ || __APPLE__)
-		got = nix64_call(args, ad, max(i, l), d, floatsmask, function, returntype & 0x3F);
+		got = nix64_call(args, ad, max(i, l), d, fpmask, function, returntype & 0x3F);
 #	elif _WIN64
 		got = win64_call(args, i, function, returntype & 0x3F);
 #	else
@@ -2378,7 +2426,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 #	endif
 
 #elif __aarch64__
-	got = arm64_call(args, ad, i, d, floatsmask, function, returntype & 0x3F);
+	got = arm64_call(args, ad, i, d, fpmask, function, returntype & 0x3F);
 
 #elif __arm__
 	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
@@ -2394,7 +2442,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 	got = mips32_call(args, i, function, returntype & 0x3F);
 
 #elif __EMSCRIPTEN__
-	got = asmjs_call(args, fmask, function, returntype & 0x3F);
+	got = asmjs_call(args, fpmask, function, returntype & 0x3F);
 
 #elif __sparc64__
 	got = call_x(args, i, function, returntype & 0x3F);
@@ -2520,7 +2568,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 				if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
 					break; // nothing to do
 
-				int c = llen(arg);
+				int c = list_length(arg);
 				void** f = (void**)args[i];
 
 				word l = arg;
@@ -2547,7 +2595,7 @@ word* OLVM_ffi(olvm_t* this, word* arguments)
 					break;
 				// case TSTRING:
 				// case TSTRINGDISPATCH:
-				// 	goto tstring;
+				// 	goto push_string;
 				// case TSTRINGWIDE:
 				// 	goto tstringwide;
 				}
@@ -3264,7 +3312,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 			#endif
 
 			if (is_pair(car(types))) {
-				//int l = llen(car(types));
+				//int l = list_length(car(types));
 				word tail = INULL;
 				void** values = (void**)value;
 

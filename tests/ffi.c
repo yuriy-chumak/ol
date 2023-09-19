@@ -674,3 +674,28 @@ int format(const char *format, ...)
 	fflush(stdout);
     return 0;
 }
+
+struct args_t
+{
+	int argc;
+	struct {
+		char** argv;
+	} x;
+	char c;
+};
+
+#include <stdio.h>
+void debug_args(struct args_t* args)
+{
+	fflush(stdout);
+	printf(" args -> {\n");
+	printf("   argc = %d\n", args->argc);
+	printf("   x = {\n");
+	for (int i = 0; i < args->argc; i++) {
+		printf("     argv[%d] = %s\n", i, args->x.argv[i]);
+	}
+	printf("   }\n");
+	printf("   c = %c\n", args->c);
+	printf(" }\n");
+	fflush(stdout);
+}
