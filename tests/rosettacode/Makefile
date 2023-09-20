@@ -1,10 +1,11 @@
-.PHONY: check rosettacode
-
-check: rosettacode
-
 ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
 else
+
+.PHONY: check rosettacode
+.SILENT: rosettacode
+
+check: rosettacode
 
 # tests without ^.ok file are legal but can't be used in batch mode
 

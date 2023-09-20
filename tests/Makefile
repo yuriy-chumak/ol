@@ -1,11 +1,14 @@
+ifndef MAKEFILE_MAIN
+$(error Use toplevel Makefile, please.)
+else
+
 .PHONY: check tests
 
 .PHONY: testing-binaries
 .PHONY: testing-embed testing-internal testing-ffi
+.PHONY: regression-tests
 
-ifndef MAKEFILE_MAIN
-$(error Use toplevel Makefile, please.)
-else
+.SILENT: regression-tests
 
 FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
 
@@ -31,6 +34,7 @@ ifeq ($(HAS_64CDEFS),1)
 DEV_MACHINE  ?= 1
 endif
 else
+DEV_MACHINE  ?= 0
 HAS_32CDEFS  ?= 0
 HAS_64CDEFS  ?= 0
 endif
@@ -341,7 +345,7 @@ endif
 	@echo " "
 
 # -- ffi ------------------------------------------
-testing-ffi: 
+testing-ffi:
 	@echo "ffi testing"
 	@echo "----------------------------------------"
 ifeq ($(DEV_MACHINE),1) # main development platform, special case
@@ -441,49 +445,54 @@ tests: testing-binaries
 	$(MAKE) -s testing-embed
 	$(MAKE) -s regression-tests
 
-.ONESHELL:
 define table-header
-	#     header line 1
+	set -e
+	: header line 1
 	printf "%-$1s " "  Test"
-	if [ $(DEV_MACHINE) = 1 ] # main development platform, special case
-	then
-		case "`expr $(HAS_32CDEFS) + $(HAS_64CDEFS)`" in
-			1) printf "| Linux   ";;
-			2) printf "| Linux             ";;
-		esac
-		case "`expr $(HAS_MINGW32) + $(HAS_MINGW64)`" in
-			1) printf "| Windows ";;
-			2) printf "| Windows           ";;
-		esac
-	else # default case
-		@printf "| %-7s " `uname`
+	if [ $(DEV_MACHINE) = 1 ]; \
+	then \
+	: main development platform, special case;\
+		case "`expr $(HAS_32CDEFS) + $(HAS_64CDEFS)`" in \
+			1) printf "| Linux   ";;\
+			2) printf "| Linux             ";;\
+		esac ;\
+		case "`expr $(HAS_MINGW32) + $(HAS_MINGW64)`" in \
+			1) printf "| Windows ";;\
+			2) printf "| Windows           ";;\
+		esac ;\
+	else \
+	: regular platform ;\
+		printf "| %-7s " `uname` ;\
 	fi
 	printf "|\n"
-	#     header line 2
-	printf "%-$1s " " "
-	if [ $(DEV_MACHINE) = 1 ] # main development platform, special case
-	then
-		if [ $(HAS_32CDEFS) = 1 ]; then printf "|32-d|32-r"; fi
-		if [ $(HAS_64CDEFS) = 1 ]; then printf "|64-d|64-r"; fi
-		if [ $(HAS_MINGW32) = 1 ]; then printf "|32-d|32-r"; fi
-		if [ $(HAS_MINGW64) = 1 ]; then printf "|64-d|64-r"; fi
-	else # default case
-		@printf "|dbg.|rel."
+
+	: header line 1
+	printf "%-$1s " `uname`
+	if [ $(DEV_MACHINE) = 1 ]; \
+	then \
+	: main development platform, special case;\
+	 	if [ $(HAS_32CDEFS) = 1 ]; then printf "|32-d|32-r"; fi ;\
+	 	if [ $(HAS_64CDEFS) = 1 ]; then printf "|64-d|64-r"; fi ;\
+	 	if [ $(HAS_MINGW32) = 1 ]; then printf "|32-d|32-r"; fi ;\
+	 	if [ $(HAS_MINGW64) = 1 ]; then printf "|64-d|64-r"; fi ;\
+	else \
+	: regular platform ;\
+		printf "|dbg.|rel." ;\
 	fi
 	printf "|\n"
 endef
 
 regression-tests: $(filter-out tests/ffi.scm, $(wildcard tests/*.scm)) $(wildcard tests/*.bin)
-	@echo " "
-	@echo "regression tests"
-	@echo "----------------"
+	echo " "
+	echo "regression tests"
+	echo "----------------"
 	$(eval F1LEN=$(shell for F in $^; do echo $${#F}; done |sort -n| tail -1))
 	$(call table-header, $(F1LEN))
-	@for F in $^; do
+	for F in $^; do \
 	   printf "%-$(F1LEN)s " "$$F";\
 	   $(MAKE) -s -B $$F.ok ;\
 	done
-	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
-	@echo "\033[1;32mpassed!\033[0m"
+	if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
+	echo "\033[1;32mpassed!\033[0m"
 
 endif
