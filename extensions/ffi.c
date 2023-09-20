@@ -156,6 +156,14 @@
 #endif
 
 // ------------------
+#ifdef __aarch64__
+#define ONLY_AARCH64(...) __VA_ARGS__
+#else
+#define ONLY_AARCH64(...)
+#endif
+
+
+// ------------------
 // maximal applicable return type of called functions
 typedef int64_t ret_t;
 
@@ -472,16 +480,13 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 // r9-r15: scratch registers
 // v16-v31: scratch registers
 // stack is 16-byte aligned at all times
+// notes:
+//   don't use r16, r17, r18
+//   don't forget "sudo DevToolsSecurity -enable" when debugging with lldb
 ret_t arm64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
-	// x0: argv
-	// x1: ad
-	// x2: i
-	// x3: d
-	// x4: mask <function>
-	// x5: function <type>
-	// x6: type
+				//    x0             x1        x2      x3       x4          x5             x6
 __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
-	"stp  x29, x30, [sp, -16]!",
+	"stp  x29, x30, [sp, -16]!", // fp + lr
 	"stp  x10, x26, [sp, -16]!",
 	"mov  x29, sp",
 	"mov  x26, x6",
@@ -509,66 +514,64 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"bge 1f", // goto Ltest
 	"b 4f",   // goto Lgo
 
+// у нас есть то, что придется складывать в стек
 "1:", // Ltest
 	// теперь посчитаем сколько нам нужно закидывать в стек
 	"sub x12, x2, #8",
 	"cmp x12, #0",
-	"bgt 2f", // goto L_a
-	"mov x12, #0", "2:",
+	"bgt 2f", // max(x12-8, 0)
+	"mov x12, #0",  "2:",
 
 	"sub x13, x3, #8",
 	"cmp x13, #0",
-	"bgt 3f", // goto L_b
-	"mov x13, #0", "3:",
+	"bgt 3f", // max(x13-8, 0)
+	"mov x13, #0",  "3:",
 
 	"add x15, x12, x13", // total x15 - count of arguments to be pushed to stack
-	// "cmp x15, #0", // эта проверка не нужна - мы уже проверили выше на две восьмерки
-	// "ble 4f",
-
 	"mov x8, #8",
 
-	// выравняем стек
+	// выровняем стек (по quad-word)
 	"orr x10, x15, #1",
-	"madd x10, x10, x8, x8", // вообще-то не обязательно добавлять 16, если добавить нечего...
-	"sub sp, sp, x10", // x10 больше не нужен
-	"mul x15, x15, x8",
-	"add x15, x15, x29", // x29 is an sp
-	"sub x15, x15, x10",
-	// "add sp, sp, x15",
+	"madd x10, x10, x8, x8", // +8 или +16, зависимо от x15 (не +0 или +8, так проще)
+	"sub sp, sp, x10",
+	"madd x15, x15, x8, x29",// x15 <- new sp + x15*8, x29 is old sp
+	"sub x15, x15, x10", // x10 больше не нужен
+	// x15 - push pointer
 
-	// спокойно передвинем массивы в конец
+	// спокойно передвинем указатели массивов на их последние элементы
 	"madd x10, x2, x8, x0",
-	"sub x10, x10, x8", // x0 = x0 + x2*8 (- 8) -8 не используем, так как он
+	"sub x10, x10, x8", // x10 = x0 + x2*8 (- 8)
 	"madd x11, x3, x8, x1",
-	"sub x11, x11, x8", // x1 = x1 + x3*8 (- 8)
+	"sub x11, x11, x8", // x11 = x1 + x3*8 (- 8)
 
 "6:", // Lpush
 	"orr x5, x12, x13", // больше нечего пушить
 	"cbz x5, 4f", // goto Lgo
-//	"tbz x4, #1, 5f",
-	"tst x4, #1",
-	"lsr x4, x4, #1", // давай посмотрим - инт или флоат
+	"tst x4, #1", // давай посмотрим - инт или флоат
+	"lsr x4, x4, #1",
 	"beq 5f", // == bc set, goto Lint
 "9:", // Lfloat
-	"cbz x13, 6b", // goto Lpush
+	// "cbz x13, 6b", // goto Lpush (sanity check)
 	"ldr x5, [x11], #-8",
 	"sub x13, x13, #1",
 	"str x5, [x15, -8]!",
 	"b 6b", // goto Lpush
-"5:",
-	"cbz x12, 6b", // goto Lpush
-	"ldr x5, [x10], #-8",
+"5:", // Lint
+	// "cbz x12, 6b", // goto Lpush (sanity check)
+	"ldr x5, [x10], #-8",  // test: "mov x5, #8",
+//	"ldr x5, =0x0001000200030004", // test
 	"sub x12, x12, #1",
 	"str x5, [x15, -8]!",
 	"b 6b", // goto Lpush
 
 // done. go
 "4:", // Lgo
+	//"brk #0",
 	// assert (x15 == sp)
 	// а теперь обычные целочисленные аргументы
 	"cbz x2, 7f", // Lcall
-	"cmp x2, #4",
-	"ble 8f", // Lless2
+	// "cmp x2, #4", // оптимизация (возможно не нужна, надо тестить)
+	// "ble 8f", // Lless2
 	"ldr x7, [x0, #56]",
 	"ldr x6, [x0, #48]",
 	"ldr x5, [x0, #40]",
@@ -1739,6 +1742,7 @@ size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 		*(type*)(memory+ptr) = (type)conv(v);\
 		ptr += sizeof(type); \
 	}
+
 	while (t != INULL && a != INULL) {
 		word p = car(t); word v = car(a);
 		if (is_pair(p))
@@ -1817,7 +1821,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
 #elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
-	float af[18]; // для флоатов отдельный массив
+	float af[18]; // для флоатов отдельный массив (почему не 16?)
 	int f = 0;     // количество аргументов для af
 #elif __EMSCRIPTEN__
 	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
@@ -1827,8 +1831,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 	// ----------------------------------------------------------
 	// 1. do memory precalculations and count number of arguments
-	int i = 0;  // актуальное количество аргументов
-	int l = 0;  // нижняя граница для параметров больших структур
 
 	// TODO: добавить в общую структуру типов поле, куда кешировать
 	// все вот эти размеры. например, как [types cached-size]
@@ -1870,7 +1872,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 	word* fp = heap->fp;
 	word* args = __builtin_alloca(max(words, 16) * sizeof(word)); // minimum - 16 words for arguments
-	i = l = 0;
+	
 
 	// ==============================================
 	// 2. prepare arguments to push
@@ -1882,16 +1884,22 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	// x86-64-psABI-1.0.pdf:
 	// 3.2.3 Parameter Passing
 
-	// special case of returning a structure by value
-	// allocate a space for the return value
-	if (is_pair(car(B)) &&
-		value(caar(B)) == TBYTEVECTOR &&
-		value(cdar(B)) > sizeof(ret_t))
-	{
-		int len = value(cdar(B));
-		word* result = new_bytevector(len);
-		args[i++] = (word) &car(result);
-	}
+	// // special case of returning a structure by value
+	// // allocate a space for the return value
+	// if (is_pair(car(B)) &&
+	// 	value(caar(B)) == TBYTEVECTOR &&
+	// 	value(cdar(B)) > sizeof(ret_t))
+	// {
+	// 	int len = value(cdar(B));
+	// 	word* result = new_bytevector(len);
+	// 	args[i++] = (word) &car(result);
+	// }
+
+	int i = 0;  // актуальное количество аргументов
+	int l = 0;  // нижняя граница для параметров больших структур (только linux?)
+#if __aarch64__
+	int ii = 0; // часть от i, если параметров больше 8
+#endif
 
 	// ==============================================
 	// PUSH
@@ -1909,11 +1917,12 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		word arg = (word) car(p);
 
 		// #ifdef linux x64, struct-by-value-passing (check this), todo fix
-		if (i == 6 && l) {
+		if (i == 6 && l) { // ??
 			i = l;
 		}
 		// #endif
 
+		ONLY_AARCH64(if (i < 8))
 		args[i] = 0; // обнулим
 
 #if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
@@ -1941,9 +1950,44 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		switch (type) {
 		// -------------------
 		// целочисленные типы:
+#if __aarch64__
+	#define SAVE_ARM64(i, ii, type, conv) {\
+		((type*)&args[i])[ii/sizeof(type)] = (type) conv(arg);\
+		i--, ii += sizeof(type);\
+		i += (ii / 8);\
+		ii = (ii % 8);\
+	}
+#endif
 		case TINT8:  case TUINT8:
+#if __aarch64__
+			if (i > 7) {
+				// выравнивания нет, складываем просто в массив
+				SAVE_ARM64(i, ii, int8_t, to_int);
+			}
+			else
+				args[i] = to_int(arg);
+			break;
+#endif
 		case TINT16: case TUINT16:
+#if __aarch64__
+			if (i > 7) {
+				ALIGN(ii, int16_t);
+				SAVE_ARM64(i, ii, int16_t, to_int);
+				break;
+			}
+			else
+				args[i] = to_int(arg);
+			break;
+#endif
 		case TINT32: case TUINT32:
+#if __aarch64__
+			if (i > 7) {
+				ALIGN(ii, int32_t);
+				SAVE_ARM64(i, ii, int32_t, to_int);
+				break;
+			}
+			else
+#endif
 			args[i] = to_int(arg);
 			break;
 
@@ -1957,7 +2001,14 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					= to_int64(arg);
 #else
 			// 64-bit machines
-			args[i] = to_int64(arg);
+#if __aarch64__
+			if (i > 7) {
+				ALIGN(ii, int64_t);
+				SAVE_ARM64(i, ii, int64_t, to_int);
+				break;
+			}
+#endif
+			args[i] = to_int(arg);
 #endif
 			break;
 
