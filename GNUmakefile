@@ -166,6 +166,13 @@ ffi: src/olvm.c extensions/ffi.c tests/ffi.c
 	   tests/ffi.c \
 	   $(CFLAGS) $(L)
 	@echo Ok.
+ffi32: CFLAGS += $(CFLAGS_DEBUG) -m32
+ffi32: src/olvm.c extensions/ffi.c tests/ffi.c
+	$(CC) src/olvm.c -o $@ \
+	   extensions/ffi.c -Iincludes \
+	   tests/ffi.c \
+	   $(CFLAGS) $(L)
+	@echo Ok.
 
 ## android build
 NDK_ROOT ?=/opt/android/ndk

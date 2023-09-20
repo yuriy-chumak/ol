@@ -1574,6 +1574,7 @@ size_t arguments_size(word args, word rtty, size_t* total)
 		}
 #if UINT64_MAX > UINTPTR_MAX
 		// 32-bit machines
+		else
 		switch (value(tty)) {
 			case TINT64: case TUINT64:
 			case TDOUBLE:
@@ -1952,7 +1953,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #	if __mips__ // 32-bit mips
 			i = (i+1)&-2; // dword align
 #	endif
-			*(int64_t*)&args[i++] = arg;
+			*(int64_t*)&args[i++]
+					= to_int64(arg);
 #else
 			// 64-bit machines
 			args[i] = to_int64(arg);
