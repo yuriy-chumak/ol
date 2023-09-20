@@ -449,7 +449,7 @@ define table-header
 	set -e
 	: header line 1
 	printf "%-$1s " "  Test"
-	if [ $(DEV_MACHINE) = 1 ]; \
+	if [ "$(DEV_MACHINE)" = "1" ]; \
 	then \
 	: main development platform, special case;\
 		case "`expr $(HAS_32CDEFS) + $(HAS_64CDEFS)`" in \
@@ -468,7 +468,7 @@ define table-header
 
 	: header line 1
 	printf "%-$1s " `uname`
-	if [ $(DEV_MACHINE) = 1 ]; \
+	if [ "$(DEV_MACHINE)" = "1" ]; \
 	then \
 	: main development platform, special case;\
 	 	if [ $(HAS_32CDEFS) = 1 ]; then printf "|32-d|32-r"; fi ;\
