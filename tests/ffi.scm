@@ -293,7 +293,7 @@
                                   #i21.90625 #i22.875)
 
 ; ----------------------------------------------------------------
-(print "too much arguments:") ; 16 arguments for only 8 required
+(print "too much arguments (8 needed, 32 declared):") ; 16 arguments for only 8 required
 (let ((function (this fft-unsigned-long-long "qqqqqqqqqqqqqqqq2q"
       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
@@ -303,7 +303,21 @@
       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
       fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long)))
-   (try "too much arguments" function
+   (try "32 arguments" function
+      1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8)
+   (try "128 arguments" function
+      1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8
+      1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8))
+
+(print "not enought declared arguments (8 needed, 1 declared):") ; 16 arguments for only 8 required and 1 declared
+(let ((function (this fft-unsigned-long-long "qqqqqqqqqqqqqqqq2q"
+      fft-unsigned-long-long)))
+   (try "32 arguments" function
       1 2 3 4 5 6 7 8
       1 2 3 4 5 6 7 8
       1 2 3 4 5 6 7 8

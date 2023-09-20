@@ -122,6 +122,10 @@
 #define FFT_PTR    0x10000
 #define FFT_REF    0x20000
 
+#define IDF(...)   (__VA_ARGS__)
+#define ALIGN(ptr, type) \
+	__builtin_choose_expr(sizeof(type) > 1, ptr = ((ptr + sizeof(type) - 1) & -sizeof(type)), (void)0)
+
 // sizeof(intmax_t): // same as long long
 //	arm, armv7a, armv8a, arm64: 8
 //	avr: 8
@@ -483,8 +487,9 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 // notes:
 //   don't use r16, r17, r18
 //   don't forget "sudo DevToolsSecurity -enable" when debugging with lldb
-ret_t arm64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
-				//    x0             x1        x2      x3       x4          x5             x6
+															 // mask is deprecated, todo: remove
+ret_t arm64_call(word argv[], double ad[], long i, long d, char* extra, void* function, long type, long e);
+				//    x0             x1        x2      x3       x4          x5             x6       x7
 __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"stp  x29, x30, [sp, -16]!", // fp + lr
 	"stp  x10, x26, [sp, -16]!",
@@ -492,6 +497,7 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"mov  x26, x6",
 
 	"mov x9, x5",
+	//"brk #0",
 
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
 	"cbz x3, 0f",  // is x3 == 0 goto Lno_more_floats
@@ -508,67 +514,26 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"ldr d7, [x1, #56]",
 
 "0:", // Lno_more_floats
-	"cmp x2, #8",
-	"bge 1f", // goto Ltest
-	"cmp x3, #8",
-	"bge 1f", // goto Ltest
-	"b 4f",   // goto Lgo
-
-// у нас есть то, что придется складывать в стек
-"1:", // Ltest
-	// теперь посчитаем сколько нам нужно закидывать в стек
-	"sub x12, x2, #8",
-	"cmp x12, #0",
-	"bgt 2f", // max(x12-8, 0)
-	"mov x12, #0",  "2:",
-
-	"sub x13, x3, #8",
-	"cmp x13, #0",
-	"bgt 3f", // max(x13-8, 0)
-	"mov x13, #0",  "3:",
-
-	"add x15, x12, x13", // total x15 - count of arguments to be pushed to stack
+	"cbz x7, 4f",  // у нас есть что складывать в стек?
 	"mov x8, #8",
 
-	// выровняем стек (по quad-word)
-	"orr x10, x15, #1",
+	// выравняем стек (по 16-байтовой границе!)
+	"orr x10, x7, #1",
 	"madd x10, x10, x8, x8", // +8 или +16, зависимо от x15 (не +0 или +8, так проще)
-	"sub sp, sp, x10",
-	"madd x15, x15, x8, x29",// x15 <- new sp + x15*8, x29 is old sp
-	"sub x15, x15, x10", // x10 больше не нужен
-	// x15 - push pointer
+	"sub sp, sp, x10", // выделим в стеке место под аргументы
 
-	// спокойно передвинем указатели массивов на их последние элементы
-	"madd x10, x2, x8, x0",
-	"sub x10, x10, x8", // x10 = x0 + x2*8 (- 8)
-	"madd x11, x3, x8, x1",
-	"sub x11, x11, x8", // x11 = x1 + x3*8 (- 8)
-
+	"mov x4, x4", // x4 - первый элемент стековых данных
+	"mov x3, sp",
 "6:", // Lpush
-	"orr x5, x12, x13", // больше нечего пушить
-	"cbz x5, 4f", // goto Lgo
-	"tst x4, #1", // давай посмотрим - инт или флоат
-	"lsr x4, x4, #1",
-	"beq 5f", // == bc set, goto Lint
-"9:", // Lfloat
-	// "cbz x13, 6b", // goto Lpush (sanity check)
-	"ldr x5, [x11], #-8",
-	"sub x13, x13, #1",
-	"str x5, [x15, -8]!",
-	"b 6b", // goto Lpush
-"5:", // Lint
-	// "cbz x12, 6b", // goto Lpush (sanity check)
-	"ldr x5, [x10], #-8",  // test: "mov x5, #8",
-//	"ldr x5, =0x0001000200030004", // test
-	"sub x12, x12, #1",
-	"str x5, [x15, -8]!",
-	"b 6b", // goto Lpush
+	"cbz x7, 4f", // больше нечего пушить, goto Lgo
+	"ldr x5, [x4], #+8",
+	"str x5, [x3], #+8",
+	"sub x7, x7, #1",
+	"b 6b",// goto Lpush
 
 // done. go
 "4:", // Lgo
-	//"brk #0",
-	// assert (x15 == sp)
-	// а теперь обычные целочисленные аргументы
+	// а теперь обычные целочисленные аргументы, не стековые
 	"cbz x2, 7f", // Lcall
 	// "cmp x2, #4", // оптимизация (возможно не нужна, надо тестить)
 	// "ble 8f", // Lless2
@@ -1736,7 +1701,6 @@ static
 size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 {
 	word *fp;
-	#define ALIGN(ptr, type) ptr = ((ptr + sizeof(type) - 1) & -sizeof(type))
 	#define SAVE(type, conv) {\
 		ALIGN(ptr, type);\
 		*(type*)(memory+ptr) = (type)conv(v);\
@@ -1814,11 +1778,18 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
 
 // (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64/LLP64
-#if defined(__LP64__) || defined(__LLP64__)
+#if (__x86_64__ && (__unix__ || __APPLE__))
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
-	double ad[18];
+	double ad[18]; // 18? почему? это некий максимум?
 	int d = 0;     // количество аргументов для ad
 	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
+#elif __aarch64__
+	double ad[8];
+	int d = 0;
+	// extra arguments:
+	int extra_len = 8 * sizeof(word); // default extra data size in bytes
+	char * extra = alloca(extra_len); // rename to __builtin_alloca
+	int e = 0; // указатель на стековые данные
 #elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
@@ -1828,6 +1799,10 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #elif _WIN32
 	// nothing special for Windows (both x32 and x64)
 #endif
+
+	// переменные для промежуточных результатов
+	char*str = 0;
+	word mem = 0;
 
 	// ----------------------------------------------------------
 	// 1. do memory precalculations and count number of arguments
@@ -1839,6 +1814,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	// words for args, total + words for GC
 	size_t total = 0;
 	size_t words = arguments_size(C, cdr (B), &total);
+	(void) words; // disable warning
 
 	// special case of returning a structure by value:
 	// http://www.sco.com/developers/devspecs/abi386-4.pdf
@@ -1871,7 +1847,13 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	}
 
 	word* fp = heap->fp;
+#if __aarch64__
+	word* args = __builtin_alloca(8 * sizeof(word)); // stable arguments count
+#else
 	word* args = __builtin_alloca(max(words, 16) * sizeof(word)); // minimum - 16 words for arguments
+#endif
+	// todo: clear args array
+	// todo: clear ad array
 	
 
 	// ==============================================
@@ -1897,10 +1879,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 	int i = 0;  // актуальное количество аргументов
 	int l = 0;  // нижняя граница для параметров больших структур (только linux?)
-#if __aarch64__
-	int ii = 0; // часть от i, если параметров больше 8
-#endif
 
+	//__ASM__("brk #0");
 	// ==============================================
 	// PUSH
 	while ((word)p != INULL) { // пока есть аргументы
@@ -1925,12 +1905,46 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		ONLY_AARCH64(if (i < 8))
 		args[i] = 0; // обнулим
 
-#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64
+#if (__x86_64__ && (__unix__ || __APPLE__)) // LP64, but without arm64
 		fpmask <<= 1; // подготовим маску к следующему аргументу
 #endif
 
+#if __aarch64__
+		// arm logic - store extra arguments (for the stack) into args[8+]
+		// todo: move all related macro here
+		#define SAVE_ARM64(type, conv, arg) {\
+			ALIGN(e, type); \
+			if (__builtin_expect((e > extra_len - sizeof(type)), 0)) { /* unlikely */ \
+				int new_extra_len = extra_len + 8 * sizeof(word);\
+				char * new_extra = alloca(new_extra_len);\
+				memcpy(new_extra, extra, extra_len);\
+				extra = new_extra;\
+				extra_len = new_extra_len;\
+			}\
+			*(type*)&extra[e] = (type) conv(arg);\
+			i--, e += sizeof(type);\
+		} // todo: remove i--
+
+		#define STORE(conv, type, arg) ({\
+			if (__builtin_expect((i>7), 0)) \
+				SAVE_ARM64(type, conv, arg) \
+			else \
+				args[i] = (word) conv (arg);\
+		})
+		#define STORE_SERIALIZE(type, conv) {\
+				word ptr = 0; \
+				SERIALIZE(&ptr, type, conv); \
+				STORE(IDF, void*, ptr); \
+			}
+#else
+		#define STORE(conv, type, arg) \
+			args[i] = (type) conv(arg) // todo: change to args[i++]
+		#define STORE_SERIALIZE(type, conv) \
+			SERIALIZE(&args[i], type, conv) // todo: change to args[i++] and i+=2 for 32-bit
+#endif
+
 	any:if (arg == IFALSE) // #false is universal "0" value
-		switch (type) {
+		switch (type) { // todo: fix for aarch64
 #if UINT64_MAX > UINTPTR_MAX
 		// 32-bits code
 		case TINT64: case TUINT64:
@@ -1938,79 +1952,56 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			args[++i] = 0; 	// doubles and longlongs fit two words
 			break;
 #endif // 64-bit
-#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
-		case TFLOAT:
-		case TDOUBLE:
-			ad[d++] = 0;
-			fpmask |= 1; --i;
-			break;
-#endif
+// #if (__x86_64__ && (__unix__ || __APPLE__))
+// 		case TFLOAT:
+// 		case TDOUBLE:
+// 			ad[d++] = 0;
+// 			fpmask |= 1; --i;
+// 			break;
+// #elif __aarch64__
+// 		// todo!
+// #endif
+
 		}
 		else
 		switch (type) {
 		// -------------------
 		// целочисленные типы:
+
 #if __aarch64__
-	#define SAVE_ARM64(i, ii, type, conv) {\
-		((type*)&args[i])[ii/sizeof(type)] = (type) conv(arg);\
-		i--, ii += sizeof(type);\
-		i += (ii / 8);\
-		ii = (ii % 8);\
-	}
-#endif
 		case TINT8:  case TUINT8:
-#if __aarch64__
-			if (i > 7) {
-				// выравнивания нет, складываем просто в массив
-				SAVE_ARM64(i, ii, int8_t, to_int);
-			}
-			else
-				args[i] = to_int(arg);
+			STORE(to_int, int8_t, arg);
 			break;
-#endif
 		case TINT16: case TUINT16:
-#if __aarch64__
-			if (i > 7) {
-				ALIGN(ii, int16_t);
-				SAVE_ARM64(i, ii, int16_t, to_int);
-				break;
-			}
-			else
-				args[i] = to_int(arg);
+			STORE(to_int, int16_t, arg);
 			break;
-#endif
 		case TINT32: case TUINT32:
-#if __aarch64__
-			if (i > 7) {
-				ALIGN(ii, int32_t);
-				SAVE_ARM64(i, ii, int32_t, to_int);
-				break;
-			}
-			else
-#endif
-			args[i] = to_int(arg);
+			STORE(to_int, int32_t, arg);
+			break;
+		case TINT64: case TUINT64:
+			STORE(to_int, int64_t, arg);
+			break;
+#else
+		case TINT8:  case TUINT8:
+		case TINT16: case TUINT16:
+		case TINT32: case TUINT32:
+			STORE(to_int, int32_t, arg);
 			break;
 
 		case TINT64: case TUINT64:
-#if UINT64_MAX > UINTPTR_MAX
+# if UINT64_MAX > UINTPTR_MAX
 			// 32-bit machines
 #	if __mips__ // 32-bit mips
 			i = (i+1)&-2; // dword align
 #	endif
 			*(int64_t*)&args[i++]
 					= to_int64(arg);
-#else
+# else
 			// 64-bit machines
-#if __aarch64__
-			if (i > 7) {
-				ALIGN(ii, int64_t);
-				SAVE_ARM64(i, ii, int64_t, to_int);
-				break;
-			}
-#endif
-			args[i] = to_int(arg);
-#endif
+			STORE(to_int, int64_t, arg);
+# endif
 			break;
+#endif
 
 		// целочисленные ссылочные типы
 		// (макросы вверху файла)
@@ -2020,7 +2011,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		case TINT8+PTR:
 		case TUINT8+PTR:
 		tint8ptr:
-			SERIALIZE(&args[i], int8_t, to_int)
+			STORE_SERIALIZE(int8_t, to_int)
 			break;
 
 		case TINT16+REF:
@@ -2029,7 +2020,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		case TINT16+PTR:
 		case TUINT16+PTR:
 		tint16ptr:
-			SERIALIZE(&args[i], int16_t, to_int)
+			STORE_SERIALIZE(int16_t, to_int)
 			break;
 
 		case TINT32+REF:
@@ -2038,7 +2029,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		case TINT32+PTR:
 		case TUINT32+PTR:
 		tint32ptr:
-			SERIALIZE(&args[i], int32_t, to_int)
+			STORE_SERIALIZE(int32_t, to_int)
 			break;
 
 		case TINT64+REF:
@@ -2047,15 +2038,21 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		case TINT64+PTR:
 		case TUINT64+PTR:
 		tint64ptr:
-			SERIALIZE(&args[i], int64_t, to_int)
+			STORE_SERIALIZE(int64_t, to_int)
 			break;
 
 		// -------------------
 		// с плавающей запятой:
 		case TFLOAT:
-			#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
+			#if (__x86_64__ && (__unix__ || __APPLE__))
 				*(float*)&ad[d++] = OL2F(arg); --i;
 				fpmask |= 1;
+			#elif __aarch64__
+				if (d > 7) {
+					SAVE_ARM64(float, OL2F, arg);
+				} else {
+					*(float*)&ad[d++] = OL2F(arg); --i;
+				}
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
 				*(float*)&af[f++] = OL2F(arg); --i;
 			#else
@@ -2070,7 +2067,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			// fall through
 		case TFLOAT+PTR:
 		tfloatptr:
-			SERIALIZE(&args[i], float, OL2F)
+			STORE_SERIALIZE(float, OL2F);
 			break;
 
 		case TDOUBLE:
@@ -2079,9 +2076,15 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				i = (i+1)&-2; // dword align
 			#endif
 
-			#if (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__
+			#if (__x86_64__ && (__unix__ || __APPLE__))
 				*(double*)&ad[d++] = OL2D(arg); --i;
 				fpmask |= 1;
+			#elif __aarch64__
+				if (d > 7) {
+					SAVE_ARM64(double, OL2D, arg);
+				} else {
+					*(double*)&ad[d++] = OL2D(arg); --i;
+				}
 			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?) // todo: check varargs
 				*(double*)&af[f++] = OL2D(arg); --i; f++;
 			#else
@@ -2096,31 +2099,33 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			// fall through
 		case TDOUBLE+PTR:
 		tdoubleptr:
-			SERIALIZE(&args[i], double, OL2D)
+			STORE_SERIALIZE(double, OL2D);
 			break;
 
 
 		case TBOOL:
-			args[i] = (arg == IFALSE) ? 0 : 1;
+			STORE(OL2D, double, (arg == IFALSE) ? 0 : 1);
 			break;
 
 		// поинтер на данные
 		case TUNKNOWN:
-			args[i] = (word) &car(arg);
+			STORE(IDF, word, &car(arg));
+		//	args[i] = (word) &car(arg);
 			break;
 
 		// automatically change the type to argument type, if fft-any
 		case TANY: {
-			if (is_value(arg))
-				args[i] = value(arg);
+			if (is_value(arg)) {
+				STORE(IDF, word, value(arg));
+			}
 			else
 			switch (reference_type(arg)) {
 			case TVPTR: // value of vptr
 			case TCALLABLE: // same as ^
-				args[i] = car(arg);
+				STORE(IDF, word, car(arg));
 				break;
 			case TBYTEVECTOR: // address of bytevector data (no copying to stack)
-				args[i] = (word) &car(arg);
+				STORE(IDF, word, (word)&car(arg));
 				break;
 			// '(arguments...) OR
 			// (cons type '(arguments...))
@@ -2140,7 +2145,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				if (is_pair(retype)) {
 					size_t size = structure_size(0, retype);
 					void* payload = alloca(size);
-					args[i] = (word) payload;
+					STORE(IDF, word, payload);
 					store_structure(&fp, payload, 0, retype, arg);
 				}
 				else
@@ -2149,10 +2154,12 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			}
 			case TSTRING:
 			case TSTRINGDISPATCH:
-				store_string(&fp, (char**)&args[i], arg);
+				store_string(&fp, &str, arg);
+				STORE(IDF, word, str);
 				break;
 			case TSTRINGWIDE:
-				store_stringwide(&fp, &args[i], arg);
+				store_stringwide(&fp, &mem, arg);
+				STORE(IDF, word, mem);
 				break;
 			}
 			break;
@@ -2166,10 +2173,10 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			if (is_reference(arg))
 				switch (reference_type(arg)) {
 				case TVPTR:
-					args[i] = car(arg);
+					STORE(IDF, word, car(arg));
 					break;
 				case TBYTEVECTOR: // can be used instead of vptr, dangerous!
-					args[i] = (word) &car(arg);
+					STORE(IDF, word, &car(arg));
 					break;
 				default:
 					E("invalid parameter value (requested vptr)");
@@ -2184,44 +2191,13 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			if (arg == INULL) // empty array will be sent as nullptr
 				break;
 			if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
-				args[i] = (word) &car(arg);
+				STORE(IDF, word, &car(arg));
 			// pointer to structure, instant structure declaration
-			else if (is_pair(arg))
-			{
+			else if (is_pair(arg)) {
 				size_t size = structure_size(0, car(arg));
 				void* payload = alloca(size);
-				args[i] = (word) payload;
+				STORE(IDF, word, payload);
 				store_structure(&fp, payload, 0, car(arg), cdr(arg));
-
-				// word l = arg;
-				// while (c--) {
-				// 	if (car(l) == INULL)
-				// 		*p++ = 0;
-				// 	else
-				// 	if (is_reference(car(l)))
-				// 		switch (reference_type(car(l))) {
-				// 		case TVPTR:
-				// 			*p++ = (void*)car(l);
-				// 			break;
-				// 		case TSTRING: // TODO: Deprecated.
-				// 		case TSTRINGWIDE:
-				// 		case TSTRINGDISPATCH: {
-				// 			char* ptr = (char*)(*p++ = &fp[1]);
-				// 			int stype = reference_type(car(l));
-				// 			new_bytevector(string2ol(ptr, car(l),
-				// 				stype == TSTRING ? chars2ol :
-				// 				stype == TSTRINGWIDE ? wchars2utf8 :
-				// 				stype == TSTRINGDISPATCH ? stringleaf2ol :
-				// 				not_a_string));
-				// 			break;
-				// 		}
-				// 		default:
-				// 			E("invalid parameter type (requested vptr*)");
-				// 		}
-				// 	else
-				// 		E("invalid parameter type (requested vptr*)");
-				// 	l = cdr(l);
-				// }
 			}
 			else
 				E("invalid parameter type (requested vptr*)");
@@ -2389,7 +2365,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			switch (reference_type(arg)) {
 			case TBYTEVECTOR:
 			case TSTRING: // ansi strings marshaling to bytevector data "as is" without conversion
-				args[i] = (word) &car(arg);
+				STORE(IDF, word, &car(arg));
 				break;
 
 			default:
@@ -2405,7 +2381,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			int size = list_length(arg);
 
 			word* p = new (TBYTEVECTOR, size, 0);
-			args[i] = (word) ++p;
+			STORE(IDF, word, ++p);
 
             size++;
 
@@ -2433,7 +2409,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 		case TCALLABLE: { // todo: maybe better to merge type-callable and type-vptr ?
 			if (is_callable(arg))
-				args[i] = (word)car(arg);
+				STORE(IDF, word, car(arg));
 			else
 				E("invalid parameter values (requested callable)");
 			break;
@@ -2441,28 +2417,29 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 		case TPORT: {
 			if (arg == make_enum(-1)) { // ?
-				args[i] = -1;
+				STORE(IDF, word, -1);
 				break;
 			}
 			int portfd = port(arg);
 			switch (portfd) {
 			case 0:
-				args[i] = (word) STDIN_FILENO;
+				STORE(IDF, word, STDIN_FILENO);
 				break;
 			case 1:
-				args[i] = (word) STDOUT_FILENO;
+				STORE(IDF, word, STDOUT_FILENO);
 				break;
 			case 2:
-				args[i] = (word) STDERR_FILENO;
+				STORE(IDF, word, STDERR_FILENO);
 				break;
 			default:
-				args[i] = portfd;
+				STORE(IDF, word, portfd);
 				break;
 			}
 			break;
 		}
 		case TVOID:
-			args[i] = 0; // do nothing, just for better readability
+			// do nothing, just for better readability
+			STORE(IDF, word, 0);
 			break;
 		default:
 			E("can't recognize %d type", type);
@@ -2508,7 +2485,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #	endif
 
 #elif __aarch64__
-	got = arm64_call(args, ad, i, d, fpmask, function, returntype & 0x3F);
+	got = arm64_call(args, ad, i, d, extra, function, returntype & 0x3F, WALIGN(e));
 
 #elif __arm__
 	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf

@@ -21,6 +21,12 @@ We use some common names for types in tables:
 You can get the type of Ol object using `type` function (`(type -12)` produces 32),
 you can get type name for integer type value using `typename` function (`(typename 32)` produces 'type-enum-).
 
+### Limitations
+
+* no *half precision floating point* support yet
+* no *quad-word integer* support yet
+* no *structures by value* support yet
+* no *unions* in *structures* support yet
 
 ## TOC
 * [Basic example](#basic-example)
