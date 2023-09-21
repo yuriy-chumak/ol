@@ -2142,6 +2142,11 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 		// automatically change the type to argument type, if fft-any
 		case TANY: {
+			#if __aarch64__
+				if (t == RNULL) { // аргументы закончились, началась "..."
+					i = 8; d = 8;
+				}
+			#endif
 			if (is_value(arg)) {
 				STORE(IDF, word, value(arg));
 			}
