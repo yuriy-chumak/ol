@@ -80,14 +80,6 @@ else
    CFLAGS += -DOLVM_BUILTIN_FMATH=0
 endif
 
-#  clang is not a primary compiler and clang have no ability to remove
-#  only one warning instance. I don't want to add SEVEN lines of code
-#  to disable only ONE warning that in fact is not a warning but fully
-#  planned behavior. so disable all same warnings to the release build.
-# ifeq ($(CC),clang)
-#    CFLAGS_RELEASE += -Wno-tautological-constant-out-of-range-compare
-# endif
-
 ## 'os dependent' flags
 # ------------------------------------------------------
 UNAME ?= $(shell uname -s)

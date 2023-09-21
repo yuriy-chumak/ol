@@ -121,35 +121,49 @@ would like.
 CUSTOMIZATION
 -------------
 
-If you want to enable/disable some olvm features you can use -Dxxx or -Dxxx=y gcc syntax. This is a list of currently accessible customizations:
+If you want to enable/disable next olvm features, you can use -Dxxx or -Dxxx=y gcc/llvm syntax.
+You can check such flags at runtime using `(vm:features)` primop, or `(olvm features)` library in a high level manner.
 
-|Variable      |Value            |Meaning |
-|--------------|-----------------|--------|
-|REPL          | undefined       |Which source code binary data is a REPL|
-|OLVM_NOMAIN   | 1\|0, default 0 |Disable 'main' function, make olvm embed|
-|OLVM_FFI      | 1\|0, default 1 |Enable FFI support|
-|OLVM_CALLABLES| 1\|0, default 1 |Enable FFI callbacks support|
-|OLVM_INEXACTS | 1\|0, default 1 |Enable inexact math support|
-|OLVM_BUILTIN_FMATH| 1\|0, default 1 |Enable builtin vm floating-point math|
-|CAR_CHECK     | 1\|0, default 1 |Enable car arguments check|
-|CDR_CHECK     | 1\|0, default 1 |Enable cdr arguments check|
+### Main Olvm Customizations
+
+These variables enable or disable main parts of olvm.
+
+|Variable          |Value            |Meaning                                 |
+|------------------|-----------------|----------------------------------------|
+|REPL              |no default value |Which source code binary data is a REPL |
+|OLVM_NOMAIN       | 1\|0, default 0 |Disable 'main' function                 |
+|OLVM_FFI          | 1\|0, default 1 |Enable FFI support                      |
+|OLVM_CALLABLES    | 1\|0, default 1 |Enable FFI callbacks support            |
+|OLVM_INEXACTS     | 1\|0, default 1 |Enable inexact math support             |
+|OLVM_BUILTIN_FMATH| 1\|0, default 1 |Enable builtin vm floating-point math   |
+|OLVM_UNSAFES      | 1\|0, default 0 |Enable "unsafe" functionality           |
+
+Next variables depends on OS support and automatically set by the Makefile (like the `configure` script does).
+You can override those values, sure.
+
+|Variable      |Value            |Meaning                                     |
+|--------------|-----------------|--------------------------------------------|
+|HAVE_SOCKETS  | 1\|0, default 1 |Enable sockets support (bind, listen, etc.) |
+|HAVE_DLOPEN   | 1\|0, default 1 |Enable dlopen/dlsym functions support       |
+|HAVE_SANDBOX  | 1\|0, default 0 |Enable sandbox support (depends on OS)      |
+|HAVE_STRFTIME | 1\|0, default 1 |Enable strftime function support            |
+|HAVE_SENDFILE | 1\|0, default 1 |Enable sendfile function support            |
+
+Please note that external libraries (like opengl, sqlite, etc.) support require HAVE_DLOPEN and OLVM_FFI enabled.
+
+
+
+Next options valid only if  provides OLVM_UNSAFES=1
+
+|Variable      |Value                          |Meaning |
+|--------------|-------------------------------|--------|
+|OLVM_UNSAFE_TVPTR_CAST | 1\|0, default 0 |Enable unsafe vm:cast integer to vptr|
+
+Floating point olvm customization
 
 |Variable         |Value                          |Meaning |
 |-----------------|-------------------------------|--------|
 |OLVM_INEXACT_TYPE| float\|double, default double |Internal inexact type representation|
-
-This variables are automatically set by the Makefile (like `configure` script). You can override those values, sure:
-
-|Variable      |Value            |Meaning |
-|--------------|-----------------|--------|
-|HAVE_SOCKETS  | 1\|0, default 1 |Enable sockets support (bind, listen, socket, etc.)|
-|HAS_UNSAFES   | 1\|0, default 1 |Enable "unsafe" external and internal functions|
-|HAVE_DLOPEN    | 1\|0, default 1 |Enable dlopen/dlsym functions support|
-|HAVE_SANDBOX   | 1\|0, default 0 |Enable internal sandbox support (depends on OS kernel)|
-|HAVE_STRFTIME  | 1\|0, default 1 |Enable strftime function support|
-|HAVE_SENDFILE  | 1\|0, default 1 |Enable sendfile function support|
-
-Please note that external libraries (like opengl, sqlite, etc.) support require HAS_DLOPEN and OLVM_FFI enabled.
 
 Additionally you can disable the following olvm features by setting the variables to 0 (-Dxxx=0):
 
@@ -159,6 +173,14 @@ Additionally you can disable the following olvm features by setting the variable
 |SYSCALL_SLEEP    | nanosleep() function usage |
 |SYSCALL_GETRLIMIT| getrlimit() function usage |
 |SYSCALL_GETRUSAGE| getrusage() function usage |
+
+
+### Debug options
+
+|Variable      |Value            |Meaning                   |
+|--------------|-----------------|--------------------------|
+|CAR_CHECK     | 1\|0, default 1 |Enable car arguments check|
+|CDR_CHECK     | 1\|0, default 1 |Enable cdr arguments check|
 
 
 CHANGING THE LANGUAGE

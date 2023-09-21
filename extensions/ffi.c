@@ -67,6 +67,10 @@
 
 #ifndef WARN_ALL
 #	ifdef __clang__
+		// clang is not a primary compiler and clang have no ability to remove
+		// only one warning instance. I don't want to add SEVEN lines of code
+		// to disable only ONE warning that in fact is not a warning but fully
+		// planned behavior. so disable all same warnings to the release build.
 #		pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #	endif
 #	pragma GCC diagnostic ignored "-Wparentheses"
@@ -1921,6 +1925,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		#define SAVE_ARM64(type, conv, arg) {\
 			ALIGN(e, type); \
 			if (__builtin_expect((e > extra_len - sizeof(type)), 0)) { /* unlikely */ \
+				/* possible optimization (depends on compiler) - alloca only delta\
+				   and still use old extra. maybe create own allembly functions.*/ \
 				int new_extra_len = extra_len + 8 * sizeof(word);\
 				char * new_extra = alloca(new_extra_len);\
 				memcpy(new_extra, extra, extra_len);\

@@ -723,7 +723,6 @@ word*p = new (TVECTOR, 13);\
 
 // арифметика целых (возможно больших)
 // прошу внимания!
-//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 // todo: rename to un2i (signed number /value or long number/ TO integer)
 #define untoi(num)  ({\
 	is_value(num) ? value(num)\
@@ -854,6 +853,7 @@ word*p = new (TVECTOR, 13);\
 	({ assert(0); (word*)IFALSE; })))
 
 // get unsigned/signed number
+//  в числовой паре надо сначала положить старшую часть, и только потом младшую!
 #define unumber(num)  ({ word* n = (word*) (num); is_value(n) ? value(n) : value(car(n)) | value(cadr(n)) << VBITS; })
 #define numberp(num)  unumber(num) // deprecated
 #define number(num)  ({\
@@ -1157,10 +1157,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #define HAVE_DLOPEN 1
 #endif
 
-#endif
-
-#ifndef HAS_UNSAFES
-#define HAS_UNSAFES 1
 #ifndef HAVE_SANDBOX
 #define HAVE_SANDBOX 0
 #endif
@@ -1176,6 +1172,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 
 #ifndef OLVM_LIBRARY_SO_NAME
 #define OLVM_LIBRARY_SO_NAME NULL
+#endif
+
+#ifndef OLVM_UNSAFES
+#define OLVM_UNSAFES 0
 #endif
 
 #if HAVE_UNISTD_H
@@ -3191,15 +3191,19 @@ loop:;
 				goto error_cast;
 			break;
 		case TVPTR:
-			// safe limitation (todo: make macro to on/off)
+#if OLVM_UNSAFES && OLVM_UNSAFE_TVPTR_CAST
 			if (is_integer(T))
-				A2 = (word)new_vptr(untoi(T));
+				A2 = (word) new_vptr(unumber(T));
+#else
+			if (T == I(0) || T == I(1))
+				A2 = (word) new_vptr(value(T));
+#endif
 			// TODO: add macro to enable this check:
 			else
 				goto error_cast;
 			break;
 
-		#if OLVM_INEXACTS
+#if OLVM_INEXACTS
 		case TINEXACT:
 			// exact->inexact
 			A2 = (word) new_inexact(ol2f(T));
@@ -3216,7 +3220,7 @@ loop:;
 			}
 			if (is_number(T)) // just copy a number to number
 				type = is_value(T) ? value_type(T) : reference_type(T);
-		#endif
+#endif
 			// fall through
 		default:
 			if (is_value(T)) {
@@ -3462,11 +3466,13 @@ loop:;
 		#if OLVM_BUILTIN_FMATH
 			| 000000040
 		#endif
-		// syscalls
-		#if SYSCALL_SYSINFO
+		#if OLVM_UNSAFES
 			| 000000100
 		#endif
-			| 000000200 // reserved
+		// syscalls
+		#if SYSCALL_SYSINFO
+			| 000000200
+		#endif
         #if SYSCALL_MEMFD
 			| 000000400
         #endif
@@ -3476,16 +3482,14 @@ loop:;
 		#if SYSCALL_GETRUSAGE
 			| 000002000
 		#endif
-		// has's
+		// os
 		#if HAVE_DLOPEN
 			| 000010000
 		#endif
 		#if HAVE_SOCKETS
 			| 000020000
 		#endif
-		#if HAS_UNSAFES
-			| 000040000
-		#endif
+		//	| 000040000 // reserved
 		#if HAVE_SANDBOX
 			| 000100000
 		#endif
@@ -3495,6 +3499,7 @@ loop:;
 		#if HAVE_SENDFILE
 			| 000400000
 		#endif
+		// posix
 		#if HAVE_UNISTD_H
 			| 001000000
 		#endif
