@@ -1145,11 +1145,11 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #define HAVE_SOCKETS 1
 #endif
 
-#ifndef HAS_SENDFILE
+#ifndef HAVE_SENDFILE
 # if defined(__linux__) || defined(__APPLE__)
-#  define HAS_SENDFILE HAVE_SOCKETS
+#  define HAVE_SENDFILE HAVE_SOCKETS
 # else
-#  define HAS_SENDFILE 0
+#  define HAVE_SENDFILE 0
 # endif
 #endif
 
@@ -1417,7 +1417,7 @@ void yield()
 #endif // HAVE_SOCKETS
 
 // sendfile:
-#if HAS_SENDFILE
+#if HAVE_SENDFILE
 #	ifdef __linux__
 #		include <sys/sendfile.h>
 #	endif
@@ -1427,8 +1427,8 @@ void yield()
 #	endif
 #else
 # if HAVE_SOCKETS
-#	undef HAS_SENDFILE
-#	define HAS_SENDFILE 1
+#	undef HAVE_SENDFILE
+#	define HAVE_SENDFILE 1
 #	ifndef _WIN32
 #		define SOCKET_ERROR -1
 #		define SD_SEND SHUT_WR
@@ -3492,7 +3492,7 @@ loop:;
 		#if HAVE_STRFTIME
 			| 000200000
 		#endif
-		#if HAS_SENDFILE
+		#if HAVE_SENDFILE
 			| 000400000
 		#endif
 		#if HAVE_UNISTD_H
@@ -3987,7 +3987,7 @@ loop:;
 			// 	result = (word*)ITRUE;
 			// 	break;
 			// }
-#if	HAS_SENDFILE
+#if	HAVE_SENDFILE
 			/*! \subsection sendfile
 			* \brief (syscall **40** outp inp offset count) -> number | #f
 			*

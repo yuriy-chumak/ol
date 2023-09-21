@@ -147,6 +147,7 @@ This variables are automatically set by the Makefile (like `configure` script). 
 |HAVE_DLOPEN    | 1\|0, default 1 |Enable dlopen/dlsym functions support|
 |HAS_SANDBOX   | 1\|0, default 0 |Enable internal sandbox support (depends on OS kernel)|
 |HAVE_STRFTIME  | 1\|0, default 1 |Enable strftime function support|
+|HAVE_SENDFILE  | 1\|0, default 1 |Enable sendfile function support|
 
 Please note that external libraries (like opengl, sqlite, etc.) support require HAS_DLOPEN and OLVM_FFI enabled.
 

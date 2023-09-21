@@ -17,7 +17,7 @@
       HAVE_SOCKETS
       HAS_SANDBOX
       HAVE_STRFTIME
-      HAS_SENDFILE
+      HAVE_SENDFILE
       HAVE_UNISTD_H)
    (import
       (scheme core))
@@ -38,7 +38,7 @@
    (define HAVE_SOCKETS       #o20000)
    (define HAS_SANDBOX      #o100000)
    (define HAVE_STRFTIME     #o200000)
-   (define HAS_SENDFILE     #o400000)
+   (define HAVE_SENDFILE     #o400000)
    (define HAVE_UNISTD_H #o001000000)
    
 

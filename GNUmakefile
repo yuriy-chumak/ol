@@ -65,8 +65,8 @@ CFLAGS += -DHAS_SANDBOX=$(if $(HAS_SECCOMP),$(HAS_SECCOMP),0)
 ifneq ($(HAS_MEMFD_CREATE),)
 CFLAGS += -DHAS_MEMFD_CREATE=$(HAS_MEMFD_CREATE)
 endif
-ifneq ($(HAS_SENDFILE),)
-CFLAGS += -DHAS_SENDFILE=$(HAS_SENDFILE)
+ifneq ($(HAVE_SENDFILE),)
+CFLAGS += -DHAVE_SENDFILE=$(HAVE_SENDFILE)
 endif
 
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
