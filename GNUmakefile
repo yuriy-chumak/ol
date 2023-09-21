@@ -59,7 +59,7 @@ CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 CFLAGS_RELEASE += -DCAR_CHECK=0 -DCDR_CHECK=0
 
 CFLAGS += -DHAVE_SOCKETS=$(if $(HAVE_SOCKETS),$(HAVE_SOCKETS),0)
-CFLAGS += -DHAS_DLOPEN=$(if $(HAS_DLOPEN),$(HAS_DLOPEN),0)
+CFLAGS += -DHAVE_DLOPEN=$(if $(HAVE_DLOPEN),$(HAVE_DLOPEN),0)
 CFLAGS += -DHAS_SANDBOX=$(if $(HAS_SECCOMP),$(HAS_SECCOMP),0)
 
 ifneq ($(HAS_MEMFD_CREATE),)
@@ -95,9 +95,9 @@ UNAME ?= $(shell uname -s)
 # Linux
 ifeq ($(UNAME),Linux)
 ifeq ($(CC), tcc)
-  L := $(if $(HAS_DLOPEN), -ldl)
+  L := $(if $(HAVE_DLOPEN), -ldl)
 else
-  L := $(if $(HAS_DLOPEN), -ldl) \
+  L := $(if $(HAVE_DLOPEN), -ldl) \
        -Xlinker --export-dynamic
 endif
 
@@ -110,17 +110,17 @@ endif
 
 # BSD
 ifeq ($(UNAME),FreeBSD)
-  L := $(if $(HAS_DLOPEN), -lc) \
+  L := $(if $(HAVE_DLOPEN), -lc) \
        -Xlinker --export-dynamic
 
   LD := ld.bfd
 endif
 ifeq ($(UNAME),NetBSD)
-  L := $(if $(HAS_DLOPEN), -lc) \
+  L := $(if $(HAVE_DLOPEN), -lc) \
        -Xlinker --export-dynamic
 endif
 ifeq ($(UNAME),OpenBSD)
-  L := $(if $(HAS_DLOPEN), -lc) \
+  L := $(if $(HAVE_DLOPEN), -lc) \
        -Xlinker --export-dynamic
 endif
 
@@ -152,10 +152,10 @@ perf: CFLAGS += -O2 -g3 -DNDEBUG -Wall
 perf: vm ol olvm libol.so
 
 
-slim: CFLAGS += -DHAVE_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
+slim: CFLAGS += -DHAVE_SOCKETS=0 -DHAVE_DLOPEN=0 -DHAS_SANDBOX=0
 slim: release
 
-minimal: CFLAGS += -DOLVM_FFI=0 -DHAVE_SOCKETS=0 -DHAS_DLOPEN=0 -DHAS_SANDBOX=0
+minimal: CFLAGS += -DOLVM_FFI=0 -DHAVE_SOCKETS=0 -DHAVE_DLOPEN=0 -DHAS_SANDBOX=0
 minimal: release
 
 # ffi test build
@@ -187,7 +187,7 @@ vm:
 	@echo Ok.
 vm.asm:
 	$(CC) src/olvm.c -o $@ \
-	   -DHAS_DLOPEN=0  -Iincludes \
+	   -DHAVE_DLOPEN=0  -Iincludes \
 	   $(CFLAGS_RELEASE) -DPREFIX=\"$(PREFIX)\" $(L) \
 	   -S -fverbose-asm
 	@echo Ok.
@@ -222,7 +222,7 @@ selfexec: ol
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
 %.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
 %.exe: MINGWCFLAGS += -Wno-shift-count-overflow
-%.exe: MINGWCFLAGS += -DHAS_DLOPEN=1
+%.exe: MINGWCFLAGS += -DHAVE_DLOPEN=1
 %.exe: MINGWCFLAGS += -DHAS_SOCKES=1
 %.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
 %.exe: src/olvm.c extensions/ffi.c tmp/repl.c

@@ -48,7 +48,7 @@ offsetof = $(shell OFFSETOF=`mktemp /tmp/offsetof.XXXXXXXXX`; \
 	          -o $$OFFSETOF 2>/dev/null && $$OFFSETOF)
 
 # default platform features
-HAS_DLOPEN  ?= $(call exists,,stdlib.h, dlopen, -ldl)
+HAVE_DLOPEN  ?= $(call exists,,stdlib.h, dlopen, -ldl)
 HAS_SECCOMP ?= $(call exists,,linux/seccomp.h, prctl)
 HAVE_SOCKETS ?= $(call exists,,stdlib.h, socket)
 

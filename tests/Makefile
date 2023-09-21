@@ -43,7 +43,7 @@ endif
 # win
 define winbuild
 	$(CC) src/olvm.c -o $1 \
-	   -DHAS_DLOPEN=1 -DHAS_SOCKES=1 -DOLVM_FFI=1 \
+	   -DHAVE_DLOPEN=1 -DHAS_SOCKES=1 -DOLVM_FFI=1 \
 	   -Iincludes/win32 -Iincludes \
 	   extensions/ffi.c \
 	   -std=gnu99 -fno-exceptions -lws2_32 \

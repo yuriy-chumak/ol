@@ -20,7 +20,7 @@ else
 olvm.js: src/olvm.c extensions/ffi.c
 	emcc src/olvm.c extensions/ffi.c -Os \
 	     -o $@ -DOLVM_NOMAIN=1 \
-		 -DHAS_DLOPEN=1 -DOLVM_FFI=1 \
+		 -DHAVE_DLOPEN=1 -DOLVM_FFI=1 \
 	     -s WASM=0  -s SIDE_MODULE=1 \
 		 -s EXPORT_ALL=1 \
 	     --memory-init-file 0
@@ -35,7 +35,7 @@ ol.wasm: src/olvm.c tmp/repl.c
 	     -O3 -o ol.html \
 	         -Iincludes \
 	   --use-preload-plugins \
-	   -DHAS_DLOPEN=1 -DHAVE_SOCKETS=0 \
+	   -DHAVE_DLOPEN=1 -DHAVE_SOCKETS=0 \
 	   -s ASYNCIFY \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \

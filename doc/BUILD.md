@@ -143,8 +143,8 @@ This variables are automatically set by the Makefile (like `configure` script). 
 |Variable      |Value            |Meaning |
 |--------------|-----------------|--------|
 |HAVE_SOCKETS  | 1\|0, default 1 |Enable sockets support (bind, listen, socket, etc.)|
-|HAS_DLOPEN    | 1\|0, default 1 |Enable dlopen/dlsym functions support|
 |HAS_UNSAFES   | 1\|0, default 1 |Enable "unsafe" external and internal functions|
+|HAVE_DLOPEN    | 1\|0, default 1 |Enable dlopen/dlsym functions support|
 |HAS_SANDBOX   | 1\|0, default 0 |Enable internal sandbox support (depends on OS kernel)|
 |HAS_STRFTIME  | 1\|0, default 1 |Enable strftime function support|
 

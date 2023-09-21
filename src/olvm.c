@@ -1153,8 +1153,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 # endif
 #endif
 
-#ifndef HAS_DLOPEN
-#define HAS_DLOPEN 1
+#ifndef HAVE_DLOPEN
+#define HAVE_DLOPEN 1
 #endif
 
 #ifndef HAS_SANDBOX
@@ -1304,7 +1304,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 #include <sys/utsname.h> // we have own win32 implementation
-#if HAS_DLOPEN
+#if HAVE_DLOPEN
 #	include <dlfcn.h> // we have own win32 implementation
 # ifdef __ANDROID__
 	static char* MODULE_FILENAME = 0;
@@ -1478,7 +1478,7 @@ void yield()
 
 // FFI support:
 #ifndef OLVM_FFI
-#define OLVM_FFI HAS_DLOPEN // ffi have no sense without dlopen/dlsym
+#define OLVM_FFI HAVE_DLOPEN // ffi have no sense without dlopen/dlsym
 #endif
 
 #if OLVM_FFI && defined(OLVM_NOPINS)
@@ -3477,7 +3477,7 @@ loop:;
 			| 000002000
 		#endif
 		// has's
-		#if HAS_DLOPEN
+		#if HAVE_DLOPEN
 			| 000010000
 		#endif
 		#if HAVE_SOCKETS
@@ -4388,7 +4388,7 @@ loop:;
 				break;
 			}
 
-#if HAS_DLOPEN
+#if HAVE_DLOPEN
 			// -=( dlopen )=-------------------------------------------------
 			case SYSCALL_DLOPEN: { // (dlopen filename mode)
 				word a = A1;
@@ -4465,7 +4465,7 @@ loop:;
 					r = new_string(error);
 				break;
 			}
-#endif// HAS_DLOPEN
+#endif// HAVE_DLOPEN
 
 			// TIME FUNCTIONS
 

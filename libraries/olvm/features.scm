@@ -12,8 +12,8 @@
       SYSCALL_MEMFD
       SYSCALL_GETRLIMIT
       SYSCALL_GETRUSAGE
-      HAS_DLOPEN
       HAS_UNSAFES
+      HAVE_DLOPEN
       HAVE_SOCKETS
       HAS_SANDBOX
       HAS_STRFTIME
@@ -33,8 +33,8 @@
    (define SYSCALL_MEMFD       #o400)
    (define SYSCALL_GETRLIMIT  #o1000)
    (define SYSCALL_GETRUSAGE  #o2000)
-   (define HAS_DLOPEN        #o10000)
    (define HAS_UNSAFES       #o40000)
+   (define HAVE_DLOPEN        #o10000)
    (define HAVE_SOCKETS       #o20000)
    (define HAS_SANDBOX      #o100000)
    (define HAS_STRFTIME     #o200000)

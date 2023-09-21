@@ -23,7 +23,7 @@
 
 #ifndef OLVM_FFI
 // ffi have no sense without dlopen/dlsym
-#define OLVM_FFI HAS_DLOPEN
+#define OLVM_FFI HAVE_DLOPEN
 #endif
 
 #if OLVM_FFI
