@@ -4125,25 +4125,25 @@ loop:;
 					r = (word*) ITRUE;
 				break;
 			}
-			// DEPRECATED!
-			case SYSCALL_MKDIR: {
-				CHECK_ARGC(1,2);
-				CHECK_STRING(1);
-				CHECK_NUMBER_OR_FALSE(2);
+// 			// DEPRECATED!
+// 			case SYSCALL_MKDIR: {
+// 				CHECK_ARGC(1,2);
+// 				CHECK_STRING(1);
+// 				CHECK_NUMBER_OR_FALSE(2);
 
-				char *path = (char*) &car(A1);
-#ifdef _WIN32
-				if (mkdir(path) >= 0)
-#else
-				int mode = (argc > 1 && A2 != IFALSE)
-			 		? number(A2)
-					: S_IRUSR | S_IWUSR;
+// 				char *path = (char*) &car(A1);
+// #ifdef _WIN32
+// 				if (mkdir(path) >= 0)
+// #else
+// 				int mode = (argc > 1 && A2 != IFALSE)
+// 			 		? number(A2)
+// 					: S_IRUSR | S_IWUSR;
 
-				if (mkdir(path, mode) >= 0)
-#endif
-					r = (word*) ITRUE;
-				break;
-			}
+// 				if (mkdir(path, mode) >= 0)
+// #endif
+// 					r = (word*) ITRUE;
+// 				break;
+// 			}
 
 			// UNSAFES
 
