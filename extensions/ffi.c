@@ -2007,6 +2007,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #endif
 
 	any:if (arg == IFALSE) // #false is universal "0" value
+	//	- 0 -----------------------------------------------
 		switch (type) { // todo: fix for aarch64
 #if UINT64_MAX > UINTPTR_MAX
 		// 32-bits code
@@ -2027,6 +2028,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 		}
 		else
+	//	- V -----------------------------------------------
 		switch (type) {
 		// -------------------
 		// целочисленные типы:
@@ -2159,8 +2161,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			case TBYTEVECTOR: // address of bytevector data (no copying to stack)
 				STORE(IDF, word, (word)&car(arg));
 				break;
-			// '(arguments...) OR
-			// (cons type '(arguments...))
+			// (list arguments...)    OR
+			// (cons type (list arguments...))
 			case TPAIR: {
 				// predeclared type or extra?
 				word retype = is_pair(t) ? car(t) : I(type);
