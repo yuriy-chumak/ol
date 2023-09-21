@@ -16,7 +16,7 @@
       HAVE_DLOPEN
       HAVE_SOCKETS
       HAS_SANDBOX
-      HAS_STRFTIME
+      HAVE_STRFTIME
       HAS_SENDFILE
       HAVE_UNISTD_H)
    (import
@@ -37,7 +37,7 @@
    (define HAVE_DLOPEN        #o10000)
    (define HAVE_SOCKETS       #o20000)
    (define HAS_SANDBOX      #o100000)
-   (define HAS_STRFTIME     #o200000)
+   (define HAVE_STRFTIME     #o200000)
    (define HAS_SENDFILE     #o400000)
    (define HAVE_UNISTD_H #o001000000)
    

@@ -1165,8 +1165,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #define HAS_UNSAFES 1
 #endif
 
-#ifndef HAS_STRFTIME
-#define HAS_STRFTIME 1
+#ifndef HAVE_STRFTIME
+#define HAVE_STRFTIME 1
 #endif
 
 // builtin olvm math functions (vm:fp1)
@@ -3489,7 +3489,7 @@ loop:;
 		#if HAS_SANDBOX
 			| 000100000
 		#endif
-		#if HAS_STRFTIME
+		#if HAVE_STRFTIME
 			| 000200000
 		#endif
 		#if HAS_SENDFILE
@@ -4495,7 +4495,7 @@ loop:;
 			 		? (time_t) numberp(A2)
 					: time(0);
 
-#if HAS_STRFTIME // todo: check this code!
+#if HAVE_STRFTIME // todo: check this code!
 				word* A = (word*) A1;
 				if (is_string(A)) {
 					struct tm * timeinfo = localtime(&seconds);

@@ -146,7 +146,7 @@ This variables are automatically set by the Makefile (like `configure` script). 
 |HAS_UNSAFES   | 1\|0, default 1 |Enable "unsafe" external and internal functions|
 |HAVE_DLOPEN    | 1\|0, default 1 |Enable dlopen/dlsym functions support|
 |HAS_SANDBOX   | 1\|0, default 0 |Enable internal sandbox support (depends on OS kernel)|
-|HAS_STRFTIME  | 1\|0, default 1 |Enable strftime function support|
+|HAVE_STRFTIME  | 1\|0, default 1 |Enable strftime function support|
 
 Please note that external libraries (like opengl, sqlite, etc.) support require HAS_DLOPEN and OLVM_FFI enabled.
 
