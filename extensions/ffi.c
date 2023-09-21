@@ -75,11 +75,17 @@
 
 // 32/64 help macro
 #if __LP64__ || __LLP64__
-#	define IF32(x)
-#	define IFN32(x) x
+#	define IF32(...)
+#	define IFN32(...) __VA_ARGS__
 #else // __ILP32__
-#	define IF32(x) x
-#	define IFN32(x)
+#	define IF32(...) __VA_ARGS__
+#	define IFN32(...)
+#endif
+
+#ifdef __mips__
+#	define IFmips32(...) __VA_ARGS__
+#else
+#	define IFmips32(...)
 #endif
 
 
@@ -2019,12 +2025,14 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			STORE(IDF, int32_t, 0);
 			break;
 		case TINT64:  case TUINT64:
+			IFmips32(i = (i+1)&-2); // 32-bit mips dword align
 			STORE(IDF, int64_t, 0); IF32(i++);
 			break;
 		case TFLOAT:
 			STORE_F(IDF, float, 0);
 			break;
 		case TDOUBLE:
+			IFmips32(i = (i+1)&-2); // 32-bit mips dword align
 			STORE_D(IDF, double, 0);
 			break;
 		default:
@@ -2047,6 +2055,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			STORE(to_int, int32_t, arg);
 			break;
 		case TINT64: case TUINT64:
+			IFmips32(i = (i+1)&-2); // 32-bit mips dword align
 			STORE(to_int, int64_t, arg);
 			break;
 #else
@@ -2059,11 +2068,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		case TINT64: case TUINT64:
 # if UINT64_MAX > UINTPTR_MAX
 			// 32-bit machines
-#	if __mips__ // 32-bit mips
-			i = (i+1)&-2; // dword align
-#	endif
-			*(int64_t*)&args[i++]
-					= to_int64(arg);
+			IFmips32(i = (i+1)&-2); // 32-bit mips dword align
+			*(int64_t*)&args[i++] = to_int64(arg);
 # else
 			// 64-bit machines
 			STORE(to_int, int64_t, arg);
@@ -2123,7 +2129,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			break;
 
 		case TDOUBLE:
-		tdouble:
+			IFmips32(i = (i+1)&-2); // 32-bit mips dword align
 			STORE_D(OL2D, double, arg);
 			break;
 
