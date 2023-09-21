@@ -1029,10 +1029,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 // android supports seccomp only for Lollipop and Nougat
 // https://security.googleblog.com/2016/07/protecting-android-with-more-linux.html
 #	if __ANDROID_API__ < 15
-#		define HAS_SANDBOX 0
+#		define HAVE_SANDBOX 0
 #	endif
 #	if __mips__
-#		define HAS_SANDBOX 0
+#		define HAVE_SANDBOX 0
 #	endif
 #	define SYSCALL_SYSINFO 0
 #	define SYSCALL_GETRLIMIT 0
@@ -1157,12 +1157,12 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #define HAVE_DLOPEN 1
 #endif
 
-#ifndef HAS_SANDBOX
-#define HAS_SANDBOX 0
 #endif
 
 #ifndef HAS_UNSAFES
 #define HAS_UNSAFES 1
+#ifndef HAVE_SANDBOX
+#define HAVE_SANDBOX 0
 #endif
 
 #ifndef HAVE_STRFTIME
@@ -1317,7 +1317,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 
 #ifdef __linux__
 #	include <sys/resource.h> // getrusage
-#	if HAS_SANDBOX
+#	if HAVE_SANDBOX
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
 #	endif
@@ -3486,7 +3486,7 @@ loop:;
 		#if HAS_UNSAFES
 			| 000040000
 		#endif
-		#if HAS_SANDBOX
+		#if HAVE_SANDBOX
 			| 000100000
 		#endif
 		#if HAVE_STRFTIME
@@ -4997,7 +4997,7 @@ loop:;
 
 			// https://www.mindcollapse.com/blog/processes-isolation.html
 			// http://outflux.net/teach-seccomp/
-#if HAS_SANDBOX && SYSCALL_PRCTL
+#if HAVE_SANDBOX && SYSCALL_PRCTL
 			case SYSCALL_PRCTL:
 				//seccomp_time = 1000 * time(NULL); /* no time calls are allowed from seccomp, so start emulating a time if success */
 				/*struct sock_filter filter[] = {

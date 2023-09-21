@@ -15,7 +15,7 @@
       HAS_UNSAFES
       HAVE_DLOPEN
       HAVE_SOCKETS
-      HAS_SANDBOX
+      HAVE_SANDBOX
       HAVE_STRFTIME
       HAVE_SENDFILE
       HAVE_UNISTD_H)
@@ -36,7 +36,7 @@
    (define HAS_UNSAFES       #o40000)
    (define HAVE_DLOPEN        #o10000)
    (define HAVE_SOCKETS       #o20000)
-   (define HAS_SANDBOX      #o100000)
+   (define HAVE_SANDBOX      #o100000)
    (define HAVE_STRFTIME     #o200000)
    (define HAVE_SENDFILE     #o400000)
    (define HAVE_UNISTD_H #o001000000)
