@@ -1936,11 +1936,74 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				SERIALIZE(&ptr, type, conv); \
 				STORE(IDF, void*, ptr); \
 			}
+		// floating point handlers
+		#define STORE_F(conv, type, arg) ({\
+			if (__builtin_expect((d>7), 0)) \
+				SAVE_ARM64(type, conv, arg) \
+			else \
+				*(type*)&ad[d++] = conv(arg), --i;\
+		})
+		#define STORE_D(conv, type, arg) \
+				STORE_F(conv, type, arg)
+
 #else
+		// todo: fix 32-bit STORE?
+		// todo: change to args[i++] ?
 		#define STORE(conv, type, arg) \
-			args[i] = (type) conv(arg) // todo: change to args[i++]
+			args[i] = (type) conv(arg)
 		#define STORE_SERIALIZE(type, conv) \
 			SERIALIZE(&args[i], type, conv) // todo: change to args[i++] and i+=2 for 32-bit
+
+		// floating point handlers
+		// for 32-bits: doubles fills two words
+#	if (__x86_64__ && (__unix__ || __APPLE__))
+		#define STORE_F(conv, type, arg) ({\
+				*(type*)&ad[d++] = conv(arg); --i;\
+				fpmask |= 1;\
+		})
+		#define STORE_D(conv, type, arg) \
+				STORE_F(conv, type, arg)
+#	elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
+		#define STORE_F(conv, type, arg) ({\
+				*(type*)&af[f++] = conv(arg); --i;\
+		})
+		#define STORE_D(conv, type, arg) ({\
+				STORE_F(conv, type, arg);\
+				++i; f++;\
+		})
+#	elif __EMSCRIPTEN__
+		#define STORE_F(conv, type, arg) ({\
+				fpmask |= 1 << i;\
+				*(type*)&args[i] = conv(arg);\
+		})
+		#define STORE_D(conv, type, arg) ({\
+				STORE_F(conv, type, arg);\
+				++i;\
+		})
+#	elif __mips__ /* 32-bit mips */
+		#define STORE_F(conv, type, arg) ({\
+				i = (i+1)&-2; /*dword align*/\
+				*(type*)&args[i] = conv(arg);\
+		})
+		#define STORE_D(conv, type, arg) ({\
+				STORE_F(conv, type, arg);\
+				++i;\
+		})
+#	else
+		#define STORE_F(conv, type, arg) ({\
+				*(type*)&args[i] = conv(arg);\
+		})
+#		if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__
+		#define STORE_D(conv, type, arg) ({\
+			STORE_F(conv, type, arg);\
+			++i;\
+		})
+#		else
+		#define STORE_D(conv, type, arg) ({\
+				STORE_F(conv, type, arg);\
+		})
+#		endif
+#	endif
 #endif
 
 	any:if (arg == IFALSE) // #false is universal "0" value
@@ -2044,23 +2107,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		// -------------------
 		// с плавающей запятой:
 		case TFLOAT:
-			#if (__x86_64__ && (__unix__ || __APPLE__))
-				*(float*)&ad[d++] = OL2F(arg); --i;
-				fpmask |= 1;
-			#elif __aarch64__
-				if (d > 7) {
-					SAVE_ARM64(float, OL2F, arg);
-				} else {
-					*(float*)&ad[d++] = OL2F(arg); --i;
-				}
-			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
-				*(float*)&af[f++] = OL2F(arg); --i;
-			#else
-				*(float*)&args[i] = OL2F(arg);
-			# ifdef __EMSCRIPTEN__
-				fpmask |= 1 << i;
-			# endif
-			#endif
+			STORE_F(OL2F, float, arg);
 			break;
 
 		case TFLOAT+REF: writeback = 1;
@@ -2072,27 +2119,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 		case TDOUBLE:
 		tdouble:
-			#if __mips__ // 32-bit mips
-				i = (i+1)&-2; // dword align
-			#endif
-
-			#if (__x86_64__ && (__unix__ || __APPLE__))
-				*(double*)&ad[d++] = OL2D(arg); --i;
-				fpmask |= 1;
-			#elif __aarch64__
-				if (d > 7) {
-					SAVE_ARM64(double, OL2D, arg);
-				} else {
-					*(double*)&ad[d++] = OL2D(arg); --i;
-				}
-			#elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?) // todo: check varargs
-				*(double*)&af[f++] = OL2D(arg); --i; f++;
-			#else
-				*(double*)&args[i] = OL2D(arg);
-			# if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__ // sizeof(double) > sizeof(float)
-				++i; 	// for 32-bits: double fills two words
-			# endif
-			#endif
+			STORE_D(OL2D, double, arg);
 			break;
 
 		case TDOUBLE+REF: writeback = 1;
