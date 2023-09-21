@@ -2009,23 +2009,26 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	any:if (arg == IFALSE) // #false is universal "0" value
 	//	- 0 -----------------------------------------------
 		switch (type) { // todo: fix for aarch64
-#if UINT64_MAX > UINTPTR_MAX
-		// 32-bits code
-		case TINT64: case TUINT64:
-		case TDOUBLE:
-			args[++i] = 0; 	// doubles and longlongs fit two words
+		case TINT8:  case TUINT8:
+			STORE(IDF, int8_t, 0);
 			break;
-#endif // 64-bit
-// #if (__x86_64__ && (__unix__ || __APPLE__))
-// 		case TFLOAT:
-// 		case TDOUBLE:
-// 			ad[d++] = 0;
-// 			fpmask |= 1; --i;
-// 			break;
-// #elif __aarch64__
-// 		// todo!
-// #endif
-
+		case TINT16:  case TUINT16:
+			STORE(IDF, int16_t, 0);
+			break;
+		case TINT32:  case TUINT32:
+			STORE(IDF, int32_t, 0);
+			break;
+		case TINT64:  case TUINT64:
+			STORE(IDF, int64_t, 0); IF32(i++);
+			break;
+		case TFLOAT:
+			STORE_F(IDF, float, 0);
+			break;
+		case TDOUBLE:
+			STORE_D(IDF, double, 0);
+			break;
+		default:
+			STORE(IDF, word, 0);
 		}
 		else
 	//	- V -----------------------------------------------
