@@ -1018,7 +1018,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #ifdef __EMSCRIPTEN__
 #	define SYSCALL_PRCTL 0
 
-#	define HAS_SOCKETS 0
+#	define HAVE_SOCKETS 0
 #   define HAS_MEMFD_CREATE 0
 #endif
 
@@ -1141,13 +1141,13 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 // DEFAULTS,
 // please don't change! use -D{OPTION}={0|1} compiler command line instead
 
-#ifndef HAS_SOCKETS
-#define HAS_SOCKETS 1
+#ifndef HAVE_SOCKETS
+#define HAVE_SOCKETS 1
 #endif
 
 #ifndef HAS_SENDFILE
 # if defined(__linux__) || defined(__APPLE__)
-#  define HAS_SENDFILE HAS_SOCKETS
+#  define HAS_SENDFILE HAVE_SOCKETS
 # else
 #  define HAS_SENDFILE 0
 # endif
@@ -1327,7 +1327,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #	include <conio.h>
 #	include <malloc.h>
 
-#	if HAS_SOCKETS
+#	if HAVE_SOCKETS
 #		include <winsock2.h>
 #	endif
 #	include "unistd-ext.h"  // own win32 implementation
@@ -1371,7 +1371,7 @@ void yield()
 
 // sockets/sendfile:
 // sockets:
-#if HAS_SOCKETS
+#if HAVE_SOCKETS
 
 # ifdef __unix__
 #	include <sys/socket.h>
@@ -1414,7 +1414,7 @@ void yield()
 //#ifdef __ANDROID__
 //	typedef unsigned long in_addr_t;
 //#endif
-#endif // HAS_SOCKETS
+#endif // HAVE_SOCKETS
 
 // sendfile:
 #if HAS_SENDFILE
@@ -1426,7 +1426,7 @@ void yield()
 #		include <sys/uio.h>
 #	endif
 #else
-# if HAS_SOCKETS
+# if HAVE_SOCKETS
 #	undef HAS_SENDFILE
 #	define HAS_SENDFILE 1
 #	ifndef _WIN32
@@ -3480,7 +3480,7 @@ loop:;
 		#if HAS_DLOPEN
 			| 000010000
 		#endif
-		#if HAS_SOCKETS
+		#if HAVE_SOCKETS
 			| 000020000
 		#endif
 		#if HAS_UNSAFES
@@ -3860,7 +3860,7 @@ loop:;
 
 				if (ol->close(portfd, ol) == 0)
 					r = (R)ITRUE;
-#if defined(_WIN32) && HAS_SOCKETS
+#if defined(_WIN32) && HAVE_SOCKETS
 				// Win32 socket workaround
 				else if (errno == EBADF) {
 					if (closesocket(portfd) == 0)
@@ -4516,7 +4516,7 @@ loop:;
 
 			// SOCKETS
 		// http://www.kegel.com/c10k.html
-#if HAS_SOCKETS
+#if HAVE_SOCKETS
 			// todo: add getsockname() and getpeername() syscalls
 
 			// SOCKET
@@ -4729,7 +4729,7 @@ loop:;
 
 				break;
 			}
-#endif// HAS_SOCKETS
+#endif// HAVE_SOCKETS
 
 			// SYSTEM INFO
 
@@ -5012,7 +5012,7 @@ loop:;
 				break;
 #endif
 
-#if HAS_UNSAFES
+#if OLVM_UNSAFES
 			case SYSCALL_ARCHPRCTL:
 				unsafesp = 0;
 				r = (word*) ITRUE;
@@ -5565,7 +5565,7 @@ int main(int argc, char** argv)
 
 	set_signal_handler();
 
-#if	HAS_SOCKETS && defined(_WIN32)
+#if	HAVE_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
 	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
 	if (sock_init  != 0) {
@@ -5594,7 +5594,7 @@ int main(int argc, char** argv)
 		OLVM_delete(olvm);
 	}
 
-#if	HAS_SOCKETS && defined(_WIN32)
+#if	HAVE_SOCKETS && defined(_WIN32)
 	WSACleanup();
 #endif
 

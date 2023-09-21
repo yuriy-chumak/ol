@@ -50,7 +50,7 @@ offsetof = $(shell OFFSETOF=`mktemp /tmp/offsetof.XXXXXXXXX`; \
 # default platform features
 HAS_DLOPEN  ?= $(call exists,,stdlib.h, dlopen, -ldl)
 HAS_SECCOMP ?= $(call exists,,linux/seccomp.h, prctl)
-HAS_SOCKETS ?= $(call exists,,stdlib.h, socket)
+HAVE_SOCKETS ?= $(call exists,,stdlib.h, socket)
 
 HAS_MEMFD_CREATE ?= $(call exists,,sys/mman.h, memfd_create)
 

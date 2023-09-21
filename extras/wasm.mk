@@ -35,7 +35,7 @@ ol.wasm: src/olvm.c tmp/repl.c
 	     -O3 -o ol.html \
 	         -Iincludes \
 	   --use-preload-plugins \
-	   -DHAS_DLOPEN=1 -DHAS_SOCKETS=0 \
+	   -DHAS_DLOPEN=1 -DHAVE_SOCKETS=0 \
 	   -s ASYNCIFY \
 	   -s ASSERTIONS=0 \
 	   -s ALLOW_MEMORY_GROWTH=1 \

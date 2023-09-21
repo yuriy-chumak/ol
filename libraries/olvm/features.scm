@@ -13,8 +13,8 @@
       SYSCALL_GETRLIMIT
       SYSCALL_GETRUSAGE
       HAS_DLOPEN
-      HAS_SOCKETS
       HAS_UNSAFES
+      HAVE_SOCKETS
       HAS_SANDBOX
       HAS_STRFTIME
       HAS_SENDFILE
@@ -34,8 +34,8 @@
    (define SYSCALL_GETRLIMIT  #o1000)
    (define SYSCALL_GETRUSAGE  #o2000)
    (define HAS_DLOPEN        #o10000)
-   (define HAS_SOCKETS       #o20000)
    (define HAS_UNSAFES       #o40000)
+   (define HAVE_SOCKETS       #o20000)
    (define HAS_SANDBOX      #o100000)
    (define HAS_STRFTIME     #o200000)
    (define HAS_SENDFILE     #o400000)
