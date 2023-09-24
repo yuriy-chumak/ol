@@ -136,8 +136,8 @@
                         (let-parse* (
                               (skip (imm #\.))
                               (digits (greedy* (rune-if (lambda (rune) (<= #\0 rune #\9))))))
-                           (/ (list->number digits 10) (expt 10 (length digits))))
-                        (epsilon 0)))
+                           (/ (list->number digits 10) (expt #i10 (length digits))))
+                        (epsilon #f)))
             (exponent (any-of
                   (let-parse* (
                         (e (imm #\e))
@@ -148,7 +148,9 @@
                         (exp (greedy+ (rune-if (lambda (rune) (<= #\0 rune #\9))))))
                      (expt 10 (signer (list->number exp 10))))
                   (epsilon 1))))
-         (* (signer (+ int frac)) exponent)))
+         (if frac
+            (* (signer (+ int frac)) exponent) ; inexact
+            (* (signer int) exponent)))) ; exact
 
    (define (object)
       (let-parse* (
