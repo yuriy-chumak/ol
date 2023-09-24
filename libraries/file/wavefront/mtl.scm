@@ -16,6 +16,11 @@
          (skip (get-imm 10))) ;; <- note that this won't match if line ends to eof
       chars))
 
+(define get-inexact
+   (let-parse* (
+         (number get-number))
+      (inexact number)))
+
 (define get-comment
    (let-parses(
          (sign (get-imm #\#))
@@ -37,11 +42,11 @@
 (define (get-3-numbers name)
    (let-parses(
          (skip (get-word name #t))
-         (r get-number)
+         (r get-inexact)
          (skip (get-imm #\space))
-         (g get-number)
+         (g get-inexact)
          (skip (get-imm #\space))
-         (b get-number)
+         (b get-inexact)
          (skip (get-imm #\newline)))
       [r g b 1.0]))
 
@@ -68,7 +73,7 @@
          (map_kd (map-parser "map_Kd ")))
       {
          'name   (bytes->string newmtl)
-         'ns     ns
+         'ns     (inexact ns)
          'ka     ka
          'kd     kd
          'map_kd map_kd
