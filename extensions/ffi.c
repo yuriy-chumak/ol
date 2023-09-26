@@ -2164,9 +2164,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					i = 8; d = 8;
 				}
 			#endif
-			if (is_value(arg)) {
-				STORE(IDF, word, value(arg));
-			}
+			if (is_value(arg))
+				STORE(to_int, int32_t, arg);
 			else
 			switch (reference_type(arg)) {
 			case TVPTR: // value of vptr
