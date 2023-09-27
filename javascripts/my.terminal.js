@@ -63,7 +63,7 @@ $('#terminal').terminal(function(command, terminal) {
 
 // FILE SYSTEM
 var Libraries = [
-   // { path: "otus", name: "ffi.scm",    file: "https://raw.githubusercontent.com/otus-lisp/ol/master/libraries/otus/ffi.scm" },
+   { path: "math", name: "infix-notation.scm",    file: "https://raw.githubusercontent.com/otus-lisp/ol/master/libraries/math/infix-notation.scm" },
 ];
 
 // WASM
