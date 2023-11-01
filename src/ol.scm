@@ -181,7 +181,8 @@ Usage: ol [OPTION]... [--] [input-file [file-options]]
    --version=<string>  override internal version string
 
    --interactive       make execution environment interactive
-   --no-interactive    make execution environment non-interactive
+   --no-interactive    make execution environment non-interactive (depr.)
+   --non-interactive   make execution environment non-interactive
    -                   stdin
 
 Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
@@ -239,6 +240,8 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                   ((string-eq? (car args) "--interactive")
                      (loop (put options 'interactive #t) (cdr args)))
                   ((string-eq? (car args) "--no-interactive")
+                     (loop (put options 'interactive #f) (cdr args)))
+                  ((string-eq? (car args) "--non-interactive")
                      (loop (put options 'interactive #f) (cdr args)))
 
                   ;; special case - use embed REPL version
