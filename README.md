@@ -316,14 +316,15 @@ DEPRECATIONS
 * `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async 'name ...)`, `(actor ...)` instead.
 
 
-### DISASSEMBLY
+DISASSEMBLY
+-----------
 
 Ol contains built-in tool for inspecting the Otus Lisp language.
 
 You can use the REPL `,expand` command to expand high-level Ol instructions into low-level (core) Otus Lisp.
 ```scheme
 > ,expand (assert (+ 1 2) = 3)
-(ifeq (equal? ((lambda (g1) g1) (+ 1 2)) 3) #true #true (runtime-error assertion error: (cons (quote (+ 1 2)) (cons must be (cons (quote 3) ())))))
+'(ifeq (equal? ((lambda (g1) g1) (+ 1 2)) 3) #true #true (runtime-error "assertion error:" (cons (quote (+ 1 2)) (cons "must be" (cons (quote 3) '())))))
 ```
 
 You can use the REPL `,disassembly` (or `,dis`, or `,d`) command to disassemble Otus Lisp functions to the Ol virtual machine instructions.

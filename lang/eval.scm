@@ -702,7 +702,7 @@
                (let*((exp in (uncons in #false)))
                   (case (macro-expand exp env)
                      (['ok exp env]
-                        (print exp))
+                        (write exp) (newline))
                      (['fail reason]
                         (print "Macro expansion failed: " reason)))
                   (repl env in)))
