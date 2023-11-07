@@ -13,8 +13,8 @@
 [![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/build%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 
-Otus Lisp, Version 2.4
-======================
+Otus Lisp, Version 2.5 rc1
+==========================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
 Otus Lisp (**Ol** in short) is a purely functional dialect of Lisp.
@@ -294,11 +294,11 @@ R<sup>7</sup>RS DIFFERENCES
 
 * 6.10. Control features
   * `apply` arguments count is **limited to 256** in Ol, but *unlimited* in Scheme.
-    - note: Use `fold` instead, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
+    - note: Use `fold` instead in such cases, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
 
 * 6.11. Exceptions
-  * **No** exceptions handling in Ol.
-    - note: Yet.
+  * ~~**No** exceptions handling in Ol.~~
+    - note: `with-exception-handler`, `raise`, and `raise-continuable` are added.
 
 * 6.13. Input and output
   * `current-input-port`, `current-output-port`, and `current-error-port` always return **stdin**, **stdout**, and **stderr** in Ol respectively, but *a parameter objects* in Scheme.
