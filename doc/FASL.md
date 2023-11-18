@@ -1,8 +1,7 @@
 FASL File Format
 ================
 
-FASL is acronim for FASt-Load format.
-FASL formnat is internal and can be changed in the feature.
+FASL is an acronim for "FASt Load". FASL format is not finalized and may be changed in the future.
 
 
 Glossary
@@ -11,30 +10,30 @@ Glossary
 * integer, little-endian multibyte sequence with signaling high bit.
 * longint_t, integer with unlimited accuracy.
 
-Workable fasl->sexp and sexp->fasl source codes can be found in the [special Ol branch](https://github.com/yuriy-chumak/ol/tree/bootstrapping/samples/bootstrapping).
+FASL decoder is pretty simple and workable sample code for `fasl->sexp` and `sexp->fasl` can be found in the [special Ol branch](https://github.com/yuriy-chumak/ol/tree/bootstrapping/samples/bootstrapping).
 
 ### Integer's Encoding
 
 All integers are encoded in a little-endian multibyte sequence with signaling high bit.
 That means a continuous stream of bytes with the least significant 6 bits and the most highest (7th) bit as a sequence flag. The last byte of sequence must have the 7th bit set to zero.
 
-In other words, you should read a byte, if high bit is zero then return a value, if high bit is set then use 6 bits as part of result and repeat with next byte.
+In other words, you should read a byte, if high bit is zero then return a value, if high bit is set then use lower 7 bits as part of result and repeat with next byte.
 
 Pseudocode:
 ```c
-	longint_t nat = 0;
-	int i = 0;
-	unsigned char ch;
+longint_t nat = 0;
+unsigned char uch;
 
-	do {
-		ch = read_next_byte();
-		nat |= (ch & 0b01111111) << i;
-		i += (8-1);
-	} while (ch & 0b10000000);
-	return nat;
+int i = 0;
+do {
+   uch = read_next_byte();
+   nat |= (uch & 0b01111111) << i;
+   i += (8-1);
+} while (uch & 0b10000000);
+return nat;
 ```
 
-Encodinh examples (first '0' means "number", second '0' means "positive integer", other numbers are the encoded integer):
+Format examples (first '0' means "number", second '0' means "positive integer", other numbers are the encoded integer):
 ```scheme
 > (fasl-encode 1)
 '(0 0 1)
@@ -62,7 +61,7 @@ struct fasl_t
 }
 ```
 
-Every tag has a type in first byte and a variable length data strcture. All tag values extcept 0, 1, and 2 are reserved for feature use and should be interpret as invalid.
+Every tag has type in a first byte and variable length data structure. All tag values except 0, 1, and 2 are reserved for future use and should be interpret as invalid.
 
 ```c
 struct tag_t

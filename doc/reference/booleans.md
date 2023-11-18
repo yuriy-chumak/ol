@@ -5,10 +5,10 @@ The standard boolean objects for *True* and *False* are written as `#true` and `
 Alternatively, they can be written as `#t` `#T` and `#f` `#F`, respectively.
 
 ```scheme
-#t       ==>  #true
-#T       ==>  #true
-#f       ==>  #false
-#F       ==>  #false
+#t       ===  #true
+#T       ===  #true
+#f       ===  #false
+#F       ===  #false
 ```
 
 All the Ol objects are treated as *true* (❗including empty list, unlike some other dialects of Lisp❗), only `#false` counts as *false* in conditional expressions.
@@ -34,6 +34,8 @@ Boolean constants evaluate to themselves, so they don't need to be quoted in pro
 '#false  ==>  #false
 ```
 
+## TOC
+
 [not](#not), [boolean?](#boolean), [boolean=?](#boolean-1)
 
 # not
@@ -45,10 +47,12 @@ The *not* procedure returns #true if *obj* is false, and returns #false otherwis
 (not #t)         ==>  #false
 (not 3)          ==>  #false
 (not (list 3))   ==>  #false
-(not #f)         ==>  #true
 (not '())        ==>  #false
 (not (list))     ==>  #false
+(not 12345)      ==>  #false
+(not not)        ==>  #false
 (not 'sym)       ==>  #false
+(not #f)         ==>  #true
 ```
 
 # boolean?

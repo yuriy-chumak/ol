@@ -32,7 +32,7 @@ The pair is guaranteed to be different (in the sense of `eq?` and `eqv?`) from e
 (cons 1 '())                  ==> '(1)
 (cons '() 1)                  ==> '(() . 1)
 (cons '(a) '(b c d))          ==> '((a) b c d)
-(cons "a" '(b c))             ==> '("a" b c)
+(cons 'a '(b c))              ==> '(a b c)
 (cons '(a b) 'c)              ==> '((a b) . c)
 ```
 
@@ -93,6 +93,7 @@ Returns a newly allocated *list* of its arguments.
 
 ```scheme
 (list 1 2 3 4 5 6 7)          ==> '(1 2 3 4 5 6 7)
+(list 1 2 3)                  === (cons 1 (cons 2 (cons 3 #null)))
 (list 'a (+ 3 4) 'c)          ==> '(a 7 c)
 (list)                        ==> '()
 (list (list 1 2) (list 3 4))  ==> '((1 2) (3 4))
