@@ -47,7 +47,7 @@
       (define (actor-linked name handler)
          (mcp 4 (list name 'mailbox 'link) handler))
 
-      ; (return-mails), * private
+      ; (return-mails), * internal
       (define (return-mails rmails)
          (mcp 6 rmails rmails))
 

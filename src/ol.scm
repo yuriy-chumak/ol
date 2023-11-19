@@ -390,7 +390,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                (halt (vm:pin evaluate)))
          else
             ; regular repl:
-            (actor ['repl] (lambda ()
+            (coroutine ['repl] (lambda ()
                (let*((lastone (repl-loop env file))
                      (lastone (if compile?
                                  (let*((path compile?)
