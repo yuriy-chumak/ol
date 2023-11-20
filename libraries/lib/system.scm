@@ -14,8 +14,8 @@
       ((flags) (syscall 22 flags))))
 
    (define (close-pipe pp)
-      (when (car pp) (close-port (car pp)))
-      (when (cdr pp) (close-port (cdr pp))))
+      (if (car pp) (close-port (car pp)))
+      (if (cdr pp) (close-port (cdr pp))))
 
    (define system
       (define (system commands in out err ports)
@@ -40,9 +40,9 @@
          ((commands in)
             (system commands in #f #f (list (car in))))
          ((commands in out)
-            (system commands in out #f (list (car in) (cdr out))))
+            (system commands in out #f (list (if in (car in)) (cdr out))))
          ((commands in out err)
-            (system commands in out err (list (car in) (cdr out) (cdr err))))))
+            (system commands in out err (list (if in (car in)) (if out (cdr out)) (cdr err))))))
 
    (define (waitpid pid)
       (syscall 61 pid))
