@@ -1,9 +1,17 @@
 (define-library (lib glib-2)
    (export
       void
-      gint guint gulong gsize gpointer
-      gdouble
-      gchar* gboolean
+      gboolean
+      gpointer
+      ;gconstpointer
+      ;gchar guchar
+
+      gint guint gshort gushort glong gulong
+   ;  gint8 guint8 gint16 guint16 gint32 guint32 ; gint64 guint64
+      
+      gsize gssize goffset
+      gfloat gdouble
+      gchar*
 
       TRUE FALSE NULL
       g_free
@@ -49,6 +57,8 @@
 
       g_object_get_data
       g_object_set_data
+
+      ; todo: atomic pointers
    )
    (import
       (scheme core)
@@ -64,15 +74,24 @@
 
    (define gint fft-int)
    (define guint fft-unsigned-int)
+   (define gshort fft-short)
+   (define gushort fft-unsigned-short)
+   (define glong fft-long)
    (define gulong fft-unsigned-long)
-   (define gpointer fft-void*)
+
+   (define gpointer fft-void*)  (define gboolean fft-bool)
+
+   (define gfloat fft-float)
    (define gdouble fft-double)
+
    (define gchar fft-char)
    (define gchar* type-string)
    (define gsize fft-unsigned-int)
-   (define gboolean gint)
+   (define gssize fft-int)
    (define gint64 fft-signed-long-long)
    (define void fft-void)
+
+   (define goffset gint64)
 
    (define GCallback type-callable) ; void (*GCallback)(void)
    (define GClosureNotify type-callable) ; void (*GClosureNotify)(gpointer, GClosure)
