@@ -1,1 +1,0 @@
-X-Window-based platforms.

@@ -1,1 +1,0 @@
-Sun Microsystems, Inc.

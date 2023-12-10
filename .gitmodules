@@ -4,3 +4,6 @@
 [submodule "samples/Olite"]
 	path = samples/Olite
 	url = https://github.com/yuriy-chumak/Olite
+[submodule "libraries/OpenGL"]
+	path = libraries/OpenGL
+	url = https://github.com/yuriy-chumak/libol-opengl.git

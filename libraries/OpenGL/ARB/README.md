@@ -1,1 +1,0 @@
-OpenGL® ARB approved extensions.
