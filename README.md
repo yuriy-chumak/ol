@@ -55,6 +55,10 @@ Some additional libraries can be installed using 'kiss' package manager. Usage i
 Q/A
 ---
 
+1. Q. Some folders are empty (i.e. "libraries/OpenGL"), is it ok?
+   A. Yes, it's ok. Some parts of Ol project are separated into their own independent repositories.  
+      Use `git clone --recursive` to get a full project. Or `git submodule init; git submodule update` to update existing with empty folders.
+
 1. Q. Why no **arrow keys** processing and a history in Ol command line?<br/>
    A. For the gods of simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
       (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and run as just `ol`).
