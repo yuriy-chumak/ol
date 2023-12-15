@@ -12,7 +12,9 @@
       read-json-stream ; same as read-json
 
       write-json
-      write-json-file)
+      write-json-file
+      
+      stringify)
    (import
       (otus lisp)
       (owl parse)
@@ -236,4 +238,8 @@
       (unless (eq? port stdout)
          (close-port port)))
 
+   (define (stringify json)
+      (define port (open-output-string))
+      (write-json json port)
+      (get-output-string port))
 ))
