@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 (import (lib gl))
-(import (OpenGL version-1-1))
+(import (OpenGL 1.1) (lib GLU))
 
 ;(teapot)
 (define vertices '(
