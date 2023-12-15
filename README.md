@@ -55,7 +55,7 @@ Some additional libraries can be installed using 'kiss' package manager. Usage i
 Q/A
 ---
 
-1. Q. Some folders are empty (i.e. "libraries/OpenGL"), is it ok?
+1. Q. Some folders are empty (i.e. "libraries/OpenGL"), is it ok?  
    A. Yes, it's ok. Some parts of Ol project are separated into their own independent repositories.  
       Use `git clone --recursive` to get a full project. Or `git submodule init; git submodule update` to update existing with empty folders.
 

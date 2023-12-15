@@ -4,8 +4,8 @@
 (export config) (import (otus lisp))
 (begin
    (define config {
-      width 1280
-      height 720
+      'width 1280
+      'height 720
    })))
 ; end of config
 
