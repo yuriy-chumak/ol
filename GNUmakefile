@@ -21,6 +21,17 @@ LD ?= ld
 ol32.exe: CC := i686-w64-mingw32-gcc
 ol64.exe: CC:=x86_64-w64-mingw32-gcc
 
+# ansi colors
+red=$(shell tput setaf 1)
+green=$(shell tput setaf 2)
+done=$(shell tput sgr0)
+
+# check submodules
+# ----------------
+ifeq ($(shell ls -A libraries/OpenGL),)
+    $(warning $(red)Submodules not loaded. Run 'git submodule update --init --recursive' once.$(done))
+endif
+
 # cleanup while insuccessfull builds
 # ----------------------------------
 $(shell [ -s tmp/repl.c ] || rm -rf tmp/repl.c)
