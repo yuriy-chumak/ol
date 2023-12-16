@@ -1619,6 +1619,40 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 // todo: os_stat
 
 
+// -- TAR Virtual ENVironment ---
+#ifdef OLVM_TARVENV
+#	include <elf.h>
+
+static char* zenv = NULL;
+
+static int zenv_open (const char *filename, int flags, int mode, void* userdata) {
+	(void) userdata;
+	if (zenv) {
+		char* ptr = zenv;
+		//char* name = filename; if (name[0] == '.' && name[1] == '/') name += 2;
+
+		// The tar format operates on 512-byte blocks.
+		while (*ptr) {
+			int len = 0;
+			for (int i = 124; i < 124+11; i++)
+				len = len * 8 + ptr[i] - '0';
+
+			if (strcmp(ptr, filename) == 0) {
+				int fd = memfd_create(filename, 0);
+				write(fd, ptr + 0x200, len);
+				lseek(fd, 0, SEEK_SET);
+				return fd;
+			}
+
+			ptr += 0x200;
+			ptr += (len + 0x1FF) & -0x200;
+		}
+	}
+	return open(filename, flags, mode);
+}
+
+#endif
+
 // ----------
 // -----------------------------------------------------------------------------
 // ------------------------------
@@ -5415,6 +5449,48 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 
 typedef struct olvm_t OL;
 
+void* OLVM_userdata(OL* ol, void* userdata)
+{
+	void* old_userdata = ol->userdata;
+	ol->userdata = userdata;
+	return old_userdata;
+}
+
+read_t*  OLVM_set_read (struct olvm_t* ol, read_t  read);
+write_t* OLVM_set_write(struct olvm_t* ol, write_t write);
+open_t*  OLVM_set_open (struct olvm_t* ol, open_t  open);
+close_t* OLVM_set_close(struct olvm_t* ol, close_t close);
+
+idle_t*  OLVM_set_idle (struct olvm_t* ol, idle_t  idle);
+
+// i/o polymorphism
+#define override(name) \
+name##_t* OLVM_set_##name(struct olvm_t* ol, name##_t name) {\
+	name##_t *old_##name = ol->name;\
+	ol->name = name;\
+	return old_##name;\
+}
+
+override(open)
+override(read)
+override(write)
+override(close)
+override(idle)
+
+#undef override
+
+void* OLVM_allocate(OL* ol, unsigned words)
+{
+	word* fp;
+
+	fp = ol->heap.fp;
+	word* r = new(words);
+	ol->heap.fp = fp;
+
+	return (void*)r;
+}
+
+// -=( main )=-----------------------------------------
 #ifdef REPL
 	extern unsigned char REPL[];
 #	define language REPL
@@ -5451,38 +5527,47 @@ int main(int argc, char** argv)
 	int autoremove = 0;
 	char* file = 0;
 
-#ifdef SELFEXEC
-	#include <elf.h>
+#ifdef OLVM_TARVENV
+	// linux: `readlink /proc/self/exe`
+	// solaris: `getexecname()` or `readlink("/proc/self/path/a.out", buf, bufsize)`
+	// freebsd: `readlink("/proc/curproc/file", buf, bufsize)` or `sysctl CTL_KERN KERN_PROC KERN_PROC_PATHNAME -1`
+	// netbsd: `readlink /proc/curproc/exe`
+	// dragonflybsd: `readlink /proc/curproc/file`
+	// windows: `GetModuleFileName()`
+	char exe[FILENAME_MAX];
+	char* argz[] = { argv[0], "./main.lisp" };
+	int end = readlink("/proc/self/exe", exe, sizeof(exe));
+	if (end >= 0 && end < sizeof(exe)) {
+		exe[end] = 0;
+		int fp = open(exe, O_RDONLY | O_BINARY, S_IRUSR);
+		if (fp >= 0) {
+			struct stat sb;
+			fstat(fp, &sb);
 
-	// TODO: use mmap
-	char tmp_f[] = "/tmp/.lisp_olvmXXXXXX";
+			if (S_ISREG(sb.st_mode) || S_ISLNK(sb.st_mode)) {
+				char* ptr = (char*) mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fp, 0);
 
-	int fp = open(argv[0], O_RDONLY | O_BINARY, S_IRUSR);
-	if (fp) {
-		struct stat sb;
-		fstat(fp, &sb);
+				Elf64_Ehdr* elf = (Elf64_Ehdr*) ptr;
+				Elf64_Shdr* sym_table;
+				sym_table = (Elf64_Shdr*) (ptr + elf->e_shoff);
+				char* names = ptr + sym_table[elf->e_shstrndx].sh_offset;
 
-		char* ptr = (char*) mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fp, 0);
+				for (int i = 0; i < elf->e_shnum; i++) {
+					if (!strcmp(".zenv", (names + sym_table[i].sh_name))) {
+						zenv = ptr + sym_table[i].sh_offset;
+						if (argc == 1) {
+							argv = argz; argc = 2;
+						}
+						break;
+					}
+				}
 
-		Elf64_Ehdr* elf = (Elf64_Ehdr*) ptr;
-		Elf64_Shdr* sym_table;
-		sym_table = (Elf64_Shdr*) (ptr + elf->e_shoff);
-
-		char* names = ptr + sym_table[elf->e_shstrndx].sh_offset;
-
-		for (int i = 0; i < elf->e_shnum; i++) {
-			if (!strcmp(".lisp", (names + sym_table[i].sh_name))) {
-				int fd = mkstemp(tmp_f);
-				write(fd, ptr + sym_table[i].sh_offset, sym_table[i].sh_size);
-				close(fd);
-				file = argv[0] = tmp_f;
-				autoremove = 1;
-				break;
+				if (!zenv) {
+					munmap(ptr, sb.st_size);
+				}
 			}
+			close(fp);
 		}
-
-		munmap(ptr, sb.st_size);
-		close(fp);
 	}
 #endif
 
@@ -5522,9 +5607,11 @@ int main(int argc, char** argv)
             goto ok;
 #endif
 
-		char bom;
-		int bin = open(file, O_RDONLY | O_BINARY, S_IRUSR);
-		if (!bin)
+		char bom = 42;
+		int bin = !zenv ?
+			open(file, O_RDONLY | O_BINARY, S_IRUSR) :
+			zenv_open(file, O_RDONLY | O_BINARY, S_IRUSR, 0);
+		if (bin == -1)
 			goto can_not_open_file;				// не смогли файл открыть
 
 		int pos = read(bin, &bom, 1); // прочитаем один байт
@@ -5591,6 +5678,10 @@ int main(int argc, char** argv)
 
 	// so, let's rock?
 	if (olvm) {
+		if (zenv) { // TAR
+			OLVM_set_open(olvm, zenv_open);
+		}
+
 		word r = OLVM_run(olvm, argc, argv);
         // convert result to appropriate system value
         if (is_number(r))
@@ -5823,47 +5914,6 @@ void OLVM_delete(OL* ol)
 	free(ol->heap.begin);
 	free(ol);
 }
-
-void* OLVM_userdata(OL* ol, void* userdata)
-{
-	void* old_userdata = ol->userdata;
-	ol->userdata = userdata;
-	return old_userdata;
-}
-void* OLVM_allocate(OL* ol, unsigned words)
-{
-	word* fp;
-
-	fp = ol->heap.fp;
-	word* r = new(words);
-	ol->heap.fp = fp;
-
-	return (void*)r;
-}
-
-
-read_t*  OLVM_set_read (struct olvm_t* ol, read_t  read);
-write_t* OLVM_set_write(struct olvm_t* ol, write_t write);
-open_t*  OLVM_set_open (struct olvm_t* ol, open_t  open);
-close_t* OLVM_set_close(struct olvm_t* ol, close_t close);
-
-idle_t*  OLVM_set_idle (struct olvm_t* ol, idle_t  idle);
-
-// i/o polymorphism
-#define override(name) \
-name##_t* OLVM_set_##name(struct olvm_t* ol, name##_t name) {\
-	name##_t *old_##name = ol->name;\
-	ol->name = name;\
-	return old_##name;\
-}
-
-override(open)
-override(read)
-override(write)
-override(close)
-override(idle)
-
-#undef override
 
 // ===============================================================
 word
