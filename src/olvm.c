@@ -4338,9 +4338,8 @@ loop:;
 									if (is_port(car(c))) {
 										dup2(port(car(c)), in[i]);
 										close(port(car(c)));
-										
-										c = cdr (c);
 									}
+									c = cdr (c);
 								}
 							}
 
