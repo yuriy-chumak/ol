@@ -22,6 +22,6 @@ rosettacode: $(wildcard tests/rosettacode/*.scm) $(wildcard tests/rosettacode/so
 	   fi ;\
 	done
 	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
-	@echo "\033[1;32mpassed!\033[0m"
+	@echo "$(green)passed!$(done)"
 
 endif

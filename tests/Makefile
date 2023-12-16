@@ -17,8 +17,8 @@ HAS_MINGW32 ?= $(shell which i686-w64-mingw32-gcc 1>/dev/null 2>/dev/null && ech
 HAS_MINGW64 ?= $(shell which x86_64-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
 WINEQ    := $(shell which wine 1>/dev/null 2>/dev/null && echo 1)
 
-ok:="\033[1;32m ok \033[0m"
-fail:="\033[1;31mfail\033[0m"
+ok:="$(green) ok $(done)"
+fail:="$(red)fail$(done)"
 
 MACHINE ?= $(shell uname -m)
 
@@ -493,6 +493,6 @@ regression-tests: $(filter-out tests/ffi.scm, $(wildcard tests/*.scm)) $(wildcar
 	   $(MAKE) -s -B $$F.ok ;\
 	done
 	if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
-	echo "\033[1;32mpassed!\033[0m"
+	echo "$(green)passed!$(done)"
 
 endif

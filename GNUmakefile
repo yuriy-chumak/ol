@@ -240,11 +240,11 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm
 	@vm repl --version="$(VERSION)" --home=.:libraries \
 	   src/ol.scm
 	@if diff boot.fasl repl>/dev/null;then\
-	   echo '\033[1;32m  `___`  \033[0m' ;\
-	   echo '\033[1;32m  (o,o)  \033[0m' ;\
-	   echo '\033[1;32m  \)  )  \033[0m' ;\
-	   echo '\033[1;32m___"_"___\033[0m' ;\
-	   echo '\033[1;32mBuild Ok.\033[0m' ;\
+	   echo '$(green)  `___`  $(done)' ;\
+	   echo '$(green)  (o,o)  $(done)' ;\
+	   echo '$(green)  \)  )  $(done)' ;\
+	   echo '$(green)___"_"___$(done)' ;\
+	   echo '$(green)Build Ok.$(done)' ;\
 	else \
 	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
 	   cp -b $@ repl ;$(MAKE) $@ ;\
