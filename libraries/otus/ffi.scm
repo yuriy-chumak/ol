@@ -236,6 +236,9 @@
    (setq |long| 4)
    (setq |long long| 5)
    (setq |size_t| 6)
+   (setq |float| 10)
+   (setq |double| 11)
+   (setq |void*| 20)
 
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-uint8)
@@ -285,7 +288,7 @@
 (define (sizeof fft)
    (cond
       ((value? fft)
-         (case fft ; todo: rework
+         (case fft ; todo: rework (use OLVM_sizeof(...))
             (fft-int8  1)
             (fft-uint8  1)
             (fft-int16 2)
@@ -297,6 +300,7 @@
             (fft-float 4)
             (fft-double 8)
             (fft-void* (size nullptr))))
+      ; todo: перенести в OLVM_sizeof и переделать
       ((list? fft)
          (fold (lambda (f el) (+ f (sizeof el))) 0 type))))
 

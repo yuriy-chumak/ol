@@ -2018,7 +2018,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #	endif
 #endif
 
-	any:if (arg == IFALSE) // #false is universal "0" value
+	any:
+	if (arg == IFALSE) // #false is universal "0" value
 	//	- 0 -----------------------------------------------
 		switch (type) { // todo: fix for aarch64
 		case TINT8:  case TUINT8:
@@ -2148,7 +2149,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 
 		case TBOOL:
-			STORE(OL2D, double, (arg == IFALSE) ? 0 : 1);
+			STORE(to_int, _Bool, (arg == IFALSE) ? 0 : 1);
 			break;
 
 		// поинтер на данные
@@ -2948,6 +2949,20 @@ word OLVM_sizeof(olvm_t* self, word* arguments)
 		// general types:
 		case 20: return I(sizeof(void*));
 
+		// ffi types
+		case TVOID: return I(sizeof(void*));
+
+		case TBOOL: return I(sizeof(_Bool));
+
+		case TFLOAT: return I(sizeof(float));
+		case TDOUBLE: return I(sizeof(double));
+
+		case TINT8:  return I(sizeof(int8_t));
+		case TINT16: return I(sizeof(int16_t));
+		case TINT32: return I(sizeof(int32_t));
+		case TINT64: return I(sizeof(int64_t));
+
+		// unknown type(s)
 		default:
 			return IFALSE;
 	}
