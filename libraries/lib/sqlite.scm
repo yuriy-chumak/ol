@@ -642,7 +642,28 @@
    (define (sqlite:query database query . args)
       (debug
          (print-to stderr MAGENTA query END)
-         (display YELLOW stderr) (write args stderr) (display END)
+         (display-to stderr YELLOW)
+         (for-each (lambda (arg)
+               (cond
+                  ((bytevector? arg)
+                     (if (< (size arg) 16)
+                        (write arg stderr)
+                     else
+                        (display-to stderr "#bytevector<")
+                        (display-to stderr (size arg))
+                        (display-to stderr "> ")))
+                  ((string? arg)
+                     (if (< (string-length arg) 256)
+                        (write arg stderr)
+                     else
+                        (display-to stderr "#string<")
+                        (display-to stderr (string-length arg))
+                        (display-to stderr "> ")))
+                  (else
+                     (write arg stderr)))
+               (display-to stderr " "))
+            args)
+         (display-to stderr END)
          (print-to stderr ", length: " YELLOW (length args) END))
 
       (let ((statement (make-sqlite3_stmt)))
