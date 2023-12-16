@@ -1510,7 +1510,7 @@ void yield()
 #endif
 
 // tbd: implement pvenv for win32 and embed
-#if defined(_WIN32) || defined(OLVM_NOMAIN)
+#if defined(_WIN32) || OLVM_NOMAIN
 # ifdef OLVM_TARVENV
 # undef OLVM_TARVENV
 # endif
