@@ -1509,6 +1509,14 @@ void yield()
 #define OLVM_NOMAIN 0
 #endif
 
+// tbd: implement pvenv for win32 and embed
+#if defined(_WIN32) || defined(OLVM_NOMAIN)
+# ifdef OLVM_TARVENV
+# undef OLVM_TARVENV
+# endif
+
+#define OLVM_TARVENV 0
+#endif
 
 // ========================================
 // -=( logger )=---------------------------
@@ -1620,16 +1628,15 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 
 
 // -- TAR Virtual ENVironment ---
-#ifdef OLVM_TARVENV
+#if OLVM_TARVENV
 #	include <elf.h>
 
-static char* zenv = NULL;
+static char* pvenv = NULL;
 
-static int zenv_open (const char *filename, int flags, int mode, void* userdata) {
+static int pvenv_open (const char *filename, int flags, int mode, void* userdata) {
 	(void) userdata;
-	if (zenv) {
-		char* ptr = zenv;
-		//char* name = filename; if (name[0] == '.' && name[1] == '/') name += 2;
+	if (pvenv) {
+		char* ptr = pvenv;
 
 		// The tar format operates on 512-byte blocks.
 		while (*ptr) {
@@ -5527,7 +5534,7 @@ int main(int argc, char** argv)
 	int autoremove = 0;
 	char* file = 0;
 
-#ifdef OLVM_TARVENV
+#if OLVM_TARVENV
 	// linux: `readlink /proc/self/exe`
 	// solaris: `getexecname()` or `readlink("/proc/self/path/a.out", buf, bufsize)`
 	// freebsd: `readlink("/proc/curproc/file", buf, bufsize)` or `sysctl CTL_KERN KERN_PROC KERN_PROC_PATHNAME -1`
@@ -5535,7 +5542,7 @@ int main(int argc, char** argv)
 	// dragonflybsd: `readlink /proc/curproc/file`
 	// windows: `GetModuleFileName()`
 	char exe[FILENAME_MAX];
-	char* argz[] = { argv[0], "./main.lisp" };
+	char* argz[] = { argv[0], "./main" }; // default command line
 	int end = readlink("/proc/self/exe", exe, sizeof(exe));
 	if (end >= 0 && end < sizeof(exe)) {
 		exe[end] = 0;
@@ -5553,8 +5560,8 @@ int main(int argc, char** argv)
 				char* names = ptr + sym_table[elf->e_shstrndx].sh_offset;
 
 				for (int i = 0; i < elf->e_shnum; i++) {
-					if (!strcmp(".zenv", (names + sym_table[i].sh_name))) {
-						zenv = ptr + sym_table[i].sh_offset;
+					if (!strcmp(".tar", (names + sym_table[i].sh_name))) {
+						pvenv = ptr + sym_table[i].sh_offset;
 						if (argc == 1) {
 							argv = argz; argc = 2;
 						}
@@ -5562,7 +5569,7 @@ int main(int argc, char** argv)
 					}
 				}
 
-				if (!zenv) {
+				if (!pvenv) {
 					munmap(ptr, sb.st_size);
 				}
 			}
@@ -5595,40 +5602,35 @@ int main(int argc, char** argv)
 #endif
 	}
 	else {
-		// todo: use mmap()
-		struct stat st;
-
-		if (stat(file, &st))
-			goto can_not_stat_file;		// не найден файл или нет доступа
-		if (st.st_size == 0)
-#ifndef REPL
-			goto invalid_binary_script;
-#else
-            goto ok;
-#endif
-
+		// todo: possibly use mmap()
 		char bom = 42;
-		int bin = !zenv ?
-			open(file, O_RDONLY | O_BINARY, S_IRUSR) :
-			zenv_open(file, O_RDONLY | O_BINARY, S_IRUSR, 0);
+		int bin =
+#if OLVM_TARVENV
+			pvenv ?
+			pvenv_open(file, O_RDONLY | O_BINARY, S_IRUSR, 0) :
+#endif
+			      open(file, O_RDONLY | O_BINARY, S_IRUSR);
 		if (bin == -1)
-			goto can_not_open_file;				// не смогли файл открыть
+			goto can_not_open_file; // не смогли файл открыть
 
-		int pos = read(bin, &bom, 1); // прочитаем один байт
-		if (pos < 1)
-			goto can_not_read_file;				// не смогли файл прочитать
+		int pos = read(bin, &bom, 1);  // прочитаем один байт
+		if (pos == -1)
+			goto can_not_read_file;
 
-		// переделать
-		if (bom == '#') { // skip possible hashbang
-			while (read(bin, &bom, 1) == 1 && bom != '\n')
-				st.st_size--;
-			st.st_size--;
-			if (read(bin, &bom, 1) < 0)
-				goto can_not_read_file;
-			st.st_size--;
-		}
+		struct stat st;
+		if (fstat(bin, &st))
+			goto can_not_stat_file;
 
-		if (bom > 2) {	// ха, это текстовая программа (скрипт)!
+		// if (bom == '#') { // skip possible hashbang
+		// 	while (read(bin, &bom, 1) == 1 && bom != '\n')
+		// 		st.st_size--;
+		// 	st.st_size--;
+		// 	if (read(bin, &bom, 1) < 0)
+		// 		goto can_not_read_file;
+		// 	st.st_size--;
+		// }
+
+		if (bom > 2) {	// это текстовая программа (скрипт)
 #ifndef REPL
 			goto invalid_binary_script;
 #else
@@ -5678,10 +5680,10 @@ int main(int argc, char** argv)
 
 	// so, let's rock?
 	if (olvm) {
-		if (zenv) { // TAR
-			OLVM_set_open(olvm, zenv_open);
-		}
-
+#if OLVM_TARVENV
+		if (pvenv)
+			OLVM_set_open(olvm, pvenv_open);
+#endif
 		word r = OLVM_run(olvm, argc, argv);
         // convert result to appropriate system value
         if (is_number(r))
