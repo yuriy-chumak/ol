@@ -12,12 +12,6 @@ stdint = $(shell echo "\
 #$(error Looks like you have no libc6-dev, please install.)
 #endif
 
-# xxd tool
-ifneq ($(if $(shell echo "" |xxd),1,0),1)
-$(error Looks like you don't have the xxd tool. This is usually part of the vim package. Please install.)
-endif
-
-
 # additional part
 exists = $(shell echo "\
 	char $3();\

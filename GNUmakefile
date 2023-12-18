@@ -47,7 +47,21 @@ includes/ol/vm.h: src/olvm.c
 	sed -e '/\/\/ <!--/,/\/\/ -->/d' $^ >$@
 
 tmp/repl.c: repl
+# vim
+ifneq ($(shell which xxd),)
 	xxd --include repl >tmp/repl.c
+else
+# coreutils
+ifneq ($(shell which od),)
+	od -An -vtx1 repl| tr -d '\n'| sed \
+	   -e 's/^ /0x/' -e 's/ /,0x/g' \
+	   -e 's/^/unsigned char repl[] = {/' \
+	   -e 's/$$/};/'> $@
+else
+	$(error "You must have 'od' (coreutils) or 'xxd' (vim) tool installed.")
+endif
+endif
+
 # or
 #	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
 # or
