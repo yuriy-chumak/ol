@@ -449,14 +449,14 @@ define table-header
 	set -e
 	: header line 1
 	printf "%-$1s " "  Test"
-	if [ "$(DEV_MACHINE)" = "1" ]; \
+	if [ "$(DEV_MACHINE:-0)" = "1" ]; \
 	then \
 	: main development platform, special case;\
-		case "`expr $(HAS_32CDEFS) + $(HAS_64CDEFS)`" in \
+		case "`expr $(HAS_32CDEFS:-0) + $(HAS_64CDEFS:-0)`" in \
 			1) printf "| Linux   ";;\
 			2) printf "| Linux             ";;\
 		esac ;\
-		case "`expr $(HAS_MINGW32) + $(HAS_MINGW64)`" in \
+		case "`expr $(HAS_MINGW32:-0) + $(HAS_MINGW64:-0)`" in \
 			1) printf "| Windows ";;\
 			2) printf "| Windows           ";;\
 		esac ;\
@@ -468,13 +468,13 @@ define table-header
 
 	: header line 1
 	printf "%-$1s " `uname`
-	if [ "$(DEV_MACHINE)" = "1" ]; \
+	if [ "$(DEV_MACHINE:-0)" = "1" ]; \
 	then \
 	: main development platform, special case;\
-	 	if [ $(HAS_32CDEFS) = 1 ]; then printf "|32-d|32-r"; fi ;\
-	 	if [ $(HAS_64CDEFS) = 1 ]; then printf "|64-d|64-r"; fi ;\
-	 	if [ $(HAS_MINGW32) = 1 ]; then printf "|32-d|32-r"; fi ;\
-	 	if [ $(HAS_MINGW64) = 1 ]; then printf "|64-d|64-r"; fi ;\
+	 	if [ "$(HAS_32CDEFS:-0)" = "1" ]; then printf "|32-d|32-r"; fi ;\
+	 	if [ "$(HAS_64CDEFS:-0)" = "1" ]; then printf "|64-d|64-r"; fi ;\
+	 	if [ "$(HAS_MINGW32:-0)" = "1" ]; then printf "|32-d|32-r"; fi ;\
+	 	if [ "$(HAS_MINGW64:-0)" = "1" ]; then printf "|64-d|64-r"; fi ;\
 	else \
 	: regular platform ;\
 		printf "|dbg.|rel." ;\

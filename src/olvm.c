@@ -1758,11 +1758,13 @@ static int pvenv_open (const char *filename, int flags, int mode, void* userdata
 // https://www.kernel.org/doc/Documentation/prctl/seccomp_filter.txt
 #define SECCOMP                     10000 // todo: change to x1000 или что-то такое
 static int sandboxp = 0;     /* are we in seccomp? а также дельта для оптимизации syscall's */
-static int unsafesp = 1;
 //static unsigned long seccomp_time; /* virtual time within seccomp sandbox in ms */
 
-//static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
+#if OLVM_UNSAFES
+static int unsafesp = 1;
+#endif
 
+//static int breaked = 0;    /* set in signal handler, passed over to owl in thread switch */
 
 
 // -= gc implementation =-----------
