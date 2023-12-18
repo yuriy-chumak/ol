@@ -1,4 +1,4 @@
-name: build windows
+name: crossbuild windows
 
 on:
   push:
@@ -18,10 +18,14 @@ jobs:
     - name: Update submodules
       run: 'git submodule update --init --recursive'
 
+    - name: Build
+      run: 'make; make describe'
+
     - name: Install MinGW toolchain
-      run: 'sudo apt install gcc-mingw-w64-x86-64 mingw-w64-x86-64-dev -y'
+      run: 'sudo apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 -y'
 
-    - name: Build (64-bit)
-      run: 'make ol64.exe'
+#    - name: Install 32-bit subsystem
+#      run: 'sudo dpkg --add-architecture i386; sudo apt update'
 
-# todo: add 32-bit build
+    - name: Regression tests
+      run: 'HAS_32CDEFS=0 HAS_64CDEFS=0 make check'

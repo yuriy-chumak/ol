@@ -19,7 +19,7 @@ jobs:
       run: 'git submodule update --init --recursive'
 
     - name: Build
-      run: 'make'
+      run: 'make; make describe'
 
     - name: Regression tests
       run: 'make describe check'

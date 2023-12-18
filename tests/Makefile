@@ -13,10 +13,14 @@ else
 FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
 
 # win32 tests:
-HAS_MINGW32 ?= $(shell which i686-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
-HAS_MINGW64 ?= $(shell which x86_64-w64-mingw32-gcc 1>/dev/null 2>/dev/null && echo 1)
-WINEQ    := $(shell which wine 1>/dev/null 2>/dev/null && echo 1)
+# apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
+HAS_MINGW32 ?= $(call which,i686-w64-mingw32-gcc)
+HAS_MINGW64 ?= $(call which,x86_64-w64-mingw32-gcc)
+# dpkg --add-architecture i386 && apt-get update
+# apt install wine32
+HAS_WINE ?= $(call which,wine)
 
+# notifications
 ok:="$(green) ok $(done)"
 fail:="$(red)fail$(done)"
 
@@ -25,18 +29,19 @@ MACHINE ?= $(shell uname -m)
 # special case, test 64- and 32-bit both
 # (maximal testings under main development platform)
 ifeq ($(UNAME)-$(MACHINE),Linux-x86_64)
-HAS_32CDEFS  ?= $(call exists,-m32,sys/cdefs.h,exit)
 HAS_64CDEFS  ?= $(call exists,-m64,sys/cdefs.h,exit)
-ifeq ($(HAS_32CDEFS),1)
+ifeq ($(HAS_64CDEFS),1)
 DEV_MACHINE  ?= 1
 endif
-ifeq ($(HAS_64CDEFS),1)
+# sudo apt-get install gcc-multilib
+HAS_32CDEFS  ?= $(call exists,-m32,sys/cdefs.h,exit)
+ifeq ($(HAS_32CDEFS),1)
 DEV_MACHINE  ?= 1
 endif
 else
 DEV_MACHINE  ?= 0
-HAS_32CDEFS  ?= 0
 HAS_64CDEFS  ?= 0
+HAS_32CDEFS  ?= 0
 endif
 
 # -------------
@@ -385,11 +390,11 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call scmtestok,$(vm)d64,debug-64)
 	$(call scmtestok,$(vm)r64,release-64)
 endif
-ifeq ($(HAS_MINGW32),1)
+ifeq ($(HAS_MINGW32)$(HAS_WINE),11)
 	$(call scmtestok,$(vm)32d.exe,win-debug-32,wine,--strip-trailing-cr)
 	$(call scmtestok,$(vm)32r.exe,win-release-32,wine,--strip-trailing-cr)
 endif
-ifeq ($(HAS_MINGW64),1)
+ifeq ($(HAS_MINGW64)$(HAS_WINE),11)
 	$(call scmtestok,$(vm)64d.exe,win-debug-64,wine,--strip-trailing-cr)
 	$(call scmtestok,$(vm)64r.exe,win-release-64,wine,--strip-trailing-cr)
 endif
@@ -421,11 +426,11 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call bintestok,$(vm)d64,debug-64)
 	$(call bintestok,$(vm)r64,release-64)
 endif
-ifeq ($(HAS_MINGW32),1)
+ifeq ($(HAS_MINGW32)$(HAS_WINE),11)
 	$(call bintestok,$(vm)32d.exe,win-debug-32,wine,--strip-trailing-cr)
 	$(call bintestok,$(vm)32r.exe,win-release-32,wine,--strip-trailing-cr)
 endif
-ifeq ($(HAS_MINGW64),1)
+ifeq ($(HAS_MINGW64)$(HAS_WINE),11)
 	$(call bintestok,$(vm)64d.exe,win-debug-64,wine,--strip-trailing-cr)
 	$(call bintestok,$(vm)64r.exe,win-release-64,wine,--strip-trailing-cr)
 endif
@@ -449,14 +454,14 @@ define table-header
 	set -e
 	: header line 1
 	printf "%-$1s " "  Test"
-	if [ "$(DEV_MACHINE:-0)" = "1" ]; \
+	if [ "$(DEV_MACHINE)" = "1" ]; \
 	then \
 	: main development platform, special case;\
-		case "`expr $(HAS_32CDEFS:-0) + $(HAS_64CDEFS:-0)`" in \
+		case "`expr    $(HAS_32CDEFS) + $(HAS_64CDEFS) `" in \
 			1) printf "| Linux   ";;\
 			2) printf "| Linux             ";;\
 		esac ;\
-		case "`expr $(HAS_MINGW32:-0) + $(HAS_MINGW64:-0)`" in \
+		case "`expr \( $(HAS_MINGW32) + $(HAS_MINGW64) \) \* $(HAS_WINE)`" in \
 			1) printf "| Windows ";;\
 			2) printf "| Windows           ";;\
 		esac ;\
@@ -468,13 +473,13 @@ define table-header
 
 	: header line 1
 	printf "%-$1s " `uname`
-	if [ "$(DEV_MACHINE:-0)" = "1" ]; \
+	if [ "$(DEV_MACHINE)" = "1" ]; \
 	then \
 	: main development platform, special case;\
-	 	if [ "$(HAS_32CDEFS:-0)" = "1" ]; then printf "|32-d|32-r"; fi ;\
-	 	if [ "$(HAS_64CDEFS:-0)" = "1" ]; then printf "|64-d|64-r"; fi ;\
-	 	if [ "$(HAS_MINGW32:-0)" = "1" ]; then printf "|32-d|32-r"; fi ;\
-	 	if [ "$(HAS_MINGW64:-0)" = "1" ]; then printf "|64-d|64-r"; fi ;\
+	 	if [ "$(HAS_32CDEFS)" = "1" ]; then printf "|32-d|32-r"; fi ;\
+	 	if [ "$(HAS_64CDEFS)" = "1" ]; then printf "|64-d|64-r"; fi ;\
+	 	if [ "$(HAS_MINGW32)$(HAS_WINE)" = "11" ]; then printf "|32-d|32-r"; fi ;\
+	 	if [ "$(HAS_MINGW64)$(HAS_WINE)" = "11" ]; then printf "|64-d|64-r"; fi ;\
 	else \
 	: regular platform ;\
 		printf "|dbg.|rel." ;\

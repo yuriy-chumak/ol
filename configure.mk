@@ -12,7 +12,7 @@ stdint = $(shell echo "\
 #$(error Looks like you have no libc6-dev, please install.)
 #endif
 
-# additional part
+# does the header file and/or library exist and are valid
 exists = $(shell echo "\
 	char $3();\
 	\
@@ -22,6 +22,11 @@ exists = $(shell echo "\
 	          -include $2\
 	          -o /dev/null 2>/dev/null && echo 1 || echo 0)
 
+# does the system tool exist
+which = $(shell which "$1" \
+	           1>/dev/null 2>/dev/null && echo 1 || echo 0)
+
+# size of native c structure
 sizeof = $(shell SIZEOF=`mktemp /tmp/sizeof.XXXXXXXXX`; \
 	trap "{ rm -f $$SIZEOF; }" EXIT; \
 	echo "\
@@ -31,6 +36,7 @@ sizeof = $(shell SIZEOF=`mktemp /tmp/sizeof.XXXXXXXXX`; \
 	          -include stdio.h\
 	          -o $$SIZEOF 2>stderr && $$SIZEOF)
 
+# offset of native c structure member
 offsetof = $(shell OFFSETOF=`mktemp /tmp/offsetof.XXXXXXXXX`; \
 	trap "{ rm -f $$OFFSETOF; }" EXIT; \
 	echo "\

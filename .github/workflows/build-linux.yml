@@ -18,11 +18,11 @@ jobs:
     - name: Update submodules
       run: 'git submodule update --init --recursive'
 
-    - name: Install gcc-multilib
+    - name: Install gcc-multilib (32-bit support)
       run: 'sudo apt update; sudo apt install gcc-multilib -y'
 
     - name: Build
-      run: 'make'
+      run: 'make; make describe'
 
     - name: Regression tests
       run: 'make describe check'
