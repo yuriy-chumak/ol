@@ -24,8 +24,11 @@ jobs:
     - name: Install MinGW toolchain
       run: 'sudo apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 -y'
 
-#    - name: Install 32-bit subsystem
-#      run: 'sudo dpkg --add-architecture i386; sudo apt update'
+    - name: Install 32-bit subsystem
+      run: 'sudo dpkg --add-architecture i386; sudo apt update'
+
+    - name: Install wine (32- and 64-bit both)
+      run: 'sudo apt install wine32 wine64'
 
     - name: Regression tests
-      run: 'HAS_32CDEFS=0 HAS_64CDEFS=0 make check'
+      run: 'DEV_MACHINE=1 HAS_32CDEFS=0 HAS_64CDEFS=0 make check'
