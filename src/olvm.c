@@ -1029,10 +1029,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 // android supports seccomp only for Lollipop and Nougat
 // https://security.googleblog.com/2016/07/protecting-android-with-more-linux.html
 #	if __ANDROID_API__ < 15
-#		define HAVE_SANDBOX 0
+#		define HAVE_SECCOMP 0
 #	endif
 #	if __mips__
-#		define HAVE_SANDBOX 0
+#		define HAVE_SECCOMP 0
 #	endif
 #	define SYSCALL_SYSINFO 0
 #	define SYSCALL_GETRLIMIT 0
@@ -1157,8 +1157,13 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #define HAVE_DLOPEN 1
 #endif
 
+#ifndef HAVE_SECCOMP
+#define HAVE_SECCOMP 0
+#endif
 #ifndef HAVE_SANDBOX
-#define HAVE_SANDBOX 0
+// we support only seccomp as sendbox right now
+// todo: add bsd sandboxes and, possibly, other
+#define HAVE_SANDBOX HAVE_SECCOMP
 #endif
 
 #ifndef HAVE_STRFTIME
@@ -1317,7 +1322,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 
 #ifdef __linux__
 #	include <sys/resource.h> // getrusage
-#	if HAVE_SANDBOX
+#	if HAVE_SECCOMP
 #		include <sys/prctl.h>
 #		include <linux/seccomp.h>
 #	endif
