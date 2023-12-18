@@ -21,10 +21,16 @@ LD ?= ld
 ol32.exe: CC := i686-w64-mingw32-gcc
 ol64.exe: CC:=x86_64-w64-mingw32-gcc
 
-# ansi colors
+# ansi colors (if supported)
+ifneq ($(shell echo $$TERM),)
 red=$(shell tput setaf 1)
 green=$(shell tput setaf 2)
 done=$(shell tput sgr0)
+else
+red='\033[1;31m'
+green='\033[1;32m'
+done='\033[0m'
+endif
 
 # check submodules
 # ----------------
