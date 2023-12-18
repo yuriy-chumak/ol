@@ -30,8 +30,11 @@ jobs:
     - name: Install wine (32- and 64-bit both)
       run: 'sudo apt install wine32 wine64'
 
+    - name: Start Virtual Framebuffer for Wine
+      run: 'sudo apt install xvfb; Xvfb :0 -screen 0 1024x768x16 &'
+
     - name: Create wine prefix
       run: 'wine cmd /c echo Wine environment created for %PROCESSOR_IDENTIFIER%'
 
     - name: Regression tests
-      run: 'DEV_MACHINE=1 HAS_32CDEFS=0 HAS_64CDEFS=0 make check'
+      run: 'DEV_MACHINE=1 HAS_32CDEFS=0 HAS_64CDEFS=0 DISPLAY=:0.0 make check'
