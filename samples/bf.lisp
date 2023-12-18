@@ -45,7 +45,7 @@
 
 ; use command line:
 (if (zero? (length (command-line))) (begin
-      (print "usage: bf.lisp \"bf-program\"")
+      (print "usage: bf.lisp 'bf-program'")
       (halt 1)))
 (setq program (list-ref (command-line) 0))
 

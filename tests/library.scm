@@ -179,7 +179,7 @@
 
 (import (config 50)) ; numerical library
 (print something)
-(import (not-existent 5050)) ; not existent in tests/config forlder
+(import (not-existent 5050)) ; not existent in tests/config folder
 (print something)
-(import (config another-named)) ; mismatched library name
+(import (config named)) ; mismatched internal library name
 (print something)

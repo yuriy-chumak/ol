@@ -12,4 +12,4 @@ END OF LINE
 (O _ O)
 21
 211
-Import failed because found file, but no proper library definition in it for (config another-named) . 
+Import failed because found file, but no proper library definition in it for (config named) . 
