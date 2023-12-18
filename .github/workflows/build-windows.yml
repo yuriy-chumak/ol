@@ -30,5 +30,8 @@ jobs:
     - name: Install wine (32- and 64-bit both)
       run: 'sudo apt install wine32 wine64'
 
+    - name: Create wine prefix
+      run: 'wine cmd /c echo Wine environment created for %PROCESSOR_IDENTIFIER%'
+
     - name: Regression tests
       run: 'DEV_MACHINE=1 HAS_32CDEFS=0 HAS_64CDEFS=0 make check'
