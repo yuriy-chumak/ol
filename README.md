@@ -8,9 +8,9 @@
 ```
 *Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
 
-[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/build%20linux/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
-[![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/build%20macos/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
-[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/build%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions)
+[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/build%20linux/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-linux.yml)
+[![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/build%20macos/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-macos.yml)
+[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/crossbuild%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-windows.yml)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 
 Otus Lisp, Version 2.5 rc1
