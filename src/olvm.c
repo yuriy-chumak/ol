@@ -1523,6 +1523,11 @@ void yield()
 #define OLVM_TARVENV 0
 #endif
 
+//empty if not exist
+#ifndef OLVM_SETOPEN
+#define OLVM_SETOPEN
+#endif
+
 // ========================================
 // -=( logger )=---------------------------
 #pragma GCC diagnostic push
@@ -5689,6 +5694,8 @@ int main(int argc, char** argv)
 #if OLVM_TARVENV
 		if (pvenv)
 			OLVM_set_open(olvm, pvenv_open);
+#else
+		OLVM_SETOPEN
 #endif
 		word r = OLVM_run(olvm, argc, argv);
         // convert result to appropriate system value
