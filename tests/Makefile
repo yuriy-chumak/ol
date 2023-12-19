@@ -19,6 +19,7 @@ HAS_MINGW64 ?= $(call which,x86_64-w64-mingw32-gcc)
 # dpkg --add-architecture i386 && apt-get update
 # apt install wine32
 HAS_WINE ?= $(call which,wine)
+WINE ?= wine cmd /c 
 
 # notifications
 ok:="$(green) ok $(done)"
@@ -391,12 +392,12 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call scmtestok,$(vm)r64,release-64)
 endif
 ifeq ($(HAS_MINGW32)$(HAS_WINE),11)
-	$(call scmtestok,$(vm)32d.exe,win-debug-32,wine,--strip-trailing-cr)
-	$(call scmtestok,$(vm)32r.exe,win-release-32,wine,--strip-trailing-cr)
+	$(call scmtestok,$(vm)32d.exe,win-debug-32,$(WINE),--strip-trailing-cr)
+	$(call scmtestok,$(vm)32r.exe,win-release-32,$(WINE),--strip-trailing-cr)
 endif
 ifeq ($(HAS_MINGW64)$(HAS_WINE),11)
-	$(call scmtestok,$(vm)64d.exe,win-debug-64,wine,--strip-trailing-cr)
-	$(call scmtestok,$(vm)64r.exe,win-release-64,wine,--strip-trailing-cr)
+	$(call scmtestok,$(vm)64d.exe,win-debug-64,$(WINE),--strip-trailing-cr)
+	$(call scmtestok,$(vm)64r.exe,win-release-64,$(WINE),--strip-trailing-cr)
 endif
 else # default case
 	$(call scmtestok,$(vm)d,debug)
@@ -427,12 +428,12 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call bintestok,$(vm)r64,release-64)
 endif
 ifeq ($(HAS_MINGW32)$(HAS_WINE),11)
-	$(call bintestok,$(vm)32d.exe,win-debug-32,wine,--strip-trailing-cr)
-	$(call bintestok,$(vm)32r.exe,win-release-32,wine,--strip-trailing-cr)
+	$(call bintestok,$(vm)32d.exe,win-debug-32,$(WINE),--strip-trailing-cr)
+	$(call bintestok,$(vm)32r.exe,win-release-32,$(WINE),--strip-trailing-cr)
 endif
 ifeq ($(HAS_MINGW64)$(HAS_WINE),11)
-	$(call bintestok,$(vm)64d.exe,win-debug-64,wine,--strip-trailing-cr)
-	$(call bintestok,$(vm)64r.exe,win-release-64,wine,--strip-trailing-cr)
+	$(call bintestok,$(vm)64d.exe,win-debug-64,$(WINE),--strip-trailing-cr)
+	$(call bintestok,$(vm)64r.exe,win-release-64,$(WINE),--strip-trailing-cr)
 endif
 else # default case
 	$(call bintestok,$(vm)d,debug)

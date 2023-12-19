@@ -239,13 +239,13 @@ selfexec: ol
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
 %.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
 %.exe: MINGWCFLAGS += -Wno-shift-count-overflow
-%.exe: MINGWCFLAGS += -DHAVE_DLOPEN=1
-%.exe: MINGWCFLAGS += -DHAS_SOCKES=1
 %.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
 %.exe: src/olvm.c extensions/ffi.c tmp/repl.c
-	$(CC) src/olvm.c tmp/repl.c -o $@ \
-	   -DREPL=repl -DOLVM_FFI=1 \
-	   -Iincludes -Iincludes/win32 extensions/ffi.c \
+	x86_64-w64-mingw32-gcc \
+	   $^ -o $@ \
+	   -DREPL=repl \
+	   -DHAVE_DLOPEN=1 -DHAS_SOCKES=1 -DOLVM_FFI=1 \
+	   -Iincludes/win32 -Iincludes \
 	   $(MINGWCFLAGS) -lws2_32
 
 # compiling the Ol language
