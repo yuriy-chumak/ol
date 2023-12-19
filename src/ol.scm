@@ -294,9 +294,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
          (embed? (getf options 'embed))
          (compile? (getf options 'compile))
 
-         (home (or (getf options 'home) ; via command line
-                   (syscall 1016 "OL_HOME")   ; guessed by olvm if not exists
-                   #null)) ; standalone?
+         (home (get options 'home "~")) ; via command line or 
          (command-line vm-args)
 
          (version (cons "OL" (get options 'version (cdr *version*))))
@@ -305,8 +303,13 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                      (env-set env (car defn) (cdr defn)))
                   initial-environment
                   (list
-                     ;(cons '*owl-names* initial-names)                                       ; windows workaround below:
-                     (cons '*path* (cons "." ((if (string=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home)))
+                     ;(cons '*owl-names* initial-names)
+                     (cons '*path* (cons "." (map (lambda (path)
+                           (if (and (eq? (size path) 1) (eq? (ref path 0) #\~)) ; fast (string-eq? path "~")
+                              (syscall 1016 "OL_HOME")
+                              path))
+                        ; fast way to detect windows.
+                        ((if (string=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home))))
                      (cons '*interactive* interactive?)
                      (cons '*command-line* command-line)
                      ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead
