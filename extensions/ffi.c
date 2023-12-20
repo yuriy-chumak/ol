@@ -1687,7 +1687,7 @@ size_t structure_size(size_t size, word t)
 		else {
 			assert (is_value(p));
 			int type = value(p);
-			if (type == TINT8 || type == TUINT8)
+			if (type == TINT8 || type == TUINT8 || type == TBOOL)
 				size++;
 			else {
 				size_t subsize;
@@ -2149,7 +2149,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 
 		case TBOOL:
-			STORE(to_int, _Bool, (arg == IFALSE) ? 0 : 1);
+			STORE(IDF, _Bool, (arg == IFALSE) ? 0 : 1);
 			break;
 
 		// поинтер на данные
@@ -3334,6 +3334,12 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 		case I(TINT64): {
 			c2ol_value(signed long long);
 			A[a] = (word) new_number(value);
+			break;
+		}
+
+		case I(TBOOL): {
+			c2ol_value(signed char);
+			A[a] = value == 0 ? IFALSE : ITRUE;
 			break;
 		}
 
