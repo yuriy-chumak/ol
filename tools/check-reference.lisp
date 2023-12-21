@@ -115,5 +115,5 @@
                         (print code-block)
                         (print "incorrect samples block:\n```scheme\n" RED (bytes->string code-block) END "```"))))))
          (car (or (try-parse parser (force (file->bytestream filename)) #f) '(())))))
-   *vm-args*)
+   *command-line*)
 (exit (car ok))

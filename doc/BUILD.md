@@ -11,9 +11,6 @@
 BUILD
 =====
 
-> Note: Since version 2.2.1, the build command line has been changed.
-> The variable NAKED_VM is no longer supported. Instead, a new REPL build variable is provided.
-
 ### BUILD REQUIREMENTS
 
 You should have gnu make installed.

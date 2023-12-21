@@ -1483,7 +1483,8 @@ void yield()
 
 // FFI support:
 #ifndef OLVM_FFI
-#define OLVM_FFI HAVE_DLOPEN // ffi have no sense without dlopen/dlsym
+// ffi have no sense without dlopen/dlsym
+#define OLVM_FFI HAVE_DLOPEN
 #endif
 
 #if OLVM_FFI && defined(OLVM_NOPINS)
@@ -5552,7 +5553,7 @@ int main(int argc, char** argv)
 	// netbsd: `readlink /proc/curproc/exe`
 	// dragonflybsd: `readlink /proc/curproc/file`
 	// windows: `GetModuleFileName()`
-	char exe[FILENAME_MAX];
+	char exe[PATH_MAX];
 	char* argz[] = { argv[0], "./main" }; // default command line
 	int end = readlink("/proc/self/exe", exe, sizeof(exe));
 	if (end >= 0 && end < sizeof(exe)) {

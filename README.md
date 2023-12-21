@@ -63,15 +63,18 @@ Q/A
    A. For the gods of simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
       (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and run as just `ol`).
 
+1. Q. *.. fatal error: stdlib.h: No No such file or directory.*  
+   A. Install gcc multilib, i.e. *sudo apt install gcc-multilib*.
+
+1. Q. *.. fatal error: bits/libc-header-start.h: No such file or directory.*  
+   A. Install gcc multilib, i.e. *sudo apt install gcc-multilib*.
+
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
    A. Yes, you are free to choose an MIT **or** LGPL license.
 
 1. Q. I want to have a Virtual Environment. Can I?  
    A. Yes. Use `--home=the-yours-venv-path` Ol command line option.  
       [More about venv](#virtual-env).
-
-1. Q. .. fatal error: bits/libc-header-start.h: No such file or directory.  
-   A. Install gcc multilib, i.e. *sudo apt install gcc-multilib*.
 
 1. Q. Anything else interesting?  
    A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
@@ -136,7 +139,6 @@ BUILD / INSTALL
 
 * GCC 3.2+ / CLANG 3.5+
 * GNU MAKE
-* XXD for a full build ("xxd" is usually part of "vim" package), not required for olvm.
 
 
 #### BUILD
@@ -155,8 +157,7 @@ type ',help' to help, ',quit' to end session.
 >
 ```
 
-The Ol binary includes a rich set of features (lists, vectors and byte vectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, asyncs and actors, etc.) and can be used as a completely standalone.  
-Additinally, check the advanced ["running"](#running) topic.
+The Ol binary includes a rich set of features (lists, vectors and bytevectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, async functions and actors, etc.) and can be used as a completely standalone.  
 
 
 ##### INSTALL
