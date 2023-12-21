@@ -1486,7 +1486,8 @@ void arg_size(word arg, word tty, size_t *total)
 			break;
 #endif
 		default:
-			while (arg != INULL) {
+			// handle proper lists and '(vptr . offset)
+			while (is_reference(arg)) { // until #null or value
 				*total += 1;
 				arg = cdr(arg);
 			}
@@ -2227,6 +2228,18 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				case TBYTEVECTOR: // can be used instead of vptr, dangerous!
 					STORE(IDF, word, &car(arg));
 					break;
+				// '(bytevector . offset)
+				case TPAIR: {
+					word bytevector = car(arg);
+					unsigned offset = unumber(cdr(arg));
+					if ((is_reference(bytevector)) &&
+						(reference_type(bytevector) == TBYTEVECTOR) &&
+						(offset < rawstream_size(bytevector)))
+					{
+						STORE(IDF, word, ((char*)&car(bytevector)) + offset);
+					}
+					break;
+				}
 				default:
 					E("invalid parameter value (requested vptr)");
 				}
