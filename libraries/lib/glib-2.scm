@@ -52,6 +52,7 @@
       G_TYPE_GTYPE
 
       g_signal_connect
+      g_signal_emit_by_name
       g_application_run
       g_application_quit
 
@@ -59,6 +60,14 @@
       g_object_set_data
 
       ; todo: atomic pointers
+
+      ; locale support
+      gettext
+      setlocale
+         LC_ALL
+      bindtextdomain
+      bind_textdomain_codeset
+      textdomain
    )
    (import
       (scheme core)
@@ -144,6 +153,7 @@
 (define g_signal_connect_data (GOBJECT gulong "g_signal_connect_data" gpointer type-string GCallback gpointer GClosureNotify GConnectFlags))
 (define (g_signal_connect instance detailed_signal c_handler data)
    (g_signal_connect_data instance detailed_signal c_handler data #false 0))
+(define g_signal_emit_by_name (GOBJECT void "g_signal_emit_by_name" gpointer type-string #|...|#))
 (define g_application_run (GIO gint "g_application_run" GApplication* gint (fft* fft-void*)))
 (define g_application_quit (GIO void "g_application_quit" GApplication*))
 
@@ -155,6 +165,14 @@
 
 (define g_object_get_data (GOBJECT gpointer "g_object_get_data" GObject* type-string))
 (define g_object_set_data (GOBJECT void "g_object_set_data" GObject* gpointer))
+
+; --=( locale support )=---------------
+(define gettext (GLIB type-string "gettext" type-string))
+(define setlocale (GLIB type-string "setlocale" fft-int type-string))
+   (define LC_ALL 6)
+(define bindtextdomain (GLIB type-string "bindtextdomain" type-string type-string))
+(define bind_textdomain_codeset (GLIB type-string "bind_textdomain_codeset" type-string type-string))
+(define textdomain (GLIB type-string "textdomain" type-string))
 
 ; --=( GType )=---------------
 (define GType fft-unsigned-long)
