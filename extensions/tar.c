@@ -20,7 +20,7 @@ int tar_open(const char *filename, int flags, int mode, void* userdata) {
 
 	// no file? let's try to search in tars
 	// folder/ -> folder.tar
-	char path[FILENAME_MAX+5]; // 5 for ".tar"
+	char path[PATH_MAX+5]; // 5 for ".tar"
 	char* ptr = (char*)filename;
 
 	while (*ptr) {
