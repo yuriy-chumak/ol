@@ -104,7 +104,8 @@
    (Linux
       (begin
          (define GLIB (or
-            (load-dynamic-library "libglib-2.0.so") ))
+            (load-dynamic-library "libglib-2.0.so")
+            (load-dynamic-library "libglib-2.0.so.0") ))
          (define GOBJECT (or
             (load-dynamic-library "libgobject-2.0.so")
             (load-dynamic-library "libgobject-2.0.so.0") ))

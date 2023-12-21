@@ -324,16 +324,16 @@
    ((or Linux FreeBSD NetBSD OpenBSD Android)
       (begin
          (define sqlite (or
-               (load-dynamic-library "libsqlite3.so.0")
-               (load-dynamic-library "libsqlite3.so")))))
+               (load-dynamic-library "libsqlite3.so")
+               (load-dynamic-library "libsqlite3.so.0")) )))
    (Darwin ; macOS
       (begin
          (define sqlite (or
                (load-dynamic-library "libsqlite3.0.dylib")
                (load-dynamic-library "libsqlite3.dylib")
                ; compatibility layer
-               (load-dynamic-library "libsqlite3.so.0")
-               (load-dynamic-library "libsqlite3.so")))))
+               (load-dynamic-library "libsqlite3.so")
+               (load-dynamic-library "libsqlite3.so/0")) )))
    (Windows
       (begin
          (define sqlite (load-dynamic-library "sqlite3.dll"))))

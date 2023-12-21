@@ -28,7 +28,9 @@
 (cond-expand
    (Linux
       (begin
-         (define GDK (load-dynamic-library "libgdk-3.so"))
+         (define GDK (or
+            (load-dynamic-library "libgdk-3.so")
+            (load-dynamic-library "libgdk-3.so.0") ))
       ))
    (Windows
       (begin
