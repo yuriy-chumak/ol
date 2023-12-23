@@ -4,12 +4,12 @@
    (owl math) (otus async)
    (lib gl config)
    (lib gl-2)
-   (OpenGL version-3-0))
+   (OpenGL 3))
 (export
    gl:set-context-version ; recreate OpenGL with version
 
    (exports (lib gl-2))
-   (exports (OpenGL version-3-0)))
+   (exports (OpenGL 3)))
 
 ; -=( 3.0+ )=-------------------------
 ; Higher OpenGL versions support
@@ -58,15 +58,15 @@
                (define new_cx (glXCreateContextAttribsARB display bestFbc NULL 1 contextAttribs))
                (define new_context [display screen window new_cx])
 
-               ; disable and destroy old context
-               (native:disable-context context) ; todo: destroy
-               ; set new context
+               ; change old to new context
+               (native:disable-context context) ; todo: destroy old one
                (mail 'opengl ['set 'context new_context])
                (native:enable-context new_context)
                #true))))
    (Windows
       ;(import (OpenGL WGL ARB create_context))
       (begin
+         ; TODO: https://community.khronos.org/t/opengl-3-x-and-qt-framework/58357/6
          (define (gl:set-context-version major minor)
             #false)))
 )

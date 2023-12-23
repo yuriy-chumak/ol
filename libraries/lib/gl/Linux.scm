@@ -1,5 +1,6 @@
 (setq X11 (or (load-dynamic-library "libX11.so")
               (load-dynamic-library "libX11.so.6")))
+   (setq None 0)
 
 ; context manipulations
 (setq XOpenDisplay   (X11 fft-void* "XOpenDisplay" type-string))
@@ -32,14 +33,16 @@
                      0 0 WIDTH HEIGHT 1
                      (XBlackPixel dpy screen)
                      (XWhitePixel dpy screen)))
+         ; GLX_USE_GL не нужен - он игнорируется
+         ; GLX_DOUBLEBUFFER не требует аргумента
          (vi (glXChooseVisual dpy screen (list
                4 ; GLX_RGBA
-               8  (get config 'red #xFFFFFFFF)   ; GLX_RED_SIZE = GLX_DONT_CARE
-               9  (get config 'green #xFFFFFFFF) ; GLX_GREEN_SIZE = GLX_DONT_CARE
-               10 (get config 'blue #xFFFFFFFF)  ; GLX_BLUE_SIZE = GLX_DONT_CARE
-               12 (get config 'depth 24)         ; GLX_DEPTH_SIZE
+               8  (get config 'red 8)   ; GLX_RED_SIZE
+               9  (get config 'green 8) ; GLX_GREEN_SIZE
+               10 (get config 'blue 8)  ; GLX_BLUE_SIZE
+               12 (get config 'depth 24); GLX_DEPTH_SIZE
                5 ; GLX_DOUBLEBUFFER
-               0)))) ; None
+               None))))
 
       ; common code
       (XSelectInput dpy window #b100000000000000111) ; StructureNotifyMask | KeyPressMask | KeyReleaseMask | ButtonPressMask
