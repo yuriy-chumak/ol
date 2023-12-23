@@ -4205,8 +4205,6 @@ loop:;
 			/*! \subsection mmap
 			* \brief 9: (mmap address length offset) -> bytevector
 			*
-			* Reposition read/write file offset
-			*
 			* \param address (type-vptr)
 			* \param length (integer)
 			* \param offset (integer)
