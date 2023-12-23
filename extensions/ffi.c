@@ -2931,55 +2931,77 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 }
 
 /** This function returns size of basic types:
- * 1 - char (signed, unsigned)
- * 2 - short (signed, unsigned)
- * 3 - int (signed, unsigned)
- * 4 - long (signed, unsigned)
- * 5 - long long (signed, unsigned)
- * 6 - size_t
- * ...
- * 10 - float, 11 - double
- * 20 - void*
+ *  1 .. 32 - primitive types
+ * 48 .. 63 - ffi types
  */
+static
+int c_sizeof(int type)
+{
+	switch (type) {
+		// ansi c types
+		case 1: return sizeof(char);
+		case 2: return sizeof(short);
+		case 3: return sizeof(int);
+		case 4: return sizeof(long);
+		case 5: return sizeof(long long);
+		case 6: return sizeof(size_t);
+		// floating point types
+		case 10: return sizeof(float);
+		case 11: return sizeof(double);
+		// etc.
+		case 20: return sizeof(void*);
+	}
+	return 0;
+}
+static
+int ffi_sizeof(int type)
+{
+	switch (type) {
+		// ffi types
+		case TVOID: return sizeof(void*);
+		case TBOOL: return sizeof(_Bool);
+
+		case TFLOAT: return sizeof(float);
+		case TDOUBLE: return sizeof(double);
+
+		case TINT8:  return sizeof(int8_t);
+		case TINT16: return sizeof(int16_t);
+		case TINT32: return sizeof(int32_t);
+		case TINT64: return sizeof(int64_t);
+
+		case TUINT8:  return sizeof(uint8_t);
+		case TUINT16: return sizeof(uint16_t);
+		case TUINT32: return sizeof(uint32_t);
+		case TUINT64: return sizeof(uint64_t);
+	}
+	return 0;
+}
+
 PUBLIC
 word OLVM_sizeof(olvm_t* self, word* arguments)
 {
 	(void) self;
 
-	word* A = (word*)car(arguments); // type
-	switch (value(A)) {
-		// primitive integer types
-		case 1: return I(sizeof(char));
-		case 2: return I(sizeof(short));
-		case 3: return I(sizeof(int));
-		case 4: return I(sizeof(long));
-		case 5: return I(sizeof(long long));
-		case 6: return I(sizeof(size_t));
-
-		// floating point types
-		case 10: return I(sizeof(float));
-		case 11: return I(sizeof(double));
-
-		// general types:
-		case 20: return I(sizeof(void*));
-
+	word A = car(arguments);
+	if (is_value(A)) {
+		int type = value(A);
+		// ansi c types
+		int size = c_sizeof(type);
+		if (size) return I(size);
 		// ffi types
-		case TVOID: return I(sizeof(void*));
-
-		case TBOOL: return I(sizeof(_Bool));
-
-		case TFLOAT: return I(sizeof(float));
-		case TDOUBLE: return I(sizeof(double));
-
-		case TINT8:  return I(sizeof(int8_t));
-		case TINT16: return I(sizeof(int16_t));
-		case TINT32: return I(sizeof(int32_t));
-		case TINT64: return I(sizeof(int64_t));
-
-		// unknown type(s)
-		default:
-			return IFALSE;
+		if (type & (FFT_PTR|FFT_REF)) {
+			size = ffi_sizeof(type & ~(FFT_PTR|FFT_REF));
+			if (size)
+				size = sizeof(int*); // typed pointer
+		}
+		else
+			size = ffi_sizeof(type);
+		if (size) return I(size);
 	}
+	else if (is_pair(A))
+		return I(structure_size(0, A));
+
+	return IFALSE;
 }
 
 // PUBLIC

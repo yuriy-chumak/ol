@@ -21,7 +21,7 @@
       load-dynamic-library
 
 
-      ffi sizeof uname *uname*
+      ffi uname *uname*
 
       make-vptr
       make-callback
@@ -90,8 +90,8 @@
       make-64bit-array
       make-vptr-array
 
-      ; function for boxing and unboxing single values
-      box unbox; execve
+      ; utility functions
+      box unbox sizeof
 
       ; fft data manipulation helpers
       vptr->string
@@ -284,25 +284,8 @@
 (define fft-int* (fft* fft-int))
 (define fft-int& (fft& fft-int))
 
-;; ; -- sizeof ---------------------------
-(define (sizeof fft)
-   (cond
-      ((value? fft)
-         (case fft ; todo: rework (use OLVM_sizeof(...))
-            (fft-int8  1)
-            (fft-uint8  1)
-            (fft-int16 2)
-            (fft-uint16 2)
-            (fft-int32 4)
-            (fft-uint32 4)
-            (fft-int64 8)
-            (fft-uint64 8)
-            (fft-float 4)
-            (fft-double 8)
-            (fft-void* (size nullptr))))
-      ; todo: перенести в OLVM_sizeof и переделать
-      ((list? fft)
-         (fold (lambda (f el) (+ f (sizeof el))) 0 type))))
+; -- sizeof ---------------------------
+(define sizeof ffi:sizeof)
 
 ; -- utils ----------------------------
 
