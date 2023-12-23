@@ -1723,6 +1723,7 @@ size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 		if (is_pair(p))
 			ptr = store_structure(ffp, memory, ptr, p, v); // assert (is_pair v)
 		else {
+			if (v == IFALSE) v = I(0); // we accept "false" as "empty value, 0"!
 			switch (value(p)) {
 			case TINT8: case TUINT8:
 				*(int8_t*)(memory+ptr) = (int8_t)value(v); ptr += sizeof(int8_t);
