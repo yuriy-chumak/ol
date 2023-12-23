@@ -202,7 +202,7 @@
    (define char* type-string)
    (define char** fft-void**)
    (define void fft-void)
-   (define size_t fft-size-t)
+   (define size_t fft-size_t)
 
    (define uint8_t fft-uint8)
    ;(define bool fft-unsigned-char)

@@ -151,7 +151,7 @@
 (begin
    (setq int fft-int)
    (setq void fft-void)
-   (setq size_t fft-size-t)
+   (setq size_t fft-size_t)
    (setq size_t& (fft& size_t))
    (setq int& (fft& fft-int))
 
