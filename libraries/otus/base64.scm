@@ -1,8 +1,7 @@
 (define-library (otus base64)
 (export
    encode
-   decode
-)
+   decode)
 
 (import (otus lisp))
 
@@ -38,7 +37,12 @@
 
    (define (encode str)
       (runes->string
-         (let ((code (let loop ((hold [0 0 (str-iter str)]) (n 0))
+         (let*((data (cond
+                        ((string? str) (str-iter str))
+                        ((bytevector? str) (bytevector->list str))
+                        (else
+                           (fasl-encode str))))
+               (code (let loop ((hold [0 0 data]) (n 0))
                         (let*((bit hold (bits 6 hold)))
                            (if bit
                               (cons
@@ -52,32 +56,28 @@
 
    ; -- decoder
    (define kernel (alist->ff (map cons (string->bytes alphabet) (iota (string-length alphabet)))))
-   (define (bits n hold)
-      (let loop ((hold hold))
-         (vector-apply hold (lambda (v i l)
-            (cond
-               ((null? l)
-                  (values (>> v (- i n)) #false))
-               ((pair? l)
-                  (if (not (less? i n))
-                     (values (>> v (- i n)) (vector (band v (- (<< 1 (- i n)) 1)) (- i n) l))
-                     (loop (vector
-                        (bor (<< v 6) (kernel (car l) 0))
-                        (+ i 6)
-                        (unless (eq? (car l) "=") (cdr l))))))
-               (else
-                  (loop (vector v i (l)))))))))
 
    (define (decode str)
-      (runes->string
-         (let loop ((hold [0 0 (str-iter str)]))
-            (let*((bit hold (bits 8 hold)))
-               (if (not (zero? bit))
-                  (cons
-                     bit
-                     (loop hold))
-                  (if hold
-                     (loop hold)
-                     #null))))))
+      (define-values (data len)
+      (let loop ((in (str-iter str)) (out 0) (len 0))
+         (cond
+            ((null? in)
+               (values out len))
+            ((pair? in)
+               (define char (kernel (car in) #f)) ; 0..63, 6 bits
+               (if char
+                  (loop (cdr in) (bor (<< out 6) char) (+ len 1))
+               else ; invalid char? (possibly '=', end-of-data)
+                  (if (eq? (car in) #\=)
+                     (loop (cdr in) (>> out 2) len)
+                  else
+                     (values out len))))
+            (else
+               (loop (force in) out len)))))
+      (let loop ((i (div (* len 6) 8)) (data data) (out '()))
+         (if (eq? i 0)
+            out
+         else
+            (loop (- i 1) (>> data 8) (cons (band data 255) out)))) )
 
 ))
