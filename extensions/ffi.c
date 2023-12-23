@@ -1700,7 +1700,7 @@ size_t structure_size(size_t size, word t)
 					case TDOUBLE:              subsize = sizeof(double);  break;
 					default:                   subsize = sizeof( word );
 				}
-				size += ((size + subsize - 1) & -subsize) + subsize; // align + size
+				size = ((size + subsize - 1) & -subsize) + subsize; // align + size
 			}
 		}
 		t = cdr(t);
