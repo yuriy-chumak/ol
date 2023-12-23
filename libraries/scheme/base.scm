@@ -117,6 +117,7 @@
       ;; input-port?
    integer->char
    integer?
+   iota       ; * (srfi 1)
    lambda
    lcm
    length
@@ -262,7 +263,7 @@
       (scheme bytevector)
       (scheme string)
       (scheme exceptions)
-      ;; (scheme dynamic-bindings) ; 4.2.6 Dynamic bindings (coroutines required)
+      (srfi 1)
       (owl io) (owl math) (owl math-extra)
       (scheme inexact)
       (owl string)

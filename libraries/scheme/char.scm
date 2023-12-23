@@ -34,7 +34,6 @@
    (import
       (scheme base)
       (owl list)
-      (srfi 1)
       (owl lazy)
       (owl math)
       (owl string)

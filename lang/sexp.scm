@@ -23,7 +23,6 @@
 
    (import
       (scheme base)
-      (srfi 1)
 
       (owl parse)
       (owl math)

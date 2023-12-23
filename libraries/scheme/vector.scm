@@ -49,7 +49,6 @@
 
    (import
       (scheme core)
-      (srfi 1)
       (scheme list)
       (owl string)
       (owl math))
