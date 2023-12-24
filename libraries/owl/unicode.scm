@@ -126,7 +126,7 @@
                   (ext point)
                   tl))
             (else
-               (runtime-error "utf8 encode: code point too high " point))))
+               (runtime-error "rune is not in unicode" point))))
 
       ; ll -> list | #false
       (define (utf8-encode thing)
