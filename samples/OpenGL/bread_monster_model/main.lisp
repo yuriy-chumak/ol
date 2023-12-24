@@ -13,97 +13,10 @@
 (import (file glTF))
 (define glTF (read-glTF-file "scene.gltf"))
 
-(define (print-array title array)
-   (print title)
-   (vector-for-each (lambda (a)
-         (print "   " a))
-      array))
-
-; binary buffers
-(import (prefix (otus base64) base64:))
-(define buffers (vector-map (lambda (buffer)
-      (define source (buffer 'uri))
-      ; todo: assert (output size == "byteLength") ?
-      (cond
-         ((m/^data:application\/octet-stream;base64,/ source)
-            (make-bytevector (base64:decode (substring source 37))))
-         (else
-            (file->bytevector source))))
-   (glTF 'buffers)))
-(print-array "buffers:" buffers)
-
-; vertex buffer objects
-(define bufferViews (vector-map (lambda (bufferView)
-      (define VBO (box 0))
-      (glGenBuffers 1 VBO)
-      (glBindBuffer (bufferView 'target) (unbox VBO))
-
-      (define buffer (vref buffers (bufferView 'buffer)))
-      (define offset (bufferView 'byteOffset 0))
-      (glBufferData (bufferView 'target) (bufferView 'byteLength)
-         (cons type-vptr (cons buffer offset)) ; trick: &buffer[offset]
-         GL_STATIC_DRAW)
-
-      (glBindBuffer (bufferView 'target) 0)
-      (put bufferView 'vbo (unbox VBO)))
-   (glTF 'bufferViews)))
-(print-array "bufferViews:" bufferViews)
-(define buffers #f) ; free buffer data, reduce memory usage
-
-; accessors
-(define accessors (glTF 'accessors))
-(print-array "accessors:" accessors)
-
-; meshes (vertex array objects for every primitive)
-(define meshes (vector-map (lambda (mesh)
-      (put mesh 'primitives
-      (vector-map (lambda (primitive)
-            (define VAO '(0))
-            (glGenVertexArrays 1 VAO)
-            (glBindVertexArray (unbox VAO))
-
-            (define position ((primitive 'attributes) 'POSITION)) ;VEC3
-            (when position
-               (define accessor (vref accessors position))
-               (define bufferView (vref bufferViews (accessor 'bufferView)))
-               (define gl_Position 0) ; todo: glGetAttribLocation(shaderProgram, "position")
-
-               (glBindBuffer GL_ARRAY_BUFFER (bufferView 'vbo))
-               (glVertexAttribPointer gl_Position
-                  ; number of components per vertex
-                  (let ((atype (accessor 'type)))
-                     (cond
-                        ((string-eq? atype "SCALAR") 1)
-                        ((string-eq? atype "VEC2") 2)
-                        ((string-eq? atype "VEC3") 3)
-                        ((string-eq? atype "VEC4") 4)
-                        ;... MATRIX...
-                     ))
-                  ; data type of each component
-                  (accessor 'componentType) ; direct mapped to GL_FLOAT etc. constants
-                  (accessor 'normalized #f) ; direct mapping to GL_TRUE..GL_FALSE
-                  ; stride & offset
-                  (bufferView 'byteStride 0)
-                  (accessor 'byteOffset 0))
-               (glEnableVertexAttribArray gl_Position)) ; todo: get index from shader?
-            ; todo: NORMAL, TANGENT, TEXCOORD_0 .. TEXCOORD_n, COLOR_0 .. COLOR_n, JOINTS.., WEIGHTS..
-
-            (glBindVertexArray 0)
-            (put primitive 'vao (unbox VAO)))
-         (mesh 'primitives))))
-   (glTF 'meshes)))
-(print-array "meshes:" meshes)
-
-;; ;; ; images
-;; ;; (define images (vector-map (lambda (image)
-;; ;;       (define source (image 'uri))
-;; ;;       ; todo: load image using SOIL
-;; ;;       #true)
-;; ;;    (glTF 'images)))
-;; ;; (print images)
-
-
 (define nodes (glTF 'nodes))
+(define meshes (glTF 'meshes))
+(define bufferViews (glTF 'bufferViews))
+(define accessors (glTF 'accessors))
 
 ; ---------------------------
 (define po (gl:create-program
@@ -125,19 +38,23 @@
 (glUseProgram po)
 
 ; draw
+(import (owl math fp))
 (import (lib GLU))
 (gl:set-renderer (lambda ()
    (glClear (bor GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
-   ;; (glMatrixMode GL_PROJECTION)
-   ;; (glLoadIdentity)
-   ;; (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 0.01 1000)
+   (glMatrixMode GL_PROJECTION)
+   (glLoadIdentity)
+   (gluPerspective 45 (/ (gl:get-window-width) (gl:get-window-height)) 0.01 1000)
 
-   ;; (glMatrixMode GL_MODELVIEW)
-   ;; (glLoadIdentity)
-   ;; (gluLookAt 0 0 0
-   ;;    100 100 100
-   ;;    0 1 0)
+   (glMatrixMode GL_MODELVIEW)
+   (glLoadIdentity)
+
+   (define x (/ (mod (time-ms) 62831) #i10000))
+   (gluLookAt
+      (* 30 (fsin x)) 2 (* 30 (fcos x))
+      0 0 0
+      0 1 0)
 
    (glUseProgram po)
    (glUniform1f (glGetUniformLocation po "time") (/ (mod (time-ms) 1000000) #i1000))
@@ -147,7 +64,15 @@
    (let walk ((i 0))
       (define node (vref nodes i))
       (glPushMatrix)
-      ;glMultMatrix if has matrix
+      (when (node 'matrix #f)
+         (define m (node 'matrix))
+         ;; (define mat [
+         ;;    (vref m 0) (vref m 4) (vref m 8) (vref m 12)
+         ;;    (vref m 1) (vref m 5) (vref m 9) (vref m 13)
+         ;;    (vref m 2) (vref m 6) (vref m 10) (vref m 14)
+         ;;    (vref m 3) (vref m 7) (vref m 11) (vref m 15)
+         ;; ])
+         (glMultMatrixf m))
       (when (node 'mesh #f)
          (define mesh (vref meshes (node 'mesh)))
          (vector-for-each (lambda (primitive)
@@ -170,10 +95,6 @@
                         (6 GL_TRIANGLE_FAN))
                      (accessor 'count)
                      (accessor 'componentType)
-                     ;; (case (accessor 'componentType)
-                     ;;    (GL_BYTE  GL_UNSIGNED_BYTE)
-                     ;;    (GL_UNSIGNED_BYTE  GL_UNSIGNED_BYTE)
-                     ;;    ...
                      (accessor 'byteOffset 0)))
 
                (glBindVertexArray 0))

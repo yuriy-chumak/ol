@@ -2,6 +2,8 @@
 (import (lib gl-3))
 (gl:set-window-title "1. Creating an OpenGL 3.0 Window")
 
+(gl:set-context-version 3 2) ; use OpenGL 3.2
+
 ; change OpenGL config
 (define-library (OpenGL config)
    (import (otus lisp))
@@ -10,9 +12,7 @@
       (define config {
          'GL_VERSION_1_2_DEPRECATED #true
       })))
-
-(gl:set-context-version 3 2) ; use OpenGL version 3.2
-(import (OpenGL version-3-2))
+(import (OpenGL 3.2))
 
 ; let's check context version
 (define major (box 0))
