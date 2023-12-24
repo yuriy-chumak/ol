@@ -267,6 +267,7 @@
       (owl io) (owl math) (owl math-extra)
       (scheme inexact)
       (owl string)
+      (owl unicode)
       (scheme process-context))
 
    (begin
@@ -453,7 +454,12 @@
          ((u8)      (syscall 1 stdout (bytevector u8) 1))
          ((u8 port) (syscall 1   port (bytevector u8) 1))))
 
-      (define write-char write-u8)
+      (define write-char
+         (define (write-char char port)
+            (syscall 1 port (make-bytevector (encode-point char #null))))
+         (case-lambda
+            ((char)      (write-char char stdout))
+            ((char port) (write-char char   port))))
 
       (define write-bytevector (case-lambda
          ((bv)                 (syscall 1 stdout bv (size bv)))
