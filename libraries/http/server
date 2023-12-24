@@ -124,6 +124,13 @@
    else
       4000))
 
+(define get-line
+   (let-parse* (
+         (bytes (greedy+ (byte-if (lambda (x) (not (eq? x #\newline))))))
+         (endl (imm #\newline)))
+      bytes))
+
+
 (http:run port (lambda (fd request headers body close)
    (define (send . args)
       (for-each (lambda (arg)
@@ -140,16 +147,9 @@
          ((not (zero? (band (ref stat 3) #o0040000)))
             (display "<folder> ")
             ; list folder:
-            (define In (pipe))
             (define Out (pipe))
-            (define Pid (system (list "/bin/bash" "-c" (string-append "ls -lah " filename)) In Out))
-            (close-pipe In) ; we don't use In rigth now
-
-            (define get-line
-               (let-parse* (
-                     (bytes (greedy+ (byte-if (lambda (x) (not (eq? x #\newline))))))
-                     (endl (imm #\newline)))
-                  bytes))
+            (define Pid (system (list "/bin/sh" "-c" (string-append
+                           "ls -lah " filename)) #f Out))
 
             (send "HTTP/1.0 200 OK\n"
                "Connection: close\n"

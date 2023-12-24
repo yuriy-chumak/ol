@@ -231,7 +231,7 @@
       (print-to stderr "can't listen a socket")
       (return #false))
 
-   (print-to stderr "server listening to 0.0.0.0:" port)
+   (print-to stderr "server listening to http://0.0.0.0:" port)
    ; accept loop
    (let loop ()
       (if (syscall 23 socket
