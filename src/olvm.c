@@ -1682,7 +1682,7 @@ static int pvenv_open (const char *filename, int flags, int mode, void* userdata
 // набор макросов - проверок для команд
 // car, cdr:
 #ifndef CAR_CHECK
-#define CAR_CHECK 1
+#define CAR_CHECK 0
 #endif
 
 #if CAR_CHECK
@@ -1692,7 +1692,7 @@ static int pvenv_open (const char *filename, int flags, int mode, void* userdata
 #endif
 
 #ifndef CDR_CHECK
-#define CDR_CHECK 1
+#define CDR_CHECK 0
 #endif
 
 #if CDR_CHECK
