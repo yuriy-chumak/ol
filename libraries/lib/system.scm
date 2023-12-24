@@ -9,6 +9,7 @@
       (scheme list)
       (owl io) (owl string))
 (begin
+   ; car to read, cdr to write
    (define pipe (case-lambda
       (() (syscall 22))
       ((flags) (syscall 22 flags))))
@@ -35,21 +36,25 @@
             (set-cdr! err #false))
          ; return pid if ok
          Pid)
-      (define (->port in)
+      (define (->car in)
          (cond
             ((pipe? in) (car in))
-            ((port? in) in)
-            (else #false)))
+            ((port? in) in) ))
+      (define (->cdr in)
+         (cond
+            ((pipe? in) (cdr in))
+            ((port? in) in) ))
+
       ; main
       (case-lambda
          ((commands)
             (system commands #f #f #f #null))
          ((commands in)
-            (system commands in #f #f (list (->port in))))
+            (system commands in #f #f (list (->car in))))
          ((commands in out)
-            (system commands in out #f (list (->port in) (->port out))))
+            (system commands in out #f (list (->car in) (->cdr out))))
          ((commands in out err)
-            (system commands in out err (list (->port in) (->port out) (->port err))))))
+            (system commands in out err (list (->car in) (->cdr out) (->cdr err))))))
 
    (define (waitpid pid)
       (syscall 61 pid))
