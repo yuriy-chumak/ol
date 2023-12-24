@@ -238,18 +238,19 @@ object_t
 #include <limits.h>
 #include <assert.h>
 
-// only 32-bit and 64-bit machines supported.
-// http://www.delorie.com/gnu/docs/gcc/gccint_53.html
-#if SIZE_MAX == 0xffffffffffffffffU
-	typedef unsigned big_t __attribute__ ((mode (TI))); // __uint128_t
-	typedef signed int_t __attribute__ ((mode (DI))); // signed 64-bit
-	#define INT_T_MIN INT64_MIN
-#elif SIZE_MAX == 0xffffffffU
-	typedef unsigned big_t __attribute__ ((mode (DI))); // __uint64_t
-	typedef signed int_t __attribute__ ((mode (SI))); // signed 32-bit
+// only 32- and 64-bit machines supported.
+// https://gcc.gnu.org/onlinedocs/gccint/Machine-Modes.html
+// define internal math types based on sizeof(size_t):
+#if SIZE_MAX == 0xffffffffU
+	typedef signed int_t __attribute__ ((mode (SI))); // four-byte integer (32 bits)
+	typedef unsigned big_t __attribute__ ((mode (DI))); // eight-byte integer (64 bits)
 	#define INT_T_MIN INT32_MIN
+#elif SIZE_MAX == 0xffffffffffffffffU
+	typedef signed int_t __attribute__ ((mode (DI))); // eight-byte integer (64 bits)
+	typedef unsigned big_t __attribute__ ((mode (TI))); // sixteen-byte integer (128 bits)
+	#define INT_T_MIN INT64_MIN
 #else
-#	error Unsupported math bit-count, only only 32-bit and 64-bit are supported
+#	error Unsupported platform bitness, only 32- and 64-bit versions are supported!
 #endif
 
 // ------------------------------------------------------
@@ -1710,7 +1711,7 @@ static int pvenv_open (const char *filename, int flags, int mode, void* userdata
 #define FREESPACE                  (4096) // expected working memory buffer (in words)
 
 // 1024 - некое магическое число, подразумевающее количество
-// памяти, используемой между вызовами apply. мои тесты пока показывают максимальное число 32
+// памяти, используемой между вызовами apply. мои тесты пока показывают максимальное число 96
 
 
 // possible data models: LP64 ILP64 LLP64 ILP32 LP32

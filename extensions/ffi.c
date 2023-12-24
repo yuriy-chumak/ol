@@ -1504,7 +1504,7 @@ size_t structure_calc(word args, word rtty, size_t* total)
 	if (is_value(rtty)) // просто тип
 		arg_size(args, rtty, total);
 	else
-	while (rtty != INULL) { // данные структуры
+	while (rtty != INULL) { // данные структуры. assert (is_pair(args))
 		word arg = car(args);
 		word tty = car(rtty); // структукры должны совпадать по количеству аргументов с типами
 

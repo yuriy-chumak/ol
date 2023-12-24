@@ -2,8 +2,8 @@
    (version 1.0)
    (license MIT/LGPL3)
    (keywords (scheme ol list))
-   (description "
-      List processing functions.")
+   (description
+      "Extra list functions.")
 
    (import
       (scheme core))

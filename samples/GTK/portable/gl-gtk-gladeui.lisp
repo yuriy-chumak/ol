@@ -6,8 +6,7 @@
    (lib gtk-3))
 (import (lib gtk-3 glarea))
 (import (otus random!))
-(import (OpenGL 2.0))
-(import (OpenGL version-3-2))
+(import (OpenGL 3.0))
 
 ; main:
 (gtk_init (box 0) #f)
@@ -49,7 +48,6 @@
 (g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
 
 ; gl init
-(define VBO (box 0))
 (define GLP (box 0))
 (define VAO (box 0))
 
@@ -72,6 +70,7 @@
          (glGenVertexArrays 1 VAO)
          (glBindVertexArray (unbox VAO))
 
+         (define VBO (box 0))
          (glGenBuffers 1 VBO)
          (glBindBuffer GL_ARRAY_BUFFER (unbox VBO))
          (define Vertices '((-0.8 -0.7 0)

@@ -1,10 +1,10 @@
 ```
-                  small,
-        `___`         embeddable
+                  Small,
+        `___`         Embeddable
         (O,O)             and
         \)  )          purely
-      ---"-"---     functional!
-   O t u s L i s p
+      ---"-"---     Functional!
+  O t u s   L i s p
 ```
 *Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
 
@@ -19,7 +19,7 @@ Otus Lisp, Version 2.5 rc1
 
 Otus Lisp (**Ol** in short) is a purely functional dialect of Lisp.
 
-It implements an extended subset of the R<sup>7</sup>RS Scheme
+Ol implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
 but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
 and cross-platform;  provides a portable, high-level interface
