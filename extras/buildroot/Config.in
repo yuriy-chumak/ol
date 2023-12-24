@@ -2,7 +2,7 @@ config BR2_PACKAGE_OL
 	bool "ol"
 	help
 	  Otus Lisp is a purely* functional dialect of Lisp.
-	  It implements an extended subset of R5RS Scheme including,
+	  Ol implements an extended subset of R7RS Scheme including,
 	  but not limited to, some of the SRFI.
 	  It is small, embeddable and crossplatform.
 

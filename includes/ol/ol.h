@@ -1,10 +1,10 @@
 /*!# Otus Lisp
  * ```
- *                     small,
- *         `___`           embeddable
- *         (O,O)               and
- *         \)  )            purely
- *       ---"-"---       functional!
+ *                   small,
+ *         `___`         embeddable
+ *         (O,O)             and
+ *         \)  )          purely
+ *       ---"-"---     functional!
  * 
  * Copyright(c) 2014 - 2023 Yuriy Chumak
  * ```
@@ -24,7 +24,7 @@
 /**
  * Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
  * 
- * It implements an extended subset of the R7RS Scheme, including
+ * Ol implements an extended subset of the R7RS Scheme, including
  * but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
  * and cross-platform;  provides a portable, high-level interface
  * to call code written in another language (c, python, lua, etc).
