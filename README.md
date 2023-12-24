@@ -13,8 +13,8 @@
 [![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/crossbuild%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-windows.yml)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 
-Otus Lisp, Version 2.5 rc1
-==========================
+Otus Lisp, Version 2.5
+======================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
 Otus Lisp (**Ol** in short) is a purely functional dialect of Lisp.
@@ -47,7 +47,7 @@ PACKAGING
 [![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
 [![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
 
-**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).
+~~**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).~~
 
 Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
 
@@ -55,41 +55,38 @@ Some additional libraries can be installed using 'kiss' package manager. Usage i
 Q/A
 ---
 
-1. Q. Some folders are empty (i.e. "libraries/OpenGL"), is it ok?  
+1. Q. Some folders **are empty** (i.e. "libraries/OpenGL"), is it ok?  
    A. Yes, it's ok. Some parts of Ol project are separated into their own independent repositories.  
-      Use `git clone --recursive` to get a full project. Or `git submodule init; git submodule update` to update existing with empty folders.
+      Use `git clone --recursive` to get a full project. Or `git submodule init; git submodule update` to update existing one.
 
-1. Q. Why no **arrow keys** processing and a history in Ol command line?<br/>
+1. Q. Why no **arrow keys** processing and a history in Ol command line?  
    A. For the gods of simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
       (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and run as just `ol`).
 
-1. Q. *.. fatal error: stdlib.h: No No such file or directory.*  
-   A. Install gcc multilib, i.e. *sudo apt install gcc-multilib*.
-
-1. Q. *.. fatal error: bits/libc-header-start.h: No such file or directory.*  
-   A. Install gcc multilib, i.e. *sudo apt install gcc-multilib*.
+1. Q. *.. **fatal error**: stdlib.h: No No such file or directory.*  
+   Q. *.. **fatal error**: bits/libc-header-start.h: No such file or directory.*  
+   A. Install gcc `multilib`, i.e. *sudo apt install gcc-multilib*.
 
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
-   A. Yes, you are free to choose an MIT **or** LGPL license.
+   A. Yes, you are free to choose an MIT or LGPL license.
 
-1. Q. I want to have a Virtual Environment. Can I?  
-   A. Yes. Use `--home=the-yours-venv-path` Ol command line option.  
-      [More about venv](#virtual-env).
+1. Q. I want to run Ol in **a venv** (Virtual ENVironment). Can I?  
+   A. Yes. Use `--home=yours-venv-folder` command line option ([more about](#virtual-env) venv).  
+      Additionally, you can embed such a venv into the Ol executable itself (the [portable](#portable-form) form).
 
 1. Q. Anything else interesting?  
    A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
-      Just type `echo ,load http/server| ol` in command line, or type `,l http/server` inside Ol session.
+      Just type `echo ,load http/server| ol` in command line (or `,l http/server` inside Ol session),  
+      change `ol` to `ol - --port 8080` to use the custom port.
 
-1. Q. Why do you call characters not "characters", but "runes"?  
-   A. Because these are runes - letters in a wide set of alphabets :)  
-      The Plan 9 operating system (a flavor of Unix), for example, uses UTF-8 as character encoding,
-      and its wide character type is called "Rune", not "wide char".
+1. Q. Why do you call the characters not "characters" but "runes"?  
+   A. Because they are *runes* - letters in a wide set of alphabets :)  
 
 1. Q. Do you have something like "sleep mode"?  
-   A. You can store the current REPL session with `,save "filename"` and continue it later as `ol filename` from the command line (but not from the other REPL session).
+   A. You can store the current REPL session with `,save "filename"`, just run later `ol filename` to continue saved session.
 
 1. Q. I'm lost in prefix math notation, can you help me?  
-   A. Ol has a special math library that provides infix math notation. Just use the `(math infix-notation)` library.  
+   A. Ol has a special math library that provides infix math notation. Use the `(math infix-notation)` library.  
    ```scheme
    > (import (math infix-notation))
    > (print (infix-notation
@@ -103,14 +100,11 @@ Q/A
    ; you can view result of transformations with ",expand"
    > ,expand (\\  1 + 2 * 3 - sqrt(4) )
    (- (+ 1 (* 2 3)) (sqrt 4))
-   > ,expand (\\  a * x ^ 2 + b * x + c )
-   (+ (+ (* a (^ x 2)) (* b x)) c)
    ```
 
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available (the previous Freenode channel is closed).
-Libera.Chat channel temporary unavailable.
 
 [The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
@@ -127,6 +121,7 @@ Table of Contents
    * [R<sup>7</sup>RS Differences](#r7rs-differences)
    * [Samples, Tests, Learning](#learning)
 1. [Deprecations](#deprecations)
+1. [Hacking](#hacking)
 1. [Lisp sources in binary form](#binary-scripts)
 1. [Files](#files), [Docs](#documentation)
 1. [License](#license)
@@ -218,111 +213,43 @@ You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 
-* 2.1. Identifiers
-  * `|\t\t|` and `|\x9;\x9;|` are **different** in Ol, but *the same* in Scheme.
-  * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
+The most important differences are:
 
-* 4.1.5. Conditionals
-  * Ol provides **extended `if`** with `then` and `else` keywords in forms:
-    * `(if <condition> then <then1-clause>..<thenN-clause>)`,
-    * `(if <condition> <then-clause> else <else1-clause>..<elseN-clause>)`,
-    * `(if <condition> then <then1-clause>..<thenN-clause> else <else1-clause>..<elseN-clause>)`.
+* Ol is definitely **case sensitive**.
+* `Numbers without precision` considered to be **exact** in Ol, but *inexact* in Scheme.
+  - `integer?` for inexact numbers always returns **#false** in Ol.
+* **No** `set!` in Ol (because Ol is purely functional),
+  - note: Use `define` instead.
+  - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions [are provided](doc/reference/pairs-and-lists.md#set-car).
+  - note: Dynamic variables are available via `(scheme dynamic-bindings)` [library](doc/reference/dynamic-bindings.md).
+* CHARACTERS in Ol is a **small numbers** (aka 'enums'), but a *characters* in Scheme.
+  - note: Ol supports full Unicode 14.0.0 (2021 Sep 14) character set.
+  - note: To write a character use `write-char`, otherwise you'll write a number.
+* NEGATIVE indices in `substring` is **valid** in Ol (means "from the end of string").
+* NEGATIVE indices in a vector functions are **valid** in Ol (means "from the end of vector").
+* **Extended form** of `case`,
+* **Extended form** of `if` (with `then` and `else` [keywords]((doc/reference/)),
+* Ol has builtin **regular expressions**.
+* `apply` arguments count is **limited to 256** in Ol (use `fold` otherwise).
+* `(eqv? +nan.0 +nan.0)` is **#true** in Ol.
 
-* 4.1.6. Assignments
-  * **No** `set!` in Ol.
-    - explanation: Ol is a purely functional language.
-    - note: Use `define` instead.
-    - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions are provided.
-    - note: Dynamic variables are available via `(scheme dynamic-bindings)` library. With some speed impact, sure.
-
-* 4.1.7. Inclusion
-  * **No** `include` and `include-ci` in Ol.
-    - note: Use libraries (`import`, `define-library`, `export`, etc.) instead.
-    - note: Top level ",load" REPL command is available.
-
-* 4.2.1. Conditionals
-  * Result of the `when` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
-  * Result of the `unless` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
-  * Extended form of `case` is available in Ol.
-
-* 4.2.5. Delayed evaluation
-  * **No** `delay-force`, `promise?` in Ol.
-    - note: `delay` and `force` exists, sure.
-    - note: `make-promise` exist too.
-
-* 4.2.7. Exception handling
-  * **No** `guard` in Ol.
-
-* 4.3. Macros
-  * **No** `let-syntax` and `letrec-syntax` in Ol.
-    - note: Use `define-syntax` instead.
-
-* 5.5. Record-type definitions
-  * **No** `define-record-type` in Ol.
-
-* 5.6.1. Library Syntax
-  * **No** `include-ci` due to fundamental ambiguity.
-  * **Additional** library terms `prefix`, `version`, `license`, `keywords`, `description`.
-
-* 6.1. Equivalence predicate `eqv?`
-  * `(eqv? +nan.0 +nan.0)` is **#true** in Ol, but *unspecified* in Scheme. The same is for `+inf.0` and `-inf.0`.
-
-* 6.2.5. Syntax of numerical constants
-  * `Numbers without precision` considered to be **exact** in Ol, but *inexact* in Scheme.
-    - explanation: Inexactness can be disabled by compiler features or/and unsupported by platform. Ol designed with respect for the same functionality of the program, independently of inexactness support (unless we directly use inexact numbers, sure).
-
-* 6.2.6. Numerical operations
-  * note: `complex?` is the same as `number?`, like in Scheme.
-  * `integer?` for inexact numbers always returns **#false** in Ol, but can be *#true* in Scheme when `(= number (round number))`.
-    - explanation: Inexactness is an inexactness, we may lose the fractional part and not to be noticed about. So let's be a little paranoid.
-  * `sqrt` is **included** in base library profile while *not included* in Scheme
-    - explanation: due to frequent use.
-
-* 6.4. Pairs and lists
-  * `memq` and `assq` behavior with 'short' numbers (aka 'enumerations') as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
-    - *note: those numbers processed by memq and assq as usual elements.*
-
-* 6.6. Characters
-  * CHARACTERS in Ol is a **small numbers** (aka 'enumerations'), but a *characters* in Scheme.
-    - explanation: This is for a historical reason.
-      Ol supports two types of numbers - 'small' numbers (enumerations) and 'long' numbers (just numbers). 'Small' numbers are used as 'glyphs' (or 'runes' in other word) inside strings for Unicode support. An additional 'character' type with requirement to use the char->integer and integer->char functions every time is too boring and slow. Thanks.
-    - note: Ol supports full Unicode 14.0.0 (2021 Sep 14) character set.
-    - note: If you want to print a character in the form of a letter (or a digit, etc.), use a function 'string', i.e. instead of `(print #\λ)` use `(print (string #\λ))`, otherwise you will get a number 955.
-
-* 6.7. Strings
-  * NEGATIVE indices of `substring` is **valid** in Ol, but *invalid* in Scheme.
-    - note: "-1" is the last rune of the string, "-2" is before the last element, etc.
-
-* 6.8. Vectors
-  * NEGATIVE indices of a vector is **valid** in Ol, but *invalid* in Scheme.
-    - note: Negative vector indices can be used to access the n-th element from the end of the vector. This means that "-1" is the last element of the vector, "-2" is before the last element, "-n" is the n-th element from the end of the vector.
-
-* 6.10. Control features
-  * `apply` arguments count is **limited to 256** in Ol, but *unlimited* in Scheme.
-    - note: Use `fold` instead in such cases, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
-
-* 6.11. Exceptions
-  * ~~**No** exceptions handling in Ol.~~
-    - note: `with-exception-handler`, `raise`, and `raise-continuable` are added.
-
-* 6.13. Input and output
-  * `current-input-port`, `current-output-port`, and `current-error-port` always return **stdin**, **stdout**, and **stderr** in Ol respectively, but *a parameter objects* in Scheme.
-    - note: due to a large performance impact.
-
-* Ol has builtin **regular expressions** while Scheme *not*.
-  * note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` with optional 'g' suffix, and `c/<pattern>/` as functions to match, change and split the string.
+The full list can be read in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
 
 
 DEPRECATIONS
 ------------
 
-* `(ilist ...)` is deprecated. Use `(cons* ...)` instead.
-* `(interact ...)` from (owl ~~interop~~ async) is deprecated. Use `(await (mail ...))` instead.
-* `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async 'name ...)`, `(actor ...)` instead.
+* 2.3 -> 2.4
+  - `(ilist ...)` is deprecated. Use `(cons* ...)` instead.
+  - `(interact ...)` from (owl ~~interop~~ async) is deprecated. Use `(await (mail ...))` instead.
+  - `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async 'name ...)`, `(actor ...)` instead.
+
+* 2.4 -> 2.5
+  - `(OpenGL version-X.Y)` libraries changed to `(OpenGL X.Y)`.
 
 
-DISASSEMBLY
------------
+HACKING
+-------
 
 Ol contains built-in tool for inspecting the Otus Lisp language.
 
@@ -475,6 +402,8 @@ Use `--home=folder` or `--home=folder1:folder2:...:folderN` Ol command line opti
 
 These folders are linked to the Ol's `*path*` global symbol and can be used and changed at runtime freely.
 
+PORTABLE FORM
+-------------
 
 FILES
 -----
