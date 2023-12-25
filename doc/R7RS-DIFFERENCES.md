@@ -1,6 +1,18 @@
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 
+Why doesn't Ol implement the full R<sup>7</sup>RS standard? Because Ol tries to be:
+  - as simple as possible (i'm sure it's one of the simplest languages),
+  - as small as possible (less than half Meg for a full language),
+  - as fast as possible (avoids unnecessary code executions),
+  - and as predictable as possible (exactly the same behavior for a wide range of different hardware, even without a floating point math processor).
+
+And voila, we have a very simple, elegant and portable language with a nice syntax
+that is a pleasure to program in.
+
+
+This is almost a complete list of differences between Ol and R<sup>7</sup>RS.
+
 * 2.1. Identifiers
   * `|\t\t|` and `|\x9;\x9;|` are **different** in Ol, but *the same* in Scheme.
   * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
@@ -38,7 +50,8 @@ R<sup>7</sup>RS DIFFERENCES
 
 * 4.3. Macros
   * **No** `let-syntax` and `letrec-syntax` in Ol.
-    - note: Use `define-syntax` instead.
+    - note: Use global `define-syntax` instead.
+  * Ol have **three more** macro declarations (`define-macro`, `define-instant-macro` and `define-lazy-macro`, which differs in the parameters evaluation stages) in addition to the hygienic `define-syntax`, while Scheme have *only hygienic one*.
 
 * 5.5. Record-type definitions
   * **No** `define-record-type` in Ol.
@@ -66,7 +79,7 @@ R<sup>7</sup>RS DIFFERENCES
     - *note: those numbers processed by memq and assq as usual elements.*
 
 * 6.6. Characters
-  * CHARACTERS in Ol is a **small numbers** (aka 'enums'), but a *characters* in Scheme.
+  * CHARACTERS in Ol are **small numbers** (aka 'enums'), but are *characters* in Scheme.
     - explanation: This is for a historical reason.
       Ol supports two types of numbers - 'small' numbers (enums) and 'long' numbers (any other numbers). 'Small' numbers are used as 'runes' (or 'glyphs' in other word) inside strings for Unicode support. An additional 'character' type with requirement to use the char->integer and integer->char functions every time is too boring and slow. Thanks.
     - note: Ol supports full Unicode 15.0.0 (2022 Sep 13) character set.
@@ -83,10 +96,6 @@ R<sup>7</sup>RS DIFFERENCES
 * 6.10. Control features
   * `apply` arguments count is **limited to 256** in Ol, but *unlimited* in Scheme.
     - note: Use `fold` instead in such cases, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
-
-* 6.13. Input and output
-  * `current-input-port`, `current-output-port`, and `current-error-port` always return **stdin**, **stdout**, and **stderr** in Ol respectively, but *a parameter objects* in Scheme.
-    - note: due to a large performance impact.
 
 * Ol has builtin **regular expressions** while Scheme *not*.
   * note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` with optional 'g' suffix, and `c/<pattern>/` as functions to match, change and split the string.
