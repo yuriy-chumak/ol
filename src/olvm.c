@@ -4034,16 +4034,18 @@ loop:;
 				break;
 			}
 
-			// case SYSCALL_FSYNC: {
-			// 	if (!is_port(a))
-			// 		break;
+			case SYSCALL_FSYNC: {
+				CHECK_ARGC_EQ(1);
+				if (!is_port(A1))
+					break;
 
-			// 	if (fsync(port (a)) < 0)
-			// 		break;
+				if (fsync(port (A1)) < 0)
+					break;
 
-			// 	result = (word*)ITRUE;
-			// 	break;
-			// }
+				r = (word*)ITRUE;
+				break;
+			}
+
 #if	HAVE_SENDFILE
 			/*! \subsection sendfile
 			* \brief (syscall **40** outp inp offset count) -> number | #f
