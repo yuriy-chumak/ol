@@ -97,5 +97,8 @@ This is almost a complete list of differences between Ol and R<sup>7</sup>RS.
   * `apply` arguments count is **limited to 256** in Ol, but *unlimited* in Scheme.
     - note: Use `fold` instead in such cases, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
 
+* 6.13.3. Output
+  * `print` function provided by Ol out-of-the-box, while no such widely used familiar function in Scheme, just older `display` and `write`.
+
 * Ol has builtin **regular expressions** while Scheme *not*.
   * note: you can use `m/<pattern>/`, `s/<expression>/<new-expression>/` with optional 'g' suffix, and `c/<pattern>/` as functions to match, change and split the string.
