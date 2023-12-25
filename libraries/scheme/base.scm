@@ -100,7 +100,7 @@
       ;; floor-quotient
       ;; floor-remainder
       ;; floor/
-      ;; flush-output-port
+   flush-output-port
    fold foldr ; * ol specific
    for-each
    gcd
@@ -166,7 +166,7 @@
       ;; output-port-open?
       ;; output-port?
    pair?
-      ;; parameterize
+   parameterize
       ;; peek-char
       ;; peek-u8
    port?
@@ -446,9 +446,16 @@
       (define (eof-object) #eof)
       (define (eof-object? o) (eq? o #eof))
 
-      (define (current-input-port) stdin)
-      (define (current-output-port) stdout)
-      (define (current-error-port) stderr)
+      (define (make-current-port stdfd)
+         (case-lambda
+            (() stdfd)
+            ((fd) (let*((oldfd (syscall 32 stdfd)))
+                     (syscall 32 fd stdfd)
+                     oldfd))))
+
+      (define current-input-port (make-current-port stdin))
+      (define current-output-port (make-current-port stdout))
+      (define current-error-port (make-current-port stderr))
 
       (define write-u8 (case-lambda
          ((u8)      (syscall 1 stdout (bytevector u8) 1))
@@ -476,5 +483,21 @@
       (define newline (case-lambda
          (() (print))
          ((port) (print-to port))))
+
+      (define flush-output-port
+         (case-lambda
+            ((port) (syscall 74 port))
+            (() (syscall 74 stdout))))
+
+      (define-syntax parameterize
+         (syntax-rules ()
+            ((parameterize ((var val) . rest-bindings) exp . rest-exps)
+               (let ((old (var val)) ; save var
+                     (value (parameterize rest-bindings exp . rest-exps)))
+                  (var old) ; restore var value
+                  value))
+            ((parameterize ()) exp)
+            ((parameterize () exp . rest)
+               ((lambda () exp . rest)))))
 
 ))

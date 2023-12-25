@@ -1,8 +1,8 @@
 ; 4.2.6 Dynamic bindings
 (define-library (scheme dynamic-bindings)
 (export
-   make-parameter
-   parameterize)
+   make-parameter)
+
 (import
    (scheme core)
    (owl ff) (otus async))
@@ -45,14 +45,4 @@
          ((init converter)
             (return (await (mail coname [#false (converter init) converter])))))))
 
-   (define-syntax parameterize
-      (syntax-rules ()
-         ((parameterize ((var val) . rest-bindings) exp . rest-exps)
-            (let ((old (var val)) ; save var
-                  (value (parameterize rest-bindings exp . rest-exps)))
-               (var old) ; restore var value
-               value))
-         ((parameterize ()) exp)
-         ((parameterize () exp . rest)
-            ((lambda () exp . rest)))))
 ))

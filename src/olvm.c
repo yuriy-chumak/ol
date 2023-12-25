@@ -2750,6 +2750,7 @@ mainloop:;
 	#		define SYSCALL_IOCTL_TIOCGETA 19
 
 	#		define SYSCALL_PIPE 22
+	#		define SYSCALL_DUP 32
 
 	#		define SYSCALL_YIELD 24
 
@@ -4136,6 +4137,24 @@ loop:;
 					#endif
 				}
 
+				break;
+			}
+
+			case SYSCALL_DUP: {
+				CHECK_ARGC(1,2);
+				int portfd = port(A1);
+				if (argc == 1) {
+					int fd = dup(portfd);
+					if (fd != -1)
+						r = (R) make_port(fd);
+				}
+				else
+				if (argc == 2) {
+					int portfd2 = port(A2);
+					int fd = dup2(portfd, portfd2);
+					if (fd != -1)
+						r = (R) make_port(fd);
+				}
 				break;
 			}
 
