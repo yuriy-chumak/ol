@@ -2734,8 +2734,7 @@ mainloop:;
 	#		define SYSCALL_STAT 4    // same for fstat and lstat
 	#		define SYSCALL_LSEEK 8   // 
 	#		define SYSCALL_MMAP 9    // 
-	#		define SYSCALL_FSYNC 74  // deprecated
-	#		define SYSCALL_UNLINK 87 // deprecated
+	#		define SYSCALL_FSYNC 74  //
 	#		define SYSCALL_EXECVE 59 //
 	#		define SYSCALL_WAIT 61   //
 	// 5, 6 - free
@@ -2760,8 +2759,6 @@ mainloop:;
 
     #		define SYSCALL_ERRNO 60  // errno
 	#		define SYSCALL_GETDENTS 78
-	#		define SYSCALL_CHDIR 80 // deprecated
-	#		define SYSCALL_MKDIR 83 // deprecated
 
 	#		define SYSCALL_SENDFILE 40
 
@@ -4122,29 +4119,6 @@ loop:;
 			}
 #endif
 
-
-			/*! \subsection unlink
-			* \brief 87: (unlink pathname) -> #t|#f
-			*
-			* Delete a name and possibly the file it refers to
-			*
-			* \param pathname
-			*
-			* \return #true if success,
-			*         #false if error
-			*
-			* http://man7.org/linux/man-pages/man2/unlink.2.html
-			*/
-			// DEPRECATED
-			case SYSCALL_UNLINK: { //
-				CHECK_ARGC_EQ(1);
-				CHECK_STRING(1);
-
-				if (unlink(string(A1)) == 0)
-					r = (word*) ITRUE;
-				break;
-			}
-
 			// PIPES
 			case SYSCALL_PIPE: {
 				CHECK_ARGC(0,1);
@@ -4169,36 +4143,6 @@ loop:;
                 break;
             }
 			// FOLDERS
-
-			// DEPRECATED!
-			case SYSCALL_CHDIR: {
-				CHECK_ARGC_EQ(1);
-				CHECK_STRING(1);
-
-				char *path = (char*) &car(A1);
-				if (chdir(path) >= 0)
-					r = (word*) ITRUE;
-				break;
-			}
-// 			// DEPRECATED!
-// 			case SYSCALL_MKDIR: {
-// 				CHECK_ARGC(1,2);
-// 				CHECK_STRING(1);
-// 				CHECK_NUMBER_OR_FALSE(2);
-
-// 				char *path = (char*) &car(A1);
-// #ifdef _WIN32
-// 				if (mkdir(path) >= 0)
-// #else
-// 				int mode = (argc > 1 && A2 != IFALSE)
-// 			 		? number(A2)
-// 					: S_IRUSR | S_IWUSR;
-
-// 				if (mkdir(path, mode) >= 0)
-// #endif
-// 					r = (word*) ITRUE;
-// 				break;
-// 			}
 
 			// UNSAFES
 

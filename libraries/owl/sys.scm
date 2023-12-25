@@ -8,7 +8,6 @@
 
 (define-library (owl sys)
    (export
-      chdir
       kill
       uname
       getenv
@@ -78,11 +77,6 @@
 
       ;; (define (dir->list path)
       ;;    (dir-fold (λ (seen this) (cons this seen)) null path))
-
-      (define (chdir path)
-         (let ((path (c-string path)))
-            (and path
-               (syscall 80 path))))
 
       ;;;
       ;;; Processes
