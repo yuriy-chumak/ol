@@ -412,16 +412,17 @@ struct args_t
    (list
       (fft* type-string)) ; array of strings
    fft-char)) ; char
+(define struct_t* (fft* struct_t))
 
 ; struct
-(define debug (this fft-void "debug_args" struct_t))
+(define debug (this fft-void "debug_args" struct_t*))
 (debug      (list 3
                   (list
                      (list "only" "three" "arguments" "from" "the" "six"))
                   #\C))
 
 (define debug (this fft-void "debug_args" fft-any))
-(debug (cons struct_t ;(list fft-int (list (fft* type-string)) fft-char)
+(debug (cons struct_t* ;(list fft-int (list (fft* type-string)) fft-char)
             (list 6
                   (list
                      (list "a" "lot" "of" "аргументов" (string-append "incl" "uding")

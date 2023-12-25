@@ -196,10 +196,9 @@
 
 ; type convertors
 (define (fft* type)
-   (vm:ior type #x10000))
+   (cons #x10000 type))
 (define (fft& type)
-   (vm:ior type #x20000))
-
+   (cons #x20000 type))
 
 (define type-callable 61)
 
