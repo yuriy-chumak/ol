@@ -82,7 +82,7 @@ This is almost a complete list of differences between Ol and R<sup>7</sup>RS.
   * CHARACTERS in Ol are **small numbers** (aka 'enums'), but are *characters* in Scheme.
     - explanation: This is for a historical reason.
       Ol supports two types of numbers - 'small' numbers (enums) and 'long' numbers (any other numbers). 'Small' numbers are used as 'runes' (or 'glyphs' in other word) inside strings for Unicode support. An additional 'character' type with requirement to use the char->integer and integer->char functions every time is too boring and slow. Thanks.
-    - note: Ol supports full Unicode 15.0.0 (2022 Sep 13) character set.
+    - note: Ol supports the full Unicode 15.0.0 (2022 Sep 13) character set.
     - note: If you want to print a character in the form of a letter (or a digit, etc.) use `write-char` function, i.e. instead of `(print #\λ)` do the `(write-char #\λ)`, otherwise you will print a number 955; or `(print (string #\λ))`, if you want.
 
 * 6.7. Strings

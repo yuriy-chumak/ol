@@ -216,24 +216,27 @@ R<sup>7</sup>RS DIFFERENCES
 The most important differences are:
 
 * Ol is definitely **case sensitive**.
-* `Numbers without precision` considered to be **exact** in Ol, but *inexact* in Scheme.
+* Numbers WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
   - `integer?` for inexact numbers always returns **#false** in Ol.
-* **No** `set!` in Ol (because Ol is purely functional),
+* **No** `set!` in Ol (Ol is purely functional!),
   - note: Use `define` instead.
   - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions [are provided](doc/reference/pairs-and-lists.md#set-car).
   - note: Dynamic variables are available via `(scheme dynamic-bindings)` [library](doc/reference/dynamic-bindings.md).
-* CHARACTERS in Ol is a **small numbers** (aka 'enums'), but a *characters* in Scheme.
-  - note: Ol supports full Unicode 14.0.0 (2021 Sep 14) character set.
+* CHARACTERS in Ol are **small numbers** (aka 'enums'), but with special *character* type in Scheme.
+  - note: Ol supports the full Unicode 15.0.0 (2022 Sep 13) character set.
   - note: To write a character use `write-char`, otherwise you'll write a number.
-* NEGATIVE indices in `substring` is **valid** in Ol (means "from the end of string").
-* NEGATIVE indices in a vector functions are **valid** in Ol (means "from the end of vector").
-* **Extended form** of `case`,
-* **Extended form** of `if` (with `then` and `else` [keywords]((doc/reference/)),
-* Ol has builtin **regular expressions**.
-* `apply` arguments count is **limited to 256** in Ol (use `fold` otherwise).
-* `(eqv? +nan.0 +nan.0)` is **#true** in Ol.
+* NEGATIVE indices in `substring` are **valid** in Ol (means "from the end of string").
+* NEGATIVE vector indices are **valid** in Ol (means "from the end of vector").
+* Ol has **extended form** of `case` (with vectors support),
+* Ol has **extended form** of `if` (with `then` and `else` [keywords]((doc/reference/)),
+* Ol has **builtin dictionary** numeric and symbolic keys,
+* Ol has builtin **regular expressions**,
+* Ol has an awfully **powerful macro system** in addition to Scheme's hygienic one.
 
 The full list can be read in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
+
+Some Ol limitations:
+  * `apply` arguments count is **limited to 256** in Ol (use `fold` otherwise).
 
 
 DEPRECATIONS
