@@ -657,10 +657,11 @@ int format(const char *format, ...)
 					printf("%f", x);
 					break;
 				}
-				case 's':
+				case 's': {
 					char* s = va_arg(ap, char*);
 					fwrite(s, strlen(s), 1, stdout);
 					break;
+				}
 				default:
 					printf("%c", ch);
 					--count;
@@ -672,7 +673,7 @@ int format(const char *format, ...)
 			printf("%c", format[i]);
 	}
     va_end(ap);
-	printf("} -> %lu] ", count); fflush(stdout);
+	printf("} -> %u] ", (unsigned)count); fflush(stdout);
     return count;
 }
 
