@@ -2,8 +2,8 @@
    (export
       pipe
       close-pipe
-      system
-      waitpid)
+      execvp waitpid
+      system)
    (import
       (scheme core)
       (scheme list)
@@ -20,8 +20,8 @@
       (if (car pp) (close-port (car pp)))
       (if (cdr pp) (close-port (cdr pp))))
 
-   (define system
-      (define (system commands in out err ports)
+   (define execvp
+      (define (execvp commands in out err ports)
          (define args (map c-string commands))
          (define Pid (syscall 59 (car args) args ports))
 
@@ -48,14 +48,17 @@
       ; main
       (case-lambda
          ((commands)
-            (system commands #f #f #f #null))
+            (execvp commands #f #f #f #null))
          ((commands in)
-            (system commands in #f #f (list (->car in))))
+            (execvp commands in #f #f (list (->car in))))
          ((commands in out)
-            (system commands in out #f (list (->car in) (->cdr out))))
+            (execvp commands in out #f (list (->car in) (->cdr out))))
          ((commands in out err)
-            (system commands in out err (list (->car in) (->cdr out) (->cdr err))))))
+            (execvp commands in out err (list (->car in) (->cdr out) (->cdr err))))))
 
    (define (waitpid pid)
       (syscall 61 pid))
+
+   (define (system command)
+      (syscall 1017 (c-string command)))
 ))

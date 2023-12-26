@@ -2735,7 +2735,7 @@ mainloop:;
 	#		define SYSCALL_LSEEK 8   // 
 	#		define SYSCALL_MMAP 9    // 
 	#		define SYSCALL_FSYNC 74  //
-	#		define SYSCALL_EXECVE 59 //
+	#		define SYSCALL_EXECVP 59 //
 	#		define SYSCALL_WAIT 61   //
 	// 5, 6 - free
 	//#		define SYSCALL_POLL 7
@@ -4289,9 +4289,9 @@ loop:;
 			}
 #endif
 
-			// (EXECVE program-or-function env (vector port port port))
-			// http://linux.die.net/man/3/execve
-			case SYSCALL_EXECVE: {
+			// (EXECVP program-or-function env (vector port port port))
+			// http://linux.die.net/man/3/execvp
+			case SYSCALL_EXECVP: {
 				CHECK_ARGC_EQ(3);
 				CHECK_STRING(1);
 
@@ -4334,7 +4334,7 @@ loop:;
 								*arg = 0;
 							}
 
-							exit(execv(command, args));
+							exit(execvp(command, args));
 							assert (0); // should not be reached
 						}
 						else if (child > 0)
@@ -4942,7 +4942,7 @@ loop:;
 				break;
 			}
 			// system
-			case 1017: { // system (char*) // todo: remove this !!!!!!
+			case 1017: { // system (char*)
 				int q = system(string(A1));
 				if (q >= 0)
 					r = new_number(q);
