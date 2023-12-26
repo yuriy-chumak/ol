@@ -2021,23 +2021,19 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	word* t = (word*)cdr (B); // rtty
 	int writeback = 0; // has write-back in arguments (code speedup)
 
-	// special case of structures-by-value
-	// x86-64-psABI-1.0.pdf:
-	// 3.2.3 Parameter Passing
-
-	// // special case of returning a structure by value
-	// // allocate a space for the return value
-	// if (is_pair(car(B)) &&
-	// 	value(caar(B)) == TBYTEVECTOR &&
-	// 	value(cdar(B)) > sizeof(ret_t))
-	// {
-	// 	int len = value(cdar(B));
-	// 	word* result = new_bytevector(len);
-	// 	args[i++] = (word) &car(result);
-	// }
-
 	int i = 0;  // актуальное количество аргументов
 	int l = 0;  // нижняя граница для параметров больших структур (только linux?)
+
+	// special case of returning a structure by value
+	// allocate a space for the return value
+	if (is_pair(car(B)) &&
+		value(caar(B)) == TBYTEVECTOR &&
+		value(cdar(B)) > sizeof(ret_t))
+	{
+		int len = value(cdar(B));
+		word* result = new_bytevector(len);
+		args[i++] = (word) &car(result);
+	}
 
 	//__ASM__("brk #0");
 	// ==============================================
@@ -2384,7 +2380,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		}
 		else
 		if (is_pointer(car(tty))) {
-		//	- R -----------------------------------------------
+		//	- P -----------------------------------------------
 			writeback |= (value(car(tty)) & FFT_REF);
 
 			if (is_value(cdr(tty))) {
@@ -2459,162 +2455,152 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				store_structure(&fp, payload, 0, cdr(tty), arg);
 			}
 		}
-		else
-			assert(0); // structure by value
-	// 		// special case of a structure by value?
-	// 		case TPAIR:
-	// 			// todo: check a types of structure
-	// 			switch (reference_type(arg)) {
-	// 			// pack structure into bytevector
-	// 			// doto: move to the standalone function named `struct2ol`
-	// 			// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
-	// 			case TPAIR: { // structures
-	// 				// 1. calculate size
-	// 				// todo: change to structure_size call (?)
-	// 				size_t size = 0;
-	// 				// http://www.catb.org/esr/structure-packing/
-	// 				for (word p = car(t); p != INULL; p = cdr(p)) {
-	// 					word subtype = car(p);
+		else {
+		//	- S -----------------------------------------------
+			assert(is_pair(arg)); // structure by value, must be defined
+			// pack structure into bytevector
+			// doto: move to the standalone function named `struct2ol`
+			// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
 
-	// 					assert (is_value(subtype));
-	// 					word stv = value(subtype);
-	// 					// внутриструктурное выравнивание (по умолчанию)
-	// 					size_t subsize = // todo: speedup use table
-	// 						( stv == TINT8  || stv == TUINT8  ) ? sizeof(int8_t) :
-	// 						( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
-	// 						( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
-	// 						( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
-	// 						( stv == TFLOAT                   ) ? sizeof(float) :
-	// 						( stv == TDOUBLE                  ) ? sizeof(double) : 0;
-	// 					size = ((size + subsize - 1) & -subsize) + subsize;
-	// 				}
-	// 				// total size should be word aligned (to fit into registers and memory)
-	// 				size = (size + sizeof(word)-1) & -sizeof(word);
+			// 1. calculate size
+			// todo: change to structure_size call (?)
+			size_t size = 0;
+			// http://www.catb.org/esr/structure-packing/
+			for (word p = car(t); p != INULL; p = cdr(p)) {
+				word subtype = car(p);
 
-	// 				int j = i;
-	// #if __LP64__ || __LLP64__
-	// 				if (size > 16) // should send using stack
-	// 					j = max(i, 6, l);
-	// 				int general = 0; // 8-bit block should go to general register
-	// #endif
-	// 				char* ptr = (char*)&args[j];
-	// 				size_t offset = 0;
+				assert (is_value(subtype));
+				word stv = value(subtype);
+				// внутриструктурное выравнивание (по умолчанию)
+				size_t subsize = // todo: speedup use table
+					( stv == TINT8  || stv == TUINT8  ) ? sizeof(int8_t) :
+					( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
+					( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
+					( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
+					( stv == TFLOAT                   ) ? sizeof(float) :
+					( stv == TDOUBLE                  ) ? sizeof(double) : 0;
+				size = ((size + subsize - 1) & -subsize) + subsize;
+			}
+			// total size should be word aligned (to fit into registers and memory)
+			size = (size + sizeof(word)-1) & -sizeof(word);
 
-	// 				for (word p = car(t), a = arg; ; p = cdr(p), a = cdr(a)) {
-	// 					word subtype = (p != INULL) ? car(p) : I(0);
+			int j = i;
+#if __LP64__ || __LLP64__
+			if (size > 16) // should send using stack
+				j = max(i, 6, l);
+			int general = 0; // 8-bit block should go to general register(s)
+#endif
+			char* ptr = (char*)&args[j];
+			size_t offset = 0;
 
-	// 					assert (is_value(subtype));
-	// 					word stv = value(subtype);
+			for (word p = car(t), a = arg; ; p = cdr(p), a = cdr(a)) {
+				word subtype = (p != INULL) ? car(p) : I(0);
 
-	// 					switch (stv) {
-	// 						case TINT8:  case TUINT8:
-	// 							// offset = offset;
-	// 							break;
-	// 						case TINT16: case TUINT16:
-	// 							offset = (offset + 1) & -2;
-	// 							break;
-	// 						case TINT32: case TUINT32:
-	// 						case TFLOAT:
-	// #if __ILP32__
-	// 						case TINT64: case TUINT64:
-	// 						case TDOUBLE: case 0: // 0 means "no more arguments"
-	// #endif
-	// 							offset = (offset + 3) & -4;
-	// 							break;
-	// #if __LP64__ || __LLP64__
-	// 						case TINT64: case TUINT64:
-	// 						case TDOUBLE: case 0: // 0 means "no more arguments"
-	// 							offset = (offset + 7) & -8;
-	// 							break;
-	// #endif
-	// 					}
-	// 					if (offset >= sizeof(word)) { // пришло время сложить данные в регистр
-	// 						assert (offset % sizeof(word) == 0);
-	// #if __LP64__ || __LLP64__
-	// 						if (general || (size > 16)) { // в регистр общего назначения
-	// 							j++; fpmask <<= 1;
-	// 							ptr += 8;
+				assert (is_value(subtype));
+				word stv = value(subtype);
 
-	// 							// если добрались до стека, а он уже что-то содержит
-	// 							if (j == 6 && l)
-	// 								j = l;
-	// 						}
-	// 						else { // в регистр с плавающей запятой
-	// 							// move from ptr to the ad
-	// 							*(int64_t*)&ad[d++] = args[j];
-	// 							fpmask |= 1;
-	// 						}
-	// 						general = 0;
-	// #else
-	// 						j += offset / sizeof(word);
-	// 						ptr += sizeof(word);
-	// #endif
-	// 						offset %= sizeof(word);
-	// 					}
-	// 					// аргументы закончились
-	// 					if (p == INULL)
-	// 						break;
-	// 					assert (a != INULL);
-	// 					// если аргументов недостаточно, пушаем 0?
-	// 					// word arg = (a != INULL) ? car(a) : I(0);
+				switch (stv) {
+					case TINT8:  case TUINT8:
+						// offset = offset;
+						break;
+					case TINT16: case TUINT16:
+						offset = (offset + 1) & -2;
+						break;
+					case TINT32: case TUINT32:
+					case TFLOAT:
+#if __ILP32__
+					case TINT64: case TUINT64:
+					case TDOUBLE: case 0: // 0 means "no more arguments"
+#endif
+						offset = (offset + 3) & -4;
+						break;
+#if __LP64__ || __LLP64__
+					case TINT64: case TUINT64:
+					case TDOUBLE: case 0: // 0 means "no more arguments"
+						offset = (offset + 7) & -8;
+						break;
+#endif
+				}
+				if (offset >= sizeof(word)) { // пришло время сложить данные в регистр
+					assert (offset % sizeof(word) == 0);
+#if __LP64__ || __LLP64__
+					if (general || (size > 16)) { // в регистр общего назначения
+						j++; fpmask <<= 1;
+						ptr += 8;
 
-	// 					switch (stv) {
-	// 						case TINT8:  case TUINT8: {
-	// 							*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
-	// 							offset += 1; IFN32(general = 1);
-	// 							break;
-	// 						}
-	// 						case TINT16: case TUINT16: {
-	// 							*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
-	// 							offset += 2; IFN32(general = 1);
-	// 							break;
-	// 						}
-	// 						case TINT32: case TUINT32: {
-	// 							*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
-	// 							offset += 4; IFN32(general = 1);
-	// 							break;
-	// 						}
-	// 						case TINT64: case TUINT64: {
-	// 							*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
-	// 							offset += 8; IFN32(general = 1);
-	// #if __ILP32__
-	// 							j++; ptr += 4; offset -= 4;
-	// #endif
-	// 							break;
-	// 						}
+						// если добрались до стека, а он уже что-то содержит
+						if (j == 6 && l)
+							j = l;
+					}
+					else { // в регистр с плавающей запятой
+						// move from ptr to the ad
+						*(int64_t*)&ad[d++] = args[j];
+						fpmask |= 1;
+					}
+					general = 0;
+#else
+					j += offset / sizeof(word);
+					ptr += sizeof(word);
+#endif
+					offset %= sizeof(word);
+				}
+				// аргументы закончились
+				if (p == INULL)
+					break;
+				assert (a != INULL);
+				// если аргументов недостаточно, пушаем 0?
+				// word arg = (a != INULL) ? car(a) : I(0);
 
-	// 						case TFLOAT: {
-	// 							*(float *)&ptr[offset] = OL2F(car(a));
-	// 							offset += 4;
-	// 							break;
-	// 						}
-	// 						case TDOUBLE: {
-	// 							*(double*)&ptr[offset] = OL2D(car(a));
-	// 							offset += 8;
-	// #ifdef __ILP32__
-	// 							j++; ptr += 4; offset -= 4;
-	// #endif
-	// 							break;
-	// 						}
-	// 					}
-	// 				}
+				switch (stv) {
+					case TINT8:  case TUINT8: {
+						*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
+						offset += 1; IFN32(general = 1);
+						break;
+					}
+					case TINT16: case TUINT16: {
+						*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
+						offset += 2; IFN32(general = 1);
+						break;
+					}
+					case TINT32: case TUINT32: {
+						*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
+						offset += 4; IFN32(general = 1);
+						break;
+					}
+					case TINT64: case TUINT64: {
+						*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
+						offset += 8; IFN32(general = 1);
+#if __ILP32__
+						j++; ptr += 4; offset -= 4;
+#endif
+						break;
+					}
 
-	// #ifndef __ILP32__
-	// 				if (size > 16 && i < 6)
-	// 					l = j;
-	// 				else
-	// #endif
-	// 					i = j;
+					case TFLOAT: {
+						*(float *)&ptr[offset] = OL2F(car(a));
+						offset += 4;
+						break;
+					}
+					case TDOUBLE: {
+						*(double*)&ptr[offset] = OL2D(car(a));
+						offset += 8;
+#ifdef __ILP32__
+						j++; ptr += 4; offset -= 4;
+#endif
+						break;
+					}
+				}
+			}
 
-	// 				--i; // because after break we already have ++i;
-	// 				break;
-	// 			}
+#ifndef __ILP32__
+			if (size > 16 && i < 6)
+				l = j;
+			else
+#endif
+				i = j;
 
-	// 			default:
-	// 				E("invalid parameter values (requested bytevector)");
-	// 			}
-	// 			break;
-		
+			i--; // adjust i (because later we have i++);
+		}
 		i++;
 		p = (word*)cdr(p);
 		t = (t == RNULL) ? t : (word*)cdr(t);
