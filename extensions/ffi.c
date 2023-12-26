@@ -1960,8 +1960,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #endif
 
 	// переменные для промежуточных результатов
-	char*str = 0;
-	word mem = 0;
 
 	// ----------------------------------------------------------
 	// 1. do memory precalculations and count number of arguments
@@ -2265,15 +2263,16 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				case TBYTEVECTOR: // address of bytevector data (no copying to stack)
 					STORE(IDF, word, (word)&car(arg));
 					break;
+				// any strings acts as "char*"
 				case TSTRING:
+				case TSTRINGWIDE:
 				case TSTRINGDISPATCH:
+				case TSYMBOL: {
+					char* str;
 					store_string(&fp, &str, arg);
 					STORE(IDF, word, str);
 					break;
-				case TSTRINGWIDE:
-					store_stringwide(&fp, &mem, arg);
-					STORE(IDF, word, mem);
-					break;
+				}
 
 				// type override:
 				// '(type . arg)
