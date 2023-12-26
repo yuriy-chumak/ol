@@ -2524,8 +2524,12 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					assert (offset % sizeof(word) == 0);
 #if __LP64__ || __LLP64__
 					if (general || (size > 16)) { // в регистр общего назначения
+#if (__x86_64__ && (__unix__ || __APPLE__))						
 						j++; fpmask <<= 1;
 						ptr += 8;
+#else
+						j++; ptr += 8;
+#endif
 
 						// если добрались до стека, а он уже что-то содержит
 						if (j == 6 && l)
@@ -2534,7 +2538,9 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					else { // в регистр с плавающей запятой
 						// move from ptr to the ad
 						*(int64_t*)&ad[d++] = args[j];
+#if (__x86_64__ && (__unix__ || __APPLE__))						
 						fpmask |= 1;
+#endif
 					}
 					general = 0;
 #else
