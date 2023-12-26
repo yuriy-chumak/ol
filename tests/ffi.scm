@@ -2,16 +2,16 @@
 
 (define (try tag function . numbers)
    (for-each display (list "   " tag " " numbers ">"))
-   (display (apply function numbers))
-   (print))
+   (let ((out (apply function numbers)))
+      (print " = " out)))
 (define (try* tag function . numbers)
    (for-each display (list "   " tag " " numbers ">"))
-   (display (apply function numbers))
-   (print))
+   (let ((out (apply function numbers)))
+      (print " = " out)))
 (define (try& tag function . numbers)
    (for-each display (list "   " tag " " numbers ">"))
-   (display (apply function numbers))
-   (print " -> " numbers))
+   (let ((out (apply function numbers)))
+      (print " = " out ", " numbers)))
 
 (define this (load-dynamic-library #f))
 (define (copy x) (vm:cast x (type x)))
@@ -33,9 +33,30 @@
 ;; note:
 ;;    fft-char is signed by default
 ;;    we don't support rational numbers as fft&
+(print "Notes:
+  * no tests with type 'long' because 'long' is either 'int' or 'long long', depends on then OS
+    and is completely covered by other tests ('int' and 'long long').
+  * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+    capital chars for unsigned prefix;   'f' for float, 'd' for double.
+")
+;;   * internal inexact numbers representation is '"
+;;       (case (size #i1)
+;;          (4 "float")
+;;          (8 "double")
+;;          (else "unknown")) "'
+
+(when (or
+         (and (eq? fft-long fft-int)
+            (eq? fft-unsigned-long fft-unsigned-int)
+            (eq? fft-signed-long fft-signed-int))
+         (and (eq? fft-long fft-long-long)
+            (eq? fft-unsigned-long fft-unsigned-long-long)
+            (eq? fft-signed-long fft-signed-long-long)) )
+   (print "yes, all longs are all ints or all longlongs. it's tested right now!"))
 
 ; --------------------------------------
-(print "type limits checking:")
+(print "
+basic numeric limits checking:")
 
 (define INT8_MIN -128)
 (define INT8_MAX +127)
@@ -80,7 +101,12 @@
    ))
 
 ; - type -> type mirroring functions ------------------------
-(print "type function(type arg) { return arg; }")
+(print "
+// simple type to type tests:
+type function(type arg)
+{
+    return arg;
+}")
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
@@ -91,7 +117,6 @@
    `( ("c2c" . ,fft-unsigned-char)
       ("s2s" . ,fft-unsigned-short)
       ("i2i" . ,fft-unsigned-int)
-      ("l2l" . ,fft-unsigned-long)
       ("q2q" . ,fft-unsigned-long-long)))
 
 (for-each (lambda (x)
@@ -103,21 +128,24 @@
    `( ("C2C" . ,fft-signed-char)
       ("S2S" . ,fft-signed-short)
       ("I2I" . ,fft-signed-int)
-      ("L2L" . ,fft-signed-long)
       ("Q2Q" . ,fft-signed-long-long)))
-
+; float
 (define mirror (this fft-float "f2f" fft-float))
 (for-each (lambda (arg)
       (try "f2f" mirror arg))
    '(0.0 #i0.0 125.125 #i125.125 -125.125 #i-125.125))
-
+; double
 (define mirror (this fft-double "d2d" fft-double))
 (for-each (lambda (arg)
       (try "d2d" mirror arg))
    '(0.0 #i0.0 125.125 #i125.125 -125.125 #i-125.125))
 
 ; - type* -> type mirroring functions ------------------------
-(print "type function(type* arg) { return *arg; }")
+(print "
+type function(type* arg)
+{
+    return *arg;
+}")
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
@@ -129,7 +157,6 @@
    `( ("pc2c" . ,fft-unsigned-char)
       ("ps2s" . ,fft-unsigned-short)
       ("pi2i" . ,fft-unsigned-int)
-      ("pl2l" . ,fft-unsigned-long)
       ("pq2q" . ,fft-unsigned-long-long)))
 
 (for-each (lambda (x)
@@ -142,21 +169,25 @@
    `( ("pC2C" . ,fft-signed-char)
       ("pS2S" . ,fft-signed-short)
       ("pI2I" . ,fft-signed-int)
-      ("pL2L" . ,fft-signed-long)
       ("pQ2Q" . ,fft-signed-long-long)))
-
+; float (todo: vectors)
 (define mirror (this fft-float "pf2f" (fft* fft-float)))
 (for-each (lambda (arg)
       (try& "pf2f" mirror arg))
    '((0.0) (#i0.0) (125.125) (#i125.125) (-125.125) (#i-125.125)))
-
+; double (todo: vectors)
 (define mirror (this fft-double "pd2d" (fft* fft-double)))
 (for-each (lambda (arg)
       (try& "pd2d" mirror arg))
    '((0.0) (#i0.0) (125.125) (#i125.125) (-125.125) (#i-125.125)))
 
 ; - type* -> type changing functions ------------------------
-(print "type function(type* arg) { *arg -= 1; return *arg + 2; }")
+(print "
+type function(type* arg)
+{
+    *arg -= 1;
+    return *arg + 2;
+}")
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
@@ -170,7 +201,6 @@
    `( ("rc2c" . ,fft-unsigned-char)
       ("rs2s" . ,fft-unsigned-short)
       ("ri2i" . ,fft-unsigned-int)
-      ("rl2l" . ,fft-unsigned-long)
       ("rq2q" . ,fft-unsigned-long-long)))
 
 (for-each (lambda (x)
@@ -185,29 +215,34 @@
    `( ("rC2C" . ,fft-signed-char)
       ("rS2S" . ,fft-signed-short)
       ("rI2I" . ,fft-signed-int)
-      ("rL2L" . ,fft-signed-long)
       ("rQ2Q" . ,fft-signed-long-long)))
-
+; float, todo: vectors
 (define mirror (this fft-float "rf2f" (fft& fft-float)))
 (for-each (lambda (arg)
       (try& "rf2f" mirror arg))
    '((0) (#i0.0) (#i125.125) (#i-125.125)))
-
+; double, todo: vectors
 (define mirror (this fft-double "rd2d" (fft& fft-double)))
 (for-each (lambda (arg)
       (try& "rd2d" mirror arg))
    '((0) (#i0.0) (#i125.125) (#i-125.125)))
 
-;; ;; ; ----------------------------------------------------------------
-;; ;; ;(print "returning a structure test:")
-;; ;; ;
-;; ;; ;(define iiv2struct12 (this (cons type-bytevector 12) "iiv2struct12" fft-int fft-int fft-int))
-;; ;; ;(try "iiv2struct12" iiv2struct12 1 2 123)
-;; ;; ;(define iiv2struct20 (this (cons type-bytevector 20) "iiv2struct20" fft-int fft-int fft-int))
-;; ;; ;(try "iiv2struct20" iiv2struct20 1 2 123)
+
+
+
+; some mixed types
+;; todo: 2 arguments, 3 arguments, 4 agruments, 5 arguments, ... 8 arguments
 
 ; ----------------------------------------------------------------
-(print "16 integer arguments test:")
+(print "
+// 16 arguments test:
+type function(type a0, type a1, type a2, type a3,
+              type a4, type a5, type a6, type a7, 
+              type a8, type a9, type aA, type aB, 
+              type aC, type aD, type aE, type aF)
+{
+    return a0+a1+a2+a3+a4+a5+a6+a7+a8+a9+aA+aB+aC+aD+aE+aF;
+}")
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
@@ -217,7 +252,6 @@
    `( ("cccccccccccccccc2c" . ,fft-unsigned-char)
       ("ssssssssssssssss2s" . ,fft-unsigned-short)
       ("iiiiiiiiiiiiiiii2i" . ,fft-unsigned-int)
-      ("llllllllllllllll2l" . ,fft-unsigned-long)
       ("qqqqqqqqqqqqqqqq2q" . ,fft-unsigned-long-long)))
 
 (for-each (lambda (x)
@@ -230,139 +264,160 @@
    `( ("CCCCCCCCCCCCCCCC2C" . ,fft-signed-char)
       ("SSSSSSSSSSSSSSSS2S" . ,fft-signed-short)
       ("IIIIIIIIIIIIIIII2I" . ,fft-signed-int)
-      ("LLLLLLLLLLLLLLLL2L" . ,fft-signed-long)
       ("QQQQQQQQQQQQQQQQ2Q" . ,fft-signed-long-long)))
 
-
-; ----------------------------------------------------------------
-;; todo: this test IS working but we need to find a numbers that will be same in x64 and x32 platforms
-(print "16 floating point arguments test:")
-
+;; this test IS working
+;; please, use only numbers that prints exactly the same output for x64 and x32 platforms
+(print "
+// extended test for all floats (rational and inexacts):")
 (define summ (this fft-float "ffffffffffffffff2f" fft-float fft-float fft-float fft-float
                                                   fft-float fft-float fft-float fft-float
                                                   fft-float fft-float fft-float fft-float
                                                   fft-float fft-float fft-float fft-float))
-   (try "16 floats" summ 0.0 1.1 2.2 3.3 4.4 5.5 6.6 7.7 8.8 9.9 10.10 11.11 12.12 13.13 14.14 15.15)
-   (try "16 floats" summ 15.15 14.14 13.13 12.12 11.11 10.10 9.9 8.8 7.7 6.6 5.5 4.4 3.3 2.2 1.1 0.0)
-   (try "16 floats" summ #i0.0 #i1.1 #i2.2   #i3.3
-                         #i4.4 #i5.5 #i6.6   #i7.7
-                         #i8.8 #i9.9 #i10.10 #i11.11
-                         #i12.12 #i13.13 #i14.14 #i15.15)
+   (try "16 rationals" summ 0.0 1.1 2.2 3.3 4.4 5.5 6.6 7.7 8.8 9.9 10.10 11.11 12.12 13.13 14.14 15.15)
+   (try "16 rationals" summ 15.15 14.14 13.13 12.12 11.11 10.10 9.9 8.8 7.7 6.6 5.5 4.4 3.3 2.2 1.1 0.0)
+   (try "16 inexacts"  summ #i0.0   #i1.1   #i2.2   #i3.3
+                            #i4.4   #i5.5   #i6.6   #i7.7
+                            #i8.8   #i9.9   #i10.10 #i11.11
+                            #i12.12 #i13.13 #i14.14 #i15.15)
+   (try "16 mixed floats" summ
+                            #i15.15 14.14   #i13.13 12.12
+                            #i11.11 10.10   #i9.9   8.8
+                            #i7.7   6.6     #i5.5   4.4
+                            #i3.3   2.2     #i1.1   0.0)
+
+   (try "16 rationals" summ -0.0 -1.1 -2.2 -3.3 -4.4 -5.5 -6.6 -7.7 -8.8 -9.9 -10.10 -11.11 -12.12 -13.13 -14.14 -15.15)
+   (try "16 inexacts"  summ #i-0.0   #i-1.1   #i-2.2   #i-3.3
+                            #i-4.4   #i-5.5   #i-6.6   #i-7.7
+                            #i-8.8   #i-9.9   #i-10.10 #i-11.11
+                            #i-12.12 #i-13.13 #i-14.14 #i-15.15)
 
 ; ----------------------------------------------------------------
-(print "12 mixed type variables test:")
-(define summ (this fft-double "cCsSiIlLqQfd2d" fft-signed-char fft-unsigned-char
-                                               fft-signed-short fft-unsigned-short
-                                               fft-signed-int fft-unsigned-int
-                                               fft-signed-long fft-unsigned-long
-                                               fft-signed-long-long fft-unsigned-long-long
-                                               fft-float fft-double))
-   (try "12 arguments" summ 0 1 2 3 4 5 6 7 8 9 1234.625 123456.25)
+(print "
+// 8 mixed integers, 1 float, 1 double:
+double cCsSiIqQfd2d(char c, ..., double d)
+{
+   return d+ ... +c;
+}")
+(define summ (this fft-double "cCsSiIqQfd2d" fft-unsigned-char fft-signed-char
+                                             fft-unsigned-short fft-signed-short
+                                             fft-unsigned-int fft-signed-int
+                                             fft-unsigned-long-long fft-signed-long-long
+                                             fft-float fft-double))
+   (try "10 mixed arguments" summ  1  2  3  4  5  6  7  8  9  10)
+   (try "10 mixed arguments" summ  1 -2  3 -4  5 -6  7 -8  9 -10)
 
 ; ----------------------------------------------------------------
-(print "22 mixed type variables test:")
-(define summ (this fft-double "cCfdsSfdiIfdlLfdqQfdfd2d"
-                   fft-signed-char fft-unsigned-char
-                   fft-float fft-double
-                   fft-signed-short fft-unsigned-short
-                   fft-float fft-double
-                   fft-signed-int fft-unsigned-int
-                   fft-float fft-double
-                   fft-signed-long fft-unsigned-long
-                   fft-float fft-double
-                   fft-signed-long-long fft-unsigned-long-long
-                   fft-float fft-double
-                   fft-float fft-double))
-   (try "22 integer arguments" summ  1  2  3  4
-                                     5  6  7  8
-                                     9 10 11 12
-                                    13 14 15 16
-                                    17 18 19 20
-                                    21 22)
-   (try "22 mixed arguments" summ  1  2  3.0  4.5
-                                   5  6  7.25 8.75
-                                   9 10 11.125 12.875
-                                  13 14 15.9375 16.6875
-                                  17 18 19.71875 20.96875
-                                  21.90625 22.875)
-   (try "22 mixed inexact arguments" summ  1  2  #i3.0  #i4.5
-                                   5  6 #i7.25 #i8.75
-                                   9 10 #i11.125 #i12.875
-                                  13 14 #i15.9375 #i16.6875
-                                  17 18 #i19.71875 #i20.96875
-                                  #i21.90625 #i22.875)
+(print "
+20 mixed type variables test:
+double cCfdsSfdiIfddfqQfddf2d(char c, ..., float f)
+{
+    return f+ ... +c;
+}")
+(define summ (this fft-double "cCfdsSfdiIfddfqQfddf2d"
+                   fft-unsigned-char  fft-signed-char  fft-float fft-double
+                   fft-unsigned-short fft-signed-short fft-float fft-double
+                   fft-unsigned-int   fft-signed-int   fft-float fft-double
+                   fft-double fft-float                fft-unsigned-long-long fft-signed-long-long
+                   fft-float fft-double                fft-double fft-float))
+   (try "20 integer arguments"
+                            summ  1  2  3  4
+                                  5  6  7  8
+                                  9 10 11 12
+                                 13 14 15 16
+                                 17 18 19 20)
+   (try "20 mixed exact arguments"
+                            summ  1  2  3.0    4.5
+                                  5  6  7.25   8.75
+                                  9 10 11.125 12.875
+                                 13.9375  14.6875  15 16
+                                 17.71875 18.96875 19 20)
+   (try "20 mixed inexact arguments"
+                            summ  #i1  #i2  #i3.0    #i4.5
+                                  #i5  #i6  #i7.25   #i8.75
+                                  #i9 #i10 #i11.125 #i12.875
+                                 #i13.9375  #i14.6875  #i15 #i16
+                                 #i17.71875 #i18.96875 #i19 #i20)
 
 ; ----------------------------------------------------------------
-(print "too much arguments (8 needed, 32 declared):") ; 16 arguments for only 8 required
-(let ((function (this fft-unsigned-long-long "qqqqqqqqqqqqqqqq2q"
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long
-      fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long fft-unsigned-long-long)))
-   (try "32 arguments" function
-      1 2 3 4 5 6 7 8
-      1 2 3 4 5 6 7 8
+(print "
+// too much arguments (4 needed, more provided):
+long long function(char c, short s, int i, long long q)
+{
+   return c+s+i+q;
+}")
+(let ((function (this fft-long-long "csiq2q" fft-char fft-short fft-int fft-long-long)))
+   (try "16 arguments" function
       1 2 3 4 5 6 7 8
       1 2 3 4 5 6 7 8)
-   (try "128 arguments" function
+   (try "99 arguments" function
       1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8
       1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8
-      1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8
-      1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8))
+      1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8  7 7 7))
 
-;; ; ---------------------------------------------------------------
-;; ; callbacks
-;; (define (test-callback name types)
-;;    (define cb (vm:pin (cons
-;;       types
-;;       (lambda args
-;;          (for-each display (list "callback: [ " args " ]"))
-;;          (apply * args)))))
-;;    (define callback_call ((load-dynamic-library #f) fft-void name type-callable))
+; ============
+(print "
+// variable arguments test (returns count of printed arguments):
+int format(const char *format, ...)
+{
+   printf(format, ...);
+}")
 
-;;    (let ((callback (make-callback cb)))
-;;       (if callback
-;;          (callback_call callback)))
-;;    (vm:unpin cb))
+(let*((format (this fft-int "format" type-string))
+      (typename (lambda (id)
+         (case id
+            (fft-int 'fft-int)
+            (fft-long-long 'fft-long-long)
+            (fft-float 'fft-float)
+            (fft-double 'fft-double)
+            (else (typename id 'unknown)))))
+      (try (lambda (tag . args)
+               (for-each display (list "   " tag " ("))
+               (write (car args))
+               (for-each (lambda (arg)
+                     (if (pair? arg)
+                        (for-each display (list
+                           " (" (typename (car arg)) " . " (cdr arg) ")"))
+                     else
+                        (display " ") (write arg)))
+                  (cdr args))
+               (display ")>")
+               (let ((out (apply format args)))
+                  (print " = " out)))))
 
+   (try "numbers" "%i %f %i %f"
+      (cons fft-int 42)
+      (cons fft-double 43.34)
+      (cons fft-int 44)
+      (cons fft-double 45.54))
 
-;; ;; (test-callback "callback_call_i" (list fft-int fft-int))
-;; ;; (test-callback "callback_call_ii" (list fft-int fft-int fft-int))
-;; ;; (test-callback "callback_call_iii" (list fft-int fft-int fft-int fft-int))
-;; ;; (test-callback "callback_call_iiii" (list fft-int fft-int fft-int fft-int fft-int))
-;; ;; (test-callback "callback_call_iiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int))
-;; ;; (test-callback "callback_call_iiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-;; ;; (test-callback "callback_call_iiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-;; ;; (test-callback "callback_call_iiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-;; ;; (test-callback "callback_call_iiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-;; ;; (test-callback "callback_call_iiiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
-
-;; (test-callback "callback_call_f" (list fft-float fft-float))
-;; (test-callback "callback_call_ifif" (list fft-float fft-int fft-float fft-int fft-float))
-;; ;; (test-callback "callback_call_d" (list fft-double fft-double))
-;; ;; (test-callback "callback_call_ifid" (list fft-double fft-int fft-float fft-int fft-double))
+   (try "utf-8 strings/symbols" "<%s/%s/%s/%s>"
+      "ansi"
+      "юнікод"
+      '|σύμβολο|
+      "ユニコード")
+   (try "empty strings/symbols" "<%s/%s/%s>"
+      "" (substring "λ" 1 1) '||)
+)
 
 ; ------------------------------------
 ; wide characters
-(print)
+(print "
+// reverse strings:")
 (define reverse_string ((load-dynamic-library #f) type-string "reverse_string" type-string))
 (define reverse_string_wide ((load-dynamic-library #f) type-string-wide "reverse_string_wide" type-string-wide))
 
 (for-each (lambda (str)
       (define s (reverse_string str))
-      (print "reverse_string(" str "): " s " - "
+      (print "   reverse_string(" str "): " s " - "
          (if (string-eq? str (list->string (reverse (string->list s))))
             "ok. " "fail."))
       (define w (reverse_string_wide str))
-      (print "reverse_string_wide(" str "): " w " - "
+      (print "   reverse_string_wide(" str "): " w " - "
          (if (string-eq? str (list->string (reverse (string->list w))))
             "ok. " "fail.")))
    '("hello"
-     "привет"
+     "привіт"
      "Совы (Strigiformes) суть релатівно чісленым рядом класы птахів обсягуюча веце як 200 видів."
      "ბუსნაირნი (ლათ. Strigiformes) — ფრინველთა რიგი. ფართოდაა გავრცელებული მსოფლიოში (ანტარქტიკული და ზოგიერთი ოკეანური კუნძულის გამოკლებით)."
      "フクロウ目（フクロウもく、梟目、学名 Strigiformes）は鳥類の1目である。"))
@@ -398,6 +453,7 @@
 ; structures
 ; -----------------------------
 (print "
+// structure by reference:
 struct args_t
 {
 	int argc;
@@ -414,7 +470,7 @@ struct args_t
    fft-char)) ; char
 (define struct_t* (fft* struct_t))
 
-; struct
+; struct by reference
 (define debug (this fft-void "debug_args" struct_t*))
 (debug      (list 3
                   (list
@@ -429,42 +485,59 @@ struct args_t
                            "very-very-very-very-very-very-very-very-long-argument"))
                   #\C)))
 
-; by value
-;; (print "int function(struct { type x, type y } a) { return a.x + a.y; }")
-;; (for-each (lambda (name type)
-;;          (for-each (lambda (subname subtype)
-;;                (define realname (string-append "_" name subname "_2i"))
-;;                (define function (this fft-int realname (list type subtype)))
-;;                (for-each (lambda (arg)
-;;                      (try realname function arg))
-;;                   '((1 2))))
-;;             (list    "c"      "s"       "i"     "q"           "f"       "d")
-;;             (list fft-char fft-short fft-int fft-long-long fft-float fft-double)))
-;;    (list    "c"      "s"       "i"     "q"           "f"       "d")
-;;    (list fft-char fft-short fft-int fft-long-long fft-float fft-double))
+; struct by value
+(print "
+// (small) structure by value:
+int function(struct { type x, type y } a)
+{
+   return a.x + a.y;
+}")
+(for-each (lambda (name type)
+         (for-each (lambda (subname subtype)
+               (define realname (string-append "_" name subname "_2i"))
+               (define function (this fft-int realname (list type subtype)))
+               (for-each (lambda (arg)
+                     (try realname function arg))
+                  '((1 2))))
+            (list    "c"      "s"       "i"     "q"           "f"       "d")
+            (list fft-char fft-short fft-int fft-long-long fft-float fft-double)))
+   (list    "c"      "s"       "i"     "q"           "f"       "d")
+   (list fft-char fft-short fft-int fft-long-long fft-float fft-double))
+
+;; ;; ; ----------------------------------------------------------------
+;; ;; ;(print "returning a structure test:")
+;; ;; ;
+;; ;; ;(define iiv2struct12 (this (cons type-bytevector 12) "iiv2struct12" fft-int fft-int fft-int))
+;; ;; ;(try "iiv2struct12" iiv2struct12 1 2 123)
+;; ;; ;(define iiv2struct20 (this (cons type-bytevector 20) "iiv2struct20" fft-int fft-int fft-int))
+;; ;; ;(try "iiv2struct20" iiv2struct20 1 2 123)
 
 
 ; -----------------------------
 ; -=( fft-any )=---------------
-; - simple type->type mirroring functions ------------------------
 
 ; special print case - we hide "(fft* type)" from output
 ; because fft-long value are different for x32 and x64.
 (define (try-a tag function . numbers)
-   (for-each display (list "   " tag " " (map cdr numbers) ":"))
-   (display (apply function numbers))
-   (print))
+   (for-each display (list "   " tag " " (map cdr numbers) ">"))
+   (let ((out (apply function numbers)))
+      (print " = " out)))
 (define (try*-a tag function . numbers)
-   (for-each display (list "   " tag " " (map cdr numbers) ":"))
-   (display (apply function numbers))
-   (print))
+   (for-each display (list "   " tag " " (map cdr numbers) ">"))
+   (let ((out (apply function numbers)))
+      (print " = " out)))
 (define (try&-a tag function . numbers)
-   (for-each display (list "   " tag " " (map cdr numbers) ":"))
-   (display (apply function numbers))
-   (print " -> " (cdar numbers)))
+   (for-each display (list "   " tag " " (map cdr numbers) ">"))
+   (let ((out (apply function numbers)))
+      (print " = " out ", " (cdar numbers))))
 
-
-(print "simple fft-any > type test:")
+;; '(type . ...)
+(print "
+// qualified '(type . ...) for fft-any to type test:
+type function(type arg)
+{
+    return arg;
+}")
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
@@ -473,7 +546,6 @@ struct args_t
    `( ("c2c" . ,fft-unsigned-char)
       ("s2s" . ,fft-unsigned-short)
       ("i2i" . ,fft-unsigned-int)
-      ("l2l" . ,fft-unsigned-long)
       ("q2q" . ,fft-unsigned-long-long)))
 
 (for-each (lambda (x)
@@ -484,19 +556,23 @@ struct args_t
    `( ("C2C" . ,fft-signed-char)
       ("S2S" . ,fft-signed-short)
       ("I2I" . ,fft-signed-int)
-      ("L2L" . ,fft-signed-long)
       ("Q2Q" . ,fft-signed-long-long)))
-
+; float
 (define mirror (this fft-float "f2f" fft-any))
    (try-a "float" mirror (cons fft-float #i125.125))
    (try-a "float" mirror (cons fft-float #i-125.125))
-
+; double
 (define mirror (this fft-double "d2d" fft-any))
    (try-a "double" mirror (cons fft-double #i125.125))
    (try-a "double" mirror (cons fft-double #i-125.125))
 
-;; (fft* ...)
-(print "simple fft-any (fft*)) > type test:")
+;; '((fft* type) . ...)
+(print "
+// qualified '((fft* type) . ...) for fft-any to type test:
+type function(type* arg)
+{
+    return *arg;
+}")
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
@@ -505,7 +581,6 @@ struct args_t
    `( ("pc2c" . ,fft-unsigned-char)
       ("ps2s" . ,fft-unsigned-short)
       ("pi2i" . ,fft-unsigned-int)
-      ("pl2l" . ,fft-unsigned-long)
       ("pq2q" . ,fft-unsigned-long-long)))
 
 (for-each (lambda (x)
@@ -516,9 +591,8 @@ struct args_t
    `( ("pC2C" . ,fft-signed-char)
       ("pS2S" . ,fft-signed-short)
       ("pI2I" . ,fft-signed-int)
-      ("pL2L" . ,fft-signed-long)
       ("pQ2Q" . ,fft-signed-long-long)))
-
+; float/double
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
             (function (this type name fft-any)))
@@ -528,64 +602,92 @@ struct args_t
       ("rd2d" . ,fft-double)))
 
 ;; (fft& ...)
-(print "extended fft-any (fft&)) > type test:")
+(print "
+// qualified '((fft& type) . ...) for fft-any to type test:
+type function(type* arg)
+{
+    type out = arg[2];
+    arg[2] = arg[0] + arg[1];
+    return out;
+}")
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
             (function (this type name fft-any)))
-         (try&-a name function (cons (fft& type) (map copy '(1 2 0))))
-         (try&-a name function (cons (fft& type) (vector-map copy [1 2 0])))
-         (try&-a name function (cons (fft& type) (map copy '(125 7 0))))
-         (try&-a name function (cons (fft& type) (vector-map copy [125 7 0])))
-         (try&-a name function (cons (fft& type) (map copy '(7 125 0))))
-         (try&-a name function (cons (fft& type) (vector-map copy [7 125 0])))))
+         (try&-a name function (cons (fft& type) (map copy '(1 2 42))))
+         (try&-a name function (cons (fft& type) (vector-map copy [1 2 42])))
+         (try&-a name function (cons (fft& type) (map copy '(125 7 42))))
+         (try&-a name function (cons (fft& type) (vector-map copy [125 7 42])))
+         (try&-a name function (cons (fft& type) (map copy '(7 125 42))))
+         (try&-a name function (cons (fft& type) (vector-map copy [7 125 42])))))
    `( ("rpc2c3" . ,fft-unsigned-char)
       ("rps2s3" . ,fft-unsigned-short)
       ("rpi2i3" . ,fft-unsigned-int)
-      ;("rpl2l3" . ,fft-unsigned-long)
-      ;("rpq2q3" . ,fft-unsigned-long-long)
+      ("rpq2q3" . ,fft-unsigned-long-long)
       ))
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
             (function (this type name fft-any)))
-         (try&-a name function (cons (fft& type) (map copy '(1 2 0))))
-         (try&-a name function (cons (fft& type) (vector-map copy [1 2 0])))
-         (try&-a name function (cons (fft& type) (map copy '(125 7 0))))
-         (try&-a name function (cons (fft& type) (vector-map copy [125 7 0])))
-         (try&-a name function (cons (fft& type) (map copy '(7 125 0))))
-         (try&-a name function (cons (fft& type) (vector-map copy [7 125 0])))))
+         (try&-a name function (cons (fft& type) (map copy '(1 2 42))))
+         (try&-a name function (cons (fft& type) (vector-map copy [1 2 42])))
+         (try&-a name function (cons (fft& type) (map copy '(125 7 42))))
+         (try&-a name function (cons (fft& type) (vector-map copy [125 7 42])))
+         (try&-a name function (cons (fft& type) (map copy '(7 125 42))))
+         (try&-a name function (cons (fft& type) (vector-map copy [7 125 42])))))
    `( ("rpC2C3" . ,fft-unsigned-char)
       ("rpS2S3" . ,fft-unsigned-short)
       ("rpI2I3" . ,fft-unsigned-int)
-      ;("rpl2l3" . ,fft-unsigned-long)
-      ;("rpq2q3" . ,fft-unsigned-long-long)
+      ("rpq2q3" . ,fft-unsigned-long-long)
       ))
 
 (for-each (lambda (x)
       (let*((name type (uncons x #f))
             (function (this type name fft-any)))
-         (try&-a name function (cons (fft& type) (map inexact '(1 2 0))))
-         (try&-a name function (cons (fft& type) (vector-map inexact [1 2 0])))
-         (try&-a name function (cons (fft& type) (map inexact '(125.125 7 0))))
-         (try&-a name function (cons (fft& type) (vector-map inexact [125.125 7 0])))
-         (try&-a name function (cons (fft& type) (map inexact '(7 125.125 0))))
-         (try&-a name function (cons (fft& type) (vector-map inexact [7 125.125 0])))
-         (try&-a name function (cons (fft& type) (map inexact '(-125.125 -125.125 0))))
-         (try&-a name function (cons (fft& type) (vector-map inexact [-125.125 -125.125 0])))
-         (try&-a name function (cons (fft& type) (map inexact '(125.125 -125.125 0))))
-         (try&-a name function (cons (fft& type) (vector-map inexact [125.125 -125.125 0])))))
+         (try&-a name function (cons (fft& type) (map inexact '(1 2 42))))
+         (try&-a name function (cons (fft& type) (vector-map inexact [1 2 42])))
+         (try&-a name function (cons (fft& type) (map inexact '(125.125 7 42))))
+         (try&-a name function (cons (fft& type) (vector-map inexact [125.125 7 42])))
+         (try&-a name function (cons (fft& type) (map inexact '(7 125.125 42))))
+         (try&-a name function (cons (fft& type) (vector-map inexact [7 125.125 42])))
+         (try&-a name function (cons (fft& type) (map inexact '(-125.125 -125.125 42))))
+         (try&-a name function (cons (fft& type) (vector-map inexact [-125.125 -125.125 42])))
+         (try&-a name function (cons (fft& type) (map inexact '(125.125 -125.125 42))))
+         (try&-a name function (cons (fft& type) (vector-map inexact [125.125 -125.125 42])))))
    `( ("rpf2f3" . ,fft-float)
       ("rpd2d3" . ,fft-double)))
 
-; ============
-; vararg support
-(define format (this fft-int "format" type-string))
-(format "[%i %f %i %f]\n"
-   (cons fft-int 42)
-   (cons fft-double 43.34)
-   (cons fft-int 44)
-   (cons fft-double 45.54))
+;; ; ---------------------------------------------------------------
+;; ; callbacks
+;; (define (test-callback name types)
+;;    (define cb (vm:pin (cons
+;;       types
+;;       (lambda args
+;;          (for-each display (list "callback: [ " args " ]"))
+;;          (apply * args)))))
+;;    (define callback_call ((load-dynamic-library #f) fft-void name type-callable))
+
+;;    (let ((callback (make-callback cb)))
+;;       (if callback
+;;          (callback_call callback)))
+;;    (vm:unpin cb))
+
+
+;; ;; (test-callback "callback_call_i" (list fft-int fft-int))
+;; ;; (test-callback "callback_call_ii" (list fft-int fft-int fft-int))
+;; ;; (test-callback "callback_call_iii" (list fft-int fft-int fft-int fft-int))
+;; ;; (test-callback "callback_call_iiii" (list fft-int fft-int fft-int fft-int fft-int))
+;; ;; (test-callback "callback_call_iiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int))
+;; ;; (test-callback "callback_call_iiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; ;; (test-callback "callback_call_iiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; ;; (test-callback "callback_call_iiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; ;; (test-callback "callback_call_iiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+;; ;; (test-callback "callback_call_iiiiiiiiii" (list fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int fft-int))
+
+;; (test-callback "callback_call_f" (list fft-float fft-float))
+;; (test-callback "callback_call_ifif" (list fft-float fft-int fft-float fft-int fft-float))
+;; ;; (test-callback "callback_call_d" (list fft-double fft-double))
+;; ;; (test-callback "callback_call_ifid" (list fft-double fft-int fft-float fft-int fft-double))
 
 ;=============
 (print "done.")
