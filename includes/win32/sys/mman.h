@@ -17,8 +17,13 @@ int memfd_create (char* name, unsigned int flags)
 	(void) name;
 	assert (flags == 0);
 
-	HANDLE handle = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, 1, NULL);
-	return _open_osfhandle((intptr_t) handle, _O_TEXT|_O_RDWR);
+	TCHAR path[MAX_PATH];
+	GetTempPath(MAX_PATH, path);
+	TCHAR file[MAX_PATH];
+	GetTempFileName(path, "memfd_olvm", 0, file);
+
+	HANDLE handle = CreateFile(file, GENERIC_READ | GENERIC_WRITE, 0,NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	return _open_osfhandle((intptr_t) handle, 0);
 }
 
 /*static

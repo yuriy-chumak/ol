@@ -1516,18 +1516,18 @@ void yield()
 #define OLVM_NOMAIN 0
 #endif
 
-// tbd: implement pvenv for win32 and embed
-#if defined(_WIN32) || OLVM_NOMAIN
-# ifdef OLVM_TARVENV
-# undef OLVM_TARVENV
-# endif
-
-#define OLVM_TARVENV 0
-#endif
-
 //empty if not exist
 #ifndef OLVM_SETOPEN
 #define OLVM_SETOPEN
+#endif
+
+#if OLVM_TARVENV
+# ifdef _WIN32
+
+# endif
+# ifdef __unix__
+#	include <elf.h>
+# endif
 #endif
 
 // ========================================
@@ -1641,8 +1641,6 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 
 // -- TAR Virtual ENVironment ---
 #if OLVM_TARVENV
-#	include <elf.h>
-
 static char* pvenv = NULL;
 
 static int pvenv_open (const char *filename, int flags, int mode, void* userdata) {
@@ -5517,11 +5515,13 @@ int main(int argc, char** argv)
 	// netbsd: `readlink /proc/curproc/exe`
 	// dragonflybsd: `readlink /proc/curproc/file`
 	// windows: `GetModuleFileName()`
-	char exe[PATH_MAX];
+	char exe[PATH_MAX]; // TODO: cancel filename size limitations
 	char* argz[] = { argv[0], "./main" }; // default command line
-	int end = readlink("/proc/self/exe", exe, sizeof(exe));
-	if (end >= 0 && end < sizeof(exe)) {
-		exe[end] = 0;
+
+# ifdef __unix__
+	int len = readlink("/proc/self/exe", exe, sizeof(exe));
+	if (len > 0 && len < sizeof(exe)) {
+		exe[len] = 0;
 		int fp = open(exe, O_RDONLY | O_BINARY, S_IRUSR);
 		if (fp >= 0) {
 			struct stat sb;
@@ -5552,6 +5552,48 @@ int main(int argc, char** argv)
 			close(fp);
 		}
 	}
+# endif
+# ifdef _WIN32
+	int len = GetModuleFileName(NULL, &exe, sizeof(exe));
+	if (len > 0 && len < sizeof(exe)) {
+		HANDLE fh = CreateFile(exe, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+		if (fh != INVALID_HANDLE_VALUE) {
+			HANDLE fm = CreateFileMapping(fh, NULL, PAGE_READONLY, 0, 0, NULL);
+			if (fm != NULL) {
+				char* ptr = MapViewOfFile(fm, FILE_MAP_READ, 0, 0, 0);
+				char* end = ptr + GetFileSize(fh, NULL);
+				fprintf(stderr, "ptr = %p\n", ptr);
+				// fprintf(stderr, "[0][1] = %c%c\n", ptr[0], ptr[1]); === "MZ"
+				// fprintf(stderr, "e_lfanew = %d\n", ((IMAGE_DOS_HEADER*)ptr)->e_lfanew);
+				IMAGE_NT_HEADERS* imageNTHeaders = ptr + ((IMAGE_DOS_HEADER*)ptr)->e_lfanew;
+				fprintf(stderr, "[0][1] = %c%c\n", ((char*)imageNTHeaders)[0], ((char*)imageNTHeaders)[1]); // === "PE"
+				size_t size = imageNTHeaders->OptionalHeader.SizeOfHeaders;
+
+				char* sectionLocation = (char*)imageNTHeaders + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + imageNTHeaders->FileHeader.SizeOfOptionalHeader;
+				for (int i = 0; i < imageNTHeaders->FileHeader.NumberOfSections; i++) {
+					IMAGE_SECTION_HEADER* sectionHeader = (IMAGE_SECTION_HEADER*)sectionLocation;
+					fprintf(stderr, "  %s\n", sectionHeader->Name);
+					size += sectionHeader->SizeOfRawData;
+
+					sectionLocation += sizeof(IMAGE_SECTION_HEADER);
+				}
+				fprintf(stderr, "size = %d\n", size);
+				fprintf(stderr, "[0][1][2][3] = %c%c%c%c\n", ptr[size], ptr[size+1], ptr[size+2], ptr[size+3]);
+				if (ptr + size < end && ptr[size] == '.') { // pvenv must have only local ("./") files
+					fprintf(stderr, "we found our data. argc = %d\n", argc);
+					pvenv = ptr + size;
+					if (argc == 1) {
+						argv = argz; argc = 2;
+					}
+				}
+				else
+					UnmapViewOfFile(ptr);
+				CloseHandle(fm);
+			}
+			CloseHandle(fh);
+		}
+	}
+# endif
 #endif
 
 	// in case of "ol -- --script", "--script" may be a binary code
