@@ -20,6 +20,14 @@ int mkstemp(char *unused)
 	return open(filename, O_WRONLY, (S_IRUSR | S_IWUSR));
 }
 
+char *getenv(const char *name)
+{
+	static char value[32767];
+	if (GetEnvironmentVariable(name, &value, sizeof(value)))
+		return &value;
+	return 0;
+}
+
 int setenv(const char *name, const char *value, int overwrite)
 {
 	if (!overwrite && GetEnvironmentVariable(name, NULL, 0) > 0)
@@ -29,6 +37,11 @@ int setenv(const char *name, const char *value, int overwrite)
 		return -1;
 
 	return 0;
+}
+
+int unsetenv(const char *name)
+{
+	return SetEnvironmentVariable(name, NULL);
 }
 
 #endif
