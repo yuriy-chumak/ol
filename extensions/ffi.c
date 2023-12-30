@@ -1441,49 +1441,6 @@ char* not_a_string(char* ptr, word string)
 #define PTR FFT_PTR // just pointer
 #define REF FFT_REF // pointer with drawback
 
-static
-size_t string_approx_len(word arg)
-{
-	size_t size = 0;
-	switch (reference_type(arg)) {
-		case TSTRING:
-			size = rawstream_size(arg);
-			break;
-		case TSTRINGWIDE: // TODO: move under #define PRECISE_STRING_CALC: WALIGN(utf8_len(arg)+1);
-			size = reference_size(arg) * 4;
-			break;
-		case TSTRINGDISPATCH:
-			arg = car(arg);
-			while (arg != INULL) {
-				size += string_approx_len(arg);
-				arg = cdr(arg);
-			}
-			break;
-	}
-	return WALIGN(size + 4); // 4 is for u'\0'
-}
-
-static
-void arg_size(word arg, word tty, size_t *total)
-{
-	if (is_reference(arg))
-	switch (reference_type(arg))
-	{
-	case TBYTEVECTOR:
-		*total += reference_size(arg); // in words
-		break;
-
-	case TSTRING:
-	case TSTRINGWIDE: // TODO: move under #define PRECISE_STRING_CALC: WALIGN(utf8_len(arg)+1);
-	case TSTRINGDISPATCH:
-		// todo: if (string-len > 10000), use precise string calculation ?
-		*total += string_approx_len(arg);
-		break;
-	}
-}
-
-
-
 // 		switch (value(tty)) {
 // 		case TSTRING+PTR: // todo: remove PTR?
 // 			while (arg != INULL) {
@@ -1677,10 +1634,14 @@ size_t arguments_size(word args, word rtty, size_t* total)
 					break;
 
 				case TSTRING:
-				case TSTRINGWIDE: // TODO: move under #define PRECISE_STRING_CALC: WALIGN(utf8_len(arg)+1);
+					*total += rawstream_size(arg); // exact size
+					break;
+				case TSTRINGWIDE:
+					*total += reference_size(arg) * 4; // берем худший случай
+					break;
 				case TSTRINGDISPATCH:
 					// todo: if (string-len > 10000), use precise string calculation ?
-					*total += string_approx_len(arg);
+					*total += number(ref(arg, 1)) * 4; // берем худший случай
 					break;
 			}
 		}
