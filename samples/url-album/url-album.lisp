@@ -59,7 +59,7 @@
       (case msg
          (['update id url]
             (when url
-               (define pid (system (list "/usr/bin/chromium" "--headless" "--screenshot" url)))
+               (define pid (execvp (list "/usr/bin/chromium" "--headless" "--screenshot" url)))
                (print "pid: " pid)
                ; wait for screenshot is done
                (let do ()
