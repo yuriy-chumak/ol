@@ -2360,6 +2360,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 						STORE_SERIALIZE(float, OL2F); break;
 					case TDOUBLE:
 						STORE_SERIALIZE(double, OL2D); break;
+					case TVOID: // same as type-vptr
+						goto tvptr;
 					// raw pointers to pointers
 					case TVPTR: {
 						if (arg == INULL) // empty list will be sent as nullptr
