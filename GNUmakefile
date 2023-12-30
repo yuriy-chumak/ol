@@ -80,7 +80,7 @@ doc/olvm.md: src/olvm.c extensions/ffi.c
 CFLAGS += -std=gnu99 -fno-exceptions
 CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
 CFLAGS_DEBUG   := -O0 -g2 -Wall
-CFLAGS_DEBUG   := -DCAR_CHECK=1 -DCDR_CHECK=1
+CFLAGS_DEBUG   += -DCAR_CHECK=1 -DCDR_CHECK=1
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 
 CFLAGS += -DHAVE_SOCKETS=$(if $(HAVE_SOCKETS),$(HAVE_SOCKETS),0)
