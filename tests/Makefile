@@ -5,7 +5,7 @@ else
 .PHONY: check tests
 
 .PHONY: testing-binaries
-.PHONY: testing-embed testing-internal testing-ffi
+.PHONY: testing-embed testing-internal check-ffi
 .PHONY: regression-tests
 
 .SILENT: regression-tests
@@ -351,7 +351,7 @@ endif
 	@echo " "
 
 # -- ffi ------------------------------------------
-testing-ffi:
+check-ffi:
 	@echo "ffi testing"
 	@echo "----------------------------------------"
 ifeq ($(DEV_MACHINE),1) # main development platform, special case
@@ -447,7 +447,7 @@ check: tests
 tests: testing-binaries
 	@rm -f $(FAILED)
 	$(MAKE) -s testing-internal
-	$(MAKE) -s testing-ffi
+	$(MAKE) -s check-ffi
 	$(MAKE) -s testing-embed
 	$(MAKE) -s regression-tests
 

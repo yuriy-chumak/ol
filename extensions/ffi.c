@@ -1689,11 +1689,11 @@ size_t arguments_size(word args, word rtty, size_t* total)
 				case TVECTOR: {
 					if (is_pair(tty)) {
 						int retype = car(tty);
-						// pointer (to array or structure)
+						// pointer (to array or structure)?
 						if (is_pointer(retype))
 							pointer_calc(arg, cdr(tty), total);
-						// structure-by-value
 						else {
+							// structure-by-value
 							size_t local = 0;
 							words += structure_by_value(arg, tty, &local) + local;
 						}
@@ -2748,98 +2748,89 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	B = OLVM_unpin(this, pB);
 	C = OLVM_unpin(this, pC);
 
-	// флажок, что среди параметрво есть те, что надо заполнить
+	// флажок, что среди параметров есть те, что надо заполнить (fft&) назад
 	if (writeback) {
-		// пробежимся по аргументам, может какие надо будет вернуть взад
-		p = (word*)C;   // аргументы
-		t = (word*)cdr(B); // rtti
+		// пробежимся по аргументам, найдем нужные
+		p = (word*)C;   // arguments
+		t = (word*)cdr (B); // rtti
 
 		i = 0;
 		while ((word)p != INULL) { // пока есть аргументы
-			assert (reference_type(p) == TPAIR); // assert (list)
-    		assert (t == RNULL || reference_type(t) == TPAIR); // assert (list)
+			// assert (reference_type(p) == TPAIR); // assert (list)
+    		// assert (t == RNULL || reference_type(t) == TPAIR); // assert (list)
 	
-			int type = (is_pair(t) && is_value(car(t))) ? value(car(t)) : TANY;
+			//int type = (is_pair(t) && is_value(car(t))) ? value(car(t)) : TANY;
+			word tty = is_pair(t) ? car(t) : I(TANY);
 			word arg = (word) car(p);
 
-			if (arg != IFALSE && type == TANY) {
-				word retype = is_pair(t) ? car(t) : I(type); // todo: move below?
-				if (is_reference(arg)) {
-					switch (reference_type(arg)) {
-						case TPAIR:
-							if (retype == I(TANY)) {// '(cons type args)
-								retype = car(arg); arg = cdr(arg);
-							}
-							// fall through
-						case TVECTOR: {
-							if (is_pair(retype)) {
-								int type = car(retype);
-								if (is_value(type) && (value(type) & FFT_REF)) {
-									if (is_value(cdr(retype))) {
-										type = value(cdr(retype));
-										switch (type) {
-											case TINT8:   DESERIALIZE(signed char); break;
-											case TUINT8:  DESERIALIZE(unsigned char); break;
-											case TINT16:  DESERIALIZE(signed short); break;
-											case TUINT16: DESERIALIZE(unsigned short); break;
-											case TINT32:  DESERIALIZE(signed int); break;
-											case TUINT32: DESERIALIZE(unsigned int); break;
-											case TINT64:  DESERIALIZE(signed long long); break;
-											case TUINT64: DESERIALIZE(unsigned long long); break;
-											case TFLOAT:  DESERIALIZE(float); break;
-											case TDOUBLE: DESERIALIZE(double); break;
-
-											case TVPTR: {
-												if (arg == INULL) // empty array will be sent as nullptr
-													break;
-												// TODO: handle vectors!
-												if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
-													break; // nothing to do
-
-												int c = list_length(arg);
-												void** f = (void**)args[i];
-
-												word l = arg;
-												while (c--) {
-													void* value = *f++;
-													word num = car(l);
-													assert (reference_type(num) == TVPTR);
-													*(void**)&car(num) = value;
-
-													l = cdr(l);
-												}
-											}
-											break;
-										}
-									}
-									else {
-										E("no structure ref yet implemented.");
-									}
-								}
-							}
-							break;
-						}
+			wbloop: // writeback loop
+			if (arg == IFALSE)
+				; // nothing
+			else
+			if (is_value(tty)) {
+			//	- V -----------------------------------------------
+				if (value(tty) == TANY) {
+					if (is_reference(arg))
+					if (reference_type(arg) == TPAIR) {
+						tty = car(arg); arg = cdr(arg);
+						goto wbloop;
 					}
 				}
-				// switch (reference_type(arg)) {
-				// case TPAIR: // sending type override
-				// 	type = car(arg);
-				// 	if (is_enump(type)) {
-				// 		type = value(type);
-				// 		arg = cdr(arg);
-				// 		goto wbagain;
-				// 	}
-				// 	break;
-				// // case TSTRING:
-				// // case TSTRINGDISPATCH:
-				// // 	goto push_string;
-				// // case TSTRINGWIDE:
-				// // 	goto tstringwide;
-				// }
+			}
+			else
+			if (is_pointer(car(tty)) && (value(car(tty)) & FFT_REF)) {
+			//	- P -----------------------------------------------
+				if (is_value(cdr(tty))) {
+					// pointer to array
+					switch (value(cdr(tty))) {
+						case TINT8:   DESERIALIZE(signed char); break;
+						case TUINT8:  DESERIALIZE(unsigned char); break;
+						case TINT16:  DESERIALIZE(signed short); break;
+						case TUINT16: DESERIALIZE(unsigned short); break;
+						case TINT32:  DESERIALIZE(signed int); break;
+						case TUINT32: DESERIALIZE(unsigned int); break;
+						case TINT64:  DESERIALIZE(signed long long); break;
+						case TUINT64: DESERIALIZE(unsigned long long); break;
+						case TFLOAT:  DESERIALIZE(float); break;
+						case TDOUBLE: DESERIALIZE(double); break;
+
+						case TVPTR: {
+							if (arg == INULL) // empty array will be sent as nullptr
+								break;
+							// TODO: handle vectors!
+							if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
+								break; // nothing to do
+
+							int c = list_length(arg);
+							void** f = (void**)args[i];
+
+							word l = arg;
+							while (c--) {
+								void* value = *f++;
+								word num = car(l);
+								assert (reference_type(num) == TVPTR);
+								*(void**)&car(num) = value;
+
+								l = cdr(l);
+							}
+						}
+						break;
+					}
+				}
+				else {
+					// pointer to structure
+					assert (is_pair(cdr(tty)));
+
+					word structure = cdr(tty);
+					size_t size = structure_size(0, structure);
+					// void* payload = alloca(size);
+					// STORE(IDF, word, payload);
+					// store_structure(&fp, payload, 0, cdr(tty), arg);
+				}
 			}
 
 			p = (word*)cdr(p);
-            t = (t == RNULL) ? t : (word*)cdr(t);
+			t = (t == RNULL) ? t : (word*)cdr(t);
 			i++;
 		}
 	}
