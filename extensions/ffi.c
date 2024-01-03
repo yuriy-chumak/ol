@@ -1956,6 +1956,84 @@ size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 	return ptr;
 }
 
+static
+size_t restore_structure(void* memory, size_t ptr, word t, word a)
+{
+	while (t != INULL && a != INULL) {
+		word p = car(t); word v = car(a);
+		if (is_pair(p)) {
+			// pointers
+			if (is_pointer(car(p))) {
+				p = cdr(p);
+				switch (value(p)) {
+					case TSTRING:
+						// ALIGN(ptr, char**);
+						// fp = *ffp;
+						// store_string_array(&fp, (char***)(memory+ptr), v);
+						// *ffp = fp;
+						// ptr += sizeof(char**);
+						assert (0);
+						break;
+					// todo: other pointer types
+				}
+			}
+			else
+				ptr = restore_structure(memory, ptr, p, v); // assert (is_pair v)
+		}
+		else {
+			if (v != IFALSE) // don't restore unspecified data
+			switch (value(p)) {
+				#define LOAD(type)\
+					ALIGN(ptr, type);\
+					type value = *(type*)(memory+ptr);\
+					ptr += sizeof(type);
+				#define WRITEBACK(type) { \
+					LOAD(type);\
+					if (is_value(v))\
+						*(R)&car(a) = make_enum(value);\
+					else {\
+						word num = v;\
+						word *l = &car(v);\
+						switch (reference_type(v)) {\
+							DESERIALIZE_INT()\
+							DESERIALIZE_INEXACT()\
+						}\
+					}}
+			// reflect integer types
+			case TINT8:  WRITEBACK(int8_t);  break;
+			case TUINT8: WRITEBACK(uint8_t); break;
+			case TINT16: WRITEBACK(int16_t); break;
+			case TUINT16:WRITEBACK(uint16_t);break;
+			case TINT32: WRITEBACK(int32_t); break;
+			case TUINT32:WRITEBACK(uint32_t);break;
+			case TINT64: WRITEBACK(int64_t); break;
+			case TUINT64:WRITEBACK(uint64_t);break;
+			case TFLOAT: WRITEBACK(float);   break;
+			case TDOUBLE:WRITEBACK(double);  break;
+
+			case TVPTR:
+				//printf("v");
+				//SAVE(void*, car);
+				break;
+
+			case TSTRING:
+				//printf("s");
+				//ALIGN(ptr, char*);
+				//fp = *ffp;
+				//store_string(&fp, (char**)(memory+ptr), v);
+				//*ffp = fp;
+				break;
+			// todo: type-string-wide, etc.
+			default:
+				E("unhandled restore");
+				break;
+			}
+			//ptr += ((ptr + subsize - 1) & -subsize) + subsize;
+		}
+		t = cdr(t); a = cdr(a);
+	}
+	return ptr; // todo: word align?
+}
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
 
@@ -2495,6 +2573,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				// pointer to structure
 				assert (is_pair(cdr(tty)));
 				size_t size = structure_size(0, cdr(tty));
+				ALIGN(size, int); // structure's padding
 				void* payload = alloca(size);
 				STORE(IDF, word, payload);
 				store_structure(&fp, payload, 0, cdr(tty), arg);
@@ -2822,10 +2901,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					assert (is_pair(cdr(tty)));
 
 					word structure = cdr(tty);
-					size_t size = structure_size(0, structure);
-					// void* payload = alloca(size);
-					// STORE(IDF, word, payload);
-					// store_structure(&fp, payload, 0, cdr(tty), arg);
+					void* payload = (void*) args[i];
+					restore_structure(payload, 0, structure, arg);
 				}
 			}
 

@@ -1,32 +1,34 @@
 # FFI olvm Extension
 
-An FFI (Foreign Function Interface) is an OLVM (Otus Lisp Vurtual Machine) extension
+FFI (Foreign Function Interface) is an OLVM (Otus Lisp Virtual Machine) extension
 by which a program written in Ol (Otus Lisp) can call routines or make use of services
-provided by the OS (Operation System) or thirdparty libraries.
+provided by the OS (Operation System) or third-party libraries.
 
-For example, you can use Sqlite library without including support for that library in Olvm.
+For example, you can use Sqlite library without including support for it directly in olvm nor writing any C code.
 
 ### Glossary
 
-* `value` is an integer number fits in machine word,
-* `reference` is any other Ol object (big and floating point numbers, strings, vectors, etc.),
+* `value` is an integer number fits in olvm word (machine word minus 8 bits),
+  - -16777215 .. +16777215 integers for 32-bit machines,
+  - -72057594037927935 .. +72057594037927935 integers for 64-bit machines,
+  - #true, #false, #null, other olvm constants.
+* `reference` is any other Ol object (big and floating point numbers, strings, vectors, functions, etc.),
 * `callable` is a special formed Ol function that can be called from the external (native) code.
 
 We use some common names for types in tables:
   * `integer-types` means type-enum+, type-enum-, type-int+, and type-int-.
-  * `number-types` means integer-types, type-rational, type-inexact, and type-complex
+  * `number-types` means integer-types, type-rational, type-inexact, and type-complex.
   * `string-types` means type-string, type-string-wide, and type-string-dispatch.
-  * `structure-type` means list (possibly a tree) of structure types in consistent order.
+  * `structure-type` means a list (possibly with nested lists) of structure types in consistent order.
 
-You can get the type of Ol object using `type` function (`(type -12)` produces 32),
-you can get type name for integer type value using `typename` function (`(typename 32)` produces 'type-enum-).
+You can get the type of any Ol object using `type` function (`(type -12)` produces 32),
+you can get type name for any type value using `typename` function (`(typename 32)` produces 'type-enum-).
 
 ### Limitations
 
-* no *half precision floating point* support yet
-* no *quad-word integer* support yet
-* no *structures by value* support yet
-* no *unions* in *structures* support yet
+* no *half precision floating point* support yet,
+* no *quad-word integer* support yet,
+* no *unions* in *structures* support yet.
 
 ## TOC
 * [Basic example](#basic-example)
@@ -54,8 +56,9 @@ you can get type name for integer type value using `typename` function (`(typena
 If you want to import function(s) from the native dynamic library, follow these steps:
 
 1. Import the ffi library: `(import (otus ffi))`,
-1. Load a native dynamic library: `(define libm (load-dynamic-library "libm.so.6"))`,
-   (I assume we use kind of Linux or any Unix flavor, for Windows use "user32.dll" library name). Now "libm" became a function loader for "libm.so" shared library.
+1. Load a native dynamic library: `(define libm (load-dynamic-library "libm.so.6"))`,  
+   (I assume you use kind of Linux or any Unix flavor, for Windows type "user32.dll" library name).  
+   Now "libm" became a function loader for "libm.so" shared library.
 1. Link an external function: `(define asin (libm fft-double "asin" fft-double))`,
 1. Use external function in a regular way: `(print (asin 0.5))`
 
@@ -83,7 +86,7 @@ bye-bye.
 
 ## Function declaration
 
-Function declaration (linking occurs at the time of declaration, so library should be loaded and valid at this point) consists of:
+Function declaration (the linking occurs at the time of declaration, so library should be loaded and valid at this point) consists of:
 1. the library (`libm` in the example above),
 1. the data type of the value the function returns in terms of ffi (first `fft-double` in the example above),
 1. the function name (`"asin"` in the example above),
@@ -92,7 +95,7 @@ Function declaration (linking occurs at the time of declaration, so library shou
 
 ## Function result types
 
-List of result types that ffi supports, with a short description:
+List of function returning types that ffi supports, with a short description:
 
 ### Integer types:
 
@@ -342,7 +345,7 @@ But I recommend creating a comprehensive solution:
 ))
 ```
 
-Then very simple usage like any other ol functions:
+Then very simple usage like any other ol functions under all supported OS:
 ```scheme
 (import (mylib))
 (print (asin 0.5))

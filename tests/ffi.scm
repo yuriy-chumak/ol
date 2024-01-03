@@ -485,6 +485,43 @@ struct args_t
                            "very-very-very-very-very-very-very-very-long-argument"))
                   #\C)))
 
+(print "
+// structure by reference with writeback:
+struct csicisc_t
+{
+   char c1;
+   short s1;
+   int i1;
+   struct {
+      char c2;
+      int i2;
+      short s2;
+   } substruct;
+   char c3;
+};")
+; by reference
+(define csicisc_t (list
+   fft-char
+   fft-short
+   fft-int
+   (list
+      fft-char
+      fft-int
+      fft-short
+      fft-short) ; substructure padding
+   fft-char))
+(define csicisc_t& (fft& csicisc_t))
+
+; struct by reference
+(define debug (this fft-void "debug_csicisc" csicisc_t&))
+(define var (list #\A 2 3
+               (list
+                  #\B 5 6 0) ; 0 for substructure padding
+               #\C))
+(print "> " var)
+(debug var)
+(print "< " var)
+
 ; struct by value
 (print "
 // (small) structure by value:

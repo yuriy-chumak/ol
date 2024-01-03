@@ -343,6 +343,45 @@ struct args_t
      c = C
    }
 
+// structure by reference with writeback:
+struct csicisc_t
+{
+   char c1;
+   short s1;
+   int i1;
+   struct {
+      char c2;
+      int i2;
+      short s2;
+   } substruct;
+   char c3;
+};
+> (65 2 3 (66 5 6 0) 67)
+   debug_csicisc(var) = {
+     c1 = A
+     s1 = 2
+     i1 = 3
+     {
+       c2 = B
+       i2 = 5
+       s2 = 6
+     }
+     c3 = C
+   }
+  and now we made +1 for all of these variables
+   (foreach var)++ = {
+     c1 = B
+     s1 = 3
+     i1 = 4
+     {
+       c2 = C
+       i2 = 6
+       s2 = 7
+     }
+     c3 = D
+   }
+ and now we made +1 for all of these variables< (66 3 4 (67 6 7 0) 68)
+
 // (small) structure by value:
 int function(struct { type x, type y } a)
 {

@@ -677,6 +677,7 @@ int format(const char *format, ...)
     return count;
 }
 
+// structure by reference
 struct args_t
 {
 	int argc;
@@ -699,5 +700,54 @@ void debug_args(struct args_t* args)
 	printf("     }\n");
 	printf("     c = %c\n", args->c);
 	printf("   }\n");
+	fflush(stdout);
+}
+
+// structure by reference with writeback
+struct csicisc_t
+{
+	char c1;
+	short s1;
+	int i1;
+	struct {
+		char c2;
+		int i2;
+		short s2;
+	} sub;
+	char c3;
+};
+
+void debug_csicisc(struct csicisc_t* var)
+{
+	fflush(stdout);
+	printf("   debug_csicisc(var) = {\n");
+	printf("     c1 = %c\n", var->c1);
+	printf("     s1 = %d\n", var->s1);
+	printf("     i1 = %d\n", var->i1);
+	printf("     {\n");
+	printf("       c2 = %c\n", var->sub.c2);
+	printf("       i2 = %d\n", var->sub.i2);
+	printf("       s2 = %d\n", var->sub.s2);
+	printf("     }\n");
+	printf("     c3 = %c\n", var->c3);
+	printf("   }\n");
+	printf("  and now we made +1 for all of these variables\n");
+	var->c1++; var->s1++; var->i1++;
+	var->sub.c2++;
+	var->sub.i2++;
+	var->sub.s2++;
+	var->c3++;
+	printf("   (foreach var)++ = {\n");
+	printf("     c1 = %c\n", var->c1);
+	printf("     s1 = %d\n", var->s1);
+	printf("     i1 = %d\n", var->i1);
+	printf("     {\n");
+	printf("       c2 = %c\n", var->sub.c2);
+	printf("       i2 = %d\n", var->sub.i2);
+	printf("       s2 = %d\n", var->sub.s2);
+	printf("     }\n");
+	printf("     c3 = %c\n", var->c3);
+	printf("   }\n");
+	printf(" and now we made +1 for all of these variables");
 	fflush(stdout);
 }
