@@ -2019,8 +2019,10 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 			case TDOUBLE:WRITEBACK(double);  break;
 
 			case TVPTR:
-				//printf("v");
-				//SAVE(void*, car);
+				LOAD(void*);
+				if (is_vptr(v)) {
+					*(void**)&car(v) = value;
+				}
 				break;
 
 			case TSTRING:
