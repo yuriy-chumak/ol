@@ -9,7 +9,7 @@
       emergency-exit
       get-environment-variable
       get-environment-variables
-      set-environment-variable
+      set-environment-variable!
       unset-environment-variable)
 
    (import
@@ -49,7 +49,7 @@
       (define (get-environment-variables)
          (syscall 1015))
 
-      (define set-environment-variable (case-lambda
+      (define set-environment-variable! (case-lambda
          ((name value)
             (syscall 1014 name value))
          ((name value overwrite)
