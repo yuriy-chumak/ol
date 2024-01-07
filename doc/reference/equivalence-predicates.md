@@ -111,8 +111,8 @@ infinite) trees are equal (in the sense of `equal?`) as ordered trees, and #fals
         { 'name "Yuriy"
           'phone 12345678 })   ==>  #true
 (equal? [1 2 3] [1 2 3])       ==>  #true
-(equal? (bytevector "123")
-        (string "123"))        ==>  #false
+(equal? (bytevector 1 2 3)
+        (string 1 2 3))        ==>  #false
 
 (equal? (append '(1 2) '((7)))
        '(1 2 (7)))             ==>  #true
