@@ -91,6 +91,13 @@
 #	define IFN32(...)
 #endif
 
+// platform filters
+#ifdef __aarch64__
+#	define IFaarch64(...) __VA_ARGS__
+#else
+#	define IFaarch64(...)
+#endif
+
 #ifdef __mips__
 #	define IFmips32(...) __VA_ARGS__
 #else
@@ -112,13 +119,13 @@
 #define TINT16        (51)
 #define TINT32        (52)
 #define TINT64        (53)
-// 54 for 128 ?
+// tbd: 54 for int128_t
 
 #define TUINT8        (55)
 #define TUINT16       (56)
 #define TUINT32       (57)
 #define TUINT64       (58)
-// 59 for 128 ?
+// tbd: 59 for uint128_t
 
 #define TMASK      0x00FFF
 
@@ -138,10 +145,7 @@
 #define FFT_REF    0x20000 // todo: change to 0x200 ? или другой уникальный небольшой тип
 // possible speedup - FFT_REF = 0x30000 (include FFT_PTR)
 
-#define IDF(...)   (__VA_ARGS__)
-#define ALIGN(ptr, type) \
-	__builtin_choose_expr(sizeof(type) > 1, ptr = ((ptr + sizeof(type) - 1) & -sizeof(type)), (void)0)
-
+// -----------------
 // sizeof(intmax_t): // same as long long
 //	arm, armv7a, armv8a, arm64: 8
 //	avr: 8
@@ -155,11 +159,11 @@
 //	raspbian, arduino: 8
 
 #if defined(_WIN32)
-#	define PUBLIC __declspec(dllexport)
+#	define EXPORT __declspec(dllexport)
 #elif defined(__EMSCRIPTEN__)
-#	define PUBLIC EMSCRIPTEN_KEEPALIVE
+#	define EXPORT EMSCRIPTEN_KEEPALIVE
 #else
-#	define PUBLIC __attribute__ ((__visibility__("default")))
+#	define EXPORT __attribute__ ((__visibility__("default")))
 #endif
 
 #ifdef _WIN32
@@ -176,16 +180,12 @@
 #endif
 
 // ------------------
-#ifdef __aarch64__
-#define ONLY_AARCH64(...) __VA_ARGS__
-#else
-#define ONLY_AARCH64(...)
-#endif
-
-
-// ------------------
 // maximal applicable return type of called functions
 typedef int64_t ret_t;
+
+#define IDF(...)   (__VA_ARGS__) // Identity function
+#define ALIGN(ptr, type) \
+	__builtin_choose_expr(sizeof(type) > 1, ptr = ((ptr + sizeof(type) - 1) & -sizeof(type)), (void)0)
 
 // ------------------------------------------------------------------------------------
 // -- assembly part -------------------------------------------------------------------
@@ -225,7 +225,7 @@ typedef int64_t ret_t;
 // platform defines:
 // https://sourceforge.net/p/predef/wiki/Architectures/
 //
-// buildin assembly:
+// builtin assembly:
 // http://locklessinc.com/articles/gcc_asm/
 // http://www.agner.org/optimize/calling_conventions.pdf
 // https://en.wikibooks.org/wiki/Embedded_Systems/Mixed_C_and_Assembly_Programming
@@ -1882,6 +1882,13 @@ size_t structure_size(size_t size, word t)
 	return size;
 }
 
+// Notes:
+//	* C standard guarantees that struct members always appear in memory in the
+//	  exact same order in which they are declared in code,
+//	* The first member must always start at the same memory address as the structure itself,
+//	* There may be padding at the end of the structure (?),
+// Btw:
+//	https://abstractexpr.com/2023/06/29/structures-in-c-from-basics-to-memory-alignment
 static
 size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 {
@@ -2037,7 +2044,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
 
-PUBLIC
+EXPORT
 __attribute__((used))
 word* OLVM_ffi(olvm_t* this, word arguments)
 {
@@ -2172,7 +2179,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		}
 		// #endif
 
-		ONLY_AARCH64(if (i < 8))
+		IFaarch64(if (i < 8))
 		args[i] = 0; // обнулим
 
 #if (__x86_64__ && (__unix__ || __APPLE__)) // LP64, but without arm64
@@ -3105,7 +3112,7 @@ int ffi_sizeof(int type)
 	return 0;
 }
 
-PUBLIC
+EXPORT
 word OLVM_sizeof(olvm_t* self, word* arguments)
 {
 	(void) self;
@@ -3132,7 +3139,6 @@ word OLVM_sizeof(olvm_t* self, word* arguments)
 	return IFALSE;
 }
 
-// PUBLIC
 #endif//OLVM_FFI
 
 
@@ -3162,7 +3168,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi
 
 // todo: удалить userdata api за ненадобностью (?) и использовать пин-api
 // JIT howto: http://eli.thegreenplace.net/2013/11/05/how-to-jit-an-introduction
-PUBLIC
+EXPORT
 word OLVM_mkcb(olvm_t* self, word* arguments)
 {
 	word* A = (word*)car(arguments);
