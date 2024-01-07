@@ -29,7 +29,7 @@
       ;; some olvm syscalls
       uname
       isatty
-      getenv)
+      getenv setenv)
 
    (import
       (scheme core)
@@ -236,4 +236,10 @@
 
    (define (getenv str)
       (syscall 1016 str))
+
+   (define setenv (case-lambda
+      ((env value)
+         (syscall 1017 env value))
+      ((env value overwrite)
+         (syscall 1017 env value overwrite))))
 ))
