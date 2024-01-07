@@ -18,6 +18,7 @@ describe: all
 CC ?= gcc
 LD ?= ld
 
+# win32 cross-compile
 ol32.exe: CC := i686-w64-mingw32-gcc
 ol64.exe: CC:=x86_64-w64-mingw32-gcc
 
@@ -64,25 +65,15 @@ endif
 
 # or
 #	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
-# or
-#	@od -An -vtx1 repl| tr -d '\n'| sed \
-#	   -e 's/^ /0x/' -e 's/ /,0x/g' \
-#	   -e 's/^/unsigned char repl[] = {/' \
-#	   -e 's/$$/};/'> $@
 
 doc/olvm.md: src/olvm.c extensions/ffi.c
 	cat src/olvm.c extensions/ffi.c| tools/makedoc >doc/olvm.md
 
 # compiler flags
 # ----------------------------------
-## 'os independent' flags
+## os independent flags
 
 CFLAGS += -std=gnu99 -fno-exceptions
-CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
-CFLAGS_DEBUG   := -O0 -g2 -Wall
-CFLAGS_DEBUG   += -DCAR_CHECK=1 -DCDR_CHECK=1
-CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
-
 CFLAGS += -DHAVE_SOCKETS=$(if $(HAVE_SOCKETS),$(HAVE_SOCKETS),0)
 CFLAGS += -DHAVE_DLOPEN=$(if $(HAVE_DLOPEN),$(HAVE_DLOPEN),0)
 CFLAGS += -DHAVE_SECCOMP=$(if $(HAVE_SECCOMP),$(HAVE_SECCOMP),0)
@@ -94,8 +85,6 @@ ifneq ($(HAVE_SENDFILE),)
 CFLAGS += -DHAVE_SENDFILE=$(HAVE_SENDFILE)
 endif
 
-VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
-
 # builtin "sin", "cos", "sqrt", etc. functions support
 # can be disabled using "-DOLVM_BUILTIN_FMATH=0"
 ifneq ($(OLVM_BUILTIN_FMATH),0)
@@ -105,12 +94,23 @@ else
    CFLAGS += -DOLVM_BUILTIN_FMATH=0
 endif
 
-## 'os dependent' flags
+# ----------------------------------
+## debug/release flags
+CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
+CFLAGS_DEBUG   := -O0 -g2 -Wall
+CFLAGS_DEBUG   += -DCAR_CHECK=1 -DCDR_CHECK=1
+CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
+
+VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
+
 # ------------------------------------------------------
+## os dependent flags
+
 UNAME ?= $(shell uname -s)
 
 # Linux
 ifeq ($(UNAME),Linux)
+
 ifeq ($(CC), tcc)
   L := $(if $(HAVE_DLOPEN), -ldl)
 else
@@ -118,12 +118,12 @@ else
        -Xlinker --export-dynamic
 endif
 
-#Debian i586 fix
+# Debian i586 fix
 ifeq ($(CC),gcc)
   CFLAGS += -I/usr/include/$(shell gcc -print-multiarch)
 endif
 
-endif
+endif #Linux
 
 # BSD
 ifeq ($(UNAME),FreeBSD)
@@ -147,7 +147,6 @@ ifeq ($(UNAME),Darwin)
 endif
 
 # -----------------------------------------------
-
 ## 'clean/install' part
 clean:
 	rm -f boot.fasl
