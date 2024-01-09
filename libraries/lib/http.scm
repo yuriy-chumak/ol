@@ -160,15 +160,46 @@
 
 
 (define http-parser
-   (let-parses (
-         (headline (either
-               get-request-line
-               get-response-line))
-         (headers-array (get-greedy* get-header-line))
-         (- (imm CR)) (- (imm LF)))   ; final CRLF
-      (vector
-         headline (pairs->ff headers-array))))
-;)
+   (either
+      ; HTTP/
+      (let-parses (
+            (headline (either
+                  get-request-line
+                  get-response-line))
+            (headers-array (get-greedy* get-header-line))
+            (- (imm CR)) (- (imm LF)))   ; final CRLF
+         (vector
+            headline (pairs->ff headers-array)))
+      ; WebSocket
+      (let-parse* (
+            (tag byte)
+            (mlen byte) ; todo: Extended payload length
+            ; header bits
+            (FIN (eval (band tag #b1000)))
+            (RSV (eval (band tag #b0111)))
+            (MASK (eval (band mlen #x80)))
+
+            (payload-len (eval (band mlen #x7F)))
+            (masking-key (if (eq? MASK #x80)
+                           (times 4 byte)
+                           (epsilon #false)))
+            (payload (times payload-len byte)))
+         [
+            'WebSocket
+            (case tag
+               ;(#x80 #f) ; continuation tag, need to collect more frames into one
+               (#x81 (let loop ((p payload) (m masking-key) (o '()))
+                        (if (null? p) {
+                           'type 'string
+                           'message (reverse o) }
+                        else
+                           (let ((m (if (null? m) masking-key m)))
+                              (loop (cdr p)
+                                    (cdr m)
+                                    (cons (bxor (car p) (car m)) o))))))
+               (#x88 {
+                  'type 'close }))
+         ])))
 
 ; ----
 ; todo: use atomic counter to check count of clients and do appropriate timeout on select
@@ -184,26 +215,30 @@
    (let*((ss1 ms1 (clock)))
       (print-to stderr)
       (print-to stderr id ": " (timestamp) " on-accept")
-      (let*((stream (port->bytestream fd))
-            (request stream
+      (let loop ((stream (port->bytestream fd)))
+      (let*((request stream
                   (let* ((l r p val (http-parser #null stream 0 ok)))
                      (if (not l)
                         (values #false r)
-                        (values val r)))))
-            (when (or
-                     (not request)
-                     (call/cc (lambda (close)
-                        (let ((Request (ref request 1))
-                              (Headers (ref request 2)))
-                           ;(print-to stderr id ": Request: \e[0;34m" Request "\e[0;0m")
-                           ;(print-to stderr id ": Headers: " Headers)
-                           (if (null? Request)
-                              (send "HTTP/1.0 400 Bad Request" "\r\n"
-                                    "Conneciton: close"        "\r\n"
-                                    "\r\n" "🤷")
-                           else
-                              (onRequest fd Request Headers stream close))))))
-               (print-to stderr id (if (syscall 3 fd) ": socket closed" ": can't close socket"))))
+                        (values val r))))
+            (close? (or
+                  (not request)
+                  (call/cc (lambda (close)
+                     (let ((Request (ref request 1))
+                           (Headers (ref request 2)))
+                        ;(print-to stderr id ": Request: \e[0;34m" Request "\e[0;0m")
+                        ;(print-to stderr id ": Headers: " Headers)
+                        (if (null? Request)
+                           (send "HTTP/1.0 400 Bad Request" "\r\n"
+                                 "Conneciton: close"        "\r\n"
+                                 "\r\n" "🤷")
+                        else
+                           (onRequest fd Request Headers stream close))))))))
+         (if (eq? close? #true)
+            (print-to stderr id (if (syscall 3 fd) ": socket closed" ": can't close socket"))
+         else
+            (loop (or close? stream)))))
+      ; done.
       (let*((ss2 ms2 (clock)))
          (print-to stderr id ": " (timestamp) " on-accept processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
 ))
