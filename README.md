@@ -63,7 +63,7 @@ Q/A
    A. For the gods of simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
       (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and run as just `ol`).
 
-1. Q. *.. **fatal error**: stdlib.h: No No such file or directory.*  
+1. Q. *.. **fatal error**: stdlib.h: No such file or directory.*  
    Q. *.. **fatal error**: bits/libc-header-start.h: No such file or directory.*  
    A. Install gcc `multilib`, i.e. *sudo apt install gcc-multilib*.
 

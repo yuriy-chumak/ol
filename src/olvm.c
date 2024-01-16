@@ -1275,6 +1275,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 
 #include <time.h>
 #include <math.h>
+//	https://gcc.gnu.org/wiki/FloatingPointMath
 #ifdef __TINYC__
 #	define __builtin_sqrt  sqrt
 #	define __builtin_sin   sin

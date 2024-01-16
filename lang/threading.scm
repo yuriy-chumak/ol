@@ -157,9 +157,9 @@
                   (drop-delivering todo done state id
                      [id ['crash a b c]] tc)))
 
-            ; 4, fork
+            ; 4, coroutine
             (λ (id cont opts thunk todo done state tc)
-               ; (system-println "mcp: interop 4 -- fork")
+               ; (system-println "mcp: interop 4 -- coroutine")
                (lets((new-id (car opts))
                      (todo (cons* [new-id thunk] [id (λ () (cont new-id))] todo))
                      (state
