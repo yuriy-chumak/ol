@@ -456,9 +456,8 @@
                (cond
                   ((not l)
                      fail-val)
-                  ((lpair? r) => (λ (r)
-                     ;; trailing garbage
-                     fail-val))
+                  ((lpair? r) ;; trailing garbage
+                     fail-val)
                   (else
                      ;; full match
                      val)))))

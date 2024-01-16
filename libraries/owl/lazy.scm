@@ -39,7 +39,7 @@
 
       (define (lpair? ll)
          (cond
-            ((pair? ll) ll)
+            ((pair? ll) #t)
             ((function? ll)
                (lpair? (force ll)))))
 
