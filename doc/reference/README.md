@@ -12,7 +12,7 @@ to call code written in another language (c, python, lua, etc).
 Reference
 =========
 
-This is an Ol reference, not a Scheme. Scheme R<sup>7</sup>RS differences decribed in the main [README](https://github.com/yuriy-chumak/ol#r7rs-differences) file.
+This is an Ol reference, not a Scheme. Scheme R<sup>7</sup>RS differences described in the [DIFFERENCES](../R7RS-DIFFERENCES.md) file.
 
 Examples are provided in two forms:
 1. in the equivalence (in sense of [equal?](equivalence-predicates.md#equal)) form using symbols "==>" and "===",
@@ -50,7 +50,7 @@ List of Standard procedures
 - [Symbols](symbols.md).
 - [Characters](characters.md).
 - [Vectors](vectors.md).
-- [Lazy Lists](lazy-lists.md).
+- [Lazy Evaluations](lazy-evaluations.md).
 - [Sorting](sorting.md).
 - [Coroutines and Actors](async.md).
 - [Macro System](macros.md).

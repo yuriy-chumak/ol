@@ -41,9 +41,8 @@ This is almost a complete list of differences between Ol and R<sup>7</sup>RS.
   * Extended form of `case` is available in Ol.
 
 * 4.2.5. Delayed evaluation
-  * **No** `delay-force`, `promise?` in Ol.
-    - note: `delay` and `force` exists, sure.
-    - note: `make-promise` exist too.
+  * ~~**No** `delay-force`, `promise?` in Ol.~~
+    - note: added in Ol 2.5.
 
 * 4.2.7. Exception handling
   * **No** `guard` in Ol.

@@ -690,20 +690,15 @@
             ((delay . body)
                (lambda () (begin . body)))))
 
-      ; syntax:  delay-force <expression>
-      ; todo.
+      ; syntax:  delay-force <expression>  * (scheme lazy)
 
       ; syntax:  force <expression>
       (define-syntax force
          (syntax-rules ()
             ((force promise) (promise))))
 
-      ; (promise? obj )
-      ; todo.
-
-      ; (make-promise obj )
-      ; todo.
-
+      ; (promise? obj)  * (scheme lazy)
+      ; (make-promise obj)  * (scheme lazy)
 
       ; 4.2.6. Dynamic bindings
       ; * declared in (scheme dynamic-bindings)
