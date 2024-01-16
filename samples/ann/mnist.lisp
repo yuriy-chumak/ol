@@ -131,6 +131,7 @@
 
 ; -=( show the image using gtk )=------------------------------
 (import (lib gdk-3))
+(import (lib gdk-3 pixbuf))
 (import (lib gtk-3 image))
 (import (lib gtk-3 tool-button))
 (import (lib gtk-3 bin))

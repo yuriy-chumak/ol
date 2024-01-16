@@ -13,6 +13,7 @@
 
 (begin
    (define GtkImage* type-vptr)
+   (define GdkPixbuf* type-vptr)
 
    (define gtk_image_clear (GTK3 void "gtk_image_clear" GtkImage*))
    (define gtk_image_set_from_pixbuf (GTK3 void "gtk_image_set_from_pixbuf" GtkImage* GdkPixbuf*))

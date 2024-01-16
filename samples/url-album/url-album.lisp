@@ -2,7 +2,9 @@
 (import
       (lib glib-2)
       (lib gtk-3))
-(import (lib gdk-3))
+(import
+      (lib gdk-3)
+      (lib gdk-3 pixbuf))
 
 (import (otus ffi))
 (import (lib sqlite))
