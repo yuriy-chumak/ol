@@ -238,6 +238,11 @@ The full list can be read in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
 Some Ol limitations:
   * `apply` arguments count is **limited to 256** in Ol (use `fold` otherwise).
 
+### Supported SRFI
+* srfi-0 - `cond-expand`, builtin
+* srfi-16 - `case-lambda`, builtin
+* srfi-71 - `(let* ((a b (values..`, builtin
+* srfi-87 - `<=` in `case`, builtin
 
 DEPRECATIONS
 ------------
