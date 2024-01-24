@@ -23,6 +23,16 @@
    )")
 (sqlite:query database "
    INSERT OR IGNORE INTO notes (id, name) VALUES (0, '/')")
+(sqlite:query database "
+   CREATE TABLE IF NOT EXISTS previews (
+      id INTEGER PRIMARY KEY,
+      note INTEGER REFERENCES notes(id),
+      created DATETIME DEFAULT CURRENT_TIMESTAMP,
+      preview BLOB
+   )")
+;  INSERT INTO previews (note, created, preview) SELECT id,updated,preview FROM notes WHERE preview NOT NULL
+;; (sqlite:query database "
+;;    CREATE INDEX previews_created_index ON previews(created)")
 
 (import (lib gtk-3 entry))
 (import (lib gtk-3 tree-model))
@@ -37,15 +47,17 @@
 ; gtk_builder_add_callback_symbol
 
 ; load and decode a file
-(define builder (gtk_builder_new_from_file "url-album.glade"))
+(define builder (gtk_builder_new))
+(gtk_builder_add_from_string builder (file->string "./url-album.glade") -1 #f)
 
 ; get window from template
-(define window (gtk_builder_get_object builder "window"))
+(define WINDOW (gtk_builder_get_object builder "window"))
 (define URL (gtk_builder_get_object builder "URL"))
 (define URL-EDITOR (gtk_builder_get_object builder "URL-EDITOR"))
 
 (define EDIT (gtk_builder_get_object builder "EDIT"))
 (define PREVIEW (gtk_builder_get_object builder "PREVIEW"))
+(define RECORDED (gtk_builder_get_object builder "RECORDED"))
 
 ; ui elements
 (define ui-treeview (gtk_builder_get_object builder "TREE"))
@@ -67,15 +79,15 @@
                (let do ()
                   (define stat (c/ / (file->string (string-append "/proc/" (number->string pid) "/stat"))))
                   (unless (string-eq? (third stat) "Z")
-                     (display ".") (sleep 16) (do)))
+                     (display ".") (sleep 64) (do)))
                (print "ok")
                (define screenshot (file->bytevector "screenshot.png"))
                (define ok (sqlite:value database
-                  "UPDATE OR FAIL notes SET preview=?2,updated=CURRENT_TIMESTAMP WHERE id=?1 RETURNING 1" id screenshot))
+                  "INSERT INTO previews (note, preview) VALUES (?1, ?2)" id screenshot))
                (print "ok: " ok)
 
                (define loader (gdk_pixbuf_loader_new))
-               (print "writed: " (gdk_pixbuf_loader_write loader screenshot (size screenshot) #f))
+               (print "stored: " (gdk_pixbuf_loader_write loader screenshot (size screenshot) #f))
                (gtk_image_set_from_pixbuf PREVIEW (gdk_pixbuf_loader_get_pixbuf loader))
                
             )))
@@ -131,7 +143,7 @@
       (print "Close pressed. Bye-bye.")
       ; todo: save window size, etc.
       (gtk_main_quit)))
-(g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
+(g_signal_connect WINDOW "destroy" (G_CALLBACK quit) NULL)
 
 ; add new url processor
 (define ADD
@@ -192,16 +204,18 @@
       (define id (let ((g (make-GValue)))
          (gtk_tree_model_get_value model iter 0 g)
          (g_value_get_int g)))
-      (define select (sqlite:value database "SELECT url,preview FROM notes WHERE id=?+0" id))
-      (define url (first select))
+      (define url (sqlite:value database "SELECT url FROM notes WHERE id=?+0" id))
       (set-url! (if url url "-- // --"))
-      (define preview (second select))
-      (if preview
+      (define preview (sqlite:value database "SELECT preview,created FROM previews WHERE note=?+0 ORDER BY created DESC LIMIT 1 "id))
+      (if (pair? preview) ; if got results
       then
          (define loader (gdk_pixbuf_loader_new))
-         (gdk_pixbuf_loader_write loader preview (size preview) #f)
+         (define image (first preview))
+         (gdk_pixbuf_loader_write loader image (size image) #f)
          (gtk_image_set_from_pixbuf PREVIEW (gdk_pixbuf_loader_get_pixbuf loader))
+         (gtk_label_set_text RECORDED (second preview))
       else
+         (gtk_label_set_text RECORDED "")
          (gtk_image_clear PREVIEW))
 
       TRUE))
@@ -320,16 +334,16 @@
 ; finally, connect signals
 (gtk_builder_connect_signals builder #f)
 
-; idle function to be actors alive
+; multithreading support
 (define idle (vm:pin (cons
    (list fft-int gpointer)
    (lambda (userdata)
-      (sleep 1)
+      (sleep 0)
       TRUE))))
 (gdk_threads_add_idle (G_CALLBACK idle) nullptr)
 
 ; show window and run
 (g_object_unref builder)
-(gtk_widget_show_all window)
+(gtk_widget_show_all WINDOW)
 (gtk_widget_hide URL-EDITOR)
 (gtk_main)
