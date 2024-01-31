@@ -3,6 +3,7 @@
 
 #include <io.h>
 #include <fcntl.h>
+#include <assert.h>
 
 #define PROT_READ 1
 #define PROT_WRITE 2

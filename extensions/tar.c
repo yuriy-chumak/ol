@@ -1,6 +1,11 @@
-// TAR archives in path support
+// TAR archives support
 
-#define _GNU_SOURCE
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
+
+//#define _GNU_SOURCE
 #include <sys/mman.h> // memfd_create
 #include <sys/sendfile.h> // sendfile
 

@@ -1656,7 +1656,7 @@ static int pvenv_open (const char *filename, int flags, int mode, void* userdata
 				len = len * 8 + ptr[i] - '0';
 
 			if (strcmp(ptr, filename) == 0) {
-				int fd = memfd_create(filename, 0);
+				int fd = memfd_create((char*)filename, 0);
 				write(fd, ptr + 0x200, len);
 				lseek(fd, 0, SEEK_SET);
 				return fd;
@@ -4392,17 +4392,17 @@ loop:;
 				CHECK_ARGC_EQ(1);
 				CHECK_NUMBER(1);
 
-				int pid = number(A1);
 				#if defined(__unix__) || defined(__APPLE__)
+					pid_t pid = (pid_t)number(A1);
 					int status = 0;
 					int err = waitpid(pid, &status, WNOHANG);
-					if (err > 0) {
+					if (err > 0)
 						r = new_number(WEXITSTATUS(status));
-					}
 				#endif
 				#ifdef _WIN32
+					HANDLE pid = (HANDLE)number(A1);
 					DWORD exitCode = 0;
-					if (GetExitCodeProcess(pid, &exitCode))
+					if (GetExitCodeProcess((HANDLE)pid, &exitCode))
 						if (exitCode != STILL_ACTIVE)
 							r = new_number(exitCode);
 				#endif
@@ -5555,7 +5555,7 @@ int main(int argc, char** argv)
 	}
 # endif
 # ifdef _WIN32
-	int len = GetModuleFileName(NULL, &exe, sizeof(exe));
+	int len = GetModuleFileName(NULL, (LPSTR)&exe, sizeof(exe));
 	if (len > 0 && len < sizeof(exe)) {
 		HANDLE fh = CreateFile(exe, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 		if (fh != INVALID_HANDLE_VALUE) {
@@ -5563,25 +5563,19 @@ int main(int argc, char** argv)
 			if (fm != NULL) {
 				char* ptr = MapViewOfFile(fm, FILE_MAP_READ, 0, 0, 0);
 				char* end = ptr + GetFileSize(fh, NULL);
-				fprintf(stderr, "ptr = %p\n", ptr);
-				// fprintf(stderr, "[0][1] = %c%c\n", ptr[0], ptr[1]); === "MZ"
-				// fprintf(stderr, "e_lfanew = %d\n", ((IMAGE_DOS_HEADER*)ptr)->e_lfanew);
-				IMAGE_NT_HEADERS* imageNTHeaders = ptr + ((IMAGE_DOS_HEADER*)ptr)->e_lfanew;
-				fprintf(stderr, "[0][1] = %c%c\n", ((char*)imageNTHeaders)[0], ((char*)imageNTHeaders)[1]); // === "PE"
+				IMAGE_NT_HEADERS* imageNTHeaders = (IMAGE_NT_HEADERS*)
+					(ptr + ((IMAGE_DOS_HEADER*)ptr)->e_lfanew);
 				size_t size = imageNTHeaders->OptionalHeader.SizeOfHeaders;
 
 				char* sectionLocation = (char*)imageNTHeaders + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + imageNTHeaders->FileHeader.SizeOfOptionalHeader;
 				for (int i = 0; i < imageNTHeaders->FileHeader.NumberOfSections; i++) {
 					IMAGE_SECTION_HEADER* sectionHeader = (IMAGE_SECTION_HEADER*)sectionLocation;
-					fprintf(stderr, "  %s\n", sectionHeader->Name);
 					size += sectionHeader->SizeOfRawData;
 
 					sectionLocation += sizeof(IMAGE_SECTION_HEADER);
 				}
-				fprintf(stderr, "size = %d\n", size);
-				fprintf(stderr, "[0][1][2][3] = %c%c%c%c\n", ptr[size], ptr[size+1], ptr[size+2], ptr[size+3]);
-				if (ptr + size < end && ptr[size] == '.') { // pvenv must have only local ("./") files
-					fprintf(stderr, "we found our data. argc = %d\n", argc);
+				// pvenv must have only local ("./") files
+				if (ptr + size < end && ptr[size] == '.') {
 					pvenv = ptr + size;
 					if (argc == 1) {
 						argv = argz; argc = 2;

@@ -23,8 +23,8 @@ int mkstemp(char *unused)
 char *getenv(const char *name)
 {
 	static char value[32767];
-	if (GetEnvironmentVariable(name, &value, sizeof(value)))
-		return &value;
+	if (GetEnvironmentVariable(name, (char*)&value, sizeof(value)))
+		return (char*)&value;
 	return 0;
 }
 
