@@ -316,7 +316,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                      (cons '*vm-args* vm-args) ; deprecated
                      (cons '*version* version)
                      ; 
-                     (cons '*features* (let*((*features* (cons* '|ol-2.4| *features*))
+                     (cons '*features* (let*((*features* (cons* '|ol-2.5| *features*))
                                              ; endiannes
                                              (*features* (let ((one (vm:cast 1 type-vptr)))
                                                             (cond

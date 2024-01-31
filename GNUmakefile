@@ -21,6 +21,7 @@ LD ?= ld
 # win32 cross-compile
 ol32.exe: CC := i686-w64-mingw32-gcc
 ol64.exe: CC:=x86_64-w64-mingw32-gcc
+ol.exe: CC := x86_64-w64-mingw32-gcc
 
 # ansi colors
 red=\033[1;31m
@@ -240,7 +241,7 @@ selfexec: ol
 %.exe: MINGWCFLAGS += -Wno-shift-count-overflow
 %.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
 %.exe: src/olvm.c extensions/ffi.c tmp/repl.c
-	x86_64-w64-mingw32-gcc \
+	$(CC) \
 	   $^ -o $@ \
 	   -DREPL=repl \
 	   -DHAVE_DLOPEN=1 -DHAS_SOCKES=1 -DOLVM_FFI=1 \

@@ -13,8 +13,8 @@
 [![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/crossbuild%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-windows.yml)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 
-Otus Lisp, Version 2.5
-======================
+Otus Lisp, Version 2.5.1
+========================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
 Otus Lisp (**Ol** in short) is a purely functional dialect of Lisp.
@@ -147,7 +147,7 @@ Advanced build instructions: [doc/BUILD.md](doc/BUILD.md)
 ##### RUN
 ```
 $ ./ol
-Welcome to Otus Lisp 2.4
+Welcome to Otus Lisp 2.5.1
 type ',help' to help, ',quit' to end session.
 >
 ```
@@ -247,13 +247,16 @@ Some Ol limitations:
 DEPRECATIONS
 ------------
 
+* 2.4 -> 2.5
+  - feature `ol-2.4`` changed to `ol-2.5`.
+  - `(system args port...)` changed to `(execvp args port...)`. New `(system command)` introduced.
+  - `(OpenGL version-X.Y)` libraries changed to `(OpenGL X.Y)`.
+  - `fft-size-t` changed to `fft-size_t`.
+  - `HAS_...` build variables changed to convenient `HAVE_...`.
 * 2.3 -> 2.4
   - `(ilist ...)` is deprecated. Use `(cons* ...)` instead.
   - `(interact ...)` from (owl ~~interop~~ async) is deprecated. Use `(await (mail ...))` instead.
   - `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async 'name ...)`, `(actor ...)` instead.
-
-* 2.4 -> 2.5
-  - `(OpenGL version-X.Y)` libraries changed to `(OpenGL X.Y)`.
 
 
 HACKING
