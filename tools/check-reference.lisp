@@ -19,6 +19,7 @@
                   text))
          (code (let-parse* (
                      (code (lazy* byte))
+                     (skip (greedy* (imm #\space)))
                      (skip (word "```" #f)))
                   code)))
    (append code '(#\newline)))))
