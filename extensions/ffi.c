@@ -2670,9 +2670,9 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 							j = l;
 					}
 					else { // в регистр с плавающей запятой
+#if (__x86_64__ && (__unix__ || __APPLE__))
 						// move from ptr to the ad
 						*(int64_t*)&ad[d++] = args[j];
-#if (__x86_64__ && (__unix__ || __APPLE__))						
 						fpmask |= 1;
 #endif
 					}
