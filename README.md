@@ -12,6 +12,8 @@
 [![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/build%20macos/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-macos.yml)
 [![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/crossbuild%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-windows.yml)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
+<a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
+
 
 Otus Lisp, Version 2.5.1
 ========================
