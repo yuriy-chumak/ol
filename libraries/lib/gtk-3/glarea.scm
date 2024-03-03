@@ -8,8 +8,10 @@
       gtk_gl_area_new
       gtk_gl_area_queue_render
       gtk_gl_area_make_current
-      gtk_gl_area_get_error
+      gtk_gl_area_get_context
       gtk_gl_area_set_required_version
+
+      gtk_gl_area_get_error
    )
    (import
       (scheme core)
@@ -20,6 +22,7 @@
 
 (begin
    (define GtkGLArea* type-vptr)
+   (define GdkGLContext* type-vptr)
    (define gtk_gl_area_get_type (GTK3 GType "gtk_gl_area_get_type"))
    (define GTK_TYPE_GL_AREA (gtk_gl_area_get_type))
    
@@ -37,7 +40,7 @@
    ; gtk_gl_area_get_auto_render
    ; gtk_gl_area_set_auto_render
    (define gtk_gl_area_queue_render (GTK3 fft-void "gtk_gl_area_queue_render" GtkGLArea*))
-   ; gtk_gl_area_get_context
+   (define gtk_gl_area_get_context (GTK3 GdkGLContext* "gtk_gl_area_get_context" GtkGLArea*))
    (define gtk_gl_area_make_current (GTK3 fft-void "gtk_gl_area_make_current" GtkGLArea*))
    ; gtk_gl_area_attach_buffers
    ; gtk_gl_area_set_error
