@@ -1,7 +1,8 @@
 #!/usr/bin/env ol
 (import
       (lib glib-2)
-      (lib gtk-3))
+      (lib gtk-3)
+      (lib gtk-3 message-dialog))
 (import (only (otus syscall) strftime))
 
 ; just check a gtk version (not required)
@@ -19,7 +20,12 @@
 ; button handler
 (define clicked
    (GTK_CALLBACK (widget userdata)
-      (print "Button clicked at " (strftime "%F %H:%M:%S\0"))
+      (define dialog (gtk_message_dialog_new #f
+         GTK_DIALOG_DESTROY_WITH_PARENT
+         GTK_MESSAGE_INFO GTK_BUTTONS_CLOSE
+         (string-append "Button clicked at " (strftime "%F %H:%M:%S\0"))))
+      (gtk_dialog_run dialog)
+      (gtk_widget_destroy dialog)
       TRUE))
 
 ; close processor
@@ -32,7 +38,7 @@
 ; init
 (define activate
    (GTK_CALLBACK (app userdata)
-      ; create an empty window
+      ; create a window
       (define window (gtk_application_window_new app))
       (gtk_window_set_title window "2.2. Extended Example")
       (gtk_window_set_default_size window 640 360)
@@ -60,5 +66,3 @@
 (vm:unpin activate)
 (vm:unpin quit)
 (g_object_unref app)
-
-(print "thank you.")

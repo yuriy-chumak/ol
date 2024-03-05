@@ -66,7 +66,7 @@
       (exports (lib glib-2)))
    (import
       (scheme core)
-      (otus ffi)
+      (otus ffi) (owl ff)
       (lib glib-2))
 
 (cond-expand
@@ -113,16 +113,18 @@
       ))
 
    (define (GtkThis this)
-      (case-lambda
-         (() this)
-         ((key . args)
-            (define value (this key #f))
-            (if (function? value)
-               (apply value args)
-               value)) ))
+      (put this 'gtk? #true))
+      ;; (case-lambda
+      ;;    (() this)
+      ;;    ((key . args)
+      ;;       (define value (this key #f))
+      ;;       (if (function? value)
+      ;;          (apply value args)
+      ;;          value)) ))
    (define (GtkThis? this)
-      ; todo: function? and arity may be 0 and (ff? (force))
-      (function? this))
+      (getf this 'gtk?))
+      ;; ; todo: function? and arity may be 0 and (ff? (force))
+      ;; (function? this))
 
    ;(define (make-GtkCallback)
    ; todo: make macro for make-GtkCallback

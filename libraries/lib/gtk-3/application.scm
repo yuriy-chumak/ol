@@ -12,6 +12,8 @@
    (import
       (scheme base)
       (otus ffi) (owl ff)
+      (lib gdk-3)
+      (only (otus async) sleep)
       (lib gtk-3 gtk)
       (lib gtk-3 widget))
 
@@ -57,6 +59,13 @@
             ; apply options
             (if (options 'on-activate #f)
                ((this 'set-activate-handler) (options 'on-activate)))
+
+            (if (options 'multithreaded #f)
+               (gdk_threads_add_idle (G_CALLBACK
+                  (GTK_CALLBACK (userdata)
+                     (sleep 0)
+                     TRUE))
+                  #f))
          )
          ; smart object
          (GtkThis this))

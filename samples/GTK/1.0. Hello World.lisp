@@ -26,10 +26,10 @@
       'text "I'm a BUTTON\n\nClick Me Now!"
       'on-click clicked
    }))
-   (window 'add button)
+   ((window 'add) button)
 
    ; display the window and it's controls
-   (window 'show-all))
+   ((window 'show-all)))
 
 ;; create an application
 (define app (GtkApplication {
@@ -39,4 +39,4 @@
 
 ;; run
 ;  note: command line will not be changed by calling
-(app 'run (command-line)) ; returns execution result
+((app 'run) (command-line)) ; returns execution result

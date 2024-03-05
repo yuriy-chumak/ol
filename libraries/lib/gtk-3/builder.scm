@@ -17,11 +17,12 @@
 
       gtk_builder_set_translation_domain
       
-      ;; GtkBuilder
+      ; lisp
+      GtkBuilder
    )
    (import
-      (scheme core)
-      (otus ffi)
+      (scheme base)
+      (otus ffi) (owl ff)
       (lib gtk-3 gtk)
       (lib gtk-3 widget)
       (lib gtk-3 application))
@@ -45,8 +46,48 @@
 
    (define gtk_builder_set_translation_domain (GTK3 void "gtk_builder_set_translation_domain" GtkBuilder* type-string))
 
-   ;; (define GtkBuilder
-   ;;    (define (GtkBuilder ptr props)
+   (define GtkBuilder
+      (define (make ptr options)
+         (define this {
+            'ptr ptr ; raw pointer
+
+            ;; 'add-from-file (lambda (filename)
+            ;;    (gtk_builder_add_from_file ptr filename #f))
+
+            ; This method is a simpler variation of gtk_builder_connect_signals_full
+            'connect-signals (case-lambda
+               (() (gtk_builder_connect_signals ptr #f))
+               ((userdata) (gtk_builder_connect_signals ptr userdata)))
+
+            'get-object (lambda (name)
+               (gtk_builder_get_object ptr name))
+
+            ; internals
+            'super #false
+            'setup (lambda (this options)
+               (if (options 'file #f)
+                  ((this 'add-from-file) (options 'file)))
+
+               #true)
+         })
+         ; apply options
+         (when (ff? options)
+            ((this 'setup) this options))
+         ; return object
+         (GtkThis this))
+   ; main
+   (case-lambda
+      ((a1) (cond
+               ((eq? (type a1) type-vptr)
+                  (make a1 #f))
+               ((ff? a1)
+                  (make (gtk_builder_new) a1))
+               ((string? a1)
+                  (make (gtk_builder_new_from_file a1) #f))
+               (else
+                  (runtime-error "GtkBuilder: invalid argument" a1)) ))
+   ))
+
    ;;       (let ((this (cond
    ;;                      ((eq? ptr #false)
    ;;                         (gtk_builder_new))

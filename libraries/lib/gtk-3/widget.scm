@@ -27,10 +27,13 @@
       gtk_widget_get_allocated_height
 
       gtk_widget_queue_resize
+
+      ; lisp
+      GtkWidget
    )
    (import
       (scheme core)
-      (otus ffi)
+      (otus ffi) (owl ff)
       (lib gdk-3)
       (lib gtk-3 gtk))
 
@@ -285,7 +288,57 @@
    ; gtk_widget_set_font_map
    ; gtk_widget_get_font_map
 
-   (define (GtkWidget props)
-      ;...
-      #false)
+   (define GtkWidget
+      (define (make ptr properties)
+         (define this {
+            'ptr ptr ; raw pointer
+            'widget ptr ; same pointer
+
+            ; Recursively shows a widget, and any child widgets.
+            ; (todo: move to "GtkWidget")
+            'show-all (lambda ()
+               (gtk_widget_show_all ptr))
+
+            ; Signals that all holders of a reference to the widget should release the reference that they hold.
+            'set-destroy-handler (lambda (handler)
+               (define callback
+                  (cond
+                     ((eq? (type handler) type-callable) ; callback
+                        handler)
+                     ((and (eq? (type handler) type-enum+) ; pin?
+                           (pair? (vm:deref handler))
+                           (function? (cdr (vm:deref handler))))
+                        (G_CALLBACK handler))
+                     ((function? handler)
+                        (G_CALLBACK
+                           (vm:pin (cons
+                              (cons gint (list GtkWidget* type-vptr))
+                              (lambda (widget userdata)
+                                 (handler (make widget #false)))))))
+                     (else
+                        (runtime-error "GtkWindow" "invalid handler"))))
+               (g_signal_connect ptr "destroy" callback #f))
+
+            'super #false
+            'setup (lambda (this options)
+               (if (options 'on-destroy #f)
+                  ((this 'set-destroy-handler) (options 'on-destroy)))
+
+               #true)
+         })
+         ; no options handling yet
+         (GtkThis this))
+   ; main
+   (case-lambda
+      ((a1) (cond
+               ((eq? (type a1) type-vptr)
+                  (make a1 #f))
+               (else
+                  (runtime-error "GtkWidget: invalid argument" a1)) ))
+      ((a1 . pr) (cond
+               ((integer? a1) ; GType
+                  (make (apply gtk_widget_new (cons a1 pr)) #f))
+               (else
+                  (runtime-error "GtkWidget: invalid arguments" (cons a1 pr))) ))
+   ))
 ))

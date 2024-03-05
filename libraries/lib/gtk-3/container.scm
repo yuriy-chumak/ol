@@ -9,10 +9,13 @@
       gtk_container_remove
 
       gtk_container_foreach
+
+      ; lisp
+      GtkContainer
    )
    (import
       (scheme core)
-      (otus ffi)
+      (otus ffi) (owl ff)
       (lib gtk-3 gtk)
       (lib gtk-3 widget))
 
@@ -26,7 +29,28 @@
 
    (define gtk_container_foreach (GTK3 fft-void "gtk_container_foreach" GtkContainer* GtkCallback gpointer))
 
-   (define (GtkContainer props)
-      ;...
-      #false)
+   (define GtkContainer
+      (define (make ptr properties)
+         (define base (GtkWidget ptr))
+         (define this (ff-replace base {
+
+            ; Adds widget to container.
+            'add (lambda (widget)
+               (when (GtkThis? widget)
+                  (define child (widget 'widget))
+                  (when child
+                     (gtk_container_add ptr child))))
+
+            'super base
+         }))
+         ; no options handling yet
+         (GtkThis this))
+   ; main
+   (case-lambda
+      ((a1) (cond
+               ((eq? (type a1) type-vptr)
+                  (make a1 #f))
+               (else
+                  (runtime-error "GtkContainer: invalid argument" a1)) ))
+   ))
 ))
