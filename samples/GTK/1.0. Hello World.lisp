@@ -3,41 +3,40 @@
    (lib gtk-3)
    (lib gtk-3 message-dialog))
 
-; print hello
-(define print_hello (GTK_CALLBACK (widget userdata)
-   (print "Hello World!")
-   (define dialog (gtk_message_dialog_new (gtk_widget_get_toplevel widget)
-                     GTK_DIALOG_MODAL
-                     GTK_MESSAGE_INFO
-                     GTK_BUTTONS_CLOSE
-                     "Hello World!"))
-   (gtk_dialog_run dialog)
-   (gtk_widget_destroy dialog)
-   TRUE))
+; button click handler
+(define (clicked this)
+   (print "button clicked")
+   (GtkMessageDialog (gtk_widget_get_toplevel (this 'widget)) {
+      'flags GTK_DIALOG_MODAL
+      'type  GTK_MESSAGE_INFO
+      'message "Hello World!"
+   }))
 
-; init
-(define activate (GTK_CALLBACK (app userdata)
-   ; create an empty window
-   (define window (gtk_application_window_new app))
-   (gtk_window_set_title window "1.0. Hello World")
-   (gtk_window_set_default_size window 320 240)
+; application init
+(define (activate app)
 
-   ; the button
-   (define button (gtk_button_new_with_label "Click Me Now!"))
-   (g_signal_connect button "clicked" (G_CALLBACK print_hello) NULL)
-   (gtk_container_add window button)
+   ; main application window
+   (define window (GtkWindow app {
+      'title "1.0. Hello World"
+      'width 320 'height 240
+   }))
 
-   ; display the window
-   (gtk_widget_show_all window)))
+   ; the button to be clicked
+   (define button (GtkButton {
+      'text "I'm a BUTTON\n\nClick Me Now!"
+      'on-click clicked
+   }))
+   (window 'add button)
 
-; main
-; create an application
-(define app (gtk_application_new "org.gtk.example" G_APPLICATION_FLAGS_NONE))
-(g_signal_connect app "activate" (G_CALLBACK activate) NULL)
+   ; display the window and it's controls
+   (window 'show-all))
 
-; run
-; note: (command-line) will not be changed by g_application_run call
-(define status (g_application_run app (length (command-line)) (command-line)))
-(g_object_unref app)
+;; create an application
+(define app (GtkApplication {
+   'id "org.gtk.example"
+   'on-activate activate
+}))
 
-status ; just indirectly return result
+;; run
+;  note: command line will not be changed by calling
+(app 'run (command-line)) ; returns execution result
