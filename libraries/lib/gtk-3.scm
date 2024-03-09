@@ -43,6 +43,9 @@
       (lib glib-2)
       ;; (lib cairo)
 
+      (lib gdk-3)
+      (only (otus async) sleep)
+
       (lib gtk-3 gtk)
       (lib gtk-3 application)
 
@@ -83,4 +86,20 @@
    (define GTK_STOCK_OPEN      "gtk-open")
    (define GTK_RESPONSE_ACCEPT -3)
 
+   ; lisp
+   (define gtk_init (case-lambda
+      (() (gtk_init '(0) #f))
+      ((a1) (if (ff? a1)
+               (let* ((argv (a1 'argv #f)))
+                  (gtk_init (list (if argv (length argv) 0)) argv)
+                  (if (a1 'multithreaded #f)
+                     (gdk_threads_add_idle (G_CALLBACK
+                        (GTK_CALLBACK (userdata)
+                           (sleep 0)
+                           TRUE)) #f)))
+            else
+               (runtime-error "gtk_init: invalid options" a1)))
+      ((a1 a2)
+            (gtk_init a1 a2))
+   ))
 ))

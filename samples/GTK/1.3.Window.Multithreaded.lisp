@@ -1,10 +1,11 @@
 #!/usr/bin/env ol
 (import (lib glib-2)
    (lib gtk-3))
+(import (only (otus syscall) strftime))
 
 ;; application activate
 (define (activate appl)
-   ; create an empty window with title
+   ; create customized window with title
    (define window (GtkWindow appl {
       'title "Multithreaded Window"
       'width 640 'height 360
@@ -17,15 +18,20 @@
          (g_application_quit (gtk_window_get_application (this 'ptr))))
    }))
 
+   ; add a label to the window
+   (define label (GtkLabel
+      "Lorem ipsum dolor sit amet,\nconsectetur adipiscing elit."))
+   ((window 'add) label)
+
+   ; run demo infinite loop
+   (async (lambda ()
+      (let infinity-loop ()
+         (sleep 10000)
+         ((label 'set-markup) (strftime "<big>%c</big>"))
+         (infinity-loop))))
+
    ; show it
    ((window 'show-all)))
-
-; run demo infinity loop
-(async (lambda ()
-   (let infinity-loop ()
-      (display ".")
-      (sleep 10000)
-      (infinity-loop))))
 
 ;; create an application
 (define app (GtkApplication {

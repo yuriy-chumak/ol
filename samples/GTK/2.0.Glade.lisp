@@ -3,17 +3,19 @@
    (lib gtk-3))
 
 ;; explicitly init
-(gtk_init '(0) #f)
+(gtk_init)
 
 ;; load ui from the file
 (define builder
-   (GtkBuilder "templates/3.1. Glade.glade"))
+   (GtkBuilder "2.0.Glade.glade"))
 
 ;; setup main window
 (define window (GtkWindow
-   ((builder 'get-object) "window")
-   { 'on-destroy (lambda (this)
+   ((builder 'get-object) "window") {
+      'on-destroy (lambda (this)
          (print "Close pressed. Bye-bye.")
+         ; when we do a (gtk_main) we should use (gtk_main_quit)
+         ;   instead of (g_application_quit)
          (gtk_main_quit))
    }))
 

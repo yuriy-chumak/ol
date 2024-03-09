@@ -4,7 +4,7 @@
 
 ;; application activate
 (define (activate appl)
-   ; create a default window with title
+   ; create default window with a title
    (define window (GtkWindow appl "Window"))
 
    ; show it

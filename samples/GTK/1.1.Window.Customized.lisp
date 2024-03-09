@@ -4,7 +4,7 @@
 
 ;; application activate
 (define (activate appl)
-   ; create an empty window with title
+   ; create customized window with title
    (define window (GtkWindow appl {
       'title "Customized Window"
       'width 640 'height 360

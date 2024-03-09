@@ -29,10 +29,8 @@
    ; lisp interface
    (define GtkButton
       (define (make ptr options)
-         (define this {
-            'ptr ptr
-            'widget ptr
-
+         (define base (GtkWidget ptr))
+         (define this (ff-replace base {
             ; Fetches the text from the label of the button.
             'get-text (lambda ()
                (gtk_button_get_label ptr))
@@ -57,13 +55,19 @@
                         (runtime-error "GtkButton" "invalid handler"))))
                (g_signal_connect ptr "clicked" (G_CALLBACK callback) #f)
             )
-         })
-         (when (ff? options)
-            ; apply options
-            (if (options 'on-click #f)
-               ((this 'set-click-handler) (options 'on-click)))
-         )
 
+            ; internals
+            'super base
+            'setup (lambda (this options)
+               ((base 'setup) this options)
+
+               (if (options 'on-click #f)
+                  ((this 'set-click-handler) (options 'on-click)))
+               #true)
+         }))
+         ; apply options
+         (when (ff? options)
+            ((this 'setup) this options))
          ; smart object
          (GtkThis this))
 
@@ -72,7 +76,7 @@
 
    ; main
    (case-lambda
-      (()   (make (gtk_button_new)))
+      (()   (make (gtk_button_new) #f))
       ((a1) (cond
                ((eq? (type a1) type-vptr)
                   (make a1 #f))
@@ -81,6 +85,12 @@
                ((ff? a1)
                   (make (gtk_button_new_with_label (a1 'text default-text)) a1))
                (else
-                  (runtime-error "GtkButton" "invalid argument")))) ))
+                  (runtime-error "GtkButton: invalid argument" a1))))
+      ((a1 op) (cond
+               ((and (eq? (type a1) type-vptr) (ff? op))
+                  (make a1 op))
+               (else
+                  (runtime-error "GtkButton: invalid arguments" (cons a1 op))) ))
+   ))
 
 ))

@@ -32,10 +32,11 @@
    (define gtk_builder_new (GTK3 GtkBuilder* "gtk_builder_new"))
    (define gtk_builder_new_from_file (GTK3 GtkBuilder* "gtk_builder_new_from_file" type-string))
    (define gtk_builder_add_from_file (GTK3 guint "gtk_builder_add_from_file" GtkBuilder* gchar* (fft& GError*)))
-   ; Note that this function does not increment the reference count of the returned object:
-   (define gtk_builder_get_object (GTK3 GObject* "gtk_builder_get_object" GtkBuilder* type-string))
    (define gtk_builder_new_from_string (GTK3 GtkBuilder* "gtk_builder_new_from_string" type-string gssize))
    (define gtk_builder_add_from_string (GTK3 GtkBuilder* "gtk_builder_add_from_string" GtkBuilder* type-string gssize (fft& GError*)))
+
+   ; Note that this function does not increment the reference count of the returned object:
+   (define gtk_builder_get_object (GTK3 GObject* "gtk_builder_get_object" GtkBuilder* type-string))
 
    (define GtkBuilderConnectFunc GtkCallback) ; void (*GtkBuilderConnectFunc)(GtkBuilder *builder, GObject *object, const gchar *signal_name, const gchar *handler_name, GObject *connect_object, GConnectFlags flags, gpointer user_data)
    (define gtk_builder_add_callback_symbol (GTK3 fft-void "gtk_builder_add_callback_symbol" GtkBuilder* gchar* GCallback))
@@ -51,8 +52,13 @@
          (define this {
             'ptr ptr ; raw pointer
 
-            ;; 'add-from-file (lambda (filename)
-            ;;    (gtk_builder_add_from_file ptr filename #f))
+            'add-from-file (lambda (filename)
+               (if (> (gtk_builder_add_from_file ptr filename #f) 0)
+                  #t #f))
+
+            'add-from-string (lambda (string)
+               (if (> (gtk_builder_add_from_string ptr string #f) 0)
+                  #t #f))
 
             ; This method is a simpler variation of gtk_builder_connect_signals_full
             'connect-signals (case-lambda
@@ -67,6 +73,8 @@
             'setup (lambda (this options)
                (if (options 'file #f)
                   ((this 'add-from-file) (options 'file)))
+               (if (options 'xml #f)
+                  ((this 'add-from-string) (options 'file)))
 
                #true)
          })
@@ -86,6 +94,11 @@
                   (make (gtk_builder_new_from_file a1) #f))
                (else
                   (runtime-error "GtkBuilder: invalid argument" a1)) ))
+      ((a1 op) (cond
+               ((and (string? a1) (ff? op))
+                  (make (gtk_builder_new_from_file a1) op))
+               (else
+                  (runtime-error "GtkBuilder: invalid arguments" (cons a1 op))) ))
    ))
 
    ;;       (let ((this (cond
