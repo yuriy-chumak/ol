@@ -29,6 +29,7 @@
 ;; setup main window
 (define window (GtkWindow
    ((builder 'get-object) "window") {
+      'title "Glade Multithreaded Example"
       'on-destroy (lambda (this)
          ; properly stop running threads
          (for-each kill (running-threads))

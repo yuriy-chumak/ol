@@ -60,6 +60,19 @@
                (if (> (gtk_builder_add_from_string ptr string #f) 0)
                   #t #f))
 
+            'add-callback-symbol (lambda (name handler)
+               (define callback
+                  (cond
+                     ((eq? (type handler) type-callable) ; callback
+                        handler)
+                     ((and (eq? (type handler) type-enum+) ; pin?
+                           (pair? (vm:deref handler))
+                           (function? (cdr (vm:deref handler))))
+                        (G_CALLBACK handler))
+                     (else
+                        (runtime-error "GtkWindow" "invalid handler"))))
+               (gtk_builder_add_callback_symbol ptr name callback))
+
             ; This method is a simpler variation of gtk_builder_connect_signals_full
             'connect-signals (case-lambda
                (() (gtk_builder_connect_signals ptr #f))

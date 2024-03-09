@@ -299,6 +299,9 @@
             'show-all (lambda ()
                (gtk_widget_show_all ptr))
 
+            'get-toplevel (lambda ()
+               (gtk_widget_get_toplevel ptr))
+
             ; Signals that all holders of a reference to the widget should release the reference that they hold.
             'set-destroy-handler (lambda (handler)
                (define callback

@@ -61,6 +61,8 @@
             'setup (lambda (this options)
                ((base 'setup) this options)
 
+               (if (options 'text #f)
+                  ((this 'set-text) (options 'text)))
                (if (options 'on-click #f)
                   ((this 'set-click-handler) (options 'on-click)))
                #true)
