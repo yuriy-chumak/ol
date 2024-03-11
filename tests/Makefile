@@ -14,11 +14,24 @@ FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
 
 # win32 tests:
 # apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
-HAS_MINGW32 ?= $(call which,i686-w64-mingw32-gcc)
-HAS_MINGW64 ?= $(call which,x86_64-w64-mingw32-gcc)
+ifeq ($(shell command -v i686-w64-mingw32-gcc),)
+HAS_MINGW32 ?= 0
+else
+HAS_MINGW32 ?= 1
+endif
+ifeq ($(shell command -v x86_64-w64-mingw32-gcc),)
+HAS_MINGW64 ?= 0
+else
+HAS_MINGW64 ?= 1
+endif
 # dpkg --add-architecture i386 && apt-get update
 # apt install wine32
-HAS_WINE ?= $(call which,wine)
+ifeq ($(shell command -v wine),)
+HAS_WINE ?= 0
+else
+HAS_WINE ?= 1
+endif
+
 WINE ?= wine cmd /c 
 
 # notifications
