@@ -21,7 +21,14 @@ LD ?= ld
 # win32 cross-compile
 ol32.exe: CC := i686-w64-mingw32-gcc
 ol64.exe: CC:=x86_64-w64-mingw32-gcc
-ol.exe: CC := x86_64-w64-mingw32-gcc
+
+ol.exe: ol64.exe
+	tar -cvf tmp/pvenv.tar \
+	    --owner=OL/2.5 --group= \
+	    --directory=libraries .
+	cat $^ >$@
+	x86_64-w64-mingw32-strip $@
+	cat tmp/pvenv.tar >>$@
 
 # ansi colors
 red=\033[1;31m
@@ -237,10 +244,10 @@ selfexec: ol
 
 # You can debug ol.exe using "winedbg --gdb ol.exe"
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
-%.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
-%.exe: MINGWCFLAGS += -Wno-shift-count-overflow
-%.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
-%.exe: src/olvm.c extensions/ffi.c tmp/repl.c
+ol%.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
+ol%.exe: MINGWCFLAGS += -Wno-shift-count-overflow
+ol%.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
+ol%.exe: src/olvm.c extensions/ffi.c tmp/repl.c
 	$(CC) \
 	   $^ -o $@ \
 	   -DREPL=repl \
