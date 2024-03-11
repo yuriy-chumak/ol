@@ -22,10 +22,6 @@ exists = $(shell echo "\
 	          -include $2\
 	          -o /dev/null 2>/dev/null && echo 1 || echo 0)
 
-# does the system tool exist
-which = $(shell which "$1" \
-	           1>/dev/null 2>/dev/null && echo 1 || echo 0)
-
 # size of native c structure
 sizeof = $(shell SIZEOF=`mktemp /tmp/sizeof.XXXXXXXXX`; \
 	trap "{ rm -f $$SIZEOF; }" EXIT; \

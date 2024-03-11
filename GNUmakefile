@@ -50,11 +50,11 @@ includes/ol/vm.h: src/olvm.c
 
 tmp/repl.c: repl
 # vim
-ifneq ($(shell which xxd),)
+ifneq ($(shell command -v xxd),)
 	xxd --include repl >tmp/repl.c
 else
 # coreutils
-ifneq ($(shell which od),)
+ifneq ($(shell command -v od),)
 	od -An -vtx1 repl| tr -d '\n'| sed \
 	   -e 's/^ /0x/' -e 's/ /,0x/g' \
 	   -e 's/^/unsigned char repl[] = {/' \
