@@ -14,19 +14,22 @@ FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
 
 # win32 tests:
 # apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
-ifeq ($(shell command -v i686-w64-mingw32-gcc),)
+
+# note: use 2>/dev/null in "shell command" to avoid
+#       make call optimization and really run shell.
+ifeq ($(shell command -v i686-w64-mingw32-gcc 2>/dev/null),)
 HAS_MINGW32 ?= 0
 else
 HAS_MINGW32 ?= 1
 endif
-ifeq ($(shell command -v x86_64-w64-mingw32-gcc),)
+ifeq ($(shell command -v x86_64-w64-mingw32-gcc 2>/dev/null),)
 HAS_MINGW64 ?= 0
 else
 HAS_MINGW64 ?= 1
 endif
 # dpkg --add-architecture i386 && apt-get update
 # apt install wine32
-ifeq ($(shell command -v wine),)
+ifeq ($(shell command -v wine 2>/dev/null),)
 HAS_WINE ?= 0
 else
 HAS_WINE ?= 1
@@ -34,7 +37,7 @@ endif
 
 WINE ?= wine cmd /c 
 
-# notifications
+# notifications:
 ok:="$(green) ok $(done)"
 fail:="$(red)fail$(done)"
 
@@ -508,7 +511,7 @@ regression-tests: $(filter-out tests/ffi.scm, $(wildcard tests/*.scm)) $(wildcar
 	$(eval F1LEN=$(shell for F in $^; do echo $${#F}; done |sort -n| tail -1))
 	$(call table-header, $(F1LEN))
 	for F in $^; do \
-	   printf "%-$(F1LEN)s " "$$F";\
+	   printf "%-$(F1LEN)s " "$$F" ;\
 	   $(MAKE) -s -B $$F.ok ;\
 	done
 	if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi

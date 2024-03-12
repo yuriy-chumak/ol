@@ -55,13 +55,15 @@ include dependencies.mk
 includes/ol/vm.h: src/olvm.c
 	sed -e '/\/\/ <!--/,/\/\/ -->/d' $^ >$@
 
+# note: use 2>/dev/null in "shell command" to avoid
+#       make call optimization and really run shell.
 tmp/repl.c: repl
 # vim
-ifneq ($(shell command -v xxd),)
+ifneq ($(shell command -v xxd 2>/dev/null),)
 	xxd --include repl >tmp/repl.c
 else
 # coreutils
-ifneq ($(shell command -v od),)
+ifneq ($(shell command -v od 2>/dev/null),)
 	od -An -vtx1 repl| tr -d '\n'| sed \
 	   -e 's/^ /0x/' -e 's/ /,0x/g' \
 	   -e 's/^/unsigned char repl[] = {/' \
