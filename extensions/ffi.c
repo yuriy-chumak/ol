@@ -2360,6 +2360,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				STORE_F(OL2F, float, arg);
 				break;
 			case TDOUBLE:
+			tdouble:
 				IFmips32(i = (i+1)&-2); // 32-bit mips dword align
 				STORE_D(OL2D, double, arg);
 				break;
@@ -2404,6 +2405,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					STORE(IDF, word, str);
 					break;
 				}
+				case TINEXACT:
+					goto tdouble;
 
 				// type override:
 				// '(type . arg)
