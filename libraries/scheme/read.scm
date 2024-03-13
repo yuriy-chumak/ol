@@ -4,8 +4,9 @@
 
 (import
    (scheme core)
-   (otus async) (owl io)
-   (only (lang sexp) sexp))
+   (owl io)
+   (only (lang sexp) sexp)
+   (only (otus async) sleep))
 
 (begin
 
@@ -13,12 +14,11 @@
       (lambda ()
          (define in (syscall 0 port 1))
          (case in
-            (#f 
-               #null) ; port error
-            (#t   ; input not ready
+            (#f #null)  ; port error
+            (#t ; input is not ready
                (sleep 5)
                (unbuffered-input-stream port))
-            (#eof     ; end-of-file
+            (#eof      ; end-of-file
                (unless (eq? port stdin)
                   (close-port port))
                #null)
@@ -36,7 +36,7 @@
          (when l
             val)))
 
-   ; public function
+   ; public
    (define read (case-lambda
       ((port)
          (read-impl port))

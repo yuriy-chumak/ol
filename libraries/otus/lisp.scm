@@ -11,9 +11,9 @@
       (exports (scheme vector))
       (exports (scheme bytevector))
 
-      ;(exports (scheme read))
       (exports (scheme misc)) ; string->number
       (exports (scheme exceptions))
+      (exports (scheme read))
 
       (exports (owl list))
       (exports (owl rlist))
@@ -38,15 +38,13 @@
       ; universal for lists, vectors and strings
       for-each fold
       
-      (exports (lang error))
-      )
+      (exports (lang error)))
 
    (import
       (scheme core)
       (srfi 1)
       (srfi 87)
       (scheme base)
-      ;(scheme read)
 
       (owl list)
       (owl rlist)
@@ -71,9 +69,9 @@
       (scheme bytevector)
       (scheme misc)
       (scheme exceptions)
+      (scheme read)
 
-      (lang error)
-   )
+      (lang error))
 
 (begin
    
