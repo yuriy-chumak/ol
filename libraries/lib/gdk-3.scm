@@ -10,6 +10,9 @@
       GdkGLContext*
       GdkDisplay*
       GdkWindow*
+
+      GdkEvent*
+      gdk_event_get_coords
    )
    (import
       (scheme core)
@@ -43,4 +46,8 @@
    (define gdk_x11_window_get_xid (GDK type-vptr "gdk_x11_window_get_xid" GdkWindow*))
 
    (define GdkGLContext* fft-void*)
+
+   (define GdkEvent* type-vptr)
+   (define gdouble& (fft& gdouble))
+   (define gdk_event_get_coords (GDK gboolean "gdk_event_get_coords" GdkEvent* gdouble& gdouble&))
 ))

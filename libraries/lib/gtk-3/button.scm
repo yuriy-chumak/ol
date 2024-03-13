@@ -33,28 +33,16 @@
          (define this (ff-replace base {
             ; Fetches the text from the label of the button.
             'get-text (lambda ()
-               (gtk_button_get_label ptr))
+                  (gtk_button_get_label ptr))
 
             ; Sets the text of the label of the button.
             'set-text (lambda (text)
-               (gtk_button_set_label ptr text))
+                  (gtk_button_set_label ptr text))
 
             ; Sets the 'clicked' button event handler.
-            'set-click-handler (lambda (handler)
-               (define callback
-                  (cond
-                     ((and (eq? (type handler) type-enum+) ; pin?
-                           (function? (vm:deref handler)))
-                        handler)
-                     ((function? handler)
-                        (vm:pin (cons
-                           (cons gint (list GtkWidget* type-vptr))
-                           (lambda (widget userdata)
-                              (handler (make widget #false))))))
-                     (else
-                        (runtime-error "GtkButton" "invalid handler"))))
-               (g_signal_connect ptr "clicked" (G_CALLBACK callback) #f)
-            )
+            'set-click-handler (GtkEventHandler "clicked" (widget userdata)
+                  (make widget #false))
+
 
             ; internals
             'super base

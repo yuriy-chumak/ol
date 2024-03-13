@@ -75,6 +75,12 @@
                ((ff? a1)
                   (make (gtk_label_new (a1 'text default-text)) a1))
                (else
-                  (runtime-error "GtkButton" "invalid argument")))) ))
+                  (runtime-error "GtkLabel: invalid argument" a1))))
+      ((a1 op) (cond
+               ((and (eq? (type a1) type-vptr) (ff? op))
+                  (make a1 op))
+               (else
+                  (runtime-error "GtkLabel: invalid arguments" (cons a1 op)))))
+   ))
 
 ))
