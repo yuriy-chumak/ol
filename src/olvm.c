@@ -2290,8 +2290,10 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 
 	// попробуем освободить ненужные регистры
     // (но не пины)
-	for (int i = 3 + ol->arity; i < NR; i++)
-		r[i] = IFALSE; // todo: use wmemset?
+	// !!! это неправильный код, так нельзя
+	// TODO: найти лучшее решение по освобождению регистров
+	// for (int i = 3 + ol->arity; i < NR; i++)
+	// 	r[i] = IFALSE; // todo: use wmemset?
 
 	// assert (fp + N + 3 < ol->heap.end);
 	int p = 0, N = NR;
