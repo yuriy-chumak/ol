@@ -8,11 +8,10 @@
 
 ;; load ui from the file
 (define builder
-   (GtkBuilder "3.0.Button.glade"))
+   (GtkBuilder "5.0.Button.glade"))
 
 ; button click handler
 (define (clicked this)
-   (print "button clicked")
    (GtkMessageDialog (gtk_widget_get_toplevel (this 'widget)) {
       'flags GTK_DIALOG_MODAL
       'type  GTK_MESSAGE_INFO

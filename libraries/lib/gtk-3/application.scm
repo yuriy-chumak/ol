@@ -68,7 +68,7 @@
                   #f))
          )
          ; smart object
-         (GtkThis this))
+         (GObject this))
 
    ; defaults
    (define default-id "org.gtk.example")

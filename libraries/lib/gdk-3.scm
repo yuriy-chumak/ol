@@ -11,12 +11,17 @@
       GdkDisplay*
       GdkWindow*
 
+      ;; events
       GdkEvent*
+      gdk_event_get_event_type
       gdk_event_get_coords
+
+      ; lisp interface
+      GdkEvent
    )
    (import
       (scheme core)
-      (otus ffi)
+      (otus ffi) (owl ff)
       (lib glib-2))
 
 (cond-expand
@@ -48,6 +53,43 @@
    (define GdkGLContext* fft-void*)
 
    (define GdkEvent* type-vptr)
+   (define GdkEventType type-enum+)
    (define gdouble& (fft& gdouble))
+
+   (define gdk_event_get_event_type (GDK GdkEventType "gdk_event_get_event_type" GdkEvent*))
    (define gdk_event_get_coords (GDK gboolean "gdk_event_get_coords" GdkEvent* gdouble& gdouble&))
+
+   ; lisp interface
+   (define GdkEvent
+      (define (make ptr)
+         (define this {
+            'ptr ptr ; raw pointer
+
+            ; Retrieves the type of the event.
+            'get-type (lambda ()
+                  (gdk_event_get_event_type ptr))
+
+            ; Extract the event window relative x/y coordinates from an event.
+            'get-coords (lambda ()
+                  (define x '(#i0))
+                  (define y '(#i0))
+                  (if (gdk_event_get_coords ptr x y)
+                     (cons (car x) (car y))))
+
+            ; internals
+            'super #false
+            'setup (lambda (this options)
+               #true)
+         })
+         ; smart object
+         (GObject this))
+   ; main
+   (case-lambda
+      ((a1) (cond
+               ((eq? (type a1) type-vptr)
+                  (make a1))
+               (else
+                  (runtime-error "GdkEvent: invalid argument" a1)) ))
+   ))
+
 ))

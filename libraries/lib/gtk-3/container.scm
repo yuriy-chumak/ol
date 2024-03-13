@@ -36,7 +36,7 @@
 
             ; Adds widget to container.
             'add (lambda (widget)
-               (when (GtkThis? widget)
+               (when (GObject? widget)
                   (define child (widget 'widget))
                   (when child
                      (gtk_container_add ptr child))))
@@ -44,7 +44,7 @@
             'super base
          }))
          ; no options handling yet
-         (GtkThis this))
+         (GObject this))
    ; main
    (case-lambda
       ((a1) (cond

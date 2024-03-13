@@ -25,11 +25,15 @@
       GError*
       g_error_free
 
-      ;
+      ; c
       GObject*
       g_object_ref
       g_object_unref
 
+      ; lisp
+      GObject GObject?
+
+      ; c
       GValue*
       make-GValue
       g_value_init
@@ -71,7 +75,7 @@
    )
    (import
       (scheme core)
-      (owl string)
+      (owl string) (owl ff)
       (otus ffi))
 
 (begin
@@ -146,6 +150,13 @@
 (define GObject* type-vptr)
 (define g_object_ref (GOBJECT gpointer "g_object_ref" gpointer))
 (define g_object_unref (GOBJECT void "g_object_unref" gpointer))
+
+(define gtag [])
+(define (GObject this)
+   (put this gtag #t))
+(define (GObject? this)
+   (get this gtag #f))
+
 
 (define GError* type-vptr)
 (define g_error_free (GOBJECT void "g_error_free" GError*))

@@ -50,12 +50,14 @@
 
    (define gtk_message_dialog_new (GTK3 GtkWidget* "gtk_message_dialog_new" GtkWindow* GtkDialogFlags GtkMessageType GtkButtonsType gchar*))
 
-   (define (GtkMessageDialog owner props)
-      (define dialog (gtk_message_dialog_new owner
+   (define (GtkMessageDialog owner props . args)
+      (define dialog (apply gtk_message_dialog_new (cons*
+         owner
          (props 'flags GTK_DIALOG_DESTROY_WITH_PARENT)
          (props 'type GTK_MESSAGE_ERROR)
          (props 'buttons GTK_BUTTONS_CLOSE)
-         (props 'message "My God, it's full of stars!")))
+         (props 'message "My God, it's full of stars!")
+         args)))
 
       (define result (gtk_dialog_run dialog))
       (gtk_widget_destroy dialog)

@@ -95,7 +95,7 @@
          (when (ff? options)
             ((this 'setup) this options))
          ; return object
-         (GtkThis this))
+         (GObject this))
    ; main
    (case-lambda
       ((a1) (cond

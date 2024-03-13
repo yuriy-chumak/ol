@@ -68,7 +68,7 @@
                (cond
                   ((eq? (type application) type-vptr)
                      (gtk_window_set_application ptr application))
-                  ((GtkThis? application)
+                  ((GObject? application)
                      (gtk_window_set_application ptr (application 'ptr)))
                   (else
                      (runtime-error "GtkWindow: set-application: invalid application" application))))
@@ -94,7 +94,7 @@
             ((this 'setup) this options))
 
          ; smart object
-         (GtkThis this))
+         (GObject this))
 
    ; defaults
    (define default-title "Window")
@@ -106,7 +106,7 @@
                ((eq? (type a1) type-vptr)
                   (make a1 #f))
                ; GtkApplication
-               ((GtkThis? a1)
+               ((GObject? a1)
                   (make (gtk_window_new 0) {
                         'application a1
                      }))
@@ -118,7 +118,7 @@
                (cond
                   ((and (eq? (type a1) type-vptr) (ff? op))
                      (return (make a1 op)))
-                  ((GtkThis? a1) (cond
+                  ((GObject? a1) (cond
                      ((string? op)
                         (return
                            (make (gtk_window_new 0) {

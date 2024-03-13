@@ -59,7 +59,7 @@
          (when (ff? options)
             ((this 'setup) this options))
          ; smart object
-         (GtkThis this))
+         (GObject this))
 
    ; defaults
    (define default-text "button")

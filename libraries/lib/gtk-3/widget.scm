@@ -353,7 +353,7 @@
                #true)
          })
          ; no options handling yet
-         (GtkThis this))
+         (GObject this))
    ; main
    (case-lambda
       ((a1) (cond

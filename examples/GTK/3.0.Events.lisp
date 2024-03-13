@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 (import (lib glib-2)
-   (only (lib gdk-3) gdk_event_get_coords)
+   (lib gdk-3)
    (lib gtk-3)
    (lib gtk-3 message-dialog))
 
@@ -13,15 +13,14 @@
 
 ; register custom event (described in glade)
 ((builder 'add-callback-symbol) "mouse-clicked" (GTK_CALLBACK (widget event userdata)
-   (define x '(#i0))
-   (define y '(#i0))
-   (if (gdk_event_get_coords event x y)
+   (define xy (((GdkEvent event) 'get-coords)))
+   (when xy
+      ; message dialog can have string format
       (GtkMessageDialog (gtk_widget_get_toplevel widget) {
-         'type  GTK_MESSAGE_INFO
-         'message (string-append
-               "mouse clicked at"  "\n"
-               (number->string (car x)) ", " (number->string (car y)))
-      }))
+            'type  GTK_MESSAGE_INFO
+            'message "mouse clicked at:\n\nx = %f\ny = %f"
+         }
+         (car xy) (cdr xy) ))
    TRUE))
 
 ;; setup main window

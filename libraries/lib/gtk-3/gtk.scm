@@ -60,9 +60,6 @@
 
       GtkStyleContext*
 
-      ; lisp
-      GtkThis GtkThis?
-
       (exports (lib glib-2)))
    (import
       (scheme core)
@@ -111,23 +108,5 @@
                (lambda (object arg1 arg2 userdata)
                   .rest))))
       ))
-
-   (define (GtkThis this)
-      (put this 'gtk? #true))
-      ;; (case-lambda
-      ;;    (() this)
-      ;;    ((key . args)
-      ;;       (define value (this key #f))
-      ;;       (if (function? value)
-      ;;          (apply value args)
-      ;;          value)) ))
-   (define (GtkThis? this)
-      (getf this 'gtk?))
-      ;; ; todo: function? and arity may be 0 and (ff? (force))
-      ;; (function? this))
-
-   ;(define (make-GtkCallback)
-   ; todo: make macro for make-GtkCallback
-
 
 ))
