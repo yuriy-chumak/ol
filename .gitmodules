@@ -1,8 +1,8 @@
 [submodule "3d-game-shaders-for-beginners"]
-	path = samples/3d-game-shaders-for-beginners
+	path = examples/3d-game-shaders-for-beginners
 	url = https://github.com/yuriy-chumak/3d-game-shaders-for-beginners.git
 [submodule "samples/Olite"]
-	path = samples/Olite
+	path = examples/Olite
 	url = https://github.com/yuriy-chumak/Olite
 [submodule "libraries/OpenGL"]
 	path = libraries/OpenGL
