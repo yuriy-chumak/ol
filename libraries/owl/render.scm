@@ -108,7 +108,7 @@
                   (cons* #\# #\r (render (rlist->list obj) tl)))
 
                (else
-                  (cons* #\# #\w #\f #\t #\? tl)))) ;; What This Format?
+                  (cons* #\# #\w #\t #\f #\? tl)))) ;; What This Format?
          render)
 
       (define render
