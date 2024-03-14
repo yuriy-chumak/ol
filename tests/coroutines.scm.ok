@@ -1,0 +1,12 @@
+ORIGINAL CONTENT:
+hello: Say hello, dude!
+bye: What? You'r leaving?
+etc: Something, something, something...
+not existent: #false
+
+CHANGED CONTENT:
+hello: Say hello, bro!
+bye: What? You'r leaving? Yes, sorry.
+etc: Something, something, something...
+not existent: #false
+
