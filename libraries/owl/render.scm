@@ -195,7 +195,7 @@
                ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e (delay (k sh))))
                ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e (delay (k sh))))
                ((eq? obj #empty) (cons* #\# #\e #\m #\p #\t #\y (delay (k sh))))
-               ((eq? obj #eof)   (render #\# #\e #\o #\f (delay (k sh))))
+               ((eq? obj #eof)   (cons* #\# #\e #\o #\f (delay (k sh))))
 
                ;; render name is one is known, just function otherwise
                ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
