@@ -93,7 +93,7 @@
                            (answer (s/[ \n]+/ /g (list->string answer)))
                            (env (vector-apply (supereval code env) (lambda (ok? test env)
                               (define buffer (open-output-string))
-                              (write test buffer)
+                              (write-simple test buffer)
                               (define actual (get-output-string buffer))
                               (if (and (not (null? (cdar expressions)))
                                        (not (string=? answer actual)))

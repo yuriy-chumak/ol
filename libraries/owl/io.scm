@@ -40,11 +40,13 @@
       display
       print
       write             ; (obj), (obj port)
-      writer-to         ;; names → (port val → bool + io)
+      write-simple
       write-bytes       ;; port byte-list   → bool
       get-block         ;; fd n → bvec | eof | #false
       try-get-block     ;; fd n block? → bvec | eof | #false=error | #true=block
       lines             ;; fd → null | ll of string, read error is just null, each [\r]\n removed
+
+      writer-to         ;; names → (port val → bool + io)
 
       system-print system-println system-stderr
       fasl-save         ;; obj path → done?
@@ -237,8 +239,8 @@
                ;; avoid dependency on generic math in IO
                (printer (cdr lst) (++ len) (cons (car lst) out) fd))))
 
-      (define (writer-to names)
-         (let ((serialize (make-serializer names)))
+      (define (writer-to names datum?)
+         (let ((serialize (make-serializer names datum?)))
             (λ (to obj)
                (printer (serialize obj '()) 0 null to))))
 
@@ -273,13 +275,13 @@
          ((obj) (display-to stdout obj))
          ((obj port) (display-to port obj))))
 
-      (define write-to
-         (writer-to {})) ; we can add a map with lot of simple functions, like "map" or "fold"...
-            ;; (put #empty map "map")))
-
       (define write (case-lambda
-         ((obj) (write-to stdout obj))
-         ((obj port) (write-to port obj))))
+         ((obj) ((writer-to {} #true) stdout obj))
+         ((obj port) ((writer-to {} #true) port obj))))
+
+      (define write-simple (case-lambda
+         ((obj) ((writer-to {} #false) stdout obj))
+         ((obj port) ((writer-to {} #false) port obj))))
 
 
       (define (print-to to . args)

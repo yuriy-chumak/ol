@@ -3,6 +3,7 @@
 
    (import
       (scheme core)
+      (scheme list)
       (owl string))
 
    (begin
@@ -11,9 +12,9 @@
             (if (eq? (type obj) type-symbol)
                (let ((str (symbol->string obj)))
                   (cond
-                     ((string=? str "")
-                        "||")    ;; make empty symbols less invisible
-                     ((m/ / str) ;; fixme: doesn't quote internal |:s yet
+                     ((eq? (string-length str) 0) "||") ; empty symbols
+                     ;; fixme: doesn't quote internal |:s yet
+                     ((has? (string->list str) #\space) ; (m/ / str)
                         (string-append (string-append "|" str) "|"))
                      (else str)))
                (runtime-error "Not a symbol: " obj))

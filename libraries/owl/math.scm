@@ -2217,8 +2217,8 @@
                      base)))
             ((eq? (type num) type-inexact)
                (cond
+                  ; must be compared with `equal?`, because of possible ffi result
                   ((equal? num #i0) (cons* #\0 #\. #\0 tl))
-                  ; inf and nan must be compared with `equal?`, because of possible ffi result
                   ((equal? num +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 tl))
                   ((equal? num -inf.0) (cons* #\- #\i #\n #\f #\. #\0 tl))
                   ((equal? num +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 tl))

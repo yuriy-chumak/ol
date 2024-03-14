@@ -354,7 +354,7 @@
                   (print (decode-value env (cdr val))))
             else
                (maybe-show-metadata env val)
-               ((writer-to (env-get env name-tag empty))
+               ((writer-to (env-get env name-tag #empty) #false) ; write-simple
                   stdout (decode-value env val))
                (display "\n"))))
 

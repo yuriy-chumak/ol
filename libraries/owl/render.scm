@@ -21,10 +21,8 @@
       (only (owl string) render-string string? string->list))
 
    (export
-      make-serializer    ;; names → ((obj tl) → (byte ... . tl))
-      ;serialize       ;; obj tl        → (byte ... . tl), eager, always shared
-      ;serialize-lazy  ;; obj tl share? → (byte ... . tl), lazy, optional sharing
-      render)          ;; obj tl        → (byte ... . tl) -- deprecated
+      make-serializer  ;; names → ((obj tl) → (byte ... . tl))
+      render)          ;; obj tl            → (byte ... . tl)
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -35,18 +33,18 @@
       ; hack: do not include full (owl math fp) library and save 1k for image
       ;       we use only this three functions:
 
-      ;; this could be removed?
+      ; (display), (print)
       (define (make-renderer meta)
          (define (render obj tl)
             (cond
-               ((null? obj)
-                  (cons* #\( #\) tl))
-
                ((number? obj)
                   (render-number obj tl 10))
 
                ((string? obj)
                   (render-string obj tl))
+
+               ((symbol? obj)
+                  (render-symbol obj tl))
 
                ((pair? obj)
                   (cons #\(
@@ -60,17 +58,16 @@
                               (else
                                  (cons* #\space #\. #\space (render obj tl))))))))
 
-               ((symbol? obj)
-                  (render-symbol obj tl))
-
-               ((bytevector? obj)
-                  (cons* #\# #\u #\8 (render (bytevector->list obj) tl)))
-
-               ((blob? obj)
-                  (cons #\# (render (blob->list obj) tl)))
-
                ((vector? obj)
                   (cons #\# (render (vector->list obj) tl)))
+
+               ((eq? obj #null)
+                  (cons* #\( #\) tl))
+
+               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e tl))
+               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e tl))
+               ((eq? obj #empty) (cons* #\# #\e #\m #\p #\t #\y tl)) ;; don't print as #()
+               ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
 
                ((function? obj)
                   (render "#function" tl))
@@ -79,6 +76,23 @@
                   ;   (if symp
                   ;      (cons* #\# #\< (render symp (cons #\> tl)))
                   ;      (render "#<function>" tl))))
+
+               ((bytevector? obj)
+                  (cons* #\# #\u #\8 (render (bytevector->list obj) tl)))
+
+               ((ff? obj) ;; fixme: ff not parsed yet this way
+                  (cons* #\# #\f #\f (render (ff->alist obj) tl)))
+
+               ((port? obj) (cons* #\# #\< #\f #\d #\space (render (vm:cast obj type-enum+) (cons #\> tl))))
+
+               ((eq? (type obj) type-const) ; ???
+                  (render-number (vm:cast obj type-enum+) tl 16))
+
+               ((eq? (type obj) type-vptr)
+                  (append (string->list "#vptr") tl))
+
+               ((blob? obj)
+                  (cons #\# (render (blob->list obj) tl)))
 
 
 ; disabled, because records currently unload
@@ -93,23 +107,8 @@
                ((rlist? obj) ;; fixme: rlist not parsed yet
                   (cons* #\# #\r (render (rlist->list obj) tl)))
 
-               ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (cons* #\# #\f #\f (render (ff->alist obj) tl)))
-
-               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e tl))
-               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e tl))
-               ((eq? obj #empty) (cons* #\# #\e #\m #\p #\t #\y tl)) ;; don't print as #()
-               ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
-
-               ((port? obj) (cons* #\# #\< #\f #\d #\space (render (vm:cast obj type-enum+) (cons #\> tl))))
-
-               ((eq? (type obj) type-const)
-                  (render-number (vm:cast obj type-enum+) tl 16))
-               ((eq? (type obj) type-vptr)
-                  (append (string->list "#vptr") tl))
-
                (else
-                  (append (string->list "#wtf?") tl)))) ;; What This Format?
+                  (cons* #\# #\w #\f #\t #\? tl)))) ;; What This Format?
          render)
 
       (define render
@@ -122,34 +121,20 @@
       ; laziness changes:
       ;  - use explicit CPS to 'return'
       ;  - emit definition on first encounter
+      ;; (define print-stats [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0])
+      ;; (define (@ n)
+      ;;    (set-ref! print-stats n (++ (ref print-stats n))))
 
-      (define (make-ser names)
+      ; todo: add regex printing
+      ; (write)
+      (define (make-ser names datum?)
          (define (ser sh obj k)
             (cond
+               ; most likely
+               ((symbol? obj)
+                  (render-symbol obj (delay (k sh))))
 
-               ;((getf sh obj) =>
-               ;   (λ (id)
-               ;      (if (< id 0) ;; already written, just refer
-               ;         (cons* #\# (render (abs id) (lcons #\# (k sh))))
-               ;         (cons* #\#
-               ;            (render id
-               ;               (cons* #\# #\=
-               ;                  (ser (del sh obj) obj
-               ;                     (λ (sh)
-               ;                        (delay
-               ;                           (k (put sh obj (- 0 id))))))))))))
-
-               ((null? obj)
-                  (cons* #\' #\( #\) (k sh)))
-
-               ((number? obj)
-                  (render-number obj (delay (k sh)) 10))
-
-               ((string? obj)
-                  (cons #\"
-                     (render-quoted-string obj  ;; <- all eager now
-                        (lcons #\" (k sh)))))
-
+               ; lists
                ((pair? obj)
                   (cons #\(
                      (let loop ((sh sh) (obj obj))
@@ -157,20 +142,6 @@
                            ((null? obj)
                               ;; run of the mill list end
                               (lcons #\) (k sh)))
-                           ;((getf sh obj) =>
-                           ;   (λ (id)
-                           ;      (cons* #\. #\space #\#
-                           ;         (render (abs id)
-                           ;            (cons #\#
-                           ;               (if (< id 0)
-                           ;                  (lcons 41 (k sh))
-                           ;                  (lcons #\=
-                           ;                     (ser (del sh obj) obj
-                           ;                        (λ (sh)
-                           ;                           (lcons 41
-                           ;                              (k
-                           ;                                 (put sh obj
-                           ;                                    (- 0 id)))))))))))))
                            ((pair? obj)
                               ;; render car, then cdr
                               (ser sh (car obj)
@@ -183,23 +154,26 @@
                               ;; improper list
                               (cons* #\. #\space
                                  (ser sh obj
-                                    (λ (sh) (lcons 41 (k sh))))))))))
+                                    (λ (sh) (lcons #\) (k sh)))))))))) ;(
 
-               ((boolean? obj)
-                  (append
-                     (string->list (if obj "#true" "#false"))
-                     (delay (k sh))))
+               ; numbers
+               ((and datum?
+                     (inexact? obj))  ; write, not write-simple
+                  (cond
+                     ((equal? obj +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 (delay (k sh))))
+                     ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 (delay (k sh))))
+                     ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 (delay (k sh))))
+                     (else
+                        (cons* #\# #\i (render-number obj (delay (k sh)) 10)))))
 
-               ((symbol? obj)
-                  (render-symbol obj (delay (k sh))))
+               ; todo: datum? and rational? and denom is 10, 100, 1000, ... - write with dot
+               ((number? obj)
+                  (render-number obj (delay (k sh)) 10))
 
-               ((bytevector? obj)
-                  (cons* #\# #\u #\8
-                     (ser sh (bytevector->list obj) k))) ;; <- should convert incrementally!
-
-               ((blob? obj)
-                  (cons #\#
-                     (ser sh (blob->list obj) k))) ;; <- should convert incrementally!
+               ((string? obj)
+                  (cons #\"
+                     (render-quoted-string obj  ;; <- all eager now
+                        (lcons #\" (k sh)))))
 
                ((vector? obj)
                   (cons #\# (cons #\(
@@ -215,6 +189,14 @@
                                           (loop sh (+ n 1))
                                           (cons #\space (loop sh (+ n 1)))))))))))))
 
+               ((eq? obj #null)
+                  (cons* #\( #\) (delay (k sh))))
+
+               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e (delay (k sh))))
+               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e (delay (k sh))))
+               ((eq? obj #empty) (cons* #\# #\e #\m #\p #\t #\y (delay (k sh))))
+               ((eq? obj #eof)   (render #\# #\e #\o #\f (delay (k sh))))
+
                ;; render name is one is known, just function otherwise
                ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
                ((function? obj)
@@ -225,34 +207,45 @@
                         else
                            (list "#function")))))
 
-               ((rlist? obj) ;; fixme: rlist not parsed yet
-                  (cons* #\# #\r (ser sh (rlist->list obj) k)))
-
-               ((eq? obj #empty) ;; don't print as #()
-                  (cons* #\# #\e #\m #\p #\t #\y (delay (k sh))))
+               ((bytevector? obj)
+                  (cons* #\# #\u #\8
+                     (ser sh (bytevector->list obj) k))) ;; todo: should convert incrementally
 
                ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (cons* #\# #\f #\f (ser sh (ff->alist obj) k)))
+                  (cons* #\# #\f #\f
+                     (ser sh (ff->alist obj) k)))
 
-               ((port? obj)   (render obj (λ () (k sh))))
-               ((eof? obj)    (render obj (λ () (k sh))))
+               ((port? obj)
+                  (render obj (λ () (k sh))))
 
                ((eq? (type obj) type-vptr)
                   (cons* #\# #\v #\p #\t #\r (delay (k sh))))
 
+               ((rlist? obj) ;; fixme: rlist not parsed yet
+                  (cons* #\# #\r (ser sh (rlist->list obj) k)))
+
+               ((blob? obj)
+                  (cons #\#
+                     (ser sh (blob->list obj) k))) ;; <- should convert incrementally!
+
                (else
-                  (append (string->list "#wtf?") (delay (k sh))))))
+                  (cons* #\# #\w #\t #\f #\? (delay (k sh))))))
          ser)
 
-      (define (self-quoting? val)
+      (define (const? x)
+         (eq? (type x) type-const))
+
+      (define (self-quoting? val datum?)
          (or  ; note, all immediates are
-            (number? val) (string? val) (boolean? val) (function? val)
-            (port? val) (vector? val) (bytevector? val) (null? val)
-            (rlist? val) (empty? val) (eq? (type val) type-vptr)))
+            (number? val) (string? val) (const? val) (function? val)
+            (port? val) (vector? val) (bytevector? val)
+            (and datum? (pair? val))
+            (rlist? val) (blob? val)
+            (eq? (type val) type-vptr)))
 
       ;; could drop val earlier to possibly gc it while rendering
-      (define (maybe-quote val lst)
-         (if (self-quoting? val)
+      (define (maybe-quote val lst datum?)
+         (if (self-quoting? val datum?)
             lst
             (cons #\' lst)))
 
@@ -297,18 +290,19 @@
                   out
                   (loop (put out (car shares) n) (cdr shares) (+ n 1))))))
 
-      (define (make-lazy-serializer names)
-         (let ((ser (make-ser names)))
+      (define (make-lazy-serializer names datum?)
+         (let ((ser (make-ser names datum?)))
             (λ (val tl share?)
                (maybe-quote val
                   (ser
                      (if share? ;; O(n), allow skipping
                         (label-shared-objects val)
                         empty)
-                     val (λ (sh) tl))))))
+                     val (λ (sh) tl))
+                  datum?))))
 
-      (define (make-serializer names)
-         (let ((serialize-lazy (make-lazy-serializer names)))
+      (define (make-serializer names datum?)
+         (let ((serialize-lazy (make-lazy-serializer names datum?)))
             (λ (val tl)
                (force-ll
                   (serialize-lazy val tl #true)))))
