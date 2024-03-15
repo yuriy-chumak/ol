@@ -178,9 +178,13 @@
 
       ;; quote just ":s for now
       (define (encode-quoted-point p tl)
-         (if (eq? p #\")
-            (cons* #\\ p tl)
-            (encode-point p tl)))
+         (cond
+            ((eq? p #\")
+               (cons* #\\ p tl))
+            ((eq? p #\\)
+               (cons* #\\ p tl))
+            (else
+               (encode-point p tl))))
 
       ; note: it is assumed string construction has checked that all code points are valid and thus encodable
       (define (string->bytes str)    (str-foldr encode-point #null str))
