@@ -406,27 +406,57 @@
              (codepoint (either named-char rune)))
             codepoint))
 
-      ;; most of these are to go via type definitions later
-      (define special-word
+      ;; #...
+      (define (special-word sexp)
          (any-of
             (word "..." '...)
             (let-parse* (
                   (skip (imm #\#))
                   (val (any-of
-                        (word "false" #false)
                         (word "true"  #true)
-                        (word "null"  #null)    ; empty list (system constant)
-                        (word "empty" #empty)   ; empty ff (system constant)
-                        (word "eof"   #eof)     ; previously (vm:cast 4 13)
+                        (word "false" #false)
+                        (word "null"  #null)    ; empty (), system constant
+
+                        ; #ff(...)
+                        (let-parse* (
+                              (-- (imm #\f))
+                              (-- (imm #\f))
+                              (-- (imm #\())
+                              (things
+                                 (greedy* (sexp)))
+                              (-- maybe-whitespace)
+                              (-- (imm #\))) )
+                           (list 'alist->ff (cons 'list (map (lambda (pair)
+                              (list 'quote pair)) things))))
+                        (word "empty" #empty)   ; empty #ff(), system constant
+
+                        ; #u8(... only bytes ...)
+                        (let-parse* (
+                              (-- (imm #\u))
+                              (-- (imm #\8))
+                              (-- (imm #\())
+                              (things
+                                 (greedy* (let-parse* (
+                                       (-- maybe-whitespace)
+                                       (base base)
+                                       (number (natural base)))
+                                    number)))
+                              (-- maybe-whitespace)
+                              (-- (imm #\))) )
+                           (list 'make-bytevector (cons 'list things)))
+
+                        ; end-of-file
+                        (word "eof"   #eof)
+
                         ; сокращения
-                        (word "t"     #true)
-                        (word "f"     #false)
-                        (word "T"     #true)
-                        (word "F"     #false)
-                        (word "n"     #null)
-                        (word "N"     #null)
-                        (word "e"     #empty)
-                        (word "E"     #empty))))
+                        (word "t" #true)
+                        (word "f" #false)
+                        (word "T" #true)
+                        (word "F" #false)
+                        (word "n" #null)
+                        (word "N" #null)
+                        (word "e" #empty)
+                        (word "E" #empty) )))
                val)))
 
 
@@ -486,21 +516,6 @@
                   (list 'make-ff (list q things))
                   (list 'make-ff (cons 'list things))))))
 
-      ; #u8(... only bytes ...)
-      (define bytevector
-         (let-parse* (
-               (-- (word "#u8" #t))
-               (-- (imm #\())
-               (things
-                  (greedy* (let-parse* (
-                        (-- maybe-whitespace)
-                        (base base)
-                        (number (natural base)))
-                     number)))
-               (-- maybe-whitespace)
-               (-- (imm #\))) )
-            (list 'make-bytevector (cons 'list things))))
-
       ; returns uninterned symbols
       (define (sexp)
          (let-parse* (
@@ -510,15 +525,14 @@
                         (list-of (sexp)) ; todo: move below
                         ; simple types
                         number
-                        simple-symbol ; 
-                        special-word
+                        simple-symbol
+                        (special-word sexp)
                         string
                         quoted-char
                         get-sexp-regex ; before symbols, which also may have "/" and "|"
                         symbol        ; 
                         ; containers
                         (vector-of (sexp))
-                        bytevector
                         (ff-of (sexp))
                         (quoted (sexp))
                         ; eof
