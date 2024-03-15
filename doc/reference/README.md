@@ -92,7 +92,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [\\\\](infix-notation.md)
 ## <a name="#"></a>#
 [#null](pairs-and-lists.md#null)
-[#u8](bytevectors.md#bytevectors)
+[#u8()](bytevectors.md#bytevectors)
 ## A
 [abs](numerical-operations.md#abs)
 [actor](async.md#actor)
@@ -266,7 +266,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [sqrt](numerical-operations.md#sqrt)
 [string->symbol](symbols.md#string-symbol)
 [string->uninterned-symbol](symbols.md#string-uninterned-symbol)
-[string->utf8](bytevectors.md#string->utf8)
+[string->utf8](bytevectors.md#string-utf8)
 [string->vector](vectors.md#string-vector)
 [symbol?](symbols.md#symbol)
 [symbol=?](symbols.md#symbol-1)
@@ -275,7 +275,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [take](pairs-and-lists.md#take)
 [truncate](numerical-operations.md#truncate)
 ## U
-[utf8->string](bytevectors.md#utf8->string)
+[utf8->string](bytevectors.md#utf8-string)
 ## V
 [vector](vectors.md#vector)
 [vector?](vectors.md#vector-1)
