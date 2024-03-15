@@ -3303,17 +3303,17 @@ loop:;
 	// todo: reference objects (with check for 'less?')
 	// * experimental feature, do not use!
 	// (vm:set! dst src)
-	// (vm:set! dst from src from to)
+	// (vm:set! dst to src start end)
 	case VMSETE: {
 		word argc = *ip++;
 
-		char *p = (char*)A0;
+		char *p = (char*)A0; // dst
 		word setok = IFALSE;
 
 		// word to, start, end;
 		if (is_reference(p)) {
 			word to    = (argc == 5) ? value (A1) : 0;
-			char* q    = (argc == 5) ?(char*) A2  : (argc == 2) ?(char*) A1 : 0;
+			char* q    = (argc == 5) ?(char*) A2  : (argc == 2) ?(char*) A1 : 0; // src
 			word start = (argc == 5) ? value (A3) : 0;
 			word end   = (argc == 5) ? value (A4) : (argc == 2 && is_reference(q)) ?
 													rawstream_size(q) : 0;
@@ -3322,8 +3322,8 @@ loop:;
 				&& end <= rawstream_size(q)
 				&& end - start + to <= rawstream_size(p))
 			{
-				if (end - start == sizeof(word)) // speedup for inexact numbers and simple objects
-					((word*)p)[++to] = ((word*)q)[++start];
+				if (end - start == W) // speedup for inexact numbers and simple objects
+					*(word*)(&p[W + to]) = *(word*)(&q[W + start]);
 				else
 					memcpy(&p[W + to], &q[W + start], end - start);
 				setok = (word) p;
