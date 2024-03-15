@@ -115,13 +115,6 @@
             (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
       )))
 
-      (define bases {
-         #\b   2
-         #\o   8
-         #\d  10
-         #\x  16
-      })
-
       (define (digit-char? base)
          (if (eq? base 10)
             (λ (n) (between? #\0 n #\9))
@@ -183,6 +176,12 @@
             (sign (* (+ num tail) pow))))
 
       ;; a sub-rational (other than as decimal notation) number
+      (define bases {
+         #\b   2
+         #\o   8
+         #\d  10
+         #\x  16
+      })
       (define base
          (any-of
             (let-parse*
@@ -487,22 +486,42 @@
                   (list 'make-ff (list q things))
                   (list 'make-ff (cons 'list things))))))
 
+      ; #u8(... only bytes ...)
+      (define bytevector
+         (let-parse* (
+               (-- (word "#u8" #t))
+               (-- (imm #\())
+               (things
+                  (greedy* (let-parse* (
+                        (-- maybe-whitespace)
+                        (base base)
+                        (number (natural base)))
+                     number)))
+               (-- maybe-whitespace)
+               (-- (imm #\))) )
+            (list 'make-bytevector (cons 'list things))))
+
       ; returns uninterned symbols
       (define (sexp)
          (let-parse* (
                (skip maybe-whitespace)
                (val (any-of
-                        (list-of (sexp))
+                        ; lists
+                        (list-of (sexp)) ; todo: move below
+                        ; simple types
                         number
-                        simple-symbol
+                        simple-symbol ; 
                         special-word
                         string
                         quoted-char
                         get-sexp-regex ; before symbols, which also may have "/" and "|"
-                        symbol
+                        symbol        ; 
+                        ; containers
                         (vector-of (sexp))
+                        bytevector
                         (ff-of (sexp))
                         (quoted (sexp))
+                        ; eof
                         (byte-if eof?))))
             val))
 

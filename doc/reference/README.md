@@ -50,6 +50,7 @@ List of Standard procedures
 - [Symbols](symbols.md).
 - [Characters](characters.md).
 - [Vectors](vectors.md).
+- [Bytevectors](bytevectors.md).
 - [Lazy Evaluations](lazy-evaluations.md).
 - [Sorting](sorting.md).
 - [Coroutines and Actors](async.md).
@@ -91,6 +92,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [\\\\](infix-notation.md)
 ## <a name="#"></a>#
 [#null](pairs-and-lists.md#null)
+[#u8](bytevectors.md#bytevectors)
 ## A
 [abs](numerical-operations.md#abs)
 [actor](async.md#actor)
@@ -105,8 +107,15 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [await](async.md#await)
 [await-linked](async.md#await-linked)
 ## B
-[boolean?](boolean.md#boolean)
-[boolean=?](boolean.md#boolean-1)
+[bytevector](bytevectors.md#bytevectors)
+[bytevector-append](bytevectors.md#bytevector-append)
+[bytevector-copy](bytevectors.md#bytevector-copy)
+[bytevector-copy!](bytevectors.md#bytevector-copy-1)
+[bytevector-length](bytevectors.md#bytevector-length)
+[bytevector-u8-ref](bytevectors.md#bytevector-u8-ref)
+[bytevector-u8-set!](bytevectors.md#bytevector-u8-set)
+[boolean?](booleans.md#boolean)
+[boolean=?](booleans.md#boolean-1)
 ## C
 [car](pairs-and-lists.md#car)
 [cdr](pairs-and-lists.md#cdr)
@@ -147,10 +156,10 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [cons*](pairs-and-lists.md#cons-1)
 ## D
 [decode2](serialization-deserialization.md#decode2)
-[define-instant-macro](#macro.md#define-instant-macro)
-[define-lazy-macro](#macro.md#define-lazy-macro)
-[define-macro](#macro.md#define-macro)
-[define-syntax](#macro.md#define-syntax)
+[define-instant-macro](macros.md#define-instant-macro)
+[define-lazy-macro](macros.md#define-lazy-macro)
+[define-macro](macros.md#define-macro)
+[define-syntax](macros.md#define-syntax)
 [del](ffs.md#del)
 [denominator](numerical-operations.md#denominator)
 [deserialize](serialization-deserialization.md#deserialize)
@@ -210,6 +219,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [mail](async.md#mail)
 [make-ff](ffs.md#make-ff)
 [make-list](pairs-and-lists.md#make-list)
+[make-bytevector](bytevectors.md#make-bytevector)
 [make-vector](vectors.md#make-vector)
 [map](pairs-and-lists.md#map)
 [max](numerical-operations.md#max)
@@ -256,6 +266,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [sqrt](numerical-operations.md#sqrt)
 [string->symbol](symbols.md#string-symbol)
 [string->uninterned-symbol](symbols.md#string-uninterned-symbol)
+[string->utf8](bytevectors.md#string->utf8)
 [string->vector](vectors.md#string-vector)
 [symbol?](symbols.md#symbol)
 [symbol=?](symbols.md#symbol-1)
@@ -264,6 +275,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [take](pairs-and-lists.md#take)
 [truncate](numerical-operations.md#truncate)
 ## U
+[utf8->string](bytevectors.md#utf8->string)
 ## V
 [vector](vectors.md#vector)
 [vector?](vectors.md#vector-1)
