@@ -15,7 +15,7 @@ The finite functions (ffs) are internally represented as red-black trees, so per
      7 "seven"
      3 "three" })
 > numbers
-'#ff((1 . "one") (3 . "three") (7 . "seven"))
+#ff((1 . "one") (3 . "three") (7 . "seven"))
 
 > (numbers 1)
 "one"
@@ -78,10 +78,10 @@ Returns a (possibly rebalanced) copy of *ff* with added new *key*-*value* pair.
 
 ```scheme
 > (put #empty 7 42)
-'#ff((7 . 42))
+#ff((7 . 42))
 
 > (put {1 2 3 "4"} 7 'itsme)
-'#ff((1 . 2) (3 . "4") (7 . itsme))
+#ff((1 . 2) (3 . "4") (7 . itsme))
 ```
 
 # put!
@@ -114,13 +114,13 @@ Same as `list->ff`.
 
 ```scheme
 > (list->ff '())
-#empty
+#ff()
 
 > (list->ff '(1 2 3 4))
-'#ff((1 . 2) (3 . 4))
+#ff((1 . 2) (3 . 4))
 
 > (list->ff '(1 2 3 4 1 8))
-'#ff((1 . 8) (3 . 4))
+#ff((1 . 8) (3 . 4))
 ```
 
 # ff->list
@@ -129,13 +129,13 @@ Same as `list->ff`.
 
 ```scheme
 > (alist->ff '())
-#empty
+#ff()
 
 > (alist->ff '((1 . 2) (3 . 4)))
-'#ff((1 . 2) (3 . 4))
+#ff((1 . 2) (3 . 4))
 
 > (alist->ff '((1 . 2) (3 . 4) (1 . 8)))
-'#ff((1 . 8) (3 . 4))
+#ff((1 . 8) (3 . 4))
 ```
 
 # ff->alist

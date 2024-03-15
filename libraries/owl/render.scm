@@ -194,7 +194,7 @@
 
                ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e (delay (k sh))))
                ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e (delay (k sh))))
-               ((eq? obj #empty) (cons* #\# #\e #\m #\p #\t #\y (delay (k sh))))
+               ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) (delay (k sh))))
                ((eq? obj #eof)   (cons* #\# #\e #\o #\f (delay (k sh))))
 
                ;; render name is one is known, just function otherwise
@@ -211,7 +211,7 @@
                   (cons* #\# #\u #\8
                      (ser sh (bytevector->list obj) k))) ;; todo: should convert incrementally
 
-               ((ff? obj) ;; fixme: ff not parsed yet this way
+               ((ff? obj)
                   (cons* #\# #\f #\f
                      (ser sh (ff->alist obj) k)))
 
@@ -236,12 +236,13 @@
          (eq? (type x) type-const))
 
       (define (self-quoting? val datum?)
-         (or  ; note, all immediates are
-            (number? val) (string? val) (const? val) (function? val)
-            (port? val) (vector? val) (bytevector? val)
-            (and datum? (pair? val))
-            (rlist? val) (blob? val)
-            (eq? (type val) type-vptr)))
+         (cond
+            ((symbol? val)
+               #false)
+            ((pair? val)
+               (if datum? #true #false))
+            (else
+               #true)))
 
       ;; could drop val earlier to possibly gc it while rendering
       (define (maybe-quote val lst datum?)
