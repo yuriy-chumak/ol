@@ -16,7 +16,9 @@
       (otus ffi) (owl ff)
       (owl string)
       (lib gtk-3 gtk)
-      (lib gtk-3 widget))
+      (lib gtk-3 widget)
+      (lib gtk-3 bin)
+      (lib gtk-3 label))
 
 (begin
    (define GtkButton* type-vptr)
@@ -38,6 +40,8 @@
             ; Sets the text of the label of the button.
             'set-text (lambda (text)
                   (gtk_button_set_label ptr text))
+            'set-markup (lambda (markup)
+                  (gtk_label_set_markup (gtk_bin_get_child ptr) markup))
 
             ; Sets the 'clicked' button event handler.
             'set-click-handler (GtkEventHandler "clicked" (widget userdata)
