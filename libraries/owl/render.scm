@@ -66,7 +66,7 @@
 
                ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e tl))
                ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e tl))
-               ((eq? obj #empty) (cons* #\# #\e #\m #\p #\t #\y tl)) ;; don't print as #()
+               ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) tl))
                ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
 
                ((function? obj)
