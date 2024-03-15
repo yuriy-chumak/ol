@@ -426,8 +426,11 @@
                                  (greedy* (sexp)))
                               (-- maybe-whitespace)
                               (-- (imm #\))) )
-                           (list 'alist->ff (cons 'list (map (lambda (pair)
-                              (list 'quote pair)) things))))
+                           (if (null? things)
+                              #empty
+                           else
+                              (list 'alist->ff (cons 'list (map (lambda (pair)
+                                 (list 'quote pair)) things)))))
                         (word "empty" #empty)   ; empty #ff(), system constant
 
                         ; #u8(... only bytes ...)
