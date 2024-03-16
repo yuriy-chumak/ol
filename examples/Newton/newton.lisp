@@ -4,6 +4,7 @@
 (import (otus random!))
 (import (otus ffi))
 (import (lib newton-dynamics))
+(import (lib GLU))
 
 (define (gettimeofday) (syscall 96))
 

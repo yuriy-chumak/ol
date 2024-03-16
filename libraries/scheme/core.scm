@@ -553,7 +553,7 @@
                     (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
       (assert (eqv? (lambda (x) x)
                     (lambda (y) y))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
-      ;assert (eqv? 1.0e0 1.0f0)            ===> unspecified
+      ;assert (eqv? 1.0e0 1.0e0)            ===> unspecified
       (assert (eqv? +nan.0 +nan.0)          ===> #true)  ; * ol specific, (in r7rs unspecified)
 
       (assert (eqv? '(a) '(a))              ===> #false) ; * ol specific, (in r7rs unspecified)

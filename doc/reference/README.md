@@ -166,6 +166,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [digit-value](characters.md#digit-value)
 [drop](pairs-and-lists.md#drop)
 ## E
+[eighth](pairs-and-lists.md#eighth)
 [encode2](serialization-deserialization.md#encode2)
 [eq?](equivalence-predicates.md#eq)
 [eqv?](equivalence-predicates.md#eqv)
@@ -185,10 +186,13 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [ff-for-each](ffs.md#ff-for-each)
 [ff-replace](ffs.md#ff-replace)
 [ff-union](ffs.md#ff-union)
+[fifth](pairs-and-lists.md#fifth)
 [finite?](numerical-operations.md#finite)
+[first](pairs-and-lists.md#first)
 [floor](numerical-operations.md#floor)
 [fold](pairs-and-lists.md#fold)
 [foldr](pairs-and-lists.md#foldr)
+[fourth](pairs-and-lists.md#fourth)
 ## G
 [get](ffs.md#get)
 [getf](ffs.md#getf)
@@ -233,6 +237,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [nan?](numerical-operations.md#nan)
 [natural?](numerical-operations.md#natural)
 [negative?](numerical-operations.md#negative)
+[ninth](pairs-and-lists.md#ninth)
 [not](pairs-and-lists.md#not)
 [null?](pairs-and-lists.md#null-1)
 [number?](numerical-operations.md#number)
@@ -257,9 +262,12 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [reverse](pairs-and-lists.md#reverse)
 [round](numerical-operations.md#round)
 ## S
+[second](pairs-and-lists.md#second)
 [set-car!](pairs-and-lists.md#set-car)
 [set-cdr!](pairs-and-lists.md#set-cdr)
+[seventh](pairs-and-lists.md#seventh)
 [serialize](serialization-deserialization.md#serialize)
+[sixth](pairs-and-lists.md#sixth)
 [sleep](async.md#sleep)
 [sort](sorting.md#sort)
 [square](numerical-operations.md#square)
@@ -273,6 +281,8 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [symbol->string](symbols.md#symbol-string)
 ## T
 [take](pairs-and-lists.md#take)
+[tenth](pairs-and-lists.md#tenth)
+[third](pairs-and-lists.md#third)
 [truncate](numerical-operations.md#truncate)
 ## U
 [utf8->string](bytevectors.md#utf8-string)

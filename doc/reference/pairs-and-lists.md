@@ -15,7 +15,9 @@ Pairs are used primarily to represent lists. A *list* can be defined recursively
 [repeat](#repeat), [iota](#iota), [lrange](#lrange), [append](#append), [reverse](#reverse),  
 [take](#take), [drop](#drop),  
 [memq](#memq), [memv](#memv), [member](#member), [assq](#assq), [assv](#assv), [assoc](#assoc),  
-[map](#map), [fold](#fold), [foldr](#foldr)
+[map](#map), [fold](#fold), [foldr](#foldr),  
+[first](#first), [second](#second), [third](#third), [fourth](#fourth), [fifth](#fifth),
+[sixth](#sixth), [seventh](#seventh), [eighth](#eighth), [ninth](#ninth), [tenth](#tenth)
 
 ### Non-functional features (very limited, use with care!)
 [set-car!](#set-car), [set-cdr!](#set-cdr), [list-set!](#list-set)
@@ -597,5 +599,96 @@ Stores *obj* in element *k* of *list*. *Obj* must be enum, symbol, or constant.
 (let ((me '(1 2 3 4)))
    (list-set! me 2 77)
    me)                       ==>  '(1 2 77 4)
+```
+
+# first
+`(first l)`, *procedure*, `(srfi 1)` library
+
+Returns first element of list *l*.
+
+```scheme
+(first '(1 2 3 4 5 6 7 8 9 10 11))   ==>  1
+```
+
+# second
+`(second l)`, *procedure*, `(srfi 1)` library
+
+Returns second element of list *l*.
+
+```scheme
+(second '(1 2 3 4 5 6 7 8 9 10 11))   ==>  2
+```
+
+# third
+`(third l)`, *procedure*, `(srfi 1)` library
+
+Returns third element of list *l*.
+
+```scheme
+(third '(1 2 3 4 5 6 7 8 9 10 11))   ==>  3
+```
+
+# fourth
+`(fourth l)`, *procedure*, `(srfi 1)` library
+
+Returns fourth element of list *l*.
+
+```scheme
+(fourth '(1 2 3 4 5 6 7 8 9 10 11))  ==>  4
+```
+
+# fifth
+`(fifth l)`, *procedure*, `(srfi 1)` library
+
+Returns fifth element of list *l*.
+
+
+```scheme
+(fifth '(1 2 3 4 5 6 7 8 9 10 11))   ==>  5
+```
+
+# sixth
+`(sixth l)`, *procedure*, `(srfi 1)` library
+
+Returns sixth element of list *l*.
+
+```scheme
+(sixth '(1 2 3 4 5 6 7 8 9 10 11))   ==>  6
+```
+
+# seventh
+`(seventh l)`, *procedure*, `(srfi 1)` library
+
+Returns seventh element of list *l*.
+
+```scheme
+(seventh '(1 2 3 4 5 6 7 8 9 10 11)) ==>  7
+```
+
+# eighth
+`(eighth l)`, *procedure*, `(srfi 1)` library
+
+Returns eighth element of list *l*.
+
+```scheme
+(eighth '(1 2 3 4 5 6 7 8 9 10 11))  ==>  8
+```
+
+# ninth
+`(ninth l)`, *procedure*, `(srfi 1)` library
+
+Returns ninth element of list *l*.
+
+```scheme
+(ninth '(1 2 3 4 5 6 7 8 9 10 11))   ==>  9
+```
+
+# tenth
+`(tenth l)`, *procedure*, `(srfi 1)` library
+
+Returns tenth element of list *l*.
+
+```scheme
+(tenth '(1 2 3 4 5 6 7 8 9 10 11))   ==>  10
 ```
 
