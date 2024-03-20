@@ -22,6 +22,7 @@ LD ?= ld
 ol32.exe: CC := i686-w64-mingw32-gcc
 ol64.exe: CC:=x86_64-w64-mingw32-gcc
 
+ol.exe: MINGWCFLAGS += -DOLVM_TARVENV=1
 ol.exe: ol64.exe
 	tar -cvf tmp/pvenv.tar \
 	    --owner=OL/2.5 --group= \
