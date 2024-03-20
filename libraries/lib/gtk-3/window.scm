@@ -90,8 +90,7 @@
          }))
 
          ; apply options
-         (when (ff? options)
-            ((this 'setup) this options))
+         ((this 'setup) this options)
 
          ; smart object
          (GObject this))
