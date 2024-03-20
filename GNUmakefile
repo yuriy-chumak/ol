@@ -182,7 +182,7 @@ perf: vm ol olvm libol.so
 slim: CFLAGS += -DHAVE_SOCKETS=0 -DHAVE_DLOPEN=0 -DHAVE_SANDBOX=0
 slim: release
 
-minimal: CFLAGS += -DOLVM_FFI=0 -DHAVE_SOCKETS=0 -DHAVE_DLOPEN=0 -DHAVE_SANDBOX=0
+minimal: CFLAGS += -DOLVM_FFI=0 -DHAVE_SOCKETS=1 -DHAVE_DLOPEN=0 -DHAVE_SANDBOX=0
 minimal: release
 
 # ffi test build
