@@ -44,7 +44,8 @@
    ; lisp interface
    (define GtkWindow
       (define (make ptr options)
-         (define base (GtkContainer ptr))
+         (define base (GtkContainer ptr
+            options))
          (define this (ff-replace base {
 
             ; Sets the title of the GtkWindow.
@@ -73,24 +74,18 @@
                   (else
                      (runtime-error "GtkWindow: set-application: invalid application" application))))
 
+            ; internals
             'super base
-            'setup (lambda (this options)
-               ((base 'setup) this options)
-
-               (if (options 'application #f)
-                  ((this 'set-application) (options 'application)))
-               (if (options 'title #f)
-                  ((this 'set-title) (options 'title)))
-               (if (options 'width (options 'height #f))
-                  ((this 'set-default-size) (options 'width) (options 'height)))
-               (if (options 'icon #f)
-                  ((this 'set-icon) (options 'icon)))
-
-               #true)
          }))
-
          ; apply options
-         ((this 'setup) this options)
+         (if (options 'application #f)
+            ((this 'set-application) (options 'application)))
+         (if (options 'title #f)
+            ((this 'set-title) (options 'title)))
+         (if (options 'width (options 'height #f))
+            ((this 'set-default-size) (options 'width 640) (options 'height 480)))
+         (if (options 'icon #f)
+            ((this 'set-icon) (options 'icon)))
 
          ; smart object
          (GObject this))
@@ -103,7 +98,7 @@
       ((a1) (cond
                ; gtk_builder_get_object:
                ((eq? (type a1) type-vptr)
-                  (make a1 #f))
+                  (make a1 #e))
                ; GtkApplication
                ((GObject? a1)
                   (make (gtk_window_new 0) {

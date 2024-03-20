@@ -28,7 +28,8 @@
    ; lisp interface
    (define GtkLabel
       (define (make ptr options)
-         (define base (GtkWidget ptr))
+         (define base (GtkWidget ptr
+            options))
          (define this (ff-replace base {
             ; Fetches the text from the label of the button.
             'get-text (lambda ()
@@ -37,27 +38,18 @@
             ; Sets the text of the label of the button.
             'set-text (lambda (text)
                (gtk_label_set_text ptr text))
-
             ; Sets the labels text and attributes from markup.
             'set-markup (lambda (markup)
                (gtk_label_set_markup ptr markup))
 
             ; internals
             'super base
-            'setup (lambda (this options)
-               ((base 'setup) this options)
-
-               (if (options 'text #f)
-                  ((this 'set-text) (options 'text)))
-               (if (options 'markup #f)
-                  ((this 'set-markup) (options 'markup)))
-
-               #true)
          }))
-         ; apply options
-         ((this 'setup) this options)
-
-         ; smart object
+         ; setup and return
+         (if (options 'text #f)
+            ((this 'set-text) (options 'text)))
+         (if (options 'markup #f)
+            ((this 'set-markup) (options 'markup)))
          (GObject this))
 
    ; defaults
@@ -65,12 +57,12 @@
 
    ; main
    (case-lambda
-      (()   (make (gtk_label_new default-text) #f))
+      (()   (make (gtk_label_new default-text) #e))
       ((a1) (cond
                ((eq? (type a1) type-vptr)
-                  (make a1 #f))
+                  (make a1 #e))
                ((string? a1)
-                  (make (gtk_label_new a1) #f))
+                  (make (gtk_label_new a1) #e))
                ((ff? a1)
                   (make (gtk_label_new (a1 'text default-text)) a1))
                (else

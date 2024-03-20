@@ -61,7 +61,7 @@
 
    ; lisp interface
    (define GdkEvent
-      (define (make ptr)
+      (define (make ptr options)
          (define this {
             'ptr ptr ; raw pointer
 
@@ -78,8 +78,6 @@
 
             ; internals
             'super #false
-            'setup (lambda (this options)
-               #true)
          })
          ; smart object
          (GObject this))
@@ -87,7 +85,7 @@
    (case-lambda
       ((a1) (cond
                ((eq? (type a1) type-vptr)
-                  (make a1))
+                  (make a1 #e))
                (else
                   (runtime-error "GdkEvent: invalid argument" a1)) ))
    ))

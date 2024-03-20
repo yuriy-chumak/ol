@@ -83,18 +83,12 @@
 
             ; internals
             'super #false
-            'setup (lambda (this options)
-               (if (options 'file #f)
-                  ((this 'add-from-file) (options 'file)))
-               (if (options 'xml #f)
-                  ((this 'add-from-string) (options 'file)))
-
-               #true)
          })
-         ; apply options
-         (when (ff? options)
-            ((this 'setup) this options))
-         ; return object
+         ; setup and return
+         (if (options 'file #f)
+            ((this 'add-from-file) (options 'file)))
+         (if (options 'xml #f)
+            ((this 'add-from-string) (options 'file)))
          (GObject this))
    ; main
    (case-lambda

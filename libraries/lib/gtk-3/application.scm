@@ -25,6 +25,7 @@
    (define gtk_application_window_new (GTK3 GtkWidget* "gtk_application_window_new" GtkApplication*))
 
    ; lisp
+   (import (owl io))
    (define GtkApplication
       (define (make ptr options)
          (define this {
@@ -55,18 +56,14 @@
          })
 
          ; handle options
-         (when (ff? options)
-            ; apply options
-            (if (options 'on-activate #f)
-               ((this 'set-activate-handler) (options 'on-activate)))
-
-            (if (options 'multithreaded #f)
-               (gdk_threads_add_idle (G_CALLBACK
-                  (GTK_CALLBACK (userdata)
-                     (sleep 0)
-                     TRUE))
-                  #f))
-         )
+         (if (options 'on-activate #f)
+            ((this 'set-activate-handler) (options 'on-activate)))
+         (if (options 'multithreaded #f)
+            (gdk_threads_add_idle (G_CALLBACK
+               (GTK_CALLBACK (userdata)
+                  (sleep 0)
+                  TRUE))
+               #f))
          ; smart object
          (GObject this))
 

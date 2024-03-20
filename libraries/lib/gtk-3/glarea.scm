@@ -52,39 +52,35 @@
    ; lisp interface
    (define GtkGLArea
       (define (make ptr options)
-         (define base (GtkWidget ptr))
+         (define base (GtkWidget ptr
+            options))
          (define this (ff-replace base {
-
+            ; Marks the currently rendered data (if any) as invalid, and queues a redraw of the widget.
             'queue-render (lambda ()
                (gtk_gl_area_queue_render ptr))
+            ; Retrieves the GdkGLContext used by area.
             'get-context (lambda ()
                (gtk_gl_area_get_context ptr))
+            ; Ensures that the GdkGLContext used by area is associated with the GtkGLArea.
             'make-current (lambda ()
                (gtk_gl_area_make_current ptr))
+            ; Gets the current error set on the area.
             'get-error (lambda ()
                (gtk_gl_area_get_error ptr))
 
             'set-realize-handler (GtkEventHandler "realize" (widget userdata)
-                     (make widget #empty))
+                     (make widget #e))
             'set-render-handler (GtkEventHandler "render" (widget context userdata)
-                     (make widget #empty))
+                     (make widget #e))
 
-            ; internal
+            ; internals
             'super base
-            'setup (lambda (this options)
-               ((base 'setup) this options)
-
-               (if (options 'on-realize #f)
-                  ((this 'set-realize-handler) (options 'on-realize)))
-               (if (options 'on-render #f)
-                  ((this 'set-render-handler) (options 'on-render)))
-               #true)
          }))
-
          ; apply options
-         (when (ff? options)
-            ((this 'setup) this options))
-
+         (if (options 'on-realize #f)
+            ((this 'set-realize-handler) (options 'on-realize)))
+         (if (options 'on-render #f)
+            ((this 'set-render-handler) (options 'on-render)))
          ; smart object
          (GObject this))
 
