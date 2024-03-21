@@ -25,7 +25,6 @@
    (define gtk_application_window_new (GTK3 GtkWidget* "gtk_application_window_new" GtkApplication*))
 
    ; lisp
-   (import (owl io))
    (define GtkApplication
       (define (make ptr options)
          (define this {
@@ -49,7 +48,7 @@
                            (vm:pin (cons
                               (cons gint (list GtkApplication* type-vptr))
                               (lambda (app userdata)
-                                 (handler (make app #false)))))))
+                                 (handler (make app #e)))))))
                      (else
                         (runtime-error "GtkApplication" "invalid handler"))))
                (g_signal_connect ptr "activate" callback #f))
@@ -76,11 +75,11 @@
       (()   (make (gtk_application_new default-id default-flags)))
       ((a1) (cond
                ((eq? (type a1) type-vptr)
-                  (make a1 #f))
+                  (make a1 #e))
                ((string? a1)
-                  (make (gtk_application_new a1 default-flags) #f))
+                  (make (gtk_application_new a1 default-flags) #e))
                ((integer? a1)
-                  (make (gtk_application_new default-id a1) #f))
+                  (make (gtk_application_new default-id a1) #e))
                ((ff? a1)
                   (make (gtk_application_new
                               (a1 'id default-id)
@@ -90,9 +89,9 @@
       ((a1 a2)
             (cond
                ((and (string? a1) (integer? a2))
-                  (make (gtk_application_new a1 a2) #f))
+                  (make (gtk_application_new a1 a2) #e))
                ((and (string? a2) (integer? a1))
-                  (make (gtk_application_new a2 a1) #f))
+                  (make (gtk_application_new a2 a1) #e))
                (else
                   (runtime-error "GtkApplication" "invalid arguments combination"))))
    ))

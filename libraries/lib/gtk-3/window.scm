@@ -44,8 +44,7 @@
    ; lisp interface
    (define GtkWindow
       (define (make ptr options)
-         (define base (GtkContainer ptr
-            options))
+         (define base (GtkContainer ptr options))
          (define this (ff-replace base {
 
             ; Sets the title of the GtkWindow.
@@ -104,7 +103,6 @@
                   (make (gtk_window_new 0) {
                         'application a1
                      }))
-
                (else
                   (runtime-error "GtkWindow: invalid argument" a1)) ))
 

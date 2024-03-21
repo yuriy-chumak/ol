@@ -31,8 +31,7 @@
 
    (define GtkContainer
       (define (make ptr options)
-         (define base (GtkWidget ptr
-            options))
+         (define base (GtkWidget ptr options))
          (define this (ff-replace base {
 
             ; Adds widget to container.

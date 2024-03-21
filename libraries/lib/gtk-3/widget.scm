@@ -363,6 +363,13 @@
                   (make a1 #e))
                (else
                   (runtime-error "GtkWidget: invalid argument" a1)) ))
+      ((a1 op) (cond
+               ((integer? a1) ; GType
+                  (make (gtk_widget_new a1 op) #e))
+               ((and (eq? (type a1) type-vptr) (ff? op))
+                  (make a1 op))
+               (else
+                  (runtime-error "GtkWidget: invalid arguments" (cons a1 op))) ))
       ((a1 . pr) (cond
                ((integer? a1) ; GType
                   (make (apply gtk_widget_new (cons a1 pr)) #e))

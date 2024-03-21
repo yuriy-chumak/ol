@@ -31,8 +31,7 @@
    ; lisp interface
    (define GtkButton
       (define (make ptr options)
-         (define base (GtkWidget ptr
-            options))
+         (define base (GtkWidget ptr options))
          (define this (ff-replace base {
             ; Fetches the text from the label of the button.
             'get-text (lambda ()

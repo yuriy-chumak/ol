@@ -94,11 +94,11 @@
    (case-lambda
       ((a1) (cond
                ((eq? (type a1) type-vptr)
-                  (make a1 #f))
+                  (make a1 #e))
                ((ff? a1)
                   (make (gtk_builder_new) a1))
                ((string? a1)
-                  (make (gtk_builder_new_from_file a1) #f))
+                  (make (gtk_builder_new_from_file a1) #e))
                (else
                   (runtime-error "GtkBuilder: invalid argument" a1)) ))
       ((a1 op) (cond

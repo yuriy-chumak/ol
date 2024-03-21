@@ -52,8 +52,7 @@
    ; lisp interface
    (define GtkGLArea
       (define (make ptr options)
-         (define base (GtkWidget ptr
-            options))
+         (define base (GtkWidget ptr options))
          (define this (ff-replace base {
             ; Marks the currently rendered data (if any) as invalid, and queues a redraw of the widget.
             'queue-render (lambda ()
