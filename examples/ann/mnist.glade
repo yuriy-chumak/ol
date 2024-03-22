@@ -66,10 +66,11 @@
               </packing>
             </child>
             <child>
-              <object class="GtkImage" id="INPUT">
+              <object class="GtkGLArea" id="INPUT">
                 <property name="visible">True</property>
+                <property name="app-paintable">True</property>
                 <property name="can-focus">False</property>
-                <property name="stock">gtk-missing-image</property>
+                <property name="use-es">True</property>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -601,7 +602,7 @@
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="halign">start</property>
-                    <property name="label" translatable="yes">Neuron 2:</property>
+                    <property name="label" translatable="yes">Loss:</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -610,10 +611,12 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkImage" id="NEURON2">
+                  <object class="GtkAlignment" id="LOSS">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="stock">gtk-missing-image</property>
+                    <child>
+                      <placeholder/>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">True</property>
@@ -638,7 +641,7 @@
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="halign">start</property>
-                    <property name="label" translatable="yes">Loss:</property>
+                    <property name="label" translatable="yes">Neuron 2/3:</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -647,11 +650,36 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkAlignment" id="LOSS">
+                  <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="orientation">vertical</property>
+                    <property name="homogeneous">True</property>
                     <child>
-                      <placeholder/>
+                      <object class="GtkGLArea" id="NEURON3">
+                        <property name="visible">True</property>
+                        <property name="app-paintable">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="use-es">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkGLArea" id="NEURON2">
+                        <property name="visible">True</property>
+                        <property name="app-paintable">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="use-es">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>
@@ -686,10 +714,11 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkImage" id="NEURON1">
+                  <object class="GtkGLArea" id="NEURON1">
                     <property name="visible">True</property>
+                    <property name="app-paintable">True</property>
                     <property name="can-focus">False</property>
-                    <property name="stock">gtk-missing-image</property>
+                    <property name="use-es">True</property>
                   </object>
                   <packing>
                     <property name="expand">True</property>
