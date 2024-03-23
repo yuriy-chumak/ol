@@ -336,7 +336,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">4</property>
@@ -350,7 +350,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">0</property>
@@ -364,7 +364,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">1</property>
@@ -378,7 +378,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">2</property>
@@ -392,7 +392,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">3</property>
@@ -406,7 +406,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">5</property>
@@ -420,7 +420,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">6</property>
@@ -434,7 +434,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">7</property>
@@ -448,7 +448,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">8</property>
@@ -462,7 +462,7 @@
                         <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">True</property>
-                        <signal name="clicked" handler="regen" swapped="no"/>
+                        <signal name="clicked" handler="find" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left-attach">9</property>

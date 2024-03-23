@@ -10,9 +10,9 @@
 ; neural topology setup:
 ; ------------------------------------------------------------
 (define INPUT-LEN 784) ; every input image has 28 * 28 pixels,
-
-(define LAYER1-LEN 99) ; size of intermediate (hidden) layer I
 (define OUTPUT-LEN 10) ; and only 10 possible numbers (0 .. 9)
+
+(define LAYER1-LEN 99); size of intermediate (hidden) layer 1
 
 ; ------------------------------------------------------------
 
@@ -143,11 +143,15 @@
                   }"
                "#version 120 // OpenGL 2.1
                   uniform sampler2D matrix;
+                  uniform bool normalize;
                   uniform float shift;
                   void main(void) {
-                     float color = texture2D(matrix, gl_TexCoord[0].st).r;
-                     color += shift;
-                     gl_FragColor = vec4(color, color, color, 1.0);
+                     float weight = texture2D(matrix, gl_TexCoord[0].st).r;
+                     if (normalize) {
+                        weight += 1.0;
+                        weight /= 2.0;
+                     }
+                     gl_FragColor = vec4(weight, weight, weight, 1.0);
                   }")) )
 
          ; render texture
@@ -156,7 +160,8 @@
 
             (glUseProgram (car po))
             (glUniform1i (glGetUniformLocation (car po) "matrix") 0)
-            (glUniform1f (glGetUniformLocation (car po) "shift") (options 'shift 0))
+            ;(glUniform1f (glGetUniformLocation (car po) "shift") (options 'shift 0))
+            (glUniform1i (glGetUniformLocation (car po) "normalize") (if (options 'normalize #f) 1 0))
             (glColor3f 1 1 1)
             (glBindTexture GL_TEXTURE_2D (car id))
             (glBegin GL_QUADS)
@@ -181,9 +186,14 @@
 
             ; set texture content
             (glBindTexture GL_TEXTURE_2D I)
-            (glTexImage2D GL_TEXTURE_2D 0 GL_R32F
-               (first shape) (second shape)
-               0 GL_RED GL_FLOAT (cdr matrix))
+            (if matrix
+               (glTexImage2D GL_TEXTURE_2D 0 GL_R32F
+                  (first shape) (second shape)
+                  0 GL_RED GL_FLOAT (cdr matrix))
+            else
+               (glTexImage2D GL_TEXTURE_2D 0 GL_R32F
+                  1 1
+                  0 GL_RED GL_FLOAT #false) )
             (glBindTexture GL_TEXTURE_2D 0)
             ; signal rerender
             ((base 'queue-render)))
@@ -215,9 +225,12 @@
 (define INPUT (GlDrawArea
    ((builder 'get-object) "INPUT")))
 (define NEURON1 (GlDrawArea
-   ((builder 'get-object) "NEURON1") {'shift #i0.5}))
+   ((builder 'get-object) "NEURON1") {'normalize #t}))
 (define NEURON2 (GlDrawArea
-   ((builder 'get-object) "NEURON2") {'shift #i0.5}))
+   ((builder 'get-object) "NEURON2") {'normalize #t}))
+
+(define NEURON3 (GlDrawArea
+   ((builder 'get-object) "NEURON3") {'normalize #f}))
 
 ; custom output
 (define (show-calculated-answer answer label)
@@ -263,6 +276,7 @@
 
 ; common functions
 (define (calculate-loss)
+   ; прогоним проверку по 100 рандомным картинкам
    (define N 100)
    (/ (fold (lambda (S _)
                (define p (+ (random-integer (size test-images)) 1))
@@ -279,18 +293,26 @@
                ;; (define layer3 (Logistic (matrix·matrix layer2 matrix3)))
 
                (define output (Reshape layer2 (list (Size layer2)))) ; back to vector
-               (define ok (Matrix~ 1 (list->vector (map (lambda (i)  ; correct answer
-                     (if (eq? i test-label) #i1 #i0))
-                  (iota 10)))))
-               (+ S (/
-                  (fold (lambda (dx ok out)
-                           (+ dx (** (- ok out) 2)))
-                     0
-                     (matrix->list ok)
-                     (matrix->list output)) (Size output)) ))
+               ;; (define ok (Matrix~ 1 (list->vector (map (lambda (i)  ; correct answer
+               ;;       (if (eq? i test-label) #i1 #i0))
+               ;;    (iota 10)))))
+               ;; (+ S (/
+               ;;    (fold (lambda (dx ok out)
+               ;;             (+ dx (** (- ok out) 2)))
+               ;;       0
+               ;;       (matrix->list ok)
+               ;;       (matrix->list output)) (Size output)) ))
+               (define ok (- (fold (lambda (ok i)
+                     (if (> (Ref output i) (Ref output ok))
+                        i ok))
+                  1
+                  (iota (Size output) 1)) 1))
+               (if (= ok test-label)
+                  (+ S 1)
+                  S))
          0
          (iota N))
-      N))
+      (inexact N)))
 
 ; calculate raw loss on random data
 (when (null? (Loss))
@@ -298,9 +320,9 @@
    (Loss (list loss)))
 
 ; test functions
-(define (test)
+(define (test id)
    ; let's select random test image
-   (define p (+ (random-integer (size test-images)) 1))
+   (define p (if id id (+ (random-integer (size test-images)) 1)))
    ;; (define p 35)
    (gtk_label_set_text P (string-append " (test) " (number->string p)))
 
@@ -312,6 +334,7 @@
    ;; (define shifted image)
    ; show the input
    ((INPUT 'update) shifted)
+   ((NEURON3 'update) (Reshape shifted (list (Size shifted) 1))) ; TEMP
    ; correct answer
    (define label (ref test-labels p))
 
@@ -328,7 +351,6 @@
 
    ; show the output:
    (show-calculated-answer output label)
-
    ; нарисуем нейроны
    ((NEURON1 'update) matrix1)
    ((NEURON2 'update) matrix2)
@@ -438,7 +460,7 @@
             (unless (null? l)
                (plot "plot '-' with linespoints title '" (last l) "' lt rgb 'red', "
                           "'-' smooth bezier title 'approx' lt rgb 'black', "
-                          "0.2 title '0.2' lt rgb 'green'")
+                          "1.0 title '100%' lt rgb 'green'")
                (for-each plot l) (plot "e")
                (for-each plot l) (plot "e")))
 
@@ -471,7 +493,7 @@
 
                ; manual test(s)
                ('test
-                  (test)
+                  (test #f)
                   (mail sender 'ok)
                   (loop (wait-mail)))
 
@@ -500,7 +522,7 @@
       (unless (null? l)
          (plot "plot '-' with linespoints title '" (last l) "' lt rgb 'red', "
                     "'-' smooth bezier title 'approx' lt rgb 'black', "
-                    "0.2 title '0.2' lt rgb 'green'")
+                    "1.0 title '100%' lt rgb 'green'")
          (for-each plot l) (plot "e")
          (for-each plot l) (plot "e"))
 
@@ -520,6 +542,7 @@
 
 ((builder 'add-callback-symbol) "play"
    (GTK_CALLBACK (widget userdata)
+      ((NEURON3 'update) #f)
       (mail 'walker 'play)
       TRUE))
 
@@ -527,6 +550,17 @@
    (GTK_CALLBACK (widget userdata)
       (mail 'walker 'pause)
       TRUE))
+
+((builder 'add-callback-symbol) "find"
+   (GTK_CALLBACK (widget userdata)
+      (define label (string->number (((GtkButton widget) 'get-text))))
+      (let loop ()
+         (define id (+ (random-integer (size test-images)) 1))
+         (if (= (ref test-labels id) label)
+            (test id)
+            (loop)))
+      TRUE))
+
 
 (define do-batch
    (GTK_CALLBACK (widget userdata)
@@ -559,9 +593,10 @@
       (number->string (gtk_socket_get_id socket) 16) "'")
 (plot "set notitle")
 (plot "unset mouse")
-(plot "set yrange [0:]")
+(plot "set yrange [0:1.1]")
+(plot "set key right bottom")
 (plot "clear")
-(test)
+(test #f)
 
 (define quit
    (GTK_CALLBACK (widget userdata)
