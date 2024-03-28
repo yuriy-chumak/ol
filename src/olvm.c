@@ -2512,7 +2512,7 @@ apply:;
 		}
 		else
 		if (type != TBYTECODE)
-			CRASH(258, this);
+			ERROR(258, this);
 
 		// А не стоит ли нам переключить поток?
 		if (--ticker < 0) {
@@ -2625,7 +2625,7 @@ apply:;
 		goto done;       // колбек закончен! надо просто выйти наверх
 	}
 	
-	CRASH(261, this); // not callable
+	ERROR(261, this); // not callable
 
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
