@@ -7,7 +7,7 @@ Finite Functions
 Ol provides out-of-the-box key-value dictionaries called "finite functions".
 Such name means that you can use these dictionaries as regular functions along with using them as a dictionary.
 
-The finite functions (ffs) are internally represented as red-black trees, so performance is much better than widely used association lists.
+The finite functions (ffs) are internally represented as red-black trees, so performance is much better than commonly used associative lists.
 
 ```scheme
 > (define numbers {
@@ -31,7 +31,7 @@ The finite functions (ffs) are internally represented as red-black trees, so per
 As a key you *should* use objects that are comparable in sense of `eq?`. Such as
 * symbols,
 * #true, #false, #null, #empty, #eof
-* small numbers (enums),
+* small numbers (in sense of `value?`),
   * -16777215 .. +16777215 for 32-bit machines
   * -72057594037927935 .. +72057594037927935 for 64-bit machines.
 
@@ -48,7 +48,7 @@ The value `#empty` (`#e`, and `empty` which is deprecated) is an empty finite fu
 # get
 `(get ff key default)`, *procedure*
 
-Wrapper for direct ff call. Returns the default value if *ff* is not ff, instead of a runtime error.
+Wrapper for direct ff call. Returns the *default* value if *ff* is not ff, instead of a runtime error.
 
 ```scheme
 > (define numbers {
@@ -124,6 +124,8 @@ Same as `list->ff`.
 ```
 
 # ff->list
+`(ff->list ff)`, *procedure*
+
 # alist->ff
 `(alist->ff alist)`, *procedure*
 

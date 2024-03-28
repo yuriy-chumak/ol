@@ -157,8 +157,8 @@ Infix notation may have a very very much different arguments. So, a very very mu
 (\\  2 ^ 3 ^ 4)              ==> 2417851639229258349412352
 
 ; two mixed operations
-; (pay attention, that * will be calculated prior to +, etc.)
 (\\  2 + 5 - 7)              ==>   0
+; pay attention, the * is performed before +, because of order of operations.
 (\\  2 + 5 * 7)              ==>  37
 (\\  2 + 5 / 7)              ==> 19/7
 (\\  2 + 5 ^ 7)              ==> 78127

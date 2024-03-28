@@ -13,6 +13,7 @@ Answers
 1. How to assemble a string from parts in the nicest way?
    * Note: this is not a functional way! For a functional way, use conventional `string-append`.
    ```scheme
+   ; use open-output-string and get-output-string functions:
    (let ((buffer (open-output-string)))
       (for-each (lambda (i)
             (display-to buffer "0x")
@@ -52,7 +53,7 @@ Answers
            (car 7)))
    "looks like you'r trying to get a car of a non pair?"
 
-
+   ; you can fire an error manually using `raise` or `runtime-error` functions
    > (define (square-root x)
         (with-exception-handler
            (lambda (reason)
@@ -69,10 +70,9 @@ Answers
    '("error:" sqrt-error)
    ```
 
-   Use can fire an error using `raise` or `runtime-error`.
 
 1. How to use default values for a function arguments in easiest way?
-   * Use `case-apply`, for example.
+   * Use `case-apply`.
    ```scheme
    ; make a sequence of numbers
    ; (1 is a default value to step)
@@ -98,10 +98,37 @@ Answers
    ```
 
 1. How to split a strings by "," for example?
-   * Use builtin regexps (a lot [of examples](https://github.com/yuriy-chumak/ol/blob/master/tests/regex.scm) in the tests).
+   * Use builtin regexps ([a lot of examples](https://github.com/yuriy-chumak/ol/blob/master/tests/regex.scm) in the tests folder).
    ```scheme
    (c/,/ "a,b,c,hallo,z")  ==>  '("a" "b" "c" "hallo" "z")
    (c/-/ "2-12-1933")      ==>  '("2" "12" "1933")
    ```
+
+1. How to declare and use variables like in imperative languages, but without any hacks?
+   * Use `make-parameter` function from `(scheme dynamic-bindings)` library.
+   ```scheme
+   > (import (scheme dynamic-bindings))
+   > (define m (make-parameter 0))
+   > (for-each (lambda (x)
+           (if (integer? (sqrt x)) (m x)))
+        '(2 3 4 5 6 7))
+   > (m)
+   4
+   ```
+
+1. I need a hack to change the value of received function argument without returning new value as a function result.
+   * I don't recommend any hacks, but.. pass an argument boxed in list and use `set-car!` function.
+   ```scheme
+   > (define x (list 123))
+   > (car x)
+   123
+
+   > (define (f a)
+        (set-car! a (+ (car a) 5000)))
+   > (f x)
+   > (car x)
+   5123
+
+
 
 ...
