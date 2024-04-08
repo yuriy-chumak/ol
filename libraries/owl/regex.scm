@@ -927,12 +927,30 @@
                (all? get-maybe-g)) ;; fixme: add other search/replace match than g
             (make-replacer rex rep all? start?)))
 
+      ; global regex parser
       (define get-sexp-regex
-         (get-any-of
-            get-replace-regex
-            get-matcher-regex
-            get-cutter-regex
-            get-copy-matcher-regex)) ;; m/<regex>/ -> like /<regex>/ but returns a list of the matched data
+         (let-parse*(
+               (from (lambda (l r p ok) (ok l r p l)))
+               (regex (get-any-of
+                  get-replace-regex
+                  get-matcher-regex
+                  get-cutter-regex
+                  get-copy-matcher-regex)) ;; m/<regex>/ -> like /<regex>/ but returns a list of the matched data
+               (to (lambda (l r p ok) (ok l r p l))))
+            ; unicode regex form
+            (define form (bytes->string
+               (let loop ((l to) (name #n))
+                  (cond
+                     ((eq? l from)
+                        name)
+                     ((integer? (car l))
+                        (loop (cdr l) (cons (car l) name)))
+                     (else
+                        (loop (cdr l) name))))))
+            ; create new regex representation with stored form
+            (lambda args
+               (define name form)
+               (apply regex args)) ))
 
       ;; str -> rex|#false, for conversion of strings to complete matchers
       (define (string->complete-match-regex str)
@@ -949,4 +967,5 @@
       ;; POSIX (ERE)
       (define string->regex
          string->extended-regexp)
+
 ))
