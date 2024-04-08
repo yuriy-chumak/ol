@@ -30,6 +30,17 @@
       (define lp #\()
       (define rp #\))
 
+      ;; helper function
+      (define (regex? x)
+         (and (eq? (type x) type-closure)
+              (eq? (size x) 3)
+              ; advanced checks
+              (eq? (type (ref x 1)) type-procedure)
+              (string?   (ref x 2))
+              ;(eq?    (type (ref x 3)) type-closure)
+         ))
+
+
       ; hack: do not include full (owl math fp) library and save 1k for image
       ;       we use only this three functions:
 
@@ -68,6 +79,9 @@
                ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e tl))
                ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) tl))
                ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
+
+               ((regex? obj)
+                  (render-quoted-string (ref obj 2) tl))
 
                ((function? obj)
                   (render "#function" tl))
@@ -197,7 +211,11 @@
                ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) (delay (k sh))))
                ((eq? obj #eof)   (cons* #\# #\e #\o #\f (delay (k sh))))
 
-               ;; render name is one is known, just function otherwise
+               ((regex? obj)
+                  (render-quoted-string (ref obj 2)
+                     (delay (k sh))))
+
+               ;; render name if one is known, just #function otherwise
                ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
                ((function? obj)
                   (let ((name (get names obj #f)))
