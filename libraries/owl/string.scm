@@ -22,8 +22,8 @@
       c-string           ; str → #false | UTF-8 encoded null-terminated raw data string
       null-terminate     ; see ^
       finish-string      ; useful to construct a string with sharing (todo: remove)
-      render-string
-      render-quoted-string
+      format-string
+      format-quoted-string
       str-iter           ; "a .. n" -> lazy (a .. n) list
       str-iterr          ; "a .. n" -> lazy (n .. a) list
       str-iter-bytes     ; "a .. n" -> lazy (a .. n) list of UTF-8 encoded bytes
@@ -188,9 +188,9 @@
 
       ; note: it is assumed string construction has checked that all code points are valid and thus encodable
       (define (string->bytes str)    (str-foldr encode-point #null str))
-      (define (render-string str tl) (str-foldr encode-point tl str))
+      (define (format-string str tl) (str-foldr encode-point tl str))
       (define (string->runes str)    (str-foldr cons #null str))
-      (define (render-quoted-string str tl)
+      (define (format-quoted-string str tl)
          (str-foldr encode-quoted-point tl str))
 
       (define (symbol->string str)

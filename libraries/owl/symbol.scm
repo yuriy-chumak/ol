@@ -8,7 +8,7 @@
 
    (begin
       (define (render-symbol obj tl)
-         (render-string
+         (format-string
             (if (eq? (type obj) type-symbol)
                (let ((str (symbol->string obj)))
                   (cond

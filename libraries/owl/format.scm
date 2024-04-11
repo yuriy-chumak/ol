@@ -15,7 +15,7 @@
       (scheme vector)
       (otus blobs)
       (only (owl math) render-number number?)
-      (only (owl string) render-string string? string->list))
+      (only (owl string) format-string string? string->list))
 
    (export
       make-writer  ;; names → ((obj tl) → (byte ... . tl))
@@ -48,7 +48,7 @@
                (render-number obj tl 10))
 
             ((string? obj)
-               (render-string obj tl))
+               (format-string obj tl))
 
             ((symbol? obj)
                (render-symbol obj tl))
@@ -77,7 +77,7 @@
             ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
 
             ((regex? obj)
-               (render-quoted-string (ref obj 2) tl))
+               (format-quoted-string (ref obj 2) tl))
 
             ((function? obj)
                (render "#function" tl))
@@ -180,7 +180,7 @@
 
                ((string? obj)
                   (cons #\"
-                     (render-quoted-string obj  ;; <- all eager now
+                     (format-quoted-string obj  ;; <- all eager now
                         (lcons #\" (k sh)))))
 
                ((vector? obj)
@@ -206,7 +206,7 @@
                ((eq? obj #eof)   (cons* #\# #\e #\o #\f (delay (k sh))))
 
                ((regex? obj)
-                  (render-quoted-string (ref obj 2)
+                  (format-quoted-string (ref obj 2)
                      (delay (k sh))))
 
                ;; render name if one is known, just #function otherwise
