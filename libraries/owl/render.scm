@@ -22,7 +22,7 @@
 
    (export
       make-writer  ;; names → ((obj tl) → (byte ... . tl))
-      render)       ;; obj tl            → (byte ... . tl)
+      format)      ;; args -> formatted list
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -45,68 +45,67 @@
       ;       we use only this three functions:
 
       ; (display), (print)
-      (define (make-renderer meta)
-         (define (render obj tl)
-            (cond
-               ((number? obj)
-                  (render-number obj tl 10))
+      (define (render obj tl)
+         (cond
+            ((number? obj)
+               (render-number obj tl 10))
 
-               ((string? obj)
-                  (render-string obj tl))
+            ((string? obj)
+               (render-string obj tl))
 
-               ((symbol? obj)
-                  (render-symbol obj tl))
+            ((symbol? obj)
+               (render-symbol obj tl))
 
-               ((pair? obj)
-                  (cons #\(
-                     (cdr
-                        (let loop ((obj obj) (tl (cons #\) tl)))
-                           (cond
-                              ((null? obj) tl)
-                              ((pair? obj)
-                                 (cons #\space
-                                    (render (car obj) (loop (cdr obj) tl))))
-                              (else
-                                 (cons* #\space #\. #\space (render obj tl))))))))
+            ((pair? obj)
+               (cons #\(
+                  (cdr
+                     (let loop ((obj obj) (tl (cons #\) tl)))
+                        (cond
+                           ((null? obj) tl)
+                           ((pair? obj)
+                              (cons #\space
+                                 (render (car obj) (loop (cdr obj) tl))))
+                           (else
+                              (cons* #\space #\. #\space (render obj tl))))))))
 
-               ((vector? obj)
-                  (cons #\# (render (vector->list obj) tl)))
+            ((vector? obj)
+               (cons #\# (render (vector->list obj) tl)))
 
-               ((eq? obj #null)
-                  (cons* #\( #\) tl))
+            ((eq? obj #null)
+               (cons* #\( #\) tl))
 
-               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e tl))
-               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e tl))
-               ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) tl))
-               ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
+            ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e tl))
+            ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e tl))
+            ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) tl))
+            ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
 
-               ((regex? obj)
-                  (render-quoted-string (ref obj 2) tl))
+            ((regex? obj)
+               (render-quoted-string (ref obj 2) tl))
 
-               ((function? obj)
-                  (render "#function" tl))
-                  ;; anonimas
-                  ;(let ((symp (interact 'intern ['get-name obj])))
-                  ;   (if symp
-                  ;      (cons* #\# #\< (render symp (cons #\> tl)))
-                  ;      (render "#<function>" tl))))
+            ((function? obj)
+               (render "#function" tl))
+               ;; anonimas
+               ;(let ((symp (interact 'intern ['get-name obj])))
+               ;   (if symp
+               ;      (cons* #\# #\< (render symp (cons #\> tl)))
+               ;      (render "#<function>" tl))))
 
-               ((bytevector? obj)
-                  (cons* #\# #\u #\8 (render (bytevector->list obj) tl)))
+            ((bytevector? obj)
+               (cons* #\# #\u #\8 (render (bytevector->list obj) tl)))
 
-               ((ff? obj) ;; fixme: ff not parsed yet this way
-                  (cons* #\# #\f #\f (render (ff->alist obj) tl)))
+            ((ff? obj) ;; fixme: ff not parsed yet this way
+               (cons* #\# #\f #\f (render (ff->alist obj) tl)))
 
-               ((port? obj) (cons* #\# #\< #\f #\d #\space (render (vm:cast obj type-enum+) (cons #\> tl))))
+            ((port? obj) (cons* #\# #\< #\f #\d #\space (render (vm:cast obj type-enum+) (cons #\> tl))))
 
-               ((eq? (type obj) type-const) ; ???
-                  (render-number (vm:cast obj type-enum+) tl 16))
+            ((eq? (type obj) type-const) ; ???
+               (render-number (vm:cast obj type-enum+) tl 16))
 
-               ((eq? (type obj) type-vptr)
-                  (append (string->list "#vptr") tl))
+            ((eq? (type obj) type-vptr)
+               (append (string->list "#vptr") tl))
 
-               ((blob? obj)
-                  (cons #\# (render (blob->list obj) tl)))
+            ((blob? obj)
+               (cons #\# (render (blob->list obj) tl)))
 
 
 ; disabled, because records currently unload
@@ -118,15 +117,13 @@
 ;                           (cons #\} tl)
 ;                           (lrange (size obj) -1 1)))))
 
-               ((rlist? obj) ;; fixme: rlist not parsed yet
-                  (cons* #\# #\r (render (rlist->list obj) tl)))
+            ((rlist? obj) ;; fixme: rlist not parsed yet
+               (cons* #\# #\r (render (rlist->list obj) tl)))
 
-               (else
-                  (cons* #\# #\w #\t #\f #\? tl)))) ;; What This Format?
-         render)
-
-      (define render
-         (make-renderer #empty))
+            (else
+               (cons* #\# #\w #\t #\f #\? tl)))) ;; What This Format?
+         
+      (define format render)
 
       ;;; serialize suitably for parsing, not yet sharing preserving
 

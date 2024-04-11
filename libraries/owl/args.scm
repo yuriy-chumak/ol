@@ -49,7 +49,7 @@
             #false))
 
       (define (fail fools)
-         (write-bytes stderr (foldr render '(10) fools))
+         (write-bytes stderr (foldr format '(#\newline) fools))
          #false)
 
       (define blank "nan") ; <- unique because allocated here
@@ -69,7 +69,7 @@
                      ok?
                      (begin
                         (write-bytes stderr
-                           (foldr render '(10)
+                           (foldr format '(#\newline)
                               (list "mandatory option not given: " (get rule 'long "(missing)"))))
                         #false))
                   ok?))
@@ -206,7 +206,7 @@
             (foldr
                (λ (rule tl)
                   (foldr
-                     render
+                     format
                      tl
                      (list "  "
                         (let ((short (getf rule 'short)))

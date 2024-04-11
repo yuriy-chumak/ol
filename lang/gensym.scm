@@ -73,7 +73,7 @@
 
       (define (gensym exp)
          (let*((id (+ 1 (if (vector? exp) (max-ast-id exp 0) (max-gensym-id exp 0))))
-               (digits (cons #\g (render id null))))
+               (digits (cons #\g (format id null))))
             (string->symbol (runes->string digits))))
 
       ;(gensym 1)

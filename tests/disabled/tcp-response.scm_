@@ -14,7 +14,7 @@
 (define sock (car sp))
 (define port (cdr sp))
 
-(define message (render "hello there" null))
+(define message (format "hello there" null))
 
 (actor 'socket-thread
    (lambda ()

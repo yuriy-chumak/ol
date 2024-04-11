@@ -269,7 +269,7 @@
       ;;          (else (loop (ll))))))
 
       (define (display-to to obj)
-         (printer (render obj '()) 0 null to))
+         (printer (format obj #n) 0 null to))
 
       (define display (case-lambda
          ((obj) (display-to stdout obj))
@@ -285,10 +285,10 @@
 
 
       (define (print-to to . args)
-         (printer (foldr render '(#\newline) args) 0 #null to))
+         (printer (foldr format '(#\newline) args) 0 #null to))
 
       (define (print . args)
-         (printer (foldr render '(#\newline) args) 0 #null stdout))
+         (printer (foldr format '(#\newline) args) 0 #null stdout))
 
 
       ;; fixme: system-X do not belong here
