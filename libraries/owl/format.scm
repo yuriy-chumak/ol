@@ -51,7 +51,7 @@
                (format-string obj tl))
 
             ((symbol? obj)
-               (render-symbol obj tl))
+               (format-symbol obj tl))
 
             ((pair? obj)
                (cons #\(
@@ -140,7 +140,7 @@
             (cond
                ; most likely
                ((symbol? obj)
-                  (render-symbol obj (delay (k sh))))
+                  (format-symbol obj (delay (k sh))))
 
                ; lists
                ((pair? obj)

@@ -1,5 +1,5 @@
 (define-library (owl symbol)
-   (export render-symbol)
+   (export format-symbol)
 
    (import
       (scheme core)
@@ -7,7 +7,7 @@
       (owl string))
 
    (begin
-      (define (render-symbol obj tl)
+      (define (format-symbol obj tl)
          (format-string
             (if (eq? (type obj) type-symbol)
                (let ((str (symbol->string obj)))
