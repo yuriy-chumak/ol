@@ -139,7 +139,7 @@
                      (cons (+ fp 1) (ff-update clos val fp))))
                (cons 0 clos) clos)))
 
-      (define (render-field clos pos)
+      (define (encode-field clos pos)
          (λ (elem out)
             (if (value? elem)
                (enc-immediate elem out)
@@ -151,8 +151,8 @@
                   ; starts with a nonzero byte when the natural > 0
                   (send-number (- pos target) out)))))
 
-      (define (render-fields out lst pos clos)
-         (foldr (render-field clos pos) out lst))
+      (define (encode-fields out lst pos clos)
+         (foldr (encode-field clos pos) out lst))
 
       (define (copy-bytes out vec p)
          (if (eq? p -1)
@@ -182,7 +182,7 @@
                      ;  t fits in 6 bits -> (+ (<< t 2) 3) (ditto)
                      (cons* 1 t
                         (send-number s
-                           (render-fields out (vector->list val) pos clos))))))))
+                           (encode-fields out (vector->list val) pos clos))))))))
 
       (define fasl-finale (list 0)) ; stream end marker
 
