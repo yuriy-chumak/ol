@@ -21,8 +21,8 @@
       (only (owl string) render-string string? string->list))
 
    (export
-      make-serializer  ;; names → ((obj tl) → (byte ... . tl))
-      render)          ;; obj tl            → (byte ... . tl)
+      make-writer  ;; names → ((obj tl) → (byte ... . tl))
+      render)       ;; obj tl            → (byte ... . tl)
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -309,7 +309,7 @@
                   out
                   (loop (put out (car shares) n) (cdr shares) (+ n 1))))))
 
-      (define (make-lazy-serializer names datum?)
+      (define (make-lazy-writer names datum?)
          (let ((ser (make-ser names datum?)))
             (λ (val tl share?)
                (maybe-quote val
@@ -320,8 +320,8 @@
                      val (λ (sh) tl))
                   datum?))))
 
-      (define (make-serializer names datum?)
-         (let ((serialize-lazy (make-lazy-serializer names datum?)))
+      (define (make-writer names datum?)
+         (let ((serialize-lazy (make-lazy-writer names datum?)))
             (λ (val tl)
                (force-ll
                   (serialize-lazy val tl #true)))))

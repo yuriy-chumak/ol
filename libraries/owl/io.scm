@@ -240,7 +240,7 @@
                (printer (cdr lst) (++ len) (cons (car lst) out) fd))))
 
       (define (writer-to names datum?)
-         (let ((serialize (make-serializer names datum?)))
+         (let ((serialize (make-writer names datum?)))
             (λ (to obj)
                (printer (serialize obj '()) 0 null to))))
 
