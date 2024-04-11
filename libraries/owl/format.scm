@@ -14,7 +14,7 @@
       (scheme bytevector)
       (scheme vector)
       (otus blobs)
-      (only (owl math) render-number number?)
+      (only (owl math) format-number number?)
       (only (owl string) format-string string? string->list))
 
    (export
@@ -45,7 +45,7 @@
       (define (render obj tl)
          (cond
             ((number? obj)
-               (render-number obj tl 10))
+               (format-number obj tl 10))
 
             ((string? obj)
                (format-string obj tl))
@@ -96,7 +96,7 @@
             ((port? obj) (cons* #\# #\< #\f #\d #\space (render (vm:cast obj type-enum+) (cons #\> tl))))
 
             ((eq? (type obj) type-const) ; ???
-               (render-number (vm:cast obj type-enum+) tl 16))
+               (format-number (vm:cast obj type-enum+) tl 16))
 
             ((eq? (type obj) type-vptr)
                (append (string->list "#vptr") tl))
@@ -172,11 +172,11 @@
                      ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 (delay (k sh))))
                      ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 (delay (k sh))))
                      (else
-                        (cons* #\# #\i (render-number obj (delay (k sh)) 10)))))
+                        (cons* #\# #\i (format-number obj (delay (k sh)) 10)))))
 
                ; todo: datum? and rational? and denom is 10, 100, 1000, ... - write with dot
                ((number? obj)
-                  (render-number obj (delay (k sh)) 10))
+                  (format-number obj (delay (k sh)) 10))
 
                ((string? obj)
                   (cons #\"

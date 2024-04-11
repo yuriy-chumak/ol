@@ -42,7 +42,7 @@
       sum product
       
       ilog ilog2
-      render-number
+      format-number
       
       rational complex
 
@@ -2190,30 +2190,30 @@
             (lets ((this st (op st)))
                (cons this (unfold op st end?)))))
 
-      (define (render-digits num tl base)
+      (define (format-digits num tl base)
          (fold (λ (a b) (cons b a)) tl
             (unfold (λ (n) (lets ((q r (quotrem n base))) (values (char-of r) q))) num zero?)))
 
       ;; move to math.scm
-      (define (render-number num tl base)
+      (define (format-number num tl base)
          (cond
             ((eq? (type num) type-rational)
-               (render-number (ref num 1)
+               (format-number (ref num 1)
                   (cons #\/
-                     (render-number (ref num 2) tl base))
+                     (format-number (ref num 2) tl base))
                   base))
             ((eq? (type num) type-complex)
                ;; todo: imaginary number rendering looks silly, written in a hurry
                (lets ((real imag num))
-                  (render-number real
+                  (format-number real
                      (cond
                         ((eq? imag 1) (cons* #\+ #\i tl))
                         ((eq? imag -1) (cons* #\- #\i tl))
                         ((< imag 0) ;; already has sign
-                           (render-number imag (cons #\i tl) base))
+                           (format-number imag (cons #\i tl) base))
                         (else
                            (cons #\+
-                              (render-number imag (cons #\i tl) base))))
+                              (format-number imag (cons #\i tl) base))))
                      base)))
             ((eq? (type num) type-inexact)
                (cond
@@ -2231,8 +2231,8 @@
                         (if (or (< 1000000000 nump)
                                 (< nump 0.00000001))
                               (let ((exponent (ffloor (flog2 nump 10))))
-                                 (render-number (fmul num (fexpt 10 (negate exponent)))
-                                                (cons* #\e (render-number (exact exponent) tl base)) base))
+                                 (format-number (fmul num (fexpt 10 (negate exponent)))
+                                                (cons* #\e (format-number (exact exponent) tl base)) base))
                         else
                            (let*((int (floor nump))
                                  (frac (- nump int))
@@ -2243,15 +2243,15 @@
                                           ((< i 0.00000001) (if (null? l) '(#\0) l))
                                           (else
                                              (loop (* (- i (floor i)) 10) (- n 1) (cons (char-of (floor i)) l)))))))
-                                 (number (render-number int (cons #\. (append number tl)) base)))
+                                 (number (format-number int (cons #\. (append number tl)) base)))
                               (if sign (cons #\- number) number)))))))
             ((< num 0)
                (cons #\-
-                  (render-number (negate num) tl base)))
+                  (format-number (negate num) tl base)))
             ((< num base)
                (cons (char-of num) tl))
             (else
-               (render-digits num tl base))))
+               (format-digits num tl base))))
 
 
       ;;;

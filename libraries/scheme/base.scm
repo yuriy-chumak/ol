@@ -301,9 +301,9 @@
       ; procedure:  (number->string z)        * (scheme base)
       ; procedure:  (number->string z radix)  * (scheme base)
       (define number->string (case-lambda
-         ((n)  (list->string (render-number n '() 10)))
+         ((n)  (list->string (format-number n '() 10)))
          ((n radix)
-               (list->string (render-number n '() radix)))))
+               (list->string (format-number n '() radix)))))
 
       (assert (number->string 0)            ===> "0")
       (assert (number->string 1.2)          ===> "6/5")

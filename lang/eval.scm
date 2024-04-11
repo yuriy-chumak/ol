@@ -900,7 +900,7 @@
                   (if (eq? d e) ; у нас удачная дробь
                      (let loop ((n n) (i i) (out #n))
                         (if (zero? i)
-                           (render-number n (cons #\. out) 10)
+                           (format-number n (cons #\. out) 10)
                         else
                            (let* ((a b (quotrem n 10)))
                               (loop a (-- i) (cons (+ b #\0) out)))))
