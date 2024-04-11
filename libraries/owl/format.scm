@@ -1,7 +1,4 @@
-
-;; making printable representations
-
-(define-library (owl render)
+(define-library (owl format)
 
    (import
       (scheme core)

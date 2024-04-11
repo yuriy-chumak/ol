@@ -68,7 +68,7 @@
       (owl list-extra)
       (owl ff)
       (otus blobs)
-      (owl render)
+      (owl format)
       (owl math)
       (otus fasl)
       (owl lazy)

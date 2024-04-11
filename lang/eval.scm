@@ -42,7 +42,7 @@
       (owl io)
       (owl math)
       (owl list-extra)
-      (owl render)
+      (owl format)
       (owl string)
       (owl parse) (lang sexp)
       (owl string)

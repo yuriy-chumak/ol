@@ -17,7 +17,7 @@
       (owl math)
       (otus async)
       (owl io)
-      (owl render)
+      (owl format)
       (owl list)
       (owl string)
       (owl ff)) ;; MODULE OUTPUT DOWNGRADED
