@@ -57,6 +57,7 @@ List of Standard procedures
 - [Macro System](macros.md).
 - [Finite Functions](ffs.md).
 - [Infix Notation](infix-notation.md).
+- [Regular Expressions](regex.md).
 - [Strings](strings.md), TBD.
 - [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.

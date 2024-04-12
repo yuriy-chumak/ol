@@ -406,7 +406,8 @@
       ;; rex ll → #false | #(ls buff ms), for replacing
       (define (rex-match-prefix rex ll)
          (rex ll null blank-ranges
-            (λ (ls buff ms) [ls buff ms])))
+            (λ (ls buff ms)
+               [ls buff ms])))
 
       ;; rex str → bool (if matches anywhere)
       (define (rex-match-anywhere? rex ll)
@@ -436,13 +437,30 @@
                (rex-match-anywhere? rex (iter target)))))
 
       ;; another half-sensible but at the moment useful thing would be (m/<regex>/ iterable) -> #false | (head . tail)
+      (define (rex-copy-match-prefix? rex ll)
+         (rex ll null blank-ranges
+            (λ (ls buff ms)
+               [ls buff ms])))
+
+      ;; rex str → bool (if matches anywhere)
+      (define (rex-copy-match-anywhere? rex ll)
+         (cond
+            ((null? ll)
+               (rex-copy-match-prefix? rex ll))
+            ((pair? ll)
+               (or (rex-copy-match-prefix? rex ll)
+                   (rex-copy-match-anywhere? rex (cdr ll))))
+            (else
+               (rex-copy-match-anywhere? rex (ll)))))
+
       (define (make-copy-matcher rex start?)
          (if start?
             (λ (target)
-               (let ((res (rex-match-prefix rex (iter target))))
-                  (if res (reverse (ref res 2)) res)))
+               (let ((res (rex-copy-match-prefix? rex (iter target))))
+                  (if res (reverse (ref res 2)))))
             (λ (target)
-               (runtime-error "no non-head copy matcher yet: " rex))))
+               (let ((res (rex-copy-match-anywhere? rex (iter target))))
+                  (if res (reverse (ref res 2)))))))
 
       (define (flush out)
          (if (null? out)
@@ -932,10 +950,10 @@
          (let-parse*(
                (from (lambda (l r p ok) (ok l r p l)))
                (regex (get-any-of
-                  get-replace-regex
-                  get-matcher-regex
-                  get-cutter-regex
-                  get-copy-matcher-regex)) ;; m/<regex>/ -> like /<regex>/ but returns a list of the matched data
+                  get-replace-regex        ;; s/.../.../
+                  get-matcher-regex        ;; m/.../
+                  get-cutter-regex         ;; c/.../
+                  get-copy-matcher-regex)) ;; g/<regex>/ -> like /<regex>/ but returns a list of the matched data
                (to (lambda (l r p ok) (ok l r p l))))
             ; unicode regex form
             (define form (bytes->string
