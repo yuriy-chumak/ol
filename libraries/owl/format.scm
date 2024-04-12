@@ -212,7 +212,7 @@
                ;; render name if one is known, just #function otherwise
                ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
                ((function? obj)
-                  (let ((name (get names obj #f)))
+                  (let ((name (names obj #f)))
                      (foldr render (delay (k sh))
                         (if name
                            (list "#<" name ">")

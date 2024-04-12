@@ -316,47 +316,40 @@
                      info)
                   (display "\n")))))
 
-      (define (function->name env function)
-         (call/cc (lambda (return)
-            (let loop ((kvs (ff-iter env)))
-               (cond
-                  ((null? kvs) (return "lambda"))
-                  ((pair? kvs)
-                     (let ((k (caar kvs))
-                           (v (cdar kvs)))
-                        (let ((v (ref v 2)))
-                           (if (function? v)
-                              (if (eq? v function)
-                                 (return (symbol->string k)))
-                              (let ((v (ref v 2)))
-                                 (if (function? v)
-                                    (if (eq? v function)
-                                       (return (symbol->string k))))))))
-                     (loop (cdr kvs)))
-                  (else (loop (kvs))))))))
-      (define (decode-value env l)
-         (cond
-            ((function? l)
-               (string-append "#<" (function->name env l) ">"))
-            ((list? l)
-               (map (lambda (r) (if (not (function? r)) r (decode-value env r))) l))
-            ((vector? l)
-               (vector-map (lambda (r) (if (not (function? r)) r (decode-value env r))) l))
-            (else l)))
+      ; find name by function ref
+      (define (function-name-getter env)
+         (lambda (function default)
+            (call/cc (lambda (return)
+               (let loop ((kvs (ff-iter env)))
+                  (cond
+                     ((null? kvs) (return "lambda"))
+                     ((pair? kvs)
+                        (let ((k (caar kvs))
+                              (v (cdar kvs)))
+                           (let ((v (ref v 2)))
+                              (if (function? v)
+                                 (if (eq? v function)
+                                    (return (symbol->string k)))
+                                 (let ((v (ref v 2)))
+                                    (if (function? v)
+                                       (if (eq? v function)
+                                          (return (symbol->string k))))))))
+                        (loop (cdr kvs)))
+                     (else (loop (kvs)))))))))
 
       ;; render the value if isatty?, and print as such (or not at all) if it is a repl-message
       ;; if interactive mode and output fails, the error is fatal
       (define (prompt env val)
          (if (interactive? env)
+         then
+            (define echo (writer-to (function-name-getter env) #false))
             (if (repl-message? val)
-            then
                (if (cdr val)
-                  (print (decode-value env (cdr val))))
+                  (echo stdout (cdr val)))
             else
                (maybe-show-metadata env val)
-               ((writer-to (env-get env name-tag #empty) #false) ; write-simple
-                  stdout (decode-value env val))
-               (display "\n"))))
+               (echo stdout val))
+            (display "\n")))
 
       (define (suspend path)
          (let ((state (call/cc (λ (cont) (vm:mcp cont 16 #t #t)))))
@@ -682,9 +675,12 @@
                                  (define dis (disassembly value))
                                  (if dis
                                  then
-                                    (print "name: " (decode-value env value))
+                                    (define echo (writer-to (function-name-getter env) #false))
+                                    (display "name: ") (echo stdout value)
+                                       (newline)
                                     (print "type: " (dis 'type))
-                                    (print "code: " (decode-value env (dis 'code)))
+                                    (display "code: ") (echo stdout (dis 'code))
+                                       (newline)
                                     (print "disassembly '(length command . args):")
                                     (for-each print (dis 'disassembly))
                                  else
@@ -1235,8 +1231,19 @@
                      (if (function? hook:fail)
                         (hook:fail reason (syscall 1002))))
 
-                  (if (list? reason)
-                     (print-repl-error (decode-value env reason)))
+                  (when (list? reason)
+                     (letrec ((function->name (function-name-getter env))
+                              (rmap (lambda (var)
+                                 (cond
+                                    ((pair? var)
+                                       (map rmap var))
+                                    ((vector? var)
+                                       (vector-map rmap var))
+                                    ((function? var)
+                                       (function->name var var))
+                                    (else
+                                       var)))))
+                        (print-repl-error (rmap reason))))
 
                   ; better luck next time
                   (boing env))
