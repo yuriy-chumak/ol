@@ -20,28 +20,28 @@
 ;; note that slashes must be quoted in strings. no need to do that in embedded regexps.
 (define regex-tests
   '(  ;; matching tests: <regex> <str> match?/replace-result
-      ("m/a/" "axx" #true)
-      ("m/b*/" "" #true) ;; fixme: this fails now
-      ("m/b/" "axx" #false)
-      ("m/./" "" #false) ;; ??
-      ("m/./" "ax" #true)
-      ("m/aa/" "aaxx" #true)
+      (m/a/ "axx" #true)
+      (m/b*/ "" #true)
+      (m/b/ "axx" #false)
+      (m/./ "" #false) ;; ??
+      (m/./ "ax" #true)
+      (m/aa/ "aaxx" #true)
       
       ;; fixme: character classes and strings do handle \t and pals at all. also check if it is ok to support \xff and \uffff in both.
-      ("m/\\t/" "	" #true) ;; todo: not entirely sure if this kind of quotations are allowed
+      ("m/\\t/" "	" #true)
       ("m/(a)\\1/" "aax" #true)
-      ("m/a*/" "aaaaaaaaaaaaxx" #true)
-      ("m/a*b*/" "aaaaaaaaaaaabbbbbbxx" #true)
-      ("m/a*b*/" "bbbbbbxxx" #true)
-      ("m/a*b*/" "xxx" #true)
-      ("m/a*bc*/" "abx" #true)
-      ("m/slartibartfast/" "slartibartfastening" #true)
-      ("m/(ab)/" "abx" #true)
-      ("m/(ab)*/" "abababx" #true)
-      ("m/(ab)*c/" "abababcx" #true)
-      ("m/^(ab)*c$/" "ababac" #false)
-      ("m/(a(bc)*)*/" "aabcabcbcabcbcbcx" #true)
-      ("m/a(b*)(c*)x/" "abbcccx" #true) ;; double quote needed since the first one is handled by owl
+      (m/a*/ "aaaaaaaaaaaaxx" #true)
+      (m/a*b*/ "aaaaaaaaaaaabbbbbbxx" #true)
+      (m/a*b*/ "bbbbbbxxx" #true)
+      (m/a*b*/ "xxx" #true)
+      (m/a*bc*/ "abx" #true)
+      (m/slartibartfast/ "slartibartfastening" #true)
+      (m/(ab)/ "abx" #true)
+      (m/(ab)*/ "abababx" #true)
+      (m/(ab)*c/ "abababcx" #true)
+      (m/^(ab)*c$/ "ababac" #false)
+      (m/(a(bc)*)*/ "aabcabcbcabcbcbcx" #true)
+      (m/a(b*)(c*)x/ "abbcccx" #true) ;; double quote needed since the first one is handled by owl
       ("m/(a*)b\\1/" "aabaax" #true)
       ("m/(a*)b\\1/" "aabaaaxe" #true)
       ("m/a|b/" "abc" #true)
@@ -171,7 +171,7 @@
       ("m/a+(?<!aa)b/" "ab" #true)
       ("m/^[ae]+(?<!aaa)b/" "aaeaab" #true)
       ("m/^[ae]+(?<!aaa)b/" "aaeaaab" #false)
-      ("g/^fo+/" "foobar" (102 111 111))   ;; exerimental way to grab the matched area for other use
+      ("g/^fo+/" "foobar" "foo")
       ("m/(.)\\1/" (#x31337 #x31337) #true) ;; check that bignum back references match (not using eq? for them)
       ("m/^a{0,}/" "b" #true)
       ("m/^a{0,}/" "ab" #true)
