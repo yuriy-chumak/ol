@@ -14,8 +14,7 @@
       (scheme bytevector)
       (scheme vector)
       (otus blobs)
-      (only (owl math) format-number number?)
-      (only (owl string) format-string string? string->list))
+      (only (owl math) format-number number?))
 
    (export
       make-writer  ;; names → ((obj tl) → (byte ... . tl))
@@ -77,7 +76,7 @@
             ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
 
             ((regex? obj)
-               (format-quoted-string (ref obj 2) tl))
+               (format-string (ref obj 2) tl))
 
             ((function? obj)
                (render "#function" tl))
@@ -206,7 +205,7 @@
                ((eq? obj #eof)   (cons* #\# #\e #\o #\f (delay (k sh))))
 
                ((regex? obj)
-                  (format-quoted-string (ref obj 2)
+                  (format-string (ref obj 2)
                      (delay (k sh))))
 
                ;; render name if one is known, just #function otherwise
