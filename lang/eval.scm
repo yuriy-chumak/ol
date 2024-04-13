@@ -342,13 +342,13 @@
       (define (prompt env val)
          (if (interactive? env)
          then
-            (define echo (writer-to (function-name-getter env) #false))
             (if (repl-message? val)
                (if (cdr val)
-                  (echo stdout (cdr val)))
+                  (display (cdr val)))
             else
                (maybe-show-metadata env val)
-               (echo stdout val))
+               ((writer-to (function-name-getter env) #false)
+                  stdout val))
             (display "\n")))
 
       (define (suspend path)
