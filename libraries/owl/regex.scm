@@ -616,8 +616,8 @@
       (define big-alpha? (λ (b) (and (less? 64 b) (less? b 91)))) ;; A-Z
 
       (define alnum? (λ (b) (or (alpha? b) (big-alpha? b) (digit? b))))
-      (define word? (λ (b) (or (eq? b #\_) (alnum? b))))
-      (define space? (λ (b) (has? '(#\space #\tab #\return #\newline #\v #\f) b)))
+      (define word? (λ (b) (or (eq? b #\_) (alnum? b))))            ;vtab formfeed
+      (define space? (λ (b) (has? '(#\space #\tab #\return #\newline #x0b #x0c) b)))
 
       ;; shared automata parts corresponding to predefined character classes
       (define accept-digit (pred digit?))
