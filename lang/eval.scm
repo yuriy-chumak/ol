@@ -444,7 +444,7 @@
             ((function? thing) thing)
             ((string? thing)
                (string->regex
-                  (foldr string-append "" (list "m/" thing "/"))))
+                  (string-append "m/" thing "/")))
             ((symbol? thing)
                (thing->rex (symbol->string thing)))
             (else #false)))
