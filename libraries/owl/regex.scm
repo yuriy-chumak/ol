@@ -425,8 +425,8 @@
             ((pair? x) x)
             ((null? x) x)
             ((string? x) (str-iter x))
-            ((blob? x) (blob-iter x))
-            (else (runtime-error "how do i iterate " x))))
+            ((blob? x) (blob-iter x)) ; todo: remove?
+            (else (runtime-error "invalid regex argument" x))))
 
       ;; todo: now that the matchers are constructed here, the terminals /[^]...[$]/ could be handled externally!
       (define (make-matcher rex start?)
@@ -454,13 +454,14 @@
                (rex-copy-match-anywhere? rex (ll)))))
 
       (define (make-copy-matcher rex start?)
-         (if start?
-            (λ (target)
-               (let ((res (rex-copy-match-prefix? rex (iter target))))
-                  (if res (reverse (ref res 2)))))
-            (λ (target)
-               (let ((res (rex-copy-match-anywhere? rex (iter target))))
-                  (if res (reverse (ref res 2)))))))
+         (define matcher (if start? rex-copy-match-prefix? rex-copy-match-anywhere?))
+         (λ (target)
+            (let ((res (matcher rex (iter target))))
+               (if res
+                  (let ((out (reverse (ref res 2))))
+                     (if (string? target)
+                        (runes->string out)
+                        out))))))
 
       (define (flush out)
          (if (null? out)
@@ -561,13 +562,11 @@
       ;; todo: use the flags of the regexp to choose what kind of replacer to make. now implicit /g
       (define (make-replacer rex rep all? start?)
          (λ (target)
-            (cond
-               ((string? target)
-                  (runes->string (rex-replace (str-iter target) rex rep start? all?)))
-               (else
-                  (rex-replace (iter target) rex rep start? all?)))))
-
-
+            (let ((res (rex-replace (iter target) rex rep start? all?)))
+               (if res
+                  (if (string? target)
+                     (runes->string res)
+                     res)))))
 
       ;;;
       ;;; Regexp string parsing
@@ -646,7 +645,7 @@
                   (imm-val #\s accept-space)       ;; \s = [ \t\r\n\v\f]
                   (imm-val #\S accept-nonspace)    ;; \S = [ \t\r\n\v\f]
                   (imm-val #\\ (imm #\\))          ;; \\ = /
-                  (imm-val #\/ (imm #\/)))))       ;; \/ = /
+                  (imm-val #\/ (imm #\/)) )))      ;; \/ = /
             val))
 
       ;; strings are already sequences of unicode code points, so no need to decode here
