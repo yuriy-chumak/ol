@@ -1,7 +1,7 @@
 Regular Expressions
 ===================
 
-`(owl regex)` library implements a mostly complete POSIX-compatible regular expressions.
+Ol implements a mostly complete POSIX-compatible regular expressions.
 
 You can declare the regular expression directly using Ol's builtin syntax, or you can convert the regex string representation into the actual regular expression itself. Regexes usage as simple as any other function - just use it with single string or list argument.
 
@@ -13,7 +13,9 @@ and [split](#split).
 Additional [string to regex](#string-regex) helper function is provided.
 
 # Simple matching regular expression
-`(m/.../ str-or-stream)`, *procedure*
+`(m/.../ string-or-stream)`, *procedure*
+
+Returns #true if the given text matches the regex pattern.
 
 ```scheme
 (m/a/ "hello")              ==>  #false
@@ -193,15 +195,29 @@ Additional [string to regex](#string-regex) helper function is provided.
 ```
 
 # Matching with returning matched part
-`(g/.../ str-or-list)`, *procedure*
+`(g/.../ string-or-stream)`, *procedure*
+
+Same as simple matching, but returns the matched part (and is a little slower).  
+Returns string if string is given, and list if given stream.
 
 ```scheme
 (g/a/ "hello")              ==>  #false
 (g/a/ "aloha")              ==>  "a"
+(g/b{2}/ "ababbc")          ==>  "bb"
+(g/a{2,4}/ "aaaaaa")        ==>  "aaaa"
+(g/(a(bc|de)*)+/
+   "aabcadedeabcbcbcx")     ==>  "aabcadedeabcbcbc"
+(g/(a(bc|de)*)+?/
+   "aabcadedeabcbcbcx")     ==>  "a"
+(g/t[ah]i/ "anything")      ==>  "thi"
+(g/t[ah]i/ (string->list "anything"))
+                            ===  '(#\t #\h #\i)
 ```
 
 # Replace
-`(s/.../.../)`, *procedure*
+`(s/.../.../ string-or-stream)`, *procedure*
+
+Replaces matched part of given string (or stream).
 
 ```scheme
 (s/[a-z]/#/ "ABabcCDE")     ==>  "AB#bcCDE"
@@ -212,7 +228,7 @@ Additional [string to regex](#string-regex) helper function is provided.
 ```
 
 # Split
-`(c/.../`), *procedure*
+`(c/.../ string-or-stream)`, *procedure*
 
 ```scheme
 (c/ / "ab cde f  ghi")      ==> '("ab" "cde" "f" "" "ghi")

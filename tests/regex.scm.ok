@@ -156,6 +156,5 @@
  | m/^a{3,}/ + 'aaaab' = '#true'
  | m/\t\t/ + '		' = '#true'
  | c/\t/ + 'a	b	c' = '(a b c)'
- | c/[ \t\n\r]+/ + 'a  	b	c	
-	d' = '(a b c d)'
+ | c/[ \t\n\r]+/ + 'a  	b	c		d' = '(a b c d)'
  '--> ~~\o\ ALL TESTS PASSED /o/~~ 
