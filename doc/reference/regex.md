@@ -141,6 +141,11 @@ Additional [string to regex](#string-regex) helper function is provided.
 (m/a|b|c/ "c")              ==>  #true
 (m/a|b|c/ "d")              ==>  #false
 
+; [...] - One of the characters in the brackets
+(m/[abc]/ "a")               ==>  #true
+(m/[abc]/ "c")               ==>  #true
+(m/[abc]/ "d")               ==>  #false
+
 ;; Grouping
 ; (...) - capturing group, counting started from 1
 ; \n - contents of group n (from 1 to 9)
@@ -192,7 +197,7 @@ Additional [string to regex](#string-regex) helper function is provided.
 
 ```scheme
 (g/a/ "hello")              ==>  #false
-(g/a/ "aloha")              ==>  '(#\a) ; "a"
+(g/a/ "aloha")              ==>  "a"
 ```
 
 # Replace

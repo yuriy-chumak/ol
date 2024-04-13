@@ -28,8 +28,8 @@
       (m/aa/ "aaxx" #true)
       
       ;; fixme: character classes and strings do handle \t and pals at all. also check if it is ok to support \xff and \uffff in both.
-      ("m/\\t/" "	" #true)
-      ("m/(a)\\1/" "aax" #true)
+      (m/\t/ "	" #true)
+      (m/(a)\1/ "aax" #true)
       (m/a*/ "aaaaaaaaaaaaxx" #true)
       (m/a*b*/ "aaaaaaaaaaaabbbbbbxx" #true)
       (m/a*b*/ "bbbbbbxxx" #true)
@@ -112,7 +112,7 @@
       (m/<[λ→x.( )]*>/ "<(λx.(x x) λx.x) (λx.x λx.x)>x" #true)
       (m/[a-w]+/ "trolololox" #true)
       (m/[a-λ]+/ "trolololoλfoo→" #true)
-      ("m/[\\t]/" "	" #true)
+      (m/[\t]/ "	" #true)
       ("m/^[\\\\\\t\\x61\\u03bb]+$/" "\\	aλ" #true)
       (m/([a-z]+) ([a-z]+) tech \1/ "dr prof tech dr provost zakharov" #true)
       (m/[^a]bba/ "abba" #false)
@@ -180,9 +180,9 @@
       (m/^a{3,}/ "aab" #false)
       (m/^a{3,}/ "aaab" #true)
       (m/^a{3,}/ "aaaab" #true)
-      ("m/\\t\\t/" "\t\t" #true)
-      ("c/\\t/" "a\tb\tc" ("a" "b" "c"))
-      ("c/[ \\t\\n\\r]+/" "a  \tb\tc\t\r\td" ("a" "b" "c" "d"))
+      (m/\t\t/ "\t\t" #true)
+      (c/\t/ "a\tb\tc" ("a" "b" "c"))
+      (c/[ \t\n\r]+/ "a  \tb\tc\t\r\td" ("a" "b" "c" "d"))
       ))
 
 ;; run a small battery of tests during load to check for issues
