@@ -38,7 +38,7 @@ Returns #true if the given text matches the regex pattern.
 (m/\D/ "7")                 ==>  #false
 (m/\D/ "b")                 ==>  #true
 
-; \w - one word character (0-9, a-z, a-Z, and _)
+; \w - one word character (0-9, a-z, A-Z, and _)
 (m/\w/ "2")                 ==>  #true
 (m/\w/ "x")                 ==>  #true
 (m/\w/ "Y")                 ==>  #true
@@ -68,7 +68,8 @@ Returns #true if the given text matches the regex pattern.
 (m/\S/ "\f")                ==>  #false
 (m/\S/ "\b")                ==>  #true
 
-; special characters (dot, backslash, newline, etc.)
+; special characters (\. - single dot, \\ - single backslash, etc.)
+; supported only \., \n, \r, \t, \\, \/
 (m/\./ "a")                 ==>  #false
 (m/\./ ".")                 ==>  #true
 (m/\\/ "a")                 ==>  #false
@@ -78,7 +79,78 @@ Returns #true if the given text matches the regex pattern.
 (m/\n/ "
 ")                          ==>  #true
 
-; ^ - line begin, $ - line end
+; | - Alternation (OR operand)
+(m/a|b/ "a")                ==>  #true
+(m/a|b/ "b")                ==>  #true
+(m/a|b/ "c")                ==>  #false
+(m/a|b|c/ "a")              ==>  #true
+(m/a|b|c/ "b")              ==>  #true
+(m/a|b|c/ "c")              ==>  #true
+(m/a|b|c/ "d")              ==>  #false
+(m/\w|\d/ "1")              ==>  #true
+(m/\w|\d/ "p")              ==>  #true
+(m/\w|\d/ "%")              ==>  #false
+
+; [...] - One of the characters in the brackets
+(m/[abc]/ "a")              ==>  #true
+(m/[abc]/ "c")              ==>  #true
+(m/[abc]/ "d")              ==>  #false
+
+; [^...] - None of the characters in the brackets
+(m/[^abc]/ "a")             ==>  #false
+(m/[^abc]/ "c")             ==>  #false
+(m/[^abc]/ "d")             ==>  #true
+
+; [.-.] - One of the characters in the range
+(m/[a-o]/ "a")             ==>  #true
+(m/[a-o]/ "i")             ==>  #true
+(m/[a-o]/ "o")             ==>  #true
+(m/[a-o]/ "p")             ==>  #false
+(m/[a-o]/ "x")             ==>  #false
+(m/[a-dm-p]/ "a")          ==>  #true
+(m/[a-dm-p]/ "c")          ==>  #true
+(m/[a-dm-p]/ "f")          ==>  #false
+(m/[a-dm-p]/ "o")          ==>  #true
+(m/[a-dm-p]/ "x")          ==>  #false
+
+; [^.-.] - One of the characters not in the range
+(m/[^a-o]/ "a")            ==>  #false
+(m/[^a-o]/ "i")            ==>  #false
+(m/[^a-o]/ "o")            ==>  #false
+(m/[^a-o]/ "p")            ==>  #true
+(m/[^a-o]/ "x")            ==>  #true
+(m/[^a-dm-p]/ "a")         ==>  #false
+(m/[^a-dm-p]/ "c")         ==>  #false
+(m/[^a-dm-p]/ "f")         ==>  #true
+(m/[^a-dm-p]/ "o")         ==>  #false
+(m/[^a-dm-p]/ "x")         ==>  #true
+
+
+; special characters inside [...] (\[ - single [, \^ - single ^, etc.)
+; supported only: \a, \b, \t, \n, \v, \f, \r, \[, \], \\, \^, \x.., \u....
+(m/[\a]/ (string #\alarm))      ==>  #true
+(m/[\b]/ (string #\backspace))  ==>  #true
+(m/[\t]/ (string #\tab))        ==>  #true
+(m/[\n]/ (string #\newline))    ==>  #true
+(m/[\r]/ (string #\return))     ==>  #true
+(m/[\v]/ (string #\vtab))       ==>  #true
+(m/[\f]/ (string #\formfeed))   ==>  #true
+(m/[\[]/ "[")                   ==>  #true
+(m/[\]]/ "]")                   ==>  #true
+(m/[\\]/ (string #\backslash))  ==>  #true
+(m/[\^]/ "^")                   ==>  #true
+
+; [\x..], [\u....] - ascii and unicode chars
+(m/[\x00]/ "\0")            ==>  #true
+(m/[\x25]/ "%")             ==>  #true
+(m/[\x52]/ "R")             ==>  #true
+(m/[\x5F]/ "_")             ==>  #true
+(m/[\x0000]/ "\0")          ==>  #true
+(m/[\u0052]/ "R")           ==>  #true
+(m/[\u03bb]/ "λ")           ==>  #true
+(m/[\u0210]/ "Ȑ")           ==>  #true
+
+; ^ - Line begin, $ - Line end
 (m/^a/ "abc")               ==>  #true
 (m/^a/ "bac")               ==>  #false
 (m/a$/ "abc")               ==>  #false
@@ -133,20 +205,6 @@ Returns #true if the given text matches the regex pattern.
 (m/^a{2,}$/ "aa")           ==>  #true
 (m/^a{2,}$/ "aaa")          ==>  #true
 (m/^a{2,}$/ "aaaaaaaaaa")   ==>  #true
-
-; | - Alternation (OR operand)
-(m/a|b/ "a")                ==>  #true
-(m/a|b/ "b")                ==>  #true
-(m/a|b/ "c")                ==>  #false
-(m/a|b|c/ "a")              ==>  #true
-(m/a|b|c/ "b")              ==>  #true
-(m/a|b|c/ "c")              ==>  #true
-(m/a|b|c/ "d")              ==>  #false
-
-; [...] - One of the characters in the brackets
-(m/[abc]/ "a")               ==>  #true
-(m/[abc]/ "c")               ==>  #true
-(m/[abc]/ "d")               ==>  #false
 
 ;; Grouping
 ; (...) - capturing group, counting started from 1
