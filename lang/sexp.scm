@@ -396,6 +396,13 @@
             (word "return"    #\return)    ;13
             (word "escape"    #\escape)    ;27
             (word "space"     #\space)     ;32
+            (word "percent"   #\percent)   ;37
+            (word "ampersand" #\ampersand) ;38
+            (word "comma"     #\comma)     ;44
+            (word "slash"     #\slash)     ;47
+            (word "colon"     #\colon)     ;58
+            (word "semicolon" #\semicolon) ;59
+            (word "backslash" #\backslash) ;92
             (word "delete"    #\delete))) ;127
 
       ;; fixme: add named characters #\newline, ...
