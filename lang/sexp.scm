@@ -391,8 +391,8 @@
             (word "backspace" #\backspace) ; 8
             (word "tab"       #\tab)       ; 9
             (word "newline"   #\newline)   ;10
-            ;; (word "vtab"      #\vtab)
-            ;; (word "formfeed"  #\formfeed)
+            (word "vtab"      #\vtab)      ;11
+            (word "formfeed"  #\formfeed)  ;12
             (word "return"    #\return)    ;13
             (word "escape"    #\escape)    ;27
             (word "space"     #\space)     ;32
