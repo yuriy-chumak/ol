@@ -61,10 +61,10 @@
 )
 ; -=( native functions )=-------------------------------------
 (cond-expand
-   (Android (include "lib/gl/Android.scm"))
-   (Linux (include "lib/gl/Linux.scm"))
-   (Emscripten (include "lib/gl/WebGL.scm"))
-   (Windows (include "lib/gl/Windows.scm"))
+   (Android (include "lib/gl/Android.lisp"))
+   (Linux (include "lib/gl/Linux.lisp"))
+   (Emscripten (include "lib/gl/WebGL.lisp"))
+   (Windows (include "lib/gl/Windows.lisp"))
    (else (runtime-error "Unsupported platform" *uname*)))
 
 ; -=( opengl coroutine )=-------------------------------------
