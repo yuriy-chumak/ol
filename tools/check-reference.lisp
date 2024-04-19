@@ -77,9 +77,9 @@
 (import (scheme inexact))
 
 (define ok '(#true))
-(define (error code answer)
-   (print "test error:")
-   (print "  " YELLOW code RED " IS NOT EQUAL TO " GREEN answer END)
+(define (error code answer should-be)
+   (print " invalid case: " YELLOW code END)
+   (print "  " RED answer END " IS NOT EQUAL TO " GREEN should-be END)
    (set-car! ok #false))
 
 (for-each (lambda (filename)
@@ -97,7 +97,7 @@
                               (define actual (get-output-string buffer))
                               (if (and (not (null? (cdar expressions)))
                                        (not (string=? answer actual)))
-                                 (error code answer))
+                                 (error code actual answer))
                               env))))
                         (loop (cdr expressions) env))))
                   ((try-parse |code ==> answer| code-block #false) => (lambda (expressions)
@@ -107,7 +107,7 @@
                         (define a (eval code env))
                         (define b (eval answer env))
                         (unless (equal? a b)
-                           (error code answer))
+                           (error code (ref a 2) answer))
                         (loop (cdr expressions) env))))
                   (else
                      (unless (or (null? code-block)
