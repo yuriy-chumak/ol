@@ -58,8 +58,8 @@ List of Standard procedures
 - [Finite Functions](ffs.md).
 - [Infix Notation](infix-notation.md).
 - [Regular Expressions](regex.md).
+- [JSON Files](json.md).
 - [Strings](strings.md), TBD.
-- [Bytevectors](bytevectors.md), TBD.
 - [Control features](control-features.md), TBD.
 - [Exceptions](exceptions.md), TBD.
 - [Environments and evaluation](environments-and-evaluation.md), TBD.

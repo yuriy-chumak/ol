@@ -989,10 +989,10 @@
       (define type-rlist-node       14) ; reference
       (define type-blob-dispatch    15) ; reference
 
-      (define type-bytecode         TBYTECODE)   ; reference, blob bytecode
+      (define type-bytecode         TBYTECODE)   ; reference, bytecode
       (define type-procedure        TPROCEDURE)  ; reference, pure function
       (define type-closure          TCLOSURE)    ; reference, function with closure(s)
-      (define type-bytevector       TBYTEVECTOR) ; reference, blob
+      (define type-bytevector       TBYTEVECTOR) ; reference, bytevector
       (define type-constructor      TCONSTRUCTOR); reference, constructor
 
       (define type-string-dispatch  21) ; reference

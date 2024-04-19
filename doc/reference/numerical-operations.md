@@ -25,7 +25,7 @@ Please note that Ol works with *exact* numbers by default. If you want to use *i
 1.2e15
 ```
 
-Number notation allows the use of a radix prefix for binary (*#b*), octal (*#o*), decimal (*#d*), or hexadecimal (*#x*) numbers. The decimal prefix is used by default and can be omitted.  
+Number notation allows the use of a radix prefix for binary (`#b`), octal (`#o`), decimal (`#d`), or hexadecimal (`#x`) numbers. The decimal prefix is used by default and can be omitted.  
 The decimal point is allowed, of course.
 
 ```scheme
@@ -552,7 +552,7 @@ Returns the multiplicative inverse of its argument.
 
 `(/ z1 z2 ...)`, *procedure*
 
-Returns the quotient of arguments, associating to the left. Up to 249 arguments are supported.  
+Returns the quotient of arguments, associating to the left (divide the first argument by the product of the remaining arguments). Up to 249 arguments are supported.  
 Produces exact results when all given arguments are exact.
 
 ```scheme

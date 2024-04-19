@@ -117,7 +117,7 @@ Answers
    ```
 
 1. I need a hack to change the value of received function argument without returning new value as a function result.
-   * I don't recommend any hacks, but.. pass an argument boxed in list and use `set-car!` function.
+   * I don't recommend any hacks, but.. pass an argument boxed in list and use `set-car!` function (works only with *symbols* and *value*s!).
    ```scheme
    > (define x (list 123))
    > (car x)
@@ -129,6 +129,6 @@ Answers
    > (car x)
    5123
 
-
+1. 
 
 ...
