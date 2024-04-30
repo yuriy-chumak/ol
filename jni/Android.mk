@@ -54,9 +54,22 @@ LOCAL_LDLIBS   += -llog -landroid
 
 include $(BUILD_SHARED_LIBRARY)
 
+# -- java interface ----------------------------------------------------------
+include $(CLEAR_VARS)
+LOCAL_MODULE   := olvmjava
+LOCAL_SHARED_LIBRARIES := olvm
+
+# configure
+LOCAL_CFLAGS   += $(OL_CFLAGS)
+LOCAL_CFLAGS   += -DREPL=repl
+LOCAL_SRC_FILES += ../extensions/jni.c ../tmp/repl.c
+LOCAL_LDLIBS   += -llog -landroid
+
+include $(BUILD_SHARED_LIBRARY)
 
 # -- libMAIN -----------------------------------------------------------------
 # native app
+ifneq ($(wildcard $(LOCAL_PATH)/vrApi/stub.c),)
 include $(CLEAR_VARS)
 LOCAL_MODULE   := main
 LOCAL_SHARED_LIBRARIES := olvm vrapi # TODO: move "vrapi" under define
@@ -85,9 +98,10 @@ endif
 
 LOCAL_EXPORT_LDFLAGS := -u ANativeActivity_onCreate
 include $(BUILD_SHARED_LIBRARY)
+endif
 
 # -- gl2es -----------------------------------------------------------------------
-ifneq ("$(wildcard $(LOCAL_PATH)/gl2es/src)","")
+ifneq ($(wildcard $(LOCAL_PATH)/gl2es/src),)
 include $(CLEAR_VARS)
 LOCAL_MODULE := gl2es
 
@@ -106,7 +120,7 @@ include $(BUILD_SHARED_LIBRARY)
 endif
 
 # # -- gl4es -----------------------------------------------------------------------
-# ifneq ("$(wildcard $(LOCAL_PATH)/gl4es/src)","")
+# ifneq ($(wildcard $(LOCAL_PATH)/gl4es/src),)
 # include $(CLEAR_VARS)
 # LOCAL_MODULE := gl4es
 
@@ -136,7 +150,7 @@ endif
 # endif
 
 # -- GLU -------------------------------------------------------------------------
-ifneq ("$(wildcard $(LOCAL_PATH)/GLU/src)","")
+ifneq ($(wildcard $(LOCAL_PATH)/GLU/src),)
 include $(CLEAR_VARS)
 LOCAL_MODULE := GLU
 
@@ -249,7 +263,7 @@ include $(BUILD_SHARED_LIBRARY)
 endif
 
 # -- SOIL ------------------------------------------------------------------------
-ifneq ("$(wildcard $(LOCAL_PATH)/SOIL/src)","")
+ifneq ($(wildcard $(LOCAL_PATH)/SOIL/src),)
 include $(CLEAR_VARS)
 LOCAL_MODULE   := SOIL
 
@@ -266,7 +280,7 @@ endif
 
 
 # # -- freetype2 -------------------------------------------------------------------
-# ifneq ("$(wildcard $(LOCAL_PATH)/freetype2/src)","")
+# ifneq ($(wildcard $(LOCAL_PATH)/freetype2/src),)
 # include $(CLEAR_VARS)
 # LOCAL_MODULE   := freetype2
 
@@ -301,7 +315,8 @@ endif
 # endif
 
 # -- libvrapi ------------------------------------------------------------------
-ifneq ("$(wildcard $(LOCAL_PATH)/vrApi/libs/$(TARGET_ARCH_ABI)/libvrapi.so)","")
+ifneq ($(wildcard $(LOCAL_PATH)/vrApi/libs/$(TARGET_ARCH_ABI)/libvrapi.so),)
+ifneq ($(wildcard $(LOCAL_PATH)/vrApi/stub.c),)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := vrapi
@@ -319,6 +334,7 @@ LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 
 include $(BUILD_SHARED_LIBRARY)
 
+endif
 endif
 
 # -- newton-dynamics ---------------------------------------------------------
