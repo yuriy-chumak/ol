@@ -5628,15 +5628,27 @@ int main(int argc, char** argv)
 		if (bin == -1)
 			goto can_not_open_file; // не смогли файл открыть
 
+		// check the file access
+		struct stat st;
+		if (fstat(bin, &st))
+			goto can_not_stat_file;
+		// empty file, or pipe, or fifo...
+		if (st.st_size == 0)
+#ifndef REPL
+			// olvm can't handle files with unknown size,
+			//  because can't deserialize such things.
+			goto invalid_binary_script;
+#else
+			// ol handle pipes/fifos as a text scripts.
+			goto continue_load;
+#endif
+
 		int pos = read(bin, &bom, 1);  // прочитаем один байт
 		if (pos == -1)
 			goto can_not_read_file;
 
-		struct stat st;
-		if (fstat(bin, &st))
-			goto can_not_stat_file;
-
-		// if (bom == '#') { // skip possible hashbang
+		// skip possible hashbang:
+		// if (bom == '#') {
 		// 	while (read(bin, &bom, 1) == 1 && bom != '\n')
 		// 		st.st_size--;
 		// 	st.st_size--;
@@ -5672,6 +5684,7 @@ int main(int argc, char** argv)
 		}
 	}
 
+continue_load:
 	set_signal_handler();
 
 #if	HAVE_SOCKETS && defined(_WIN32)
