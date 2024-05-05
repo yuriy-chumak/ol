@@ -30,14 +30,20 @@
 
 static jobject java_asset_manager = NULL;
 static AAssetManager *asset_manager = NULL;
-// static AAsset **fds = NULL; // file descriptors
-// static int fds_size = 0;
+static AAsset **fds = NULL; // file descriptors
+static int fds_size = 0;
 
 JNIEXPORT void JNICALL NATIVE(nativeSetAssetManager)(JNIEnv *jenv, jobject jobj, jobject assetManager)
 {
 	LOGD("> nativeSetAssetManager()");
 	java_asset_manager = (*jenv)->NewGlobalRef(jenv, assetManager);
 	asset_manager = AAssetManager_fromJava(jenv, java_asset_manager);
+
+	// file system init:
+	fds_size = 16;
+	if (fds)
+		free(fds);
+	fds = (AAsset **)calloc(fds_size, sizeof(*fds));
 	LOGD("< nativeSetAssetManager()");
 }
 
@@ -45,8 +51,9 @@ int assets_open(const char *filename, int flags, int mode, void *userdata)
 {
 	char *filename1 = (char*)filename;
 
+	// try to open file as usual
 	int file = open(filename1, flags, mode);
-	LOGD("open file:1: %s -> %d(%s)", filename1, file, file != -1 ? "Ok" : strerror(errno));
+	LOGD("open file1: %s -> %d(%s)", filename1, file, file != -1 ? "Ok" : strerror(errno));
 	if (file != -1)
 		return file;
 
@@ -56,17 +63,94 @@ int assets_open(const char *filename, int flags, int mode, void *userdata)
 	snprintf(filename2, strlen(home) + strlen(filename) + 2, "%s/%s", home, filename);
 
 	file = open(filename2, flags, mode);
-	LOGD("open file:2: %s -> %d(%s)", filename2, file, file != -1 ? "Ok" : strerror(errno));
+	LOGD("open file2: %s -> %d(%s)", filename2, file, file != -1 ? "Ok" : strerror(errno));
 	if (file != -1)
 		return file;
 
-	// TODO: handle java assets
+	// still no file? handle project assets
+	// 1. remove "./" if any
+	if (strncmp(filename, "./", 2) == 0)
+		filename += 2;
+
+	AAsset *asset = AAssetManager_open(asset_manager, filename, 0);
+	LOGD("open asset: %s -> %p(%s)", filename, asset, asset != 0 ? "Ok" : "Fail");
+	if (asset)
+	{
+		int i = 3; // 0, 1, 2 - reserved
+		for (; i < fds_size; i++) {
+			if (fds[i] == 0) {
+				LOGD("asset %p -> file %d", asset, -i);
+				fds[i] = asset;
+				file = -i;
+				break;
+			}
+		}
+		// no available descriptors?
+		if (i == fds_size) {
+			int fds_size_new = fds_size * 5 / 8; // 1.6, ~1.618
+			AAsset **fds_new = realloc(fds, fds_size_new);
+			if (fds_new) {
+				fds = fds_new;
+				fds_size = fds_size_new;
+
+				LOGD("asset %p -> file %d", asset, -i);
+				fds[i] = asset;
+				file = -i;
+			}
+		}
+	}
 
 	return file;
 }
 
-// todo: assets_close
-// todo: assets_read
+int assets_close(int fd, void *userdata)
+{
+	LOGD("close file: %d", fd);
+	// assets ?
+	if (fd < 0) {
+		fd = -fd;
+		if (fd < fds_size) {
+			AAsset *aa = fds[fd];
+			if (aa != 0) {
+				AAsset_close(aa);
+				fds[fd] = 0;
+				return 0;
+			}
+		}
+		// error:
+		return -1;
+	}
+	// regular file descriptor
+	else
+		return close(fd);
+}
+
+ssize_t assets_read(int fd, void *buf, size_t count, void *userdata)
+{
+	LOGD("read file: %d, %p, %d", fd, buf, (int)count);
+	// assets ?
+	if (fd < 0) {
+		fd = -fd;
+		if (fd < fds_size) {
+			AAsset *aa = fds[fd];
+			if (aa != 0) {
+				LOGD("    asset: %p", aa);
+				int rr = AAsset_read(aa, buf, count);
+				LOGD("    return %d", rr);
+				return rr;
+			}
+		}
+		// error:
+		LOGD("    return %d", -1);
+		return -1;
+	}
+	// regular file descriptor
+	else {
+		int rr = read(fd, buf, count);
+		LOGD("    return %d", rr);
+		return rr;
+	}
+}
 
 // redirect stdout/stderr to logcat!
 ssize_t assets_write(int fd, void *buf, size_t count, void *userdata)
@@ -113,12 +197,10 @@ JNIEXPORT void JNICALL NATIVE(nativeNew)(JNIEnv *jenv, jobject class)
 	OL_new(&ol, REPL);
 	OLVM_userdata(ol.vm, &ol);
 
-	//OLVM_set_open(ol.vm, assets_open);
-	//OLVM_set_close(ol.vm, assets_close);
-	//OLVM_set_read(ol.vm, assets_read);
-
-	// stdout/stderr to logcat redirector
-	OLVM_set_write(ol.vm, assets_write);
+	OLVM_set_open(ol.vm, assets_open);
+	OLVM_set_close(ol.vm, assets_close);
+	OLVM_set_read(ol.vm, assets_read);
+	OLVM_set_write(ol.vm, assets_write); // stdout/stderr to logcat redirector included
 
 	LOGD("< nativeNew()");
 	return;
