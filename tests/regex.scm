@@ -168,6 +168,8 @@
       (m/^[ae]+(?<!aaa)b/ "aaeaab" #true)
       (m/^[ae]+(?<!aaa)b/ "aaeaaab" #false)
       (g/^fo+/ "foobar" "foo")
+      (g/fo+/ "foobarfobarfooooobar" "foo")
+      (g/fo+/g "foobarfobarfooooobar" ("foo" "fo" "fooooo"))
       (m/(.)\1/ (#x31337 #x31337) #true) ;; check that bignum back references match (not using eq? for them)
       (m/^a{0,}/ "b" #true)
       (m/^a{0,}/ "ab" #true)

@@ -453,15 +453,25 @@
             (else
                (rex-copy-match-anywhere? rex (ll)))))
 
-      (define (make-copy-matcher rex start?)
+      (define (make-copy-matcher rex start? all?)
+         ;assert (not (and start? all?))
          (define matcher (if start? rex-copy-match-prefix? rex-copy-match-anywhere?))
          (λ (target)
-            (let ((res (matcher rex (iter target))))
-               (if res
-                  (let ((out (reverse (ref res 2))))
-                     (if (string? target)
-                        (runes->string out)
-                        out))))))
+            (define (return match)
+               (define out (reverse (ref match 2)))
+               (if (string? target) (runes->string out) out))
+            (if all?
+               ; global grab
+               (let loop ((res (matcher rex (iter target))) (out #null))
+                  (if res
+                     (loop (matcher rex (ref res 1))
+                           (cons (return res) out))
+                  else
+                     (reverse out)))
+               ; simple grab
+               (let ((res (matcher rex (iter target))))
+                  (if res
+                     (return res))) )))
 
       (define (flush out)
          (if (null? out)
@@ -872,6 +882,11 @@
                   (get-epsilon i)))) ;; nothing
            (tail (repetition regex))))
 
+      (define get-maybe-g
+         (get-either
+            (get-imm #\g)
+            (get-epsilon #false)))
+
       ;; get a sequence of regexps with zero or more | in between and merge them
       (define (get-regex)
          (let-parses
@@ -899,8 +914,9 @@
              (skip (get-imm #\/))  ;; opening /
              (start? (get-either (get-imm #\^) (get-epsilon #false))) ;; maybe get leading ^ (special)
              (rex (get-regex))
-             (skip (get-imm #\/))) ;; closing /
-            (make-copy-matcher rex start?)))
+             (skip (get-imm #\/)) ;; closing /
+             (all? get-maybe-g))
+            (make-copy-matcher rex start? (unless start? all?))))
 
       (define get-cutter-regex
          (let-parses
@@ -926,11 +942,6 @@
                ((char get-rune)
                 (verify (not (eq? char #\/)) #false))
                char)))
-
-      (define get-maybe-g
-         (get-either
-            (get-imm #\g)
-            (get-epsilon #false)))
 
       ;; for testing, s/<regex>/<str>/[g]
       (define get-replace-regex

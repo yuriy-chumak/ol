@@ -8,11 +8,11 @@ You can declare the regular expression directly using Ol's builtin syntax, or yo
 Four types of regular expressions are supported:
 simple [match](#simple-matching-regular-expression),
 match with [matched return](#matching-with-returning-matched-part),
-[replace](#replace),
-and [split](#split).  
+[substitute](#substitute),
+and [cut](#cutter).  
 Additional [string to regex](#string-regex) helper function is provided.
 
-# Simple matching regular expression
+# Simple matching (match)
 `(m/.../ string-or-stream)`, *procedure*
 
 Returns #true if the given text matches the regex pattern.
@@ -69,7 +69,7 @@ Returns #true if the given text matches the regex pattern.
 (m/\S/ "\b")                ==>  #true
 
 ; special characters (\. - single dot, \\ - single backslash, etc.)
-; supported only \., \n, \r, \t, \\, \/
+; only \., \n, \r, \t, \\, \/ are supported
 (m/\./ "a")                 ==>  #false
 (m/\./ ".")                 ==>  #true
 (m/\\/ "a")                 ==>  #false
@@ -252,11 +252,13 @@ Returns #true if the given text matches the regex pattern.
 (m/t[ah]i/ "triangle")      ==>  #false
 ```
 
-# Matching with returning matched part
-`(g/.../ string-or-stream)`, *procedure*
+# Matching with returning matched part (grab)
+`(g/.../[g] string-or-stream)`, *procedure*  
 
-Same as simple matching, but returns the matched part (and is a little slower).  
-Returns string if string is given, and list if given stream.
+Without the suffix `g` works like simple match, but returns the matched part.  
+With suffix `g` (means 'globally') returns list of matched parts, and empty list if no matches found.
+
+Returns string(s) if string is given, and stream(s) if given stream.
 
 ```scheme
 (g/a/ "hello")              ==>  #false
@@ -270,10 +272,15 @@ Returns string if string is given, and list if given stream.
 (g/t[ah]i/ "anything")      ==>  "thi"
 (g/t[ah]i/ (string->list "anything"))
                             ===  '(#\t #\h #\i)
+
+(g/fo+/ "foobarfobarfooooobar")
+                            ==>  "foo"
+(g/fo+/g "foobarfobarfooooobar")
+                            ==> '("foo" "fo" "fooooo")
 ```
 
-# Replace
-`(s/.../.../ string-or-stream)`, *procedure*
+# Substitute
+`(s/.../.../[g] string-or-stream)`, *procedure*
 
 Replaces matched part of given string (or stream).
 
@@ -285,7 +292,7 @@ Replaces matched part of given string (or stream).
                             ==>  "1 2a 3a"
 ```
 
-# Split
+# Cutter
 `(c/.../ string-or-stream)`, *procedure*
 
 ```scheme
