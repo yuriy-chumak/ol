@@ -5542,7 +5542,12 @@ int main(int argc, char** argv)
 					if (!strcmp(".tar", (names + sym_table[i].sh_name))) {
 						pvenv = ptr + sym_table[i].sh_offset;
 						if (argc == 1) {
-							argv = argz; argc = 2;
+							// if pvenv main exists:
+							int main = pvenv_open(argz[1], O_RDONLY, 0, 0);
+							if (main >= 0) {
+								close(main);
+								argv = argz; argc = 2;
+							}
 						}
 						break;
 					}
@@ -5580,7 +5585,12 @@ int main(int argc, char** argv)
 				if (ptr + size < end && ptr[size] == '.') {
 					pvenv = ptr + size;
 					if (argc == 1) {
-						argv = argz; argc = 2;
+						// if pvenv main exists:
+						int main = pvenv_open(argz[1], O_RDONLY, 0, 0);
+						if (main >= 0) {
+							close(main);
+							argv = argz; argc = 2;
+						}
 					}
 				}
 				else
