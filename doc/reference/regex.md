@@ -6,8 +6,8 @@ Ol implements a mostly complete POSIX-compatible regular expressions.
 You can declare the regular expression directly using Ol's builtin syntax, or you can convert the regex string representation into the actual regular expression itself. Regexes usage as simple as any other function - just use it with single string or list argument.
 
 Four types of regular expressions are supported:
-simple [match](#simple-matching-regular-expression),
-match with [matched return](#matching-with-returning-matched-part),
+simple [match](#simple-matching-match),
+match with [matched return](#matching-with-returning-matched-part-grab),
 [substitute](#substitute),
 and [cut](#cutter).  
 Additional [string to regex](#string-regex) helper function is provided.

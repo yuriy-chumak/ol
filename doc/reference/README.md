@@ -118,6 +118,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [boolean?](booleans.md#boolean)
 [boolean=?](booleans.md#boolean-1)
 ## C
+[c/../](regex.md#cutter)
 [car](pairs-and-lists.md#car)
 [cdr](pairs-and-lists.md#cdr)
 [caar](pairs-and-lists.md#caar--cddr)
@@ -195,6 +196,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [foldr](pairs-and-lists.md#foldr)
 [fourth](pairs-and-lists.md#fourth)
 ## G
+[g/../](regex.md#matching-with-returning-matched-part-grab)
 [get](ffs.md#get)
 [getf](ffs.md#getf)
 ## H
@@ -221,6 +223,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [list-tail](pairs-and-lists.md#list-tail)
 [lrange](pairs-and-lists.md#lrange)
 ## M
+[m/../](regex.md#simple-matching-match)
 [mail](async.md#mail)
 [make-ff](ffs.md#make-ff)
 [make-list](pairs-and-lists.md#make-list)
@@ -263,6 +266,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [reverse](pairs-and-lists.md#reverse)
 [round](numerical-operations.md#round)
 ## S
+[s/../](regex.md#substitute)
 [second](pairs-and-lists.md#second)
 [set-car!](pairs-and-lists.md#set-car)
 [set-cdr!](pairs-and-lists.md#set-cdr)
@@ -273,6 +277,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [sort](sorting.md#sort)
 [square](numerical-operations.md#square)
 [sqrt](numerical-operations.md#sqrt)
+[string->regex](regex.md#string-regex)
 [string->symbol](symbols.md#string-symbol)
 [string->uninterned-symbol](symbols.md#string-uninterned-symbol)
 [string->utf8](bytevectors.md#string-utf8)
