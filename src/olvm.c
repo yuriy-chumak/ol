@@ -500,13 +500,13 @@ word* p = new (type, _words, _pads);\
 })
 
 // -= ports =-------------------------------------------
-// создает порт, НЕ аллоцирует память
+// создает порт, возможно аллоцирует память
 
 // it's safe (posix uses int as io handles)
 #define is_port(ob)  ((is_value(ob)     && value_type(ob)     == TPORT) ||\
                       (is_reference(ob) && reference_type(ob) == TPORT))
 #define make_port(a) ({ word _p = (word)a; assert (((word)_p << VPOS) >> VPOS == (word)_p); make_value(TPORT, _p); })
-#define port(o)      ({ word _p = (word)o; is_port(_p) ? value(_p) : car(_p); })
+#define port(o)      ({ word _p = (word)o; is_value(_p) ? value(_p) : car(_p); })
 
 #define new_port(arg1) ({ \
 	word _arg1 = (word) (arg1);\
@@ -3868,13 +3868,13 @@ loop:;
 				char* s = string(A1);
 				int f = number(A2);
 				int flg = (f & 01000 ? O_CREAT : 0)
-						| (f & 00100 ? O_TRUNC : 0)
-						| (f & 00002 ? O_RDWR  : 0)
-                        | (f & 0100000 ? O_BINARY : 0);
+				        | (f & 00100 ? O_TRUNC : 0)
+				        | (f & 00002 ? O_RDWR  : 0)
+				        | (f & 0100000 ? O_BINARY : 0);
 				int blocking = (argc > 2 && A3 == ITRUE) ? 1 : 0; // todo: A3 != IFALSE
 				int mode =     (argc > 3 && A4 != IFALSE)
-			 		? number(A4)
-					: S_IRUSR | S_IWUSR;
+			 	    ? number(A4)
+				    : S_IRUSR | S_IWUSR;
 
 				int file = ol->open(s, flg, mode, ol);
 				if (file == -1)
@@ -3890,12 +3890,12 @@ loop:;
 
 				// regular file? (id less than VMAX, then we return port as value)
 				if ((unsigned long)file <= VMAX) {
-                    if (!blocking)
+					if (!blocking)
 					    set_blocking(file, 0); // and set "non-blocking" mode
 					r = (R) make_port(file);
 				}
 				else // port as reference
-					r = new_port(file);
+					r = new_port((unsigned long)file);
 
 				break;
 			}
