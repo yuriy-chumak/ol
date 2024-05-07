@@ -76,6 +76,9 @@
 ;  define-syntax  * builtin (lang eval)
    define-values
    denominator
+   dlopen ; * olvm specific
+   dlsym ; * olvm specific
+   dlclose ; * olvm specific
       ;; do
       ;; dynamic-wind
 ;  else           * reserved for use by Scheme
@@ -499,5 +502,17 @@
             ((parameterize ()) exp)
             ((parameterize () exp . rest)
                ((lambda () exp . rest)))))
+
+
+      ; olvm dynamic libraries support
+      (define dlopen (case-lambda
+         ((name) (syscall 174 (c-string name) 1))
+         (() (syscall 174 #false 1))))
+
+      (define (dlsym dll name)
+         (syscall 177 dll (c-string name)))
+
+      (define (dlclose module)
+         (syscall 176 module))
 
 ))
