@@ -1311,11 +1311,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2023 Yuriy Chumak";
 #endif
 
 #include <sys/utsname.h> // we have own win32 implementation
+
 #if HAVE_DLOPEN
 #	include <dlfcn.h> // we have own win32 implementation
-# ifdef __ANDROID__
-	static char* MODULE_FILENAME = 0;
-# endif
 #endif
 
 #if !defined(SYSCALL_SYSINFO) || (defined(SYSCALL_SYSINFO) && SYSCALL_SYSINFO != 0)
@@ -2416,6 +2414,14 @@ void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char
 
 #ifdef DEBUG_COUNT_OPS
 static unsigned long long ops[256];
+#endif
+
+#if HAVE_DLOPEN
+# if defined(__ANDROID__) && !OLVM_NOMAIN
+	static char* LIBRARY_FILENAME = 0;
+# else
+	#define LIBRARY_FILENAME OLVM_LIBRARY_SO_NAME
+# endif
 #endif
 
 static //__attribute__((aligned(8)))
@@ -4424,28 +4430,22 @@ loop:;
 
 				// android 2.2 segfaults on dlopen(NULL, ...)
 				// http://code.google.com/p/android/issues/detail?id=5049
-				void* module;
-				if ((word) filename == IFALSE) {
-					module = dlopen(
-				# if defined(__ANDROID__) && !OLVM_NOMAIN
-						MODULE_FILENAME
-				# else						
-						OLVM_LIBRARY_SO_NAME
-				# endif
-						, mode); // If filename is NULL, then the returned handle is for the main program.
-				}
-				else if (is_string(filename)) {
-					module = dlopen(string(filename), mode);
-				}
+				char* library_name;
+				if (filename == (R)IFALSE)
+					library_name = LIBRARY_FILENAME;
 				else
-					break; // invalid filename, return #false
+				if (is_string(filename))
+					library_name = string(filename);
+				else
+					break; // invalid filename
 
+				void* module = dlopen(library_name, mode);
 				if (module)
 					r = new_vptr(module);
 				break;
 			}
 
-			case SYSCALL_DLCLOSE: {
+			case SYSCALL_DLCLOSE: { // (dlclose module)
 				word a = A1;
 				if (!is_vptr(a))
 					ERROR(SYSCALL_DLCLOSE, a, INULL);
@@ -4456,7 +4456,7 @@ loop:;
 				break;
 			}
 
-			case SYSCALL_DLSYM: { // (dlsym module function #false)
+			case SYSCALL_DLSYM: { // (dlsym module function)
 				// CHECK(is_vptr(a), a, SYSCALL);
 				word a = A1;
 				word b = A2;
@@ -5490,7 +5490,7 @@ int main(int argc, char** argv)
 	unsigned char* bootstrap = language;
 
 #ifdef __ANDROID__
-	MODULE_FILENAME = argv[0];
+	LIBRARY_FILENAME = argv[0];
 #endif
 
 	//  vm special key: if command line is "--version" then print a version
