@@ -62,7 +62,9 @@
       )
 
    (import
-      (scheme base)
+      (scheme core)
+      (owl math)
+      (owl string)
       (owl unicode)
       (owl lazy))
 
@@ -95,6 +97,7 @@
             ((let-parse* ((a . b) ...) first . rest)
                (let-parse* ((a . b) ...) (begin first . rest)))))
 
+      (define (char? o) (eq? (type o) type-enum+))
 
       ;; bactrtrack function : l r fp why
       ; l - stream

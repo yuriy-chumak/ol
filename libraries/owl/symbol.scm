@@ -3,8 +3,7 @@
 
    (import
       (scheme core)
-      (scheme list)
-      (owl string))
+      (owl string) (owl regex))
 
    (begin
       (define (format-symbol obj tl)
@@ -14,7 +13,7 @@
                   (cond
                      ((eq? (string-length str) 0) "||") ; empty symbols
                      ;; fixme: doesn't quote internal |:s yet
-                     ((has? (string->list str) #\space) ; (m/ / str)
+                     ((m/[ .]/ str)
                         (string-append (string-append "|" str) "|"))
                      (else str)))
                (runtime-error "Not a symbol: " obj))
