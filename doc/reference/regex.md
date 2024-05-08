@@ -306,4 +306,10 @@ Replaces matched part of given string (or stream).
 `(string->regex str)`, *procedure*
 
 ```scheme
+> (define re (string->regex "m/a/"))
+
+(re "hello")                ==>  #false
+(re "aloha")                ==>  #true
+(re (string->list "abc"))   ==>  #true
+(re (str-iter "xaz"))       ==>  #true
 ```

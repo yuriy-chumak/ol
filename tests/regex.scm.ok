@@ -142,7 +142,7 @@
  | m/^[ae]+(?<!aaa)b/ + 'aaeaab' = '#true'
  | m/^[ae]+(?<!aaa)b/ + 'aaeaaab' = '#false'
  | g/^fo+/ + 'foobar' = 'foo'
- | g/fo+/ + 'foobarfoobarfoobar' = 'foo'
+ | g/fo+/ + 'foobarfobarfooooobar' = 'foo'
  | g/fo+/g + 'foobarfobarfooooobar' = '(foo fo fooooo)'
  | m/(.)\1/ + '(201527 201527)' = '#true'
  | m/^a{0,}/ + 'b' = '#true'
