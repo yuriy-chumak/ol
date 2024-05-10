@@ -82,8 +82,12 @@
    (print "  " RED answer END " IS NOT EQUAL TO " GREEN should-be END)
    (set-car! ok #false))
 
+(define dup (case-lambda
+   ((p) (syscall 32 p))
+   ((p1 p2) (syscall 32 p1 p2))))
+
 (for-each (lambda (filename)
-      (print "  testing " filename "...")
+      (for-each display (list "  testing " filename "..."))
       (for-each (lambda (code-block)
             (let loop ((code-block code-block) (env (interaction-environment)))
                (cond
@@ -91,10 +95,28 @@
                      (let*((code (caar expressions))
                            (answer (cdar expressions))
                            (answer (s/[ \n]+/ /g (list->string answer)))
+                           ; handle value printing
+                           (output (when (member (ref (car code) 1) '(display write write-simple print))
+                              (define bak (dup stdout))
+                              (define port (open-output-string))
+                              (dup port stdout)
+                              [port bak]))
+
                            (env (vector-apply (supereval code env) (lambda (ok? test env)
-                              (define buffer (open-output-string))
-                              (write-simple test buffer)
-                              (define actual (get-output-string buffer))
+                              (define actual (s/[ \n]+$// ; remove trailing newline
+                                 (if output
+                                    ; handle special case with "Print"
+                                    (vector-apply output (lambda (port bak)
+                                       ;; todo: flush
+                                       (dup bak stdout)
+                                       (close-port bak)
+                                       (get-output-string port)))
+                                 else
+                                    ; common case with returned value
+                                    (define buffer (open-output-string))
+                                    (write-simple test buffer)
+                                    (get-output-string buffer)) ))
+                              ; compare
                               (if (and (not (null? (cdar expressions)))
                                        (not (string=? answer actual)))
                                  (error code actual answer))
@@ -115,6 +137,8 @@
                                  (equal? code-block '(10 10)))
                         (print code-block)
                         (print "incorrect samples block:\n```scheme\n" RED (bytes->string code-block) END "```"))))))
-         (car (or (try-parse parser (force (file->bytestream filename)) #f) '(())))))
+         (car (or (try-parse parser (force (file->bytestream filename)) #f) '(()))))
+      (if (car ok)
+         (print GREEN " ok" END)))
    *command-line*)
 (exit (car ok))
