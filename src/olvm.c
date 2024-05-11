@@ -74,6 +74,17 @@
 #define HAVE_UNISTD_H 1
 #endif
 
+// public attributes
+#if defined(__unix__)
+#	define OLVM_PUBLIC __attribute__ ((__visibility__("default"))) __attribute__((used))
+#elif defined(_WIN32)
+#	define OLVM_PUBLIC __declspec(dllexport)
+#elif defined(__APPLE__)
+#	define OLVM_PUBLIC __attribute__ ((__visibility__("default"))) __attribute__((used))
+#else
+#	define OLVM_PUBLIC
+#endif
+
 // --> end of standard definitions
 
 /*!- - -
@@ -115,13 +126,28 @@ void*OLVM_allocate(olvm_t* ol, unsigned words);
 
 // pinned objects support functions
 #ifndef OLVM_NOPINS
+# ifndef OLVM_PIN_PROTOTYPES
 size_t OLVM_pin(olvm_t* ol, word ref); // pin can realloc RPS (Register and Pin Set)
 word OLVM_deref(olvm_t* ol, size_t p);
 word OLVM_unpin(olvm_t* ol, size_t p);
+# else
+typedef size_t (*olvm_pin_t)(olvm_t* ol, word ref); extern olvm_pin_t OLVM_pin;
+typedef word (*olvm_deref_t)(olvm_t* ol, size_t p); extern olvm_deref_t OLVM_deref;
+typedef word (*olvm_unpin_t)(olvm_t* ol, size_t p); extern olvm_unpin_t OLVM_unpin;
+# endif
 #endif
 
 // ffi callbacks support
 word OLVM_apply(olvm_t* ol, word function, word args);
+
+// embed type conversion helpers
+# ifndef OLVM_FCONV_PROTOTYPES
+float OL2F(word arg);
+double OL2D(word arg);
+# else
+typedef float (*ol2f_t)(word arg);                  extern ol2f_t OL2F;
+typedef double (*ol2d_t)(word arg);                 extern ol2d_t OL2D;
+#endif
 
 // -----------------------------------------------------
 // descriptor format
@@ -2115,7 +2141,7 @@ static_assert(offsetof(olvm_t, heap) == 0, "heap_t must be first field of olvm_t
 
 // =================================================================
 // machine floating point support, internal functions
-
+#if OLVM_INEXACTS
 // todo: add disabling ol2d (for machines without doubles), or better reusing as ol2f
 static
 double ol2d_convert(word p) {
@@ -2129,6 +2155,7 @@ double ol2d_convert(word p) {
 	return v;
 }
 
+OLVM_PUBLIC
 double OL2D(word arg) {
 	if (is_enum(arg))
 		return enum(arg);
@@ -2164,6 +2191,7 @@ float ol2f_convert(word p) {
 	}
 	return v;
 }
+OLVM_PUBLIC
 float OL2F(word arg) {
 	if (is_enum(arg))
 		return enum(arg);
@@ -2272,6 +2300,8 @@ word d2ol(struct heap_t* heap, double v) {
 #if OLVM_INEXACTS
 #define ol2f(num) __builtin_choose_expr( __builtin_types_compatible_p (inexact_t, double), OL2D(num), OL2F(num) )
 #endif // OLVM_INEXACTS
+
+#endif
 // =================================================================
 
 
@@ -6045,6 +6075,7 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 // [0..3] - errors
 // 0 means "no space left"
 // 1 means "not a pinnable object"
+OLVM_PUBLIC
 size_t OLVM_pin(struct olvm_t* ol, word ref)
 {
 	if (ref == IFALSE)
@@ -6078,6 +6109,7 @@ ok:
 	return id;
 }
 
+OLVM_PUBLIC
 word OLVM_deref(struct olvm_t* ol, size_t p)
 {
 	size_t id = p;
@@ -6087,6 +6119,7 @@ word OLVM_deref(struct olvm_t* ol, size_t p)
 		return IFALSE;
 }
 
+OLVM_PUBLIC
 word OLVM_unpin(struct olvm_t* ol, size_t p)
 {
     word re = IFALSE;
