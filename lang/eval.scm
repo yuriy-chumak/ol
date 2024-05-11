@@ -1081,7 +1081,7 @@
                               (repl-message
                                  (list->string
                                     (foldr format null
-                                       (cons ";; Imported " (cdr exp)))))
+                                       (cons "\b\b;; Imported " (cdr exp)))))
                               envp))))
                   ((definition? exp)
                      (case (evaluator (caddr exp) env)
@@ -1150,7 +1150,7 @@
                                     (repl-message
                                        (list->string
                                           (foldr format null
-                                             (list ";; Library " name " added" ))))
+                                             (list "\b\b;; Library " name " added" ))))
                                     (env-set env '*libraries*
                                        (cons (cons name library)
                                           (keep  ;; drop the loading tag for this library
