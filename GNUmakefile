@@ -179,8 +179,9 @@ perf: CFLAGS += -O2 -g3 -DNDEBUG -Wall
 perf: vm ol olvm libol.so
 
 
-slim: CFLAGS += -DHAVE_SOCKETS=0 -DHAVE_DLOPEN=0 -DHAVE_SANDBOX=0
-slim: release
+slim:
+	HAVE_SOCKETS=0 HAVE_DLOPEN=0 HAVE_SANDBOX=0 \
+	$(MAKE) release -B && strip olvm
 
 minimal: CFLAGS += -DOLVM_FFI=0 -DHAVE_SOCKETS=1 -DHAVE_DLOPEN=0 -DHAVE_SANDBOX=0
 minimal: release
