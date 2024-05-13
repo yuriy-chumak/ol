@@ -239,10 +239,9 @@
                ;; avoid dependency on generic math in IO
                (printer (cdr lst) (++ len) (cons (car lst) out) fd))))
 
-      (define (writer-to names datum?)
-         (let ((serialize (make-writer names datum?)))
-            (λ (to obj)
-               (printer (serialize obj '()) 0 null to))))
+      (define (writer-to serializer)
+         (λ (to obj)
+            (printer (serializer obj '()) 0 null to)))
 
 
 
@@ -276,12 +275,12 @@
          ((obj port) (display-to port obj))))
 
       (define write (case-lambda
-         ((obj) ((writer-to {} #true) stdout obj))
-         ((obj port) ((writer-to {} #true) port obj))))
+         ((obj) ((writer-to (make-writer {} #true)) stdout obj))
+         ((obj port) ((writer-to (make-writer {} #true)) port obj))))
 
       (define write-simple (case-lambda
-         ((obj) ((writer-to {} #false) stdout obj))
-         ((obj port) ((writer-to {} #false) port obj))))
+         ((obj) ((writer-to (make-writer {} #false)) stdout obj))
+         ((obj port) ((writer-to (make-writer {} #false)) port obj))))
 
 
       (define (print-to to . args)

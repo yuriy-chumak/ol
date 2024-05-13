@@ -347,7 +347,7 @@
                   (display (cdr val)))
             else
                (maybe-show-metadata env val)
-               ((writer-to (function-name-getter env) #false)
+               ((writer-to (make-writer (function-name-getter env) #false))
                   stdout val))
             (display "\n")))
 
@@ -675,7 +675,7 @@
                                  (define dis (disassembly value))
                                  (if dis
                                  then
-                                    (define echo (writer-to (function-name-getter env) #false))
+                                    (define echo (writer-to (make-writer (function-name-getter env) #false)))
                                     (display "name: ") (echo stdout value)
                                        (newline)
                                     (print "type: " (dis 'type))
