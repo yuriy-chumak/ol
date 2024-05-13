@@ -340,8 +340,7 @@
       ;; render the value if isatty?, and print as such (or not at all) if it is a repl-message
       ;; if interactive mode and output fails, the error is fatal
       (define (prompt env val)
-         (if (interactive? env)
-         then
+         (when (interactive? env)
             (if (repl-message? val)
                (if (cdr val)
                   (display (cdr val)))

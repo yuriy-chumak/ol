@@ -135,84 +135,84 @@
       ; todo: add regex printing
       ; (write)
       (define (make-ser names datum?)
-         (define (ser sh obj k)
+         (define (ser obj k)
             (cond
                ; most likely
                ((symbol? obj)
-                  (format-symbol obj (delay (k sh))))
+                  (format-symbol obj (delay (k))))
 
                ; lists
                ((pair? obj)
                   (cons #\(
-                     (let loop ((sh sh) (obj obj))
+                     (let loop ((obj obj))
                         (cond
                            ((null? obj)
                               ;; run of the mill list end
-                              (lcons #\) (k sh)))
+                              (lcons #\) (k)))
                            ((pair? obj)
                               ;; render car, then cdr
-                              (ser sh (car obj)
-                                 (λ (sh)
+                              (ser (car obj)
+                                 (λ ()
                                     (delay
                                        (if (null? (cdr obj))
-                                          (loop sh (cdr obj))
-                                          (cons #\space (loop sh (cdr obj))))))))
+                                          (loop (cdr obj))
+                                          (cons #\space (loop (cdr obj))))))))
                            (else
                               ;; improper list
                               (cons* #\. #\space
-                                 (ser sh obj
-                                    (λ (sh) (lcons #\) (k sh)))))))))) ;(
+                                 (ser obj
+                                    (λ () (lcons #\) (k)))))))))) ;(
 
                ; numbers
                ((and datum?
                      (inexact? obj))  ; write, not write-simple
                   (cond
-                     ((equal? obj +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 (delay (k sh))))
-                     ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 (delay (k sh))))
-                     ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 (delay (k sh))))
+                     ((equal? obj +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 (delay (k))))
+                     ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 (delay (k))))
+                     ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 (delay (k))))
                      (else
-                        (cons* #\# #\i (format-number obj (delay (k sh)) 10)))))
+                        (cons* #\# #\i (format-number obj (delay (k)) 10)))))
 
                ; todo: datum? and rational? and denom is 10, 100, 1000, ... - write with dot
                ((number? obj)
-                  (format-number obj (delay (k sh)) 10))
+                  (format-number obj (delay (k)) 10))
 
                ((string? obj)
                   (cons #\"
                      (format-quoted-string obj  ;; <- all eager now
-                        (lcons #\" (k sh)))))
+                        (lcons #\" (k)))))
 
                ((vector? obj)
                   (cons #\# (cons #\(
-                     (let loop ((sh sh) (n 1))
+                     (let loop ((n 1))
                         (cond
                            ((less? (size obj) n)
-                              (lcons #\) (k sh)))
+                              (lcons #\) (k)))
                            (else
-                              (ser sh (ref obj n) ; render car, then cdr
-                                 (λ (sh)
+                              (ser (ref obj n) ; render car, then cdr
+                                 (λ ()
                                     (delay
                                        (if (eq? n (size obj))
-                                          (loop sh (+ n 1))
-                                          (cons #\space (loop sh (+ n 1)))))))))))))
+                                          (loop (+ n 1))
+                                          (cons #\space (loop (+ n 1)))))))))))))
 
                ((eq? obj #null)
-                  (cons* #\( #\) (delay (k sh))))
+                  (cons* #\( #\) (delay (k))))
 
-               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e (delay (k sh))))
-               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e (delay (k sh))))
-               ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) (delay (k sh))))
-               ((eq? obj #eof)   (cons* #\# #\e #\o #\f (delay (k sh))))
+               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e (delay (k))))
+               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e (delay (k))))
+               ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) (delay (k))))
+               ((eq? obj #eof)   (cons* #\# #\e #\o #\f (delay (k))))
 
                ((regex? obj)
                   (format-string (ref obj 2)
-                     (delay (k sh))))
+                     (delay (k))))
 
                ;; render name if one is known, just #function otherwise
                ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
                ((function? obj)
                   (let ((name (names obj #f)))
-                     (foldr render (delay (k sh))
+                     (foldr render (delay (k))
                         (if name
                            (list "#<" name ">")
                         else
@@ -220,27 +220,27 @@
 
                ((bytevector? obj)
                   (cons* #\# #\u #\8
-                     (ser sh (bytevector->list obj) k))) ;; todo: should convert incrementally
+                     (ser (bytevector->list obj) k))) ;; todo: should convert incrementally
 
                ((ff? obj)
                   (cons* #\# #\f #\f
-                     (ser sh (ff->alist obj) k)))
+                     (ser (ff->alist obj) k)))
 
                ((port? obj)
-                  (render obj (λ () (k sh))))
+                  (render obj (λ () (k))))
 
                ((eq? (type obj) type-vptr)
-                  (cons* #\# #\v #\p #\t #\r (delay (k sh))))
+                  (cons* #\# #\v #\p #\t #\r (delay (k))))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
-                  (cons* #\# #\r (ser sh (rlist->list obj) k)))
+                  (cons* #\# #\r (ser (rlist->list obj) k)))
 
                ((blob? obj)
                   (cons #\#
-                     (ser sh (blob->list obj) k))) ;; <- should convert incrementally!
+                     (ser (blob->list obj) k))) ;; <- should convert incrementally!
 
                (else
-                  (cons* #\# #\w #\t #\f #\? (delay (k sh))))))
+                  (cons* #\# #\w #\t #\f #\? (delay (k))))))
          ser)
 
       (define (const? x)
@@ -304,19 +304,15 @@
 
       (define (make-lazy-writer names datum?)
          (let ((ser (make-ser names datum?)))
-            (λ (val tl share?)
+            (λ (val tl)
                (maybe-quote val
-                  (ser
-                     (if share? ;; O(n), allow skipping
-                        (label-shared-objects val)
-                        empty)
-                     val (λ (sh) tl))
+                  (ser val (λ () tl))
                   datum?))))
 
       (define (make-writer names datum?)
          (let ((serialize-lazy (make-lazy-writer names datum?)))
             (λ (val tl)
                (force-ll
-                  (serialize-lazy val tl #true)))))
+                  (serialize-lazy val tl)))))
 
 ))
