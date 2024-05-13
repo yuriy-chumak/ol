@@ -17,8 +17,15 @@
       (only (owl math) format-number number?))
 
    (export
-      make-writer  ;; names → ((obj tl) → (byte ... . tl))
-      format)      ;; args -> formatted list
+      make-writer  ;; names → ((obj tl) → (byte ... . tl)) ; TODO: remove
+
+      write-format-ff ; write, write-simple
+      write-formatter
+      print-format-ff ; display, print
+      print-formatter
+
+      format
+      formatter)
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -36,90 +43,15 @@
               ;(eq?    (type (ref x 3)) type-closure)
          ))
 
-
       ; hack: do not include full (owl math fp) library and save 1k for image
       ;       we use only this three functions:
 
-      ; (display), (print)
-      (define (render obj tl)
+      (define (formatter this obj k)
          (cond
-            ((number? obj)
-               (format-number obj tl 10))
-
-            ((string? obj)
-               (format-string obj tl))
-
-            ((symbol? obj)
-               (format-symbol obj tl))
-
-            ((pair? obj)
-               (cons #\(
-                  (cdr
-                     (let loop ((obj obj) (tl (cons #\) tl)))
-                        (cond
-                           ((null? obj) tl)
-                           ((pair? obj)
-                              (cons #\space
-                                 (render (car obj) (loop (cdr obj) tl))))
-                           (else
-                              (cons* #\space #\. #\space (render obj tl))))))))
-
-            ((vector? obj)
-               (cons #\# (render (vector->list obj) tl)))
-
-            ((eq? obj #null)
-               (cons* #\( #\) tl))
-
-            ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e tl))
-            ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e tl))
-            ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) tl))
-            ((eq? obj #eof)   (cons* #\# #\e #\o #\f tl))
-
-            ((regex? obj)
-               (format-string (ref obj 2) tl))
-
-            ((function? obj)
-               (render "#function" tl))
-               ;; anonimas
-               ;(let ((symp (interact 'intern ['get-name obj])))
-               ;   (if symp
-               ;      (cons* #\# #\< (render symp (cons #\> tl)))
-               ;      (render "#<function>" tl))))
-
-            ((bytevector? obj)
-               (cons* #\# #\u #\8 (render (bytevector->list obj) tl)))
-
-            ((ff? obj) ;; fixme: ff not parsed yet this way
-               (cons* #\# #\f #\f (render (ff->alist obj) tl)))
-
-            ((port? obj) (cons* #\# #\< #\f #\d #\space (render (vm:cast obj type-enum+) (cons #\> tl))))
-
-            ((eq? (type obj) type-const) ; ???
-               (format-number (vm:cast obj type-enum+) tl 16))
-
-            ((eq? (type obj) type-vptr)
-               (append (string->list "#vptr") tl))
-
-            ((blob? obj)
-               (cons #\# (render (blob->list obj) tl)))
-
-
-; disabled, because records currently unload
-;               ((record? obj)
-;                  (cons* #\# #\{
-;                     (render (ref obj 1) ;; type tag object
-;                        (fold
-;                           (λ (tl pos) (cons 32 (render (ref obj pos) tl)))
-;                           (cons #\} tl)
-;                           (lrange (size obj) -1 1)))))
-
-            ((rlist? obj) ;; fixme: rlist not parsed yet
-               (cons* #\# #\r (render (rlist->list obj) tl)))
-
+            ((this (type obj) #f) => (lambda (format)
+               (format this obj k)))
             (else
-               (cons* #\# #\w #\t #\f #\? tl)))) ;; What This Format?
-         
-      (define format render)
+               (cons* #\# #\w #\t #\f #\? k))))
 
       ;;; serialize suitably for parsing, not yet sharing preserving
 
@@ -132,116 +64,166 @@
       ;; (define (@ n)
       ;;    (set-ref! print-stats n (++ (ref print-stats n))))
 
-      ; todo: add regex printing
-      ; (write)
-      (define (make-ser names datum?)
-         (define (ser obj k)
-            (cond
-               ; most likely
-               ((symbol? obj)
-                  (format-symbol obj k))
+      ; default receipes
+      (define (cook-string this obj tl)
+         (format-string obj tl))
 
-               ; lists
-               ((pair? obj)
-                  (cons #\(
-                     (let loop ((obj obj))
-                        (cond
-                           ((null? obj)
-                              ;; run of the mill list end
-                              (cons* #\) k))
-                           ((pair? obj)
-                              ;; render car, then cdr
-                              (ser (car obj)
-                                 (λ ()
-                                    (delay
-                                       (if (null? (cdr obj))
-                                          (loop (cdr obj))
-                                          (cons #\space (loop (cdr obj))))))))
-                           (else
-                              ;; improper list
-                              (cons* #\. #\space
-                                 (ser obj
-                                    (λ () (cons* #\) k))))))))) ;(
+      (define (cook-quoted-string this obj tl)
+         (cons #\"
+            (format-quoted-string obj
+               (cons* #\" tl))))
 
-               ; numbers
-               ((and datum?
-                     (inexact? obj))  ; write, not write-simple
-                  (cond
+      (define (cook-number this obj tl)
+         (format-number obj tl 10))
+
+      (define (cook-symbol this obj tl)
+         (format-symbol obj tl))
+
+      (define (cook-const this obj k)
+         (case obj
+            (#null  (cons* #\( #\) k))
+            (#true  (cons* #\# #\t #\r #\u #\e k))
+            (#false (cons* #\# #\f #\a #\l #\s #\e k))
+            (#empty (cons* #\# #\f #\f #\( #\) k))
+            (#eof   (cons* #\# #\e #\o #\f k))
+            (else   (cons* #\# #\? #\? k))))
+
+      (define (cook-function this obj k)
+         (if (regex? obj)
+            (format-string (ref obj 2) k)
+         else
+            (let*((name ((this 'names {}) obj #f)))
+               (format-string (if name
+                     (string-append "#<" name ">")
+                     "#function") k))))
+
+      (define (cook-ff this obj k)
+         (cons* #\# #\f #\f
+            (formatter this (ff->alist obj) k)))
+
+
+      ; receipe book
+      ; (write), (write-simple)
+      (define write-format-ff {
+         type-symbol cook-symbol
+         ; strings
+         type-string cook-quoted-string
+         type-string-wide cook-quoted-string
+         type-string-dispatch cook-quoted-string
+         ; true, false, etc.
+         type-const cook-const
+         ; numbers (todo: maybe use number? and (getf .. 'number))
+         type-enum+ cook-number
+         type-int+  cook-number
+         type-enum- cook-number
+         type-int-  cook-number
+         type-rational cook-number
+         type-inexact (lambda (this obj k)
+               (if (this 'datum #f)
+                  (cond ; write
                      ((equal? obj +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 k))
                      ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 k))
                      ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 k))
                      (else
-                        (cons* #\# #\i (format-number obj k 10)))))
+                        (cons* #\# #\i (format-number obj k 10))))
+               else ; write-simple
+                  (format-number obj k 10)))
+         type-complex cook-number
+         ; functions
+         type-procedure cook-function
+         type-closure   cook-function
+         type-bytecode  cook-function
+         ; others
+         type-port (lambda (this obj k)
+               (cons* #\# #\< #\f #\d #\space
+                  (format-number (vm:cast obj (if (value? obj) type-enum+ type-int+)) (cons* #\> k))))
+         type-vptr (lambda (this obj k)
+               (cons* #\# #\v #\p #\t #\r k))
 
-               ; todo: datum? and rational? and denom is 10, 100, 1000, ... - write with dot
-               ((number? obj)
-                  (format-number obj k 10))
+         ; list
+         type-pair (lambda (this obj k)
+               (cons #\(
+                  (let loop ((obj obj))
+                     (cond
+                        ((null? obj) ;; run of the mill list end
+                           (cons* #\) k))
+                        ((pair? obj)
+                           ;; render car, then cdr
+                           (formatter this (car obj)
+                              (delay
+                                 (if (null? (cdr obj))
+                                    (loop (cdr obj))
+                                    (cons #\space (loop (cdr obj)))))))
+                        (else
+                           ;; improper list
+                           (cons* #\. #\space
+                              (formatter this obj
+                                 (λ () (cons* #\) k))))))))) ;(
 
-               ((string? obj)
-                  (cons #\"
-                     (format-quoted-string obj  ;; <- all eager now
-                        (cons* #\" k))))
+         type-vector (lambda (this obj k)
+               (cons* #\#
+                  (formatter this (vector->list obj) k)))
+               ;; (cons* #\# #\(
+               ;;    (let loop ((n 1))
+               ;;       (cond
+               ;;          ((less? (size obj) n)
+               ;;             (cons* #\) k))
+               ;;          (else
+               ;;             ((setup 'format) setup (ref obj n) ; render car, then cdr
+               ;;                (delay
+               ;;                   (if (eq? n (size obj))
+               ;;                      (loop (+ n 1))
+               ;;                      (cons #\space (loop (+ n 1)))))))))))
 
-               ((vector? obj)
-                  (cons #\# (cons #\(
-                     (let loop ((n 1))
+         type-bytevector (lambda (this obj k)
+               (cons* #\# #\u #\8
+                  (formatter this (bytevector->list obj) k))) ;; todo: should convert incrementally
+
+         24 cook-ff  25 cook-ff  26 cook-ff  27 cook-ff
+
+         ;; TODO:
+            ;; ((rlist? obj) ;; fixme: rlist not parsed yet
+            ;;    (cons* #\# #\r (write-formatter formatter (rlist->list obj) k)))
+
+            ;; ((blob? obj)
+            ;;    (cons #\#
+            ;;       (write-formatter formatter (blob->list obj) k))) ;; <- should convert incrementally!
+      })
+
+      (define (write-formatter obj k)
+         (formatter write-format-ff obj k))
+
+
+      ; (display), (print)
+      (define print-format-ff (ff-replace write-format-ff
+      {
+         type-inexact cook-number
+
+         type-string cook-string
+         type-string-wide cook-string
+         type-string-dispatch cook-string
+
+         type-pair (lambda (this obj k)
+               (cons #\(
+                  (cdr
+                     (let loop ((obj obj) (tl (cons #\) k)))
                         (cond
-                           ((less? (size obj) n)
-                              (cons* #\) k))
+                           ((null? obj) tl)
+                           ((pair? obj)
+                              (cons #\space
+                                 (formatter this (car obj) (loop (cdr obj) tl))))
                            (else
-                              (ser (ref obj n) ; render car, then cdr
-                                 (λ ()
-                                    (delay
-                                       (if (eq? n (size obj))
-                                          (loop (+ n 1))
-                                          (cons #\space (loop (+ n 1)))))))))))))
+                              (cons* #\space #\. #\space (formatter this obj tl))))))))
+      }))
 
-               ((eq? obj #null)
-                  (cons* #\( #\) k))
+      ; 
+      (define (print-formatter obj k)
+         (formatter print-format-ff obj k))
 
-               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e k))
-               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e k))
-               ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) k))
-               ((eq? obj #eof)   (cons* #\# #\e #\o #\f k))
+      (define format print-formatter)
 
-               ((regex? obj)
-                  (format-string (ref obj 2) k))
 
-               ;; render name if one is known, just #function otherwise
-               ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
-               ((function? obj)
-                  (let ((name (names obj #f)))
-                     (foldr render k
-                        (if name
-                           (list "#<" name ">")
-                        else
-                           (list "#function")))))
-
-               ((bytevector? obj)
-                  (cons* #\# #\u #\8
-                     (ser (bytevector->list obj) k))) ;; todo: should convert incrementally
-
-               ((ff? obj)
-                  (cons* #\# #\f #\f
-                     (ser (ff->alist obj) k)))
-
-               ((port? obj)
-                  (render obj (λ () (k))))
-
-               ((eq? (type obj) type-vptr)
-                  (cons* #\# #\v #\p #\t #\r k))
-
-               ((rlist? obj) ;; fixme: rlist not parsed yet
-                  (cons* #\# #\r (ser (rlist->list obj) k)))
-
-               ((blob? obj)
-                  (cons #\#
-                     (ser (blob->list obj) k))) ;; <- should convert incrementally!
-
-               (else
-                  (cons* #\# #\w #\t #\f #\? k))))
-         ser)
-
+      ; ------------------------------
       (define (const? x)
          (eq? (type x) type-const))
 
@@ -261,57 +243,18 @@
             (cons #\' lst)))
 
       ;; a value worth checking for sharing in datum labeler
-      (define (shareable? x)
-         (not (or (function? x) (symbol? x) (port? x))))
 
+      (define (make-lazy-writer setup)
+         (define datum? (setup 'datum #f))
+         (define this (ff-replace write-format-ff setup))
 
-      (define (partial-object-closure root pred)
-         (define (clos seen obj)
-            (cond
-               ((value? obj) seen)
-               ((not (pred obj)) seen)
-               ((getf seen obj) =>
-                  (λ (n) (ff-update seen obj (+ n 1))))
-               (else
-                  (let ((seen (put seen obj 1)))
-                     (if (ref obj 0) ; ==(blob? obj), 0 in ref works only for blobs
-                        seen
-                        (fold clos seen (vector->list obj)))))))
-         (clos empty root))
+         (λ (val tl) ; todo: remove (setup 'format)
+            (maybe-quote val (formatter this val (λ () tl)) datum?)))
 
-      ;; don't return ff, type of which is changing atm
-      (define (sub-objects root pred)
-         (ff->alist
-            (partial-object-closure root pred)))
-
-      ;; val → ff of (ob → node-id)
-      (define (label-shared-objects val)
-         (lets
-            ((refs (sub-objects val shareable?))
-             (shares
-               (fold
-                  (λ (shared p)
-                     (lets ((ob refs p))
-                        (if (eq? refs 1)
-                           shared
-                           (cons ob shared))))
-                  #null refs)))
-            (let loop ((out empty) (shares shares) (n 1))
-               (if (null? shares)
-                  out
-                  (loop (put out (car shares) n) (cdr shares) (+ n 1))))))
-
-      (define (make-lazy-writer names datum?)
-         (let ((ser (make-ser names datum?)))
+      (define (make-writer setup)
+         (let ((serialize-lazy (make-lazy-writer setup)))
             (λ (val tl)
-               (maybe-quote val
-                  (ser val (λ () tl))
-                  datum?))))
-
-      (define (make-writer names datum?)
-         (let ((serialize-lazy (make-lazy-writer names datum?)))
-            (λ (val tl)
-               (force-ll
+               (force-ll ; todo: change to "force" after scheme core be changed
                   (serialize-lazy val tl)))))
 
 ))

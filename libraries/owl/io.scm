@@ -275,12 +275,12 @@
          ((obj port) (display-to port obj))))
 
       (define write (case-lambda
-         ((obj) ((writer-to (make-writer {} #true)) stdout obj))
-         ((obj port) ((writer-to (make-writer {} #true)) port obj))))
+         ((obj) ((writer-to (make-writer {'datum #true})) stdout obj))
+         ((obj port) ((writer-to (make-writer {'datum #true})) port obj))))
 
       (define write-simple (case-lambda
-         ((obj) ((writer-to (make-writer {} #false)) stdout obj))
-         ((obj port) ((writer-to (make-writer {} #false)) port obj))))
+         ((obj) ((writer-to (make-writer {'datum #false})) stdout obj))
+         ((obj port) ((writer-to (make-writer {'datum #false})) port obj))))
 
 
       (define (print-to to . args)
