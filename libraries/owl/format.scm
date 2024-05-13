@@ -139,7 +139,7 @@
             (cond
                ; most likely
                ((symbol? obj)
-                  (format-symbol obj (delay (k))))
+                  (format-symbol obj k))
 
                ; lists
                ((pair? obj)
@@ -148,7 +148,7 @@
                         (cond
                            ((null? obj)
                               ;; run of the mill list end
-                              (lcons #\) (k)))
+                              (cons* #\) k))
                            ((pair? obj)
                               ;; render car, then cdr
                               (ser (car obj)
@@ -161,33 +161,33 @@
                               ;; improper list
                               (cons* #\. #\space
                                  (ser obj
-                                    (λ () (lcons #\) (k)))))))))) ;(
+                                    (λ () (cons* #\) k))))))))) ;(
 
                ; numbers
                ((and datum?
                      (inexact? obj))  ; write, not write-simple
                   (cond
-                     ((equal? obj +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 (delay (k))))
-                     ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 (delay (k))))
-                     ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 (delay (k))))
+                     ((equal? obj +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 k))
+                     ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 k))
+                     ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 k))
                      (else
-                        (cons* #\# #\i (format-number obj (delay (k)) 10)))))
+                        (cons* #\# #\i (format-number obj k 10)))))
 
                ; todo: datum? and rational? and denom is 10, 100, 1000, ... - write with dot
                ((number? obj)
-                  (format-number obj (delay (k)) 10))
+                  (format-number obj k 10))
 
                ((string? obj)
                   (cons #\"
                      (format-quoted-string obj  ;; <- all eager now
-                        (lcons #\" (k)))))
+                        (cons* #\" k))))
 
                ((vector? obj)
                   (cons #\# (cons #\(
                      (let loop ((n 1))
                         (cond
                            ((less? (size obj) n)
-                              (lcons #\) (k)))
+                              (cons* #\) k))
                            (else
                               (ser (ref obj n) ; render car, then cdr
                                  (λ ()
@@ -197,22 +197,21 @@
                                           (cons #\space (loop (+ n 1)))))))))))))
 
                ((eq? obj #null)
-                  (cons* #\( #\) (delay (k))))
+                  (cons* #\( #\) k))
 
-               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e (delay (k))))
-               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e (delay (k))))
-               ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) (delay (k))))
-               ((eq? obj #eof)   (cons* #\# #\e #\o #\f (delay (k))))
+               ((eq? obj #true)  (cons* #\# #\t #\r #\u #\e k))
+               ((eq? obj #false) (cons* #\# #\f #\a #\l #\s #\e k))
+               ((eq? obj #empty) (cons* #\# #\f #\f #\( #\) k))
+               ((eq? obj #eof)   (cons* #\# #\e #\o #\f k))
 
                ((regex? obj)
-                  (format-string (ref obj 2)
-                     (delay (k))))
+                  (format-string (ref obj 2) k))
 
                ;; render name if one is known, just #function otherwise
                ;; todo: print `(foo ,map ,+ -) instead of '(foo #<map> <+> -) ; ?, is it required
                ((function? obj)
                   (let ((name (names obj #f)))
-                     (foldr render (delay (k))
+                     (foldr render k
                         (if name
                            (list "#<" name ">")
                         else
@@ -230,7 +229,7 @@
                   (render obj (λ () (k))))
 
                ((eq? (type obj) type-vptr)
-                  (cons* #\# #\v #\p #\t #\r (delay (k))))
+                  (cons* #\# #\v #\p #\t #\r k))
 
                ((rlist? obj) ;; fixme: rlist not parsed yet
                   (cons* #\# #\r (ser (rlist->list obj) k)))
@@ -240,7 +239,7 @@
                      (ser (blob->list obj) k))) ;; <- should convert incrementally!
 
                (else
-                  (cons* #\# #\w #\t #\f #\? (delay (k))))))
+                  (cons* #\# #\w #\t #\f #\? k))))
          ser)
 
       (define (const? x)
