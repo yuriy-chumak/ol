@@ -17,7 +17,7 @@
       (owl math)
       (otus async)
       (owl io)
-      (owl format)
+      (otus format)
       (owl list)
       (owl string)
       (owl ff)) ;; MODULE OUTPUT DOWNGRADED
@@ -49,7 +49,7 @@
             #false))
 
       (define (fail fools)
-         (write-bytes stderr (foldr format '(#\newline) fools))
+         (write-bytes stderr (foldr format-any '(#\newline) fools))
          #false)
 
       (define blank "nan") ; <- unique because allocated here
@@ -69,7 +69,7 @@
                      ok?
                      (begin
                         (write-bytes stderr
-                           (foldr format '(#\newline)
+                           (foldr format-any '(#\newline)
                               (list "mandatory option not given: " (get rule 'long "(missing)"))))
                         #false))
                   ok?))
@@ -206,7 +206,7 @@
             (foldr
                (λ (rule tl)
                   (foldr
-                     format
+                     format-any
                      tl
                      (list "  "
                         (let ((short (getf rule 'short)))

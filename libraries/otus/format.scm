@@ -1,4 +1,4 @@
-(define-library (owl format)
+(define-library (otus format)
 
    (import
       (scheme core)
@@ -20,12 +20,9 @@
       make-writer  ;; names → ((obj tl) → (byte ... . tl)) ; TODO: remove
 
       write-format-ff ; write, write-simple
-      write-formatter
-      print-format-ff ; display, print
-      print-formatter
+      print-format-ff ; display, print, print-to
 
-      format
-      formatter)
+      format-any) ; convert argument to lazy utf-8 list, todo?: rename
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -179,7 +176,8 @@
       (define (print-formatter obj k)
          (formatter print-format-ff obj k))
 
-      (define format print-formatter)
+      (define format-any print-formatter)
+      (define format format-any)
 
       ; -------------------------------------------------
       ; receipe book
@@ -215,6 +213,11 @@
                            (cons* #\. #\space
                               (formatter this obj
                                  (λ () (cons* #\) k))))))))) ;(
+         ; strings
+         type-string cook-quoted-string
+         type-string-wide cook-quoted-string
+         type-string-dispatch cook-quoted-string
+
          'self-quoting? (lambda (this obj)
                            (define datum (this 'datum #f))
                            (cond

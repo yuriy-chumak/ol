@@ -24,7 +24,7 @@
       (owl list)
       (owl math)
       (owl string)
-      (owl format)
+      (otus format)
       (lang env)
       (only (lang eval) print-repl-error)
       (lang error)
@@ -57,9 +57,9 @@
                      #false))
                ((not st) ;; no such thread, or just no inbox
                   (system-stderr "ol: dropping envelope to missing thread: ")
-                  (system-stderr (bytes->string (format to '(#\newline))))
+                  (system-stderr (bytes->string (format-any to '(#\newline))))
                   (system-stderr "    envelope: ")
-                  (system-stderr (bytes->string (format envelope '(#\newline))))
+                  (system-stderr (bytes->string (format-any envelope '(#\newline))))
                   (values state #false))
                (else ;; activate the state function
                   (values

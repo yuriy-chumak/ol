@@ -3,7 +3,7 @@
 
 (lets
    ((port (open-output-file "tmp/test")))
-   (write-bytes port (format "Hello, world!" null))
+   (write-bytes port (format-any "Hello, world!" null))
    (close-port port))
 
 (lets

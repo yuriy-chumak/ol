@@ -7,7 +7,7 @@
       (scheme base)
       (owl string)
       (owl list)
-      (owl format)
+      (otus format)
       (owl math))
 
    (begin
@@ -18,8 +18,8 @@
             n
             (let ((this (ref str pos)))
                (cond
-                  ((and (< 47 this) (< this 58))
-                     (count-gensym-id str (+ pos 1) end (+ (* n 10) (- this 48))))
+                  ((and (< 47 this) (< this 58)) ; (<= #\0 this #\9)
+                     (count-gensym-id str (+ pos 1) end (+ (* n 10) (- this #\0))))
                   (else #false)))))
 
       (define (gensym-id exp)
@@ -73,7 +73,7 @@
 
       (define (gensym exp)
          (let*((id (+ 1 (if (vector? exp) (max-ast-id exp 0) (max-gensym-id exp 0))))
-               (digits (cons #\g (format id null))))
+               (digits (cons #\g (format-number id null 10))))
             (string->symbol (runes->string digits))))
 
       ;(gensym 1)

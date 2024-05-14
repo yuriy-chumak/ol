@@ -24,7 +24,7 @@
    (import
       (scheme core)
       (scheme list)
-      (except (owl list) render)
+      (owl list)
       (owl list-extra)
       (owl lazy)
       (owl math))

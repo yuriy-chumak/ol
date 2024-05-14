@@ -68,7 +68,7 @@
       (owl list-extra)
       (owl ff)
       (otus blobs)
-      (owl format)
+      (otus format)
       (owl math)
       (otus fasl)
       (owl lazy)
@@ -267,8 +267,9 @@
       ;;          ((null? ll) #true)
       ;;          (else (loop (ll))))))
 
+      ; TODO: speedup!!
       (define (display-to to obj)
-         (printer (format obj #n) 0 null to))
+         (printer (format-any obj #n) 0 null to))
 
       (define display (case-lambda
          ((obj) (display-to stdout obj))
@@ -283,11 +284,12 @@
          ((obj port) ((writer-to (make-writer {'datum #false})) port obj))))
 
 
+      ; TODO: speedup!
       (define (print-to to . args)
-         (printer (foldr format '(#\newline) args) 0 #null to))
+         (printer (foldr format-any '(#\newline) args) 0 #null to))
 
       (define (print . args)
-         (printer (foldr format '(#\newline) args) 0 #null stdout))
+         (printer (foldr format-any '(#\newline) args) 0 #null stdout))
 
 
       ;; fixme: system-X do not belong here

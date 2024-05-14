@@ -24,7 +24,7 @@
       (exports (owl string))
       (exports (owl sort))
       (exports (otus blobs))
-      (exports (owl format))
+      (exports (otus format))
       (exports (otus async))
       (exports (otus fasl))
       (exports (owl time))
@@ -59,7 +59,7 @@
       (otus fasl)
       (otus blobs)
       (owl regex)
-      (owl format)
+      (otus format)
       (otus async)
       (owl math)
 
