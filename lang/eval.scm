@@ -346,7 +346,11 @@
                   (display (cdr val)))
             else
                (maybe-show-metadata env val)
-               ((writer-to (make-writer (function-name-getter env) #false))
+               ((writer-to (make-writer (ff-replace {
+                        'names (function-name-getter env)
+                        'datum #false }
+                     ; override writing #(defined #(value #ff()))
+                     (or (ref (ref (env 'repl:write #f) 2) 2) {}) )))
                   stdout val))
             (display "\n")))
 
@@ -674,7 +678,7 @@
                                  (define dis (disassembly value))
                                  (if dis
                                  then
-                                    (define echo (writer-to (make-writer (function-name-getter env) #false)))
+                                    (define echo (writer-to (make-writer {'names (function-name-getter env) 'datum #false })))
                                     (display "name: ") (echo stdout value)
                                        (newline)
                                     (print "type: " (dis 'type))

@@ -101,10 +101,10 @@
          (cons* #\# #\f #\f
             (formatter this (ff->alist obj) k)))
 
-
-      ; receipe book
-      ; (write), (write-simple)
-      (define write-format-ff {
+      ; -------------------------------------------------
+      ; (display), (print)
+      (define print-format-ff
+      {
          type-symbol cook-symbol
          ; strings
          type-string cook-quoted-string
@@ -114,21 +114,16 @@
          type-const cook-const
          ; numbers (todo: maybe use number? and (getf .. 'number))
          type-enum+ cook-number
-         type-int+  cook-number
+         type-int+ cook-number
          type-enum- cook-number
-         type-int-  cook-number
+         type-int- cook-number
          type-rational cook-number
-         type-inexact (lambda (this obj k)
-               (if (this 'datum #f)
-                  (cond ; write
-                     ((equal? obj +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 k))
-                     ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 k))
-                     ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 k))
-                     (else
-                        (cons* #\# #\i (format-number obj k 10))))
-               else ; write-simple
-                  (format-number obj k 10)))
          type-complex cook-number
+         type-inexact cook-number
+         ; strings
+         type-string cook-string
+         type-string-wide cook-string
+         type-string-dispatch cook-string
          ; functions
          type-procedure cook-function
          type-closure   cook-function
@@ -140,6 +135,67 @@
          type-vptr (lambda (this obj k)
                (cons* #\# #\v #\p #\t #\r k))
 
+         ; lists, vectors, bytevectors
+         type-pair (lambda (this obj k)
+               (cons #\(
+                  (cdr
+                     (let loop ((obj obj) (tl (cons #\) k)))
+                        (cond
+                           ((null? obj) tl)
+                           ((pair? obj)
+                              (cons #\space
+                                 (formatter this (car obj) (loop (cdr obj) tl))))
+                           (else
+                              (cons* #\space #\. #\space (formatter this obj tl))))))))
+         type-vector (lambda (this obj k)
+               (cons* #\#
+                  (formatter this (vector->list obj) k)))
+               ;; (cons* #\# #\(
+               ;;    (let loop ((n 1))
+               ;;       (cond
+               ;;          ((less? (size obj) n)
+               ;;             (cons* #\) k))
+               ;;          (else
+               ;;             ((setup 'format) setup (ref obj n) ; render car, then cdr
+               ;;                (delay
+               ;;                   (if (eq? n (size obj))
+               ;;                      (loop (+ n 1))
+               ;;                      (cons #\space (loop (+ n 1)))))))))))
+         type-bytevector (lambda (this obj k)
+               (cons* #\# #\u #\8
+                  (formatter this (bytevector->list obj) k))) ;; todo: should convert incrementally
+         ;ffs
+         24 cook-ff  25 cook-ff  26 cook-ff  27 cook-ff
+         ;; TODO:
+            ;; ((rlist? obj) ;; fixme: rlist not parsed yet
+            ;;    (cons* #\# #\r (write-formatter formatter (rlist->list obj) k)))
+
+            ;; ((blob? obj)
+            ;;    (cons #\#
+            ;;       (write-formatter formatter (blob->list obj) k))) ;; <- should convert incrementally!
+      })
+
+      ; 
+      (define (print-formatter obj k)
+         (formatter print-format-ff obj k))
+
+      (define format print-formatter)
+
+      ; -------------------------------------------------
+      ; receipe book
+      ; (write), (write-simple)
+      (define write-format-ff (ff-replace print-format-ff {
+         ; inexact form depends on 'datum
+         type-inexact (lambda (this obj k)
+               (if (this 'datum #f)
+                  (cond ; write
+                     ((equal? obj +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 k))
+                     ((equal? obj +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 k))
+                     ((equal? obj -inf.0) (cons* #\- #\i #\n #\f #\. #\0 k))
+                     (else
+                        (cons* #\# #\i (format-number obj k 10))))
+               else ; write-simple
+                  (format-number obj k 10)))
          ; list
          type-pair (lambda (this obj k)
                (cons #\(
@@ -159,97 +215,29 @@
                            (cons* #\. #\space
                               (formatter this obj
                                  (λ () (cons* #\) k))))))))) ;(
-
-         type-vector (lambda (this obj k)
-               (cons* #\#
-                  (formatter this (vector->list obj) k)))
-               ;; (cons* #\# #\(
-               ;;    (let loop ((n 1))
-               ;;       (cond
-               ;;          ((less? (size obj) n)
-               ;;             (cons* #\) k))
-               ;;          (else
-               ;;             ((setup 'format) setup (ref obj n) ; render car, then cdr
-               ;;                (delay
-               ;;                   (if (eq? n (size obj))
-               ;;                      (loop (+ n 1))
-               ;;                      (cons #\space (loop (+ n 1)))))))))))
-
-         type-bytevector (lambda (this obj k)
-               (cons* #\# #\u #\8
-                  (formatter this (bytevector->list obj) k))) ;; todo: should convert incrementally
-
-         24 cook-ff  25 cook-ff  26 cook-ff  27 cook-ff
-
-         ;; TODO:
-            ;; ((rlist? obj) ;; fixme: rlist not parsed yet
-            ;;    (cons* #\# #\r (write-formatter formatter (rlist->list obj) k)))
-
-            ;; ((blob? obj)
-            ;;    (cons #\#
-            ;;       (write-formatter formatter (blob->list obj) k))) ;; <- should convert incrementally!
-      })
+         'self-quoting? (lambda (this obj)
+                           (define datum (this 'datum #f))
+                           (cond
+                              ; symbols are always not self quoting
+                              ((symbol? obj) #false)
+                              ; lists and pairs - depends on datum.
+                              ((pair? obj) datum)
+                              ; all others - yes
+                              (else #true)))
+      }))
 
       (define (write-formatter obj k)
          (formatter write-format-ff obj k))
 
-
-      ; (display), (print)
-      (define print-format-ff (ff-replace write-format-ff
-      {
-         type-inexact cook-number
-
-         type-string cook-string
-         type-string-wide cook-string
-         type-string-dispatch cook-string
-
-         type-pair (lambda (this obj k)
-               (cons #\(
-                  (cdr
-                     (let loop ((obj obj) (tl (cons #\) k)))
-                        (cond
-                           ((null? obj) tl)
-                           ((pair? obj)
-                              (cons #\space
-                                 (formatter this (car obj) (loop (cdr obj) tl))))
-                           (else
-                              (cons* #\space #\. #\space (formatter this obj tl))))))))
-      }))
-
-      ; 
-      (define (print-formatter obj k)
-         (formatter print-format-ff obj k))
-
-      (define format print-formatter)
-
-
       ; ------------------------------
-      (define (const? x)
-         (eq? (type x) type-const))
-
-      (define (self-quoting? val datum?)
-         (cond
-            ((symbol? val)
-               #false)
-            ((pair? val)
-               (if datum? #true #false))
-            (else
-               #true)))
-
-      ;; could drop val earlier to possibly gc it while rendering
-      (define (maybe-quote val lst datum?)
-         (if (self-quoting? val datum?)
-            lst
-            (cons #\' lst)))
-
-      ;; a value worth checking for sharing in datum labeler
-
       (define (make-lazy-writer setup)
-         (define datum? (setup 'datum #f))
          (define this (ff-replace write-format-ff setup))
 
-         (λ (val tl) ; todo: remove (setup 'format)
-            (maybe-quote val (formatter this val (λ () tl)) datum?)))
+         (λ (val tl)
+            (define output (formatter this val (delay tl)))
+            (if ((this 'self-quoting?) this val)
+               output
+               (cons #\' output))))
 
       (define (make-writer setup)
          (let ((serialize-lazy (make-lazy-writer setup)))
