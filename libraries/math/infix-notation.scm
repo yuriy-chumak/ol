@@ -20,7 +20,9 @@
    ; todo: add ∧,or, xor
 
    (define \\operators {
-      '+ 2 '- 2 '− 3
+      '= 1
+
+      '+ 2 '- 2 '− 2
       '* 3 '/ 3
       '· 3 '× 3 ; dot and cross
       '^ 4 ; power
