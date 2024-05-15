@@ -11,7 +11,7 @@ And voila, we have a very simple, elegant and portable language with a nice synt
 that is a pleasure to program in.
 
 
-This is almost a complete list of differences between Ol and R<sup>7</sup>RS.
+This is almost a complete list of differences between Ol and [R<sup>7</sup>RS](https://small.r7rs.org/attachment/r7rs.pdf).
 
 * 2.1. Identifiers
   * `|\t\t|` and `|\x9;\x9;|` are **different** in Ol, but *the same* in Scheme.

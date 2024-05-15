@@ -290,6 +290,10 @@ Replaces matched part of given string (or stream).
 
 (s/(a??)(a??)(a??)x/1\1 2\2 3\3/ "aax")
                             ==>  "1 2a 3a"
+
+; using backlinks
+(s/(a)+/\1/ "aabbaabb")     ==>  "abbaabb"
+(s/(a)+/\1/g "aabbaabb")    ==>  "abbabb"
 ```
 
 # Cutter

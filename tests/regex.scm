@@ -185,6 +185,13 @@
       (m/\t\t/ "\t\t" #true)
       (c/\t/ "a\tb\tc" ("a" "b" "c"))
       (c/[ \t\n\r]+/ "a  \tb\tc\t\r\td" ("a" "b" "c" "d"))
+
+      (s/(a)+/<\1>/ "aabbaabb"   "<a>bbaabb")
+      (s/(a)+/<\1>/g "aabbaabb"  "<a>bb<a>bb")
+      (s/(a)+/<\\>/g "aabbaabb"  "<\\>bb<\\>bb")
+      (s/(a)+/<\/>/g "aabbaabb"  "</>bb</>bb")
+      (s/(a)+/<\x>/g "aabbaabb"  "<x>bb<x>bb")
+
       ))
 
 ;; run a small battery of tests during load to check for issues

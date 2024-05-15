@@ -159,4 +159,9 @@
  | m/\t\t/ + '		' = '#true'
  | c/\t/ + 'a	b	c' = '(a b c)'
  | c/[ \t\n\r]+/ + 'a  	b	c		d' = '(a b c d)'
+ | s/(a)+/<\1>/ + 'aabbaabb' = '<a>bbaabb'
+ | s/(a)+/<\1>/g + 'aabbaabb' = '<a>bb<a>bb'
+ | s/(a)+/<\\>/g + 'aabbaabb' = '<\>bb<\>bb'
+ | s/(a)+/<\/>/g + 'aabbaabb' = '</>bb</>bb'
+ | s/(a)+/<\x>/g + 'aabbaabb' = '<x>bb<x>bb'
  '--> ~~\o\ ALL TESTS PASSED /o/~~ 

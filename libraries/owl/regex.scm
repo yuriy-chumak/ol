@@ -29,8 +29,7 @@
       get-sexp-regex
       string->regex
       string->replace-regex
-      string->complete-match-regex
-      )
+      string->complete-match-regex)
 
    (import
       (scheme core)
@@ -521,22 +520,22 @@
       (define (replace rep ms tl)
          (foldr
             (λ (char tl)
-               (cond
-                  ((eq? char #\\)
-                     (if (null? tl)
-                        (cons char tl)
-                        (let ((op (car tl)))
-                           (cond
-                              ((and (less? 47 op) (less? op 58)) ;; fixme: silly
-                                 (let ((submatch (ranges-ref ms (- op 48))))
-                                    (if submatch
-                                       (append submatch (cdr tl))
-                                       tl))) ;; todo: add a fail cont and complain about bad backreference
-                              ((eq? op #\\) tl)
-                              (else ;; todo: warn about unhandeld quote
-                                 tl)))))
-                  (else
-                     (cons char tl))))
+               (if (pair? char) ; quoted?
+               then
+                  (define op (car char))
+                  (cond
+                     ; (<= #\0 op #\9), it's a backreference
+                     ;  todo: add a fail cont and complain about bad backreference
+                     ((and (less? 47 op) (less? op 58))
+                        (let ((submatch (ranges-ref ms (- op #\0))))
+                           (if submatch
+                              (append submatch tl)
+                              tl)))
+                     ; just a quoted char
+                     (else
+                        (cons op tl)))
+               else
+                  (cons char tl)))
             tl rep))
 
       ;; todo: could be made lazy to allow string/vector operations without unwinding the whole thing to a list while operating on it
@@ -934,24 +933,24 @@
 
       (define get-replace-char
          (get-either
-            (let-parses ;; quoted
-               ((skip (get-imm #\\))
-                (char (get-imm #\b)))
-               char)
-            (let-parses ;; something other than /
-               ((char get-rune)
-                (verify (not (eq? char #\/)) #false))
-               char)))
+            (let-parse* (;; quoted char with "\"
+                  (skip (get-imm #\\))
+                  (rune get-rune))
+               (list rune)) ; quoted char boxing
+            (let-parse* (;; something other than /
+                  (rune get-rune)
+                  (verify (not (eq? rune #\/)) #false)) ; (verify (eq? rune #\/) #true) ?
+               rune)))
 
-      ;; for testing, s/<regex>/<str>/[g]
+      ; s/<regex>/<str>/[g]
       (define get-replace-regex
-         (let-parses (
+         (let-parse* (
                (skip (get-imm #\s))  ;; opening s
                (skip (get-imm #\/))  ;; opening /
-               (start? (get-either (get-imm #\^) (get-epsilon #false))) ;; maybe get leading ^ (special)
-               (rex (get-regex))
+                  (start? (get-either (get-imm #\^) (get-epsilon #false))) ;; maybe get leading ^ (special)
+                  (rex (get-regex))
                (skip (get-imm #\/))  ;; delimiting /
-               (rep (get-greedy* get-replace-char))
+                  (rep (get-greedy* get-replace-char))
                (skip (get-imm #\/)) ;; closing /
                (all? get-maybe-g)) ;; fixme: add other search/replace match than g
             (make-replacer rex rep all? start?)))
