@@ -1,7 +1,7 @@
 (file json)
 ===========
 
-JSON is *a de facto* industry standard for data exchange.
+JSON as a text-based data exchange format, and is *a de facto* industry standard for data exchange.
 Ol provides a library for working naturally with JSON-formed files, strings and streams.
 
 ```scheme
@@ -19,24 +19,66 @@ Ol provides a library for working naturally with JSON-formed files, strings and 
 ```
 
 ## TOC
-read-json
-read-json-file
-read-json-port
-read-json-string
-read-json-stream
-write-json
-write-json-file
-stringify
+[read-json](#read-json)
+[read-json-file](#read-json-file)
+[read-json-port](#read-json-port)
+[read-json-string](#read-json-string)
+[read-json-stream](#read-json-stream)
+[write-json](#write-json)
+[write-json-file](#write-json-file)
+[stringify](#stringify)
 
 # read-json
 `(read-json pss)`, *procedure*
 
-Reads a json data from port, string, or stream.
+Reads a json data from port, string, or stream.  
+Reads valid json data, i.e. number, string, boolean, array, or object (collection of a key-value pairs).
 
 ```scheme
 > (import (file json))
-> (read-json-string "{'name':'me','phone-number':223323232}")
+
+;; Numbers
+> (read-json "123")
+123
+
+> (read-json "1e17")
+100000000000000000
+
+; number with a dot is read as inexact
+> (read-json "12.34")
+12.3399999
+
+> (read-json "1.1e17")
+1.1e17
+
+;; Strings
+> (read-json "\"hello\"")
+"hello"
+
+; ' is allowed as a string delimiter,
+;   for the readability
+> (read-json "'hello'")
+"hello"
+
+; unicode fully supported, sure
+> (read-json "'χαιρετισμός'")
+"χαιρετισμός"
+
+;; Booleans
+> (read-json "true")
+#true
+
+> (read-json "false")
+#false
+
+;; Objects
+> (read-json "{'name':'me','phone-number':223323232}")
 #ff((name . "me") (phone-number . 223323232))
+
+; objects represented as ff's, so field access can be very fast
+> (let ((obj (read-json "{'name':'me','phone':223323232}")))
+     (if obj (obj 'name)))
+"me"
 ```
 
 # read-json-file
