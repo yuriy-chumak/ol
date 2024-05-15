@@ -128,7 +128,7 @@
          ; others
          type-port (lambda (this obj k)
                (cons* #\# #\< #\f #\d #\space
-                  (format-number (vm:cast obj (if (value? obj) type-enum+ type-int+)) (cons* #\> k))))
+                  (format-number (vm:cast obj (if (value? obj) type-enum+ type-int+)) (cons* #\> k) 10)))
          type-vptr (lambda (this obj k)
                (cons* #\# #\v #\p #\t #\r k))
 
