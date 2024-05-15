@@ -138,8 +138,11 @@
 
    ; send file to output stream
    (define (sendfile filename)
-      (for-each display (list "Sending '\e[0;33m" filename "\e[0;0m'... "))
-      (define stat (syscall 4 (if (string? filename) (c-string filename))))
+      (define realname (s/[?].*$// filename))
+      (print "real name: " realname)
+
+      (for-each display (list "Sending '\e[0;33m" realname "\e[0;0m'... "))
+      (define stat (syscall 4 (if (string? realname) (c-string realname))))
 
       (if stat
       (cond
@@ -149,7 +152,7 @@
             ; list folder:
             (define Out (pipe))
             (define Pid (execvp (list "/bin/sh" "-c" (string-append
-                           "ls -lah " filename)) #f Out))
+                           "ls -lah " realname)) #f Out))
 
             (send "HTTP/1.0 200 OK\n"
                "Connection: close\n"
@@ -165,15 +168,15 @@
             (let loop ((stream (try-parse get-line (cdr line) #false)))
                (when stream
                   (define line (car stream))
-                  (define columns (parse split line filename "invlid ls output" #f))
+                  (define columns (parse split line realname "invlid ls output" #f))
                   (send (car columns))
                   (send
                      "<a href='"
                         (cond
                            ((string-eq? (cdr columns) ".")
-                              (string-append "/" filename))
+                              (string-append "/" realname))
                            (else
-                              (string-append "/" filename "/" (cdr columns))))
+                              (string-append "/" realname "/" (cdr columns))))
                      "'>"
                      (cdr columns)
                      "</a>")
@@ -190,12 +193,18 @@
          ; regular file?
          ((not (zero? (band (ref stat 3) #o0100000)))
             (display "<file> ") ; TODO: get mimetypes
-            (define file (open-input-file filename))
+            (define file (open-input-file realname))
             (if file
             then
                (send "HTTP/1.0 200 OK\n"
                   "Connection: close\n"
-                  "Content-Type: " "application/octet-stream" "\n"
+                  "Content-Type: "
+                     (cond
+                        ((m/.*\.html?$/ realname)
+                           "text/html")
+                        (else
+                           "application/octet-stream"))
+                     "\n"
                   "Content-Length: " (ref stat 8) "\n"
                   "Server: " (car *version*) "/" (cdr *version*) "\n"
                   "\n")
