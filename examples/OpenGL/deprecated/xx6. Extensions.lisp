@@ -8,7 +8,7 @@
 ;(gl:StopCurrent Context)
 
 (unless EXT_bgra
-   (runtime-error "Required opengl extension not supported" 0))
+   (runtime-error "Required opengl extension not supported"))
 
 (gl:run
 

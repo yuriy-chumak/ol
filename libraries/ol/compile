@@ -21,7 +21,7 @@
                (['fail reason]
                   (runtime-error "eval failed with" reason))
                (else
-                  (runtime-error "unknown eval fail error") #n)))
+                  (runtime-error "unknown eval fail error"))))
          exp)))
 
 (define bytes (fasl-encode main))

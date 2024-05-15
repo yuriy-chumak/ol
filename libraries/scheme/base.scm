@@ -297,7 +297,7 @@
       ; 5.5  Record-type definitions
       ; syntax:  (define-record-type <name> <constructor> <pred> <field> ...)  * not supported
       (setq define-record-type (lambda (name constructor pred . fields)
-         (runtime-error "No define-record-type is implemented." #null)))
+         (runtime-error "No define-record-type is implemented.")))
 
       ; 6.2.7.  Numerical input and output
 

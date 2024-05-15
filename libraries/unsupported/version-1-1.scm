@@ -1018,7 +1018,7 @@
       (begin
          (define GLES (or
             (load-dynamic-library "libGLESv1_CM.so")
-            (runtime-error "No GLESv1 library found." #f)))))
+            (runtime-error "No GLESv1 library found.")))))
    (Emscripten
       (begin
          (define GLES (load-dynamic-library #f))))

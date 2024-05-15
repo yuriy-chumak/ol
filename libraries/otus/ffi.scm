@@ -156,7 +156,7 @@
 ; olvm ffi exported functions
 (define ffi (dlsym (dlopen) "OLVM_ffi"))
 (unless ffi
-   (runtime-error "assertion error: ol built with no ffi support, please check a HAVE_DLOPEN and OLVM_FFI build variables." #null))
+   (runtime-error "assertion error: ol built with no ffi support, please check a HAVE_DLOPEN and OLVM_FFI build variables."))
 
 ; smart "dlopen/dlsym"
 (define (load-dynamic-library name)

@@ -57,10 +57,20 @@
          (values-apply (vm:add n 1) (lambda (n carry) n))))
 
       ; * ol specific: (runtime-error reason info)
-      (setq runtime-error (lambda (reason info)
-         (call-with-current-continuation
-            (lambda (resume)
-               (vm:mcp resume 5 reason info))))) ; (mcp 5 reason info)
+      (setq runtime-error (case-lambda
+         ((reason)
+            (call-with-current-continuation
+               (lambda (resume)
+                  (vm:mcp resume 5 reason ""))))
+         ((reason info)
+            (call-with-current-continuation
+               (lambda (resume)
+                  (vm:mcp resume 5 reason info))))
+         ((reason . info)
+            (call-with-current-continuation
+               (lambda (resume)
+                  (vm:mcp resume 5 reason info))))
+       ))
 
       ; * internal automation testing staff
       ; note: please be careful!

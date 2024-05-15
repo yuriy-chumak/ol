@@ -235,7 +235,7 @@
 (let ((context (native:create-context "Ol: OpenGL Window")))
    (if context
       (mail 'opengl ['set 'context context])
-      (runtime-error "Can't create OpenGL context" #null)))
+      (runtime-error "Can't create OpenGL context")))
 
 (define (gl:redisplay)
    (native:swap-buffers

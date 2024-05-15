@@ -36,7 +36,7 @@
 (define res (PQexec conn "BEGIN"))
 (unless (and res (<= (PQresultStatus conn) PGRES_COMMAND_OK))
    (PQclear res)
-   (runtime-error "BEGIN command failed" '()))
+   (runtime-error "BEGIN command failed"))
 
 ; should PQclear PGresult whenever it is no longer needed to avoid memory leaks
 (PQclear res)
@@ -48,7 +48,7 @@
                (not res)
                (> (PQresultStatus conn) PGRES_COMMAND_OK))
          (PQclear res)
-         (runtime-error "BEGIN command failed" '()))
+         (runtime-error "BEGIN command failed"))
       (PQclear res))
    '(
       "DROP TABLE IF EXISTS test"

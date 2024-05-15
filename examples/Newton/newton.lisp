@@ -16,7 +16,7 @@
 ; создадим "мир"
 (define world (or
    (NewtonCreate)
-   (runtime-error "Can't create newton world" #f)))
+   (runtime-error "Can't create newton world")))
 (NewtonSetSolverIterations world 2)
 
 (print "NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
@@ -24,7 +24,7 @@
 ; создадим "пол"
 (define collision (or
    (NewtonCreateTreeCollision world 0)
-   (runtime-error "Can't create background" #f)))
+   (runtime-error "Can't create background")))
 (NewtonTreeCollisionBeginBuild collision)
 
 ; пол
@@ -57,7 +57,7 @@
 ; добавим куб сто кубов
 (define collision (or
    (NewtonCreateBox world  1 1 1  0  #f)
-   (runtime-error "Can't create box" #f)))
+   (runtime-error "Can't create box")))
 
 (define cubes (map
    (lambda (id)
@@ -84,7 +84,7 @@
 
 ;; (define collision (or
 ;;    (NewtonCreateSphere world  0.5  0  #f)
-;;    (runtime-error "Can't create box" #f)))
+;;    (runtime-error "Can't create box")))
 ;; (NewtonDestroyCollision collision)
 
 (define spheres null)
@@ -164,7 +164,7 @@
 
 (define collision (or
    (NewtonCreateSphere world  0.5  0  #f)
-   (runtime-error "Can't create box" #f)))
+   (runtime-error "Can't create box")))
 
 ; init
 (glShadeModel GL_SMOOTH)

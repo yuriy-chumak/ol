@@ -118,7 +118,7 @@
 ;      ((< density 90)  2)
 ;      (else 1)))
 
-;(runtime-error "debug-exit" '())
+;(runtime-error "debug-exit")
 
 ;
 (define (insert_glyph2 glyph x y slide)

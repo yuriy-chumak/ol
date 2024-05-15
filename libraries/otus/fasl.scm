@@ -200,9 +200,9 @@
                   ((eq? (ref one (-- (size one))) 1)
                      copyreverse-bytes)
                   ((eq? (ref one 1) 1)
-                     (runtime-error "middle-endian unsupported" #null))
+                     (runtime-error "middle-endian unsupported"))
                   (else
-                     (runtime-error "unknown-endian unsupported" #null)))))
+                     (runtime-error "unknown-endian unsupported")))))
          ; generate subobjects index
          (let ((index (cdr (index-closure (object-closure obj)))))
             (let loop ((kvs (ff-iter index)))
@@ -353,9 +353,9 @@
                      (lambda (x)
                         x)) ; same
                   ((eq? (ref one 1) 1)
-                     (runtime-error "middle-endian unsupported" #null))
+                     (runtime-error "middle-endian unsupported"))
                   (else
-                     (runtime-error "unknown-endian unsupported" #null)))))
+                     (runtime-error "unknown-endian unsupported")))))
 
          (let* ((ll ob (decode-or ll (λ (why) failed) copybytes)))
             (if (eq? ob failed)

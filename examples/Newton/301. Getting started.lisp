@@ -49,7 +49,7 @@
 ; создадим "мир"
 (define world (or
    (NewtonCreate)
-   (runtime-error "Can't create newton world" #f)))
+   (runtime-error "Can't create newton world")))
 (create-background-body world) ; create the "table"
 
 (define body1 (create-freefall-ball world 50))

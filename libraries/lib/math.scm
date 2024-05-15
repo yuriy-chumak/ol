@@ -15,7 +15,7 @@
 )
 
 (begin
-   (unless libm (runtime-error "Can't load libm" #f))
+   (unless libm (runtime-error "Can't load libm"))
 
    (define exp (libm fft-double "exp" fft-double))
    (define log (libm fft-double "log" fft-double))

@@ -18,7 +18,7 @@
             (['fail reason]
                (runtime-error "eval failed with" reason))
             (else
-               (runtime-error "unknown eval fail error") #n)))
+               (runtime-error "unknown eval fail error"))))
       (case-lambda
          ((expr env) (eval expr env))
          ((expr) (eval expr (interaction-environment)))))

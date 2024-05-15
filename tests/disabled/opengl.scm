@@ -1,4 +1,4 @@
-(runtime-error "Example deprecated!" '())
+(runtime-error "Example deprecated!")
 (define SHADER_NUM 1)
 
 

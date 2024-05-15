@@ -23,7 +23,7 @@
       (runtime-error "Can't bind to port" port))
    ; listen
    (if (not (listen socket)) ; listen
-      (runtime-error "Can't listen socket" #f))
+      (runtime-error "Can't listen socket"))
 
    ; accept
    (let loop ()

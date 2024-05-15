@@ -265,7 +265,7 @@
             (['code-var fixed? arity insts]
                (let* ((insts (allocate-registers insts)))
                   (if (not insts)
-                     (runtime-error "failed to allocate registers" "")
+                     (runtime-error "failed to allocate registers")
                      (let*/cc ret  ((fail (λ (why) (runtime-error "Error in bytecode assembly: " why) #false))
                                     (bytes (assemble insts fail))
                                     (len (length bytes)))

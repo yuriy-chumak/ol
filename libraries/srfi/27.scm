@@ -39,7 +39,7 @@
 
 (begin
    (unless (eq? (band (vm:features) #o20) #o20)
-      (runtime-error "Required inexactness support (vm must be built with the OLVM_INEXACTS build variable)" #null))
+      (runtime-error "Required inexactness support (vm must be built with the OLVM_INEXACTS variable enabled)"))
 
    (setq norm #i2.3283065495728e-10)
    (setq m1   #i4294967087)

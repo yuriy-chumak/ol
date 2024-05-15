@@ -125,7 +125,7 @@
          (setq :getcwd (SO type-string-wide "_wgetcwd" type-string-wide fft-int))
          (setq :chdir (SO fft-int "_wchdir" type-string-wide))
          (runtime-error
-            "Windows platform supported in progress" #n)
+            "Windows platform supported in progress")
       )) )
 
 (begin

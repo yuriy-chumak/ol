@@ -35,7 +35,7 @@
          (glx_minor (make-bytevector '(0 0 0 0))))
       (or
          (glXQueryVersion display glx_major glx_minor)
-         (runtime-error "Can't get glX version" null))
+         (runtime-error "Can't get glX version"))
       (cons (vector->int32 glx_major)
             (vector->int32 glx_minor))))
 

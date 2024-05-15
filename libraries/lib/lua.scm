@@ -137,13 +137,13 @@
          (setq LUA (or
             (load-dynamic-library "liblua5.2.so")
             (load-dynamic-library "liblua5.2.so.0")
-            (runtime-error "Can't load lua library" #null)))))
+            (runtime-error "Can't load lua library")))))
    (Windows
       (begin
          (setq LUA (or
             (load-dynamic-library "lua52.dll")
             (load-dynamic-library "lua5.2.dll")
-            (runtime-error "Can't load lua library" #null)))))
+            (runtime-error "Can't load lua library")))))
    (else
       (begin (runtime-error "Unsupported platform OS" *uname*))))
 

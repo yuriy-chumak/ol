@@ -12,13 +12,13 @@
 
 (define world (or
    (NewtonCreate)
-   (runtime-error "Can't create newtonian world" #f)))
+   (runtime-error "Can't create newtonian world")))
 (print "NewtonGetMemoryUsed = " (NewtonGetMemoryUsed))
 
 ; создадим "пол"
 (define collision (or
    (NewtonCreateTreeCollision world 0)
-   (runtime-error "Can't create background" #f)))
+   (runtime-error "Can't create background")))
 (NewtonTreeCollisionBeginBuild collision)
 
 (define S 4)

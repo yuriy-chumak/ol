@@ -797,7 +797,7 @@
       (begin
          (define GLES (or
             (load-dynamic-library "libGLESv2.so")
-            (runtime-error "No GLESv2 library found." #f)))))
+            (runtime-error "No GLESv2 library found.")))))
    (Emscripten
       (begin
          (define GLES (load-dynamic-library #f))))
@@ -805,7 +805,7 @@
       (begin
          (define GLES (or
             (load-dynamic-library "libEGL.so")
-            (runtime-error "No GLES library found." #f)))))
+            (runtime-error "No GLES library found.")))))
    (else
       (begin (runtime-error "1Unsupported platform:" *uname*))))
 

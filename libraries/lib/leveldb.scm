@@ -176,7 +176,7 @@
    (define (make-void*) (vm:cast 0 type-vptr))
 
    (if (not leveldb)
-      (runtime-error "LevelDB library not found. Please, install one." #null))
+      (runtime-error "LevelDB library not found. Please, install one."))
 
    ; Types
    (define leveldb_t* fft-void*)

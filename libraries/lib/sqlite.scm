@@ -346,7 +346,7 @@
    (define (make-void*) (vm:cast 0 type-vptr))
 
    (if (not sqlite)
-      (runtime-error "Sqlite3 library not found. Please install one." #null))
+      (runtime-error "Sqlite3 library not found. Please install one."))
 
    ; Types
    (define sqlite3*  fft-void*)

@@ -54,7 +54,7 @@
                      (vs (glCreateShader GL_VERTEX_SHADER))
                      (fs (glCreateShader GL_FRAGMENT_SHADER)))
                   (if (eq? po 0)
-                     (runtime-error "Can't create shader program." #f))
+                     (runtime-error "Can't create shader program."))
 
                   (compile vs vstext)
                   (compile fs fstext)
@@ -69,7 +69,7 @@
                      (vs (glCreateShader GL_VERTEX_SHADER))
                      (fs (glCreateShader GL_FRAGMENT_SHADER)))
                   (if (eq? program 0)
-                     (runtime-error "Can't create shader program." #f))
+                     (runtime-error "Can't create shader program."))
 
                   (compile gs gstext)
                   (compile vs vstext)
