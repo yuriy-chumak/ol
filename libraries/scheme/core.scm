@@ -66,6 +66,7 @@
       ; note: please be careful!
       ;       this is simplified 'assert' that uses 'eq?' before real 'equal?' be
       ;       defined to real implementation in 6.1
+      ; todo: change ===> to the ==>, and ==== to the ===
       (define-syntax assert
          (syntax-rules (= ===> equal?)
             ((assert expression ===> expectation)
@@ -696,6 +697,12 @@
       (define-syntax force
          (syntax-rules ()
             ((force promise) (promise))))
+
+      ;; TODO: change to this:
+         ;; (cond
+         ;;    ((null? it) it)
+         ;;    ((pair? it) (cons (car it) (force-ll (cdr it))))
+         ;;    (else (force-ll (it)))))
 
       ; (promise? obj)  * (scheme lazy)
       ; (make-promise obj)  * (scheme lazy)
@@ -1518,6 +1525,7 @@
          (eq? (type o) type-bytecode))
 
       ; *ol* extension
+      ; TODO: exchange procedure? and function?
       (define (function? o)
          (case (type o)
             (type-procedure #true)

@@ -188,15 +188,16 @@
 
       ; note: it is assumed string construction has checked that all code points are valid and thus encodable
       (define (string->bytes str)    (str-foldr encode-point #null str))
-      (define (format-string str tl) (str-foldr encode-point tl str))
       (define (string->runes str)    (str-foldr cons #null str))
+
+      (define (format-string str tl) (str-foldr encode-point tl str))
       (define (format-quoted-string str tl)
          (str-foldr encode-quoted-point tl str))
 
       (define (symbol->string str)
          (if (symbol? str)
             (ref str 1)))
-      (define (string->symbol str)
+      (define (string->symbol str) ; todo: move to (otus symbol)?
          (if (string? str)
             (await (mail 'intern str)))) ; do not work without (lang intern)
 

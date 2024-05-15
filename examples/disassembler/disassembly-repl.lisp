@@ -1,6 +1,7 @@
 #!/usr/bin/env ol
 
-(import (lang eval))
+(import (lang eval)
+      (scheme repl))
 
 (define (function->name env function)
    (call/cc (lambda (return)

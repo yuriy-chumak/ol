@@ -30,23 +30,24 @@ Notes
 -----
 
 * REPL still available, use `./ol -` (or `ol.exe -`) to run.
-  ```
+  ```scheme
   $ ./ol -
   Welcome to Otus Lisp 2.5.1
   type ',help' to help, ',quit' to end session.
 
+  ; let's check included libraries
   > ,libs
   '((otus core) (lang embed) (lang threading) (lang eval) (lang macro) (lang fixedp
   oint) (lang alpha) (lang cps) (lang gensym) (lang rtl) (lang closure) (lang assem
-  ble) (lang register) (lang ast) (scheme cxr) (lang env) (otus lisp) (scheme misc)
-   (lang sexp) (lang intern) (lib system) (owl regex) (owl parse) (owl time) (schem
-  e base) (scheme process-context) (scheme inexact) (owl math-extra) (owl sort) (ow
-  l iff) (owl io) (otus fasl) (owl render) (owl rlist) (owl symbol) (otus blobs) (o
-  wl queue) (scheme exceptions) (scheme string) (scheme bytevector) (scheme vector)
-   (owl string) (owl unicode) (owl lazy) (owl list-extra) (otus async) (lang error)
-   (lang primop) (owl list) (srfi 1) (owl math) (owl math fp) (owl ff) (scheme list
-  ) (scheme core) (srfi 71) (srfi 87) (srfi 16) (src vm))
-  
+  ble) (lang register) (lang ast) (scheme cxr) (lang env) (otus lisp) (scheme read)
+  (scheme misc) (lang sexp) (lang intern) (lib system) (owl time) (scheme base) (sc
+  heme process-context) (scheme inexact) (owl math-extra) (owl sort) (owl io) (otus
+  fasl) (otus format) (owl rlist) (owl symbol) (owl regex) (owl iff) (owl parse) (o
+  tus blobs) (owl queue) (scheme exceptions) (scheme string) (scheme bytevector) (s
+  cheme vector) (owl string) (owl unicode) (owl lazy) (owl list-extra) (otus async)
+  (lang error) (lang primop) (owl list) (srfi 1) (owl math) (owl math fp) (owl ff) 
+  (scheme list) (scheme core) (srfi 71) (srfi 87) (srfi 16) (src vm))
+
   > (print "hello")
   hello
   #true

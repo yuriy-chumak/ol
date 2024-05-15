@@ -33,10 +33,14 @@
             ; Fetches the text from the label of the button.
             'get-text (lambda ()
                (gtk_label_get_text ptr))
-
             ; Sets the text of the label of the button.
             'set-text (lambda (text)
                (gtk_label_set_text ptr text))
+            ; gets or sets 
+            'text (case-lambda
+               (()(gtk_label_get_text ptr))
+               ((text)
+                  (gtk_label_set_text ptr text)))
             ; Sets the labels text and attributes from markup.
             'set-markup (lambda (markup)
                (gtk_label_set_markup ptr markup))

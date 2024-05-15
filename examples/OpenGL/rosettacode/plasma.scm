@@ -16,7 +16,7 @@
          (iota 256))))
 
 ; render
-(import (lib gl1))
+(import (lib gl-1))
 (gl:set-window-size 256 256)
 
 (glBindTexture GL_TEXTURE_2D 0)

@@ -15,6 +15,7 @@
       write-json-file
       
       stringify)
+
    (import
       (otus lisp)
       (owl parse)
@@ -224,11 +225,12 @@
                      (open-input-file filename)))) ; note: no need to close port
 
 
-   (define (write-json json port)
-      (print-json-with (lambda (what) (display-to port what)) json))
-   (define write-json (case-lambda
-      ((json) (write-json json stdout))
-      ((json port) (write-json json port))))
+   (define write-json
+      (define (write-json json port)
+         (print-json-with (lambda (what) (display-to port what)) json))
+      (case-lambda
+         ((json) (write-json json stdout))
+         ((json port) (write-json json port))))
 
    (define (write-json-file json filename)
       (define port (if (equal? filename "-")

@@ -1,7 +1,7 @@
 #!/usr/bin/env ol
 
 (import (lib newton-dynamics))
-(import (lib gl))
+(import (lib gl) (lib GLU))
 
 (gl:set-window-title "301. Getting started")
 (import (OpenGL 1.0))

@@ -593,6 +593,7 @@
    (define WHITE "\e[0;37m")
    (define END "\e[0;0m"))
 
+; TODO: add debug functions under (getenv "SQLITE_DEBUG") or similar
 (cond-expand
    (sqlite-log-debug
       (begin

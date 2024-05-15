@@ -7,6 +7,7 @@
 ;; todo: use types from (scheme core)
 ;; todo: rins, rdel
 
+; todo: rename to tree??
 (define-library (owl rlist)
 
    (export

@@ -70,8 +70,8 @@ $ ol
 Welcome to Otus Lisp 2.3.1-3172-43e20773
 type ',help' to help, ',quit' to end session.
 > (import (otus ffi))
-> ;; Library (otus ffi) added
-> ;; Imported (otus ffi)
+;; Library (otus ffi) added
+;; Imported (otus ffi)
 > (define libm (load-dynamic-library "libm.so.6"))
 ;; Defined libm
 > (define asin (libm fft-double "asin" fft-double))

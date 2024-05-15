@@ -12,6 +12,7 @@
 
    (begin
       ; return the gensym id of exp (number) or #false
+      ; todo: change gensym names starts with '^
 
       (define (count-gensym-id str pos end n)
          (if (= pos end)

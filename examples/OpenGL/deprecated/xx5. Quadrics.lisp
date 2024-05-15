@@ -1,7 +1,8 @@
 #!/usr/bin/env ol
-(import (lib opengl))
+(import (lib gl))
 (gl:set-window-title "5. Quadrics")
 
+(import (OpenGL 1.0) (lib GLU))
 ; init
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
@@ -11,15 +12,19 @@
 (gluPerspective 45 (/ 640 480) 0.1 100)
 
 (glEnable GL_DEPTH_TEST)
-(let ((sphere (gluNewQuadric)))
-   (gluQuadricDrawStyle sphere GLU_LINE)
 
-   (gl:set-userdata
-      1 0.02 3 0.03 sphere))
+(define sphere (gluNewQuadric))
+(gluQuadricDrawStyle sphere GLU_LINE)
+
+(import (scheme dynamic-bindings))
+(define q (make-parameter [
+      1 0.02 3 0.03 sphere]))
 
 ; draw
-(gl:set-renderer (lambda (x   dx y   dy  sphere)
+(gl:set-renderer (lambda ()
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
+
+   (vector-apply (q) (lambda (x dx y dy sphere)
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
@@ -31,5 +36,5 @@
 
    (let ((nx (if (or (> x 2) (< x -2)) (- dx) dx))
          (ny (if (or (> y 4) (< y -4)) (- dy) dy)))
-      (list (+ x nx) nx (+ y ny) ny sphere))
+      (q [(+ x nx) nx (+ y ny) ny sphere]))))
 ))

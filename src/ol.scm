@@ -116,7 +116,10 @@
             (define block (min bytes blocksize))
             (loop (- bytes block) (cons (make-bytevector block) out))))))
 
-(define exit-seccomp-failed 2)   ;; --seccomp given but cannot do it
+
+
+(setq invalid-home-option-error 1)
+(setq seccomp-failed-error 2)   ;; --seccomp given but cannot do it
 
 ;; enter sandbox with at least n-megs of free space in heap, or exit
 (define (sandbox n-megs)
@@ -271,7 +274,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                            args)))
                   ((starts-with? (car args) "--")
                      (print "unknown command line option '" (car args) "'")
-                     (halt 0))
+                     (halt 4))
 
                   (else
                      (values
@@ -354,7 +357,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
          (if sandbox?
             (unless (sandbox sandbox?)
                (system-stderr "Failed to enter the sandbox.\nYou must have SECCOMP support enabled.\n")
-               (halt exit-seccomp-failed)))
+               (halt 2)))
 
 
          ; ohai:
