@@ -41,7 +41,7 @@
       (time                (greedy+ (rune-if non-space?)))
       (sp8 (greedy+ (rune-if space?)))
 
-      (filename            (greedy+ byte)))
+      (filename            (greedy+ rune)))
    (cons
       (runes->string
          (append
@@ -117,10 +117,9 @@
             (loop (force (cdr string)) (+ n 1))))))
 
 (define port
-   (if (and
-            (> (length *command-line*) 1)
+   (if (and (> (length *command-line*) 1)
             (string-eq? (car *command-line*) "--port"))
-         (string->number (cadr *command-line*) 10)
+      (string->number (cadr *command-line*) 10)
    else
       4000))
 
@@ -138,8 +137,9 @@
 
    ; send file to output stream
    (define (sendfile filename)
-      (define realname (s/[?].*$// filename))
-      (print "real name: " realname)
+      (define realname
+         (s/%20/ /g
+         (s/[?].*$// filename)))
 
       (for-each display (list "Sending '\e[0;33m" realname "\e[0;0m'... "))
       (define stat (syscall 4 (if (string? realname) (c-string realname))))
@@ -159,7 +159,8 @@
                "Content-Type: " "text/html" "\n"
                "Server: " (car *version*) "/" (cdr *version*) "\n"
                "\n")
-            (send "<pre>\n")
+            (send "<meta charset='UTF-8'>")
+            (send "<pre>")
             (send "<h3>" filename "</h3>")
             ; skip first line "total ..."
             (define line (try-parse get-line (port->bytestream (car Out)) #false))
@@ -200,8 +201,28 @@
                   "Connection: close\n"
                   "Content-Type: "
                      (cond
-                        ((m/.*\.html?$/ realname)
-                           "text/html")
+                        ((m/.*\.html?$/ realname) "text/html")
+                        ((m/.*\.js$/ realname) "text/javascript")
+                        ((m/.*\.md$/ realname) "text/markdown")
+                        ; other texts
+                        ((m/.*\.css$/ realname) "text/css")
+                        ((m/.*\.csv$/ realname) "text/csv")
+                        ((m/.*\.txt$/ realname) "text/plain")
+                        ; image
+                        ((m/.*\.bmp$/ realname) "image/bmp")
+                        ((m/.*\.gif$/ realname) "image/gif")
+                        ((m/.*\.jpe?g$/ realname) "image/jpeg")
+                        ((m/.*\.png$/ realname) "image/png")
+                        ((m/.*\.svg$/ realname) "image/svg+xml")
+                        ; audio/video
+                        ((m/.*\.mp3$/ realname) "audio/mpeg")
+                        ((m/.*\.opus$/ realname) "audio/opus")
+                        ((m/.*\.mp4$/ realname) "video/mp4")
+                        ((m/.*\.mpeg$/ realname) "video/mpeg")
+                        ; others
+                        ((m/.*\.pdf$/ realname) "application/pdf")
+                        ((m/.*\.json$/ realname) "application/json")
+                        ((m/.*\.xml$/ realname) "application/xml")
                         (else
                            "application/octet-stream"))
                      "\n"
@@ -238,7 +259,7 @@
                (string-eq? (ref request 1) "GET"))
             (define filename (ref request 2))
             (sendfile (if (string-eq? filename "/") "."
-               (substring filename 1 (string-length filename))))) ; without leading "/"
+               (s/^\/+// filename)))) ; remove all leading "/"
          (else
             (sendfile 404))))
    (send "HTTP/1.0 404 Not Found\n"
