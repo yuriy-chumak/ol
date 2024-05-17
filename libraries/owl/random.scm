@@ -409,7 +409,7 @@
             ;; fixme: is this indeed ok?
             (lets ((rs o (rand rs (- hi lo))))
                (values rs (+ o lo)))
-            (runtime-error "rnd-range: bad range: " (list lo hi))))
+            (runtime-error "rnd-range: bad range: " lo hi)))
 
       ;(define data (lrange 0 1 10))
       ;(let loop ((rst (expt (time-ms) 3)))

@@ -206,7 +206,7 @@
             (if (and (pair? lits) (uncompiled-closure? (car lits)))
                (ok (cdar lits) env)
                (runtime-error "Bad closurize output: " 
-                  (list 'exp exp 'lits lits)))))
+                  'exp exp 'lits lits))))
 
 ))
 

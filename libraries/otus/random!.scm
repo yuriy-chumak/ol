@@ -51,7 +51,7 @@
    (if (< lo hi)
       (let* ((o (rand! (- hi lo))))
          (+ o lo))
-      (runtime-error "rand-range! bad range: " (list lo hi))))
+      (runtime-error "rand-range! bad range: " lo hi)))
 
 (define (shuffle! o) ; перемешивалка для vector, list, string
    (cond

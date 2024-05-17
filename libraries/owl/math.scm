@@ -238,10 +238,10 @@
                
 
       (define (big-bad-args op a b)
-         (runtime-error "Bad math:" (list op a b)))
+         (runtime-error "Bad math:" op a b))
 
       (define (big-unimplemented op a b)
-         (runtime-error "Math too high:" (list op a b)))
+         (runtime-error "Math too high:" op a b))
 
 
       ;;;
@@ -1973,7 +1973,7 @@
             ((eq? (type b) type-inexact)
                (fdiv a b))
             ((eq? b 0)
-               (cond ; old: (runtime-error "division by zero " (list '/ a b)))
+               (cond ; old: (runtime-error "division by zero " '/ a b))
                   ((or (eq? a 0) (eqv? a +nan.0))
                      +nan.0)
                   ((< a 0)
@@ -2026,7 +2026,8 @@
             (type-int- (ncons (ncar n) (ncdr n)))
             (type-rational (if (negative? n) (sub 0 n) n)) ; todo: speedup
             (type-inexact (if (negative? n) (fsub 0 n) n))
-            (else (runtime-error "bad math: " (list 'abs n)))))
+            (else (runtime-error
+                     "bad math: " 'abs n))))
 
       (define (floor n)
          (case (type n)

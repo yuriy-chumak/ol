@@ -82,14 +82,17 @@
             ((assert expression ===> expectation)
                (ifeq (equal? ((lambda (x) x) expression) expectation) #true
                   #true
-                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))
+                  (runtime-error "assertion error:"
+                     (quote expression) "must be" (quote expectation))))
             ((assert expression = expectation)
                (ifeq (equal? ((lambda (x) x) expression) expectation) #true
                   #true
-                  (runtime-error "assertion error:" (cons (quote expression) (cons "must be" (cons (quote expectation) #null))))))
+                  (runtime-error "assertion error:"
+                     (quote expression) "must be" (quote expectation))))
             ((assert expression)
                (ifeq (equal? ((lambda (x) x) expression) #false) #true
-                  (runtime-error "assertion error:" (cons (quote expression) (cons "is not a true" #null)))
+                  (runtime-error "assertion error:"
+                     (quote expression) "is not a true")
                   #true))))
       ; * 'equal?' stub
       ; note: allows basic assert implementation before real 'equal?' be
@@ -111,7 +114,7 @@
       ; * internal staff
       (setq core-profile-error (lambda (function module)
          (runtime-error "Core profile error:"
-            (cons "Function" (cons function (cons "require to import" (cons module (cons "module." #null))))))))
+            "Function" function "require to import" module "module.")))
 
       (setq make-vector ; #() and []
          (case-lambda

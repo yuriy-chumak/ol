@@ -54,10 +54,10 @@
    (else
       (begin
          (define libsoil (or (load-dynamic-library "libSOIL.so.1")
-                             (runtime-error "Can't load libsoil" (list
+                             (runtime-error "Can't load libsoil"
                                       "try to install 'libsoil1' package, or\n"
                                "       check the libsoil homepage at https://github.com/yuriy-chumak/libol-soil\n"
-                               "       if there is no package for your OS")))))))
+                               "       if there is no package for your OS"))))))
 
 (begin
 	; The format of images that may be loaded (force_channels)

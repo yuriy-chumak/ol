@@ -511,7 +511,8 @@
                                  ;;; note that this is an alias thing...
                                  (if (eq? (length formals) (length args))
                                     (rtl-any (create-aliases regs formals args) body)
-                                    (runtime-error "Bad argument count in lambda call: " (list 'args args 'formals formals))))))
+                                    (runtime-error "Bad argument count in lambda call: "
+                                       'args args 'formals formals)))))
                         (else
                            (rtl-call regs rator rands))))))
             (else

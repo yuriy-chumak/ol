@@ -794,7 +794,7 @@
                   (λ (rx) (at-most m rx))
                   (λ (rx) (rex-and (exactly n rx) (at-most (- m n) rx)))))
             (else
-               (runtime-error "make-repeater: bad range: " (list n 'to m)))))
+               (runtime-error "make-repeater: bad range: " n 'to m))))
 
       (define get-range
          (let-parses

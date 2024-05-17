@@ -123,7 +123,7 @@
                            (mklambda formals body)
                            rands env cont free)))
                   (else
-                     (runtime-error "Bad head lambda arguments:" (list 'args formals 'rands rands)))))
+                     (runtime-error "Bad head lambda arguments:" 'args formals 'rands rands))))
             (['call rator2 rands2]
                (lets
                   ((this free (fresh free))
@@ -201,7 +201,7 @@
             (['lambda-var fixed? formals body]
                (cps-just-lambda cps formals fixed? body env free))
             (else
-               (runtime-error "brae: " (list node "argument should be function")))))
+               (runtime-error "brae: " node "argument should be function"))))
 
       (define (cps-exp exp env cont free)
          (case exp

@@ -179,7 +179,7 @@
                            (unless (eq? (length formals) (length rands))
                               (runtime-error 
                                  "Wrong number of arguments: "
-                                 (list 'call exp 'expects formals)))
+                                    'call exp 'expects formals))
                            (let ((sub-env (env-bind env formals)))
                               (mkcall rator
                                  (append
@@ -331,7 +331,7 @@
                                  (set-deps node partition)
                                  (runtime-error 
                                     "mutual recursion bug, partitions differ: " 
-                                    (list 'picked partition 'found node))))
+                                       'picked partition 'found node)))
                            nodes))
                       (env-rec
                         (fold
