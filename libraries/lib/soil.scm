@@ -44,18 +44,18 @@
       (begin
          (define libsoil (or (load-dynamic-library "soil.dll")
                              (runtime-error "Can't load libsoil"
-                                      "try installing 'soil.dll' from https://github.com/yuriy-chumak/libol-soil/releases/")))))
+                                      "try to install 'soil.dll' from https://github.com/yuriy-chumak/libol-soil/releases/")))))
    (Android
       (begin
          (define libsoil (or (load-dynamic-library "libSOIL.so")
                              (load-dynamic-library "libSOIL.so.1")
                              (runtime-error "Can't load libsoil"
-                                      "try rebuilding apk")))))
+                                      "try to rebuild apk")))))
    (else
       (begin
          (define libsoil (or (load-dynamic-library "libSOIL.so.1")
                              (runtime-error "Can't load libsoil" (list
-                                      "try installing 'libsoil1' package, or\n"
+                                      "try to install 'libsoil1' package, or\n"
                                "       check the libsoil homepage at https://github.com/yuriy-chumak/libol-soil\n"
                                "       if there is no package for your OS")))))))
 

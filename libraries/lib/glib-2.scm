@@ -131,15 +131,15 @@
          (define GLIB
             (load-dynamic-library "libglib-2.0-0.dll"))
          (unless GLIB (runtime-error "Can't load libglib-2.0-0.dll"
-            "try installing dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
+            "try to install dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
          (define GOBJECT
             (load-dynamic-library "libgobject-2.0-0.dll"))
          (unless GOBJECT (runtime-error "Can't load libgobject-2.0-0.dll"
-            "try installing dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
+            "try to install dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
          (define GIO
             (load-dynamic-library "libgio-2.0-0.dll"))
          (unless GIO (runtime-error "Can't load libgio-2.0-0.dll"
-            "try installing dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
+            "try to install dlls from https://github.com/yuriy-chumak/libol-gtk-3/releases/"))
       ))
 )
 ; common part
