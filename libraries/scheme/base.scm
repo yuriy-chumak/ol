@@ -277,7 +277,7 @@
       ; * internal staff
       (setq base-profile-error (lambda (function module)
          (runtime-error "Base profile error:"
-            (cons "Function" (cons function (cons "require to import" (cons module (cons "module." #null))))))))
+            "Function" function "require to import" module "module.")))
 
       (define-syntax declare-external
          (syntax-rules (quote)
