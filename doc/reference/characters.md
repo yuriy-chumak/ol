@@ -7,14 +7,23 @@ Characters are written using the notation #\\<character\> or #\\<character name\
 
 The full list of character names:
 ```scheme
-#\null          ==>  #x0
-#\alarm         ==>  #x7
-#\backspace     ==>  #x8
-#\tab           ==>  #x9
-#\newline       ==>  #xA
-#\return        ==>  #xD
+#\null          ==>  #x00
+#\alarm         ==>  #x07
+#\backspace     ==>  #x08
+#\tab           ==>  #x09
+#\newline       ==>  #x0A
+#\vtab          ==>  #x0B
+#\formfeed      ==>  #x0C
+#\return        ==>  #x0D
 #\escape        ==>  #x1B
 #\space         ==>  #x20
+#\percent       ==>  #x25
+#\ampersand     ==>  #x26
+#\comma         ==>  #x2C
+#\slash         ==>  #x2F
+#\colon         ==>  #x3A
+#\semicolon     ==>  #x3B
+#\backslash     ==>  #x5C
 #\delete        ==>  #x7F
 ```
 
