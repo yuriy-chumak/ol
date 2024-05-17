@@ -1222,6 +1222,7 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 	cp < 0x110000 ? 4 : 1; })
 
 static // length of wide string in utf-8 encoded bytes
+__attribute__((unused))
 size_t utf8_len(word widestr)
 {
 	size_t len = 0;
