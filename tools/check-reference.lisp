@@ -87,7 +87,7 @@
    ((p1 p2) (syscall 32 p1 p2))))
 
 (for-each (lambda (filename)
-      (for-each display (list "  testing " filename "..."))
+      (for-each display (list "  testing " filename))
       (for-each (lambda (code-block)
             (let loop ((code-block code-block) (env (interaction-environment)))
                (cond
@@ -95,6 +95,7 @@
                      (let*((code (caar expressions))
                            (answer (cdar expressions))
                            (answer (s/[ \n]+/ /g (list->string answer)))
+                           (_ (write-char #\. stderr))
                            ; handle value printing
                            (output (when (member (ref (car code) 1) '(display write write-simple print))
                               (define bak (dup stdout))
