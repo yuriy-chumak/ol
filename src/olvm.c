@@ -430,16 +430,15 @@ typedef word* R;
 #define INULL     make_value(TCONST, 2)  // #null, empty list, '()
 #define IEMPTY    make_value(TCONST, 3)  // #empty, empty ff, {}
 #define IEOF      make_value(TCONST, 4)  // #eof, end of file
-#define IHALT     make_value(TCONST, 5)  // #halt, end of thread
-#define IRETURN   make_value(TCONST, 6)  // #return, end of program
+// olvm internal, not exposed to the ol
+#define IEXIT     make_value(TCONST, 5)  // end of thread/program
+#define IRETURN   make_value(TCONST, 6)  // end of thunk, return value
 
 #define RFALSE    ((R)IFALSE)
 #define RTRUE     ((R)ITRUE)
 #define RNULL     ((R)INULL)
 #define REMPTY    ((R)IEMPTY)
 #define REOF      ((R)IEOF)
-#define RHALT     ((R)IHALT)
-#define RRETURN   ((R)IRETURN)
 
 // ------- service functions ------------------
 void E(char* format, ...);
@@ -2637,7 +2636,7 @@ apply:;
 	}
 
 	// done ?
-	if (this == IHALT) {
+	if (this == IEXIT) {
 		// a thread or mcp is calling the final continuation
 		this = R0;
 		if (!is_reference(this))
@@ -2992,7 +2991,7 @@ loop:;
 			break;  // no apply, continue
 		}
 		// else call a thunk with terminal continuation
-		R3 = IHALT;  // exit via R0 when the time comes
+		R3 = IEXIT;  // exit via R0 when the time comes
 		acc = 1;
 
 		goto apply;
@@ -5909,7 +5908,7 @@ OLVM_new(unsigned char* bootstrap)
 	for (ptrdiff_t i = 0; i < NR; i++)
 		reg[i] = IFALSE;
 	reg[0] = IFALSE; // MCP - master control program (NO mcp for now)
-	reg[3] = IHALT;  // continuation, just finish job
+	reg[3] = IEXIT;  // continuation, just finish job
 	reg[4] = INULL;  // first argument
 
 #ifndef OLVM_NOPINS
