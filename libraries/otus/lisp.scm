@@ -37,6 +37,7 @@
       ; extended ol functions
       ; universal for lists, vectors and strings
       for-each fold
+      =
       
       (exports (lang error)))
 
@@ -112,4 +113,32 @@
                               state
                               (loop (apply f (cons state (map car args))) (map cdr args)))))
       ((f state) state)))
+
+   ; -=( universal = )=-------------------
+   (define =
+      (case-lambda
+         ((a b)
+            (cond
+               ((number? a)
+                  (number=? a b))
+               ((string? a)
+                  (string=? a b))
+               ((list? a)
+                  (equal? a b))))
+
+         ((a . bs)
+            (cond
+               ((number? a)
+                  (each (lambda (b)
+                           (number=? a b))
+                     bs))
+               ((string? a)
+                  (each (lambda (b)
+                           (string=? a b))
+                     bs))
+               ((list? a)
+                  (each (lambda (b)
+                           (equal? a b))
+                     bs)) ))))
+
 ))

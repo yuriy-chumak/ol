@@ -7,7 +7,7 @@
       mem
       fold-map foldr-map ; deprecated
       keep remove
-      all some
+      all some each
       smap unfold
       take-while                ;; pred, lst -> as, bs
       halve
@@ -82,9 +82,11 @@
       (define (remove pred lst)
          (keep (o not pred) lst))
 
-      (define (all pred lst)
+      (define (each pred lst)
          (withcc ret
             (fold (λ (ok x) (if (pred x) ok (ret #false))) #true lst)))
+
+      (define all each)
 
       (define (some pred lst)
          (withcc ret

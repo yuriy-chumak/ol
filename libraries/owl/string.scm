@@ -56,6 +56,9 @@
       string-ci=?        ; str str → bool
       string-ci>?        ; str str → bool
       string-ci>=?       ; str str → bool
+
+      ; * ol internal
+      compare-strings
    )
 
    (import (scheme core))
