@@ -46,6 +46,7 @@
       
       rational complex
 
+      number=?
       big-bad-args
       math-constructor!)
 
@@ -301,7 +302,7 @@
                (big-bad-args '< a b))))
 
       ; public "="
-      (define (= b a)
+      (define (number=? b a)
          (case (type a)
             (type-enum+ (if (eq? (type b) type-inexact)
                            (equal? (inexact a) b)
@@ -324,22 +325,22 @@
             (type-rational
                (case (type b)
                   (type-rational
-                     (and (= (ncar a) (ncar b))
-                          (= (ncdr a) (ncdr b))))
+                     (and (number=? (ncar a) (ncar b))
+                          (number=? (ncdr a) (ncdr b))))
                   (type-inexact (equal? (inexact a) b))
                   (else
                      #false)))
             ; only complex numbers can be equal to other complex number
             (type-complex
                (if (eq? (type b) type-complex)
-                  (and (= (ncar a) (ncar b))
-                       (= (ncdr a) (ncdr b)))))
+                  (and (number=? (ncar a) (ncar b))
+                       (number=? (ncdr a) (ncdr b)))))
             (type-inexact
                (unless (eq? (type b) type-complex)
                   (equal? a (inexact b))))
             (else
                (big-bad-args '= a b))))
-
+      (define = number=?)
 
       ;;;
       ;;; ADDITION
