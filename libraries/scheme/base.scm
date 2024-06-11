@@ -81,6 +81,7 @@
    dlclose ; * olvm specific
       ;; do
       ;; dynamic-wind
+   each ; * ol specific
 ;  else           * reserved for use by Scheme
    eof-object
    eof-object?

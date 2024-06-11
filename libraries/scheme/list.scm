@@ -13,6 +13,7 @@
       fold foldr
       
       has? ; * ol specific, fast version of member
+      each
    )
 
 
@@ -75,6 +76,32 @@
                         (apply f (map car a))
                         (loop (map cdr a)))))
       ((f) #false)))
+
+   ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
+   (define each (case-lambda
+      ((ok? a)    (call/cc (lambda (ret)
+                     (let loop ((a a))
+                        (unless (null? a)
+                           (unless (ok? (car a))
+                              (ret #false))
+                           (loop (cdr a))))
+                     #true)))
+      ((ok? a b)  (call/cc (lambda (ret)
+                     (let loop ((a a) (b b))
+                        (unless (null? a)
+                           (unless (ok? (car a) (car b))
+                              (ret #false))
+                           (loop (cdr a) (cdr b))))
+                     #true)))
+      ((ok? a . bs)
+                  (call/cc (lambda (ret)
+                     (let loop ((a (cons a bs)))
+                        (unless (null? (car a))
+                           (unless (apply ok? (map car a))
+                              (ret #false))
+                           (loop (map cdr a))))
+                     #true)))
+      ))
 
    ; procedure:  (fold proc list1 list2 ...)  * ol specific, fold left
    (define fold
