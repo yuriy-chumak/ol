@@ -123,7 +123,7 @@
                   (number=? a b))
                ((string? a)
                   (string=? a b))
-               ((list? a)
+               (else
                   (equal? a b))))
 
          ((a . bs)
@@ -136,7 +136,7 @@
                   (each (lambda (b)
                            (string=? a b))
                      bs))
-               ((list? a)
+               (else
                   (each (lambda (b)
                            (equal? a b))
                      bs)) ))))
