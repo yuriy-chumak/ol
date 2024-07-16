@@ -56,7 +56,7 @@
    (glTexParameteri GL_TEXTURE_2D GL_GENERATE_MIPMAP_SGIS GL_TRUE)
 
    ; задаем символы, которые будут в нашем атласе
-   ; please read samples/OpenGL/fonts/README.md
+   ; please read examples/OpenGL/fonts/README.md
 
    ; словарь буква -> глиф на текстуре
    (import (file json))

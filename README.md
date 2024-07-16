@@ -15,7 +15,7 @@
 <a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
 
 
-Otus Lisp, Version 2.5.1
+Otus Lisp, Version 2.6 (rc1)
 ========================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
@@ -49,7 +49,14 @@ PACKAGING
 [![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
 [![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
 
-~~**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).~~
+* Ubuntu (and it's descendants such as Mint, Pop!_OS, Xubuntu, etc.) users may use the official [project ppa](https://launchpad.net/~yuriy-chumak/+archive/ubuntu/ol).
+  ```shell
+  $ sudo add-apt-repository ppa:yuriy-chumak/ol
+  $ sudo apt update
+  $ sudo apt install ol
+  ```
+
+* ~~**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).~~
 
 Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
 
@@ -149,9 +156,9 @@ Advanced build instructions: [doc/BUILD.md](doc/BUILD.md)
 ##### RUN
 ```
 $ ./ol
-Welcome to Otus Lisp 2.5.1
+Welcome to Otus Lisp 2.6
 type ',help' to help, ',quit' to end session.
->
+> 
 ```
 
 The Ol binary includes a rich set of features (lists, vectors and bytevectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, async functions and actors, etc.) and can be used as a completely standalone.  
@@ -162,7 +169,7 @@ The Ol binary includes a rich set of features (lists, vectors and bytevectors, a
 $ sudo make install
 ```
 
-Note: by default used */usr/bin/ol* for Ol binary, and */usr/lib/ol/* for Ol libraries.
+Note: by default we use */usr/bin/ol* for Ol binary, and */usr/lib/ol/* folder for Ol libraries.
 
 
 ##### UNINSTALL
@@ -185,28 +192,28 @@ LEARNING
 
 The Otus Lisp language is based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with minor changes and useful extensions.
 
-You can find Ol samples at:
-* [Standard procedures](doc/reference/) list (under construction).
-* [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page.
-* [Samples](samples/) and [Tests](tests/) repository folders.
-* Embed usage sample available as toy [pacman game](samples/pacman/) sample.
-* Android sample available at [android](samples/android/) sample.
+You can find working Ol examples at:
+* [Standard procedures](doc/reference/) list (under construction),
+* [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page,
+* [Tests](tests/) and [Examples](examples/) repository folders,
+* Embed usage sample available as toy [pacman game](examples/pacman/) sample,
+* Android sample code available at [android](examples/android/) folder.
 
 
 For example:
 
-* "LogicWire" and "Digital rain" samples demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)):
-  * https://github.com/yuriy-chumak/ol/tree/master/samples/LogicWire ([idea source](https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/))
+* "LogicWire" and "Digital rain" examples demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)):
+  * https://github.com/yuriy-chumak/ol/tree/master/examples/LogicWire ([idea source](https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/))
     <img src="https://raw.githubusercontent.com/yuriy-chumak/ol/master/doc/img/2023-04-10-21-47.gif" width="50%" height="50%">
-  * https://github.com/yuriy-chumak/ol/tree/master/samples/Matrix
+  * https://github.com/yuriy-chumak/ol/tree/master/examples/Matrix
     !["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
 
-* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/samples/pacman
+* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/examples/pacman
 
 !["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
 
 
-* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/samples/Newton.
+* "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/examples/Newton.
 You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.
 
 !["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
@@ -326,7 +333,7 @@ Ol command line options available:
 * `--sandbox`: enable execution in the sandbox (if OS supports)
 * `--sandbox=...`: execution in the sandbox with "..." Megs of memory preallocated
 * `--interactive`: force REPL interactive mode
-* `--no-interactive`: disable REPL interactive mode
+* `--non-interactive`: disable REPL interactive mode
 * `--embed`: run special reduced REPL for embed usage
 * `--`: end-of-options sign
 
@@ -439,7 +446,7 @@ FILES
 EMBEDDING OL
 ------------
 
-Please refer to the [embedding sample README](https://github.com/yuriy-chumak/ol/blob/master/samples/pacman/README.md).
+Please refer to the [embedding sample README](https://github.com/yuriy-chumak/ol/blob/master/examples/pacman/README.md).
 
 
 DOCUMENTATION
@@ -457,7 +464,7 @@ Otus Lisp is available under 2 licenses:
 [GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
 
 Copyright (c) 2011-2014 Aki Helin                         <br/>
-Copyright (c) 2014-2023 Yuriy Chumak                      <br/>
+Copyright (c) 2014-2024 Yuriy Chumak                      <br/>
 
 
 ----------------------------------------------------------------------

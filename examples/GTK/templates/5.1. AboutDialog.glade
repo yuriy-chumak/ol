@@ -11,7 +11,7 @@
     <property name="copyright" translatable="yes">(c) 2022 Yuriy Chumak</property>
     <property name="comments" translatable="yes">This is GTK samples written in pure Lisp.
 Otus Lisp.</property>
-    <property name="website">https://github.com/otus-lisp/ol/tree/master/samples/GTK</property>
+    <property name="website">https://github.com/otus-lisp/ol/tree/master/examples/GTK</property>
     <property name="website_label" translatable="yes">Sources Web Page</property>
     <property name="authors">Yuriy Chumak, https://github.com/yuriy-chumak/ol
 Aki Helin, https://gitlab.com/owl-lisp/owl</property>

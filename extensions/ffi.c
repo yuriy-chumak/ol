@@ -2766,23 +2766,19 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 	if (function)
 #if  __x86_64__
-#	if (__unix__ || __APPLE__)
-		got = nix64_call(args, ad, max(i, l), d, fpmask, function, returntype & 0x3F);
-#	elif _WIN64
+# if _WIN64
 		got = win64_call(args, i, function, returntype & 0x3F);
-#	else
-#		error "Unsupported platform"
-#	endif
+# else // (__unix__ || __APPLE__)
+		got = nix64_call(args, ad, max(i, l), d, fpmask, function, returntype & 0x3F);
+# endif
 
 #elif __i386__
-#	if (__unix__ || __APPLE__)
-		got = x86_call(args, i, function, returntype & 0x3F);
-#	elif _WIN32
+# if _WIN32
 		// cdecl and stdcall in our case are same, so...
 		got = x86_call(args, i, function, returntype & 0x3F);
-#	else
-#		error "Unsupported platform"
-#	endif
+# else // (__unix__ || __APPLE__)
+		got = x86_call(args, i, function, returntype & 0x3F);
+# endif
 
 #elif __aarch64__
 	got = arm64_call(args, ad, i, d, extra, function, returntype & 0x3F, WALIGN(e));

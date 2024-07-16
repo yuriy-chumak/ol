@@ -5,7 +5,7 @@ export OL_HOME=libraries
 # detect external features
 -include configure.mk
 
-.PHONY: all debug release check slim config recompile install uninstall clean android
+.PHONY: all release debug check slim config recompile install uninstall clean android
 .PHONY: describe
 
 all: release
@@ -162,7 +162,8 @@ endif
 clean:
 	rm -f boot.fasl
 	rm -f ./vm ./ol ./olvm ./libol.so
-	rm -r tmp/*
+	rm -f tmp/*
+	rm -f includes/ol/vm.h
 
 -include extras/setup.mk
 

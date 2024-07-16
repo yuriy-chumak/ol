@@ -165,7 +165,7 @@
 ;; help strings
 (define copyright
    (substring (symbol->string '|
-Copyright (c) 2014-2023 Yuriy Chumak
+Copyright (c) 2014-2024 Yuriy Chumak
 License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>
 License MIT: <https://en.wikipedia.org/wiki/MIT_License>
 This is free software: you are free to change and redistribute it.
@@ -186,6 +186,8 @@ Usage: ol [OPTION]... [--] [input-file [file-options]]
    --interactive       make execution environment interactive
    --no-interactive    make execution environment non-interactive (depr.)
    --non-interactive   make execution environment non-interactive
+
+   --                  end of options list
    -                   stdin
 
 Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
@@ -242,7 +244,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
 
                   ((string-eq? (car args) "--interactive")
                      (loop (put options 'interactive #t) (cdr args)))
-                  ((string-eq? (car args) "--no-interactive")
+                  ((string-eq? (car args) "--no-interactive") ; deprecated
                      (loop (put options 'interactive #f) (cdr args)))
                   ((string-eq? (car args) "--non-interactive")
                      (loop (put options 'interactive #f) (cdr args)))

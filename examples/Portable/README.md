@@ -32,7 +32,7 @@ Notes
 * REPL still available, use `./ol -` (or `ol.exe -`) to run.
   ```scheme
   $ ./ol -
-  Welcome to Otus Lisp 2.5.1
+  Welcome to Otus Lisp 2.6
   type ',help' to help, ',quit' to end session.
 
   ; let's check included libraries
@@ -59,8 +59,8 @@ Notes
 * Other command line options works too, sure.
   ```
   $ ./ol --version
-  ol (Otus Lisp) 2.5.1
-  Copyright (c) 2014-2023 Yuriy Chumak
+  ol (Otus Lisp) 2.6
+  Copyright (c) 2014-2024 Yuriy Chumak
   License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>
   License MIT: <https://en.wikipedia.org/wiki/MIT_License>
   This is free software: you are free to change and redistribute it.

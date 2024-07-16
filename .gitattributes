@@ -8,6 +8,7 @@
 
 # Exclude tests
 tests/* linguist-detectable=false
+examples/* linguist-detectable=false
 samples/* linguist-detectable=false
 
 # Declare files that will always have CRLF line endings on checkout.

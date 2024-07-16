@@ -11,7 +11,34 @@
 CHANGELOG
 =========
 
-### Otus Lisp, Version 2.5.1
+2.6 changelog:
+ * [!] large write/print upgrade
+ * [!] large regex update
+ * [!] Now Ol (but not Olvm) can handle pipes.
+ * regex update with "global" grab
+ * `g//` regex returns string if arg was a string
+ * dlopen/dlsym moved to base library
+ * new `each` function
+ * `=` now can compare not only numbers, but strings, vectors, etc.,
+ * lot of documentation added
+ * `runtime-error` goes more universal
+ * `http/server` mime-types support added, can handle links with "?"
+ * regex library upgraded
+ * port printing updated
+ * fix for long port numbers bug
+ * pvenv now run repl if no './main' provided
+ * print and write now prints regexps in source form
+ * 258 and 261 olvm "crash" renamed to proper "error"
+ * gtk-3 oop added
+ * write strings fixed (for "\\")
+ * print updated with #ff()
+ * #ff(...) notation added
+ * #u8(...) notation added
+ * new function `write-simple`
+ * win32 ol.exe made portable
+
+
+### Otus Lisp, Version 2.5
 2.5 changelog:
  * FFI structures-by-value in parameters,
  * FFI structures writeback,

@@ -53,9 +53,9 @@ IN DETAILS
 ----------
 
 Please read the
-[embed1.c](https://github.com/yuriy-chumak/ol/blob/master/samples/pacman/embed1.c),
-[embed2.c](https://github.com/yuriy-chumak/ol/blob/master/samples/pacman/embed2.c), and
-[embed3.c](https://github.com/yuriy-chumak/ol/blob/master/samples/pacman/embed3.c) complete source codes for a better usage understanding.
+[embed1.c](https://github.com/yuriy-chumak/ol/blob/master/examples/pacman/embed1.c),
+[embed2.c](https://github.com/yuriy-chumak/ol/blob/master/examples/pacman/embed2.c), and
+[embed3.c](https://github.com/yuriy-chumak/ol/blob/master/examples/pacman/embed3.c) complete source codes for a better usage understanding.
 
 COMPARISON
 ----------

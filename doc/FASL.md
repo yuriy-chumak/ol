@@ -10,7 +10,7 @@ Glossary
 * integer, little-endian multibyte sequence with signaling high bit.
 * longint_t, integer with unlimited accuracy.
 
-FASL decoder is pretty simple and workable sample code for `fasl->sexp` and `sexp->fasl` can be found in the [special Ol branch](https://github.com/yuriy-chumak/ol/tree/bootstrapping/samples/bootstrapping).
+FASL decoder is pretty simple and workable sample code for `fasl->sexp` and `sexp->fasl` can be found in the [special Ol branch](https://github.com/yuriy-chumak/ol/tree/bootstrapping/examples/bootstrapping).
 
 ### Integer's Encoding
 
