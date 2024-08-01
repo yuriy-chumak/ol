@@ -6,7 +6,7 @@ Bytevectors
 The *length* of a bytevector is the number of elements that it contains.
 This number is a non-negative integer that is fixed when the bytevector is created.
 
-The *valid indexes* of a bytevector are the exact non-negative integers less than the length of the bytevector, starting at index **zero** as with vectors.
+The *valid indexes* of a bytevector are the exact non-negative integers less than the length of the bytevector, starting at index **zero**.
 
 Bytevectors are written using the notation `#u8(...)` and function `bytevector`.
 
@@ -55,10 +55,12 @@ Returns #true if *obj* is a bytevector. Otherwise, #false is returned.
 ```
 
 # make-bytevector
-`(make-bytevector k)`, *procedure*  
-`(make-bytevector k byte)`, *procedure*
+`(make-bytevector list)`, *procedure*  
+`(make-bytevector len)`, *procedure*  
+`(make-bytevector len byte)`, *procedure*
 
-Returns a newly allocated bytevector of length *k*. If *byte* is given, then all elements of the bytevector are initialized to *byte*, otherwise the contents of each element are 0.
+Returns a newly allocated bytevector from *list* if it's a list.  
+Returns a newly allocated bytevector of length *len* if *len* is integer. If *byte* is given, then all elements of the bytevector are initialized to *byte*, otherwise the contents of each element are 0.
 
 Values wider than 8 bits are not supported!
 
@@ -70,6 +72,8 @@ Values wider than 8 bits are not supported!
 (make-bytevector "3")      ==>  #false
 (make-bytevector -3)       ==>  #false
 (make-bytevector 7/5)      ==>  #false
+(make-bytevector '(1 2 3)) ==>  #u8(1 2 3)
+(make-bytevector '())      ==>  #u8()
 ```
 
 # bytevector-length
