@@ -654,6 +654,7 @@
                   (imm-val #\s accept-space)       ;; \s = [ \t\r\n\v\f]
                   (imm-val #\S accept-nonspace)    ;; \S = [ \t\r\n\v\f]
                   (imm-val #\\ (imm #\\))          ;; \\ = /
+                  (imm-val #\| (imm #\|))          ;; \| = |
                   (imm-val #\/ (imm #\/)) )))      ;; \/ = /
             val))
 
