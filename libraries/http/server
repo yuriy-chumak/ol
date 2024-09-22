@@ -23,6 +23,15 @@
 
 (define (space? x) (eq? x #\space))
 (define (non-space? x) (not (eq? x #\space)))
+
+(define \d (fold (lambda (ff x) (put ff x #t)) {} (iota 10 #\0)))
+(define (\d? x) (\d x #f))
+(define \d: (put \d #\: #t))
+(define (\d:? x) (\d: x #f))
+(define \d- (put \d #\- #t))
+(define (\d-? x) (\d- x #f))
+(define S\D? (lambda (x) (not (or (space? x) (\d x #f)))))
+
 (define split (let-parse* (
       (permissions         (greedy+ (rune-if non-space?)))
       (sp1 (greedy+ (rune-if space?)))
@@ -34,13 +43,22 @@
       (sp4 (greedy+ (rune-if space?)))
       (file-size           (greedy+ (rune-if non-space?)))
       (sp5 (greedy+ (rune-if space?)))
-      (month               (greedy+ (rune-if non-space?)))
+      (date (any-of
+               (let-parse* (
+                     (month         (greedy+ (rune-if S\D?)))
+                     (sp1 (greedy+ (rune-if space?)))
+                     (day           (greedy+ (rune-if \d?)))
+                     (sp2 (greedy+ (rune-if space?)))
+                     (time          (greedy+ (rune-if \d:?))) )
+                  (append month sp1 day sp2 time))
+               (let-parse* (
+                     (date          (greedy+ (rune-if \d-?)))
+                     (sp1 (greedy+ (rune-if space?)))
+                     (time          (greedy+ (rune-if \d:?))) )
+                  (append date sp1 time))
+            ))
       (sp6 (greedy+ (rune-if space?)))
-      (day                 (greedy+ (rune-if non-space?)))
-      (sp7 (greedy+ (rune-if space?)))
-      (time                (greedy+ (rune-if non-space?)))
-      (sp8 (greedy+ (rune-if space?)))
-
+      ; file name - the rest of line
       (filename            (greedy+ rune)))
    (cons
       (runes->string
@@ -50,9 +68,7 @@
             file-owner          sp3
             file-group          sp4
             file-size           sp5
-            month               sp6
-            day                 sp7
-            time                sp8))
+            date                sp6))
       (runes->string filename))))
 
 (define OK "\e[0;32mOK\e[0;0m")
