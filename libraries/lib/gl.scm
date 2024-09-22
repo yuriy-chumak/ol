@@ -29,6 +29,9 @@
    gl:hide-cursor
    gl:redisplay ; (swap buffers)
 
+   gl:force-render
+   gl:swap-buffers
+
    ; * internal use (with gl3 and gl4)
    native:enable-context native:disable-context
    hook:exit)
@@ -104,23 +107,61 @@
                )))))))
    (else
       (begin
+         ; smart call to renderer
+         (define (render this)
+            (define renderer (this 'renderer #f))
+            (when renderer
+               (define mouse (os:GetMousePos (this 'context #f)))
+               (define (draw)
+                  (case-apply renderer
+                     (list 0)
+                     (list 1 mouse)
+                     (list 2 mouse {
+                        'mouse mouse
+                        ; TBD:
+                        'option1 #true
+                        'option2 #false
+                     })))
+
+               (if (this 'vr-mode) ;; VR mode
+               then
+                  (glHint GL_VR_HINT 1)
+                  ((this 'vr-begin))
+                  (for-each (lambda (eye)
+                        ((this 'vr-update) eye)
+                        (glGetIntegerv GL_VIEWPORT gl:window-dimensions)
+
+                        (draw) ((this 'vr-flush)))
+                     '(0 1)) ; left eye, right eye
+                  ((this 'vr-end))
+                  (glHint GL_VR_HINT 0)
+               else
+                  (draw) ;; regular mode
+                  (native:swap-buffers (this 'context [])) )))
+
+         ; main OpenGL actor
          (actor 'opengl (lambda ()
          (let loop ((this {
                ; defaults
                'resize-handler (lambda (w h) (glViewport 0 0 w h))
                'vr-mode #false
+               'autorender setup:autorender-mode
          }))
          (cond
             ((check-mail) => (lambda (envelope)
                (let*((sender msg envelope))
                   (case msg
                      ; low level interface:
+                     ('this
+                        (mail sender this)
+                        (loop this))
+
                      (['set key value]
                         (loop (put this key value)))
                      (['get key]
                         (mail sender (this key #false))
                         (loop this))
-                     (['debug]
+                     (['debug] ; todo: remove
                         (mail sender this)
                         (loop this))
 
@@ -135,11 +176,11 @@
 
                      ; setters
                      (['set-window-title title]
-                        (gl:SetWindowTitle (this 'context #f) title)
+                        (os:SetWindowTitle (this 'context #f) title)
                         (loop this))
 
                      (['set-window-size width height]
-                        (gl:SetWindowSize (this 'context #f) width height)
+                        (os:SetWindowSize (this 'context #f) width height)
                         (glViewport 0 0 width height)
                         (loop this))
 
@@ -163,8 +204,7 @@
 
             ; блок непосредственно рабочего цикла окна
             ((this 'context #f) => (lambda (context)
-               (let ((renderer (this 'renderer #f))
-                     (prerenderer (this 'prerenderer #f))
+               (let ((prerenderer (this 'prerenderer #f))
                      (calculator (this 'calculator #f)))
                   ; 1. обработаем сообщения (todo: не более чем N за раз)
                   (native:process-events context (lambda (event)
@@ -187,39 +227,9 @@
                   ; 3. и нарисуем его
                   (if prerenderer
                      (prerenderer))
-                  (when renderer
-                     (define mouse (gl:GetMousePos (this 'context #f)))
-                     (define (draw)
-                        (case-apply renderer
-                           (list 0)
-                           (list 1 mouse)
-                           (list 2 mouse { ; TBD.
-                              'option1 #true
-                              'option2 #false
-                           })))
-
-                     (if (this 'vr-mode) ;; VR mode
-                     then
-                        (define viewport '(0 0 0 0))
-
-                        (glHint GL_VR_HINT 1)
-                        ((this 'vr-begin))
-                        (for-each (lambda (eye)
-                              ((this 'vr-update) eye)
-                              (glGetIntegerv GL_VIEWPORT viewport)
-                              ; todo: use vector (update ffi.c)
-                              (set-ref! gl:window-dimensions 1 (list-ref viewport 0))
-                              (set-ref! gl:window-dimensions 2 (list-ref viewport 1))
-                              (set-ref! gl:window-dimensions 3 (list-ref viewport 2))
-                              (set-ref! gl:window-dimensions 4 (list-ref viewport 3))
-
-                              (draw) ((this 'vr-flush)))
-                           '(0 1)) ; left eye, right eye
-                        ((this 'vr-end))
-                        (glHint GL_VR_HINT 0)
-                     else
-                        (draw) ;; regular mode
-                        (native:swap-buffers (this 'context []))))
+                  ; 4. 
+                  (when (this 'autorender #f)
+                     (render this))
 
                   ; 4. done
                   (sleep 0)
@@ -238,6 +248,12 @@
       (runtime-error "Can't create OpenGL context")))
 
 (define (gl:redisplay)
+   (native:swap-buffers
+      (await (mail 'opengl ['get 'context]))))
+
+(define (gl:force-render)
+   (render (await (mail 'opengl 'this))))
+(define (gl:swap-buffers)
    (native:swap-buffers
       (await (mail 'opengl ['get 'context]))))
 
@@ -268,7 +284,7 @@
 ;;       (glColor3f r g b))))
 
 (define (gl:hide-cursor)
-   (gl:HideCursor (await (mail 'opengl ['get 'context]))))
+   (os:HideCursor (await (mail 'opengl ['get 'context]))))
 
 (define (gl:set-mouse-handler handler)
    (mail 'opengl ['set 'mouse-handler handler]))
