@@ -23,11 +23,8 @@ ol32.exe: CC := i686-w64-mingw32-gcc
 ol64.exe: CC:=x86_64-w64-mingw32-gcc
 
 ol.exe: MINGWCFLAGS += -DOLVM_TARVENV=1
-ol.exe: ol64.exe
-	tar -cvf tmp/pvenv.tar \
-	    --owner=OL/2.5 --group= \
-	    --directory=libraries .
-	cat $^ >$@
+ol.exe: ol64.exe tmp/pvenv.tar
+	cat $< >$@
 	x86_64-w64-mingw32-strip $@
 	cat tmp/pvenv.tar >>$@
 
@@ -58,7 +55,7 @@ includes/ol/vm.h: src/olvm.c
 
 # note: use 2>/dev/null in "shell command" to avoid
 #       make call optimization and really run shell.
-tmp/repl.c: repl
+tmp/repl.c: olvm repl
 # vim
 ifneq ($(shell command -v xxd 2>/dev/null),)
 	xxd --include repl >tmp/repl.c
@@ -294,3 +291,31 @@ check-reference: ol
 check-reference: $(wildcard doc/reference/*.md)
 	@echo "Testing reference samples:"
 	@./ol tools/check-reference.lisp $(filter %.md,$^) && echo $(ok) || echo $(failed)
+
+# -------------------------------------------------------------
+# pvenv
+define PVENV_ADD
+	cat '{}'| ol <(echo '(write (read))') >../tmp/library.scm;\
+	tar -rf ../$@ \
+	    --absolute-names ../tmp/library.scm \
+		--transform 's|.*|{}|'\
+		--owner=OL/2.5 \
+		--group=? 
+endef
+define PVENV_ADD_RAW
+	tar -rf ../$@ \
+	    --absolute-names {} \
+		--owner=OL/2.5 \
+		--group=? 
+endef
+tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
+               $(wildcard libraries/*/*/*.scm)\
+               $(wildcard libraries/*/*/*/*.scm)\
+               $(wildcard libraries/*/*.lisp)\
+               $(wildcard libraries/*/*/*.lisp)
+	rm -f $@
+	cd libraries;\
+	  find ./ -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
+	  find ./ -name "*.lisp" -exec bash -c "echo '{}'; $(PVENV_ADD_RAW)" \;;\
+	cd ..
+	rm -f tmp/library.scm
