@@ -1,3 +1,7 @@
+; properties
+(define setup:autorender-mode #true)
+
+
 (setq user32 (load-dynamic-library "user32.dll"))
 (setq gdi32  (load-dynamic-library "gdi32.dll"))
 (setq opengl32 (load-dynamic-library "opengl32.dll"))
@@ -172,7 +176,7 @@
 ; ---
 (setq SetWindowText (user32 fft-int "SetWindowTextW" fft-void* type-string-wide))
 
-(define (gl:SetWindowTitle context title)
+(define (os:SetWindowTitle context title)
    (vector-apply context (lambda (dc glrc window)
       (SetWindowText window title))))
 
@@ -182,7 +186,7 @@
    (setq GWL_STYLE -16) (setq GWL_EXSTYLE -20)
 (setq GetMenu (user32 fft-void* "GetMenu" fft-void*))
 
-(define (gl:SetWindowSize context width height)
+(define (os:SetWindowSize context width height)
    (vector-apply context (lambda (dc glrc window)
       (let ((rect '(0 0 0 0))
             (area (list 0 0 width height)))
@@ -195,11 +199,11 @@
 
 ; ---
 (setq ShowCursor (user32 fft-int "ShowCursor" fft-int))
-(define (gl:HideCursor context)
+(define (os:HideCursor context)
    (ShowCursor 0))
 
 ; ---
-(define (gl:GetMousePos context)
+(define (os:GetMousePos context)
    (vector-apply context (lambda (dc glrc window)
       (let ((pos '(0 0)))
          (GetCursorPos pos)

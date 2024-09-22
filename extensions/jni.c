@@ -1,31 +1,45 @@
-//package github.otus_lisp.ol
+// package github.otus_lisp.ol
 #define NATIVE(name) Java_github_otus_1lisp_ol_Olvm_ ## name
 
 // Otus Lisp Java Native Interface
 #include <jni.h>
 
 #include <android/log.h>
-#define APP_NAME "ol"
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,   APP_NAME, __VA_ARGS__)
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,    APP_NAME, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,   APP_NAME, __VA_ARGS__)
-#define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, APP_NAME, __VA_ARGS__)
+#define LOG_NAME "ol"
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,   LOG_NAME, __VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,    LOG_NAME, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,   LOG_NAME, __VA_ARGS__)
+#define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_NAME, __VA_ARGS__)
 
 // ----------------
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 
+#include <string.h>
 #include <strings.h>
 
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <stdio.h>
 #include <errno.h>
-#include <string.h>
 
-//////////////////////////////////////////////////////////////////////
-// input/output
+#include <ol/ol.h>
+
+// ------------------------------------------------------------------------
+// TODO: make dynamic
+ol_t ol;
+struct {
+	// saved i/o functions:
+	open_t* open;
+	close_t* close;
+	read_t* read;
+	write_t* write;
+	stat_t* stat;
+} old;
+///////////////////////////////////////////////////////////////////////////
+// android i/o
 #include <android/asset_manager_jni.h>
 
 static jobject java_asset_manager = NULL;
@@ -49,25 +63,13 @@ JNIEXPORT void JNICALL NATIVE(nativeSetAssetManager)(JNIEnv *jenv, jobject jobj,
 
 int assets_open(const char *filename, int flags, int mode, void *userdata)
 {
-	char *filename1 = (char*)filename;
-
 	// try to open file as usual
-	int file = open(filename1, flags, mode);
-	LOGD("open file1: %s -> %d(%s)", filename1, file, file != -1 ? "Ok" : strerror(errno));
+	int file = old.open(filename, flags, mode, userdata);
+	LOGD("open file: %s -> %d(%s)", filename, file, file != -1 ? "Ok" : strerror(errno));
 	if (file != -1)
 		return file;
 
-	// no file, try to open $OL_HOME/file
-	char *home = getenv("OL_HOME");
-	char *filename2 = (char *)(__builtin_alloca(strlen(home) + strlen(filename) + 2));
-	snprintf(filename2, strlen(home) + strlen(filename) + 2, "%s/%s", home, filename);
-
-	file = open(filename2, flags, mode);
-	LOGD("open file2: %s -> %d(%s)", filename2, file, file != -1 ? "Ok" : strerror(errno));
-	if (file != -1)
-		return file;
-
-	// still no file? handle project assets
+	// no file? handle project assets
 	// 1. remove "./" if any
 	if (strncmp(filename, "./", 2) == 0)
 		filename += 2;
@@ -105,7 +107,7 @@ int assets_open(const char *filename, int flags, int mode, void *userdata)
 
 int assets_close(int fd, void *userdata)
 {
-	LOGD("close file: %d", fd);
+	LOGD("close file(%d, %p)", fd, userdata);
 	// assets ?
 	if (fd < 0) {
 		fd = -fd;
@@ -122,32 +124,32 @@ int assets_close(int fd, void *userdata)
 	}
 	// regular file descriptor
 	else
-		return close(fd);
+		return old.close(fd, userdata);
 }
 
 ssize_t assets_read(int fd, void *buf, size_t count, void *userdata)
 {
-	LOGD("read file: %d, %p, %d", fd, buf, (int)count);
+	//LOGD("read file: %d, %p, %d", fd, buf, (int)count);
 	// assets ?
 	if (fd < 0) {
 		fd = -fd;
 		if (fd < fds_size) {
 			AAsset *aa = fds[fd];
 			if (aa != 0) {
-				LOGD("    asset: %p", aa);
+				//LOGD("    asset: %p", aa);
 				int rr = AAsset_read(aa, buf, count);
-				LOGD("    return %d", rr);
+				//LOGD("    return %d", rr);
 				return rr;
 			}
 		}
 		// error:
-		LOGD("    return %d", -1);
+		//LOGD("    return %d", -1);
 		return -1;
 	}
 	// regular file descriptor
 	else {
-		int rr = read(fd, buf, count);
-		LOGD("    return %d", rr);
+		int rr = old.read(fd, buf, count, userdata);
+		//LOGD("    return %d", rr);
 		return rr;
 	}
 }
@@ -171,18 +173,36 @@ ssize_t assets_write(int fd, void *buf, size_t count, void *userdata)
 			;// nothing
 	}
 	// default:
-	return write(fd, buf, count);
+	return old.write(fd, buf, count, userdata);
+}
+
+// todo: handle folders (AAssetDir)
+int assets_stat(const char *filename, struct stat *st, void* userdata)
+{
+	LOGD("assets_stat(%s, %p, %p)", filename, st, userdata);
+	// try to system stat
+	int ret = old.stat(filename, st, userdata);
+	if (ret >= 0)
+		return ret;
+
+	// no file? handle project assets
+	if (!st) return -1;
+	AAsset *asset = AAssetManager_open(asset_manager, filename, 0);
+	if (!asset)
+		return -1;
+
+	bzero(st, sizeof(*st));
+	st->st_mode |= 0100000; // file
+	st->st_size = AAsset_getLength(asset);
+
+	AAsset_close(asset);
+	return 0;
 }
 
 // ========================================================================
-#include <ol/ol.h>
-
-ol_t ol; // TODO: make dynamic
-// ------------------------------------------------------------------------
-
-#ifndef OL_HOME
-#define OL_HOME "/sdcard/ol"
-#endif//OL_HOME
+// #ifndef OL_HOME
+// #define OL_HOME "/sdcard/ol"
+// #endif//OL_HOME
 
 #ifdef REPL
 	extern unsigned char REPL[];
@@ -192,15 +212,16 @@ ol_t ol; // TODO: make dynamic
 JNIEXPORT void JNICALL NATIVE(nativeNew)(JNIEnv *jenv, jobject class)
 {
 	LOGD("> nativeNew()");
-	setenv("OL_HOME", OL_HOME, 0);
+	// setenv("OL_HOME", OL_HOME, 0);
 
 	OL_new(&ol, REPL);
 	OLVM_userdata(ol.vm, &ol);
 
-	OLVM_set_open(ol.vm, assets_open);
-	OLVM_set_close(ol.vm, assets_close);
-	OLVM_set_read(ol.vm, assets_read);
-	OLVM_set_write(ol.vm, assets_write); // stdout/stderr to logcat redirector included
+	old.open = OLVM_set_open(ol.vm, assets_open);
+	old.close = OLVM_set_close(ol.vm, assets_close);
+	old.read = OLVM_set_read(ol.vm, assets_read);
+	old.write = OLVM_set_write(ol.vm, assets_write); // stdout/stderr to logcat redirector included
+	old.stat = OLVM_set_stat(ol.vm, assets_stat);
 
 	LOGD("< nativeNew()");
 	return;

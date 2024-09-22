@@ -1636,9 +1636,7 @@ typedef int     (open_t) (const char *filename, int flags, int mode, void* userd
 typedef int     (close_t)(int fd, void* userdata);
 typedef ssize_t (read_t) (int fd, void *buf, size_t count, void* userdata);
 typedef ssize_t (write_t)(int fd, void *buf, size_t count, void* userdata);
-
-typedef int     (stat_t) (const char *filename, struct stat *st);
-typedef int		(fstat_t)(int fd, struct stat *st);
+typedef int     (stat_t) (const char *filename, struct stat *st, void* userdata);
 
 typedef void    (idle_t) (void* userdata);
 
@@ -1660,8 +1658,11 @@ static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 	(void) userdata;
 	return write(fd, buf, size);
 }
-// todo: os_stat
-
+static int os_stat(const char *filename, struct stat *st, void* userdata) {
+	(void) userdata;
+	// D("os_stat(%s, %p, %p)", filename, st, userdata);
+	return stat(filename, st);
+}
 
 // -- TAR Virtual ENVironment ---
 #if OLVM_TARVENV
@@ -4047,8 +4048,16 @@ loop:;
 				}
 				else
 				if (is_string(A1)) {
-					if (((argc == 2 && A2 == ITRUE) ? lstat : stat)(string(A1), &st) < 0)
-						break;
+					// if (((argc == 2 && A2 == ITRUE) ? lstat : ol->stat)(string(A1), &st, this) < 0)
+					// 	break;
+					if (argc == 2 && A2 == ITRUE) {
+						if (lstat(string(A1), &st) < 0)
+							break;
+					}
+					else {
+						 if (ol->stat(string(A1), &st, this) < 0)
+						 	break;
+					}
 				}
 				else
 					break;
@@ -5475,6 +5484,7 @@ read_t*  OLVM_set_read (struct olvm_t* ol, read_t  read);
 write_t* OLVM_set_write(struct olvm_t* ol, write_t write);
 open_t*  OLVM_set_open (struct olvm_t* ol, open_t  open);
 close_t* OLVM_set_close(struct olvm_t* ol, close_t close);
+stat_t*  OLVM_set_stat (struct olvm_t* ol, stat_t  stat);
 
 idle_t*  OLVM_set_idle (struct olvm_t* ol, idle_t  idle);
 
@@ -5490,6 +5500,8 @@ override(open)
 override(read)
 override(write)
 override(close)
+override(stat)
+
 override(idle)
 
 #undef override
@@ -5920,6 +5932,7 @@ OLVM_new(unsigned char* bootstrap)
 	handle->close = os_close;
 	handle->read = os_read;
 	handle->write = os_write;
+	handle->stat = os_stat;
 
 //	handle->exit = exit;
 

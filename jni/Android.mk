@@ -20,7 +20,7 @@ OL_CFLAGS   += -std=c99 -std=gnu11 -O3 -g0
 include $(CLEAR_VARS)
 LOCAL_MODULE   := ol
 
-LOCAL_CFLAGS   += $(OL_CFLAGS) -DHAS_DLOPEN=1 -DHAS_SOCKETS=1 -DREPL=repl
+LOCAL_CFLAGS   += $(OL_CFLAGS) -DHAVE_DLOPEN=1 -DHAVE_SOCKETS=1 -DREPL=repl
 
 LOCAL_SRC_FILES := ../src/olvm.c
 LOCAL_SRC_FILES += ../tmp/repl.c
@@ -45,8 +45,8 @@ LOCAL_CFLAGS   += -DOLVM_NOMAIN
 # src
 LOCAL_SRC_FILES:= ../src/olvm.c
 
-# extensions
-LOCAL_CFLAGS   += -DHAS_DLOPEN=1
+# extensions (ffi)
+LOCAL_CFLAGS   += -DHAVE_DLOPEN=1
 LOCAL_SRC_FILES+= ../extensions/ffi.c
 
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
@@ -54,7 +54,7 @@ LOCAL_LDLIBS   += -llog -landroid
 
 include $(BUILD_SHARED_LIBRARY)
 
-# -- java interface ----------------------------------------------------------
+# -- java interface + repl ---------------------------------------------------
 include $(CLEAR_VARS)
 LOCAL_MODULE   := olvmjava
 LOCAL_SHARED_LIBRARIES := olvm
@@ -62,7 +62,10 @@ LOCAL_SHARED_LIBRARIES := olvm
 # configure
 LOCAL_CFLAGS   += $(OL_CFLAGS)
 LOCAL_CFLAGS   += -DREPL=repl
-LOCAL_SRC_FILES += ../extensions/jni.c ../tmp/repl.c
+# extensions (jni + repl)
+LOCAL_SRC_FILES+= ../extensions/jni.c ../tmp/repl.c
+
+LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 LOCAL_LDLIBS   += -llog -landroid
 
 include $(BUILD_SHARED_LIBRARY)

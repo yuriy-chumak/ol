@@ -1,3 +1,7 @@
+; properties
+(define setup:autorender-mode #true)
+
+
 (setq X11 (or (load-dynamic-library "libX11.so")
               (load-dynamic-library "libX11.so.6")))
    (setq None 0)
@@ -121,7 +125,7 @@
 (setq XInternAtom (X11 type-vptr "XInternAtom" type-vptr type-string fft-int))
 (setq XChangeProperty (X11 fft-void "XChangeProperty" type-vptr type-vptr type-vptr type-vptr fft-int fft-int type-string fft-int))
 
-(define (gl:SetWindowTitle context title)
+(define (os:SetWindowTitle context title)
    (vector-apply context (lambda (dpy screen window cx)
       (case (type title)
          (type-string
@@ -136,7 +140,7 @@
 ; ---
 (setq XResizeWindow (X11 fft-int "XResizeWindow" type-vptr type-vptr fft-int fft-int))
 
-(define (gl:SetWindowSize context width height)
+(define (os:SetWindowSize context width height)
    (let ((display (ref context 1))
          (window  (ref context 3)))
       (XResizeWindow display window width height)))
@@ -150,7 +154,7 @@
 (setq XFreeCursor (X11 type-vptr "XFreeCursor" type-vptr type-vptr))
 (setq XFreePixmap (X11 type-vptr "XFreePixmap" type-vptr type-vptr))
 
-(define (gl:HideCursor context)
+(define (os:HideCursor context)
    (vector-apply context (lambda (dpy screen window cx)
       (let*((bm_no_data '(0 0 0 0 0 0 0 0))
             (cmap (XDefaultColormap dpy screen))
@@ -168,7 +172,7 @@
 (setq XGetInputFocus (X11 fft-void "XGetInputFocus" type-vptr (fft* type-vptr) (fft& fft-int)))
 (setq XQueryPointer (X11 fft-int "XQueryPointer" type-vptr type-vptr (fft* type-vptr) (fft* type-vptr) (fft& fft-int) (fft& fft-int) (fft& fft-int) (fft& fft-int) (fft& fft-unsigned-int)))
 
-(define (gl:GetMousePos context)
+(define (os:GetMousePos context)
    (vector-apply context (lambda (dpy screen window cx)
    (let ((vptr (make-vptr))
          (revert_to_return (box 0)))

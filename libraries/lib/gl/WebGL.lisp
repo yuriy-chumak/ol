@@ -1,3 +1,7 @@
+; properties
+(define setup:autorender-mode #true)
+
+
 (import (EGL 1.3))
 
 (define (native:create-context title)
@@ -74,9 +78,9 @@
    ;; TBD.
    #false)
 
-(define (gl:SetWindowTitle context title)
+(define (os:SetWindowTitle context title)
    ;; TBD.
    #false)
-(define (gl:SetWindowSize context width height) #false)
-(define (gl:HideCursor context) #false)
-(define (gl:GetMousePos context) #false)
+(define (os:SetWindowSize context width height) #false)
+(define (os:HideCursor context) #false)
+(define (os:GetMousePos context) #false)
