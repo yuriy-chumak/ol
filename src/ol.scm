@@ -371,8 +371,8 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
 
          (if embed?
             (let*((this (cons (vm:pin env) 0))
-                  (eval (lambda (exp args)
-                           (case exp
+                  (eval (lambda (result args)
+                           (case result
                               (['ok value env]
                                  (vm:unpin (car this))
                                  (set-car! this (vm:pin env))

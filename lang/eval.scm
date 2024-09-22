@@ -1256,6 +1256,7 @@
                   foo))))
 
       ; --- eval ---------------------------
+      ; -> (['ok value env] args)
       (define (eval exp env)
          (eval-repl exp env
                   (lambda (env in)

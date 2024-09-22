@@ -15,7 +15,7 @@ Reference
 This is an Ol reference, not a Scheme. Scheme R<sup>7</sup>RS differences described in the [DIFFERENCES](../R7RS-DIFFERENCES.md) file.
 
 Examples are provided in two forms:
-1. in the equivalence (in sense of [equal?](equivalence-predicates.md#equal)) form using symbols "==>" and "===",
+1. in the form of equivalence (in sense of [equal?](equivalence-predicates.md#equal)) using symbols "==>" and "===",
 ```scheme
 (+ 1 2 3)  ==>  6
 [1 2 3 4]  ===  (make-vector '(1 2 3 4))
@@ -70,6 +70,8 @@ List of Standard procedures
 - [Lazy evaluations](lazy-evaluations.md), TBD.
 
 - [Serialization/Deserialization](serialization-deserialization.md)
+
+- [Inexact library](inexact-library.md)
 
 Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 =====================================================================

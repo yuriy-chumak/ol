@@ -125,6 +125,7 @@ Real numbers are those numbers used to measure a continuous one-dimensional quan
 (real? #i3.14)                ==>  #true
 (real? +inf.0)                ==>  #true
 (real? +nan.0)                ==>  #true
+
 (real? '(1))                  ==>  #false
 (real? "1234")                ==>  #false
 ```
@@ -143,6 +144,8 @@ If you want to know if a number is exactly rational and not an integer, use `(eq
 (rational? 6/3)               ==>  #true
 (rational? 3+4i)              ==>  #false
 (rational? #i3.14)            ==>  #false
+
+(rational? "1234")            ==>  #false
 ```
 
 # integer?
@@ -365,6 +368,14 @@ Returns #true if arguments are equal in a mathematical sense. Up to 249 argument
 (= 7/10 21/30 0.7)            ==>  #true
 (= 0.7 #i0.7)                 ==>  #true
 (= 3+8i #i3+#i8i)             ==>  #true
+
+(= 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1)         ==>  #true
 ```
 
 # <
@@ -478,6 +489,14 @@ Produces exact results when all given arguments are exact.
 
 > (apply + '(17 -3 45.67 111222333444555666))
 11122233344455572567/100
+
+(+ 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+   1 1 1 1 1 1 1 1 1)         ==>  249
 ```
 
 # -
@@ -622,8 +641,8 @@ Returns the numerator of *q*.
 (numerator 1)                 ==>  1
 (numerator 7/3)               ==>  7
 (numerator 3/7)               ==>  3
-(numerator 3/33)              ==>  1
-(numerator 33/3)              ==>  11
+(numerator 3/33)              ==>  1   ; 1/11
+(numerator 33/3)              ==>  11  ; 11/1
 ```
 
 # denominator
@@ -635,8 +654,8 @@ Returns the denominator of *q*.
 (denominator 1)               ==>  1
 (denominator 7/3)             ==>  3
 (denominator 3/7)             ==>  7
-(denominator 3/33)            ==>  11
-(denominator 33/3)            ==>  1
+(denominator 3/33)            ==>  11  ; 1/11
+(denominator 33/3)            ==>  1   ; 11/1
 ```
 
 # floor
@@ -711,6 +730,7 @@ Returns the square of *z*.
 (square 2)                    ==>  4
 (square -2)                   ==>  4
 (square 3/7)                  ==>  9/49
+(square 0+i)                  ==> -1
 (square 1+2i)                 ==> -3+4i
 ```
 

@@ -2127,7 +2127,7 @@ struct olvm_t
 	close_t* close;
 	read_t* read;
 	write_t* write;
-//	stat_t*  stat;
+	stat_t* stat;
 
 	// debug callbacks
 	idle_t* idle;   // OL task ready to switch

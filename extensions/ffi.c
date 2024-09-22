@@ -2428,7 +2428,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					case TVPTR:
 						STORE(IDF, word, car(arg));
 						break;
-					case TBYTEVECTOR: // can be used instead of vptr, dangerous!
+					// can be used instead of vptr, dangerous!
+					case TBYTEVECTOR:
 						STORE(IDF, word, &car(arg));
 						break;
 					// '(bytevector . offset)

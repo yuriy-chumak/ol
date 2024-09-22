@@ -411,7 +411,7 @@
 ; see also: http://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/predef/reference/boost_os_operating_system_macros.html
 )
 
-; notification about ",save":
+; notification for ",save":
 (begin
    (define notification-text (vm:new type-constructor (lambda (args)
       (print "You restored session with ffi enabled.")
