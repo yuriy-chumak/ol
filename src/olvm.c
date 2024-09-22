@@ -2074,7 +2074,7 @@ static __inline__ void wordcopy(word *from, word *to, int n) { while (n--) *to++
 #	ifdef _WIN32
 
 static
-void set_signal_handler() { }
+void set_signal_handlers() { }
 
 #	else
 
@@ -2088,10 +2088,11 @@ void sigint_handler(int sig)
 }
 
 static
-void set_signal_handler()
+void set_signal_handlers()
 {
 	signal(SIGINT, sigint_handler);
 	signal(SIGPIPE, SIG_IGN);	// do not break on sigpipe
+	signal(SIGCHLD, SIG_IGN);   // avoid zombies
 }
 
 #	endif//_WIN32
@@ -5686,59 +5687,58 @@ int main(int argc, char** argv)
 		if (fstat(bin, &st))
 			goto can_not_stat_file;
 		// empty file, or pipe, or fifo...
-		if (st.st_size == 0)
+		if (st.st_size != 0) {
+			int pos = read(bin, &bom, 1);  // прочитаем один байт
+			if (pos == -1)
+				goto can_not_read_file;
+
+			// skip possible hashbang:
+			// if (bom == '#') {
+			// 	while (read(bin, &bom, 1) == 1 && bom != '\n')
+			// 		st.st_size--;
+			// 	st.st_size--;
+			// 	if (read(bin, &bom, 1) < 0)
+			// 		goto can_not_read_file;
+			// 	st.st_size--;
+			// }
+
+			if (bom > 2) {	// это текстовая программа (скрипт)
 #ifndef REPL
-			// olvm can't handle files with unknown size,
-			//  because can't deserialize such things.
-			goto invalid_binary_script;
+				goto invalid_binary_script;
 #else
-			// ol handle pipes/fifos as a text scripts.
-			goto continue_load;
+				close(bin);
 #endif
-
-		int pos = read(bin, &bom, 1);  // прочитаем один байт
-		if (pos == -1)
-			goto can_not_read_file;
-
-		// skip possible hashbang:
-		// if (bom == '#') {
-		// 	while (read(bin, &bom, 1) == 1 && bom != '\n')
-		// 		st.st_size--;
-		// 	st.st_size--;
-		// 	if (read(bin, &bom, 1) < 0)
-		// 		goto can_not_read_file;
-		// 	st.st_size--;
-		// }
-
-		if (bom > 2) {	// это текстовая программа (скрипт)
-#ifndef REPL
-			goto invalid_binary_script;
-#else
-			close(bin);
-#endif
-		}
-		else {
-			// иначе загрузим его
-			unsigned char* ptr = (unsigned char*) malloc(st.st_size);
-			if (ptr == NULL)
-				goto can_not_allocate_memory;	// опа, не смогли выделить память...
-
-			ptr[0] = bom;
-			while (pos < st.st_size) {
-				int n = read(bin, &ptr[pos], st.st_size - pos);
-				if (n < 0)
-					goto can_not_read_file;		// не смогли прочитать
-				pos += n;
 			}
-			close(bin);
+			else {
+				// иначе загрузим его
+				unsigned char* ptr = (unsigned char*) malloc(st.st_size);
+				if (ptr == NULL)
+					goto can_not_allocate_memory;	// опа, не смогли выделить память...
 
-			bootstrap = ptr;
-			argc--; argv++; // бинарный файл заменяет repl, скорректируем строку аргументов
+				ptr[0] = bom;
+				while (pos < st.st_size) {
+					int n = read(bin, &ptr[pos], st.st_size - pos);
+					if (n < 0)
+						goto can_not_read_file;		// не смогли прочитать
+					pos += n;
+				}
+				close(bin);
+
+				bootstrap = ptr;
+				argc--; argv++; // бинарный файл заменяет repl, скорректируем строку аргументов
+			}
 		}
+#ifdef REPL
+		// ol handle pipes/fifos as a text scripts.
+#else
+		// but olvm can't handle files with unknown size,
+		//  because can't deserialize such things.
+		else
+			goto invalid_binary_script;
+#endif
 	}
 
-continue_load:
-	set_signal_handler();
+	set_signal_handlers();
 
 #if	HAVE_SOCKETS && defined(_WIN32)
 	WSADATA wsaData;
