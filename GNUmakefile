@@ -67,12 +67,10 @@ ifneq ($(shell command -v od 2>/dev/null),)
 	   -e 's/^/unsigned char repl[] = {/' \
 	   -e 's/$$/};/'> $@
 else
-	$(error "You must have 'od' (coreutils) or 'xxd' (vim) tool installed.")
+# olvm
+	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (display x) (display ",")) (file->bytestream "repl")) (display "0};")'| ./olvm repl> tmp/repl.c
 endif
 endif
-
-# or
-#	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl> tmp/repl.c
 
 doc/olvm.md: src/olvm.c extensions/ffi.c
 	cat src/olvm.c extensions/ffi.c| tools/makedoc >doc/olvm.md
