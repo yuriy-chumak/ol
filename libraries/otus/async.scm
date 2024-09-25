@@ -5,6 +5,7 @@
       link
 
       mail wait-mail check-mail
+      wait-mail-from
 
       ; 'linked' means "it mails to owner a message with a final status of the thread"
       coroutine-linked
@@ -123,6 +124,10 @@
                (else
                   (loop (wait-mail) (cons this rev-spam))))))
 
+      (define (wait-mail-from name)
+         (accept-mail (λ (e) (eq? (ref e 1) name))))
+
+
 
       (define async (case-lambda
          ((thunk) (coroutine [] thunk))
@@ -145,7 +150,7 @@
       ; example: (await (mail 'who ['a 'message]))
       (define (await name)
          (if name
-            (ref (accept-mail (λ (env) (eq? (ref env 1) name))) 2)))
+            (ref (wait-mail-from name) 2)))
 
       (define (await-linked name)
          (define answer (await name))
