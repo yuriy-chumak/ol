@@ -561,6 +561,7 @@ word*p = NEW_OBJECT (type, 2);\
 #define NEW_PAIR_MACRO(_1, _2, _3, NAME, ...) NAME
 #define new_pair(...) NEW_PAIR_MACRO(__VA_ARGS__, NEW_TYPED_PAIR, NEW_PAIR, NOTHING, NOTHING)(__VA_ARGS__)
 
+#define cons(a, b) new_pair(a, b)
 
 // -= new_list =----------------------------------------
 
@@ -2525,7 +2526,7 @@ apply:;
                              // todo: use same type by longer size, with function name
 			word* args = (word*)INULL;
 			for (int i = acc; i > 1; i--)
-				args = new_pair(reg[i+2], args);
+				args = cons(reg[i+2], args);
 
 			word (*function)(struct olvm_t*, word*) = (word (*)(struct olvm_t*, word*)) car(this);  assert (function);
 
@@ -3085,7 +3086,7 @@ loop:;
 		if (acc >= arity) {
 			word tail = INULL;
 			while (acc > arity) {
-				tail = (word)new_pair (reg[acc + 2], tail);
+				tail = (word) cons(reg[acc + 2], tail);
 				acc--;
 			}
 			reg[acc + 3] = tail;
@@ -3229,7 +3230,7 @@ loop:;
 
 	// операции посложнее
 	case CONS:   // cons a b -> r : Rr = (cons Ra Rb)
-		A2 = (word) new_pair(A0, A1); // видимо, вызывается очень часто, так как замена на макрос дает +10% к скорости
+		A2 = (word) cons(A0, A1); // видимо, вызывается очень часто, так как замена на макрос дает +10% к скорости
 		ip += 3; break;
 
 
@@ -3532,7 +3533,7 @@ loop:;
 
 
 	case 28: // (vm:version)
-		A0 = (word) new_pair(TPAIR,
+		A0 = (word) cons(
 				new_string(__OLVM_NAME__,    sizeof(__OLVM_NAME__) - 1),
 				new_string(__OLVM_VERSION__, sizeof(__OLVM_VERSION__) - 1));
 		ip += 1; break;
@@ -4177,7 +4178,7 @@ loop:;
 				int flags = (argc > 0) ? (int) numberp(A1) : 0; // 0b00, 1 means synchronous
 				int pipefd[2];
 				if (pipe(pipefd) == 0) {
-					r = new_pair(make_port(pipefd[0]), make_port(pipefd[1]));
+					r = cons(make_port(pipefd[0]), make_port(pipefd[1]));
 
 					#ifndef _WIN32
 					if (!(flags & 1)) fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
@@ -4540,7 +4541,7 @@ loop:;
 
 				struct timeval tv;
 				if (gettimeofday(&tv, NULL) == 0)
-					r = new_pair (new_number(tv.tv_sec), new_number(tv.tv_usec));
+					r = cons (new_number(tv.tv_sec), new_number(tv.tv_usec));
 				break;
 			}
 
@@ -4764,7 +4765,7 @@ loop:;
 				char* ipaddress = inet_ntoa(((struct sockaddr_in *)&peer)->sin_addr);
 				unsigned short port = ntohs(((struct sockaddr_in *)&peer)->sin_port);
 
-				r = new_pair(new_string(ipaddress), I(port));
+				r = cons (new_string(ipaddress), I(port));
 
 		#else
 				unsigned short port;
@@ -4775,7 +4776,7 @@ loop:;
 					struct sockaddr_in *s = (struct sockaddr_in *)&peer;
 					port = ntohs(s->sin_port);
 					inet_ntop(AF_INET, &s->sin_addr, ipaddress, sizeof ipaddress);
-					r = new_pair(new_string(ipaddress), I(port));
+					r = cons (new_string(ipaddress), I(port));
 				}
 				/* temporary disable IP_v6, todo: return back
 				else
@@ -4900,8 +4901,8 @@ loop:;
 				// arguments currently ignored. used RUSAGE_SELF
 				if (getrusage(RUSAGE_SELF, &u) == 0)
 					r = new_vector(
-							new_pair (new_number(u.ru_utime.tv_sec), new_number(u.ru_utime.tv_usec)),
-							new_pair (new_number(u.ru_stime.tv_sec), new_number(u.ru_stime.tv_usec))
+							cons (new_number(u.ru_utime.tv_sec), new_number(u.ru_utime.tv_usec)),
+							cons (new_number(u.ru_stime.tv_sec), new_number(u.ru_stime.tv_usec))
 					);
 				break;
 
@@ -5401,7 +5402,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 		}
 		// если мы декодировали конструктор, надо его добавить в цепочку
 		if (type == TCONSTRUCTOR) // special case: constructor
-			constructor = new_pair(ptrs[id], constructor);
+			constructor = cons(ptrs[id], constructor);
 	}
 	// return construction list
 	ptrs[nobjs] = (word) constructor;
@@ -6028,7 +6029,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 			int length = pos - (char*)(fp + 1);
 			// todo: check the memory!
 			if (length > 0) // если есть что добавить
-				userdata = (word) new_pair (new_alloc(TSTRING, length), userdata);
+				userdata = (word) cons (new_alloc(TSTRING, length), userdata);
 		}
 
 		ol->heap.fp = fp;
