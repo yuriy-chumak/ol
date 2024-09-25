@@ -5,10 +5,11 @@
 (define-library (owl io)
    (export
       ;; asynchronous i/o and threading
-      wait wait-mail ; wait N ms, wait N ms or mail
-      ;; ring ; to wake and send a message
-      ;; bell ; just wake, without message ; maybe rename to call or wake?
       start-io-scheduler
+
+      wait wait-mail ; wait N ms, wait N ms or mail
+      bell ; just wake, without message (notify actor to check mailbox)
+      call ; to wake and send a message (send an urgent mail and bell)
 
       ;; general i/o
       ;; thread-oriented non-blocking io
@@ -108,16 +109,43 @@
       (define (start-io-scheduler)
          (actor io-scheduler-name io-scheduler))
 
+      ; wait for ms microseconds (or for bell or call)
       (define (wait ms)
          (await (mail io-scheduler-name ['alarm ms])))
 
       ; override wait-mail
-      (define wait-mail (case-lambda
-         (() (wait-mail))
-         ;; ((ms) ()) ; returns #false on timeout
-         ;;    ((ms default) (let ((envelope (sleep ms))) ; returns 
-         ;;       (if ()) ; check the message if timeout and return "default" if occurs else message
+      (define wait-mail
+         (define io-scheduler io-scheduler-name)
+         (define (wait-mail-ms ms default)
+            (let*((answer (check-mail))
+                  (answer (or answer
+                              (if (mail io-scheduler ['alarm ms])
+                                 (wait-mail-from io-scheduler)))))
+               (if (eq? (ref answer 1) io-scheduler)
+               then ; timeout expired!
+                  (or (check-mail) (if default [#false default]))
+               else ; got real message
+                  answer)))
+      
+      (case-lambda
+         (() (wait-mail)) ; just a regular "wait-mail"
+         ((ms) (wait-mail-ms ms #f)) ; wait mail with timeout, returns a mail if got one or "#false"
+         ((ms default) (wait-mail-ms default)) ; ... but returns [#false default]
       ))
+
+      ; just wake the coroutine (if waiting)
+      (define (bell whom)
+         (mail io-scheduler-name ['call whom]))
+
+      ; "call" is "urgent mail"
+      ; send mail to the coroutine and wake it if required
+      (define (call whom message)
+         (when (mail whom message)
+            (mail io-scheduler-name ['call whom])
+            whom))
+
+     ;; ==================================================================================
+
 
       ;;; Writing
 

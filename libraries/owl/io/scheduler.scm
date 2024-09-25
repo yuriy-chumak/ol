@@ -30,6 +30,7 @@
       (syscall 7 rs ws timeout))
 
    ;; ==================================================================================
+   (define TIMEOUT ['alarm])
 
    ;; TODO: change to faster function (i.e. (gettimeofday), etc.)
    (define (time-ms)
@@ -64,7 +65,7 @@
       (if (null? alarms)
          (begin
             (print "ERROR: fd read with timeout had no matching alarm")
-            #n)
+            #null)
          (let ((this (car alarms)))
             (if (eq? (cdr this) envelope)
                (cdr alarms)
@@ -81,20 +82,16 @@
                   (op port ms msg))
                (eq? port fd)))
          alarms))
+   ;; alarm = (TIMEOUT . #(thread #(<read|write>-timeout fd ms)))
    (define (remove-alarms-by-thread alarms thread)
-      (print "(remove-alarms-by-thread " alarms " " thread ")")
-      (let ((alarms (remove
-         (λ (alarm)
-            ;; alarm = (TIMEOUT . #(thread #(<read|write>-timeout fd ms)))
+      (remove (λ (alarm)
             (eq? (cadr alarm) thread))
-         alarms)))
-         (print "new alarms " alarms)
          alarms))
 
    (define (wakeup rs ws alarms fd reason)
       (cond
          ((eq? reason 1) ;; data ready to be read
-            (let*
+            (let* 
                ((rs x (grabelt rs fd))
                   (fd envelope x)
                   (from message envelope))
@@ -112,18 +109,7 @@
                   (if (eq? (ref message 1) 'write-timeout)
                      (remove-alarm alarms envelope)
                      alarms))))
-         ;; TODO: handle 3
-         ;; ((eq? reason 3) ;; ready to be written to
 
-         ((vector? reason) ;; force wakeup, reason - сообщение о побудке
-            ; todo: переименовать alarm на sleep
-            ; todo: проверить, что получатель спит на 'waitmail, а не на 'alarm
-            (let*((envelope reason)
-                  (from msg envelope)
-                  (to (ref msg 2)))
-               (mail to msg) ; отправлять сообщение? или отправлять timeout? или отправлять false, если это был обычный таймер, а не wait-mail?
-               (values rs ws
-                  (remove-alarms-by-thread alarms fd))))
          (else ;; error
             (let* ((rs x (grabelt rs fd))
                      (ws y (grabelt ws fd)))
@@ -148,17 +134,12 @@
          (['alarm ms]
             (values rs ws (push-alarm alarms (+ (time-ms) ms) envelope)))
 
-         ;; (['stop thread]
-         ;;    (let* ((alarms (remove-alarms-by-thread alarms thread)))
-         ;;       (kill thread)
-         ;;       (values rs ws alarms)))
-
-         (['wakeup thread] ; wakeup?
-            ; todo: move corresponded "wakeup" code here
-            (let* ((rs ws alarms (wakeup rs ws alarms thread envelope)))
-               (values rs ws alarms)))
+         (['call thread] ; urgent mail delivery
+            (mail thread 'call)
+            (values rs ws
+               (remove-alarms-by-thread alarms thread)))
          (else
-            (print "bad muxer message from " (ref envelope 1))
+            (print "ERROR: bad muxer message from " (ref envelope 1))
             (values rs ws alarms))))
 
    (define (muxer rs ws alarms)
@@ -203,19 +184,21 @@
                      (id message envelope))
                   ;; all alarms return a pair with the original request
                   ;; all i/o thread activations return the original request
-                  (mail id ['timeout message])
+                  (mail id ['timeout message]) ; todo: change to internal timeout message
                   (case message
+                     ; sleep for ms milliseconds
                      (['alarm ms]
                         (muxer rs ws (cdr alarms)))
+
                      (['read-timeout fd ms]
                         ;; remove both the alarm and the read request
                         (let* ((rs _ (grabelt rs fd)))
                            (muxer rs ws (cdr alarms))))
+
                      (['write-timeout fd ms]
                         ;; remove both the alarm and the write request
                         (let* ((ws _ (grabelt ws fd)))
                            (muxer rs ws (cdr alarms))))
-                     ;['wait-mail me ms] - sleep until mail got or timeout
                      (else
                         ;; bug. crash.
                         (car #false))))))))
