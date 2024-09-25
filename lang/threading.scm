@@ -31,6 +31,10 @@
       (owl io))
 
    (begin
+      ; debug messages
+      ; question: maybe change to *threading-log-level* and use (less? LEVEL *debug-threading*) instead of naked if
+      (define *debug-threading* '(#t))
+
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
       (define poll-tag "mcp/polls")
@@ -47,29 +51,30 @@
          (system-println "mcp: got bad interop")
          (values todo done state))
 
-      ; -> state x #false|waked-thread
+      ; -> state ok? x #false|waked-thread
       (define (deliver-mail state to envelope)
          (let ((st (get state to #false)))
             (cond
                ((pair? st) ;; currently working, leave a mail to inbox queue
-                  (values
+                  (values #true
                      (ff-update state to (qsnoc envelope st))
                      #false))
                ((not st) ;; no such thread, or just no inbox
-                  (system-stderr "ol: dropping envelope to missing thread: ")
-                  (system-stderr (bytes->string (format-any to '(#\newline))))
-                  (system-stderr "    envelope: ")
-                  (system-stderr (bytes->string (format-any envelope '(#\newline))))
-                  (values state #false))
+                  (when (car *debug-threading*)
+                     (system-stderr "ol: dropping envelope to missing thread: ")
+                     (system-stderr (bytes->string (format-any to '(#\newline))))
+                     (system-stderr "    envelope: ")
+                     (system-stderr (bytes->string (format-any envelope '(#\newline)))))
+                  (values #false state #false))
                (else ;; activate the state function
-                  (values
+                  (values #true
                      (ff-update state to qnull) ;; leave an inbox
                      [to (λ () (st envelope))]))))) ;; activate it
 
       (define (deliver-messages todo done state subs msg tc)
          (if (null? subs)
             (tc todo done state)
-            (lets ((state waked (deliver-mail state (car subs) msg)))
+            (lets ((ok? state waked (deliver-mail state (car subs) msg)))
                (if waked
                   (deliver-messages (cons waked todo) done state (cdr subs) msg tc)
                   (deliver-messages todo done state (cdr subs) msg tc)))))
@@ -219,12 +224,16 @@
             ; return id of thread if delievered or not
             (λ (id cont to msg todo done state tc)
                ; (system-stderr "interop 9 - mail")
-               (let ((todo (cons [id (λ () (cont to))] todo)))
-                  ; send a normal mail
-                  (lets ((state waked (deliver-mail state to [id msg])))
-                     (if waked
-                        (tc (cons* (car todo) waked (cdr todo)) done state)
-                        (tc todo done state)))))
+
+               ; send a normal mail
+               ; return addressee if ok, #false otherwise
+               (let*((ok? state waked (deliver-mail state to [id msg]))
+                     (todo (if ok?
+                              (cons [id (λ () (cont to))] todo)
+                              (cons [id (λ () (cont #f))] todo))))
+                  (if waked
+                     (tc (cons* (car todo) waked (cdr todo)) done state)
+                     (tc todo done state))))
 
             ; 10, breaked - call signal handler
             (λ (id a b c todo done state thread-controller)
