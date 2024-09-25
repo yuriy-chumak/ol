@@ -19,8 +19,8 @@ CC ?= gcc
 LD ?= ld
 
 # win32 cross-compile
-ol32.exe: CC := i686-w64-mingw32-gcc
-ol64.exe: CC:=x86_64-w64-mingw32-gcc
+ol32.exe: MGCC := i686-w64-mingw32-gcc
+ol64.exe: MGCC:=x86_64-w64-mingw32-gcc
 
 ol.exe: MINGWCFLAGS += -DOLVM_TARVENV=1
 ol.exe: ol64.exe tmp/pvenv.tar
@@ -248,7 +248,7 @@ ol%.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
 ol%.exe: MINGWCFLAGS += -Wno-shift-count-overflow
 ol%.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
 ol%.exe: src/olvm.c extensions/ffi.c tmp/repl.c
-	$(CC) \
+	$(MGCC) \
 	   $^ -o $@ \
 	   -DREPL=repl \
 	   -DHAVE_DLOPEN=1 -DHAS_SOCKES=1 -DOLVM_FFI=1 \
