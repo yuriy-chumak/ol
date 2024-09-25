@@ -4056,7 +4056,7 @@ loop:;
 							break;
 					}
 					else {
-						 if (ol->stat(string(A1), &st, this) < 0)
+						 if (ol->stat(string(A1), &st, (void*)this) < 0)
 						 	break;
 					}
 				}
