@@ -73,8 +73,9 @@
                   (list ; just 1 thread
                      ['main
                         (λ ()
-                           (fork-symbol-interner symbols)
-                           (fork-bytecode-interner codes)
+                           (start-io-scheduler)
+                           (fork-symbol-interner symbols) ; todo: rename to start-symbol-interner
+                           (fork-bytecode-interner codes) ; todo: rename to start-bytecode-interner
                            (main vm-args))] ))))))
 
 ))

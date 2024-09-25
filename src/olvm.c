@@ -2771,13 +2771,13 @@ mainloop:;
 	#		define SYSCALL_OPEN 2    // 
 	#		define SYSCALL_CLOSE 3   // 
 	#		define SYSCALL_STAT 4    // same for fstat and lstat
+	#		define SYSCALL_POLL 7    // 
 	#		define SYSCALL_LSEEK 8   // 
 	#		define SYSCALL_MMAP 9    // 
 	#		define SYSCALL_FSYNC 74  //
 	#		define SYSCALL_EXECVP 59 //
 	#		define SYSCALL_WAIT 61   //
 	// 5, 6 - free
-	//#		define SYSCALL_POLL 7
 	// 12 - reserved for memory functions
 	// #		define SYSCALL_BRK 12
 	// 14 - todo: set signal handling
@@ -4081,6 +4081,61 @@ loop:;
 						new_number(st.st_mtime),  // время последней модификации (в секундах)
 						new_number(st.st_ctime)   // время последнего изменения (в секундах)
 				);
+				break;
+			}
+
+			// TODO: rewrite for "poll" if supported
+			case SYSCALL_POLL: {
+				word a = A1;
+				word b = A2;
+				word c = A3;
+				word ms = value(c);
+
+				fd_set rs, ws, es;
+				int nfds = 1;
+				FD_ZERO(&rs); FD_ZERO(&ws); FD_ZERO(&es);
+				for (word* cur = (word *)a; (word)cur != INULL; cur = (word *)cur[2]) {
+					int fd = port(caar(cur));
+					FD_SET(fd, &rs);
+					FD_SET(fd, &es);
+					if (fd >= nfds)
+						nfds = fd + 1;
+				}
+				for (word* cur = (word *)b; (word)cur != INULL; cur = (word *)cur[2]) {
+					int fd = port(caar(cur));
+					FD_SET(fd, &ws);
+					FD_SET(fd, &es);
+					if (fd >= nfds)
+						nfds = fd + 1;
+				}
+
+				int res;
+				if (c == IFALSE) {
+					res = select(nfds, &rs, &ws, &es, NULL);
+				} else {
+					struct timeval tv;
+					tv.tv_sec = ms / 1000;
+					tv.tv_usec = (ms % 1000) * 1000;
+					res = select(nfds, &rs, &ws, &es, &tv);
+				}
+
+				word r1, r2;
+				if (res < 1) {
+					r1 = IFALSE; r2 = res < 0 ? ITRUE : IFALSE; /* 0 = timeout, otherwise error or signal */
+				} else {
+					int fd; /* something active, wake the first thing */
+					for (fd = 0; ; ++fd) {
+						if (FD_ISSET(fd, &rs)) {
+							r1 = make_port(fd); r2 = I(1); break;
+						} else if (FD_ISSET(fd, &ws)) {
+							r1 = make_port(fd); r2 = I(2); break;
+						} else if (FD_ISSET(fd, &es)) {
+							r1 = make_port(fd); r2 = I(3); break;
+						}
+					}
+				}
+
+				r = cons(r1, r2);
 				break;
 			}
 

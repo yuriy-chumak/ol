@@ -3,8 +3,14 @@
 ;;;
 
 (define-library (owl io)
-
    (export
+      ;; asynchronous i/o and threading
+      wait wait-mail ; wait N ms, wait N ms or mail
+      ;; ring ; to wake and send a message
+      ;; bell ; just wake, without message ; maybe rename to call or wake?
+      start-io-scheduler
+
+      ;; general i/o
       ;; thread-oriented non-blocking io
       open-input-file         ;; path → fd | #false
       open-binary-input-file
@@ -63,6 +69,7 @@
       (scheme core)
       (scheme list)
       (otus async)
+      (owl io scheduler)
       (owl queue)
       (owl string)
       (owl list-extra)
@@ -96,6 +103,21 @@
       (define (sys:close fd)
          (syscall 3 fd))
 
+      ; i/o scheduler
+      ; todo?: rewrite as constructor
+      (define (start-io-scheduler)
+         (actor io-scheduler-name io-scheduler))
+
+      (define (wait ms)
+         (await (mail io-scheduler-name ['alarm ms])))
+
+      ; override wait-mail
+      (define wait-mail (case-lambda
+         (() (wait-mail))
+         ;; ((ms) ()) ; returns #false on timeout
+         ;;    ((ms default) (let ((envelope (sleep ms))) ; returns 
+         ;;       (if ()) ; check the message if timeout and return "default" if occurs else message
+      ))
 
       ;;; Writing
 
