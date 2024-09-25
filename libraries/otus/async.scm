@@ -2,6 +2,7 @@
    (export
       coroutine actor
       async await sleep
+      link
 
       mail wait-mail check-mail
 
@@ -89,6 +90,8 @@
       (define (start-nested-parallel-computation a b)
          (mcp 22 a b))
 
+      (define (link id)
+         (mcp 23 id id))
 
       ;; macro for calling from code directly
       (define-syntax par
