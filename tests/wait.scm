@@ -7,5 +7,5 @@
          (wait 100) ; 1 second wait
          (loop (+ n 1))))))
 
-(wait 500)
+(wait 520)
 (mail 'timer #n) ; stop timer and autoexit program

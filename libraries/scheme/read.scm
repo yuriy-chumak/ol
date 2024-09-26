@@ -6,7 +6,7 @@
    (scheme core)
    (owl io)
    (only (lang sexp) sexp)
-   (only (otus async) sleep))
+   (otus async))
 
 (begin
 
@@ -16,7 +16,7 @@
          (case in
             (#f #null)  ; port error
             (#t ; input is not ready
-               (sleep 5)
+               (await (mail io-scheduler-name ['read-timeout port 3000])) ; 3 second wait
                (unbuffered-input-stream port))
             (#eof      ; end-of-file
                (unless (eq? port stdin)
