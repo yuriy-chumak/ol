@@ -14,7 +14,8 @@
       write-json
       write-json-file
       
-      stringify)
+      stringify ; same as json->string, deprecated
+      json->string)
 
    (import
       (otus lisp)
@@ -240,8 +241,11 @@
       (unless (eq? port stdout)
          (close-port port)))
 
-   (define (stringify json)
+   (define (json->string json)
       (define port (open-output-string))
       (write-json json port)
       (get-output-string port))
+
+   (define stringify json->string)
+
 ))
