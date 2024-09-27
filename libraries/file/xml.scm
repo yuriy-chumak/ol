@@ -5,7 +5,15 @@
    (owl parse))
 
 (export
+   xml-parser
    xml-parse-file
+
+   read-xml
+   read-xml-file
+
+   read-xml-port   ; same as read-xml
+   read-xml-string ; same as read-xml
+   read-xml-stream ; same as read-xml
 
    xml-get-root-element
    xml-get-attributes
@@ -28,6 +36,8 @@
    xml:value
 
    xml:attribute
+
+   ;xml->string ; todo
 )
 
 ; parsed xml is:
@@ -54,7 +64,8 @@
    (define (character? n) (or
       (between? #\a n #\z)
       (between? #\0 n #\9)
-      (between? #\A n #\Z)))
+      (between? #\A n #\Z)
+      (eq? n #\-) (eq? n #\:)))
       ;(between? #x7F n #xD7FF)
       ;(between? #xE000 n #xFFFD)
       ;(between? #x10000 n #x10FFFF)))
@@ -84,9 +95,9 @@
       (get-either
          (get-greedy*
             ; parse tag with attributes
-            (let-parses (
-                  (< (get-imm #\<))
-                  (name (get-greedy+ (get-rune-if character?)))
+            (let-parse* (
+                  (< (imm #\<))
+                  (name (greedy+ (get-rune-if character?)))
                   (* skip-whitespaces)
                   (attributes (get-greedy* get-attribute))
                   (body (get-either
@@ -104,16 +115,17 @@
                   (string->symbol (runes->string name))
                   (pairs->ff attributes)
                   body)))
-         (let-parses (
+         (let-parse* (
                (body (get-greedy* (get-rune-if (lambda (x) (not (eq? x #\<)))))))
             (if body (runes->string body)))))
 
    (define xml-parser
-      (let-parses (
-            (* (get-word "<?xml" #t)) ;<?xml version="1.0" encoding="UTF-8"?>
-            (* skip-whitespaces)
+      (let-parse* (
+            (? (word "<?xml " #t)) ;<?xml version="1.0" encoding="UTF-8"?>
+            (? skip-whitespaces)
             (attributes (get-greedy* get-attribute))
             (* (get-word "?>" #true))
+
             (* skip-whitespaces)
             (body (get-tag)))
          ['xml (pairs->ff attributes) body]))
@@ -191,4 +203,30 @@
                (display "</")
                (display (xml-get-name root))
                (display ">\n")))))
+
+   (define (read-xml-stream stream)
+      (when stream
+         (define xml (try-parse xml-parser stream #f))
+         (if xml (car xml))))
+
+   (define (read-xml-port port)
+      (when port
+         (read-xml-stream (force (port->bytestream port)))))
+
+   (define (read-xml-string str)
+      (when str
+         (read-xml-stream (str-iter-bytes str))))
+
+   (define read-xml (case-lambda
+      (() (read-xml-port stdin))
+      ((source) (cond
+         ((port? source) (read-xml-port source))
+         ((string? source) (read-xml-string source))
+         ((pair? source) (read-xml-stream source))))))
+
+   (define (read-xml-file filename)
+      (read-xml (if (equal? filename "-")
+                     stdin
+                     (open-input-file filename)))) ; note: no need to close port
+
 ))
