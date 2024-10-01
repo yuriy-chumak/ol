@@ -4,10 +4,13 @@
       open close
       lseek stat
       sendfile
+      strftime
+      gettimeofday
       )
 
    (import
       (scheme core)
+      (owl string)
       (srfi 16))
 
 (begin
@@ -38,9 +41,15 @@
       (syscall 8 port offset whence))
 
    (define (stat port/file)
-      (syscall 4 port/file))
+      (syscall 4 (if (string? port/file) (c-string port/file) port/file)))
 
    (define (sendfile out in offset count)
       (syscall 40 out in offset count))
+
+   (define strftime (case-lambda
+      ((fmt) (syscall 201 (c-string fmt)))
+      ((fmt time) (syscall 201 (c-string fmt) time))))
+
+   (define (gettimeofday) (syscall 96))
 
 ))

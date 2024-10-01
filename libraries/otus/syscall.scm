@@ -8,6 +8,8 @@
       (owl string))
 
    (begin
+      (import (owl io))
+      (print "Library (otus syscall) is deprecated and will be removed soon. Use (olvm syscalls) instead.")
 
       (define (gettimeofday) (syscall 96))
       (define strftime (case-lambda
