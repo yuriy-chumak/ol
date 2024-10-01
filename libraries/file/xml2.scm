@@ -15,6 +15,8 @@
    read-xml-string ; same as read-xml
    read-xml-stream ; same as read-xml
 
+   write-xml
+
    xml-get-root-element
    xml-get-attributes
    xml-get-name
@@ -37,7 +39,7 @@
 
    xml:attribute
 
-   ;xml->string ; todo
+   xml->string
 )
 
 ; parsed xml is:
@@ -211,7 +213,10 @@
                   (close-port file)))))) ; no automatic port closing on error
 
    (define (xml-get-root-element xml)
-      (car (ref xml 3)))
+      (let ((root (ref xml 3)))
+         (if (list? root)
+            (car root)
+            root)))
 
    ; todo?: make a ff with keys #t for name, #n for value, #e for attributes
    (define (xml-get-name root)
@@ -246,37 +251,62 @@
    (define xml:attribute xml-get-attribute)
 
    ; printing the xml:
-   (define (xml-print xml)
+   (define (print-xml-with display xml)
+      (define (print-tag tag)
+         ;; (print "\n(print-tag " tag ")")
+         (if (string? tag)
+            (display tag)
+         else
+            (display "<")
+            (display (xml-get-name tag))
+            (ff-for-each (lambda (key value)
+                  (for-each display (list " " key "=\"" value "\"")))
+               (or (xml-get-attributes tag) {}))
+            (if (or (eq? (xml-get-value tag) #f)
+                    (null? (xml-get-value tag)))
+               (display "/>")
+            else
+               (display ">")
+               (define value (xml-get-value tag))
+               (if (list? value)
+                  (for-each print-tag value)
+                  (print-tag value))
+               (display "</")
+               (display (xml-get-name tag))
+               (display ">"))))
+
       ; header
       (display "<?xml")
       (ff-fold (lambda (? key value)
             (for-each display (list " " key "=\"" value "\"")))
          #f (xml-get-attributes xml))
       (display "?>\n")
+      (print-tag (xml-get-root-element xml)))
       ; tags
-      (let loop ((root (xml-get-root-element xml)) (indent ""))
-         (display indent)
-         (display "<")
-         (display (xml-get-name root))
-         (ff-fold (lambda (? key value)
-               (for-each display (list " " key "=\"" value "\"")))
-            #f (xml-get-attributes root))
+      ;; (let loop ((root (xml-get-root-element xml)) (indent ""))
+      ;;    (display indent)
+      ;;    (display "<")
+      ;;    (display (xml-get-name root))
+      ;;    (ff-fold (lambda (? key value)
+      ;;          (for-each display (list " " key "=\"" value "\"")))
+      ;;       #f (xml-get-attributes root))
 
-         (if (null? (xml-get-value root))
-            (display "/>\n")
-            (let ((value (xml-get-value root)))
-               (display ">")
-               (if (string? value)
-                  (display value)
-                  (begin
-                     (display "\n")
-                     (for-each (lambda (child)
-                           (loop child (string-append "   " indent)))
-                        value)
-                     (display indent)))
-               (display "</")
-               (display (xml-get-name root))
-               (display ">\n")))))
+      ;;    (if (null? (xml-get-value root))
+      ;;       (display "/>\n")
+      ;;    else
+      ;;       (let ((value (xml-get-value root)))
+      ;;          (display ">")
+      ;;          (if (string? value)
+      ;;             (display value)
+      ;;             (begin
+      ;;                (display "\n")
+      ;;                (for-each (lambda (child)
+      ;;                      (loop child (string-append "   " indent)))
+      ;;                   value)
+      ;;                (display indent)))
+      ;;          (display "</")
+      ;;          (display (xml-get-name root))
+      ;;          (display ">\n"))))
 
    (define (read-xml-stream stream)
       (when stream
@@ -303,4 +333,25 @@
                      stdin
                      (open-input-file filename)))) ; note: no need to close port
 
+   (define write-xml
+      (define (write-xml xml port)
+         (print-xml-with (lambda (what) (display-to port what)) xml))
+      (case-lambda
+         ((xml) (write-xml xml stdout))
+         ((xml file) (if (port? file)
+                        (write-xml xml file)
+                     else
+                        (define port (if (equal? file "-") stdout (open-output-file file)))
+                        (write-xml xml port)
+                        (unless (eq? port stdout)
+                           (close-port port)))) ))
+
+   (define (xml->string xml)
+      (define port (open-output-string))
+      (write-xml xml port)
+      (get-output-string port))
+
+
+   ; legacy support
+   (define (xml-print xml) (print-xml-with display xml))
 ))
