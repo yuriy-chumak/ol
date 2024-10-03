@@ -49,7 +49,7 @@
       (define (time)
          (lets ((ss ms (clock))) ss))
 
-      (define (time-ms) 
+      (define (time-ms)
          (lets ((ss ms (clock))) 
             (+ (* ss 1000) ms)))))
 

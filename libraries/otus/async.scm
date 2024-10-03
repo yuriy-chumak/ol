@@ -62,8 +62,8 @@
          (mcp 8 #false #false))
 
       ; send a mail
-      (define (mail id msg)
-         (mcp 9 id msg))
+      (define (mail to msg)
+         (mcp 9 to msg))
 
       ; drop a thread
       (define (kill id) ; todo: rename

@@ -4,8 +4,9 @@
 
 (import
    (scheme core)
-   (owl io)
    (only (lang sexp) sexp)
+   (owl io)
+   (owl io scheduler)
    (otus async))
 
 (begin
