@@ -333,15 +333,6 @@
             (values (cons key value) u))))))
 
 
-(define (http:parse-url url)
-(let*((path u (get-path (string->runes url))))
-   (let loop ((args #empty) (u u))
-      (if (null? u)
-         [path args]
-         (let*((kv u (get-keyvalue u)))
-            (loop (put args (string->symbol (car kv)) (cdr kv)) u))))))
-
-
 ; https://en.wikipedia.org/wiki/Percent-encoding
 ; '[' and ']' are reserver characters, so should be encoded as '%5B' and '%5D'
 (define (ends-with-vector arg)
@@ -351,26 +342,27 @@
 
 ; new version with arrays support
 (define (http:parse-url url)
-(let*((path u (get-path (string->runes url))))
-   (let loop ((args #empty) (u u))
-      (if (null? u)
-         [path args]
-         (let*((kv u (get-keyvalue u)))
-            (let ((key (car kv))
-                  (value (cdr kv)))
-               ;(print "key: " key)
-               ;(print "value: " value)
-               (if (ends-with-vector key) ; encoded as vector?
-                  ; slow and naive implementation:
-                  (let ((key (string->symbol (substring key 0 (- (string-length key) 6)))))
-                     ;(print "KEY: " key)
-                     (loop (put args key
-                              (list->vector
-                                 (if (vector? (getf args key))
-                                    (append (vector->list (getf args key)) (list value))
-                                    (list value))))
-                           u))
-                  (loop (put args (string->symbol (car kv)) (cdr kv)) u))))))))
+(when (string? url)
+   (let*((path u (get-path (string->runes url))))
+      (let loop ((args #empty) (u u))
+         (if (null? u)
+            [path args]
+            (let*((kv u (get-keyvalue u)))
+               (let ((key (car kv))
+                     (value (cdr kv)))
+                  ;(print "key: " key)
+                  ;(print "value: " value)
+                  (if (ends-with-vector key) ; encoded as vector?
+                     ; slow and naive implementation:
+                     (let ((key (string->symbol (substring key 0 (- (string-length key) 6)))))
+                        ;(print "KEY: " key)
+                        (loop (put args key
+                                 (list->vector
+                                    (if (vector? (getf args key))
+                                       (append (vector->list (getf args key)) (list value))
+                                       (list value))))
+                              u))
+                     (loop (put args (string->symbol (car kv)) (cdr kv)) u)))))))))
 
 
 ))
