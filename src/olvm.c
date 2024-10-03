@@ -2776,7 +2776,7 @@ mainloop:;
 	#		define SYSCALL_MMAP 9    // 
 	#		define SYSCALL_FSYNC 74  //
 	#		define SYSCALL_EXECVP 59 //
-	#		define SYSCALL_WAIT 61   //
+	#		define SYSCALL_WAITPID 61//
 	// 5, 6 - free
 	// 12 - reserved for memory functions
 	// #		define SYSCALL_BRK 12
@@ -4493,15 +4493,17 @@ loop:;
 				break;
 			}
 
-			case SYSCALL_WAIT: {
-				CHECK_ARGC_EQ(1);
+			case SYSCALL_WAITPID: {
+				CHECK_ARGC(1, 2);
 				CHECK_NUMBER(1);
+				CHECK_BOOLEAN(2);
 
 				#if defined(__unix__) || defined(__APPLE__)
 					pid_t pid = (pid_t)number(A1);
+					int flag = (argc > 1 && A2 != IFALSE) ? 0 : WNOHANG;
 					int status = 0;
-					int err = waitpid(pid, &status, WNOHANG);
-					if (err > 0)
+					int err = waitpid(pid, &status, flag);
+					if (err >= 0)
 						r = new_number(WEXITSTATUS(status));
 				#endif
 				#ifdef _WIN32
