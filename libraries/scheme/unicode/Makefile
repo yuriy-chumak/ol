@@ -1,6 +1,6 @@
 # http://www.unicode.org/reports/tr44/#Other_Alphabetic
 UNICODE_SERVER=https://www.unicode.org/Public
-UNICODE_VERSION=15.0.0
+UNICODE_VERSION=16.0.0
 
 $(shell mkdir -p tmp)
 tmp/PropList.txt:
