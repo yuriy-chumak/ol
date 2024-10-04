@@ -299,24 +299,26 @@ check-reference: $(wildcard doc/reference/*.md)
 # -------------------------------------------------------------
 # pvenv
 define PVENV_ADD
-	cat '{}'| ol <(echo '(write (read))') >../tmp/library.scm;\
+	cat '{}'| ../ol <(echo '(write (read))') >../tmp/library.scm;\
 	tar -rf ../$@ \
 	    --absolute-names ../tmp/library.scm \
 		--transform 's|.*|{}|'\
-		--owner=OL/2.5 \
-		--group=? 
+		--owner=OL/2.6 \
+		--group=* 
 endef
 define PVENV_ADD_RAW
 	tar -rf ../$@ \
-	    --absolute-names {} \
-		--owner=OL/2.5 \
-		--group=? 
+	    --absolute-names '{}' \
+		--owner=OL/2.6 \
+		--group=* 
 endef
+tmp/pvenv.tar: ol
 tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
                $(wildcard libraries/*/*/*.scm)\
                $(wildcard libraries/*/*/*/*.scm)\
                $(wildcard libraries/*/*.lisp)\
-               $(wildcard libraries/*/*/*.lisp)
+               $(wildcard libraries/*/*/*.lisp)\
+               $(wildcard libraries/*/*/*/*.lisp)
 	rm -f $@
 	cd libraries;\
 	  find ./ -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
