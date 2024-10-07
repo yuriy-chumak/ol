@@ -8,7 +8,9 @@
     http-parser)
   (import (scheme base) (srfi 1)
       (owl parse)
-      (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra) (otus async)
+      (owl math) (owl list) (owl string) (owl ff) (owl list-extra) (otus async)
+      (owl io)
+      (owl io scheduler)
       (lang sexp))
 
 (begin
@@ -269,10 +271,15 @@
    (print-to stderr "server listening to http://0.0.0.0:" port)
    ; accept loop
    (let loop ()
-      (if (syscall 23 socket
-            (if (null? (running-threads)) 30000000 1)) ; wait a 30 second if no running threads detected (100000 for tests)
+      ; old code with "listen":
+    ; (if (syscall 23 socket
+    ;       (if (null? (running-threads)) 30000000 1)) ; wait a 30 second if no running threads detected (100000 for tests)
+      ; new code with modern io scheduler:
+      (unless (eq? (ref (await (mail io-scheduler-name ['read-timeout socket 3000])) 1) 'timeout) ; timeout reached?
          (let ((fd (syscall 43 socket))) ; accept
-            (async (on-accept (generate-unique-id) fd onRequest)))
+            (print "fd: " fd)
+            (if fd
+               (async (on-accept (generate-unique-id) fd onRequest))))
          (sleep 0)) ; else just switch context
       (loop)) )))
 
