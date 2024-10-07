@@ -145,6 +145,25 @@
          (endl (imm #\newline)))
       bytes))
 
+(define-library (parser)
+   (import (otus lisp))
+   (export ls parser)
+(cond-expand
+   (Windows
+      (begin
+         (print "Windows")
+         (define (ls realname)
+            (list "cmd.exe" "-c" (string-append
+               "dir " realname)))
+         (define parser #f)))
+   (else
+      (begin
+         (print "Others")
+         (define (ls realname)
+            (list "/bin/sh" "-c" (string-append
+               "ls -lah " realname)))
+         (define parser #f)))))
+(import (parser))
 
 (http:run port (lambda (fd request headers body close)
    (define (send . args)
@@ -167,8 +186,7 @@
             (display "<folder> ")
             ; list folder:
             (define Out (pipe))
-            (define Pid (execvp (list "/bin/sh" "-c" (string-append
-                           "ls -lah " realname)) #f Out))
+            (define Pid (execvp (ls realname) #f Out))
 
             (send "HTTP/1.0 200 OK\n"
                "Connection: close\n"
