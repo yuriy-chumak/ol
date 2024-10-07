@@ -4451,31 +4451,34 @@ loop:;
 					#endif
 					#ifdef _WIN32
 						STARTUPINFO si;
-						ZeroMemory( &si, sizeof(STARTUPINFO) );
+						ZeroMemory(&si, sizeof(STARTUPINFO));
 						si.cb = sizeof(STARTUPINFO);
 						si.dwFlags |= STARTF_USESTDHANDLES;
+						si.hStdInput = (HANDLE) _get_osfhandle(STDIN_FILENO);
 						if (is_pair(c)) {
-							if (is_port(car(c)))
-								si.hStdInput = (HANDLE) _get_osfhandle(port(c));
+							if (is_port(car(c))) // stdin in
+								si.hStdInput = (HANDLE) _get_osfhandle(port(car(c)));
 							c = cdr(c);
 						}
+						si.hStdOutput = (HANDLE) _get_osfhandle(STDOUT_FILENO);
 						if (is_pair(c)) {
-							if (is_port(car(c)))
-								si.hStdOutput = (HANDLE) _get_osfhandle(port(c));
+							if (is_port(car(c))) // stdout out
+								si.hStdOutput = (HANDLE) _get_osfhandle(port(car(c)));
 							c = cdr(c);
 						}
+						si.hStdError = (HANDLE) _get_osfhandle(STDERR_FILENO);
 						if (is_pair(c)) {
-							if (is_port(car(c)))
-								si.hStdError = (HANDLE) _get_osfhandle(port(c));
+							if (is_port(car(c))) // stderr out
+								si.hStdError = (HANDLE) _get_osfhandle(port(car(c)));
 							c = cdr(c);
 						}
 
-						// черновой вариант
-						char* args = string (fp);
-						// todo: add length check!
+						char* args = (char*) &car (fp);
+						// todo: add length check! TODO: add this feature under #define like HARDENING
 						sprintf(args, "\"%s\"", command);
 
 						if (is_pair(b)) {
+							b = cdr(b); // skip command name
 							word i = b;
 							while (i != INULL) {
 								strcat(args, " ");
