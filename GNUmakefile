@@ -293,6 +293,9 @@ check-reference: $(wildcard doc/reference/*.md)
 	@echo "Testing reference samples:"
 	@./ol tools/check-reference.lisp $(filter %.md,$^) && echo $(ok) || echo $(failed)
 
+# win32 extensions
+-include extensions/win32/Makefile
+
 # -------------------------------------------------------------
 # pvenv
 define PVENV_ADD

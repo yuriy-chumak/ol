@@ -1337,6 +1337,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #endif
 
 #include <sys/utsname.h> // we have own win32 implementation
+#ifdef _WIN32
+int (*puname)(struct utsname* out) = uname;
+# define uname puname
+#endif
 
 #if HAVE_DLOPEN
 #	include <dlfcn.h> // we have own win32 implementation
@@ -5804,6 +5808,16 @@ int main(int argc, char** argv)
 	if (sock_init  != 0) {
 		E("WSAStartup failed with error: %d", sock_init);
 		return 1;
+	}
+#endif
+
+// larger uname
+#if	HAVE_DLOPEN && defined(_WIN32)
+	void* libuname = dlopen("ol-uname.dll", 0);
+	if (libuname) {
+		void* f = dlsym(libuname, "uname");
+		if (f)
+			uname = (int (*)(struct utsname*))f;
 	}
 #endif
 
