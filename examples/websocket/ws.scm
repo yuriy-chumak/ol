@@ -42,7 +42,7 @@
             (async (lambda ()
                (let loop ((n 1))
                   (send-websocket (string-append (number->string n) " "))
-                  (sleep 9999)
+                  (wait 1000)
                   (if (< n 10)
                      (loop (+ n 1))))
                (send-websocket "END."))))
@@ -61,6 +61,7 @@
                "Connection: Upgrade\r\n"
                "Sec-WebSocket-Accept: " (base64:encode (sha1:digest
                   (string-append sec-websocket-key "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))) "\r\n"
+               "Sec-WebSocket-Protocol: " (headers 'sec-websocket-protocol "-")              "\r\n"
                "\r\n")
          (close #false)
       else
