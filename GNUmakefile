@@ -18,9 +18,12 @@ describe: all
 CC ?= gcc
 LD ?= ld
 
+MGCC32 ?= i686-w64-mingw32-gcc
+MGCC64?=x86_64-w64-mingw32-gcc
+
 # win32 cross-compile
-ol32.exe: MGCC := i686-w64-mingw32-gcc
-ol64.exe: MGCC:=x86_64-w64-mingw32-gcc
+ol32.exe: MGCC:=$(MGCC32)
+ol64.exe: MGCC:=$(MGCC64)
 
 ol.exe: MINGWCFLAGS += -DOLVM_TARVENV=1
 ol.exe: ol64.exe tmp/pvenv.tar
