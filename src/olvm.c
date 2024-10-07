@@ -4514,11 +4514,17 @@ loop:;
 						r = new_number(WEXITSTATUS(status));
 				#endif
 				#ifdef _WIN32
-					HANDLE pid = (HANDLE)number(A1);
+					DWORD pid = (DWORD)number(A1);
 					DWORD exitCode = 0;
-					if (GetExitCodeProcess((HANDLE)pid, &exitCode))
+					HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, TRUE, pid);
+					if (!hProcess) { // no process active
+						r = (R)ITRUE;
+						break;
+					}
+					if (GetExitCodeProcess(hProcess, &exitCode))
 						if (exitCode != STILL_ACTIVE)
 							r = new_number(exitCode);
+					CloseHandle(hProcess);
 				#endif
 				break;
 			}
