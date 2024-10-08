@@ -299,7 +299,7 @@
             ((begin) #false) ; empty 
             ((begin exp) exp)
 
-            ; define, define-values
+            ; super define, super define-values
             ((begin (define . a) (define . b) ... . rest)
                (begin 42 () (define . a) (define . b) ... . rest))
             ((begin (define-values (var ...) . body) . rest)
@@ -315,6 +315,7 @@
                (begin 42 ((var val) . done) . rest))
             ((begin 42 done . exps)
                (begin 43 done () exps))
+
             ((begin 43 (a . b) c exps)
                (begin 43 b (a . c) exps))
             ((begin 43 () bindings exps)
