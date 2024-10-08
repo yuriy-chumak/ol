@@ -6,6 +6,9 @@
       sendfile
       strftime
       gettimeofday
+
+      ;socket
+      getpeername
       )
 
    (import
@@ -51,5 +54,9 @@
       ((fmt time) (syscall 201 (c-string fmt) time))))
 
    (define (gettimeofday) (syscall 96))
+
+   ; the peer address of the specified socket
+   (define (getpeername socket)
+      (syscall 51 socket))
 
 ))
