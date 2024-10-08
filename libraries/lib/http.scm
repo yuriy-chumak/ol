@@ -174,31 +174,54 @@
             headline (pairs->ff headers-array)))
       ; WebSocket
       (let-parse* (
-            (tag byte)
-            (mlen byte) ; todo: Extended payload length
             ; header bits
-            (FIN (eval (band tag #b1000)))
-            (RSV (eval (band tag #b0111)))
-            (MASK (eval (band mlen #x80)))
+            (tag byte)
+            (FIN (eval (band tag #b10000000))) ; the final fragment in a message
+            (RSV (eval (band tag #b01110000))) ; rsv1, rsv2, rsv3
+            (opcode  (eval (band tag #b1111))) ; opcode
 
-            (payload-len (eval (band mlen #x7F)))
+            (mlen byte) ; todo: Extended payload length
+            (MASK (eval (band mlen #x80)))
+            (plen (eval (band mlen #x7F)))
+            (plen (cond
+                     ; 1..125
+                     ((< plen 126)
+                        (epsilon plen))
+                     ; 126..65535
+                     ((= plen 126)
+                        (let-parse* (
+                              (a byte) (b byte))
+                           ; network byte order == big endian
+                           (+ (<< a 8) b)))
+                     ; 65536..18446744073709551615
+                     ((= plen 127)
+                        (let-parse* (
+                              (a byte) (b byte) (c byte) (d byte))
+                           ; network byte order == big endian
+                           (+ (<< a 24) (<< b 16) (<< c 8) d)))
+                     (else
+                        (runtime-error "invalid 'Payload len'" plen))))
+                        
             (masking-key (if (eq? MASK #x80)
                            (times 4 byte)
                            (epsilon #false)))
-            (payload (times payload-len byte)))
+            (payload (times plen byte)))
          [
             'WebSocket
             (case tag
                ;(#x80 #f) ; continuation tag, need to collect more frames into one
-               (#x81 (let loop ((p payload) (m masking-key) (o '()))
-                        (if (null? p) {
-                           'type 'string
-                           'message (reverse o) }
-                        else
-                           (let ((m (if (null? m) masking-key m)))
-                              (loop (cdr p)
-                                    (cdr m)
-                                    (cons (bxor (car p) (car m)) o))))))
+               ; the string in one message
+               (#x81 (if masking-key
+                        (let loop ((p payload) (m masking-key) (o '()))
+                           (if (null? p) {
+                              'type 'string
+                              'message (reverse o) }
+                           else
+                              (let ((m (if (null? m) masking-key m)))
+                                 (loop (cdr p)
+                                       (cdr m)
+                                       (cons (bxor (car p) (car m)) o)))))
+                        payload))
                (#x88 {
                   'type 'close }))
          ])))
