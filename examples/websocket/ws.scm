@@ -1,26 +1,33 @@
 #!/usr/bin/env ol
 
-; websocket library
-;; webSocket = new WebSocket(url, protocols);
-
 (import (lib http)
    (otus base64)
-   (lib sha1)) ; sha1:digest and base64:encode
+   (olvm syscalls)
+   (only (lib sha1)
+      sha1:digest base64:encode))
 
-; simplest example:
+; :simple example:
 ; One lucky number between 10000 and 65536 is 27048, as it was the year of my birth! (c) Mistral Instruct
 (http:run 27048 (lambda (fd request headers body close)
-   (print ":: " (syscall 51 fd))
+   (print "the peer: " (getpeername fd)) ; 
 
    (define (send . args)
       (for-each (lambda (arg)
          (display-to fd arg)) args))
    (define (send-websocket message)
-      (define bytes (string->list message))
-      (print "sending message " message)
-      (write-bytes fd (cons* #x81 (length bytes) bytes)))
-      ;(write-bytes fd (cons* #x81 0)))
-      ;)
+      (define len (string-length message))
+
+      (cond
+         ; 125 or less
+         ((< len 125)
+            (write-bytevector fd (make-bytevector (cons* #x81 len
+                  (string->list message)))))
+         ; 126-65535
+         ((< len 65536)                                            ; big endian
+            (write-bytevector fd (make-bytevector (cons* #x81 #x7e (>> len 8) (band len #xFF) (string->list message)))))
+         ; 65536+ unsupported
+         (else
+            (runtime-error "too long message"))))
 
    ; sec-websocket-protocol . 1
    ; sec-websocket-key . xxxxxx
@@ -29,28 +36,24 @@
 
    (print "request: " request)
    (print "headers: " headers)
-   (print "body: " body)
 
    (if (eq? request 'WebSocket)
    then
-      ;(print "> " (list->string headers))
       (case (headers 'type #f)
          ('close ; websocket closed
             (close #true))
          ('string
-            ; simulate ai network answer
+            ; simulate long ai answer
             (async (lambda ()
-               (let loop ((n 1))
-                  (send-websocket (string-append (number->string n) " "))
-                  (wait 1000)
-                  (if (< n 10)
-                     (loop (+ n 1))))
-               (send-websocket "END."))))
+               (for-each (lambda (char)
+                     (wait 500)
+                     (send-websocket (string char)))
+                  (headers 'message "")))))
       )
       (close #false)
    else
       (if (and ; websocket connection inside http
-               ; (string-eq? (headers 'connection "") "keep-alive, Upgrade"), todo: find "upgrade" in 'connection header
+               ; (string-eq? (headers 'connection "") "keep-alive, Upgrade")
                (string-eq? (headers 'upgrade "") "websocket"))
       then
          (define sec-websocket-key (headers 'sec-websocket-key ""))
@@ -76,6 +79,3 @@
                "<hr><small>" headers
                "</small>")
          (close #true)))))
-
-   ;; (close #t)
-   ;; ))
