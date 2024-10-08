@@ -4671,17 +4671,30 @@ loop:;
 #if HAVE_SOCKETS
 			// todo: add getsockname() and getpeername() syscalls
 
-			// SOCKET
-			case 41: { // socket (todo: options: STREAM or DGRAM)
-				// http://beej.us/net2/html/syscalls.html
-				// right way: use PF_INET in socket call
-		#ifdef _WIN32
-				int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-				ioctlsocket(sock, FIONBIO, &(unsigned long){1}); // set blocking mode
-		#else
-				int sock = socket(PF_INET, SOCK_STREAM, 0);
+			/*! #### SOCKET
+			* * `(syscall 41)` -> tcp socket
+			* * `(syscall 41 domain type)` -> typed socket
+			* * `(syscall 41 domain type protocol)` -> typed socket
+			*
+			* - *type*, 1 - STREAM, 2 - DGRAM, 3 - RAW
+			* - *protocol*, 
+			*/
+			case 41: {
+				CHECK_ARGC(0,3);
+				CHECK_NUMBER(1);
+				CHECK_NUMBER(2);
+				CHECK_NUMBER(3);
+
+				int domain = (argc > 0) ? (int)number(A1) : AF_INET;
+				int type = (argc > 1) ? (int)number(A2) : SOCK_STREAM;
+				int protocol = (argc > 2) ? (int)number(A3) : IPPROTO_TCP;
+#ifdef _WIN32
+				int sock = socket(domain, type, protocol);
+				ioctlsocket(sock, FIONBIO, &(unsigned long){1}); // enable non-blocking mode
+#else
+				int sock = socket(domain, type, protocol); // |SOCK_NONBLOCK
 				setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
-		#endif
+#endif
 				if (sock != -1)
 					r = (word*)make_port (sock);
 				break;
@@ -4724,7 +4737,7 @@ loop:;
 				if (fcntl(sockfd, F_SETFL, flags) == 0)
 #endif
 
-					r = (word*)ITRUE;
+					r = (R)ITRUE;
 
 				break;
 			}
