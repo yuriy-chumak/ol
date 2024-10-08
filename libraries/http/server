@@ -255,7 +255,6 @@
                (if parsed
                   (let* ((line stream parsed))
                      (unless (null? line)
-                        (print "line: " (list->string line))
                         (define columns (parse split line realname "not a file record" #f))
                         (if columns
                         then
