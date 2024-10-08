@@ -225,14 +225,21 @@
                      stdin
                      (open-input-file filename)))) ; note: no need to close port
 
-
    (define write-json
       (define (write-json json port)
          (print-json-with (lambda (what) (display-to port what)) json))
       (case-lambda
          ((json) (write-json json stdout))
-         ((json port) (write-json json port))))
+         ((json file)
+               (if (port? file)
+                  (write-json json file)
+               else
+                  (define port (open-output-file file))
+                  (when port
+                     (write-json json port)
+                     (close-port port))))))
 
+   ; todo: remove "-" as a name for stdout
    (define (write-json-file json filename)
       (define port (if (equal? filename "-")
                      stdout
