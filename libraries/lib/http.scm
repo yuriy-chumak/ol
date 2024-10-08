@@ -11,6 +11,7 @@
       (owl math) (owl list) (owl string) (owl ff) (owl list-extra) (otus async)
       (owl io)
       (owl io scheduler)
+      (olvm syscalls)
       (lang sexp))
 
 (begin
@@ -239,7 +240,8 @@
 
    (let*((ss1 ms1 (clock)))
       (print-to stderr)
-      (print-to stderr id ": " (timestamp) " on-accept")
+      (print-to stderr "new connect: " (getpeername fd))
+      (print-to stderr id ": > " (timestamp) ", on-accept")
       (let loop ((stream (port->bytestream fd)))
       (let*((request stream
                   (let* ((l r p val (http-parser #null stream 0 ok)))
@@ -265,7 +267,7 @@
             (loop (or close? stream)))))
       ; done.
       (let*((ss2 ms2 (clock)))
-         (print-to stderr id ": " (timestamp) " on-accept processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
+         (print-to stderr id ": < " (timestamp) ", on-accept processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
 ))
 
 
@@ -300,7 +302,6 @@
       ; new code with modern io scheduler:
       (unless (eq? (ref (await (mail io-scheduler-name ['read-timeout socket 3000])) 1) 'timeout) ; timeout reached?
          (let ((fd (syscall 43 socket))) ; accept
-            (print "fd: " fd)
             (if fd
                (async (on-accept (generate-unique-id) fd onRequest))))
          (sleep 0)) ; else just switch context
