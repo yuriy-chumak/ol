@@ -21,56 +21,6 @@
 (define (time format seconds) (syscall 201 format seconds))
 (define uname (syscall 63))
 
-(define (space? x) (eq? x #\space))
-(define (non-space? x) (not (eq? x #\space)))
-
-(define \d (fold (lambda (ff x) (put ff x #t)) {} (iota 10 #\0)))
-(define (\d? x) (\d x #f))
-(define \d: (put \d #\: #t))
-(define (\d:? x) (\d: x #f))
-(define \d- (put \d #\- #t))
-(define (\d-? x) (\d- x #f))
-(define S\D? (lambda (x) (not (or (space? x) (\d x #f)))))
-
-(define split (let-parse* (
-      (permissions         (greedy+ (rune-if non-space?)))
-      (sp1 (greedy+ (rune-if space?)))
-      (number-of-hardlinks (greedy+ (rune-if non-space?)))
-      (sp2 (greedy+ (rune-if space?)))
-      (file-owner          (greedy+ (rune-if non-space?)))
-      (sp3 (greedy+ (rune-if space?)))
-      (file-group          (greedy+ (rune-if non-space?)))
-      (sp4 (greedy+ (rune-if space?)))
-      (file-size           (greedy+ (rune-if non-space?)))
-      (sp5 (greedy+ (rune-if space?)))
-      (date (any-of
-               (let-parse* (
-                     (month         (greedy+ (rune-if S\D?)))
-                     (sp1 (greedy+ (rune-if space?)))
-                     (day           (greedy+ (rune-if \d?)))
-                     (sp2 (greedy+ (rune-if space?)))
-                     (time          (greedy+ (rune-if \d:?))) )
-                  (append month sp1 day sp2 time))
-               (let-parse* (
-                     (date          (greedy+ (rune-if \d-?)))
-                     (sp1 (greedy+ (rune-if space?)))
-                     (time          (greedy+ (rune-if \d:?))) )
-                  (append date sp1 time))
-            ))
-      (sp6 (greedy+ (rune-if space?)))
-      ; file name - the rest of line
-      (filename            (greedy+ rune)))
-   (cons
-      (runes->string
-         (append
-            permissions         sp1
-            number-of-hardlinks sp2
-            file-owner          sp3
-            file-group          sp4
-            file-size           sp5
-            date                sp6))
-      (runes->string filename))))
-
 (define OK "\e[0;32mOK\e[0;0m")
 (define FAIL "\e[0;31mFAIL\e[0;0m")
 
@@ -139,29 +89,119 @@
    else
       4000))
 
-(define get-line
-   (let-parse* (
-         (bytes (greedy+ (byte-if (lambda (x) (not (eq? x #\newline))))))
-         (endl (imm #\newline)))
-      bytes))
-
 (define-library (parser)
-   (import (otus lisp))
-   (export ls parser)
+   (import
+      (otus lisp)
+      (owl parse))
+   (export ls split
+      line-skips get-line
+   )
+(begin
+   (define \d (fold (lambda (ff x) (put ff x #t)) {} (iota 10 #\0)))
+   (define (\d? x) (\d x #f))
+   (define \d: (put \d #\: #t))
+   (define (\d:? x) (\d: x #f))
+   (define \d- (put \d #\- #t))
+   (define (\d-? x) (\d- x #f))
+   (define \d/ (put \d #\/ #t))
+   (define (\d/? x) (\d/ x #f))
+
+   (define (space? x) (eq? x #\space))
+   (define (non-space? x) (not (eq? x #\space)))
+   (define S\D? (lambda (x) (not (or (space? x) (\d x #f)))))
+   (define spaces (greedy+ (rune-if space?))) )
 (cond-expand
+   ; -=( Windows )=----------------------------
    (Windows
       (begin
          (print "Windows")
-         (define (ls realname)
-            (list "cmd.exe" "-c" (string-append
-               "dir " realname)))
+         (define (ls folder)
+            (list "cmd.exe" "/c" (string-append
+               "dir " (s/\//\\/g folder))))
+
+         (define line-skips 5)
+         (define get-line (let-parse* (
+               (bytes (greedy* (byte-if (lambda (x) (not (eq? x #\return))))))
+               (| | (imm #\return))
+               (endl (imm #\newline)))
+            bytes))
+         
+         (define split (let-parse* (
+               ; '10/07/2024  08:26 PM'
+               (date (let-parse* (
+                           (day           (greedy+ (rune-if \d/?)))
+                           (*1 spaces)
+                           (time          (greedy+ (rune-if \d:?)))
+                           (*2 spaces)
+                           (ampm          (greedy+ (rune-if non-space?))) )
+                        (append day *1 time *2 ampm)))
+               (|date | spaces)
+               ; '<DIR>' or '35,821'
+               (info (greedy+ (rune-if non-space?)))
+               (|info | spaces)
+               ; file name - the rest of line
+               (filename (greedy+ rune)))
+            (cons
+               (runes->string
+                  (append
+                     date         |date |
+                     info         |info |))
+               (runes->string (s/\\/\// filename)))))
+
          (define parser #f)))
+   ; -=( Unix )=-------------------------------
    (else
       (begin
          (print "Others")
-         (define (ls realname)
+         (define (ls folder)
             (list "/bin/sh" "-c" (string-append
-               "ls -lah " realname)))
+               "ls -lah " folder)))
+
+         (define line-skips 1)
+         (define get-line (let-parse* (
+               (bytes (greedy+ (byte-if (lambda (x) (not (eq? x #\newline))))))
+               (endl (imm #\newline)))
+            bytes))
+
+         (define split (let-parse* (
+               (permissions         (greedy+ (rune-if non-space?)))
+               (sp1 (greedy+ (rune-if space?)))
+               (number-of-hardlinks (greedy+ (rune-if non-space?)))
+               (sp2 (greedy+ (rune-if space?)))
+               (file-owner          (greedy+ (rune-if non-space?)))
+               (sp3 (greedy+ (rune-if space?)))
+               (file-group          (greedy+ (rune-if non-space?)))
+               (sp4 (greedy+ (rune-if space?)))
+               (file-size           (greedy+ (rune-if non-space?)))
+               (sp5 (greedy+ (rune-if space?)))
+               (date (any-of
+                        (let-parse* (
+                              (month         (greedy+ (rune-if S\D?)))
+                              (sp1 (greedy+ (rune-if space?)))
+                              (day           (greedy+ (rune-if \d?)))
+                              (sp2 (greedy+ (rune-if space?)))
+                              (time          (greedy+ (rune-if \d:?))) )
+                           (append month sp1 day sp2 time))
+                        (let-parse* (
+                              (date          (greedy+ (rune-if \d-?)))
+                              (sp1 (greedy+ (rune-if space?)))
+                              (time          (greedy+ (rune-if \d:?))) )
+                           (append date sp1 time))
+                     ))
+               (sp6 (greedy+ (rune-if space?)))
+               ; file name - the rest of line
+               (filename            (greedy+ rune)))
+            (cons
+               (runes->string
+                  (append
+                     permissions         sp1
+                     number-of-hardlinks sp2
+                     file-owner          sp3
+                     file-group          sp4
+                     file-size           sp5
+                     date                sp6))
+               (runes->string filename))))
+
          (define parser #f)))))
 (import (parser))
 
@@ -171,6 +211,8 @@
          (display-to fd arg)) args))
 
    ; send file to output stream
+   ; todo: list zip files content
+   ; todo: add "download arrow" to download full folder or zip at the right of filename
    (define (sendfile filename)
       (define realname
          (s/%20/ /g
@@ -184,41 +226,62 @@
          ; folder?
          ((not (zero? (band (ref stat 3) #o0040000)))
             (display "<folder> ")
+            (define folder realname)
             ; list folder:
             (define Out (pipe))
-            (define Pid (execvp (ls realname) #f Out))
+            (define Pid (execvp (ls folder) #f Out))
 
-            (send "HTTP/1.0 200 OK\n"
-               "Connection: close\n"
-               "Content-Type: " "text/html" "\n"
-               "Server: " (car *version*) "/" (cdr *version*) "\n"
-               "\n")
+            (send "HTTP/1.0 200 OK\r\n"
+               "Connection: close\r\n"
+               "Content-Type: " "text/html" "\r\n"
+               "Server: " (car *version*) "/" (cdr *version*) "\r\n"
+               "\r\n")
             (send "<meta charset='UTF-8'>")
             (send "<pre>")
-            (send "<h3>" filename "</h3>")
-            ; skip first line "total ..."
-            (define line (try-parse get-line (port->bytestream (car Out)) #false))
+            (send "<h3>" folder "</h3>")
+            ; skip first dummy lines
+            (define stream (let loop ((n line-skips) (stream (port->bytestream (car Out))))
+                              ;; (print "n = " n)
+                              (if (= n 0) stream
+                              else
+                                 (define parsed (try-parse get-line stream))
+                                 (if parsed
+                                    (let* ((line stream parsed))
+                                       (loop (- n 1) stream))))))
 
             ; ls -la
-            (let loop ((stream (try-parse get-line (cdr line) #false)))
-               (when stream
-                  (define line (car stream))
-                  (define columns (parse split line realname "invlid ls output" #f))
-                  (send (car columns))
-                  (send
-                     "<a href='"
-                        (cond
-                           ((string-eq? (cdr columns) ".")
-                              (string-append "/" realname))
-                           (else
-                              (string-append "/" realname "/" (cdr columns))))
-                     "'>"
-                     (cdr columns)
-                     "</a>")
-                  ;(for-each send (cddr columns))
-                  (send "<br/>")
+            (let loop ((stream stream))
+               (define parsed (try-parse get-line stream))
+               (if parsed
+                  (let* ((line stream parsed))
+                     (unless (null? line)
+                        (print "line: " (list->string line))
+                        (define columns (parse split line realname "not a file record" #f))
+                        (if columns
+                        then
+                           ;; (print "columns: " columns)
+                           (send (s/</&lt;/ (s/>/&gt;/ (car columns))))
+                           (send
+                              "<a href='"
+                                 (cond
+                                    ((string-eq? (cdr columns) ".")
+                                       (string-append "/" realname))
+                                    ((string-eq? (cdr columns) "..")
+                                       ; don't show ".." for top folder
+                                       ;; (unless (string-eq? realname ".")
+                                          (print "filename: " (cdr columns))
+                                          (print "realname: " realname)
+                                          (print "    name: " (s/[\/\\]?[^\/]+$// realname))
+                                          (string-append "/" (s/[\/\\]?[^\/]+$// realname)))
+                                    (else
+                                       (string-append "/" realname "/" (cdr columns))))
+                              "'>"
+                              (cdr columns)
+                              "</a>")
+                           ;(for-each send (cddr columns))
+                           (send "<br/>")
 
-                  (loop (try-parse get-line (cdr stream) #false))))
+                           (loop stream) )))))
             (send "</pre>\n")
             (send-uptime send)
             (close-pipe Out)
@@ -228,11 +291,11 @@
          ; regular file?
          ((not (zero? (band (ref stat 3) #o0100000)))
             (display "<file> ") ; TODO: get mimetypes
-            (define file (open-input-file realname))
+            (define file (open-binary-input-file realname))
             (if file
             then
-               (send "HTTP/1.0 200 OK\n"
-                  "Connection: close\n"
+               (send "HTTP/1.0 200 OK\r\n"
+                  "Connection: close\r\n"
                   "Content-Type: "
                      (cond
                         ((m/.*\.html?$/ realname) "text/html")
@@ -259,28 +322,28 @@
                         ((m/.*\.xml$/ realname) "application/xml")
                         (else
                            "application/octet-stream"))
-                     "\n"
-                  "Content-Length: " (ref stat 8) "\n"
-                  "Server: " (car *version*) "/" (cdr *version*) "\n"
-                  "\n")
+                     "\r\n"
+                  "Content-Length: " (ref stat 8) "\r\n"
+                  "Server: " (car *version*) "/" (cdr *version*) "\r\n"
+                  "\r\n")
                (syscall 40 fd file 0 (ref stat 8)) ; sendfile
                (close-port file)
                (print OK)
                (close #t)
             else
-               (send "HTTP/1.0 500 Internal Server Error\n"
-                     "Connection: close\n"
-                     "\n")
+               (send "HTTP/1.0 500 Internal Server Error\r\n"
+                     "Connection: close\r\n"
+                     "\r\n")
                (print FAIL)
                (close #t)))
          (else
-            (send "HTTP/1.0 500 Internal Server Error\n"
-                  "Connection: close\n"
-                  "\n")
+            (send "HTTP/1.0 500 Internal Server Error\r\n"
+                  "Connection: close\r\n"
+                  "\r\n")
             (close #t))))
-      (send "HTTP/1.0 404 Not Found\n"
-            "Connection: close\n"
-            "\n")
+      (send "HTTP/1.0 404 Not Found\r\n"
+            "Connection: close\r\n"
+            "\r\n")
       (close #t))
 
    (print "fd: " fd ", request: " request)
@@ -296,6 +359,6 @@
                (s/^\/+// filename)))) ; remove all leading "/"
          (else
             (sendfile 404))))
-   (send "HTTP/1.0 404 Not Found\n"
-         "\n")
+   (send "HTTP/1.0 404 Not Found\r\n"
+         "\r\n")
    (close #t)))
