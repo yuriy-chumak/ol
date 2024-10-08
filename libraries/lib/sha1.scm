@@ -1,5 +1,3 @@
-#!/bin/ol
-
 (define-library (lib sha1)
   (export
     sha1:digest
