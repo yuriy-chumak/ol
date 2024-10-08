@@ -7,27 +7,18 @@ int pipe(int pipes[2]);
 
 int pipe(int pipes[2])
 {
-	static int id = 0;
-	char name[64];
-	snprintf(name, sizeof(name), "\\\\.\\pipe\\ol%d", ++id); //todo: __sync_fetch_and_add(&id, 1));
+	SECURITY_ATTRIBUTES saAttr;
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	saAttr.bInheritHandle = TRUE;
+	saAttr.lpSecurityDescriptor = NULL; 
 
-	HANDLE pipe1 = CreateNamedPipe(name,
-			PIPE_ACCESS_DUPLEX|WRITE_DAC,
-			PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT,
-			2, 1024, 1024, 2000, NULL);
-
-	HANDLE pipe2 = CreateFile(name,
-			GENERIC_WRITE, 0,
-			NULL,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-			NULL);
-
-	// https://stackoverflow.com/questions/7369445/is-there-a-windows-equivalent-to-fdopen-for-handles
-	pipes[0] = _open_osfhandle((intptr_t)pipe1, _O_APPEND | _O_RDONLY);
-	pipes[1] = _open_osfhandle((intptr_t)pipe2, _O_APPEND | _O_WRONLY);
-
-	// not required: ConnectNamedPipe(pipe1, NULL);
-	return 0;
+	HANDLE i, o;
+	if (CreatePipe(&i, &o, &saAttr, 1024)) {
+		pipes[0] = _open_osfhandle((intptr_t)i, _O_APPEND | _O_RDONLY);
+		pipes[1] = _open_osfhandle((intptr_t)o, _O_APPEND | _O_WRONLY);
+		return 0;
+	}
+	return -1;
 }
 
 // read workaround:

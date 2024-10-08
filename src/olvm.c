@@ -4236,22 +4236,6 @@ loop:;
 				CHECK_NUMBERP(1);
 				int flags = (argc > 0) ? (int) numberp(A1) : 0; // 0b00, 1 means synchronous
 
-#ifdef _WIN32
-				SECURITY_ATTRIBUTES saAttr;
-				saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-				saAttr.bInheritHandle = TRUE;
-				saAttr.lpSecurityDescriptor = NULL; 
-
-				HANDLE in, out;
-				if (CreatePipe(&in, &out, &saAttr, 0)) {
-					// if (flags & 1)
-					// 	SetHandleInformation(in, HANDLE_FLAG_INHERIT, 0);
-					// if (flags & 2)
-					// 	SetHandleInformation(out, HANDLE_FLAG_INHERIT, 0);
-					r = cons(make_port(_open_osfhandle(in, 0)),
-							 make_port(_open_osfhandle(out, 0)));
-				}
-#else
 				int pipefd[2];
 				if (pipe(pipefd) == 0) {
 					r = cons(make_port(pipefd[0]), make_port(pipefd[1]));
@@ -4261,7 +4245,6 @@ loop:;
 					if (!(flags & 2)) fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
 					#endif
 				}
-#endif
 				break;
 			}
 
