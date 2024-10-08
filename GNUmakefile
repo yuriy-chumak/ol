@@ -299,10 +299,10 @@ check-reference: $(wildcard doc/reference/*.md)
 # -------------------------------------------------------------
 # pvenv
 define PVENV_ADD
-	cat '{}'| ../ol <(echo '(write (read))') >../tmp/library.scm;\
+	cat '{}'| ../ol <(echo '(write (read))') >$$library;\
 	tar -rf ../$@ \
-	    --absolute-names ../tmp/library.scm \
-		--transform 's|.*|{}|'\
+		--absolute-names '$$library' \
+		--transform 's|.*|{}|' \
 		--owner=OL/2.6 \
 		--group=* 
 endef
@@ -312,7 +312,7 @@ define PVENV_ADD_RAW
 		--owner=OL/2.6 \
 		--group=* 
 endef
-tmp/pvenv.tar: ol
+tmp/pvenv.tar: release
 tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
                $(wildcard libraries/*/*/*.scm)\
                $(wildcard libraries/*/*/*/*.scm)\
@@ -320,8 +320,16 @@ tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
                $(wildcard libraries/*/*/*.lisp)\
                $(wildcard libraries/*/*/*/*.lisp)
 	rm -f $@
+	@export library=`mktemp /tmp/scm.XXXXXXXXX`;\
+	`# macOS wants the template to be at the end` \
+	\
 	cd libraries;\
 	  find ./ -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
 	  find ./ -name "*.lisp" -exec bash -c "echo '{}'; $(PVENV_ADD_RAW)" \;;\
+	  for name in "http/server"; do \
+	    eval `echo $(PVENV_ADD_RAW) |sed "s|{}|$$name|g"`; \
+	  done;\
+	  rm -f $$library;
 	cd ..
-	rm -f tmp/library.scm
+	rm -f $(clean.scm)
+
