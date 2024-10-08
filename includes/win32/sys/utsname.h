@@ -1,6 +1,13 @@
-﻿#pragma once
+﻿/*
+   This is a simplest version of uname for MsWindows.
+
+   The larger version of uname is accessible in the "extensions/win32/uname.c"
+   which must be compiled as "ol-uname.dll" (use `make ol-uname.dll`).
+   Olvm tries to load "ol-uname.dll" and change uname to a new one at startup.
+*/
 #ifdef _WIN32
 
+// todo: load large "ol-uname.dll" or use default simplified one function (below)
 struct utsname
 {
 	char sysname[65];  //
@@ -12,8 +19,8 @@ struct utsname
 
 static
 int uname(struct utsname* out) {
-	DWORD nodenamesize = sizeof(out->nodename);
-	GetComputerNameA(out->nodename, &nodenamesize);
+	DWORD nns = sizeof(out->nodename);
+	GetComputerNameA(out->nodename, &nns);
 
 	SYSTEM_INFO si;
 	GetSystemInfo(&si);
