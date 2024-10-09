@@ -1,6 +1,12 @@
 #pragma once
 #ifdef _WIN32
 
+#if _WIN32_WINNT >= 0x0600 // Vista
+#	include <sysinfoapi.h>
+#endif
+
+#include <winbase.h>
+
 struct sysinfo
 {
 	long uptime;             /* Seconds since boot */
@@ -20,7 +26,24 @@ struct sysinfo
 
 int sysinfo(struct sysinfo *info) {
 	ZeroMemory(info, sizeof(*info));
+
+	// Seconds since boot
+#if _WIN32_WINNT >= 0x0600 // Vista
+	info->uptime = GetTickCount64() / 1000;
+#else
 	info->uptime = GetTickCount() / 1000;
+#endif
+
+	// Total usable main memory size
+#if _WIN32_WINNT >= 0x0601 // 7
+	ULONGLONG mem;
+	if (GetPhysicallyInstalledSystemMemory(&mem))
+		info->totalram = (mem > ULONG_MAX / 1024)
+			? ULONG_MAX
+			: (unsigned long) (mem * 1024);
+#endif
+
+	// 
 	return 0;
 }
 

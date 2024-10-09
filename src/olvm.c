@@ -69,6 +69,11 @@
 #	endif
 #endif
 
+#ifdef _WIN32             // we have no modern windows features
+#	define WINVER _WIN32_WINNT_NT4
+#	define _WIN32_WINNT _WIN32_WINNT_NT4
+#endif
+
 // assume we use posix
 #ifndef HAVE_UNISTD_H
 #define HAVE_UNISTD_H 1
