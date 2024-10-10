@@ -463,9 +463,9 @@ struct args_t
 	char c;
 };")
 ; by reference
-(define struct_t (list
+(define struct_t (struct
    fft-int ; argc
-   (list
+   (struct
       (fft* type-string)) ; array of strings
    fft-char)) ; char
 (define struct_t* (fft* struct_t))
@@ -500,11 +500,11 @@ struct csicisc_t
    char c3;
 };")
 ; by reference
-(define csicisc_t (list
+(define csicisc_t (struct
    fft-char
    fft-short
    fft-int
-   (list
+   (struct
       fft-char
       fft-int
       fft-short

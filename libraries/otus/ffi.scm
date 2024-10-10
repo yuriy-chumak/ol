@@ -53,6 +53,9 @@
       ;  пока что пусть остается так.
       __stdcall __cdecl __fastcall
 
+       ; structures declaration
+      struct
+
       ; type and value convertors
       fft* ; make c-like pointer from type
       fft& ; make c-like reference from type
@@ -193,6 +196,10 @@
 (define (__cdecl    arg) (vm:ior arg #x1000))
 (define (__stdcall  arg) (vm:ior arg #x2000))
 (define (__fastcall arg) (vm:ior arg #x3000))
+
+(define-syntax struct
+   (syntax-rules ()
+      ((struct . stuff) (list . stuff))))
 
 ; type convertors
 (define (fft* type)
