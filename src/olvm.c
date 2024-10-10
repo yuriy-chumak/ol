@@ -5848,6 +5848,11 @@ int main(int argc, char** argv)
 	}
 #endif
 
+#if defined(_WIN32)
+	if (_isatty(STDIN_FILENO))
+		win32_io_setup(); // <win32/unistd-ext.h>
+#endif
+
 	// configuring OL_HOME (if not exists):
 #ifndef PREFIX
 #define PREFIX "/usr"

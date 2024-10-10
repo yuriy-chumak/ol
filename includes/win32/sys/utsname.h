@@ -49,7 +49,7 @@ int uname(struct utsname* out) {
 		"Unknown", sizeof(out->machine));
 
 	snprintf(out->release, sizeof(out->release),
-		"%d.%d.%d", oi.dwMajorVersion, oi.dwMinorVersion, oi.dwBuildNumber);
+		"%ld.%ld.%ld", oi.dwMajorVersion, oi.dwMinorVersion, oi.dwBuildNumber);
 	return 0;
 };
 

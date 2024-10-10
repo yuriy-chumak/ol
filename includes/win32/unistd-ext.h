@@ -21,24 +21,67 @@ int pipe(int pipes[2])
 	return -1;
 }
 
-// read workaround:
+// -----------------------------------------------
+// non-blocking win32 terminal input
+// 1 producer, 1 consumer
+
+char char_buffer[4096];
+ssize_t buffer_chars=0;
+
+HANDLE ghReadEvent = NULL;
+HANDLE ConsoleReadThread = NULL;
+
+static
+DWORD WINAPI ConsoleReadProc(CONST LPVOID lpParam)
+{
+	while (1) {
+		// must wait to avoid storing old cursor position
+		WaitForSingleObject(ghReadEvent, INFINITE);
+		if (buffer_chars) // don't read next portion if haven't processed already read
+			continue;
+
+		buffer_chars =
+			_read(STDIN_FILENO, &char_buffer, sizeof(char_buffer));
+	}
+}
+
+static
+void win32_io_setup()
+{
+	ghReadEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	ConsoleReadThread = CreateThread(NULL, 0, &ConsoleReadProc, NULL, 0, NULL);
+}
+
+// note: _kbhit() is not working under raw wine but working under wine cmd
 static
 ssize_t readEx(int fd, void *buf, size_t size)
 {
-	int got;
+	int got = 0;
 #ifdef _WIN64
 	int chunk_size = size;
 #else
 	int chunk_size = 24 * 1024;
 #endif
 
-	// regular reading
-	if (!_isatty(fd) || _kbhit()) { // we don't get hit by kb in pipe
-		got = read(fd, (char *) buf, min(chunk_size, size));
-	} else {
-		errno = EAGAIN;
-		return -1;
+	// asynchronous terminal input:
+	if (fd == STDIN_FILENO && _isatty(fd) && ConsoleReadThread) {
+		// todo: handle "size"
+		int chars = 0;
+		if ((chars = buffer_chars) > 0) {
+			memcpy(buf, &char_buffer, chars);
+
+			buffer_chars = 0; // got it!
+			return chars;
+		}
+		else {
+			SetEvent(ghReadEvent);
+			errno = EAGAIN;
+			return -1;
+		}
 	}
+	else
+		// regular reading
+		got = _read(fd, (char *) buf, min(chunk_size, size));
 
 	if (got == -1) {
 		switch (errno) {
@@ -64,6 +107,7 @@ ssize_t readEx(int fd, void *buf, size_t size)
 						  && (state & PIPE_NOWAIT) != 0) {
 					errno = EAGAIN;
 				}
+
 			}
 			break; }
 		}

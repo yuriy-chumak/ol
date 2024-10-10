@@ -287,7 +287,7 @@ MAKEFILE_MAIN=1
 -include config/Makefile
 
 # documentation samples check
-check: ol check-reference
+check: check-reference
 check-reference: release
 check-reference: $(wildcard doc/reference/*.md)
 	@echo "Testing reference samples:"
