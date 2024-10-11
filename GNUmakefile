@@ -109,6 +109,7 @@ CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
 CFLAGS_DEBUG   := -O0 -g2 -Wall
 CFLAGS_DEBUG   += -DCAR_CHECK=1 -DCDR_CHECK=1
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
+CFLAGS_RELEASE += -Wno-unused-result
 
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
 
