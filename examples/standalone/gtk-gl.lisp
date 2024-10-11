@@ -1,6 +1,7 @@
 #!/usr/bin/env ol
 (import (lib gl))
-(gl:set-window-title "OpenGL: Drawing simple triangle")
+
+(gl:set-window-title "GTK+OpenGL: Drawing simple triangle")
 
 (import (OpenGL 1.0))
 

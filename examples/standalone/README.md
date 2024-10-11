@@ -1,29 +1,36 @@
-Portable Ol
-===========
+Standalone Executable
+=====================
 
-You can create a standalone Ol executable with all required libraries and autorun main program.
+You can create a standalone Ol executable with all required libraries and an automatically running main program.
 
-Run `make ol` to create a linux, macOS, etc. portable OpenGL program.  
-Run `make ol.exe` to create the same for windows.
+Run `make` to create a linux (macOS, Unix) portable binaries.  
+Run `make ol.exe gol.exe` to create the same for windows.
 
 How it's made
 -------------
-1. `OLVM_TARVENV` feature must be enabled.
-1. `pvenv.tar` is a tar archive with virtual environment files,
-   all files must start from "**./**" to override the global files.
-1. Write startup code into "./main" (this file must be included into pvenv.tar).
-1. Embed `pvenv.tar` into ol executable as ".tar" section for Linux/macOS/etc.,
+1. `OLVM_TARVENV` feature must be enabled (is enabled by default since ver. 2.6).
+1. `*-pvenv.tar` are tar archives with virtual environment files,
+   all files must start from "./" to override the global files.
+1. Startup code must be put in "./main" inside the *-pvenv.tar.
+1. Embed `*-pvenv.tar` into ol executable as ".tar" section for Linux/macOS/etc.,
    or just append to ol.exe for Windows.
 
 How it's working
 ----------------
+
 Just run `./ol` or `ol.exe`.  
 ```
 $ ./ol
-OpenGL version: 4.6 (Compatibility Profile) Mesa 23.0.4-0ubuntu1~22.04.1
-OpenGL vendor: AMD
-OpenGL renderer: RENOIR (renoir, LLVM 15.0.7, DRM 3.42, 5.15.0-91-generic)
+Usage: ol [OPTION]... [--] [input-file [file-options]]
+
+   --help              print full options list
+          ............
+use 'main' for 'input-file' to run default main program.
+
+Running just 'ol' without any options same as 'ol main'.
 ```
+
+Second one example `./gol` (and `gol.exe`) showing GTK and OpenGL usage inside standalone executable.
 ![https://imgur.com/3HVK2HG.png](https://imgur.com/3HVK2HG.png)
 
 Notes
