@@ -5,28 +5,26 @@ clean:
 
 # Linux/macOS/etc.
 ../../ol:
-	rm -f $@
-	CFLAGS="-DOLVM_TARVENV=1" \
 	$(MAKE) -C ../.. ol
 
-# Win64
-../../ol64.exe:
-	rm -f $@
-	MINGWCFLAGS="-DOLVM_TARVENV=1" \
-	$(MAKE) -C ../.. ol64.exe
-
 ol: ../../ol pvenv.tar
-	$(MAKE) $< -B
+	cp $< $@
 	objcopy --add-section       .tar=pvenv.tar \
 	        --set-section-flags .tar=noload,readonly \
-	        ../../ol $@
+	        ol $@
+	@echo Ok.
+
+# Windows
+../../ol64.exe:
+	$(MAKE) -C ../.. ol64.exe
 
 ol.exe: ../../ol64.exe pvenv.tar
-	$(MAKE) $< -B
+	cp $< $@
 	x86_64-w64-mingw32-strip $<
-	cat $^ >$@
+	cat pvenv.tar >>$@
 
 pvenv.tar:
-	tar -cvf pvenv.tar --owner=OL/2.5 --group= $(addprefix ./,$^) \
-	    ./main \
-	    --directory=../../libraries .
+	$(MAKE) -C ../.. tmp/pvenv.tar
+	cp ../../tmp/pvenv.tar pvenv.tar
+	# integrate "./main"
+	tar -rf pvenv.tar --owner=OL --group=* --transform 's|.*|./main|' ./main.lisp

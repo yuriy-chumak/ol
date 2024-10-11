@@ -226,6 +226,11 @@ ol:
 	   tmp/repl.c -DREPL=repl
 	@echo Ok.
 
+olp: ol tmp/pvenv.tar
+	objcopy --add-section       .tar=tmp/pvenv.tar \
+	        --set-section-flags .tar=noload,readonly \
+	$< $@
+
 libol.so:
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
