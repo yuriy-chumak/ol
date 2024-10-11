@@ -1,9 +1,9 @@
 ```
-                  Small,
-        `___`         Embeddable
+                  small,
+        `___`         embeddable
         (O,O)             and
         \)  )          purely
-      ---"-"---     Functional!
+      ---"-"---     functional!
   O t u s   L i s p
 ```
 *Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
@@ -19,7 +19,7 @@ Otus Lisp, Version 2.6 (rc3)
 ========================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
-Otus Lisp (**Ol** in short) is a purely functional dialect of Lisp.
+Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
 Ol implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
@@ -27,7 +27,7 @@ but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
 and cross-platform;  provides a portable, high-level interface
 to call code written in another language (c, python, lua, etc).
 
-You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
+You can use Ol on Linux, Windows, macOS, Android, Chromebook*,
 (Open/Free/Net) BSD, Solaris and other operating systems based
 on various hardware architectures (intel, arm, ppc, mips, etc).
 
