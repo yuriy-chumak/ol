@@ -5659,7 +5659,19 @@ int main(int argc, char** argv)
 	char* argz[] = { argv[0], "./main" }; // default command line
 
 # ifdef __unix__
+#  if UINTPTR_MAX == UINT32_MAX
+#   define Elf_Ehdr Elf32_Ehdr
+#   define Elf_Shdr Elf32_Shdr
+#  else
+#   define Elf_Ehdr Elf64_Ehdr
+#   define Elf_Shdr Elf64_Shdr
+#  endif
+
+#  ifdef __linux__
 	int len = readlink("/proc/self/exe", exe, sizeof(exe));
+#  else
+	int len = 0;
+#  endif
 	if (len > 0 && len < sizeof(exe)) {
 		exe[len] = 0;
 		int fp = open(exe, O_RDONLY | O_BINARY, S_IRUSR);
@@ -5670,9 +5682,9 @@ int main(int argc, char** argv)
 			if (S_ISREG(sb.st_mode) || S_ISLNK(sb.st_mode)) {
 				char* ptr = (char*) mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fp, 0);
 
-				Elf64_Ehdr* elf = (Elf64_Ehdr*) ptr;
-				Elf64_Shdr* sym_table;
-				sym_table = (Elf64_Shdr*) (ptr + elf->e_shoff);
+				Elf_Ehdr* elf = (Elf_Ehdr*) ptr;
+				Elf_Shdr* sym_table;
+				sym_table = (Elf_Shdr*) (ptr + elf->e_shoff);
 				char* names = ptr + sym_table[elf->e_shstrndx].sh_offset;
 
 				for (int i = 0; i < elf->e_shnum; i++) {
