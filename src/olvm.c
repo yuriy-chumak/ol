@@ -1215,6 +1215,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #define OLVM_UNSAFES 0
 #endif
 
+#ifndef OLVM_TARVENV
+#define OLVM_TARVENV 1
+#endif
+
 #if HAVE_UNISTD_H
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
 #endif
