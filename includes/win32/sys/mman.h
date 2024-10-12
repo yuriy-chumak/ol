@@ -23,7 +23,8 @@ int memfd_create (char* name, unsigned int flags)
 	TCHAR file[MAX_PATH];
 	GetTempFileName(path, "memfd_olvm", 0, file);
 
-	HANDLE handle = CreateFile(file, GENERIC_READ | GENERIC_WRITE, 0,NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE handle = CreateFile(file, GENERIC_READ | GENERIC_WRITE, 0,NULL, CREATE_ALWAYS,
+		FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	return _open_osfhandle((intptr_t) handle, 0);
 }
 
