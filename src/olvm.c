@@ -1570,11 +1570,16 @@ void yield()
 
 // ========================================
 // -=( logger )=---------------------------
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-#ifdef __clang__
-#pragma GCC diagnostic ignored "-Wstring-plus-int"
+#ifndef OLVM_OWNLOGGER
+#define OLVM_OWNLOGGER 1
 #endif
+
+#if OLVM_OWNLOGGER
+#	pragma GCC diagnostic push
+#	pragma GCC diagnostic ignored "-Wunused-result"
+# ifdef __clang__
+#	pragma GCC diagnostic ignored "-Wstring-plus-int"
+# endif
 
 void E(char* format, ...)
 {
@@ -1635,7 +1640,10 @@ void E(char* format, ...)
 		(void)write(fd, format-1, sizeof(char));
 	}
 }
-#pragma GCC diagnostic pop
+#	pragma GCC diagnostic pop
+#else
+#	define E(...) fprintf(stderr, __VA_ARGS__)
+#endif
 
 // --------------------------------------------------------
 // -=( i/o )=----------------------------------------------
