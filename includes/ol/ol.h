@@ -145,7 +145,7 @@ read_t*  OLVM_set_read(struct olvm_t* ol, read_t read);
 write_t* OLVM_set_write(struct olvm_t* ol, write_t write);
 
 // stat
-typedef int     (stat_t) (const char *filename, stat *st, void* userdata);
+typedef int     (stat_t) (const char *filename, struct stat *st, void* userdata);
 stat_t*  OLVM_set_stat(struct olvm_t* ol, stat_t stat);
 
 // idle
