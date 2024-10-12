@@ -305,7 +305,7 @@ check-reference: $(wildcard doc/reference/*.md)
 # -------------------------------------------------------------
 # pvenv
 define PVENV_ADD
-	cat '{}'| ../ol <(echo '(write (read))') >$$library;\
+	cat '{}'| ../olvm repl <(echo '(write (read))') >$$library;\
 	tar -rf ../$@ \
 		--absolute-names '$$library' \
 		--transform 's|.*|{}|' \
@@ -318,7 +318,7 @@ define PVENV_ADD_RAW
 		--owner=OL/2.6 \
 		--group=* 
 endef
-tmp/pvenv.tar: release
+tmp/pvenv.tar: olvm
 tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
                $(wildcard libraries/*/*/*.scm)\
                $(wildcard libraries/*/*/*/*.scm)\

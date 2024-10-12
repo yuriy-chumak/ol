@@ -13,8 +13,8 @@ BUILD
 
 ### BUILD REQUIREMENTS
 
-You should have gnu make installed.
-You should have GCC 3.2+ (with gcc-multilib and binutils) or CLANG 3.5+ installed.
+You should have `gnu make` installed.
+You should have `GCC 3.2+` (with `gcc-multilib` and `binutils`) or `CLANG 3.5+` installed.
 
 MacOS users should have xcode-tools installed.
 

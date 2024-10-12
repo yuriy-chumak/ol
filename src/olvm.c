@@ -1678,16 +1678,18 @@ static int os_stat(const char *filename, struct stat *st, void* userdata) {
 	return stat(filename, st);
 }
 
-// -- TAR Virtual ENVironment ---
+// --------------------------------------------------------
+// -=( TAR Virtual ENVironment )=--------------------------
+// take it all in
 #if OLVM_TARVENV
 static char* pvenv = NULL;
 
+__attribute__((__used__))
 static int pvenv_open (const char *filename, int flags, int mode, void* userdata) {
 	(void) userdata;
-	if (pvenv) {
+	if (pvenv && filename) {
 		char* ptr = pvenv;
 
-		// The tar format operates on 512-byte blocks.
 		while (*ptr) {
 			int len = 0;
 			for (int i = 124; i < 124+11; i++)
@@ -1700,11 +1702,101 @@ static int pvenv_open (const char *filename, int flags, int mode, void* userdata
 				return fd;
 			}
 
-			ptr += 0x200;
+			ptr += 0x200; // skip header
+			// tar format operates on 512-byte blocks.
 			ptr += (len + 0x1FF) & -0x200;
 		}
 	}
 	return open(filename, flags, mode);
+}
+
+__attribute__((__used__))
+static char* pvenv_main() {
+	// linux: `readlink /proc/self/exe`
+	// solaris: `getexecname()` or `readlink("/proc/self/path/a.out", buf, bufsize)`
+	// freebsd: `readlink("/proc/curproc/file", buf, bufsize)` or `sysctl CTL_KERN KERN_PROC KERN_PROC_PATHNAME -1`
+	// netbsd: `readlink /proc/curproc/exe`
+	// dragonflybsd: `readlink /proc/curproc/file`
+	// windows: `GetModuleFileName()`
+	char exe[PATH_MAX]; // TODO: cancel filename size limitations
+
+# ifdef __unix__
+#  if UINTPTR_MAX == UINT32_MAX
+#   define Elf_Ehdr Elf32_Ehdr
+#   define Elf_Shdr Elf32_Shdr
+#  else
+#   define Elf_Ehdr Elf64_Ehdr
+#   define Elf_Shdr Elf64_Shdr
+#  endif
+
+#  ifdef __linux__
+	int len = readlink("/proc/self/exe", exe, sizeof(exe));
+#  else
+	int len = 0;
+#  endif
+	if (len > 0 && len < sizeof(exe)) {
+		exe[len] = 0;
+		int fp = open(exe, O_RDONLY | O_BINARY, S_IRUSR);
+		if (fp >= 0) {
+			struct stat sb;
+			fstat(fp, &sb);
+
+			if (S_ISREG(sb.st_mode) || S_ISLNK(sb.st_mode)) {
+				char* ptr = (char*) mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fp, 0);
+
+				Elf_Ehdr* elf = (Elf_Ehdr*) ptr;
+				Elf_Shdr* sym_table;
+				sym_table = (Elf_Shdr*) (ptr + elf->e_shoff);
+				char* names = ptr + sym_table[elf->e_shstrndx].sh_offset;
+
+				for (int i = 0; i < elf->e_shnum; i++) {
+					if (!strcmp(".tar", (names + sym_table[i].sh_name))) {
+						pvenv = ptr + sym_table[i].sh_offset;
+						break;
+					}
+				}
+
+				if (!pvenv) {
+					munmap(ptr, sb.st_size);
+				}
+			}
+			close(fp);
+		}
+	}
+# endif
+# ifdef _WIN32
+	int len = GetModuleFileName(NULL, (LPSTR)&exe, sizeof(exe));
+	if (len > 0 && len < sizeof(exe)) {
+		HANDLE fh = CreateFile(exe, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+		if (fh != INVALID_HANDLE_VALUE) {
+			HANDLE fm = CreateFileMapping(fh, NULL, PAGE_READONLY, 0, 0, NULL);
+			if (fm != NULL) {
+				char* ptr = MapViewOfFile(fm, FILE_MAP_READ, 0, 0, 0);
+				char* end = ptr + GetFileSize(fh, NULL);
+				IMAGE_NT_HEADERS* imageNTHeaders = (IMAGE_NT_HEADERS*)
+					(ptr + ((IMAGE_DOS_HEADER*)ptr)->e_lfanew);
+				size_t size = imageNTHeaders->OptionalHeader.SizeOfHeaders;
+
+				char* sectionLocation = (char*)imageNTHeaders + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + imageNTHeaders->FileHeader.SizeOfOptionalHeader;
+				for (int i = 0; i < imageNTHeaders->FileHeader.NumberOfSections; i++) {
+					IMAGE_SECTION_HEADER* sectionHeader = (IMAGE_SECTION_HEADER*)sectionLocation;
+					size += sectionHeader->SizeOfRawData;
+
+					sectionLocation += sizeof(IMAGE_SECTION_HEADER);
+				}
+				// pvenv must have only local ("./") files
+				if (ptr + size < end && ptr[size] == '.') {
+					pvenv = ptr + size;
+				}
+				else
+					UnmapViewOfFile(ptr);
+				CloseHandle(fm);
+			}
+			CloseHandle(fh);
+		}
+	}
+# endif
+	return pvenv;
 }
 
 #endif
@@ -5645,130 +5737,44 @@ int main(int argc, char** argv)
 	}
 #endif
 
-	int autoremove = 0;
-	char* file = 0;
+	int file = -1; // running program file
+	char*name = 0; // running program name
+	// int autoremove = 0;
 
 #if OLVM_TARVENV
-	// linux: `readlink /proc/self/exe`
-	// solaris: `getexecname()` or `readlink("/proc/self/path/a.out", buf, bufsize)`
-	// freebsd: `readlink("/proc/curproc/file", buf, bufsize)` or `sysctl CTL_KERN KERN_PROC KERN_PROC_PATHNAME -1`
-	// netbsd: `readlink /proc/curproc/exe`
-	// dragonflybsd: `readlink /proc/curproc/file`
-	// windows: `GetModuleFileName()`
-	char exe[PATH_MAX]; // TODO: cancel filename size limitations
-	char* argz[] = { argv[0], "./main" }; // default command line
-
-# ifdef __unix__
-#  if UINTPTR_MAX == UINT32_MAX
-#   define Elf_Ehdr Elf32_Ehdr
-#   define Elf_Shdr Elf32_Shdr
-#  else
-#   define Elf_Ehdr Elf64_Ehdr
-#   define Elf_Shdr Elf64_Shdr
-#  endif
-
-#  ifdef __linux__
-	int len = readlink("/proc/self/exe", exe, sizeof(exe));
-#  else
-	int len = 0;
-#  endif
-	if (len > 0 && len < sizeof(exe)) {
-		exe[len] = 0;
-		int fp = open(exe, O_RDONLY | O_BINARY, S_IRUSR);
-		if (fp >= 0) {
-			struct stat sb;
-			fstat(fp, &sb);
-
-			if (S_ISREG(sb.st_mode) || S_ISLNK(sb.st_mode)) {
-				char* ptr = (char*) mmap(0, sb.st_size, PROT_READ, MAP_PRIVATE, fp, 0);
-
-				Elf_Ehdr* elf = (Elf_Ehdr*) ptr;
-				Elf_Shdr* sym_table;
-				sym_table = (Elf_Shdr*) (ptr + elf->e_shoff);
-				char* names = ptr + sym_table[elf->e_shstrndx].sh_offset;
-
-				for (int i = 0; i < elf->e_shnum; i++) {
-					if (!strcmp(".tar", (names + sym_table[i].sh_name))) {
-						pvenv = ptr + sym_table[i].sh_offset;
-						if (argc == 1) {
-							// if pvenv main exists:
-							int main = pvenv_open(argz[1], O_RDONLY, 0, 0);
-							if (main >= 0) {
-								close(main);
-								argv = argz; argc = 2;
-							}
-						}
-						break;
-					}
-				}
-
-				if (!pvenv) {
-					munmap(ptr, sb.st_size);
-				}
+	char* argz[] = { "./main" }; // default command line
+	if (pvenv_main()) {
+		if (argc == 1) {
+			// if pvenv main exists:
+			int main = pvenv_open(argz[0], O_RDONLY, 0, 0);
+			if (main >= 0) {
+				// speedup: (instead of "close(main);")
+				argv = argz; argc = 1;
+				name = argv[0];
+				file = main; goto bom;
 			}
-			close(fp);
 		}
 	}
-# endif
-# ifdef _WIN32
-	int len = GetModuleFileName(NULL, (LPSTR)&exe, sizeof(exe));
-	if (len > 0 && len < sizeof(exe)) {
-		HANDLE fh = CreateFile(exe, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-		if (fh != INVALID_HANDLE_VALUE) {
-			HANDLE fm = CreateFileMapping(fh, NULL, PAGE_READONLY, 0, 0, NULL);
-			if (fm != NULL) {
-				char* ptr = MapViewOfFile(fm, FILE_MAP_READ, 0, 0, 0);
-				char* end = ptr + GetFileSize(fh, NULL);
-				IMAGE_NT_HEADERS* imageNTHeaders = (IMAGE_NT_HEADERS*)
-					(ptr + ((IMAGE_DOS_HEADER*)ptr)->e_lfanew);
-				size_t size = imageNTHeaders->OptionalHeader.SizeOfHeaders;
 
-				char* sectionLocation = (char*)imageNTHeaders + sizeof(DWORD) + sizeof(IMAGE_FILE_HEADER) + imageNTHeaders->FileHeader.SizeOfOptionalHeader;
-				for (int i = 0; i < imageNTHeaders->FileHeader.NumberOfSections; i++) {
-					IMAGE_SECTION_HEADER* sectionHeader = (IMAGE_SECTION_HEADER*)sectionLocation;
-					size += sectionHeader->SizeOfRawData;
-
-					sectionLocation += sizeof(IMAGE_SECTION_HEADER);
-				}
-				// pvenv must have only local ("./") files
-				if (ptr + size < end && ptr[size] == '.') {
-					pvenv = ptr + size;
-					if (argc == 1) {
-						// if pvenv main exists:
-						int main = pvenv_open(argz[1], O_RDONLY, 0, 0);
-						if (main >= 0) {
-							close(main);
-							argv = argz; argc = 2;
-						}
-					}
-				}
-				else
-					UnmapViewOfFile(ptr);
-				CloseHandle(fm);
-			}
-			CloseHandle(fh);
-		}
-	}
-# endif
 #endif
 
 	// in case of "ol -- --script", "--script" may be a binary code
-	if ((file == 0) && (argc > 1) && (strcmp(argv[1], "--") == 0)) {
+	if ((name == 0) && (argc > 1) && (strcmp(argv[1], "--") == 0)) {
 		argc -= 2; argv += 2;
 		if (argc > 0) {
-			file = argv[0];
+			name = argv[0];
 			argc--; argv++;
 		}
 	}
 	else
 	// ./ol - если первая команда - не имя файла, то использовать repl
-	if ((file == 0) && (argc > 1) && (strncmp(argv[1], "-", 1) != 0)) {
-		file = argv[1];
+	if ((name == 0) && (argc > 1) && (strncmp(argv[1], "-", 1) != 0)) {
+		name = argv[1];
 		argv++, argc--;
 	}
 
 	int v = 0;
-	if (file == 0) { // входной файл не указан
+	if (name == 0) { // входной файл не указан
 #ifndef REPL
 		goto no_binary_script;
 #else
@@ -5778,31 +5784,32 @@ int main(int argc, char** argv)
 	else {
 		// todo: possibly use mmap()
 		char bom = 42;
-		int bin =
+		file =
 #if OLVM_TARVENV
 			pvenv ?
-			pvenv_open(file, O_RDONLY | O_BINARY, S_IRUSR, 0) :
+			pvenv_open(name, O_RDONLY | O_BINARY, S_IRUSR, 0) :
 #endif
-			      open(file, O_RDONLY | O_BINARY, S_IRUSR);
-		if (bin == -1)
+			      open(name, O_RDONLY | O_BINARY, S_IRUSR);
+		if (file == -1)
 			goto can_not_open_file; // не смогли файл открыть
 
+	bom:;
 		// check the file access
 		struct stat st;
-		if (fstat(bin, &st))
+		if (fstat(file, &st))
 			goto can_not_stat_file;
 		// empty file, or pipe, or fifo...
 		if (st.st_size != 0) {
-			int pos = read(bin, &bom, 1);  // прочитаем один байт
-			if (pos == -1)
+			int pos = read(file, &bom, 1);  // прочитаем один байт
+			if (pos != 1)
 				goto can_not_read_file;
 
 			// skip possible hashbang:
 			// if (bom == '#') {
-			// 	while (read(bin, &bom, 1) == 1 && bom != '\n')
+			// 	while (read(file, &bom, 1) == 1 && bom != '\n')
 			// 		st.st_size--;
 			// 	st.st_size--;
-			// 	if (read(bin, &bom, 1) < 0)
+			// 	if (read(file, &bom, 1) < 0)
 			// 		goto can_not_read_file;
 			// 	st.st_size--;
 			// }
@@ -5811,7 +5818,7 @@ int main(int argc, char** argv)
 #ifndef REPL
 				goto invalid_binary_script;
 #else
-				close(bin);
+				close(file);
 #endif
 			}
 			else {
@@ -5822,12 +5829,12 @@ int main(int argc, char** argv)
 
 				ptr[0] = bom;
 				while (pos < st.st_size) {
-					int n = read(bin, &ptr[pos], st.st_size - pos);
+					int n = read(file, &ptr[pos], st.st_size - pos);
 					if (n < 0)
 						goto can_not_read_file;		// не смогли прочитать
 					pos += n;
 				}
-				close(bin);
+				close(file);
 
 				bootstrap = ptr;
 				argc--; argv++; // бинарный файл заменяет repl, скорректируем строку аргументов
@@ -5909,7 +5916,7 @@ int main(int argc, char** argv)
 #endif
 
 ok:
-	if (autoremove) unlink(file);
+	// if (autoremove) unlink(name);
 	return (int) v;
 
 // FAILS:
@@ -5947,7 +5954,7 @@ ok:
 fail:;
 	int e = errno;
 	E("%s (errno: %d, %s)", message, errno, strerror(errno));
-	if (autoremove) unlink(file);
+	// if (autoremove) unlink(name);
 	return e;
 }
 #endif

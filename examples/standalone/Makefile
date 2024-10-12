@@ -1,7 +1,7 @@
-all: ol gol
+all: out/ol
 
 clean:
-	rm -f ol ol.exe pvenv.tar
+	rm -f out/ol pvenv.tar
 
 # just ensure main binaries are built
 ../../ol:
@@ -10,45 +10,19 @@ clean:
 ../../tmp/pvenv.tar:
 	$(MAKE) -C ../.. tmp/pvenv.tar
 
-../../ol64.exe:
-	$(MAKE) -C ../.. ol64.exe
 
-
-# Linux/Unix/macOS
-ol: ../../ol ol-pvenv.tar
+# cooking
+out/ol: ../../ol pvenv.tar
+	mkdir -p out
 	cp $< $@
-	objcopy --add-section       .tar=ol-pvenv.tar \
+	objcopy --add-section       .tar=pvenv.tar \
 	        --set-section-flags .tar=noload,readonly \
-	        ol $@
+	   $@ $@
 	@echo Ok.
 
-ol-pvenv.tar: ../../tmp/pvenv.tar usage.lisp
+pvenv.tar: ../../tmp/pvenv.tar program.lisp
 	cp $< $@
-	# integrate "usage.lisp" as "./main"
-	tar -rf $@ --owner=OL \
-                   --group=* \
-                   --transform 's|.*|./main|' \
-            usage.lisp
-
-gol: ../../ol gol-pvenv.tar
-	cp $< $@
-	objcopy --add-section       .tar=gol-pvenv.tar \
-	        --set-section-flags .tar=noload,readonly \
-	        ol $@
-	@echo Ok.
-
-gol-pvenv.tar: ../../tmp/pvenv.tar gtk-gl.lisp
-	cp $< $@
-	# integrate "usage.lisp" as "./main"
-	tar -rf $@ --owner=OL \
-                   --group=* \
-                   --transform 's|.*|./main|' \
-            gtk-gl.lisp
-
-# Windows
-
-ol.exe: ../../ol64.exe pvenv.tar
-	cp $< $@
-	x86_64-w64-mingw32-strip $<
-	cat pvenv.tar >>$@
-
+	# integrate "program.lisp" as "./main"
+	tar -rf $@ --owner=OL --group=* \
+	           --transform 's|.*|./main|' \
+	   program.lisp

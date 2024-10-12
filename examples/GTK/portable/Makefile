@@ -1,7 +1,5 @@
 all: ../../../ol pvenv.tar
-	# enble feature and compile
-	CFLAGS="-DOLVM_TARVENV=1" \
-	$(MAKE) -C ../../.. -B
+	$(MAKE) -C ../../../ol
 	# prepare tar portable venv
 	objcopy --add-section       .tar=pvenv.tar \
 	        --set-section-flags .tar=noload,readonly \
