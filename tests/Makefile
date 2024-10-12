@@ -18,21 +18,21 @@ FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
 # note: use 2>/dev/null in "shell command" to avoid
 #       make call optimization and really run shell.
 ifeq ($(shell command -v i686-w64-mingw32-gcc 2>/dev/null),)
-HAS_MINGW32 ?= 0
+HAVE_MINGW32 ?= 0
 else
-HAS_MINGW32 ?= 1
+HAVE_MINGW32 ?= 1
 endif
 ifeq ($(shell command -v x86_64-w64-mingw32-gcc 2>/dev/null),)
-HAS_MINGW64 ?= 0
+HAVE_MINGW64 ?= 0
 else
-HAS_MINGW64 ?= 1
+HAVE_MINGW64 ?= 1
 endif
 # dpkg --add-architecture i386 && apt-get update
 # apt install wine32
 ifeq ($(shell command -v wine 2>/dev/null),)
-HAS_WINE ?= 0
+HAVE_WINE ?= 0
 else
-HAS_WINE ?= 1
+HAVE_WINE ?= 1
 endif
 
 WINE ?= wine cmd /c 
@@ -72,7 +72,7 @@ define winbuild
 	   $2
 endef
 
-ifeq ($(HAS_MINGW32),1)
+ifeq ($(HAVE_MINGW32),1)
 tmp/vm32d.exe: CC=i686-w64-mingw32-gcc
 tmp/vm32d.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_DEBUG))
@@ -80,7 +80,7 @@ tmp/vm32r.exe: CC=i686-w64-mingw32-gcc
 tmp/vm32r.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_RELEASE))
 endif
-ifeq ($(HAS_MINGW64),1)
+ifeq ($(HAVE_MINGW64),1)
 tmp/vm64d.exe: CC=x86_64-w64-mingw32-gcc
 tmp/vm64d.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_DEBUG))
@@ -252,13 +252,13 @@ ifeq ($(HAS_64CDEFS),1)
 	@$(MAKE) -s vm-release-64
 	@echo $(ok)
 endif
-ifeq ($(HAS_MINGW32),1)
+ifeq ($(HAVE_MINGW32),1)
 	@printf "    mingw 32-bit debug and release versions... "
 	@$(MAKE) -s $(vm)32d.exe
 	@$(MAKE) -s $(vm)32r.exe
 	@echo $(ok)
 endif
-ifeq ($(HAS_MINGW64),1)
+ifeq ($(HAVE_MINGW64),1)
 	@printf "    mingw 64-bit debug and release versions... "
 	@$(MAKE) -s $(vm)64d.exe
 	@$(MAKE) -s $(vm)64r.exe
@@ -407,11 +407,11 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call scmtestok,$(vm)d64,debug-64)
 	$(call scmtestok,$(vm)r64,release-64)
 endif
-ifeq ($(HAS_MINGW32)$(HAS_WINE),11)
+ifeq ($(HAVE_MINGW32)$(HAVE_WINE),11)
 	$(call scmtestok,$(vm)32d.exe,win-debug-32,$(WINE),--strip-trailing-cr)
 	$(call scmtestok,$(vm)32r.exe,win-release-32,$(WINE),--strip-trailing-cr)
 endif
-ifeq ($(HAS_MINGW64)$(HAS_WINE),11)
+ifeq ($(HAVE_MINGW64)$(HAVE_WINE),11)
 	$(call scmtestok,$(vm)64d.exe,win-debug-64,$(WINE),--strip-trailing-cr)
 	$(call scmtestok,$(vm)64r.exe,win-release-64,$(WINE),--strip-trailing-cr)
 endif
@@ -443,11 +443,11 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call bintestok,$(vm)d64,debug-64)
 	$(call bintestok,$(vm)r64,release-64)
 endif
-ifeq ($(HAS_MINGW32)$(HAS_WINE),11)
+ifeq ($(HAVE_MINGW32)$(HAVE_WINE),11)
 	$(call bintestok,$(vm)32d.exe,win-debug-32,$(WINE),--strip-trailing-cr)
 	$(call bintestok,$(vm)32r.exe,win-release-32,$(WINE),--strip-trailing-cr)
 endif
-ifeq ($(HAS_MINGW64)$(HAS_WINE),11)
+ifeq ($(HAVE_MINGW64)$(HAVE_WINE),11)
 	$(call bintestok,$(vm)64d.exe,win-debug-64,$(WINE),--strip-trailing-cr)
 	$(call bintestok,$(vm)64r.exe,win-release-64,$(WINE),--strip-trailing-cr)
 endif
@@ -478,7 +478,7 @@ define table-header
 			1) printf "| Linux   ";;\
 			2) printf "| Linux             ";;\
 		esac ;\
-		case "`expr \( $(HAS_MINGW32) + $(HAS_MINGW64) \) \* $(HAS_WINE)`" in \
+		case "`expr \( $(HAVE_MINGW32) + $(HAVE_MINGW64) \) \* $(HAVE_WINE)`" in \
 			1) printf "| Windows ";;\
 			2) printf "| Windows           ";;\
 		esac ;\
@@ -495,8 +495,8 @@ define table-header
 	: main development platform, special case;\
 	 	if [ "$(HAS_32CDEFS)" = "1" ]; then printf "|32-d|32-r"; fi ;\
 	 	if [ "$(HAS_64CDEFS)" = "1" ]; then printf "|64-d|64-r"; fi ;\
-	 	if [ "$(HAS_MINGW32)$(HAS_WINE)" = "11" ]; then printf "|32-d|32-r"; fi ;\
-	 	if [ "$(HAS_MINGW64)$(HAS_WINE)" = "11" ]; then printf "|64-d|64-r"; fi ;\
+	 	if [ "$(HAVE_MINGW32)$(HAVE_WINE)" = "11" ]; then printf "|32-d|32-r"; fi ;\
+	 	if [ "$(HAVE_MINGW64)$(HAVE_WINE)" = "11" ]; then printf "|64-d|64-r"; fi ;\
 	else \
 	: regular platform ;\
 		printf "|dbg.|rel." ;\
