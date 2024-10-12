@@ -94,6 +94,10 @@ else
    CFLAGS += -DOLVM_BUILTIN_FMATH=0
 endif
 
+# 32-bit linux fseek and ftell needs:
+CFLAGS += -D_FILE_OFFSET_BITS=64
+# -D_LARGEFILE_SOURCE
+
 # ----------------------------------
 ## debug/release flags
 CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
@@ -305,7 +309,7 @@ check-reference: $(wildcard doc/reference/*.md)
 # -------------------------------------------------------------
 # pvenv
 define PVENV_ADD
-	cat '{}'| ../olvm repl <(echo '(write (read))') >$$library;\
+	cat '{}'| ../olvm ../repl <(echo '(write (read))') >$$library;\
 	tar -rf ../$@ \
 		--absolute-names '$$library' \
 		--transform 's|.*|{}|' \
@@ -326,8 +330,9 @@ tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
                $(wildcard libraries/*/*/*.lisp)\
                $(wildcard libraries/*/*/*/*.lisp)
 	rm -f $@
-	@export library=`mktemp /tmp/scm.XXXXXXXXX`;\
-	`# macOS wants the template to be at the end` \
+	@# macOS wants the template to be at the end
+	@# so use the same template under all os
+	export library=`mktemp /tmp/scm.XXXXXXXXX`;\
 	\
 	cd libraries;\
 	  find ./ -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
@@ -335,7 +340,5 @@ tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
 	  for name in "http/server"; do \
 	    eval `echo $(PVENV_ADD_RAW) |sed "s|{}|$$name|g"`; \
 	  done;\
-	  rm -f $$library;
+	  rm -f $$library;\
 	cd ..
-	rm -f $(clean.scm)
-
