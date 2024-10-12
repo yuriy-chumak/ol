@@ -1640,12 +1640,6 @@ void E(char* format, ...)
 // --------------------------------------------------------
 // -=( i/o )=----------------------------------------------
 // os independent i/o implementations
-// notes: 64-bit versions of Windows use 32-bit handles for
-//	interoperability. When sharing a handle between 32-bit
-//	and 64-bit applications, only the lower 32 bits are
-//	significant, so it is safe to truncate the handle (when
-//	passing it from 64-bit to 32-bit) or sign-extend the
-//	handle (when passing it from 32-bit to 64-bit).
 typedef int     (open_t) (const char *filename, int flags, int mode, void* userdata);
 typedef int     (close_t)(int fd, void* userdata);
 typedef ssize_t (read_t) (int fd, void *buf, size_t count, void* userdata);
@@ -1654,25 +1648,37 @@ typedef int     (stat_t) (const char *filename, struct stat *st, void* userdata)
 
 typedef void    (idle_t) (void* userdata);
 
+// notes: 64-bit versions of Windows use 32-bit handles for
+//	interoperability. When sharing a handle between 32-bit
+//	and 64-bit applications, only the lower 32 bits are
+//	significant, so it is safe to truncate the handle (when
+//	passing it from 64-bit to 32-bit) or sign-extend the
+//	handle (when passing it from 32-bit to 64-bit).
+
 // iternal wrappers for open/close/read and write functions:
 // (just skip userdata)
-static int os_open (const char *filename, int flags, int mode, void* userdata) {
+static inline
+int os_open (const char *filename, int flags, int mode, void* userdata) {
 	(void) userdata;
 	return open(filename, flags, mode);
 }
-static int os_close(int fd, void* userdata) {
+static inline
+int os_close(int fd, void* userdata) {
 	(void) userdata;
 	return close(fd);
 }
-static ssize_t os_read(int fd, void *buf, size_t size, void* userdata) {
+static inline
+ssize_t os_read(int fd, void *buf, size_t size, void* userdata) {
 	(void) userdata;
 	return read(fd, buf, size);
 }
-static ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
+static inline
+ssize_t os_write(int fd, void *buf, size_t size, void* userdata) {
 	(void) userdata;
 	return write(fd, buf, size);
 }
-static int os_stat(const char *filename, struct stat *st, void* userdata) {
+static inline
+int os_stat(const char *filename, struct stat *st, void* userdata) {
 	(void) userdata;
 	// D("os_stat(%s, %p, %p)", filename, st, userdata);
 	return stat(filename, st);

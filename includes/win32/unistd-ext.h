@@ -32,6 +32,7 @@ HANDLE ghReadEvent = NULL;
 HANDLE ConsoleReadThread = NULL;
 
 static
+__attribute__((noreturn)) // infinite read thread
 DWORD WINAPI ConsoleReadProc(CONST LPVOID lpParam)
 {
 	while (1) {
