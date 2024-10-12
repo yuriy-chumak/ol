@@ -1798,10 +1798,9 @@ static char* pvenv_main() {
 
 					sectionLocation += sizeof(IMAGE_SECTION_HEADER);
 				}
-				// pvenv must have only local ("./") files
-				if (ptr + size < end && ptr[size] == '.') {
+                // 0x200 - is a minimal non-empty tar file size
+				if ((ptr + size + 0x200 < end) && (strncmp((ptr + size + 0x101), "ustar", 5) == 0))
 					pvenv = ptr + size;
-				}
 				else
 					UnmapViewOfFile(ptr);
 				CloseHandle(fm);
@@ -5812,6 +5811,7 @@ int main(int argc, char** argv)
 		struct stat st;
 		if (fstat(file, &st))
 			goto can_not_stat_file;
+
 		// empty file, or pipe, or fifo...
 		if (st.st_size != 0) {
 			int pos = read(file, &bom, 1);  // прочитаем один байт
