@@ -18,18 +18,9 @@ describe: all
 CC ?= gcc
 LD ?= ld
 
+# win32 cross-compile
 MGCC32 ?= i686-w64-mingw32-gcc
 MGCC64?=x86_64-w64-mingw32-gcc
-
-# win32 cross-compile
-ol32.exe: MGCC:=$(MGCC32)
-ol64.exe: MGCC:=$(MGCC64)
-
-ol.exe: MINGWCFLAGS += -DOLVM_TARVENV=1
-ol.exe: ol64.exe tmp/pvenv.tar
-	cat $< >$@
-	x86_64-w64-mingw32-strip $@
-	cat tmp/pvenv.tar >>$@
 
 # ansi colors
 red=\033[1;31m
@@ -254,7 +245,6 @@ selfexec: ol
 # You can debug ol.exe using "winedbg --gdb ol.exe"
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
 ol%.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
-ol%.exe: MINGWCFLAGS += -Wno-shift-count-overflow
 ol%.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
 ol%.exe: src/olvm.c extensions/ffi.c tmp/repl.c
 	$(MGCC) \
@@ -263,6 +253,16 @@ ol%.exe: src/olvm.c extensions/ffi.c tmp/repl.c
 	   -DHAVE_DLOPEN=1 -DHAS_SOCKES=1 -DOLVM_FFI=1 \
 	   -Iincludes/win32 -Iincludes \
 	   $(MINGWCFLAGS) -lws2_32
+	#wine tools/cv2pdb.exe $@
+
+ol32.exe: MGCC:=$(MGCC32)
+ol64.exe: MGCC:=$(MGCC64)
+
+ol.exe: MINGWCFLAGS += -DOLVM_TARVENV=1 # enable TARVENV definitely
+ol.exe: ol64.exe tmp/pvenv.tar # by default 64-bit exe
+	cat $< >$@
+	x86_64-w64-mingw32-strip $@
+	cat tmp/pvenv.tar >>$@
 
 # compiling the Ol language
 recompile: boot.fasl

@@ -17,12 +17,12 @@ FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
 
 # note: use 2>/dev/null in "shell command" to avoid
 #       make call optimization and really run shell.
-ifeq ($(shell command -v i686-w64-mingw32-gcc 2>/dev/null),)
+ifeq ($(shell command -v $(MGCC32) 2>/dev/null),)
 HAVE_MINGW32 ?= 0
 else
 HAVE_MINGW32 ?= 1
 endif
-ifeq ($(shell command -v x86_64-w64-mingw32-gcc 2>/dev/null),)
+ifeq ($(shell command -v $(MGCC64) 2>/dev/null),)
 HAVE_MINGW64 ?= 0
 else
 HAVE_MINGW64 ?= 1
@@ -35,7 +35,13 @@ else
 HAVE_WINE ?= 1
 endif
 
+ifdef WSL_DISTRO_NAME
+WINE ?= # wine is not required under WSL
+else
 WINE ?= wine cmd /c 
+endif
+
+WINER := WINEDLLOVERRIDES="mountmgr.sys=d" $(WINE) # disable com port detection
 
 # notifications:
 ok:="$(green) ok $(done)"
@@ -73,18 +79,18 @@ define winbuild
 endef
 
 ifeq ($(HAVE_MINGW32),1)
-tmp/vm32d.exe: CC=i686-w64-mingw32-gcc
+tmp/vm32d.exe: CC=$(MGCC32)
 tmp/vm32d.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_DEBUG))
-tmp/vm32r.exe: CC=i686-w64-mingw32-gcc
+tmp/vm32r.exe: CC=$(MGCC32)
 tmp/vm32r.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_RELEASE))
 endif
 ifeq ($(HAVE_MINGW64),1)
-tmp/vm64d.exe: CC=x86_64-w64-mingw32-gcc
+tmp/vm64d.exe: CC=$(MGCC64)
 tmp/vm64d.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_DEBUG))
-tmp/vm64r.exe: CC=x86_64-w64-mingw32-gcc
+tmp/vm64r.exe: CC=$(MGCC64)
 tmp/vm64r.exe: src/olvm.c
 	$(call winbuild,$@,$(CFLAGS_RELEASE))
 endif
@@ -387,7 +393,7 @@ endif
 
 # -- scm ------------------------------------------
 define scmtestok
-	@if ([ -f $1 ]); then\
+	if ([ -f $1 ]); then\
 		if ([ -f $^.in ] && $3 $1 repl --home=libraries $^ <$^.in 2>&1 || $3 $1 repl --home=libraries $^ 2>&1) | diff $4 - $^.ok >/dev/null; then\
 			printf \|$(ok) ;\
 		else \
@@ -408,12 +414,12 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call scmtestok,$(vm)r64,release-64)
 endif
 ifeq ($(HAVE_MINGW32)$(HAVE_WINE),11)
-	$(call scmtestok,$(vm)32d.exe,win-debug-32,$(WINE),--strip-trailing-cr)
-	$(call scmtestok,$(vm)32r.exe,win-release-32,$(WINE),--strip-trailing-cr)
+	$(call scmtestok,$(vm)32d.exe,win-debug-32,$(WINER),--strip-trailing-cr)
+	$(call scmtestok,$(vm)32r.exe,win-release-32,$(WINER),--strip-trailing-cr)
 endif
 ifeq ($(HAVE_MINGW64)$(HAVE_WINE),11)
-	$(call scmtestok,$(vm)64d.exe,win-debug-64,$(WINE),--strip-trailing-cr)
-	$(call scmtestok,$(vm)64r.exe,win-release-64,$(WINE),--strip-trailing-cr)
+	$(call scmtestok,$(vm)64d.exe,win-debug-64,$(WINER),--strip-trailing-cr)
+	$(call scmtestok,$(vm)64r.exe,win-release-64,$(WINER),--strip-trailing-cr)
 endif
 else # default case
 	$(call scmtestok,$(vm)d,debug)
@@ -444,12 +450,12 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call bintestok,$(vm)r64,release-64)
 endif
 ifeq ($(HAVE_MINGW32)$(HAVE_WINE),11)
-	$(call bintestok,$(vm)32d.exe,win-debug-32,$(WINE),--strip-trailing-cr)
-	$(call bintestok,$(vm)32r.exe,win-release-32,$(WINE),--strip-trailing-cr)
+	$(call bintestok,$(vm)32d.exe,win-debug-32,$(WINER),--strip-trailing-cr)
+	$(call bintestok,$(vm)32r.exe,win-release-32,$(WINER),--strip-trailing-cr)
 endif
 ifeq ($(HAVE_MINGW64)$(HAVE_WINE),11)
-	$(call bintestok,$(vm)64d.exe,win-debug-64,$(WINE),--strip-trailing-cr)
-	$(call bintestok,$(vm)64r.exe,win-release-64,$(WINE),--strip-trailing-cr)
+	$(call bintestok,$(vm)64d.exe,win-debug-64,$(WINER),--strip-trailing-cr)
+	$(call bintestok,$(vm)64r.exe,win-release-64,$(WINER),--strip-trailing-cr)
 endif
 else # default case
 	$(call bintestok,$(vm)d,debug)
