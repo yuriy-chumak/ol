@@ -1,7 +1,7 @@
 #!/usr/bin/env ol
 (import (lib glib-2)
    (lib gtk-3))
-(import (only (otus syscall) strftime))
+(import (only (olvm syscalls) strftime))
 
 ;; application activate
 (define (activate appl)

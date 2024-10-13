@@ -6,7 +6,6 @@
    (define (send . args)
       (for-each (lambda (arg)
          (display-to fd arg)) args))
-   (print ":: " (syscall 51 fd))
    (send "HTTP/1.0 200 OK\n"
          "Connection: close\n"
          "Content-Type: text/html; charset=UTF-8\n"

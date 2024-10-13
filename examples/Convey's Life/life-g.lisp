@@ -56,6 +56,8 @@
 (import (lib gl-2))
 (gl:set-window-title "Convey's The game of Life")
 (import (OpenGL EXT geometry_shader4))
+(unless EXT_geometry_shader4
+   (raise "Geometry shaders are not supported."))
 
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
@@ -100,9 +102,9 @@ GL_POINTS GL_TRIANGLE_STRIP 4
 "))
 
 ; shaders done
-(gl:set-resize-handler (lambda (width height)
-   (glViewport 0 0 width height)
-   (glPointSize (/ width WIDTH))))
+;; (gl:set-resize-handler (lambda (width height)
+;;    (glViewport 0 0 width height)
+;;    (glPointSize (/ width WIDTH))))
 
 (define userdata (make-parameter
    (let ((initial population))

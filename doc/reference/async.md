@@ -131,6 +131,10 @@ If no other running coroutines are found, a true sleep occurs (as far as the OS 
 
 Sends a message to the actor named *actor-name* in the form *#(sender message)*. Message passing (aka mailing) is asynchronous, and at least in a one-core environment order-preserving.
 
+*2.6 version update*:
+* returns #false if addressee not found,
+* error log "ol: dropping envelope to missing thread" must be enabled explicitly using `(enable-threading-debug!)`, by default no more such logs
+
 *check the [`actor`](#actor) example.*
 
 # wait-mail

@@ -52,10 +52,10 @@
                ;; (define vi (glXGetVisualFromFBConfig display bestFbc))
 
                (define contextAttribs (list
-                  GLX_CONTEXT_MAJOR_VERSION_ARB  major
-                  GLX_CONTEXT_MINOR_VERSION_ARB  minor
+                  GLX_CONTEXT_MAJOR_VERSION  major
+                  GLX_CONTEXT_MINOR_VERSION  minor
                   0))
-               (define new_cx (glXCreateContextAttribsARB display bestFbc NULL 1 contextAttribs))
+               (define new_cx (glXCreateContextAttribs display bestFbc NULL 1 contextAttribs))
                (define new_context [display screen window new_cx])
 
                ; disable and destroy old context

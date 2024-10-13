@@ -3,6 +3,7 @@
         (lib GLU))
 (import (otus random!))
 (import (scheme inexact))
+(import (OpenGL EXT geometry_shader4))
 
 ; the size of world
 (define WIDTH (* 100 2))  ; x
