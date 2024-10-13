@@ -27,21 +27,23 @@ HAVE_MINGW64 ?= 0
 else
 HAVE_MINGW64 ?= 1
 endif
+
 # dpkg --add-architecture i386 && apt-get update
 # apt install wine32
+# note: if you need to disable com ports under wine, then navigate to
+#       HKLM\Software\Wine and create a new empty String named 'com33' (or smth)
 ifeq ($(shell command -v wine 2>/dev/null),)
 HAVE_WINE ?= 0
 else
 HAVE_WINE ?= 1
 endif
 
+# wine is not required under WSL
 ifdef WSL_DISTRO_NAME
-WINE ?= # wine is not required under WSL
-else
-WINE ?= wine cmd /c 
+WINE ?=
+else    # disable any wine logging
+WINE ?= WINEDEBUG=-all wine cmd /c 
 endif
-
-WINER := WINEDLLOVERRIDES="mountmgr.sys=d" $(WINE) # disable com port detection
 
 # notifications:
 ok:="$(green) ok $(done)"
@@ -414,12 +416,12 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call scmtestok,$(vm)r64,release-64)
 endif
 ifeq ($(HAVE_MINGW32)$(HAVE_WINE),11)
-	$(call scmtestok,$(vm)32d.exe,win-debug-32,$(WINER),--strip-trailing-cr)
-	$(call scmtestok,$(vm)32r.exe,win-release-32,$(WINER),--strip-trailing-cr)
+	$(call scmtestok,$(vm)32d.exe,win-debug-32,$(WINE),--strip-trailing-cr)
+	$(call scmtestok,$(vm)32r.exe,win-release-32,$(WINE),--strip-trailing-cr)
 endif
 ifeq ($(HAVE_MINGW64)$(HAVE_WINE),11)
-	$(call scmtestok,$(vm)64d.exe,win-debug-64,$(WINER),--strip-trailing-cr)
-	$(call scmtestok,$(vm)64r.exe,win-release-64,$(WINER),--strip-trailing-cr)
+	$(call scmtestok,$(vm)64d.exe,win-debug-64,$(WINE),--strip-trailing-cr)
+	$(call scmtestok,$(vm)64r.exe,win-release-64,$(WINE),--strip-trailing-cr)
 endif
 else # default case
 	$(call scmtestok,$(vm)d,debug)
@@ -450,12 +452,12 @@ ifeq ($(HAS_64CDEFS),1)
 	$(call bintestok,$(vm)r64,release-64)
 endif
 ifeq ($(HAVE_MINGW32)$(HAVE_WINE),11)
-	$(call bintestok,$(vm)32d.exe,win-debug-32,$(WINER),--strip-trailing-cr)
-	$(call bintestok,$(vm)32r.exe,win-release-32,$(WINER),--strip-trailing-cr)
+	$(call bintestok,$(vm)32d.exe,win-debug-32,$(WINE),--strip-trailing-cr)
+	$(call bintestok,$(vm)32r.exe,win-release-32,$(WINE),--strip-trailing-cr)
 endif
 ifeq ($(HAVE_MINGW64)$(HAVE_WINE),11)
-	$(call bintestok,$(vm)64d.exe,win-debug-64,$(WINER),--strip-trailing-cr)
-	$(call bintestok,$(vm)64r.exe,win-release-64,$(WINER),--strip-trailing-cr)
+	$(call bintestok,$(vm)64d.exe,win-debug-64,$(WINE),--strip-trailing-cr)
+	$(call bintestok,$(vm)64r.exe,win-release-64,$(WINE),--strip-trailing-cr)
 endif
 else # default case
 	$(call bintestok,$(vm)d,debug)
