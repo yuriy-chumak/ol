@@ -1272,7 +1272,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #include <alloca.h>
 #endif
 #if defined(_WIN32)
-#include <alloca.h> // we have own win32 implementation
+#include <malloc.h>
 #endif
 
 #ifndef __GNUC__

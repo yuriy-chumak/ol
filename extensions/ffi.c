@@ -51,7 +51,14 @@
 
 #include <string.h>
 #include <unistd.h>
+
+// alloca
+#if defined(__linux__) || defined(__APPLE__)
 #include <alloca.h>
+#endif
+#if defined(_WIN32)
+#include <malloc.h>
+#endif
 
 #ifndef __GNUC__
 #define __builtin_alloca alloca
