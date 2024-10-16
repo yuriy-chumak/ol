@@ -1051,7 +1051,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #	define SYSCALL_PRCTL 0
 
 #	define HAVE_SOCKETS 0
-#   define HAS_MEMFD_CREATE 0
+#   define HAVE_MEMFD_CREATE 0
 #endif
 
 #ifdef __ANDROID__
@@ -1070,7 +1070,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #	define SYSCALL_GETRLIMIT 0
 
 #	if __ANDROID_API__ < 30
-#		define HAS_MEMFD_CREATE 0
+#		define HAVE_MEMFD_CREATE 0
 #	endif
 #endif
 
@@ -1082,7 +1082,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 // qemu for windows: https://qemu.weilnetz.de/
 // images for qemu:  https://4pda.ru/forum/index.php?showtopic=318284
 
-#   define HAS_MEMFD_CREATE 1 // we have own win32 implementation!
+#   define HAVE_MEMFD_CREATE 1 // we have own win32 implementation!
 #endif
 
 #ifdef __APPLE__
@@ -1096,6 +1096,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #	else
 	// Unsupported platform
 #	endif
+
+#   define HAVE_MEMFD_CREATE 0
 #endif
 
 // ---------------------------------------------------------
@@ -1334,11 +1336,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #endif
 
 // memfd_create:
-#if HAS_MEMFD_CREATE
-#else
-#	undef HAS_MEMFD_CREATE
-#	define HAS_MEMFD_CREATE 1
 #include <sys/mman.h>
+#if !HAVE_MEMFD_CREATE
 	static // not a real memfd_create, but compatibility wrapper
 	int memfd_create (char* name, unsigned int flags)
 	{
@@ -2928,8 +2927,8 @@ mainloop:;
 	#		define SYSCALL_SENDFILE 40
 
 	#		ifndef SYSCALL_MEMFD
-    #        ifdef HAS_MEMFD_CREATE
-	#		  define SYSCALL_MEMFD ((HAS_MEMFD_CREATE == 1) ? 85 : 0)
+    #        ifdef HAVE_MEMFD_CREATE
+	#		  define SYSCALL_MEMFD ((HAVE_MEMFD_CREATE == 1) ? 85 : 0)
     #        else
 	#		  define SYSCALL_MEMFD 85
     #        endif

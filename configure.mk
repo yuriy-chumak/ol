@@ -48,7 +48,7 @@ HAVE_DLOPEN  ?= $(call exists,,stdlib.h, dlopen, -ldl)
 HAVE_SECCOMP ?= $(call exists,,linux/seccomp.h, prctl)
 HAVE_SOCKETS ?= $(call exists,,stdlib.h, socket)
 
-HAS_MEMFD_CREATE ?= $(call exists,,sys/mman.h, memfd_create)
+HAVE_MEMFD_CREATE ?= $(call exists,,sys/mman.h, memfd_create)
 
 # computing native x11 variables
 ifeq ($(UNAME),Linux)
