@@ -69,7 +69,7 @@
 #	endif
 #endif
 
-#ifdef _WIN32             // we have no modern windows features
+#ifdef _WIN32             // we need no modern windows features
 #	define WINVER _WIN32_WINNT_NT4
 #	define _WIN32_WINNT _WIN32_WINNT_NT4
 #endif
@@ -5765,12 +5765,12 @@ int main(int argc, char** argv)
 	if (pvenv_main()) {
 		if (argc == 1) {
 			// if pvenv main exists:
-			int main = pvenv_open(argz[0], O_RDONLY, 0, 0);
-			if (main >= 0) {
+			int venv = pvenv_open(argz[0], O_RDONLY, 0, 0);
+			if (venv >= 0) {
 				// speedup: (instead of "close(main);")
 				argv = argz; argc = 1;
 				name = argv[0];
-				file = main; goto bom;
+				file = venv; goto bom;
 			}
 		}
 	}
