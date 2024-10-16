@@ -1264,7 +1264,14 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #include <dirent.h>
 #include <string.h>
 #include <setjmp.h>
+
+// alloca
+#if defined(__linux__) || defined(__APPLE__)
+#include <alloca.h>
+#endif
+#if defined(_WIN32)
 #include <alloca.h> // we have own win32 implementation
+#endif
 
 #ifndef __GNUC__
 #define __builtin_alloca alloca
@@ -1328,10 +1335,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 
 // memfd_create:
 #if HAS_MEMFD_CREATE
-#	include <sys/mman.h>
 #else
 #	undef HAS_MEMFD_CREATE
 #	define HAS_MEMFD_CREATE 1
+#include <sys/mman.h>
 	static // not a real memfd_create, but compatibility wrapper
 	int memfd_create (char* name, unsigned int flags)
 	{
