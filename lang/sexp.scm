@@ -551,9 +551,7 @@
 
       (define hashbang+sexp
          (let-parse* (
-               (skip (either
-                        hashbang ;; we skip leading #!
-                        (epsilon #f)))
+               (-- (maybe hashbang #f));; skip leading "#! ...\n"
                (value (sexp)))
             value))
 

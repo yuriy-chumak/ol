@@ -133,8 +133,8 @@ OLVM_allocate(struct olvm_t* ol, unsigned words);
 // i/o hooks api
 
 // open/close
-typedef int     (open_t) (const char *filename, int flags, int mode, void* userdata);
-typedef int     (close_t)(int fd, void* userdata);
+typedef int (open_t) (const char *filename, int flags, int mode, void* userdata);
+typedef int (close_t)(int fd, void* userdata);
 open_t*  OLVM_set_open(struct olvm_t* ol, open_t open);
 close_t* OLVM_set_close(struct olvm_t* ol, close_t close);
 
@@ -145,11 +145,12 @@ read_t*  OLVM_set_read(struct olvm_t* ol, read_t read);
 write_t* OLVM_set_write(struct olvm_t* ol, write_t write);
 
 // stat
-typedef int     (stat_t) (const char *filename, struct stat *st, void* userdata);
+struct stat;
+typedef int (stat_t) (const char *filename, struct stat *st, void* userdata);
 stat_t*  OLVM_set_stat(struct olvm_t* ol, stat_t stat);
 
 // idle
-typedef void    (idle_t) (void* userdata);
+typedef void (idle_t) (void* userdata);
 idle_t*  OLVM_set_idle(struct olvm_t* ol, idle_t idle);
 
 // ==========================================================================

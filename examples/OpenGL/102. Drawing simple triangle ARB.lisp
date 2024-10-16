@@ -6,6 +6,16 @@
 (import (OpenGL ARB shading_language_100))
 (import (OpenGL ARB shader_objects))
 
+; note:
+;  extension functions and constants has no additional suffixes like
+;  ARB and _ARB. so you must change any examples by renaming symbols
+;  like "glUniform1fARB" into "glUniform1f".
+;  or
+;  if you still want to use suffixes "ARB" you must add two special
+;  imports like "(import (suffix (OpenGL ARB shader_objects) ARB))"
+;  for functions
+;  and "(import (suffix (OpenGL ARB shader_objects) _ARB))" for constants
+
 ; init
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
@@ -31,9 +41,9 @@
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
-   (glUseProgramObjectARB po)
-   (glUniform1fARB (glGetUniformLocationARB po "time") (/ (mod (time-ms) 1000000) #i1000))
-   (glUniform2fARB (glGetUniformLocationARB po "dimensions") (gl:get-window-width) (gl:get-window-height))
+   (glUseProgramObject po)
+   (glUniform1f (glGetUniformLocation po "time") (/ (mod (time-ms) 1000000) #i1000))
+   (glUniform2f (glGetUniformLocation po "dimensions") (gl:get-window-width) (gl:get-window-height))
 
    (glColor3f 1 1 1)
    (glBegin GL_TRIANGLES)

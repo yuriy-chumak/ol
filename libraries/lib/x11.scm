@@ -222,7 +222,9 @@
 (define bool fft-int)
 ; -=( wgl )=------------------------------------------------------------
 ; opengl: https://gist.github.com/gszauer/da038dec2a7ffc288c41
-(define GLX (load-dynamic-library "libGL.so.1"))
+(define GLX (or
+      (load-dynamic-library "libGL.so")
+      (load-dynamic-library "libGL.so.1")))
    (define glXQueryVersion  (GLX fft-int "glXQueryVersion" fft-void* type-vptr type-vptr))
 
    (define glXChooseVisual  (GLX fft-void* "glXChooseVisual" fft-void* int int*))
