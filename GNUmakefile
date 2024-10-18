@@ -2,13 +2,15 @@ export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
 
+# default target
+all: release
+
 # detect external features
 -include configure.mk
 
 .PHONY: all release debug check slim config recompile install uninstall clean android
 .PHONY: describe
 
-all: release
 describe: all
 	./vm --version
 	./ol --version
@@ -238,6 +240,8 @@ libol.so:
 # real name of
 olvm: vm
 	cp vm olvm
+	strip olvm
+	strip olvm -R .eh_frame -R .eh_frame_hdr
 
 # selfexec feature test
 selfexec: ol
