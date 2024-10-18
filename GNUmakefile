@@ -255,6 +255,7 @@ ol%.exe: src/olvm.c extensions/ffi.c tmp/repl.c
 	   $^ -o $@ \
 	   -DREPL=repl \
 	   -DHAVE_DLOPEN=1 -DHAS_SOCKES=1 -DOLVM_FFI=1 \
+	   -DOLVM_TARVENV=1 \
 	   -Iincludes/win32 -Iincludes \
 	   $(MINGWCFLAGS) -lws2_32
 	#wine tools/cv2pdb.exe $@

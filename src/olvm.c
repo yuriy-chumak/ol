@@ -1218,7 +1218,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #endif
 
 #ifndef OLVM_TARVENV
-#define OLVM_TARVENV 1
+#define OLVM_TARVENV 0
 #endif
 
 #if HAVE_UNISTD_H
