@@ -12,8 +12,7 @@
 #define MAP_ANONYMOUS 0x20
 #define MAP_PRIVATE 0x02
 
-static
-int memfd_create (char* name, unsigned int flags)
+int memfd_create (const char* name, unsigned int flags)
 {
 	(void) name;
 	assert (flags == 0);

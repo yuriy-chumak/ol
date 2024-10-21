@@ -1338,8 +1338,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 // memfd_create:
 #include <sys/mman.h>
 #if !HAVE_MEMFD_CREATE
-	static // not a real memfd_create, but compatibility wrapper
-	int memfd_create (char* name, unsigned int flags)
+	// not a real memfd_create, but compatibility wrapper
+	int memfd_create (const char* name, unsigned int flags)
 	{
 		(void) name;
 		assert (flags == 0);
