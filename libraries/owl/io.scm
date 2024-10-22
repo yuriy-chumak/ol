@@ -10,6 +10,7 @@
       wait wait-mail ; wait N ms, wait N ms or mail
       bell ; just wake, without message (notify actor to check mailbox)
       call ; to wake and send a message (send an urgent mail and bell)
+      wait-read ; 
 
       ;; general i/o
       ;; thread-oriented non-blocking io
@@ -133,6 +134,11 @@
          ((ms default) (wait-mail-ms default)) ; ... but returns [#false default]
       ))
 
+      ; returns #true if port is ready to be read, #false if timeout
+      (define (wait-read port timeout)
+         (define answer (await (mail io-scheduler-name ['read-timeout port timeout])))
+         (not (eq? (ref answer 1) 'timeout))) ; timeout reached?      
+
       ; just wake the coroutine (if waiting)
       (define (bell whom)
          (mail io-scheduler-name ['call whom]))
@@ -193,7 +199,7 @@
             (if (eq? res #true) ;; would block
                (if block?
                   (begin
-                     (sleep 5)
+                     (wait-read fd 10000) ; 10 seconds
                      (try-get-block fd block-size #true))
                   res)
                res))) ;; is #false, eof or bvec

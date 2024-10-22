@@ -297,10 +297,10 @@
    ; accept loop
    (let loop ()
       ; old code with "listen":
-    ; (if (syscall 23 socket
-    ;       (if (null? (running-threads)) 30000000 1)) ; wait a 30 second if no running threads detected (100000 for tests)
+      ; (if (syscall 23 socket
+      ;        (if (null? (running-threads)) 30000000 1)) ; wait a 30 second if no running threads detected (100000 for tests)
       ; new code with modern io scheduler:
-      (unless (eq? (ref (await (mail io-scheduler-name ['read-timeout socket 3000])) 1) 'timeout) ; timeout reached?
+      (when (wait-read socket 30000) ; ready to read?
          (let ((fd (syscall 43 socket))) ; accept
             (if fd
                (async (on-accept (generate-unique-id) fd onRequest))))
