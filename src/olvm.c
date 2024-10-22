@@ -1082,7 +1082,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 // qemu for windows: https://qemu.weilnetz.de/
 // images for qemu:  https://4pda.ru/forum/index.php?showtopic=318284
 
-#   define HAVE_MEMFD_CREATE 1 // we have own win32 implementation!
+#   define HAVE_MEMFD_CREATE 0 // we have own win32 implementation!
 #endif
 
 #ifdef __APPLE__
@@ -1338,6 +1338,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 // memfd_create:
 #include <sys/mman.h>
 #if !HAVE_MEMFD_CREATE
+#	if defined(__linux__) || defined(__APPLE__)
 	// not a real memfd_create, but compatibility wrapper
 	int memfd_create (const char* name, unsigned int flags)
 	{
@@ -1349,6 +1350,23 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 
 		return fd;
 	}
+#	endif
+#	if defined(_WIN32)
+	int memfd_create (const char* name, unsigned int flags)
+	{
+		(void) name;
+		assert (flags == 0);
+
+		TCHAR path[MAX_PATH];
+		GetTempPath(MAX_PATH, path);
+		TCHAR file[MAX_PATH];
+		GetTempFileName(path, "memfd_olvm", 0, file);
+
+		HANDLE handle = CreateFile(file, GENERIC_READ | GENERIC_WRITE, 0,NULL, CREATE_ALWAYS,
+			FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+		return _open_osfhandle((intptr_t) handle, 0);
+	}
+#	endif
 #endif
 
 #include <sys/utsname.h> // we have own win32 implementation

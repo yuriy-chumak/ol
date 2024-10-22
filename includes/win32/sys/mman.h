@@ -12,19 +12,6 @@
 #define MAP_ANONYMOUS 0x20
 #define MAP_PRIVATE 0x02
 
-int memfd_create (const char* name, unsigned int flags)
-{
-	(void) name;
-	assert (flags == 0);
-
-	TCHAR path[MAX_PATH];
-	GetTempPath(MAX_PATH, path);
-	TCHAR file[MAX_PATH];
-	GetTempFileName(path, "memfd_olvm", 0, file);
-
-	HANDLE handle = CreateFile(file, GENERIC_READ | GENERIC_WRITE, 0,NULL, CREATE_ALWAYS,
-		FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-	return _open_osfhandle((intptr_t) handle, 0);
-}
+int memfd_create (const char* name, unsigned int flags);
 
 #endif
