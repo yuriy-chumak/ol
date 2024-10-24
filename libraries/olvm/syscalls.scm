@@ -7,8 +7,10 @@
       strftime
       gettimeofday
 
-      ;socket
-      getpeername
+      ; socket api:
+      socket
+      bind listen select accept
+      sendfile getpeername
       )
 
    (import
@@ -55,8 +57,15 @@
 
    (define (gettimeofday) (syscall 96))
 
-   ; the peer address of the specified socket
-   (define (getpeername socket)
-      (syscall 51 socket))
+   ; sockets API
+   (define (socket) (syscall 41))
+
+   (define (bind socket port) (syscall 49 socket port))
+   (define (listen socket) (syscall 50 socket))
+   (define (select socket timeout)
+      (syscall 23 socket timeout))
+   (define (accept socket) (syscall 43 socket))
+   (define (sendfile in out size) (syscall 40 in out 0 size))
+   (define (getpeername socket) (syscall 51 socket))
 
 ))
