@@ -102,11 +102,11 @@ CFLAGS += -D_FILE_OFFSET_BITS=64
 
 # ----------------------------------
 ## debug/release flags
-CFLAGS_CHECK   := -O0 -g2 -Wall -DWARN_ALL
-CFLAGS_DEBUG   := -O0 -g2 -Wall
+CFLAGS_CHECK   := -O0 -g3 -Wall -DWARN_ALL
+CFLAGS_DEBUG   := -O0 -g3 -Wall
 CFLAGS_DEBUG   += -DCAR_CHECK=1 -DCDR_CHECK=1
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
-CFLAGS_RELEASE += -Wno-unused-result
+CFLAGS_RELEASE += -Wno-unused-result -g3
 
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
 
@@ -210,10 +210,12 @@ vm:
 	   extensions/ffi.c -Iincludes \
 	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L)
 	@echo Ok.
+
+vm.asm: CFLAGS += $(CFLAGS_RELEASE)
 vm.asm:
 	$(CC) src/olvm.c -o $@ \
 	   -DHAVE_DLOPEN=0  -Iincludes \
-	   $(CFLAGS_RELEASE) -DPREFIX=\"$(PREFIX)\" $(L) \
+	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L) \
 	   -S -fverbose-asm
 	@echo Ok.
 
@@ -241,9 +243,10 @@ libol.so:
 
 # real name of
 olvm: vm
-	cp vm olvm
-	strip olvm
-	strip olvm -R .eh_frame -R .eh_frame_hdr
+	cp $< $@
+	strip $@
+	#strip $@ -R .eh_frame
+	#strip $@ -R .eh_frame_hdr
 
 # selfexec feature test
 selfexec: ol
