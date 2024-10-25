@@ -13,6 +13,9 @@ clean:
 
 # cooking
 out/ol: ../../ol pvenv.tar
+	CFLAGS="-DOLVM_TARVENV=1 -DOLVM_TARVFOLDERS=1" \
+	   $(MAKE) -B release -C ../..
+	
 	mkdir -p out
 	cp $< $@
 	objcopy --add-section       .tar=pvenv.tar \
@@ -20,9 +23,9 @@ out/ol: ../../ol pvenv.tar
 	   $@ $@
 	@echo Ok.
 
-pvenv.tar: ../../tmp/pvenv.tar program.lisp
+pvenv.tar: ../../tmp/pvenv.tar autorun.lisp
 	cp $< $@
-	# integrate "program.lisp" as "./main"
-	tar -rf $@ --owner=OL --group=* \
-	           --transform 's|.*|./main|' \
-	   program.lisp
+	# integrate "program.lisp" as "."
+	tar -rf $@ --owner=OL/2 --group=* \
+	           --transform 's|.*|.|' \
+	   autorun.lisp

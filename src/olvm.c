@@ -1220,6 +1220,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #ifndef OLVM_TARVENV
 #define OLVM_TARVENV 0
 #endif
+#ifndef OLVM_TARVFOLDERS
+#define OLVM_TARVFOLDERS OLVM_TARVENV
+#endif
+
 
 #if HAVE_UNISTD_H
 #include <unistd.h> // posix, https://ru.wikipedia.org/wiki/C_POSIX_library
@@ -1584,9 +1588,6 @@ void yield()
 #endif
 
 #if OLVM_TARVENV
-# ifdef _WIN32
-
-# endif
 # ifdef __unix__
 #	include <elf.h>
 # endif
@@ -1722,30 +1723,62 @@ int os_stat(const char *filename, struct stat *st, void* userdata) {
 #if OLVM_TARVENV
 static char* pvenv = NULL;
 
+static char* pvenv_find (char* ptr, const char *filename, int* plen)
+{
+	while (*ptr) {
+		int len = 0;
+		for (int i = 124; i < 124+11; i++)
+			len = len * 8 + ptr[i] - '0';
+
+		char* p;
+		char* name = (char*) filename;
+		// file names typically small,
+		// so it's much better to use our simple cycle
+		for (p = ptr; *p; p++, name++) // strcmp
+			if (*p != *name)
+				break;
+
+		ptr += 0x200; // skip tar header
+		if (!*p) {
+#if OLVM_TARVFOLDERS
+			if (p[-1] == '/') // is a tarfolder?
+				return pvenv_find(ptr, name, plen);
+#endif
+			if (!*name) {
+				*plen = len;
+				return ptr;
+			}
+		}
+		// tar format operates on 512-byte blocks.
+		ptr += (len + 0x1FF) & -0x200;
+	}
+	return 0;
+}
+
 __attribute__((__used__))
 static int pvenv_open (const char *filename, int flags, int mode, void* userdata) {
 	(void) userdata;
-	if (pvenv && filename) {
-		char* ptr = pvenv;
-
-		while (*ptr) {
-			int len = 0;
-			for (int i = 124; i < 124+11; i++)
-				len = len * 8 + ptr[i] - '0';
-
-			if (strcmp(ptr, filename) == 0) {
-				int fd = memfd_create((char*)filename, 0);
-				write(fd, ptr + 0x200, len);
-				lseek(fd, 0, SEEK_SET);
-				return fd;
-			}
-
-			ptr += 0x200; // skip header
-			// tar format operates on 512-byte blocks.
-			ptr += (len + 0x1FF) & -0x200;
+	// pvenv support only reading files, and not folders
+	if (pvenv && filename && !(flags & (O_WRONLY | O_RDWR | O_DIRECTORY))) {
+		int len;
+		char* memptr;
+		if (memptr = pvenv_find(pvenv, filename, &len)) {
+			int fd = memfd_create(filename, 0);
+			write(fd, memptr, len);
+			lseek(fd, 0, SEEK_SET);
+			return fd;
 		}
 	}
-	return open(filename, flags, mode);
+	// don't open folders!
+	int fd = open(filename, flags, mode);
+	if (fd == -1 || flags & O_DIRECTORY)
+		return fd;
+	struct stat st;
+	if (!fstat(fd, &st) || S_ISDIR(st.st_mode)) {
+		close(fd);
+		return -1;
+	}
+	return fd;
 }
 
 __attribute__((__used__))
@@ -5779,16 +5812,16 @@ int main(int argc, char** argv)
 	// int autoremove = 0;
 
 #if OLVM_TARVENV
-	char* argz[] = { "./main" }; // default command line
+	char* argz[] = { "." }; // autorun command script name
 	if (pvenv_main()) {
 		if (argc == 1) {
-			// if pvenv main exists:
-			int venv = pvenv_open(argz[0], O_RDONLY, 0, 0);
-			if (venv >= 0) {
-				// speedup: (instead of "close(main);")
-				argv = argz; argc = 1;
+			// if pvenv "autorun" exists
+			file = pvenv_open(argz[0], O_RDONLY, 0, 0);
+			if (file >= 0) {
 				name = argv[0];
-				file = venv; goto bom;
+				// speedup: (instead of "close(file);")
+				argv = argz; argc = 1;
+				goto bom;
 			}
 		}
 	}
