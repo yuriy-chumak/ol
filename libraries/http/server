@@ -114,7 +114,6 @@
    ; -=( Windows )=----------------------------
    (Windows
       (begin
-         (print "Windows")
          (define (ls folder)
             (list "cmd.exe" "/c" (string-append
                "dir " (s/\//\\/g folder))))
@@ -152,7 +151,6 @@
    ; -=( Unix )=-------------------------------
    (else
       (begin
-         (print "Others")
          (define (ls folder)
             (list "/bin/sh" "-c" (string-append
                "ls -lah " folder)))

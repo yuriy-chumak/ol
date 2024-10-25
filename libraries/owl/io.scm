@@ -131,7 +131,7 @@
       (case-lambda
          (() (wait-mail)) ; just a regular "wait-mail"
          ((ms) (wait-mail-ms ms #f)) ; wait mail with timeout, returns a mail if got one or "#false"
-         ((ms default) (wait-mail-ms default)) ; ... but returns [#false default]
+         ((ms default) (wait-mail-ms default))                             ; ... or [#false default]
       ))
 
       ; returns #true if port is ready to be read, #false if timeout

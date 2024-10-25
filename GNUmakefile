@@ -358,7 +358,7 @@ tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
 	tar -cf $$tar0 -T /dev/null ;\
 	cd libraries/lib/gtk-3 ;\
 	   find * -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
-	cd ../.. ;\
+	cd ../../.. ;\
 	export tar0=${abspath $@} ;\
 	cd libraries ;\
 	   find . -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
