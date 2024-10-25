@@ -21,8 +21,6 @@
          array))
 
    (import (prefix (otus base64) base64:))
-   (setq box (lambda args args))
-   (setq unbox car)
    (setq vref vector-ref)
 
    ; read and compile glTF file

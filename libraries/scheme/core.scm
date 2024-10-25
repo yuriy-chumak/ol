@@ -252,6 +252,9 @@
       (setq set! (lambda (variable expression)
          (runtime-error "No set! is allowed." "(sometimes you can use set-ref!, check the docs)")))
 
+      (setq box (lambda args args))
+      (setq unbox car)
+
       ; 4.1.7. Inclusion
       ;
       ; syntax: (include hstring1i hstring2i ...)  * not supported, (scheme base)
@@ -1782,7 +1785,7 @@
       ; 4.1.5, 4.2.2  Conditionals
       if and or
       ; 4.1.6  Assignments
-      set!
+      set! box unbox
       ; 4.2.1  Binding constructs and Sequencing
       letrec let begin let*
       ; 5.3  Variable definitions

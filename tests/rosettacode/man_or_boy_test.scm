@@ -1,5 +1,3 @@
-(define (box x)  (list x))
-(define (unbox x) (car x))
 (define (copy x) (box (unbox x)))
 
 (define (A k x1 x2 x3 x4 x5)

@@ -94,7 +94,7 @@
       make-vptr-array
 
       ; utility functions
-      box unbox sizeof
+      sizeof
 
       ; fft data manipulation helpers
       vptr->string
@@ -294,12 +294,6 @@
 (define sizeof ffi:sizeof)
 
 ; -- utils ----------------------------
-
-; boxing/unboxing
-(define (box value)
-   (list value))
-(define (unbox box)
-   (car box))
 
 ; makers
 (define (make-32bit-array len)
