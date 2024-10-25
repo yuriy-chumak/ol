@@ -24,6 +24,7 @@
    (import
       (scheme base)
       (scheme cxr)
+      (only (srfi 1) filter)
 
       (owl list)
       (lang rtl)
@@ -422,7 +423,8 @@
 
       ;; todo: should keep a list of documents *loading* and use that to detect circular loads (and to indent the load msgs)
       (define (repl-load repl path in env)
-         (let*((paths (map (lambda (dir) (string-append dir "/" path)) (env-get env '*path* '("."))))
+         (let*((paths (map (lambda (dir) (string-append dir "/" path))
+                        (filter string? (env-get env '*path* '(".")))))
                (exps ;; find the file to read
                   (let loop ((paths paths))
                      (unless (null? paths)
@@ -849,8 +851,7 @@
       (define (repl-include env path fail)
          (let*((paths (map
                         (λ (dir) (list->string (append (string->list dir) (cons #\/ (string->list path)))))
-                        (env-get env '*path* null)))
-;             (_ (print "paths: " paths))
+                        (filter string? (env-get env '*path* null))))
                (data (let loop ((paths paths))
                         (unless (null? paths)
                            (or (library-file->list env (car paths))

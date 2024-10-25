@@ -370,11 +370,11 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                (if embed? "" "type ',help' to help, ',quit' to end session.")))
 
          (if embed?
-            (let*((this (cons (vm:pin env) 0))
+            (let*((this (box (vm:pin env)))
                   (eval (lambda (result args)
                            (case result
                               (['ok value env]
-                                 (vm:unpin (car this))
+                                 (vm:unpin (unbox this))
                                  (set-car! this (vm:pin env))
                                  (if (null? args)
                                     value
@@ -384,7 +384,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                                  #false))))
                   (evaluate (lambda (expression)
                            (halt
-                              (let*((env (vm:deref (car this)))
+                              (let*((env (vm:deref (unbox this)))
                                     (exp args (uncons expression #f)))
                                  (case (type exp)
                                     (type-string
@@ -394,7 +394,8 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                                     (type-enum+
                                        (eval (eval-repl (vm:deref exp) env #f evaluate) args))
                                     (type-bytevector
-                                       (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (car this)) #f evaluate) args))))))))
+                                       (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (unbox this)) #f evaluate) args))))))))
+               ; return pinned evaluator to the caller
                (halt (vm:pin evaluate)))
          else
             ; regular repl:
