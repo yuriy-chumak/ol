@@ -69,7 +69,7 @@
 #	endif
 #endif
 
-#ifdef _WIN32             // we need no modern windows features
+#ifdef _WIN32             // we don't need modern windows features
 #	define WINVER _WIN32_WINNT_NT4
 #	define _WIN32_WINNT _WIN32_WINNT_NT4
 #endif
@@ -1342,19 +1342,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 // memfd_create:
 #include <sys/mman.h>
 #if !HAVE_MEMFD_CREATE
-#	if defined(__linux__) || defined(__APPLE__)
-	// not a real memfd_create, but compatibility wrapper
-	int memfd_create (const char* name, unsigned int flags)
-	{
-		(void) name;
-		assert (flags == 0);
-
-		char tmp_m[] = "/tmp/memfd_olvmXXXXXX";
-		int fd = mkstemp(tmp_m); unlink(tmp_m);
-
-		return fd;
-	}
-#	endif
 #	if defined(_WIN32)
 	int memfd_create (const char* name, unsigned int flags)
 	{
@@ -1369,6 +1356,18 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 		HANDLE handle = CreateFile(file, GENERIC_READ | GENERIC_WRITE, 0,NULL, CREATE_ALWAYS,
 			FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 		return _open_osfhandle((intptr_t) handle, 0);
+	}
+#	else
+	// not a real memfd_create, but compatibility wrapper
+	int memfd_create (const char* name, unsigned int flags)
+	{
+		(void) name;
+		assert (flags == 0);
+
+		char tmp_m[] = "/tmp/memfd_olvmXXXXXX";
+		int fd = mkstemp(tmp_m); unlink(tmp_m);
+
+		return fd;
 	}
 #	endif
 #endif
@@ -2979,14 +2978,7 @@ mainloop:;
 	#		define SYSCALL_GETDENTS 78
 
 	#		define SYSCALL_SENDFILE 40
-
-	#		ifndef SYSCALL_MEMFD
-    #        ifdef HAVE_MEMFD_CREATE
-	#		  define SYSCALL_MEMFD ((HAVE_MEMFD_CREATE == 1) ? 85 : 0)
-    #        else
-	#		  define SYSCALL_MEMFD 85
-    #        endif
-	#		endif
+	#		define SYSCALL_MEMFD 85
 
 	#		define SYSCALL_GETTIMEOFDAY 96
 
@@ -4392,7 +4384,6 @@ loop:;
 			}
 #endif
 
-#if SYSCALL_MEMFD
 			case SYSCALL_MEMFD: {
 				CHECK_ARGC_EQ(0);
 
@@ -4402,7 +4393,6 @@ loop:;
 
 				break;
 			}
-#endif
 
 			// PIPES
 			case SYSCALL_PIPE: {
