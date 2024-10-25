@@ -1568,6 +1568,9 @@ void yield()
 #ifndef O_BINARY
 #	define O_BINARY 0
 #endif
+#ifndef O_DIRECTORY
+#	define O_DIRECTORY 0
+#endif
 
 // https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
 //#pragma GCC diagnostic push
@@ -4220,7 +4223,7 @@ loop:;
 				struct stat st;
 
 				if (is_port(A1)) {
-					if (fstat(port(A1), &st) < 0)
+					if (fstat(port(A1), &st))
 						break;
 				}
 				else
@@ -4228,7 +4231,7 @@ loop:;
 					// if (((argc == 2 && A2 == ITRUE) ? lstat : ol->stat)(string(A1), &st, this) < 0)
 					// 	break;
 					if (argc == 2 && A2 == ITRUE) {
-						if (lstat(string(A1), &st) < 0)
+						if (lstat(string(A1), &st))
 							break;
 					}
 					else {
