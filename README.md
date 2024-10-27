@@ -331,7 +331,7 @@ Ol command line options available:
 * `--version=...`: overwrite ol version string
 * `--home=...`: overwrite path where to search for the ol libraries
 * `--sandbox`: enable execution in the sandbox (if OS supports)
-* `--sandbox=...`: execution in the sandbox with "..." Megs of memory preallocated
+* `--sandbox=Nnn`: execution in the sandbox with "Nnn" Megs of memory preallocated
 * `--interactive`: force REPL interactive mode
 * `--non-interactive`: disable REPL interactive mode
 * `--embed`: run special reduced REPL for embed usage

@@ -3274,7 +3274,7 @@ loop:;
 		word *T = new (type, size-1);
 
 		word vec = reg[*ip++];
-		T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
+		T[1] = ref(vec,*ip++); // T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
 
 		for (size_t i = 2; i < size; )
 			T[i++] = reg[*ip++];
@@ -4404,10 +4404,12 @@ loop:;
 				if (pipe(pipefd) == 0) {
 					r = cons(make_port(pipefd[0]), make_port(pipefd[1]));
 
-					#ifndef _WIN32
+				#	ifndef _WIN32
 					if (!(flags & 1)) fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL, 0) | O_NONBLOCK);
 					if (!(flags & 2)) fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL, 0) | O_NONBLOCK);
-					#endif
+				#	else
+					(void) flags;
+				#	endif
 				}
 				break;
 			}
@@ -4827,7 +4829,7 @@ loop:;
 			* - *protocol*, 
 			*/
 			case 41: {
-				CHECK_ARGC(0,3);
+				CHECK_ARGC(0,3); // TODO: in 2.7: simplify to exactly 3 arguments and update the (olvm syscalls) lib
 				CHECK_NUMBER(1);
 				CHECK_NUMBER(2);
 				CHECK_NUMBER(3);
