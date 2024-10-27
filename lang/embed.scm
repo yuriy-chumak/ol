@@ -68,7 +68,7 @@
       (let ((symbols (symbols-of main))
             (codes   (codes-of   main)))
          (vm:new type-constructor
-            (λ (vm-args)
+            (λ (args)
                (start-thread-controller
                   (list ; just 1 thread
                      ['main
@@ -76,6 +76,6 @@
                            (start-io-scheduler)
                            (fork-symbol-interner symbols) ; todo: rename to start-symbol-interner
                            (fork-bytecode-interner codes) ; todo: rename to start-bytecode-interner
-                           (main vm-args))] ))))))
+                           (main args))] ))))))
 
 ))

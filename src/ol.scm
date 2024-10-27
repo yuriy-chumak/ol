@@ -204,16 +204,14 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
 
 ; entry point of the compiled image
 ; (called after starting mcp, symbol and bytecode interners)
-(define (main vm-args)
+(define (main args)
 
    (define (starts-with? string prefix)
       (and (<= (string-length prefix) (string-length string))
             (string-eq? prefix (substring string 0 (string-length prefix)))))
 
-   ;; (print "vm-args: " vm-args)
-
-   (let*((options vm-args
-            (let loop ((options #empty) (args vm-args))
+   (let*((options args
+            (let loop ((options #empty) (args args))
                (cond
                   ((null? args)
                      (values options #null))
@@ -302,7 +300,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
          (compile? (getf options 'compile))
 
          (home (get options 'home "~")) ; via command line or 
-         (command-line vm-args)
+         (command-line args)
 
          (version (cons "OL" (get options 'version (cdr *version*))))
          (env (fold
@@ -311,16 +309,16 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                   initial-environment
                   (list
                      ;(cons '*owl-names* initial-names)
-                     (cons '*path* (cons "." (map (lambda (path)
+                     (cons '*path* (cons "." (filter string? (map (lambda (path)
                            (if (and (eq? (size path) 1) (eq? (ref path 0) #\~)) ; fast (string-eq? path "~")
                               (syscall 1016 "OL_HOME")
                               path))
                         ; fast way to detect windows.
-                        ((if (string=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home))))
+                        ((if (string=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home)))))
                      (cons '*interactive* interactive?)
                      (cons '*command-line* command-line)
                      ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead
-                     (cons '*vm-args* vm-args) ; deprecated
+                     (cons '*vm-args* args) ; deprecated
                      (cons '*version* version)
                      ; 
                      (cons '*features* (let*((*features* (cons* '|ol-2.6| *features*))
