@@ -8,10 +8,7 @@
    (file json)
    (owl parse)
    (only (file parser) times)
-   (only (otus syscall) strftime))
-
-; syscalls
-(define (yield) (syscall 1022 0))
+   (only (olvm syscalls) strftime))
 
 (http:run 8080 (lambda (fd request headers body close)
    (define (send . args)
@@ -21,7 +18,7 @@
    (print "fd: " fd ", request: " request)
    (print "User-Agent: \e[0;36m" (get headers 'user-agent #false) "\e[0;0m")
 
-   (define content-length (headers 'content-length #f))
+   (define content-length (headers 'content-length "0"))
    (define content-length-num (string->number content-length))
    (print "content-length-num: " content-length-num)
    (if content-length

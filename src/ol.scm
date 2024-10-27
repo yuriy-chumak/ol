@@ -68,6 +68,8 @@
 (import (lang eval))
 (import (lang embed))
 
+(import (olvm syscalls))
+
 ; replace old (otus core) to the new one, (only (lang eval) *otus-core*)
 (define *libraries* ; заменим старую (otus core) на новую из (lang eval)
    (cons

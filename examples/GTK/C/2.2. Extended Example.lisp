@@ -3,7 +3,7 @@
       (lib glib-2)
       (lib gtk-3)
       (lib gtk-3 message-dialog))
-(import (only (otus syscall) strftime))
+(import (only (olvm syscalls) strftime))
 
 ; just check a gtk version (not required)
 (define notify (gtk_check_version 3 0 0))

@@ -3,7 +3,7 @@
       (lib glib-2)
       (lib gtk-3))
 
-(import (only (otus syscall) strftime))
+(import (only (olvm syscalls) strftime))
 
 ; main:
 (gtk_init '(0) #f)

@@ -7,10 +7,7 @@
    (lib http)
    (file json)
    (owl parse)
-   (only (otus syscall) strftime))
-
-; syscalls
-(define (yield) (syscall 1022 0))
+   (only (olvm syscalls) strftime))
 
 (http:run 8080 (lambda (fd request headers body close)
    (define (send . args)

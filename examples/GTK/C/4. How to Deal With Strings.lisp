@@ -3,7 +3,7 @@
 (import
    (lib glib-2)
    (lib gtk-3))
-(import (only (otus syscall) strftime))
+(import (only (olvm syscalls) strftime))
 
 ; button handler, set label text to current date and time
 (define print_datetime

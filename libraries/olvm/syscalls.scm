@@ -3,13 +3,13 @@
       read write
       open close
       lseek stat
-      sendfile
       strftime
       gettimeofday
 
       ; socket api:
       socket
       bind listen select accept
+      connect
       sendfile getpeername
       )
 
@@ -48,9 +48,6 @@
    (define (stat port/file)
       (syscall 4 (if (string? port/file) (c-string port/file) port/file)))
 
-   (define (sendfile out in offset count)
-      (syscall 40 out in offset count))
-
    (define strftime (case-lambda
       ((fmt) (syscall 201 (c-string fmt)))
       ((fmt time) (syscall 201 (c-string fmt) time))))
@@ -65,7 +62,11 @@
    (define (select socket timeout)
       (syscall 23 socket timeout))
    (define (accept socket) (syscall 43 socket))
-   (define (sendfile in out size) (syscall 40 in out 0 size))
+   (define (connect socket addr port)
+      (syscall 42 socket addr port))
+   (define (sendfile out in offset count)
+      (syscall 40 out in offset count))
+   
    (define (getpeername socket) (syscall 51 socket))
 
 ))

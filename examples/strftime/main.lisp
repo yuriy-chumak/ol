@@ -1,7 +1,7 @@
 #!/usr/bin/env ol
 
 (import
-   (only (otus syscall) strftime))
+   (only (olvm syscalls) strftime))
 
 (for-each (lambda (arg)
       (define template (car arg))

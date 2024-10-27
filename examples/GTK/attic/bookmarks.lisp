@@ -6,7 +6,7 @@
 
 ; let's read config:
 (import (file json)
-   (only (otus syscall) strftime))
+   (only (olvm syscalls) strftime))
 
 (define config (or
    (read-json-file "config.json")

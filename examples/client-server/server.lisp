@@ -1,5 +1,7 @@
 #!/usr/bin/env ol
 
+(import (olvm syscalls))
+
 ; commands
 (define MOVE 1001)
 (define GET 1002)
@@ -31,49 +33,48 @@
          (loop this)))))))
 
 ; clients handler
-(define (on-accept socket)
-   (print "client " (syscall 51 socket) " connected.")
+(define (on-accept conn)
+   (print "client " (getpeername conn) " connected.")
 
    ; greeting
-   (write-bytestream (fasl-encode "I see you, please wait...") socket)
+   (write-bytestream (fasl-encode "I see you, please wait...") conn)
    
-   (define command (fasl-decode (port->bytestream socket) #f))
+   (define command (fasl-decode (port->bytestream conn) #f))
    (print "  received a command " (if command command "invalid command"))
    
    (define answer (await (mail 'hero command)))
    (print "  hero answered " answer)
    
-   (write-bytestream (fasl-encode (await (mail 'hero [GET]))) socket)
+   (write-bytestream (fasl-encode (await (mail 'hero [GET]))) conn)
 
    (print "  current hero status is " (await (mail 'hero [GET]))))
 
 
 ; let's start tcp server
-(define socket (syscall 41))
+(define conn (socket))
 (define port 8888)
 
 ; bind
-(unless (syscall 49 socket port)
+(unless (bind conn port)
    (print-to stderr "can't bind to a port " port)
    (exit 1))
 (print-to stderr "server binded to " port)
 
 ; listen
-(unless (syscall 50 socket)
-   (print-to stderr "can't listen a socket")
+(unless (listen conn)
+   (print-to stderr "can't listen a conn")
    (exit 2))
 (print-to stderr "server listening to 0.0.0.0:" port)
 
 ; accept loop
 (let loop ()
-   (if (syscall 23 socket
+   (if (select conn
          (if (null? (running-threads)) 3000000 1)) ; wait a 3 seconds if no running threads detected
-      (let ((fd (syscall 43 socket))) ; accept
+      (let ((fd (accept conn))) ; accept
          (async (on-accept fd)))
       (sleep 0)) ; else just switch context
-   (loop)) )))
+   (loop))
 
-
-(close-port socket)
+(close-port conn)
 
 (print "done.")

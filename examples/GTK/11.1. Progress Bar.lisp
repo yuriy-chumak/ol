@@ -4,7 +4,7 @@
    (lib glib-2)
    (lib gtk-3)
    (lib gdk-3))
-(import (only (otus syscall) strftime))
+(import (only (olvm syscalls) strftime))
 
 (import (lib gtk-3 toggle-button))
 (import (lib gtk-3 progress-bar))

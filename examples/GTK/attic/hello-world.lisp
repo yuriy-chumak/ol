@@ -3,7 +3,7 @@
 (import (otus ffi)
    (lib glib-2)
    (lib gtk-3))
-(import (only (otus syscall) strftime))
+(import (only (olvm syscalls) strftime))
 
 (define print_hello (vm:pin (cons
    (cons fft-int (list GtkWidget* gpointer))
