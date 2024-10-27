@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ -O--no-parallel
+
+override_dh_auto_test:
+	dh_auto_test -O--no-parallel

@@ -275,6 +275,7 @@ ol64.exe: MGCC:=$(MGCC64)
 ol.exe: MINGWCFLAGS += -DOLVM_TARVENV=1 # enable TARVENV definitely
 ol.exe: ol64.exe tmp/pvenv.tar # by default 64-bit exe
 	cat $< >$@
+	#wine tools/cv2pdb.exe ol.exe
 	x86_64-w64-mingw32-strip $@
 	cat tmp/pvenv.tar >>$@
 
@@ -305,6 +306,7 @@ MAKEFILE_MAIN=1
 -include tests/Makefile
 -include tests/rosettacode/Makefile
 -include config/Makefile
+-include debian/Makefile
 
 # documentation samples check
 check: check-reference

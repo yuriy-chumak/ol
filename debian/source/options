@@ -1,0 +1,5 @@
+tar-ignore = ".git"
+tar-ignore = ".vscode"
+tar-ignore = "examples"
+tar-ignore = "jni"
+tar-ignore = "samples"

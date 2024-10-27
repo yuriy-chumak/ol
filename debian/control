@@ -1,0 +1,27 @@
+Source: ol
+Section: lisp
+Priority: optional
+Maintainer: Yuriy Chumak <yuriy-chumak@mail.com>
+Build-Depends: debhelper-compat (= 10)
+Standards-Version: 4.6.0
+Homepage: http://yuriy-chumak.github.io/ol/
+Vcs-Browser: https://github.com/yuriy-chumak/ol
+Vcs-Git: https://github.com/yuriy-chumak/ol.git
+Rules-Requires-Root: no
+
+Package: ol
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: A purely functional dialect of Lisp.
+ Ol implements an extended subset of the R<sup>7</sup>RS Scheme
+ ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
+ but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
+ and cross-platform;  provides a portable, high-level interface
+ to call code written in another language (c, python, lua, etc).
+ .
+ You can use Ol in Linux, Windows, macOS, Android, Chromebook*,
+ (Open/Free/Net) BSD, Solaris and other operating systems based
+ on various hardware architectures (intel, arm, ppc, mips, etc).
+ .
+ Also, Ol is ported to the web (in WebAssembly form) and can be
+ used in Chrome, Safari, Firefox, Edge, Opera, etc.
