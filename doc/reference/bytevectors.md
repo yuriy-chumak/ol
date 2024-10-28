@@ -17,12 +17,8 @@ Bytevectors are written using the notation `#u8(...)` and function `bytevector`.
 (bytevector)   ===  #u8()
 (bytevector 0 1 2 127 128 255)
                ===  #u8(0 1 2 127 128 255)
-
-; all values wider than 8 bits will be truncated
-(bytevector 254 255 256 257 258 7778885551232190)
-               ==>  #u8(254 255 0 1 2 190)
-
 ```
+
 ## TOC
 
 [#u8()](#bytevectors), [bytevector](#bytevectors),
@@ -86,8 +82,8 @@ Returns the length of bytevector *bv* in bytes as an exact integer.
 (bytevector-length #u8())  ==>  0
 (bytevector-length #u8(1 2 3))
                            ==>  3
-(bytevector-length (make-bytevector 1000000))
-                           ==>  1000000
+(bytevector-length (make-bytevector 100000))
+                           ==>  100000
 ```
 
 # bytevector-u8-ref

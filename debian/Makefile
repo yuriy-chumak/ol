@@ -9,7 +9,11 @@ else
 ppa:
 	git checkout debian/changelog
 	sed 's/UNRELEASED/$(UNRELEASED)/g' -i debian/changelog
-	
+
+	git checkout debian/control
+	# fix fuxking debhelper-compact for fuxking ubuntu build system
+	test "$(UNRELEASED)" = "xenial" && sed -i '/debhelper-compat/c\Build-Depends: debhelper-compat (= 9)' debian/control; true
+
 	rm -f debian/files
 	dpkg-buildpackage -us -uc -ui -S -sd \
 	   -rfakeroot
@@ -25,6 +29,14 @@ ppas:
 	do \
 	   UNRELEASED=$$debver $(MAKE) ppa ;\
 	done
+	git checkout debian/changelog
+
+xenial:
+	UNRELEASED=xenial $(MAKE) ppa
+	git checkout debian/changelog
+
+noble:
+	UNRELEASED=noble $(MAKE) ppa
 	git checkout debian/changelog
 
 endif

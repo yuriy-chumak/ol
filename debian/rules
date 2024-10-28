@@ -1,7 +1,9 @@
 #!/usr/bin/make -f
+MAKEFLAGS += --no-print-directory
 
 %:
 	dh $@ -O--no-parallel
 
 override_dh_auto_test:
+	echo | gcc -dM -E -
 	dh_auto_test -O--no-parallel

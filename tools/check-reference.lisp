@@ -5,10 +5,11 @@
 (import (scheme repl))
 (import (lang intern))
 
-(define RED "\x1B;[22;31m")
-(define GREEN "\x1B;[22;32m")
-(define YELLOW "\x1B;[22;33m")
-(define END "\x1B;[0m")
+(define isatty (syscall 1016 (c-string "MAKE_TERMOUT")))
+(define RED (if isatty "\x1B;[22;31m" ""))
+(define GREEN (if isatty "\x1B;[22;32m" ""))
+(define YELLOW (if isatty "\x1B;[22;33m" ""))
+(define END (if isatty "\x1B;[0m" ""))
 
 ; collects all ```scheme ... ``` code blocks
 (define parser

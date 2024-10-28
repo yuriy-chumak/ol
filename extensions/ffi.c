@@ -273,7 +273,7 @@ ret_t win64_call(word argv[], long argc, void* function, long type);
 	// edx - argc
 	// r8  - function
 	// r9d - type
-__ASM__("win64_call:_win64_call:",  // "int $3",
+__ASM__("win64_call:", "_win64_call:",  // "int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
@@ -327,11 +327,14 @@ __ASM__("win64_call:_win64_call:",  // "int $3",
 	"movsd %xmm0, (%rsp)",
 	"pop   %rax", // можно попать, так как уже пушнули один r9 вверху (оптимизация)
 	"jmp   9b");
+# endif
 
-# else      // System V (unix, linux, osx)
-ret_t nix64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type);
+# if __unix__ || __linux__ || __APPLE__ // System V (unix, linux, osx)
+static __attribute((__naked__))
+ret_t nix64_call(word argv[], double ad[], long i, long d, long mask, void* function, long type)
 	            //    rdi            rsi      edx     ecx       r8          r9           16(rbp)
-__ASM__("nix64_call:_nix64_call:", //"int $3",
+{
+__ASM__(//"int $3",
 	"pushq %rbp",
 	"movq  %rsp, %rbp",
 
@@ -429,6 +432,7 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 	"movsd %xmm0, (%rsp)",
 	"popq  %rax", // corresponded push not required (we already pushed %r9)
 	"jmp   9b");
+}
 
 // RDI, RSI, RDX, RCX (R10 in the Linux kernel interface[17]:124), R8, and R9
 // while XMM0, XMM1, XMM2, XMM3, XMM4, XMM5, XMM6 and XMM7 are used for floats
@@ -455,7 +459,7 @@ __ASM__("nix64_call:_nix64_call:", //"int $3",
 // 
 ret_t x86_call(word argv[], long i, void* function, long type);
 	// all variables are in stack
-__ASM__("x86_call:_x86_call:", //"int $3",
+__ASM__("x86_call:", "_x86_call:", //"int $3",
 	"pushl %ebp",
 	"movl  %esp, %ebp",
 
@@ -511,9 +515,12 @@ __ASM__("x86_call:_x86_call:", //"int $3",
 //   don't use r16, r17, r18
 //   don't forget "sudo DevToolsSecurity -enable" when debugging with lldb
 															 // mask is deprecated, todo: remove
+// "static __attribute((__naked__))"" is unsupported, so
 ret_t arm64_call(word argv[], double ad[], long i, long d, char* extra, void* function, long type, long e);
-				//    x0             x1        x2      x3       x4          x5             x6       x7
-__ASM__("arm64_call:", "_arm64_call:", // "brk #0",
+				//    x0             x1        x2      x3        x4           x5             x6        x7
+__ASM__(
+".global arm64_call");
+__ASM__("arm64_call:", // "brk #0",
 	"stp  x29, x30, [sp, -16]!", // fp + lr
 	"stp  x10, x26, [sp, -16]!",
 	"mov  x29, sp",
@@ -589,9 +596,7 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"b 0b",
 "7:", // double (8)
 	"str d0, [sp]",
-	"b 0b"
-);
-
+	"b 0b");
 
 // ------------------------------------------
 #elif __arm__
@@ -2776,20 +2781,17 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #if  __x86_64__
 # if _WIN64
 		got = win64_call(args, i, function, returntype & 0x3F);
-# else // (__unix__ || __APPLE__)
+# endif
+# if __unix__ || __linux__ || __APPLE__ // System V (unix, linux, osx)
 		got = nix64_call(args, ad, max(i, l), d, fpmask, function, returntype & 0x3F);
 # endif
 
 #elif __i386__
-# if _WIN32
 		// cdecl and stdcall in our case are same, so...
 		got = x86_call(args, i, function, returntype & 0x3F);
-# else // (__unix__ || __APPLE__)
-		got = x86_call(args, i, function, returntype & 0x3F);
-# endif
 
 #elif __aarch64__
-	got = arm64_call(args, ad, i, d, extra, function, returntype & 0x3F, WALIGN(e));
+		got = arm64_call(args, ad, i, d, extra, function, returntype & 0x3F, WALIGN(e));
 
 #elif __arm__
 	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
@@ -2802,16 +2804,17 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #	endif
 
 #elif __mips__
-	got = mips32_call(args, i, function, returntype & 0x3F);
+		got = mips32_call(args, i, function, returntype & 0x3F);
 
 #elif __EMSCRIPTEN__
-	got = asmjs_call(args, fpmask, function, returntype & 0x3F);
+		got = asmjs_call(args, fpmask, function, returntype & 0x3F);
 
 #elif __sparc64__
-	got = call_x(args, i, function, returntype & 0x3F);
+		got = call_x(args, i, function, returntype & 0x3F);
 
 #else // ALL other
-	got = call_x(args, i, function, returntype & 0x3F);
+		got = call_x(args, i, function, returntype & 0x3F);
+
 /*	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
 		CALL(__cdecl);
 	}
@@ -2836,7 +2839,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		break;
 	}*/
 #endif
-	else
+	else // just mirror argument
 		got = *(ret_t *)args;
 
 	// где гарантия, что C и B не поменялись?

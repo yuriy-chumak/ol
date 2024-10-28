@@ -2,6 +2,9 @@ export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
 
+# don't spam "Entering/Leaving directory"
+MAKEFLAGS += --no-print-directory
+
 # default target
 all: release
 
@@ -25,9 +28,15 @@ MGCC32 ?= i686-w64-mingw32-gcc
 MGCC64?=x86_64-w64-mingw32-gcc
 
 # ansi colors
+ifeq ($(MAKE_TERMOUT),)
+red=
+green=
+done=
+else
 red=\033[1;31m
 green=\033[1;32m
 done=\033[0m
+endif
 
 # check submodules
 # ----------------

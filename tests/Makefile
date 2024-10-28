@@ -140,7 +140,7 @@ endif
 
 # -=( ffi )=----------------------------------------
 test-ffi:
-	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes \
+	$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes \
 	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(ffi)$(affix)$(bits) $(L) \
 	   -fsigned-char # for ffi tests we should use char as signed by default
 	@printf "Testing $(ffi)$(affix)$(bits) ... "
@@ -180,8 +180,8 @@ endif
 # -=( vmi )=---------------------------------------
 test-vmi:
 	$(CC) src/olvm.c $(CFLAGS) tests/vm.c -Iincludes -DOLVM_NOMAIN -o $(vmi)$(affix)$(bits) $(L)
-	   @echo "$(vmi)$(affix)$(bits):"
-	   @$(vmi)$(affix)$(bits)
+	@echo "$(vmi)$(affix)$(bits):"
+	@$(vmi)$(affix)$(bits)
 vmi=tmp/vmi
 
 test-vmi-debug: CFLAGS += $(CFLAGS_DEBUG)
@@ -250,32 +250,32 @@ ifeq ($(DEV_MACHINE),1) # main development platform, special case
 	@printf "\n"
 ifeq ($(HAS_32CDEFS),1)
 	@printf "    linux 32-bit debug and release versions... "
-	@$(MAKE) -s vm-debug-32
-	@$(MAKE) -s vm-release-32
+	$(MAKE) vm-debug-32
+	$(MAKE) vm-release-32
 	@echo $(ok)
 endif
 ifeq ($(HAS_64CDEFS),1)
 	@printf "    linux 64-bit debug and release versions... "
-	@$(MAKE) -s vm-debug-64
-	@$(MAKE) -s vm-release-64
+	$(MAKE) vm-debug-64
+	$(MAKE) vm-release-64
 	@echo $(ok)
 endif
 ifeq ($(HAVE_MINGW32),1)
 	@printf "    mingw 32-bit debug and release versions... "
-	@$(MAKE) -s $(vm)32d.exe
-	@$(MAKE) -s $(vm)32r.exe
+	$(MAKE) $(vm)32d.exe
+	$(MAKE) $(vm)32r.exe
 	@echo $(ok)
 endif
 ifeq ($(HAVE_MINGW64),1)
 	@printf "    mingw 64-bit debug and release versions... "
-	@$(MAKE) -s $(vm)64d.exe
-	@$(MAKE) -s $(vm)64r.exe
+	$(MAKE) $(vm)64d.exe
+	$(MAKE) $(vm)64r.exe
 	@echo $(ok)
 endif
 else # regular case
 	@printf " (debug and release versions both)... "
-	@$(MAKE) -s vm-debug
-	@$(MAKE) -s vm-release
+	$(MAKE) vm-debug
+	$(MAKE) vm-release
 endif
 	@echo "built."
 	@printf "\n"
@@ -284,71 +284,71 @@ endif
 testing-embed: tests/embed.c src/olvm.c includes/ol/ol.h tmp/repl.c
 	@echo "embed testing"
 	@echo "----------------------------------------"
-	@printf "tests/embed.c ..."
+	@echo "tests/embed.c"
 ifeq ($(DEV_MACHINE),1) # main development platform, special case
 ifeq ($(HAS_32CDEFS),1)
-	@printf ", debug-32: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	@echo "   debug-32:"
+	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed32d \
 	   -Iincludes -lm $(CFLAGS_DEBUG) -m32 -Wno-unused-function
 	@if tmp/embed32d >/dev/null; then\
-	   printf $(ok) ;\
+	   echo $(ok) ;\
 	else \
-	   printf $(fail) ;\
+	   echo $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
-	@printf ", release-32: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	@echo "   release-32:"
+	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed32r \
 	   -Iincludes -lm $(CFLAGS_RELEASE) -m32 -Wno-unused-function
 	@if tmp/embed32r >/dev/null; then\
-	   printf $(ok) ;\
+	   echo $(ok) ;\
 	else \
-	   printf $(fail) ;\
+	   echo $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
 ifeq ($(HAS_64CDEFS),1)
-	@printf ", debug-64: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	@echo "   debug-64:"
+	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed64d \
 	   -Iincludes -lm $(CFLAGS_DEBUG) -m64 -Wno-unused-function
 	@if tmp/embed64d >/dev/null; then\
-	   printf $(ok) ;\
+	   echo $(ok) ;\
 	else \
-	   printf $(fail) ;\
+	   echo $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
-	@printf ", release-64: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	@echo "   release-64:"
+	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed64r \
 	   -Iincludes -lm $(CFLAGS_RELEASE) -m64 -Wno-unused-function
 	@if tmp/embed64r >/dev/null; then\
-	   printf $(ok) ;\
+	   echo $(ok) ;\
 	else \
-	   printf $(fail) ;\
+	   echo $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
 else # regular case
-	@printf ", debug: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	@echo "   debug:"
+	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embedd \
 	   -Iincludes -lm $(CFLAGS_DEBUG) -Wno-unused-function
 	@if tmp/embedd >/dev/null; then\
-	   printf $(ok) ;\
+	   echo $(ok) ;\
 	else \
-	   printf $(fail) ;\
+	   echo $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
-	@printf ", release: "
-	@$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	@echo "   release:"
+	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embedr \
 	   -Iincludes -lm $(CFLAGS_RELEASE) -Wno-unused-function
 	@if tmp/embedr >/dev/null; then\
-	   printf $(ok) ;\
+	   echo $(ok) ;\
 	else \
-	   printf $(fail) ;\
+	   echo $(fail) ;\
 	   touch $(FAILED) ;\
 	fi
 endif
@@ -361,16 +361,16 @@ testing-internal:
 	@echo "----------------------------------------"
 ifeq ($(DEV_MACHINE),1) # main development platform, special case
 ifeq ($(HAS_32CDEFS),1)
-	@$(MAKE) -s test-vmi-debug-32
-	@$(MAKE) -s test-vmi-release-32
+	$(MAKE) test-vmi-debug-32
+	$(MAKE) test-vmi-release-32
 endif
 ifeq ($(HAS_64CDEFS),1)
-	@$(MAKE) -s test-vmi-debug-64
-	@$(MAKE) -s test-vmi-release-64
+	$(MAKE) test-vmi-debug-64
+	$(MAKE) test-vmi-release-64
 endif
 else # regular case
-	@$(MAKE) -s test-vmi-debug
-	@$(MAKE) -s test-vmi-release
+	$(MAKE) test-vmi-debug
+	$(MAKE) test-vmi-release
 endif
 	@echo " "
 
@@ -380,22 +380,22 @@ check-ffi:
 	@echo "----------------------------------------"
 ifeq ($(DEV_MACHINE),1) # main development platform, special case
 ifeq ($(HAS_32CDEFS),1)
-	@$(MAKE) -s test-ffi-debug-32
-	@$(MAKE) -s test-ffi-release-32
+	$(MAKE) test-ffi-debug-32
+	$(MAKE) test-ffi-release-32
 endif
 ifeq ($(HAS_64CDEFS),1)
-	@$(MAKE) -s test-ffi-debug-64
-	@$(MAKE) -s test-ffi-release-64
+	$(MAKE) test-ffi-debug-64
+	$(MAKE) test-ffi-release-64
 endif
 else # regular case
-	@$(MAKE) -s test-ffi-debug
-	@$(MAKE) -s test-ffi-release
+	$(MAKE) test-ffi-debug
+	$(MAKE) test-ffi-release
 endif
 	@echo " "
 
 # -- scm ------------------------------------------
 define scmtestok
-	if ([ -f $1 ]); then\
+	@if ([ -f $1 ]); then\
 		if ([ -f $^.in ] && $3 $1 repl --home=libraries $^ <$^.in 2>&1 || $3 $1 repl --home=libraries $^ 2>&1) | diff $4 - $^.ok >/dev/null; then\
 			printf \|$(ok) ;\
 		else \
@@ -470,10 +470,10 @@ endif
 check: tests
 tests: testing-binaries
 	@rm -f $(FAILED)
-	$(MAKE) -s testing-internal
-	$(MAKE) -s check-ffi
-	$(MAKE) -s testing-embed
-	$(MAKE) -s regression-tests
+	$(MAKE) testing-internal
+	$(MAKE) check-ffi
+	$(MAKE) testing-embed
+	$(MAKE) regression-tests
 
 define table-header
 	set -e
