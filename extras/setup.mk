@@ -4,6 +4,8 @@
 DESTDIR?=
 PREFIX ?= /usr
 
+.PHONY: install install-dev uninstall reinstall reinstall-dev
+
 install: all includes/ol/vm.h
 	# install Ol executable(s) to $(DESTDIR)$(PREFIX)/bin:
 	@echo Installing main binary...
@@ -58,3 +60,11 @@ uninstall:
 	-rm -rf $(DESTDIR)$(PREFIX)/lib/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/include/ol
 	-rm -rf $(DESTDIR)$(PREFIX)/share/man/man1/ol.1.gz
+
+reinstall:
+	$(MAKE) uninstall
+	$(MAKE) install
+
+reinstall-dev:
+	$(MAKE) uninstall
+	$(MAKE) install-dev
