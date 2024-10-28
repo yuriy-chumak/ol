@@ -9,7 +9,7 @@
 (gtk_init '(0) #f)
 
 ; load and decode a file
-(define builder (gtk_builder_new_from_file "templates/3.1. Glade.glade"))
+(define builder (gtk_builder_new_from_file "3.1. Glade.glade"))
 (gtk_builder_connect_signals builder #f)
 
 ; get window from template

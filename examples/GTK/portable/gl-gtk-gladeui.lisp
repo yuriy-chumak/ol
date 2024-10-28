@@ -12,7 +12,7 @@
 (gtk_init (box 0) #f)
 
 ; create window from ui template file
-(define builder (gtk_builder_new_from_file "./ui.glade"))
+(define builder (gtk_builder_new_from_string (file->string "./ui.glade") -1))
 (gtk_builder_connect_signals builder #f NULL)
 
 (define window (gtk_builder_get_object builder "window"))

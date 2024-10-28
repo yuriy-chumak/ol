@@ -300,9 +300,9 @@ Replaces matched part of given string (or stream).
 `(c/.../ string-or-stream)`, *procedure*
 
 ```scheme
-(c/ / "ab cde f  ghi")      ==> '("ab" "cde" "f" "" "ghi")
-(c/ +/ "ab cde f  ghi")     ==> '("ab" "cde" "f" "ghi")
-(c/(\d)\1/ "12112122112")   ==> '("12" "21" "" "2")
+(c/ / "ab cde f  ghi")      ==> '("ab" "cde" "f" "" "ghi") ; divider is a single space
+(c/ +/ "ab cde f  ghi")     ==> '("ab" "cde" "f" "ghi") ; divider is a multiple spaces
+(c/(\d)\1/ "12112122112")   ==> '("12" "21" "" "2") ; divider is two identical numbers
 ```
 
 

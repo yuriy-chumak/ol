@@ -26,8 +26,8 @@
    ; run demo infinite loop
    (async (lambda ()
       (let infinity-loop ()
-         (sleep 10000)
          ((label 'set-markup) (strftime "<big>%c</big>"))
+         (wait 1000)
          (infinity-loop))))
 
    ; show it

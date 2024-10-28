@@ -31,6 +31,9 @@
 ; ---------------
 (import (lib gl-2))
 (gl:set-window-title "Langton's Ant")
+(import (OpenGL EXT geometry_shader4))
+(unless EXT_geometry_shader4
+   (raise "Geometry shaders are not supported."))
 
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)

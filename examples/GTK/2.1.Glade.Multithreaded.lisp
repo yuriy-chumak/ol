@@ -14,7 +14,6 @@
 ;; demo infinite loop
 (async (lambda ()
    (let infinity-loop ()
-      (sleep 10000)
 
       (define label (GtkLabel
          ((builder 'get-object) "label")))
@@ -24,6 +23,7 @@
       ((label 'set-text) (strftime "%X"))
       ((button 'set-text) (strftime "%S"))
 
+      (wait 1000)
       (infinity-loop))))
 
 ;; setup main window

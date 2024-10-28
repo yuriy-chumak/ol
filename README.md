@@ -15,7 +15,7 @@
 <a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
 
 
-Otus Lisp, Version 2.6 (rc4)
+Otus Lisp, Version 2.6
 ========================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 

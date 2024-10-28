@@ -2,6 +2,7 @@
 
 (import (lib gl-2))
 (import (scheme inexact))
+(import (lib GLU))
 
 (gl:set-window-title "Convey's The game of Life on the Trefoil Knot")
 

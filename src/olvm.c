@@ -1359,7 +1359,8 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 	}
 #	else
 	// not a real memfd_create, but compatibility wrapper
-	int memfd_create (const char* name, unsigned int flags)
+	static
+	int memfd_create_(const char* name, unsigned int flags)
 	{
 		(void) name;
 		assert (flags == 0);
@@ -1369,6 +1370,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 
 		return fd;
 	}
+#	define memfd_create memfd_create_
 #	endif
 #endif
 

@@ -113,8 +113,8 @@ And voila, now we can create any async functions, any actors, and other multithr
 ```scheme
    (async (lambda ()
       (let infinity-loop ()
-         (sleep 10000)
          ; do something...
+         (wait 1000)
          (infinity-loop))))
 ```
 ([source code](1.3.Window.Multithreaded.lisp))

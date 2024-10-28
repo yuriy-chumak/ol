@@ -126,13 +126,15 @@
       0 1 0)
 
    (let ((render (lambda (surface)
-                     (gluBeginSurface teapot)
+                     (gluBeginSurface teapot)                           ; get vertices by indices:
                      (gluNurbsSurface teapot 8 knots 8 knots (* 4 3) 3  (fold append '() (map (lambda (n) (nth vertices n)) surface))  4 4 GL_MAP2_VERTEX_3)
                      (gluEndSurface teapot))))
+      (glFrontFace GL_CW)
       (for-each render Rim:)
       (for-each render Body:)
       (for-each render Lid:)
       (glScalef -1 1  1)
+      (glFrontFace GL_CCW)
       (for-each render Rim:)
       (for-each render Body:)
       (for-each render Lid:)
@@ -141,6 +143,7 @@
       (for-each render Body:)
       (for-each render Lid:)
       (glScalef -1 1  1)
+      (glFrontFace GL_CW)
       (for-each render Rim:)
       (for-each render Body:)
       (for-each render Lid:)
@@ -148,6 +151,7 @@
       (for-each render Handle:)
       (for-each render Spout:)
       (glScalef 1 -1 1)
+      (glFrontFace GL_CCW)
       (for-each render Handle:)
       (for-each render Spout:))
 

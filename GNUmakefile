@@ -235,12 +235,16 @@ ol:
 	   tmp/repl.c -DREPL=repl
 	@echo Ok.
 
+olp: CFLAGS += $(CFLAGS_RELEASE)
 olp: tmp/pvenv.tar
-	CFLAGS="-DOLVM_TARVENV=1 -DOLVM_TARVFOLDERS=1" \
-	   $(MAKE) -B release
+	$(CC) src/olvm.c -o $@ \
+	   extensions/ffi.c -Iincludes \
+	   -DOLVM_TARVENV=1 -DOLVM_TARVFOLDERS=1 \
+	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L) \
+	   tmp/repl.c -DREPL=repl
 	objcopy --add-section       .tar=tmp/pvenv.tar \
 	        --set-section-flags .tar=noload,readonly \
-	   ol $@
+	   $@ $@
 
 libol.so:
 	$(CC) src/olvm.c -o $@ \

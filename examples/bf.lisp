@@ -46,6 +46,7 @@
 ; use command line:
 (if (zero? (length (command-line))) (begin
       (print "usage: bf.lisp 'bf-program'")
+      (print "for example: ./bf.lisp \"++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.!\"")
       (halt 1)))
 (setq program (list-ref (command-line) 0))
 

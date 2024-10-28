@@ -2,10 +2,6 @@
 
 (import (lib curl))
 
-(define file (open-output-file "quine.lisp"))
-(unless file
-   (print "can't create or open file")
-   (halt 1))
 (define mmap (lambda (ptr size)
    (syscall 9 ptr size)))
 
@@ -13,11 +9,10 @@
 (define write (vm:pin (cons
    (cons fft-int (list fft-void* fft-int fft-int fft-void*))
    (lambda (ptr sz nmemb userdata)
-      (write-bytevector (mmap ptr (* sz nmemb)) file)
+      (bytevector->file (mmap ptr (* sz nmemb)) "quine.lisp")
       (* sz nmemb)))))
 
 (define curl (make-curl))
 (curl 'url "https://raw.githubusercontent.com/yuriy-chumak/ol/master/quine.lisp")
 (curl 'writefunction (make-callback write))
 (curl 'perform) ;; or just (curl)
-(close-port file)

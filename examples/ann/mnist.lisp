@@ -284,7 +284,7 @@
                (define test-image (ref test-images p))
                (define shifted (Shift test-image (map (lambda (lr)
                                                          (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
-                                                   (Paddings test-image))))
+                                                   (Padding test-image))))
 
                (define layer0 (Reshape shifted (list 1 (Size shifted)))) ; input layer
 
@@ -330,7 +330,7 @@
    (define image (ref test-images p)); слева-направо и сверху-вниз
    (define shifted (Shift image (map (lambda (lr)
                                         (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
-                                   (Paddings image))))
+                                   (Padding image))))
    ;; (define shifted image)
    ; show the input
    ((INPUT 'update) shifted)
@@ -379,7 +379,7 @@
          (define shifted (Shift image
                (map (lambda (lr)
                        (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
-                  (Paddings image))))
+                  (Padding image))))
 
          ((INPUT 'update) shifted)
 

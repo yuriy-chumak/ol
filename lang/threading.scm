@@ -13,7 +13,8 @@
 (define-library (lang threading)
 
    (export
-      start-thread-controller)
+      start-thread-controller
+      *debug-threading*)
 
    (import
       (scheme base)
@@ -35,10 +36,15 @@
       ; question: maybe change to *threading-log-level* and use (less? LEVEL *debug-threading*) instead of naked if
       (define *debug-threading* '(#t))
 
+      (define (sys:write fd buffer)
+         (syscall 1 fd buffer #false))
+
+      (define stderr (vm:cast 2 type-port))
+      (define (print . args)
+         (sys:write stderr (make-bytevector (foldr format-any '(#\newline) args))))
+
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
-      (define poll-tag "mcp/polls")
-      (define buffer-tag "mcp/buffs")
       (define link-tag "mcp/links")
       (define signal-tag "mcp/break")
 

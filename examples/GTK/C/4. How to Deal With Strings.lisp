@@ -17,7 +17,7 @@
 
 (gtk_init '(0) #f)
 
-(define builder (gtk_builder_new_from_file "templates/4. How to Deal With Strings.glade"))
+(define builder (gtk_builder_new_from_file "4. How to Deal With Strings.glade"))
 (gtk_builder_connect_signals builder #f)
 
 (define window (gtk_builder_get_object builder "window"))

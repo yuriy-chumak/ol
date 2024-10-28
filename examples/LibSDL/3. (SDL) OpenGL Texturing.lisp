@@ -40,7 +40,7 @@
                   (iota 256))))
             (iota 128)))))
 
-(import (OpenGL version-1-2))
+(import (OpenGL 1.2))
 
 (define GL_RGBA16F #x881A)
 

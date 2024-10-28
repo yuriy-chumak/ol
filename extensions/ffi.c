@@ -520,7 +520,7 @@ ret_t arm64_call(word argv[], double ad[], long i, long d, char* extra, void* fu
 				//    x0             x1        x2      x3        x4           x5             x6        x7
 __ASM__(
 ".global arm64_call");
-__ASM__("arm64_call:", // "brk #0",
+__ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"stp  x29, x30, [sp, -16]!", // fp + lr
 	"stp  x10, x26, [sp, -16]!",
 	"mov  x29, sp",
