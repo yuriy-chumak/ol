@@ -51,14 +51,15 @@
                      (div      (car stime) D   ) " days, "
                      (div (rem (car stime) D) H) " hr, "
                      (div (rem (car stime) H) M) " min, "
-                     (     rem (car stime) M   ) " sec."
+                     (     rem (car stime) M   ) " sec." )
+      (if uptime (send
             "<br>"
             "uptime: "
                      (div      uptime D   ) " days, "
                      (div (rem uptime D) H) " hr, "
                      (div (rem uptime H) M) " min, "
-                     (     rem uptime M   ) " sec."
-            "</div>")
+                     (     rem uptime M   ) " sec."))
+      (send "</div>")
       (send "<div style='float:right'>"
             (car *version*) "/" (cdr *version*)
             ", "
