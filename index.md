@@ -6,8 +6,7 @@ categories: index
 > Any sufficiently complicated program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of some Lisp dialect.
 > <br/> <span style="float: right;">Greenspun's tenth rule</span>
 
-**We have a Twitter! Follow us [@otus_lisp](https://twitter.com/otus_lisp).**
-
+## ✨ Version [2.6](https://github.com/yuriy-chumak/ol/releases/tag/2.6) is out!
 
 **Otus Lisp** (Ol in short) is a purely[\*](#pure) functional dialect of Lisp.
 
@@ -25,6 +24,8 @@ Also, Ol is ported to the Web (in WebAssembly form) and can be
 used in Chrome, Firefox, Opera, Iceweasel, Epiphany, SeaMonkey,
 Luakit, Iceape, etc.
 
+<a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
+<a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
 
 ### Language reference
 

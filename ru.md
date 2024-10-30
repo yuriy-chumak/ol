@@ -8,10 +8,14 @@ categories: index
 
 **Теперь мы и в Твиттере! Все актуальные новости о проекте на [@otus_lisp](https://twitter.com/otus_lisp).**
 
+## ✨ Версия [2.6](https://github.com/yuriy-chumak/ol/releases/tag/2.6) вышла!
 
-**Otus Lisp** (произносится как [́отэс лисп]), или сокращенно Ol ([́ол]) - чисто[\*](#pure) функциональный диалект языка Lisp.
+**Otus Lisp** (произносится как [о́тэс лисп]), или сокращенно Ol ([о́л]) - чисто[\*](#pure) функциональный диалект языка Lisp.
 
 Ol реализован как расширенное подмножество Scheme [R<sup>7</sup>RS](http://www.schemers.org/Documents/Standards/R5RS/), включая, но не ограничиваясь, некоторые из [SRFI](https://r7rs.org). Маленький, встраиваемый и кроссплатформенный; может работать в собственной песочнице (в системах, где песочница поддерживается); предоставляет портабельный, высокоуровневый путь для вызова написанного на других языках кода. Вы можете использовать его под GNU/Linux, Windows, всевозможных Unix, различных BSD, Android, webOS, macOS, Minoca и многих других операционных системах на различных архитектурах (x86/x86_64, arm/aarch64, mips, ppc, ...) платформах (ODroid, LattePanda и т.д.).
+
+<a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
+<a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
 
 
 ### Описание языка и список функций
