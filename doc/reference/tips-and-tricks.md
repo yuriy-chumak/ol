@@ -6,6 +6,8 @@ Tips and Tricks
 1. How to use default values for a function arguments in easiest way?
 1. How to find a function if you only remember part of its name?
 1. How to split a strings by "," for example?
+1. How to declare and use variables like in imperative languages, but without any hacks?
+1. I need a hack to change the value of received function argument without returning new value as a function result.
 
 Answers
 -------

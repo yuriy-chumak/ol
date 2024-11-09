@@ -21,7 +21,7 @@ Examples are provided in two forms:
 [1 2 3 4]  ===  (make-vector '(1 2 3 4))
 ```
 
-2. in the interactive form using prompt symbol "> ", which shows the behavior as if someone were typing code in an interactive ol session.
+2. in the interactive form using prompt symbol "> ", which shows the behavior as if someone were typing code in an interactive ol session (REPL).
 ```scheme
 > #i1.2
 1.199999999

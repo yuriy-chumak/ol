@@ -25,17 +25,26 @@ Pairs are used primarily to represent lists. A *list* can be defined recursively
 # cons
 `(cons obj1 obj2)`, *primop*
 
-Returns a newly allocated pair whose car is *obj1* and whose cdr is *obj2*.
-The pair is guaranteed to be different (in the sense of `eq?` and `eqv?`) from every existing object.
+Returns a newly allocated pair whose [car](#car) is *obj1* and whose [cdr](#cdr) is *obj2*.
+The pair is guaranteed to be different (in the sense of [`eq?`](equivalence-predicates.md?eq) and [`eqv?`](equivalence-predicates.md?eqv)) from every existing object.
 
 ```scheme
 (cons 1 2)                    ==> '(1 . 2)
+(cons 2 1)                    ==> '(2 . 1)
 (cons 'a 3)                   ==> '(a . 3)
-(cons 1 '())                  ==> '(1)
-(cons '() 1)                  ==> '(() . 1)
-(cons '(a) '(b c d))          ==> '((a) b c d)
-(cons 'a '(b c))              ==> '(a b c)
+(cons 1 '())                  ==> '(1) ; cdr #n is omitted by default
+(cons 1 #n)                   ==> '(1)
+(cons 1 #null)                ==> '(1)
+(cons '() 1)                  ==> '(() . 1) ; but car #n is displayed
+(cons #n 1)                   ==> '(() . 1)
+(cons 1 #f)                   ==> '(1 . #false)
+(cons #f 1)                   ==> '(#false . 1)
 (cons '(a b) 'c)              ==> '((a b) . c)
+(cons '(a b) "abc")           ==> '((a b) . "abc")
+(cons '(a) '(b c d))          ==> '((a) b c d) ; pair with list makes a new list
+(cons 'a '(b c))              ==> '(a b c)
+(cons '(a b) '(c d))          ==> '((a b) c d)
+(cons '(a b) '(c #n))         ==> '((a b) c ())
 ```
 
 # pair?
