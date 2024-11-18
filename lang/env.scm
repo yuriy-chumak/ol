@@ -119,9 +119,13 @@
             (['undefined]
                (fail
                (let ((error (bytes->string (foldr format-any '() (list "'" exp "'?")))))
-                  (if (has? '(q quit stop ret) exp)
-                     (list "What is " error " \n/if you want to quit just type ,quit or (exit)/")
-                     (list "What is " error)))))
+                  (cond
+                     ((has? '(quit stop ret abort) exp)
+                        (list "What is" error "\nDid you mean ',quit'? Enter ',help' to help."))
+                     ((has? '(help) exp)
+                        (list "What is" error "\nDid you mean ',help'? Enter ',help' to help."))
+                     (else
+                        (list "What is" error))))))
             (else is bad
                (fail (list "The symbol" exp "has a funny value: '" bad "'")))))
 

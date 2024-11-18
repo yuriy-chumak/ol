@@ -598,16 +598,15 @@
                            (DIS "?"))))))))
 
 
-      (define repl-ops-help (symbol->string '
-|Commands:
-   ,help             - show this
+      (define repl-ops-help (symbol->string '|Commands:
+   ,help             - display this help
    ,words            - list all current definitions                 (,w)
-   ,find [regex/sym] - list all defined words matching regex or m/<sym>/
+   ,find [regex/sym] - list all defined symbols matching regex or m/sym/
    ,expand <expr>    - expand macros in the expression
-   ,disassembly func - show disassembled function binary code  (,d ,dis)
+   ,disassembly func - show disassembled function code         (,d ,dis)
    ,libraries        - show all currently loaded libraries       (,libs)
    ,load "sexp-file" - (re)load a text ol file             (,l ,include)
-   ,save "file-name" - save current state, restart with $ ol <file-name>
+   ,save "file-name" - save current state, restart with `ol <file-name>`
    ,quit             - exit ol
 |))
       (define save-ops-help (symbol->string '
