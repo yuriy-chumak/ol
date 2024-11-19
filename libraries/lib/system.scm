@@ -21,9 +21,10 @@
       (if (cdr pp) (close-port (cdr pp))))
 
    (define execvp
-      (define (execvp commands in out err ports)
-         (define args (map c-string commands))
-         (define Pid (syscall 59 (car args) args ports))
+      (define (execvp commands in out err)
+         (define args (map c-string
+               (if (pair? commands) commands (list commands))))
+         (define Pid (syscall 59 (car args) args (list in out err)))
 
          (when (pipe? in) ; pipe?
             (close-port (car in))
@@ -36,25 +37,18 @@
             (set-cdr! err #false))
          ; return pid if ok
          Pid)
-      (define (->car in)
-         (cond
-            ((pipe? in) (car in))
-            ((port? in) in) ))
-      (define (->cdr in)
-         (cond
-            ((pipe? in) (cdr in))
-            ((port? in) in) ))
 
       ; main
       (case-lambda
          ((commands)
-            (execvp commands #f #f #f #null))
+            (execvp commands #f #f #f))
          ((commands in)
-            (execvp commands in #f #f (list (->car in))))
+            (execvp commands in #f #f))
          ((commands in out)
-            (execvp commands in out #f (list (->car in) (->cdr out))))
+            (execvp commands in out #f))
          ((commands in out err)
-            (execvp commands in out err (list (->car in) (->cdr out) (->cdr err))))))
+            (execvp commands in out err))
+         ))
 
    (define (waitpid pid)
       (syscall 61 pid))

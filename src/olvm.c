@@ -4574,8 +4574,8 @@ loop:;
 				// if a is string:
 				if (is_string(A1)) {
 					char* command = string(A1);
-					word b = A2;
-					word c = A3;
+					word b = A2; // command line
+					word c = A3; // ports
 					#if defined(__unix__) || defined(__APPLE__)
 					# ifdef __EMSCRIPTEN__
 						emscripten_run_script(command);
@@ -4586,11 +4586,31 @@ loop:;
 						if (child == 0) {
 							D("forked %s", command);
 							if (is_pair (c)) {
-								const int in[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
-								for (size_t i = 0; i < sizeof(in) / sizeof(in[0]) && is_pair(c); i++) {
-									if (is_port(car(c))) {
-										dup2(port(car(c)), in[i]);
-										close(port(car(c)));
+								// stdin
+								word p = car(c);
+								if (is_pair (p)) {
+									if (is_port(cdr(p)))
+										close(port(cdr(p)));
+									p = car(p);
+								}
+								if (is_port(p)) {
+									dup2(port(p), STDIN_FILENO);
+									close(port(p));
+								}
+								c = cdr(c);
+
+								// stdout/stderr
+								const int cc[2] = { STDOUT_FILENO, STDERR_FILENO };
+								for (size_t i = 0; i < sizeof(cc) / sizeof(cc[0]) && is_pair(c); i++) {
+									word p = car(c);
+									if (is_pair (p)) {
+										if (is_port(car(p)))
+											close(port(car(p)));
+										p = cdr(p);
+									}
+									if (is_port(p)) {
+										dup2(port(p), cc[i]);
+										close(port(p));
 									}
 									c = cdr (c);
 								}
