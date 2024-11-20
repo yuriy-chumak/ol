@@ -181,14 +181,17 @@
       (define us-per-round 10000) ; 10 ms
       (define (set-ticker-value n) (syscall 1022 n))
 
-      (define (sleep rounds)
-         (set-ticker-value 0)
-         (if (eq? rounds 0)
-            rounds
-         else
-            (if (single-thread?)
-               (syscall 35 us-per-round)) ; syscall 'sleep'
-            (let* ((rounds _ (vm:sub rounds 1)))
-               (sleep rounds))))
+      (define sleep (case-lambda
+         (() (set-ticker-value 0))
+         ((rounds)
+            (let loop ((rounds rounds))
+               (set-ticker-value 0)
+               (if (eq? rounds 0)
+                  rounds
+               else
+                  (if (single-thread?)
+                     (syscall 35 us-per-round)) ; syscall 'sleep', TODO: remove this, use "wait n" instead
+                  (let* ((rounds _ (vm:sub rounds 1)))
+                     (loop rounds))))) ))
 
 ))
