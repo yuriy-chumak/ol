@@ -13,6 +13,7 @@
       glfwCreateWindow
       glfwDestroyWindow
       glfwWindowShouldClose
+      glfwGetWindowSize
 
       glfwPollEvents
 
@@ -101,6 +102,8 @@
    (define glfwCreateWindow (GLFW GLFWwindow* "glfwCreateWindow" int int type-string GLFWmonitor* GLFWwindow*))
    (define glfwDestroyWindow (GLFW void "glfwDestroyWindow" GLFWwindow*))
    (define glfwWindowShouldClose (GLFW bool "glfwWindowShouldClose" GLFWwindow*))
+
+   (define glfwGetWindowSize (GLFW void "glfwGetWindowSize" GLFWwindow* int& int&))
 
    (define glfwPollEvents (GLFW void "glfwPollEvents"))
 
