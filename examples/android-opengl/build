@@ -1,0 +1,72 @@
+#!/bin/bash
+
+ANDROID_SDK=${ANDROID_SDK:=/opt/android/sdk}
+
+[ x$ANDROID_SDK == x ] && {
+   printf '\e[31mANDROID_SDK not set\e[30m\n'
+   exit 1
+}
+
+[ ! -d $ANDROID_SDK ] && {
+   printf "\e[31mInvalid ANDROID_SDK ---> $ANDROID_SDK\e[30m\n"
+   exit 1
+}
+
+# .
+APK_BASENAME=debug
+
+export PATH=$PATH:$ANDROID_SDK/platform-tools
+BUILD_TOOLS=$ANDROID_SDK/build-tools/29.0.2
+
+# Build Native Code
+make -C ../.. android || exit
+
+# Build 
+$BUILD_TOOLS/aapt package -f -m \
+	-S res -J src -M AndroidManifest.xml \
+	-I $ANDROID_SDK/platforms/android-29/android.jar
+
+# Compile java
+# Compile NativeLoader.java
+mkdir -p obj
+javac -verbose -source 1.8 -target 1.8 -d obj \
+	-bootclasspath jre/lib/rt.jar \
+	-classpath $ANDROID_SDK/platforms/android-29/android.jar:obj \
+	-sourcepath src `find . -name *.java` || exit
+
+
+# Generate android bytecode
+mkdir -p dex
+$BUILD_TOOLS/dx --verbose --dex --output=dex/classes.dex obj
+
+# Create APK with code, resources, and assets
+$BUILD_TOOLS/aapt package -f \
+	-M AndroidManifest.xml -S res -A assets \
+	-I $ANDROID_SDK/platforms/android-29/android.jar -F debug.apk dex
+
+# Add shared libraries to APK
+mkdir -p lib
+cp -r ../../libs/* lib
+#rm lib/arm64-v8a/libvrapi.so
+$BUILD_TOOLS/aapt add debug.apk `find -L lib/ -name *.so`
+
+# # keytool -genkey -v -validity 14000 -dname "CN=Ol,O=Android,C=ES" -keystore debug.keystore    -storepass android    -keypass android    -alias androiddebugkey -keyalg RSA
+# # keytool -genkeypair -validity 1000 -dname "CN=Ol,O=Android,C=ES" -keystore otuslisp.keystore -storepass 'otuslisp' -keypass 'otuslisp' -alias projectKey -keyalg RSA
+# jarsigner -keystore otuslisp.keystore -storepass otuslisp -keypass otuslisp \
+# 	-signedjar debug.apk debug.apk projectKey
+# jarsigner -keystore ./debug.keystore -sigalg SHA1withRSA -digestalg SHA1 -storepass android \
+# 	-signedjar debug.apk debug.apk androiddebugkey
+
+# Sign APK
+# NOTE: If you changed the storepass and keypass in the setup process, change them here too
+[ -f debug.keystore ] || keytool -genkeypair -validity 1000 -dname "CN=debug,O=Android,C=ES" -keystore debug.keystore -storepass 'debug0' -keypass 'debug0' -alias projectKey -keyalg RSA
+
+jarsigner -keystore debug.keystore -storepass debug0 -keypass debug0 \
+	-signedjar debug.apk debug.apk projectKey
+
+# Zipalign APK
+$BUILD_TOOLS/zipalign -f 4 debug.apk debug.final.apk
+mv -f debug.final.apk debug.apk
+
+# Done
+exit

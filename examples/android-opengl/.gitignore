@@ -1,0 +1,8 @@
+bin/
+dex/
+gen/
+lib/
+obj/
+
+assets/libraries/
+src/lang/

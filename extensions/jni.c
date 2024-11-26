@@ -1,5 +1,5 @@
-// package github.otus_lisp.ol
-#define NATIVE(name) Java_github_otus_1lisp_ol_Olvm_ ## name
+// package name.otuslisp
+#define NATIVE(name) Java_lang_otuslisp_Ol_ ## name
 
 // Otus Lisp Java Native Interface
 #include <jni.h>
@@ -58,14 +58,15 @@ JNIEXPORT void JNICALL NATIVE(nativeSetAssetManager)(JNIEnv *jenv, jobject jobj,
 	if (fds)
 		free(fds);
 	fds = (AAsset **)calloc(fds_size, sizeof(*fds));
-	LOGD("< nativeSetAssetManager()");
+	LOGV("< nativeSetAssetManager()");
 }
 
 int assets_open(const char *filename, int flags, int mode, void *userdata)
 {
+	LOGD("assets_open(%s, %o, %o, %p)", filename, flags, mode, userdata);
 	// try to open file as usual
 	int file = old.open(filename, flags, mode, userdata);
-	LOGD("open file: %s -> %d(%s)", filename, file, file != -1 ? "Ok" : strerror(errno));
+	LOGV("open file: %s -> %d(%s)", filename, file, file != -1 ? "Ok" : strerror(errno));
 	if (file != -1)
 		return file;
 
@@ -75,13 +76,13 @@ int assets_open(const char *filename, int flags, int mode, void *userdata)
 		filename += 2;
 
 	AAsset *asset = AAssetManager_open(asset_manager, filename, 0);
-	LOGD("open asset: %s -> %p(%s)", filename, asset, asset != 0 ? "Ok" : "Fail");
+	LOGV("open asset: %s -> %p(%s)", filename, asset, asset != 0 ? "Ok" : "Fail");
 	if (asset)
 	{
 		int i = 3; // 0, 1, 2 - reserved
 		for (; i < fds_size; i++) {
 			if (fds[i] == 0) {
-				LOGD("asset %p -> file %d", asset, -i);
+				LOGV("asset %p -> file %d", asset, -i);
 				fds[i] = asset;
 				file = -i;
 				break;
@@ -95,7 +96,7 @@ int assets_open(const char *filename, int flags, int mode, void *userdata)
 				fds = fds_new;
 				fds_size = fds_size_new;
 
-				LOGD("asset %p -> file %d", asset, -i);
+				LOGV("asset %p -> file %d", asset, -i);
 				fds[i] = asset;
 				file = -i;
 			}
@@ -305,8 +306,10 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 	}
 
 	// make arguments list:
+	uintptr_t *fp;
 	uintptr_t userdata = 0x236; // #null
-	uintptr_t *fp = ol.vm->fp;
+
+	fp = ol.vm->fp;
 	for (int i = argc - 1; i >= 0; i--, fp += 3) {
 		fp[0] = 0x30006; // TPAIR
 		fp[1] = values[i];
@@ -317,8 +320,8 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 
 	// eval:
 	uintptr_t r = OLVM_evaluate(ol.vm,
-	                            OLVM_deref(ol.vm, ol.eval),
-	                            1, &userdata);
+	                 OLVM_deref(ol.vm, ol.eval),
+	                 1, &userdata);
 	LOGD("  eval = %p", (void*)r);
 
 	// process result:

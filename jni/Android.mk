@@ -35,11 +35,11 @@ include $(BUILD_EXECUTABLE)
 # ol shared library
 include $(CLEAR_VARS)
 LOCAL_MODULE   := olvm
-#LOCAL_MODULE_FILENAME := libol
+#LOCAL_MODULE_FILENAME := libolvm
 
 # configure
 LOCAL_CFLAGS   += $(OL_CFLAGS)
-LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"libolvm.so"' \
+LOCAL_CFLAGS   += -DOLVM_LIBRARY_SO_NAME='"lib$(LOCAL_MODULE).so"' \
                   -Wno-unsequenced -Wno-parentheses
 LOCAL_CFLAGS   += -DOLVM_NOMAIN
 # src
@@ -56,7 +56,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 # -- java interface + repl ---------------------------------------------------
 include $(CLEAR_VARS)
-LOCAL_MODULE   := olvmjava
+LOCAL_MODULE   := jni+repl
 LOCAL_SHARED_LIBRARIES := olvm
 
 # configure
@@ -106,14 +106,15 @@ endif
 # -- gl2es -----------------------------------------------------------------------
 ifneq ($(wildcard $(LOCAL_PATH)/gl2es/src),)
 include $(CLEAR_VARS)
-LOCAL_MODULE := gl2es
+LOCAL_MODULE := GL2
 
 GL2ES_SRC_FILES := $(wildcard $(LOCAL_PATH)/gl2es/src/*.c)
 
 LOCAL_SRC_FILES  := $(GL2ES_SRC_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/gl2es/include
 
-LOCAL_CFLAGS   += -g -std=gnu99 -funwind-tables -O3 -fvisibility=hidden
+LOCAL_CFLAGS   += -g -std=gnu99 -funwind-tables -O3 -fvisibility=hidden \
+                  -DGL2ES_LIBRARY_SO_NAME=\"libGL2.so\"
 
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 LOCAL_LDLIBS   += -ldl -llog -landroid
@@ -258,7 +259,7 @@ LOCAL_SRC_FILES := \
 	GLU/src/libnurbs/nurbtess/sampledLine.cc			\
 	GLU/src/libnurbs/nurbtess/searchTree.cc
 
-LOCAL_SHARED_LIBRARIES := gl2es
+LOCAL_SHARED_LIBRARIES := GL2
 #LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 LOCAL_LDLIBS := -ldl -llog
 
@@ -277,7 +278,7 @@ LOCAL_CFLAGS   += -I$(LOCAL_PATH)/SOIL/include -D__ANDROID__
 #LOCAL_CFLAGS   += -I$(LOCAL_PATH)/gl4es/include
 LOCAL_LDLIBS   := -llog -lEGL
 
-LOCAL_SHARED_LIBRARIES += gl2es
+LOCAL_SHARED_LIBRARIES += GL2
 include $(BUILD_SHARED_LIBRARY)
 endif
 
