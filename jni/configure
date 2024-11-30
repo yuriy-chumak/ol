@@ -8,6 +8,7 @@ checkout gl2es
 checkout GLU
 checkout SOIL
 checkout newton-dynamics
+checkout vrApi
 
 cd newton-dynamics
 git submodule init
