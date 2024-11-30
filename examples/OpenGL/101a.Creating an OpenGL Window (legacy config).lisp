@@ -1,5 +1,6 @@
 #!/usr/bin/env ol
-; Let's preconfigure our (lib gl)
+
+;; preconfigure (lib gl)
 (define-library (lib gl config)
 (export config) (import (otus lisp))
 (begin
@@ -7,17 +8,17 @@
       'width 1280
       'height 720
    })))
-; end of config
 
+; create opengl window
 (import (lib gl))
-(gl:set-window-title "1. Creating an OpenGL Window (initially custom screen size)")
+(gl:set-window-title "1. Creating an OpenGL Window")
 
+; import OpenGL functions
 (import (OpenGL 1.0))
 
 ; global init
 (glClearColor 0.3 0.3 0.3 1)
 
-; draw loop
+; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)))
-

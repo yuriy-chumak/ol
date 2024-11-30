@@ -1,14 +1,15 @@
 #!/usr/bin/env ol
+
 (import (lib gl))
 (gl:set-window-title "2. Drawing simple triangle")
 
 (import (OpenGL 1.0))
 
-; init
+; global init
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
-; draw loop
+; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env ol
+
 (import (lib gl))
 (gl:set-window-title "2. Stipple lines")
 
@@ -31,4 +32,3 @@
       '(   0.5    0.9    0.5                0.1)
    )
 ))
-

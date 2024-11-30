@@ -1,4 +1,5 @@
 #!/usr/bin/env ol
+
 (import (lib gl))
 (gl:set-window-title "2. Point, line, triangle, quad, polygon")
 

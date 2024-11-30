@@ -1,3 +1,16 @@
+# OpenGL Tutorial
+
+# OpenGL 1.4
+
+# OpenGL 2.1 (includes 1.4)
+
+# OpenGL 3.0+
+
+# OpenGL 4.0+
+
+
+### Notes
+
 Line Stipple:
 https://stackoverflow.com/questions/6017176/gllinestipple-deprecated-in-opengl-3-1
 

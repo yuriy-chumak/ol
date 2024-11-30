@@ -1,9 +1,9 @@
 #!/usr/bin/env ol
-(import (lib opengl))
+(import (lib gl))
 
 (define Context (gl:Create "8. Teapot 2.0"))
 
-(import (OpenGL version-2-0))
+(import (OpenGL 2.0))
 
 (define width 640)
 (define height 480)

@@ -1,14 +1,17 @@
 #!/usr/bin/env ol
 
 ; create OpenGL window
-(import (lib gl-2))
-(gl:set-window-title "1. Creating an OpenGL 2.1 Window")
+(import (lib gl))
+(gl:set-window-title "1. Creating an OpenGL Window")
 
 ; import OpenGL functions
-; (OpenGL 2.1) already included into (lib gl-2)
+(import (OpenGL 1.0))
 
 ; global init
 (glClearColor 0.3 0.3 0.3 1)
+
+; set new window size
+(gl:set-window-size 1280 720)
 
 ; render pass
 (gl:set-renderer (lambda ()

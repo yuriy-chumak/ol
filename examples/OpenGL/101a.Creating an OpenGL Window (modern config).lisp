@@ -1,6 +1,13 @@
 #!/usr/bin/env ol
 
-; create OpenGL window
+; let's preconfigure our (lib gl)
+; this feature requires latest Ol
+(define-config (lib gl) {
+   'width 1280
+   'height 720
+})
+
+; create opengl window
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 
@@ -13,6 +20,3 @@
 ; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)))
-
-; no further action is required,
-; just wait until window closes.

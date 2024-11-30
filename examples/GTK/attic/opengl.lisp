@@ -5,7 +5,7 @@
    (lib gdk-3)
    (lib gtk-3))
 (import (otus random!))
-(import (OpenGL version-3-2))
+(import (OpenGL 3.2))
 
 ; main:
 (gtk_init (box 0) #f)
