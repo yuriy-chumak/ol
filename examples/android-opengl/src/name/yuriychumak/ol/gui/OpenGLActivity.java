@@ -11,6 +11,7 @@ import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.khronos.egl.EGLConfig;
 import android.opengl.GLES20;
 
+// Ol
 import lang.otuslisp.Ol;
 import name.yuriychumak.ol.gui.R;
 
@@ -29,9 +30,9 @@ public class OpenGLActivity extends Activity
 		}
 
 		// load native libraries
-		System.loadLibrary("GL2");
-		System.loadLibrary("SOIL");
-		System.loadLibrary("GLU");
+		System.loadLibrary("gl2es"); // OpenGL 2.1 over GLES
+		System.loadLibrary("GLU"); // OpenGL Utility Library
+		System.loadLibrary("SOIL"); // Image loading Library
 	}
 
 	@Override
@@ -43,7 +44,7 @@ public class OpenGLActivity extends Activity
 		setContentView(R.layout.main);
 		getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-		// ol jni setup (if we want to use "assets")
+		// ol jni setup (we need to use assets data)
 		try {
 			Ol.nativeSetAssetManager(this.getAssets());
 		} catch (Exception ex) {
@@ -54,31 +55,33 @@ public class OpenGLActivity extends Activity
 		glView.setEGLContextClientVersion(2);
 		glView.setRenderer(this);
 		// render mode style
-		glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY); /* or RENDERMODE_CONTINUOUSLY */
-		// glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+		// glView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY); /* or RENDERMODE_CONTINUOUSLY */
+		glView.setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 		setContentView(glView);
 	}
 
 
 	// GLSurfaceView.Renderer
 	public void onSurfaceCreated(GL10 unused, EGLConfig config) {
-		Log.i(TAG, "onSurfaceCreated()");
+		Log.d(TAG, "onSurfaceCreated()");
 
 		Ol.load("main.lisp");
+		// we needed (gl:force-render)
+		Ol.eval("(import (lib gl))");
+
 	}
 
 	public void onSurfaceChanged(GL10 unused, int width, int height) {
-		Log.i(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
+		Log.d(TAG, "onSurfaceChanged(" + width + ", " + height + ")");
 
 		// 'resize gl event
 		Ol.eval("(mail 'opengl ['resize " + width + " " + height + "])");
 	}
 
 	public void onDrawFrame(GL10 unused) {
-		Log.i(TAG, "onDrawFrame()");
+		Log.v(TAG, "onDrawFrame()");
 
 		// 'render gl event
-		Ol.eval("(import (lib gl))");
 		Ol.eval("(gl:force-render)");
 	}
 

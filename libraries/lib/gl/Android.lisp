@@ -5,7 +5,7 @@
 ;; (setq gl2es (load-dynamic-library "libgl2es.so"))
 ;; (setq GLESv2 (load-dynamic-library "libGLESv2.so"))
 
-(setq THIS (load-dynamic-library "libandroid.so")) ; android shared code (todo: move to gl4es)
+(setq THIS (load-dynamic-library "libmain.so")) ; android shared code (todo: move to gl4es)
 ;; (setq anlPollEvents (THIS fft-void "anlPollEvents"))
 ;; (setq anlNextEvent (THIS fft-unsigned-int "anlNextEvent"))
 ;; (setq anlSwapBuffers (THIS fft-void "anlSwapBuffers"))
@@ -64,8 +64,8 @@
    #true)
 
 (define (native:swap-buffers context)
+   ;(if anlSwapBuffers (anlSwapBuffers))
    #false)
-   ;; (anlSwapBuffers))
 
 (define (native:process-events context handler)
    #false)

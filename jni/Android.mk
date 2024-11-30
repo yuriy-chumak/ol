@@ -75,14 +75,15 @@ include $(BUILD_SHARED_LIBRARY)
 ifneq ($(wildcard $(LOCAL_PATH)/vrApi/stub.c),)
 include $(CLEAR_VARS)
 LOCAL_MODULE   := main
-LOCAL_SHARED_LIBRARIES := olvm vrapi # TODO: move "vrapi" under define
+LOCAL_SHARED_LIBRARIES := olvm vrapi jni+repl
+# TODO: move "vrapi" under define
 
 # configure
 LOCAL_CFLAGS   += $(OL_CFLAGS)
 # src
 LOCAL_CFLAGS   += -I$(NDK_ROOT) -DREPL=repl -I$(LOCAL_PATH)/vrApi/include
-LOCAL_SRC_FILES += native-app.c ../tmp/repl.c
-LOCAL_SRC_FILES += ovr.c # Oculus Go
+LOCAL_SRC_FILES += main.c
+LOCAL_SRC_FILES += ovr.c # Oculus Go / Meta Quest 2
 LOCAL_SRC_FILES += egl.c # OpenGL ES
 LOCAL_LDLIBS   += -llog -landroid
 
@@ -106,7 +107,7 @@ endif
 # -- gl2es -----------------------------------------------------------------------
 ifneq ($(wildcard $(LOCAL_PATH)/gl2es/src),)
 include $(CLEAR_VARS)
-LOCAL_MODULE := GL2
+LOCAL_MODULE := gl2es
 
 GL2ES_SRC_FILES := $(wildcard $(LOCAL_PATH)/gl2es/src/*.c)
 
@@ -114,7 +115,7 @@ LOCAL_SRC_FILES  := $(GL2ES_SRC_FILES:$(LOCAL_PATH)/%=%)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/gl2es/include
 
 LOCAL_CFLAGS   += -g -std=gnu99 -funwind-tables -O3 -fvisibility=hidden \
-                  -DGL2ES_LIBRARY_SO_NAME=\"libGL2.so\"
+                  -DGL2ES_LIBRARY_SO_NAME=\"lib$(LOCAL_MODULE).so\"
 
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 LOCAL_LDLIBS   += -ldl -llog -landroid
@@ -259,7 +260,7 @@ LOCAL_SRC_FILES := \
 	GLU/src/libnurbs/nurbtess/sampledLine.cc			\
 	GLU/src/libnurbs/nurbtess/searchTree.cc
 
-LOCAL_SHARED_LIBRARIES := GL2
+LOCAL_SHARED_LIBRARIES := gl2es
 #LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 LOCAL_LDLIBS := -ldl -llog
 
@@ -278,7 +279,7 @@ LOCAL_CFLAGS   += -I$(LOCAL_PATH)/SOIL/include -D__ANDROID__
 #LOCAL_CFLAGS   += -I$(LOCAL_PATH)/gl4es/include
 LOCAL_LDLIBS   := -llog -lEGL
 
-LOCAL_SHARED_LIBRARIES += GL2
+LOCAL_SHARED_LIBRARIES += gl2es
 include $(BUILD_SHARED_LIBRARY)
 endif
 
@@ -319,8 +320,9 @@ endif
 # endif
 
 # -- libvrapi ------------------------------------------------------------------
-ifneq ($(wildcard $(LOCAL_PATH)/vrApi/libs/$(TARGET_ARCH_ABI)/libvrapi.so),)
 ifneq ($(wildcard $(LOCAL_PATH)/vrApi/stub.c),)
+# vrApi libraries are only for armeabi-v7a and arm64-v8a
+ifneq ($(wildcard $(LOCAL_PATH)/vrApi/libs/$(TARGET_ARCH_ABI)/libvrapi.so),)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := vrapi
@@ -328,8 +330,8 @@ LOCAL_SRC_FILES := vrApi/libs/$(TARGET_ARCH_ABI)/libvrapi.so
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 include $(PREBUILT_SHARED_LIBRARY)
 
+# no vrApi libraries, so just use an empty stub
 else
-
 include $(CLEAR_VARS)
 LOCAL_MODULE   := vrapi
 

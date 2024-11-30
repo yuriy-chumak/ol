@@ -3,9 +3,13 @@ help:
 	@echo "Targets:"
 	@echo "  clean - clean the folder from temp files"
 	@echo "  build - build a regular android OpenGL app"
+	@echo "  install - install the apk"
+	@echo "  install - uninstall installed package"
+	@echo "  start - start installed package"
 
 # ---------------------------------------------------
 # link assets libraries
+$(shell [ -d assets/libraries ]        || mkdir -p assets/libraries)
 $(shell [ -d assets/libraries/OpenGL ] || ln -s ../../../../libraries/OpenGL assets/libraries/OpenGL)
 $(shell [ -d assets/libraries/lib ]    || ln -s ../../../../libraries/lib    assets/libraries/lib)
 $(shell [ -d assets/libraries/otus ]   || ln -s ../../../../libraries/otus   assets/libraries/otus)
@@ -30,20 +34,27 @@ ifeq ("$(wildcard $(ANDROID_NDK)/)","")
 $(error ANDROID_NDK not set or invalid!)
 endif
 
-.PHONY: all build logcat
+.PHONY: all build clean start stop restart install uninstall reinstall logcat
 
 build:
 	./build
 
 clean:
-	rm -rf bin dex gen lib obj
+	rm -rf dex lib obj
+	find src -name "R.java" -exec rm {} \;
+	rm -f debug.apk debug.keystore
 
 install:
-	adb -d install debug.apk
-	# grant default permissions
-	# adb shell pm grant name.yuriychumak.ol.gui android.permission.READ_EXTERNAL_STORAGE
+	adb -d install -r debug.apk
+	@# grant default permissions
+	@# adb shell pm grant name.yuriychumak.ol.gui android.permission.READ_EXTERNAL_STORAGE
+
 uninstall:
 	adb -d uninstall name.yuriychumak.ol.gui
+
+reinstall:
+	@$(MAKE) uninstall
+	@$(MAKE) install
 
 start:
 	adb shell am start -n name.yuriychumak.ol.gui/name.yuriychumak.ol.gui.OpenGLActivity
@@ -51,8 +62,13 @@ start:
 stop:
 	adb shell am force-stop name.yuriychumak.ol.gui
 
+restart:
+	@$(MAKE) stop
+	@$(MAKE) start
+
 logcat:
 	adb logcat -v color \
-	    ol:D name.yuriychumak.ol.gui:V gl2es:D \
+	    ol:D name.yuriychumak.ol.gui:V gl2es:E \
 	    threaded_app:V nativeloader:E \
-		AndroidRuntime:E DEBUG:V *:F
+	    AndroidRuntime:E DEBUG:V *:F
+

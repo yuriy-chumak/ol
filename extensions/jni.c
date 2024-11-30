@@ -42,23 +42,20 @@ struct {
 // android i/o
 #include <android/asset_manager_jni.h>
 
-static jobject java_asset_manager = NULL;
 static AAssetManager *asset_manager = NULL;
 static AAsset **fds = NULL; // file descriptors
 static int fds_size = 0;
 
-JNIEXPORT void JNICALL NATIVE(nativeSetAssetManager)(JNIEnv *jenv, jobject jobj, jobject assetManager)
+JNIEXPORT
+void jniSetAssetManager(jobject assetManager)
 {
-	LOGD("> nativeSetAssetManager()");
-	java_asset_manager = (*jenv)->NewGlobalRef(jenv, assetManager);
-	asset_manager = AAssetManager_fromJava(jenv, java_asset_manager);
+	asset_manager = assetManager;
 
 	// file system init:
 	fds_size = 16;
 	if (fds)
 		free(fds);
 	fds = (AAsset **)calloc(fds_size, sizeof(*fds));
-	LOGV("< nativeSetAssetManager()");
 }
 
 int assets_open(const char *filename, int flags, int mode, void *userdata)
@@ -209,12 +206,34 @@ int assets_stat(const char *filename, struct stat *st, void* userdata)
 	extern unsigned char REPL[];
 #endif
 
-// public static native void nativeNew();
-JNIEXPORT void JNICALL NATIVE(nativeNew)(JNIEnv *jenv, jobject class)
+// static jobject java_asset_manager = NULL;
+JNIEXPORT void JNICALL NATIVE(nativeSetAssetManager)(JNIEnv *jenv, jobject jobj, jobject assetManager)
 {
-	LOGD("> nativeNew()");
-	// setenv("OL_HOME", OL_HOME, 0);
+	LOGD("> nativeSetAssetManager()");
+	jobject java_asset_manager = (*jenv)->NewGlobalRef(jenv, assetManager);
+	jobject asset_manager = AAssetManager_fromJava(jenv, java_asset_manager);
 
+	jniSetAssetManager(asset_manager);
+	LOGV("< nativeSetAssetManager()");
+}
+
+JNIEXPORT
+void jniNew()
+{
+	ol.vm = OLVM_new(REPL);
+	ol.eval = 0;
+	OLVM_userdata(ol.vm, ol.vm);
+
+	old.open = OLVM_set_open(ol.vm, assets_open);
+	old.close = OLVM_set_close(ol.vm, assets_close);
+	old.read = OLVM_set_read(ol.vm, assets_read);
+	old.write = OLVM_set_write(ol.vm, assets_write); // stdout/stderr to logcat redirector included
+	old.stat = OLVM_set_stat(ol.vm, assets_stat);
+}
+
+JNIEXPORT
+void jniNewEmbed()
+{
 	OL_new(&ol, REPL);
 	OLVM_userdata(ol.vm, &ol);
 
@@ -223,24 +242,42 @@ JNIEXPORT void JNICALL NATIVE(nativeNew)(JNIEnv *jenv, jobject class)
 	old.read = OLVM_set_read(ol.vm, assets_read);
 	old.write = OLVM_set_write(ol.vm, assets_write); // stdout/stderr to logcat redirector included
 	old.stat = OLVM_set_stat(ol.vm, assets_stat);
+}
 
-	LOGD("< nativeNew()");
+JNIEXPORT
+void jniRun(int argc, char** argv)
+{
+	(void)OLVM_run(ol.vm, argc, argv);
+}
+
+JNIEXPORT void JNICALL NATIVE(nativeNew)(JNIEnv *jenv, jobject class)
+{
+	LOGD("> nativeNew()");
+	// setenv("OL_HOME", OL_HOME, 0);
+	jniNewEmbed();
+	LOGV("< nativeNew()");
 	return;
+}
+
+JNIEXPORT
+void jniDelete()
+{
+	OL_delete(&ol);
 }
 
 JNIEXPORT void JNICALL NATIVE(nativeDelete)(JNIEnv *jenv, jobject class)
 {
 	LOGD("> nativeDelete()");
-	OL_delete(&ol);
-	LOGD("< nativeDelete()");
+	jniDelete();
+	LOGV("< nativeDelete()");
 }
 
 JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 {
-	LOGD("> eval()");
+	LOGV("> eval()");
 
 	jint argc = (*jenv)->GetArrayLength(jenv, args);
-	LOGD("  argumets count: %d", argc);
+	LOGV("  argumets count: %d", argc);
 
 	// TODO: optimize
 	jclass String = (*jenv)->FindClass(jenv, "java/lang/String");
@@ -258,13 +295,13 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 		//     break;
 		// }
 		if (0) {
-			LOGD("Struck by lightning, struck by lightning!"); // assert
+			LOGE("Struck by lightning, struck by lightning!"); // assert
 		}
 		else if ((*jenv)->IsInstanceOf(jenv, arg, String))
 		{
 			char *value = (char *)(*jenv)->GetStringUTFChars(jenv, arg, 0);
 
-			LOGD("  char* %d: %s", i, value);
+			LOGV("  char* %d: %s", i, value);
 			values[i] = new_string(&ol, value); // no release "value" required?
 		}
 		else if ((*jenv)->IsInstanceOf(jenv, arg, Integer))
@@ -272,7 +309,7 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 			jmethodID intValue = (*jenv)->GetMethodID(jenv, Integer, "intValue", "()I");
 			jint value = (*jenv)->CallIntMethod(jenv, arg, intValue);
 
-			LOGD("  int %d: %d", i, value);
+			LOGV("  int %d: %d", i, value);
 			values[i] = make_integer(value);
 		}
 		else if ((*jenv)->IsInstanceOf(jenv, arg, Boolean))
@@ -280,7 +317,7 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 			jmethodID booleanValue = (*jenv)->GetMethodID(jenv, Boolean, "booleanValue", "()Z");
 			jboolean value = (*jenv)->CallBooleanMethod(jenv, arg, booleanValue);
 
-			LOGD("  bool %d: %d", i, value == JNI_TRUE);
+			LOGV("  bool %d: %d", i, value == JNI_TRUE);
 			values[i] = (value == JNI_TRUE) ? 0x136 : 0x036; // #true : #false
 		}
 		else if ((*jenv)->IsInstanceOf(jenv, arg, Float))
@@ -288,7 +325,7 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 			jmethodID floatValue = (*jenv)->GetMethodID(jenv, Float, "floatValue", "()F");
 			jfloat value = (*jenv)->CallFloatMethod(jenv, arg, floatValue);
 
-			LOGD("  float %d: %f", i, value);
+			LOGV("  float %d: %f", i, value);
 			values[i] = new_rational(&ol, value);
 		}
 		else if ((*jenv)->IsInstanceOf(jenv, arg, Double))
@@ -296,7 +333,7 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 			jmethodID doubleValue = (*jenv)->GetMethodID(jenv, Double, "doubleValue", "()D");
 			jdouble value = (*jenv)->CallDoubleMethod(jenv, arg, doubleValue);
 
-			LOGD("  double %d: %f", i, value);
+			LOGV("  double %d: %f", i, value);
 			values[i] = new_rational(&ol, value);
 		}
 		else {
@@ -322,7 +359,7 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 	uintptr_t r = OLVM_evaluate(ol.vm,
 	                 OLVM_deref(ol.vm, ol.eval),
 	                 1, &userdata);
-	LOGD("  eval = %p", (void*)r);
+	LOGV("  eval = %p", (void*)r);
 
 	// process result:
 	if (r == ITRUE)
@@ -358,6 +395,6 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 
 	// else: return #false
 	jfieldID FALSE = (*jenv)->GetStaticFieldID(jenv, Boolean, "FALSE", "Ljava/lang/Boolean;");
-	LOGI("< eval()");
+	LOGV("< eval()");
 	return (*jenv)->GetStaticObjectField(jenv, Boolean, FALSE);
 }

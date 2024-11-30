@@ -25,7 +25,7 @@ public class Ol
 	 * just load and run.
 	 */
 	public static void load(String filename) {
-		Log.i(TAG, "load");
+		Log.i(TAG, "load \"" + filename + "\"");
 		eval(
 			"(define-library (" + "!!" + ")" +
 			"(import (otus lisp))" +

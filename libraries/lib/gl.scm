@@ -34,6 +34,7 @@
 
    ; * internal use (with gl3 and gl4)
    native:enable-context native:disable-context
+   native:swap-buffers
    hook:exit)
 
    ; todo:
@@ -112,12 +113,13 @@
             (define renderer (this 'renderer #f))
             (when renderer
                (define mouse (os:GetMousePos (this 'context #f)))
-               (define (draw)
+               (define (draw eye)
                   (case-apply renderer
                      (list 0)
                      (list 1 mouse)
                      (list 2 mouse {
                         'mouse mouse
+                        'eye eye
                         ; TBD:
                         'option1 #true
                         'option2 #false
@@ -125,19 +127,22 @@
 
                (if (this 'vr-mode) ;; VR mode
                then
-                  (glHint GL_VR_HINT 1)
+                  ;(glHint GL_VR_HINT 1) ; todo: не нужен?
                   ((this 'vr-begin))
                   (for-each (lambda (eye)
-                        ((this 'vr-update) eye)
+                        ((this 'vr-eye) eye)  ; prepare rendering through the eye
+                        ; mirror actual viewport to the window:
                         (glGetIntegerv GL_VIEWPORT gl:window-dimensions)
-
-                        (draw) ((this 'vr-flush)))
-                     '(0 1)) ; left eye, right eye
-                  ((this 'vr-end))
-                  (glHint GL_VR_HINT 0)
+                        (draw eye)
+                        ((this 'vr-finish)))  ; rendering through eye is finished
+                     '(1 2)) ; left eye = 1, right eye = 2
+                  ((this 'vr-end)) ; 
+                  ;(glHint GL_VR_HINT 0)
+                  (native:swap-buffers (this 'context []))
                else
-                  (draw) ;; regular mode
-                  (native:swap-buffers (this 'context [])) )))
+                  (draw #f) ;; regular mode
+                  (native:swap-buffers (this 'context []))
+               )))
 
          ; main OpenGL actor
          (actor 'opengl (lambda ()
@@ -253,6 +258,7 @@
 
 (define (gl:force-render)
    (render (await (mail 'opengl 'this))))
+
 (define (gl:swap-buffers)
    (native:swap-buffers
       (await (mail 'opengl ['get 'context]))))

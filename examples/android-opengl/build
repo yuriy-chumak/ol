@@ -59,9 +59,9 @@ $BUILD_TOOLS/aapt add debug.apk `find -L lib/ -name *.so`
 
 # Sign APK
 # NOTE: If you changed the storepass and keypass in the setup process, change them here too
-[ -f debug.keystore ] || keytool -genkeypair -validity 1000 -dname "CN=debug,O=Android,C=ES" -keystore debug.keystore -storepass 'debug0' -keypass 'debug0' -alias projectKey -keyalg RSA
+[ -f debug.keystore ] || keytool -genkeypair -validity 1000 -dname "CN=debug,O=Android,C=ES" -keystore debug.keystore -storepass 'debug123' -keypass 'debug123' -alias projectKey -keyalg RSA
 
-jarsigner -keystore debug.keystore -storepass debug0 -keypass debug0 \
+jarsigner -keystore debug.keystore -storepass debug123 -keypass debug123 \
 	-signedjar debug.apk debug.apk projectKey
 
 # Zipalign APK

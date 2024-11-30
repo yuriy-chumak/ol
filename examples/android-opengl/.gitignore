@@ -5,4 +5,8 @@ lib/
 obj/
 
 assets/libraries/
-src/lang/
+src/lang/otuslisp/Ol.java
+src/name/yuriychumak/ol/gui/R.java 
+
+debug.apk
+debug.keystore
