@@ -1,0 +1,11 @@
+bin/
+dex/
+gen/
+lib/
+obj/
+
+assets/libraries/
+src/name/yuriychumak/ol/NativeLoader.java
+
+debug.apk
+debug.keystore
