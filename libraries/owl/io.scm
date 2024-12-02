@@ -422,19 +422,20 @@
                   (sys:read port (ref stat 8))))))
 
       (define (file->bytevector path) ; path -> vec | #false
-         (let*((port (maybe-open-binary-file path))
-               (file (port->bytevector port)))
-            (maybe-close-port port)
+         (define stat (syscall 4 (c-string path)))
+         (let*((port (open-binary-input-file path))
+               (file (sys:read port (ref stat 8))))
+            (close-port port)
             file))
 
       ;; fixme: no way to poll success yet. last message should be ok-request, which are not there yet.
       ;; fixme: detect case of non-bytevectors, which simply means there is a leaf which is not of type (raw 11)
       (define (bytevector->file vec path)
-         (let ((port (open-binary-output-file path)))
-            (if port
-               (let ((outcome (sys:write port vec #false)))
-                  (close-port port)
-                  outcome))))
+         (define port (open-binary-output-file path))
+         (when port
+            (define outcome (sys:write port vec #false))
+            (close-port port)
+            outcome))
 
 
       ; BLOB:
