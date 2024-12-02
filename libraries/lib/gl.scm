@@ -127,7 +127,7 @@
 
                (if (this 'vr-mode) ;; VR mode
                then
-                  ;(glHint GL_VR_HINT 1) ; todo: не нужен?
+                  (glHint GL_VR_HINT 1) ; включает использование VR матриц
                   ((this 'vr-begin))
                   (for-each (lambda (eye)
                         ((this 'vr-eye) eye)  ; prepare rendering through the eye
@@ -137,7 +137,7 @@
                         ((this 'vr-finish)))  ; rendering through eye is finished
                      '(1 2)) ; left eye = 1, right eye = 2
                   ((this 'vr-end)) ; 
-                  ;(glHint GL_VR_HINT 0)
+                  (glHint GL_VR_HINT 0)
                   (native:swap-buffers (this 'context []))
                else
                   (draw #f) ;; regular mode
