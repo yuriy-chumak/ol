@@ -18,7 +18,7 @@
    ALuint    ALuint*  ALuint&
    ALsizei
    ALenum
-   ALfloat
+   ALfloat            ALfloat&
    ALdouble
 
    ALvoid
@@ -93,6 +93,7 @@
    (define ALsizei   fft-int)
    (define ALenum    fft-int)
    (define ALfloat   fft-float)  ; 32-bit IEEE754 floating-point
+   (define ALfloat&  (fft& fft-float))
    (define ALdouble  fft-double) ; 64-bit IEEE754 floating-point
 
    (define ALvoid    fft-void)

@@ -26,6 +26,23 @@
       alGenSources
       alGenBuffers
 
+      alDeleteSources
+      alDeleteBuffers
+
+      alListenerf
+      alListener3f
+      alListenerfv
+      alListeneri
+      alListener3i
+      alListeneriv
+
+      alSourcef
+      alSource3f
+      alSourcefv
+      alSourcei
+      alSource3i
+      alSourceiv
+
       alSourcei
          AL_BUFFER AL_LOOPING
 
@@ -41,8 +58,85 @@
       alSourceQueueBuffers
       alSourceUnqueueBuffers
 
-      ; Source:
-      AL_BUFFER AL_LOOPING
+      ; constants
+      AL_SOURCE_RELATIVE
+      AL_CONE_INNER_ANGLE
+      AL_CONE_OUTER_ANGLE
+      AL_PITCH
+      AL_POSITION
+      AL_DIRECTION
+      AL_VELOCITY
+      AL_LOOPING
+      AL_BUFFER
+      AL_GAIN
+      AL_MIN_GAIN
+      AL_MAX_GAIN
+      AL_ORIENTATION
+      AL_CHANNEL_MASK
+
+      AL_SOURCE_STATE
+      AL_INITIAL
+      AL_PLAYING
+      AL_PAUSED
+      AL_STOPPED
+
+      AL_BUFFERS_QUEUED
+      AL_BUFFERS_PROCESSED
+
+      AL_SEC_OFFSET
+      AL_SAMPLE_OFFSET
+      AL_BYTE_OFFSET
+
+      AL_SOURCE_TYPE
+      AL_STATIC
+      AL_STREAMING
+      AL_UNDETERMINED
+
+      ;AL_FORMAT_MONO8
+      ;AL_FORMAT_MONO16
+      ;AL_FORMAT_STEREO8
+      ;AL_FORMAT_STEREO16
+
+      AL_REFERENCE_DISTANCE
+      AL_ROLLOFF_FACTOR
+      AL_CONE_OUTER_GAIN
+      AL_CONE_OUTER_GAIN
+
+      AL_FREQUENCY
+      AL_BITS
+      AL_CHANNELS
+      AL_SIZE
+
+      AL_UNUSED
+      AL_PENDING
+      AL_PROCESSED
+
+      AL_NO_ERROR
+      AL_INVALID_NAME
+      AL_ILLEGAL_ENUM
+      AL_INVALID_ENUM
+      AL_INVALID_VALUE
+      AL_ILLEGAL_COMMAND
+      AL_INVALID_OPERATION
+      AL_OUT_OF_MEMORY
+
+      ;AL_VENDOR
+      ;AL_VERSION
+      ;AL_RENDERER
+      ;AL_EXTENSIONS
+
+      AL_DOPPLER_FACTOR
+      AL_DOPPLER_VELOCITY
+      AL_SPEED_OF_SOUND
+   
+      AL_DISTANCE_MODEL
+      AL_INVERSE_DISTANCE
+      AL_INVERSE_DISTANCE_CLAMPED
+      AL_LINEAR_DISTANCE
+      AL_LINEAR_DISTANCE_CLAMPED
+      AL_EXPONENT_DISTANCE
+      AL_EXPONENT_DISTANCE_CLAMPED
+
    )
 ; ============================================================================
 ; == implementation ==========================================================
@@ -57,6 +151,9 @@
 
 (begin
    (setq AL AL_LIBRARY)
+
+   (setq void ALvoid)
+
 
    (define AL_VERSION_1_0 1)
    (define AL_VERSION_1_1 1)
@@ -188,13 +285,12 @@
    ; * Position     AL_POSITION     ALfloat[3]
    ; * Velocity     AL_VELOCITY     ALfloat[3]
    ; * Orientation  AL_ORIENTATION  ALfloat[6] (Forward then Up vectors)
-   ; alListenerf
-      ; AL_GAIN AL_POSITION AL_VELOCITY AL_ORIENTATION
-   ; alListener3f
-   ; alListenerfv
-   ; alListeneri
-   ; alListener3i
-   ; alListeneriv
+   (define alListenerf (AL void "alListenerf" ALenum ALfloat))
+   (define alListener3f (AL void "alListener3f" ALenum ALfloat ALfloat ALfloat))
+   (define alListenerfv (AL void "alListenerfv" ALenum ALfloat&))
+   (define alListeneri (AL void "alListeneri" ALenum ALint))
+   (define alListener3i (AL void "alListener3i" ALenum ALint ALint ALint))
+   (define alListeneriv (AL void "alListeneriv" ALenum ALint&))
    
    ; alGetListenerf
    ; alGetListener3f
@@ -242,13 +338,12 @@
    (define alDeleteSources (AL fft-void "alDeleteSources" ALsizei ALuint*))
    (define alIsSource (AL ALboolean "alIsSource" ALuint))
 
-   ;alSourcef
-   ;alSource3f
-   ;alSourcefv
-   (define alSourcei (AL fft-void "alSourcei" ALuint ALenum ALint))
-
-   ;alSource3i
-   ;alSourceiv
+   (define alSourcef (AL void "alSourcef" ALuint ALenum ALfloat))
+   (define alSource3f (AL void "alSource3f" ALuint ALenum ALfloat ALfloat ALfloat))
+   (define alSourcefv (AL void "alSourcefv" ALuint ALenum ALfloat&))
+   (define alSourcei (AL void "alSourcei" ALuint ALenum ALint))
+   (define alSource3i (AL void "alSource3i" ALuint ALenum ALint ALint ALint))
+   (define alSourceiv (AL void "alSourceiv" ALuint ALenum ALint&))
 
 
    ;alGetSourcef
@@ -312,7 +407,7 @@
    ; * Channels (Query only)     AL_CHANNELS       ALint
 
    (define alGenBuffers (AL fft-void "alGenBuffers" ALsizei ALuint&))
-   ;alDeleteBuffers
+   (define alDeleteBuffers (AL void "alDeleteBuffers" ALsizei ALuint*))
    ;alIsBuffer
    (define alBufferData (AL fft-void "alBufferData"
             ALuint  #|bid|#
