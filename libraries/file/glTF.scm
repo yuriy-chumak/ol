@@ -1,6 +1,7 @@
 (define-library (file glTF)
    (export
       read-glTF-file
+      glTF-parser
 
       ARRAY_BUFFER
       ELEMENT_ARRAY_BUFFER
@@ -10,52 +11,108 @@
       (file json)
       (owl ff) (owl string)
       (lib soil) ; image loading library
-      (OpenGL 3.0))
+      (owl parse)
+      (OpenGL 3.0)) ; todo: 2.1 and extesions
 
 (begin
+   (setq vref vector-ref)
+
    (import (owl io)) ;temp
    (define (print-array title array) ;temp
       (print title)
       (vector-for-each (lambda (a)
             (print "   " a))
          array))
+   (import (only (otus lisp) typename))
 
    (import (prefix (otus base64) base64:))
-   (setq vref vector-ref)
+
+   (define uint32 (let-parse* (
+         (b0 byte) (b1 byte) (b2 byte) (b3 byte))
+      0))
+   (define glTF-parser
+      (either
+         ; binary glTF
+         (let-parse* (
+               ; 12-byte header
+               (header (word "glTF" #t))
+               (version uint32)
+               (flen uint32)
+               ; Chunk 0 (JSON)
+               (clen uint32)
+               (ctype (word "JSON" #t))
+               (json json-parser)
+               (spaces (greedy* (imm #\space)))
+               ; Chunk 1 (BIN)
+               (skips (lazy+ byte))
+               (ctype (word "BIN\0" #t))
+               (bin (greedy+ byte)) )
+            ; replace buffers[0] with buffer data
+            ; assert "(size buffers) == 1"
+            (put json 'buffers (vector-map (lambda (buffer)
+                  (if (buffer 'uri #f)
+                     buffer
+                     (put buffer 'buffer
+                        (make-bytevector bin))))
+               (json 'buffers))))
+         ; text glTF
+         json-parser))
+         
+
 
    ; read and compile glTF file
    (define (read-glTF-file filename)
-      (define glTF (read-json-file "scene.gltf"))
+      (define glTF (parse glTF-parser (force (file->bytestream filename)) #f))
 
       ; binary buffers
       (define buffers (vector-map (lambda (buffer)
-            (define source (buffer 'uri))
-            ; todo: assert (output size == "byteLength") ?
-            (cond
-               ((m/^data:application\/octet-stream;base64,/ source)
-                  (make-bytevector (base64:decode (substring source 37))))
-               (else
-                  (file->bytevector source))))
+            (define source (buffer 'uri #f))
+            (if source
+               (cond
+                  ((m/^data:application\/octet-stream;base64,/ source)
+                     (make-bytevector (base64:decode (substring source 37))))
+                  (else
+                     (file->bytevector source)))
+            else
+               (buffer 'buffer)))
          (glTF 'buffers)))
 
-      ; vertex buffer objects
-      (define bufferViews (vector-map (lambda (bufferView)
+      ; buffer objects (a subset of the buffer)
+      ; https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-bufferview
+      (define bufferViews (vector-map (lambda (bufferView id)
+            ; TODO: don't load image buffer data into vbo
             (define VBO (box 0))
             (glGenBuffers 1 VBO)
-            (glBindBuffer (bufferView 'target) (unbox VBO))
+
+            (define target (or
+               (bufferView 'target #f) ; we know the buffer purpose
+               (call/cc (lambda (claim)
+                  ; is this buffer will be index buffer?
+                  (vector-for-each (lambda (mesh)
+                        (vector-for-each (lambda (primitive)
+                              (if (eq? (primitive 'indices #f) id)
+                                 (claim GL_ELEMENT_ARRAY_BUFFER)))
+                           (mesh 'primitives [])))
+                     (glTF 'meshes))
+                  ; no, use as array buffer
+                  GL_ARRAY_BUFFER))))
+
+            (glBindBuffer target (unbox VBO))
 
             (define buffer (vref buffers (bufferView 'buffer)))
             (define offset (bufferView 'byteOffset 0))
-            (glBufferData (bufferView 'target) (bufferView 'byteLength)
-               (cons type-vptr (cons buffer offset)) ; trick: &buffer[offset]
+            (glBufferData target (bufferView 'byteLength)
+               (cons type-vptr (cons buffer offset)) ; trick: &buffer[offset] for fft-any
                GL_STATIC_DRAW)
 
-            (glBindBuffer (bufferView 'target) 0)
+            (glBindBuffer target 0)
             (put bufferView 'vbo (unbox VBO)))
-         (glTF 'bufferViews)))
-      ;(print-array "bufferViews:" bufferViews)
+         (glTF 'bufferViews)
+         (list->vector (iota (size (glTF 'bufferViews)))) ))
+      ; (print-array "bufferViews:" bufferViews)
 
       ; accessors
+      ; https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-accessor
       (define accessors (glTF 'accessors))
       (define (accessor-type->GL at)
          (cond
@@ -70,10 +127,32 @@
 
       ; images
       (define images (vector-map (lambda (image)
-            (put image 'texture
-               ; todo: support base64
-               (SOIL_load_OGL_texture (image 'uri) SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)))
-               ; todo: glBindTexture + glTexParameteri...
+            (define uri (image 'uri #f))
+            (define id
+               (if uri
+                  ; todo: support base64
+                  (SOIL_load_OGL_texture uri
+                     SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)
+               else
+                  (define bufferView (vref bufferViews (image 'bufferView)))
+                  (define buffer (vref buffers (bufferView 'buffer)))
+                  (define byteOffset (bufferView 'byteOffset))
+                  (define byteLength (bufferView 'byteLength))
+                  ;; (define bv (bytevector-copy buffer byteOffset (+ byteOffset byteLength)))
+                  ;; (bytevector->file bv (string-append "image" (number->string byteOffset)))
+                  (SOIL_load_OGL_texture_from_memory
+                     (cons buffer byteOffset) byteLength ; &buffer[byteOffset]
+                     SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)))
+            ; TODO: setup texture parameters
+            ;; (glBindTexture GL_TEXTURE_2D id)
+            ;; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_REPEAT)
+            ;; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_REPEAT)
+            ;; ;; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+            ;; ;; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+            ;; (glBindTexture GL_TEXTURE_2D 0)
+
+            (put image 'texture id))
+
          (glTF 'images)))
 
       ; materials
@@ -177,7 +256,7 @@
       ;(print-array "meshes:" meshes)
 
       (ff-replace glTF {
-         'buffers #false ; free buffer data, reduce memory usage
+         'buffers #false ; free binary buffer data, reduce memory usage
          'bufferViews bufferViews
          'meshes meshes
          'images images
