@@ -453,17 +453,25 @@
             ; three arguments is deprecated:
             ((parser data unused) (try-parse parser data))))
 
-      (define (parse parser data unused-path errmsg fail-val) ; todo: use path
-         (let loop ((try (λ () (parser #null data 0 parser-succ))))
-            (let* ((l r p val (try)))
-               (cond
-                  ((not l)
-                     fail-val)
-                  ((lpair? r) ;; trailing garbage
-                     fail-val)
-                  (else
-                     ;; full match
-                     val)))))
+      (define parse
+         (define (parse parser data fail-val) ; todo: use path
+            (let loop ((try (λ () (parser #null data 0 parser-succ))))
+               (let* ((l r p val (try)))
+                  (cond
+                     ; fail
+                     ((not l) fail-val)
+                     ; trailing garbage
+                     ((lpair? r) fail-val)
+                     ; ok, full match
+                     (else val)))))
+      
+      (case-lambda
+         ((parser data fail-val)
+            (parse parser data fail-val))
+         ; five arguments is deprecated:
+         ((parser data unused-path errmsg fail-val)
+            (parse parser data fail-val))))
+
 
       ;; (define (first-match parser data fail-val)
       ;;    (let loop ((try (λ () (parser #n data 0 parser-succ))))
