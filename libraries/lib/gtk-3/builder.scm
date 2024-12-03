@@ -6,6 +6,7 @@
       gtk_builder_new_from_file
       gtk_builder_add_from_file
       gtk_builder_get_object
+      gtk_builder_get_objects
       gtk_builder_new_from_string
       gtk_builder_add_from_string
 
@@ -37,6 +38,7 @@
 
    ; Note that this function does not increment the reference count of the returned object:
    (define gtk_builder_get_object (GTK3 GObject* "gtk_builder_get_object" GtkBuilder* type-string))
+   (define gtk_builder_get_objects (GTK3 type-vptr "gtk_builder_get_objects" GtkBuilder*)) ; -> GSList*
 
    (define GtkBuilderConnectFunc GtkCallback) ; void (*GtkBuilderConnectFunc)(GtkBuilder *builder, GObject *object, const gchar *signal_name, const gchar *handler_name, GObject *connect_object, GConnectFlags flags, gpointer user_data)
    (define gtk_builder_add_callback_symbol (GTK3 fft-void "gtk_builder_add_callback_symbol" GtkBuilder* gchar* GCallback))

@@ -15,6 +15,7 @@
 
       TRUE FALSE NULL
       g_free
+      ;; get_type
 
       G_APPLICATION_FLAGS_NONE
 
@@ -51,6 +52,7 @@
       g_date_time_unref
 
       GType
+      g_type_check_instance_is_a
 
       G_CALLBACK
       G_TYPE_GTYPE
@@ -72,6 +74,13 @@
       bindtextdomain
       bind_textdomain_codeset
       textdomain
+
+      ; gslist
+      GSList*
+      g_slist_free
+      g_slist_nth_data
+      ;; g_slist_find_custom
+      ;; GCompareFunc
    )
    (import
       (scheme core)
@@ -93,6 +102,7 @@
    (define gulong fft-unsigned-long)
 
    (define gpointer fft-void*)  (define gboolean fft-bool)
+   (define gconstpointer fft-void*)
 
    (define gfloat fft-float)
    (define gdouble fft-double)
@@ -185,8 +195,21 @@
 (define bind_textdomain_codeset (GLIB type-string "bind_textdomain_codeset" type-string type-string))
 (define textdomain (GLIB type-string "textdomain" type-string))
 
+
+; --= ( gslist )=--------------
+(define GSList* type-vptr)
+;; (define GCompareFunc* type-vptr)
+(define g_slist_free (GLIB void "g_slist_free" GSList*))
+(define g_slist_nth_data (GLIB gpointer "g_slist_nth_data" GSList* guint))
+;; (define g_slist_find_custom (GLIB GSList* "g_slist_find_custom" GSList* gconstpointer GCompareFunc*))
+;; (define (GCompareFunc a b)
+;;    #f)
+
+
 ; --=( GType )=---------------
 (define GType fft-unsigned-long)
+(define GTypeInstance* fft-void*)
+
 (setq G_TYPE_FUNDAMENTAL_SHIFT 2)
 (setq G_TYPE_MAKE_FUNDAMENTAL (lambda (x)
    (let* ((hi lo (vm:shl x G_TYPE_FUNDAMENTAL_SHIFT)))
@@ -199,6 +222,8 @@
 ;...
 
 (define G_TYPE_GTYPE ((GOBJECT GType "g_gtype_get_type"))) ; GIO?
+
+(define g_type_check_instance_is_a (GOBJECT gboolean "g_type_check_instance_is_a" GTypeInstance* GType))
 
 
 ; --=( GValue )=---------
