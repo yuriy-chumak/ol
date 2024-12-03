@@ -194,7 +194,8 @@
                            value)))
                      (/ maybe-whitespaces)
                      (/ (imm #\])))
-                  (list->vector value)))))
+                  (list->vector value))))
+            (/ maybe-whitespaces))
          value))
 
    (define json-parser (object))
