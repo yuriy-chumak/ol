@@ -95,24 +95,24 @@
    (define SOIL_last_result (libsoil type-string "SOIL_last_result"))
    
    (define SOIL_load_OGL_texture (libsoil fft-unsigned-int "SOIL_load_OGL_texture" type-string fft-int fft-unsigned-int fft-unsigned-int))
-   (define SOIL_load_OGL_texture_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_texture_from_memory" type-bytevector fft-int fft-int fft-unsigned-int fft-unsigned-int))
+   (define SOIL_load_OGL_texture_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_texture_from_memory" type-vptr fft-int fft-int fft-unsigned-int fft-unsigned-int))
 
    (define SOIL_load_OGL_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_cubemap"
       type-string type-string type-string type-string type-string type-string
       fft-int fft-unsigned-int fft-unsigned-int))
    (define SOIL_load_OGL_cubemap_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_cubemap_from_memory"
-      type-bytevector fft-int ; x positive
-      type-bytevector fft-int ; x negative
-      type-bytevector fft-int ; y positive
-      type-bytevector fft-int ; y negative
-      type-bytevector fft-int ; z positive
-      type-bytevector fft-int ; z negative
+      type-vptr fft-int ; x positive
+      type-vptr fft-int ; x negative
+      type-vptr fft-int ; y positive
+      type-vptr fft-int ; y negative
+      type-vptr fft-int ; z positive
+      type-vptr fft-int ; z negative
       fft-int fft-unsigned-int fft-unsigned-int))
 
    (define SOIL_load_OGL_single_cubemap (libsoil fft-unsigned-int "SOIL_load_OGL_single_cubemap"
       type-string type-string fft-int fft-unsigned-int fft-unsigned-int))
    (define SOIL_load_OGL_single_cubemap_from_memory (libsoil fft-unsigned-int "SOIL_load_OGL_single_cubemap_from_memory"
-      type-bytevector fft-int
+      type-vptr fft-int
       type-string
       fft-int fft-unsigned-int fft-unsigned-int))
 
@@ -120,7 +120,7 @@
    ;SOIL_load_OGL_HDR_texture
 
    (define SOIL_load_image (libsoil type-vptr "SOIL_load_image" type-string int& int& int& int))
-   (define SOIL_load_image_from_memory (libsoil type-vptr "SOIL_load_image_from_memory" type-bytevector int int& int& int& int))
+   (define SOIL_load_image_from_memory (libsoil type-vptr "SOIL_load_image_from_memory" type-vptr int int& int& int& int))
    (define SOIL_free_image_data (libsoil fft-void "SOIL_free_image_data" type-vptr))
    
    (define SOIL_create_OGL_texture (libsoil fft-int "SOIL_create_OGL_texture" fft-any fft-int fft-int fft-int fft-int fft-int))
