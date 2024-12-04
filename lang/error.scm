@@ -37,6 +37,12 @@
       type-inexact 'type-inexact
    })
 
+   (define (enum? x)
+      (let ((x-type (type x)))
+         (or
+            (eq? x-type type-enum+)
+            (eq? x-type type-enum-) )))
+
    (define (verbose-ol-error code a b)
       (if (eq? (type code) type-closure) ; continuation?
          (list a b)
@@ -71,6 +77,12 @@
 
                ((261 258) ; (not-an-executable-object)
                   `(illegal invocation of ,a))
+
+               ; invalid vector indexer
+               (262
+                  (if (enum? b)
+                     `("vector index out of range:" ,b) ; todo?: print vector sizes
+                     `(,b "cannot be a vector index")))
 
                ; ------------------------------------------------------------
                ; syscall errors:

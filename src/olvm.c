@@ -2699,6 +2699,25 @@ apply:;
 			goto apply;
 		}
 		else
+		// new feature: vectors as functions
+		if (type == TVECTOR) {
+			word continuation = R3;
+            word index = R4;
+			if (!is_enum(index))
+				ERROR(262, this, index);
+
+			word size = object_size(*(R)this);
+			size_t i = is_enump (index) ? (value(index)) : (size - value(index));
+			if (i > 0 && i < size) { // objects are indexed from 1
+				R3 = ref(this, i);
+				this = continuation;
+				acc = 1; // 1 means "no arguments"
+
+				goto apply;
+			}
+			ERROR(262, this, index);
+		}
+		else
 #if OLVM_FFI // unsafe must be enabled
 		// running ffi function
 		if (type == TVPTR) { // todo: change to special type or/and add a second word - function name (== [ptr function-name])
