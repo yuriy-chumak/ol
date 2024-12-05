@@ -2590,16 +2590,19 @@ word get(word *ff, word key, word def, jmp_buf ret)
 
 // "ERROR" is an error (produces 'error, mcp #5)
 #define ERROR3(code, a, b) ERROR5("ERROR", 5, code,a,b)
-#define ERROR2(code, a) ERROR3(code, a, INULL)
+#define ERROR2(code, a) ERROR3(code, this, a)
 #define ERROR(...) ERROR_MACRO(__VA_ARGS__, ERROR3, ERROR2,, NOTHING)(__VA_ARGS__)
+
+// CHECK is an ERROR simplification
+#define CHECK(exp, errorcode, a)  if (!(exp)) ERROR(errorcode, this, a);
 
 // "CRASH" is a critical error (produces 'crash, mcp #3)
 #define CRASH3(code, a, b) ERROR5("CRASH", 3, code,a,b)
-#define CRASH2(code, a) CRASH3(code, a, INULL)
+#define CRASH2(code, a) CRASH3(code, this, a)
 #define CRASH(...) ERROR_MACRO(__VA_ARGS__, CRASH3, CRASH2,, NOTHING)(__VA_ARGS__)
 
+// "ASSERT" is a "CRASH" simplification
 #define ASSERT(exp, code, a)        if (!(exp)) CRASH(code, a, INULL);
-#define CHECK(exp, val, errorcode)  if (!(exp)) ERROR(errorcode, val, ITRUE);
 
 // # of function calls in a thread quantum
 #define TICKS  10000
@@ -2691,7 +2694,7 @@ apply:;
 				R3 = get((word*)this, key, R5, ol->ret);
 				break;
 			default:
-				ERROR(259, this, I(acc));
+				ERROR(17, this, cons(I(acc), cons(I(1), I(2))));
 			}
 			this = continuation;
 			acc = 1;
@@ -2702,6 +2705,8 @@ apply:;
 		// new feature: vectors as functions
 		if (type == TVECTOR) {
 			word continuation = R3;
+			if (acc != 2)
+				ERROR(17, this, cons(I(acc-1), I(1)));
             word index = R4;
 			if (!is_enum(index))
 				ERROR(262, this, index);
@@ -2829,7 +2834,7 @@ apply:;
 			R3 = R5;           // default value
 			break;
 		default:
-			ERROR(259, this, I(acc));
+			ERROR(17, this, cons(I(acc-1), cons(I(1), I(2))));
 		}
 		this = continuation;
 		acc = 1;
@@ -3086,7 +3091,7 @@ loop:;
 	 * Arity Error
 	 */
 	case ARITY_ERROR: // (0%)
-		ERROR(ARITY_ERROR, this, I(acc));
+		ERROR(ARITY_ERROR, IFALSE, I(acc));
 		break;
 
 	/*! #### GOTO
@@ -3122,7 +3127,7 @@ loop:;
 		}
 
 		if (acc < 0)
-			ERROR(APPLY, I(0));
+			ERROR(ARITY_ERROR, I(0));
 		this = reg[r];
 
 		// copy args down
@@ -3920,15 +3925,17 @@ loop:;
 	case SYSCALL: {
 		word argc = *ip++;
 		if (argc == 0)
-			ERROR(62000, I(0), I(1));
+			ERROR(ARITY_ERROR, I(SYSCALL), cons(I(0), cons(I(1), IFALSE)));
+
 		--argc; // skip syscall number
 		word* r = (R) IFALSE;  // by default returning #false
 
 		// -----------------------------------------------------------------------------------
 		// arguments count checking macro
-		#define CHECK_ARGC_EQ(n)  if (argc - n) ERROR(62000, I(argc), I(n)); // === (arg != n)
-		#define CHECK_ARGC(a, b)  if (argc < a) ERROR(62000, I(argc), I(a))\
-                             else if (argc > b) ERROR(62000, I(argc), I(b));
+		#define CHECK_ARGC_EQ(n)  if (argc - n) \
+		                              ERROR(ARITY_ERROR, I(SYSCALL), cons(I(argc), I(n)));
+		#define CHECK_ARGC(a, b)  if (argc < a || argc > b) \
+		                              ERROR(ARITY_ERROR, I(SYSCALL), cons(I(argc), cons(I(a), I(b))));
 		// arguments type checking macro
 		#define CHECK_TYPE(arg, type, error) if (argc >= arg) if (!is_##type(A##arg)) ERROR(error, I(arg), A##arg)
 		#define CHECK_TYPE_OR_FALSE(arg, type, error) \

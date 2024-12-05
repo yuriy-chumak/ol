@@ -498,8 +498,10 @@
                               (rtl-primitive regs op formals (cdr rands)
                                  (λ (regs) (rtl-any regs body)))
                               ;; fixme: should be a way to show just parts of AST nodes, which may look odd
-                              (runtime-error "Bad number of arguments for primitive: "
-                                 (list 'op (primop-name op) 'got (length (cdr rands)) 'arguments))))
+                              (runtime-error "error 17 ->"
+                                 (car '|wrong number of arguments:|) (length (cdr rands))
+                                    'but (primop-name op)
+                                    'expects (length formals))))
                         (else
                            (runtime-error "bad primitive args: " rands)))
                      (case rator
@@ -511,8 +513,10 @@
                                  ;;; note that this is an alias thing...
                                  (if (eq? (length formals) (length args))
                                     (rtl-any (create-aliases regs formals args) body)
-                                    (runtime-error "Bad argument count in lambda call: "
-                                       'args args 'formals formals)))))
+                                    (runtime-error "error 17 ->"
+                                       (car '|wrong number of arguments:|) (length args)
+                                          'but 'lambda
+                                          'expects (length formals))))))
                         (else
                            (rtl-call regs rator rands))))))
             (else

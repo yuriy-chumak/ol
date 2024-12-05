@@ -177,9 +177,10 @@
                      (case (lookup env sym)
                         (['recursive formals deps]
                            (unless (eq? (length formals) (length rands))
-                              (runtime-error 
-                                 "Wrong number of arguments: "
-                                    'call exp 'expects formals))
+                              (runtime-error "error 17 ->"
+                                 (car '|wrong number of arguments:|) (length rands)
+                                    'but exp
+                                    'expects (length formals)))
                            (let ((sub-env (env-bind env formals)))
                               (mkcall rator
                                  (append

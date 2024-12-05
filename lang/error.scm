@@ -51,16 +51,39 @@
             (case code
                (0
                   `(unsupported vm code ,a))
-               (20 ; (apply ...)
-                  (if (eq? a 0)
-                     '(empty apply)
-                     '(too large apply)))
+
+               (ARITY-ERROR ; 17
+                  (cons* (car '|wrong number of arguments:|)
+                     (if (integer? b)
+                        ; todo: add smart analyzer of bytecode to find
+                        ;       exact count of supported procedure arguments
+                        ;       if no arguments count provided
+                        (cons* (-- b) null)
+                     else ; assert (pair b)
+                        (cons* (car b) 'but
+                           (if (and (integer? a) (less? a 256)) (primop-name a) 'procedure)
+                           (cons* 'expects
+                              (if (pair? (cdr b)) ; (given . (takes-from . takes-to)
+                                 (if (cddr b)
+                                    (cons* 'from (cadr b) 'to (cddr b) null)
+                                    (cons* 'at 'least (cadr b) null))
+                              else ; (given . takes)
+                                 (cons* (cdr b) null)))))))
+
+               ; not a procedure
+               ((258 261)
+                  `("operator is not a procedure:" ,a))
+
+               ; invalid vector indexer
+               (262
+                  (if (enum? b)
+                     `("vector index out of range:" ,b) ; todo?: print vector sizes
+                     `(,b "cannot be a vector index")))
+
                (22 ; (vm:cast ...)
                   `(invalid cast to ,(typename b (cons 'type b)) for ,a))
                (50 ; (vm:run ...)
                   '(invalid vm:run state))
-               (ARITY-ERROR
-                  `(,a did not accept ,(-- b) arguments))
 
                ((23 18 82) ; VMNEW, VMMAKE, VMALLOC
                   `(memory allocation error))
@@ -70,25 +93,11 @@
                (53 ; (cdr not-a-pair)
                   `(trying cdr of a non-pair ,a))
 
-               (259 ; ff direct call
-                  `(,expecting-2-3-arguments ,b))
                (260 ; (ff not-existent-key)
-                  `(key ,b not found in ,a))
-
-               ((261 258) ; (not-an-executable-object)
-                  `(illegal invocation of ,a))
-
-               ; invalid vector indexer
-               (262
-                  (if (enum? b)
-                     `("vector index out of range:" ,b) ; todo?: print vector sizes
-                     `(,b "cannot be a vector index")))
+                  `("key not found:" ,b 'in ,a))
 
                ; ------------------------------------------------------------
                ; syscall errors:
-               (62000
-                  `(too ,(if (less? a b) 'few 'many) arguments to syscall))
-
                (62001 ; port
                   `(syscall argument ,a is not a port))
                (62002 ; number
