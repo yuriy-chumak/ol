@@ -98,7 +98,7 @@
                ;; no threads were waiting for something that is being removed, so tell stderr about it
                (case (ref (ref msg 2) 1)
                   ; runtime error or vm error
-                  ((error crashed)
+                  ((error crash)
                      (vector-apply (ref msg 2)
                         (lambda (state code reason clarification)
                            (print-repl-error
