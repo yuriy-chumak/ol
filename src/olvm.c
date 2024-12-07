@@ -2728,7 +2728,7 @@ apply:;
 				ARITYERROR(this, acc-1, I1);
             word index = R4;
 			if (!is_enum(index))
-				ERROR(262, this, index);
+				ERROR(1032, this, index);
 
 			word size = object_size(*(R)this);
 			size_t i = is_enump (index) ? (value(index)) : (size - value(index));
@@ -2739,7 +2739,7 @@ apply:;
 
 				goto apply;
 			}
-			ERROR(262, this, index);
+			ERROR(1032, this, index);
 		}
 		else
 #if OLVM_FFI // unsafe must be enabled

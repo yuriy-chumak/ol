@@ -86,7 +86,7 @@
                   `("operator is not a procedure:" ,a))
 
                ; invalid vector indexer
-               (262
+               (1032 ; VECTORAPPLY+1000
                   (if (enum? b)
                      `("vector index out of range:" ,b) ; todo?: print vector sizes
                      `(,b "cannot be a vector index")))
