@@ -123,7 +123,10 @@
                            (mklambda formals body)
                            rands env cont free)))
                   (else
-                     (runtime-error "Bad head lambda arguments:" 'args formals 'rands rands))))
+                     (runtime-error "error 17 ->"
+                        (ref '|wrong number of arguments:| 1) (length rands)
+                           'but 'lambda
+                           'expects 'at 'least (-- (length formals))))))
             (['call rator2 rands2]
                (lets
                   ((this free (fresh free))

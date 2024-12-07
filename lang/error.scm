@@ -43,7 +43,18 @@
             (eq? x-type type-enum+)
             (eq? x-type type-enum-) )))
 
-   (define (verbose-ol-error code a b)
+   (define (op-name env op)
+      (cond
+         ((and (enum? op) (less? op 256))
+            (primop-name op))
+         ((vector? op)
+            'vector)
+         ((ff? op)
+            'object)
+         (else
+            'procedure)))
+
+   (define (verbose-ol-error env code a b)
       (if (eq? (type code) type-closure) ; continuation?
          (list a b)
       else
@@ -53,15 +64,15 @@
                   `(unsupported vm code ,a))
 
                (ARITY-ERROR ; 17
-                  (cons* (car '|wrong number of arguments:|)
+                  (cons* (ref '|wrong number of arguments:| 1)
                      (if (integer? b)
                         ; todo: add smart analyzer of bytecode to find
                         ;       exact count of supported procedure arguments
                         ;       if no arguments count provided
-                        (cons* (-- b) null)
+                        (cons* b #null)
                      else ; assert (pair b)
                         (cons* (car b) 'but
-                           (if (and (integer? a) (less? a 256)) (primop-name a) 'procedure)
+                           (op-name env a)
                            (cons* 'expects
                               (if (pair? (cdr b)) ; (given . (takes-from . takes-to)
                                  (if (cddr b)

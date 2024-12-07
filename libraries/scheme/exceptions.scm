@@ -37,7 +37,7 @@
 
          ; (VM::FAIL ...), vm pushed an error
          (['crash opcode a b]
-            (handler (verbose-ol-error opcode a b)))
+            (handler (verbose-ol-error #e opcode a b)))
 
          ; (raise info)
          ; note, these could easily be made resumable by storing cont
@@ -45,7 +45,7 @@
             (handler
                (if (eq? reason flag)
                   info
-                  (verbose-ol-error code reason info))))
+                  (verbose-ol-error #e code reason info))))
 
          (else is foo
             (runtime-error "something wrong" foo))))

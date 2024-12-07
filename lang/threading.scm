@@ -102,7 +102,7 @@
                      (vector-apply (ref msg 2)
                         (lambda (state code reason clarification)
                            (print-repl-error
-                              (verbose-ol-error code reason clarification))))))
+                              (verbose-ol-error #e code reason clarification))))))
                      
                (tc todo done (del state id))
             else

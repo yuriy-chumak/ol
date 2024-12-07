@@ -126,7 +126,7 @@
          (define describe-error
             (env-get env 'describe-ol-error
                ; empty error printer:
-               (lambda (opcode a b)
+               (lambda (env opcode a b)
                   (list "error" opcode "->" a " / " b))))
          (case answer
             ;; evaluated, typical behavior (ok, fail)
@@ -137,12 +137,12 @@
             ; (VM::FAIL ...), vm pushed an error
             (['crash opcode a b]
                ;; (print-to stderr "crashed")
-               (fail (describe-error opcode a b)))
+               (fail (describe-error env opcode a b)))
 
             ; (runtime-error ...)
             ; note, these could easily be made resumable if continuation
             (['error code reason clarification]
-               (fail (describe-error code reason clarification)))
+               (fail (describe-error env code reason clarification)))
 
             ;; (['breaked]
             ;;    (print-to stderr "breaked")

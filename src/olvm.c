@@ -2595,12 +2595,12 @@ word get(word *ff, word key, word def, jmp_buf ret)
 	R6 = (word) (b);\
 	goto error; \
 }
-#define ERROR_MACRO(_1, _2, _3, NAME, ...) NAME
+#define ERROR_MACRO(_1, _2, _3, _4, NAME, ...) NAME
 
 // "ERROR" is an error (produces 'error, mcp #5)
 #define ERROR3(code, a, b) ERROR5("ERROR", 5, code,a,b)
 #define ERROR2(code, a) ERROR3(code, this, a)
-#define ERROR(...) ERROR_MACRO(__VA_ARGS__, ERROR3, ERROR2,, NOTHING)(__VA_ARGS__)
+#define ERROR(...) ERROR_MACRO(__VA_ARGS__, NOTHING,ERROR3,ERROR2,, NOTHING)(__VA_ARGS__)
 
 // CHECK is an ERROR simplification
 #define CHECK(exp, errorcode, a)  if (!(exp)) ERROR(errorcode, this, a);
@@ -2608,10 +2608,20 @@ word get(word *ff, word key, word def, jmp_buf ret)
 // "CRASH" is a critical error (produces 'crash, mcp #3)
 #define CRASH3(code, a, b) ERROR5("CRASH", 3, code,a,b)
 #define CRASH2(code, a) CRASH3(code, this, a)
-#define CRASH(...) ERROR_MACRO(__VA_ARGS__, CRASH3, CRASH2,, NOTHING)(__VA_ARGS__)
+#define CRASH(...) ERROR_MACRO(__VA_ARGS__, NOTHING,CRASH3,CRASH2,, NOTHING)(__VA_ARGS__)
 
 // "ASSERT" is a "CRASH" simplification
-#define ASSERT(exp, code, a)        if (!(exp)) CRASH(code, a, INULL);
+#define ASSERT(exp, errorcode, a) if (!(exp)) CRASH(errorcode, a, INULL);
+
+// "ARITY_ERROR" macro
+#if OLVM_NO_ADVANCED_ARITY_ERROR
+#	define ARITYERROR(this, acc, ...) ERROR(17, this, I(acc))
+#else
+#	define ARITYERROR2(this, acc) ERROR3(17, this, I(acc))
+#	define ARITYERROR3(this, acc, a) ERROR3(17, this, cons(I(acc), a))
+#	define ARITYERROR4(this, acc, a, b) ERROR3(17, this, cons(I(acc), cons(a, b)))
+#	define ARITYERROR(...) ERROR_MACRO(__VA_ARGS__, ARITYERROR4,ARITYERROR3,ARITYERROR2,, NOTHING)(__VA_ARGS__)
+#endif
 
 // # of function calls in a thread quantum
 #define TICKS  10000
@@ -2703,7 +2713,7 @@ apply:;
 				R3 = get((word*)this, key, R5, ol->ret);
 				break;
 			default:
-				ERROR(17, this, cons(I(acc), cons(I(1), I(2))));
+				ARITYERROR(this, acc, I1, I2);
 			}
 			this = continuation;
 			acc = 1; // 1 means "no arguments"
@@ -2715,7 +2725,7 @@ apply:;
 		if (type == TVECTOR) {
 			word continuation = R3;
 			if (acc != 2)
-				ERROR(17, this, cons(I(acc-1), I(1)));
+				ARITYERROR(this, acc-1, I1);
             word index = R4;
 			if (!is_enum(index))
 				ERROR(262, this, index);
@@ -2843,7 +2853,7 @@ apply:;
 			R3 = R5;           // default value
 			break;
 		default:
-			ERROR(17, this, cons(I(acc-1), cons(I(1), I(2))));
+			ARITYERROR(this, acc-1, I1, I2);
 		}
 		this = continuation;
 		acc = 1;
@@ -3118,7 +3128,7 @@ loop:;
 	 * Arity Error
 	 */
 	case ARITY_ERROR: // (0%)
-		ERROR(ARITY_ERROR, IFALSE, I(acc));
+		ARITYERROR(this, acc-1);
 		break;
 
 	/*! #### GOTO
@@ -3153,7 +3163,7 @@ loop:;
 		}
 
 		if (acc < 0)
-			ERROR(ARITY_ERROR, I(0));
+			ARITYERROR(this, 0);
 		this = reg[r];
 
 		// copy args down
@@ -3166,7 +3176,7 @@ loop:;
 
 		while (is_pair(lst)) { // unwind argument list
 			if (r > NR)
-				ERROR(APPLY, I(r));
+				ARITYERROR(this, r);
 			reg[r++] = car (lst);
 			lst = (word *) cdr(lst);
 			arity++;
@@ -3951,7 +3961,7 @@ loop:;
 	case SYSCALL: {
 		word argc = *ip++;
 		if (argc == 0)
-			ERROR(ARITY_ERROR, I(SYSCALL), cons(I(0), cons(I(1), IFALSE)));
+			ARITYERROR(I(SYSCALL), argc, I1, IFALSE); // , I(1), IFALSE
 
 		--argc; // skip syscall number
 		word* r = (R) IFALSE;  // by default returning #false
@@ -3959,9 +3969,9 @@ loop:;
 		// -----------------------------------------------------------------------------------
 		// arguments count checking macro
 		#define CHECK_ARGC_EQ(n)  if (argc - n) \
-		                              ERROR(ARITY_ERROR, I(SYSCALL), cons(I(argc), I(n)));
+		                              ARITYERROR(I(SYSCALL), argc, I(n));
 		#define CHECK_ARGC(a, b)  if (argc < a || argc > b) \
-		                              ERROR(ARITY_ERROR, I(SYSCALL), cons(I(argc), cons(I(a), I(b))));
+		                              ARITYERROR(I(SYSCALL), argc, I(a), I(b));
 		// arguments type checking macro
 		#define CHECK_TYPE(arg, type, error) if (argc >= arg) if (!is_##type(A##arg)) ERROR(error, I(arg), A##arg)
 		#define CHECK_TYPE_OR_FALSE(arg, type, error) \

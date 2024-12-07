@@ -161,12 +161,12 @@
 
             ; (VM::FAIL ...), vm pushed an error
             (['crash opcode a b]
-               (runtime-error "vm error" (verbose-ol-error opcode a b)))
+               (runtime-error "vm error" (verbose-ol-error #e opcode a b)))
 
             ; (runtime-error ...)
             ; note, these could easily be made resumable if continuation
             (['error code reason clarification]
-               (runtime-error "ol error" (verbose-ol-error code reason clarification)))
+               (runtime-error "ol error" (verbose-ol-error #e code reason clarification)))
             (else is foo
                (runtime-error "unknown error" foo))))
 

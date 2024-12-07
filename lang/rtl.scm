@@ -499,7 +499,7 @@
                                  (λ (regs) (rtl-any regs body)))
                               ;; fixme: should be a way to show just parts of AST nodes, which may look odd
                               (runtime-error "error 17 ->"
-                                 (car '|wrong number of arguments:|) (length (cdr rands))
+                                 (ref '|wrong number of arguments:| 1) (length (cdr rands))
                                     'but (primop-name op)
                                     'expects (length formals))))
                         (else
@@ -514,7 +514,7 @@
                                  (if (eq? (length formals) (length args))
                                     (rtl-any (create-aliases regs formals args) body)
                                     (runtime-error "error 17 ->"
-                                       (car '|wrong number of arguments:|) (length args)
+                                       (ref '|wrong number of arguments:| 1) (length args)
                                           'but 'lambda
                                           'expects (length formals))))))
                         (else

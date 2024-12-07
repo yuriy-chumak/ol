@@ -178,7 +178,7 @@
                         (['recursive formals deps]
                            (unless (eq? (length formals) (length rands))
                               (runtime-error "error 17 ->"
-                                 (car '|wrong number of arguments:|) (length rands)
+                                 (ref '|wrong number of arguments:| 1) (length rands)
                                     'but exp
                                     'expects (length formals)))
                            (let ((sub-env (env-bind env formals)))
