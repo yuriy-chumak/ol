@@ -365,12 +365,6 @@
       (define fasl-decode decode2)
 
       ; deserialize
-      (define (procedure? o)
-         (case (type o)
-            (type-procedure #true)
-            (type-closure #true)
-            (type-constructor #true)))
-
       (define (deserialize ll fail)
          (define obj (fasl-decode ll fail))
          (if (eq? obj fail)

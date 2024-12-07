@@ -1530,7 +1530,20 @@
       ; This chapter describes various primitive procedures which
       ; control the flow of program execution in special ways.
       ; ...
-      ; The procedure? predicate is also described here.
+
+      ; procedure:  (procedure? obj)
+      (define (procedure? o)
+         (case (type o)
+            (type-procedure #true)
+            (type-closure #true)
+            (type-bytecode #true)))
+
+      (assert (procedure? car)                  ===> #true)
+      (assert (procedure? 'car)                 ===> #false)
+      (assert (procedure? (lambda (x) (cons x x)))
+                                                ===> #true)
+      (assert (call-with-current-continuation procedure?)
+                                                ===> #true)
 
       ; *ol* extension
       (define (ff? o)
@@ -1552,19 +1565,7 @@
             (type-closure #true)
             (type-bytecode #true)))
 
-      ; procedure:  (procedure? obj)
-      ;
-      (define (procedure? o)
-         (or (function? o) (ff? o)))
-
-      (assert (procedure? car)                  ===> #true)
-      (assert (procedure? 'car)                 ===> #false)
-      (assert (procedure? (lambda (x) (cons x x)))
-                                                ===> #true)
-      (assert (call-with-current-continuation procedure?)
-                                                ===> #true)
-
-      ; procedure:  (apply proc arg1 ...)  * builtin
+      ; procedure:  (apply proc arg1 ...) * builtin
 
       ; procedure:  (map proc list1 ...)  * (scheme list)
       ; procedure:  (string-map proc string1 ...)  * (scheme string)
@@ -1574,7 +1575,7 @@
       ; procedure:  (string-for-each proc string1 ...)  * (scheme string)
       ; procedure:  (vector-for-each proc vector1 ...)  * (scheme vector)
 
-      ; procedure:  (call-with-current-continuation proc)  * (src vm)
+      ; procedure:  (call-with-current-continuation proc) * (src vm)
 
       (define call/cc call-with-current-continuation)
 
