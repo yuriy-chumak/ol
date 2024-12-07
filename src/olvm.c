@@ -2707,7 +2707,7 @@ apply:;
 			case 2:
 				R3 = get((word*)this, key,  0, ol->ret); // 0 is "not found"
 				if (!R3)
-					ERROR(260, this, key);
+					ERROR(1049, this, key);
 				break;
 			case 3:
 				R3 = get((word*)this, key, R5, ol->ret);
@@ -2847,7 +2847,7 @@ apply:;
         word key = R4;
 		switch (acc) {
 		case 2:
-			ERROR(260, this, key); // key
+			ERROR(1049, this, key); // key
 			break;
 		case 3:
 			R3 = R5;           // default value

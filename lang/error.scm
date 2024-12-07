@@ -85,6 +85,9 @@
                ((258 261)
                   `("operator is not a procedure:" ,a))
 
+               (1049 ; FFAPPLY+1000
+                  `("key not found:" ,b in ,a))
+
                ; invalid vector indexer
                (1032 ; VECTORAPPLY+1000
                   (if (enum? b)
@@ -103,9 +106,6 @@
                   `(trying car of a non-pair ,a))
                (53 ; (cdr not-a-pair)
                   `(trying cdr of a non-pair ,a))
-
-               (260 ; (ff not-existent-key)
-                  `("key not found:" ,b 'in ,a))
 
                ; ------------------------------------------------------------
                ; syscall errors:
