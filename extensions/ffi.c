@@ -1288,10 +1288,10 @@ int_t from_rational(word arg) {
 	else {
 		switch (reference_type(pa)) {
 		case TINTP:
-			a = +untoi(pa);
+			a = +unumber(pa);
 			break;
 		case TINTN:
-			a = -untoi(pa);
+			a = -unumber(pa);
 			break;
 		}
 	}
@@ -1302,10 +1302,10 @@ int_t from_rational(word arg) {
 	else {
 		switch (reference_type(pb)) {
 		case TINTP:
-			b = +untoi(pb);
+			b = +unumber(pb);
 			break;
 		case TINTN:
-			b = -untoi(pb);
+			b = -unumber(pb);
 			break;
 		}
 	}
@@ -3191,7 +3191,7 @@ word OLVM_mkcb(olvm_t* self, word* arguments)
 	word* fp;
 	char* ptr = 0;
 
-	int pin = untoi(A);
+	int pin = unumber(A);
 
 #ifdef __i386__ // x86 linux/windows
 	// long callback(olvm_t* ol, int id, int* argv)

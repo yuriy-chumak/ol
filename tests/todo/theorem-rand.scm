@@ -41,7 +41,7 @@
       ((string? x) (lrange 0 1 (string-length x)))
       ((blob? x)   (lrange 0 1 (blob-len x)))
       ((ff? x)     (keys x))
-      (else (error "domain: what is " x))))
+      (else (error "domain: what is" x))))
 
 ; f :: _ → ?, values
 (define (range x)
@@ -51,7 +51,7 @@
       ((string? x) (string->list x))
       ((blob? x) (blob->list x))
       ((ff? x)     (ff-fold (λ (out k v) (cons v out)) null x))
-      (else (error "range: what is " x))))
+      (else (error "range: what is" x))))
 
 ;; rs (thing_1 ...) def → rs' thing_i | rs def
 (define (choose rs l)

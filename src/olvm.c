@@ -306,7 +306,7 @@ object_t
 
 
 // three main classes:
-#define is_value(x)                 (( (V)(x)) & 2)
+#define is_value(x)                 (((V)(x)) & 2)
 #define is_reference(x)             (!is_value(x))
 #define is_rawstream(x)             ((*(R)(x)) & RAWBIT) //((struct object_t*)(x))->rawness // ((*(word*)(x)) & RAWBIT)
 
@@ -319,7 +319,14 @@ object_t
 typedef word V;
 // makes positive olvm integer value from int
 #define I(val) \
-		(make_value(TENUMP, val))  // === (value << VPOS) | 2
+		(make_value(TENUMP, val)) // === (value << VPOS) | 2
+
+#define I0 I(0)
+#define I1 I(1)
+#define I2 I(2)
+#define I3 I(3)
+#define I4 I(4)
+#define I5 I(5)
 
 // R means Reference
 typedef word* R;
@@ -331,9 +338,8 @@ typedef word* R;
 
 // всякая всячина:
 #define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size
-#define object_size(x)              (header_size(x))
+#define object_size(x)              (header_size(x)) // todo: remove this, rename to header_size
 #define header_pads(x)              (unsigned char) ((((word)(x)) >> VPOS) & 7) // header_t(x).padding
-#define object_payload(x)           (((word)(x)) + 1)
 
 #define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
 #define reference_type(x)           (value_type (*reference(x)))
@@ -569,8 +575,8 @@ word*p = NEW_OBJECT (type, 2);\
 #define cons(a, b) new_pair(a, b)
 
 // -= new_list =----------------------------------------
-
 // аллокаторы списоков (ставить в качестве типа частей TPAIR! так как часть списка - список)
+
 #define new_list2(type, a1) \
 	new_pair (type, a1, INULL)
 #define new_list3(type, a1, a2) \
@@ -598,7 +604,6 @@ word*p = NEW_OBJECT (type, 2);\
 
 #define NEW_LIST(_1, _2, _3, _4, _5, _6, NAME, ...) NAME
 #define new_list(...) NEW_LIST(__VA_ARGS__, new_list6, new_list5, new_list4, new_list3, new_list2, NOTHING, NOTHING)(__VA_ARGS__)
-
 
 // -= vector =---------------------------------------
 
@@ -748,20 +753,9 @@ word*p = new (TVECTOR, 13);\
 // uv, sv - unsigned/signed respectively.
 // Z - mножество целых чисел.
 
-// работа с numeric value типами
-#ifndef UVTOI_CHECK
-#define UVTOI_CHECK(v)  assert (is_value(v) && value_type(v) == TENUMP);
-#endif
-
 // арифметика целых (возможно больших)
-// прошу внимания!
-// todo: rename to un2i (signed number /value or long number/ TO integer)
-#define untoi(num)  ({\
-	is_value(num) ? value(num)\
-		: value(car(num)) | value(cadr(num)) << VBITS; \
-	}) //(is_reference(cdr(num)) ? uftoi(cadr(num)) << VBITS : 0); })
 
-// something wrong: looks like __builtin_choose_expr doesn't work as expected!
+// something wrong?: looks like __builtin_choose_expr doesn't work as expected!
 #ifndef __GNUC__
 #define __builtin_choose_expr(const_exp, exp1, exp2) (const_exp) ? (exp1) : (exp2)
 #endif
@@ -1323,21 +1317,36 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 
 #include <time.h>
 #include <math.h>
+
+// --------------------------------------------------------------------------
 //	https://gcc.gnu.org/wiki/FloatingPointMath
-#ifdef __TINYC__
-#	define __builtin_sqrt  sqrt
-#	define __builtin_sin   sin
-#	define __builtin_cos   cos
-#	define __builtin_tan   tan
-#	define __builtin_atan  atan
-#	define __builtin_log   log
-#	define __builtin_exp   exp
-#	define __builtin_asin  asin
-#	define __builtin_acos  acos
-#	define __builtin_floor floor
-#	define __builtin_atan2 atan2
-#	define __builtin_pow   pow
+#ifdef OLVM_BUILTIN_FMATH
+
+/// __GCC_IEC_559 > 0 if float and double supported (only GCC)
+#if 0 // todo: __GCC_IEC_559 > 0 && __x86_64__
+// #elif __GCC_IEC_559 > 0 && __i386__
+// #elif __GCC_IEC_559 > 0 && __aarch64__
+// #elif __GCC_IEC_559 > 0 && __arm__
+// # ifndef __ARM_PCS_VFP
+// # else
+// # endif
+// #elif __GCC_IEC_559 > 0 && __mips__
+#else // __CLANG, __TINYC__, __EMSCRIPTEN__, ...
+#	define fsqrt sqrt
+#	define fsin sin
+#	define fcos cos
+#	define ftan tan
+#	define fatan atan
+#	define flog log
+#	define fexp exp
+#	define fasin asin
+#	define facos acos
+#	define ffloor floor
+// #	define __builtin_atan2 atan2
+// #	define __builtin_pow   pow
 #endif
+#endif//OLVM_BUILTIN_FMATH
+// -----------------------
 
 // memfd_create:
 #include <sys/mman.h>
@@ -2679,7 +2688,7 @@ apply:;
 			R1 = this; this = car(this);
 		}
 		else
-		// low bits have special meaning
+		// ff's low bits have special meaning
 		if ((type & 0x3C) == TFF) { // (95% for "no")
 			// ff assumed to be valid
 			word continuation = R3;
@@ -2697,7 +2706,7 @@ apply:;
 				ERROR(17, this, cons(I(acc), cons(I(1), I(2))));
 			}
 			this = continuation;
-			acc = 1;
+			acc = 1; // 1 means "no arguments"
 
 			goto apply;
 		}
@@ -2866,7 +2875,7 @@ apply:;
 		goto done;       // колбек закончен! надо просто выйти наверх
 	}
 	
-	ERROR(261, this); // not callable
+	ERROR(261, this); // is not a procedure
 
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
@@ -2939,7 +2948,25 @@ mainloop:;
 	#	define LESSQ 44
 
 	#	define FP1 33
+	#		define FSQRT 0xFA
+	#		define FSIN 0xFE
+	#		define FCOS 0xFF
+	#		define FTAN 0xF2
+	#		define FATAN 0xF3
+	#		define FLOG 0xF1
+	#		define FEXP 0x81
+	#		define FASIN 0x8E
+	#		define FACOS 0x8F
+	#		define FFLOOR 0xFC
 	#	define FP2 34
+	#		define FLESSQ 0xD9
+	#		define FADD 0xC1
+	#		define FSUB 0xE9
+	#		define FMUL 0xC9
+	#		define FDIV 0xF9
+	//#		define FATAN 0xF3
+	#		define FLOG2 0xF1
+	#		define FEXPT 0x81
 
 		// tuples, trees
 	#	define VECTORAPPLY 32
@@ -3114,7 +3141,6 @@ loop:;
 
 	/*! #### APPLY
 	 */
-	// todo:? include apply-tuple, apply-values? and apply-ff to the APPLY
 	case APPLY: { // (0%)
 		int r = 4;   // normal apply: cont=r3, func=r4, a0=r5,
 		int arity = 1;
@@ -3807,7 +3833,7 @@ loop:;
 
 		word pos = 1, n = *ip++;
 		//word hdr = *tuple;
-		//CHECK(!(is_raw(hdr) || object_size(hdr)-1 != n), vector, BIND);
+		//CHECK(!(is_raw(hdr) || object_size(hdr)-1 != n), VECTORAPPLY, vector);
 		while (n--)
 			reg[*ip++] = vector[pos++];
 
@@ -5030,7 +5056,7 @@ loop:;
 
 				// CHECK(is_port(a), a, SYSCALL);
 				int sockfd = port(a);
-				int timeus = is_numberp(b) ? untoi (b) : 100000; // default is 100 ms
+				int timeus = is_numberp(b) ? unumber(b) : 100000; // default is 100 ms
 
 				fd_set fds;
 				FD_ZERO(&fds); FD_SET(sockfd, &fds);
@@ -5393,42 +5419,42 @@ loop:;
 	// FPU extensions
 	case FP1: { // with 1 argument
 	#if OLVM_INEXACTS && OLVM_BUILTIN_FMATH
-		word fn = value (A0);
+		word func = value (A0);
 		inexact_t a = ol2f(A1);
 
 		A2 = (word) new_alloc(TINEXACT, sizeof(inexact_t));
-		switch (fn) {
-		case 0xFA: // fsqrt
-			*(inexact_t*)&car(A2) = __builtin_sqrt(a);
+		register inexact_t *inexact = (inexact_t*)&car(A2);
+		switch (func) {
+		case FSQRT:
+			*inexact = fsqrt(a);
 			break;
-		case 0xFE: // fsin
-			*(inexact_t*)&car(A2) = __builtin_sin(a);
+		case FSIN:
+			*inexact = fsin(a);
 			break;
-		case 0xFF: // fcos
-			*(inexact_t*)&car(A2) = __builtin_cos(a);
+		case FCOS:
+			*inexact = fcos(a);
 			break;
-		case 0xF2: // ftan
-			*(inexact_t*)&car(A2) = __builtin_tan(a);
+		case FTAN:
+			*inexact = ftan(a);
 			break;
-		case 0xF3: // fatan
-			*(inexact_t*)&car(A2) = __builtin_atan(a);
+		case FATAN:
+			*inexact = fatan(a);
 			break;
-		case 0xF1: // flog
-			*(inexact_t*)&car(A2) = __builtin_log(a);
+		case FLOG:
+			*inexact = flog(a);
+			break;
+		case FEXP:
+			*inexact = fexp(a);
+			break;
+		case FASIN:
+			*inexact = fasin(a);
+			break;
+		case FACOS:
+			*inexact = facos(a);
 			break;
 
-		case 0x81: // fexp
-			*(inexact_t*)&car(A2) = __builtin_exp(a);
-			break;
-		case 0x8E: // fasin
-			*(inexact_t*)&car(A2) = __builtin_asin(a);
-			break;
-		case 0x8F: // facos
-			*(inexact_t*)&car(A2) = __builtin_acos(a);
-			break;
-
-		case 0xFC: // ffloor
-			*(inexact_t*)&car(A2) = __builtin_floor(a);
+		case FFLOOR:
+			*inexact = ffloor(a);
 			break;
 
 		default:
@@ -5448,32 +5474,32 @@ loop:;
 		inexact_t b = ol2f(A2);
 
 		A3 = (word) new_alloc(TINEXACT, sizeof(inexact_t));
+		register inexact_t *inexact = (inexact_t*)&car(A3);
 		switch (fn) {
-		case 0xD9: // fless?
-			A3 = (a < b) ? ITRUE : IFALSE;
+		case FLESSQ:
+			A3 = (a < b) ? ITRUE : IFALSE; // ignore allocated space
 			break;
-		case 0xC1: // fadd
-			*(inexact_t*)&car(A3) = a + b;
+		case FADD: // fadd
+			*inexact = a + b;
 			break;
-		case 0xE9: // fsub
-			*(inexact_t*)&car(A3) = a - b;
+		case FSUB: // fsub
+			*inexact = a - b;
 			break;
-		case 0xC9: // fmul
-			*(inexact_t*)&car(A3) = a * b;
+		case FMUL: // fmul
+			*inexact = a * b;
 			break;
-		case 0xF9: // fdiv
-			*(inexact_t*)&car(A3) = a / b;
+		case FDIV: // fdiv
+			*inexact = a / b;
 			break;
 	#if OLVM_BUILTIN_FMATH
-		case 0xF3: // fatan2
-			*(inexact_t*)&car(A3) = __builtin_atan2(a, b);
+		case FATAN: // fatan2
+			*inexact = atan2(a, b);
 			break;
-		case 0xF1: // flog2
-			*(inexact_t*)&car(A3) = __builtin_log(a) / __builtin_log(b);
+		case FLOG2: // flog2
+			*inexact = flog(a) / flog(b);
 			break;
-
-		case 0x81: // fexpt
-			*(inexact_t*)&car(A3) = __builtin_pow(a, b);
+		case FEXPT: // fexpt
+			*inexact = pow(a, b);
 			break;
 	#endif
 		default:
