@@ -1538,6 +1538,9 @@
              (eq? o #empty)))
 
       ; *ol* extension
+      (define object? ff?)
+
+      ; *ol* extension
       (define (bytecode? o)
          (eq? (type o) type-bytecode))
 
@@ -1849,6 +1852,7 @@
       ; 6.10  Control features
       ff? bytecode? function?
       procedure? apply
+      object?
       call-with-current-continuation call/cc
       call-with-values
       
