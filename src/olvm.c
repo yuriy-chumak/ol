@@ -2588,11 +2588,11 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define A5  reg[ip[5]]
 
 // generate errors and crashes
-#define ERROR5(type,value, code,a,b) { \
+#define ERROR5(type,mcp_n, code,a,b) { \
 	D("VM " type " AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code,a,b); \
-	R4 = I(code);    R3 = I(value);\
-	R5 = (word) (a);\
-	R6 = (word) (b);\
+	r4 = I(code);    r3 = I(mcp_n);\
+	r5 = (word) (a);\
+	r6 = (word) (b);\
 	goto error; \
 }
 #define ERROR_MACRO(_1, _2, _3, _4, NAME, ...) NAME
@@ -2678,6 +2678,9 @@ word runtime(struct olvm_t* ol)
 	unsigned char *ip = 0, *ip0;
 	// internal gc call wrapper
 #	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
+
+	// error handling optimized variables
+	register word r3,r4,r5,r6;
 
 #ifdef DEBUG_COUNT_OPS
     bzero(ops, sizeof(ops));
@@ -2867,17 +2870,11 @@ apply:;
 		if (!is_reference(this))
 			goto done; // expected exit
 
-		R0 = IFALSE; // set mcp yes?
 		R4 = R3;
-		R3 = I(2);   // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
-		R5 = IFALSE;
-		R6 = IFALSE;
-//		breaked = 0;
-		ticker = TICKS;// ?
-		bank = 0;
-		acc = 4;
-
-		goto apply;
+		R3 = I(2);     // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
+		R5 = R6 = IFALSE;
+		bank = ticker = 0;
+		goto mcp;
 	}
 
 	if (this == IRETURN) {
@@ -2887,6 +2884,23 @@ apply:;
 	
 	ERROR(261, this); // is not a procedure
 
+// error handling (calling mcp function)
+error:;
+	this = R0;
+	R3 = r3; R4 = r4; R5 = r5; R6 = r6;
+
+// call mcp (if any), R3: mcp function, R4-R6: arguments
+mcp:;
+	R0 = IFALSE;
+
+	if (ticker > 10)
+		bank = ticker; // deposit remaining ticks for return to thread
+	ticker = TICKS;
+
+	acc = 4;
+	goto apply;
+
+// main vm execution loop
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
 	#	define MODD(i, n) ((i) + ((n)<<6))
@@ -3191,14 +3205,8 @@ loop:;
 	// do mcp operation with continuation
 	case MCP: { // (1%) sys continuation op arg1 arg2
 		this = R0;
-		R0 = IFALSE; // let's call mcp
 		R3 = A1; R4 = A0; R5 = A2; R6 = A3;
-		acc = 4;
-		if (ticker > 10)
-			bank = ticker; // deposit remaining ticks for return to thread
-		ticker = TICKS;
-
-		goto apply;
+		goto mcp;
 	}
 
 	/*! #### RUN
@@ -5561,17 +5569,6 @@ loop:;
 		goto done;
 	}
 	goto loop;
-
-
-error:; // R4-R6 set, and call mcp (if any)
-	this = R0;
-	R0 = IFALSE;
-	if (is_reference(this)) {
-		acc = 4;
-		goto apply;
-	}
-	E("invoke_mcp failed");
-	goto done; // no mcp to handle error (fail in it?), so nonzero exit
 
 done:;
 	ol->this = this;
