@@ -92,7 +92,7 @@
             (let*((name ((this 'names {}) obj #f)))
                (format-string (if name
                      (string-append "#<" name ">")
-                     "#function") k))))
+                     "#<lambda>") k))))
 
       (define (cook-ff this obj k)
          (cons* #\# #\f #\f
@@ -170,6 +170,17 @@
             ;; ((blob? obj)
             ;;    (cons #\#
             ;;       (write-formatter formatter (blob->list obj) k))) ;; <- should convert incrementally!
+         ; special vector (names for error log)
+         9 (lambda (this obj k)
+               (cons* #\# #\<
+                  (cdr
+                     (let loop ((obj (vector->list obj)) (tl (cons #\> k)))
+                        (cond
+                           ((null? obj) tl)
+                           ((pair? obj)
+                              (cons #\space
+                                 (formatter this (car obj) (loop (cdr obj) tl)))))))))
+
       })
 
       ; 

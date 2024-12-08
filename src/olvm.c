@@ -2690,8 +2690,9 @@ word runtime(struct olvm_t* ol)
 apply:;
 
 	// if it's an allocated object, not a value:
+	word type = 0;
 	if (is_reference(this)) {
-		word type = reference_type (this);
+		type = reference_type (this);
 		if (type == TCLOSURE) { // (66% for "yes")
 			R1 = this; this = car(this);
 			R2 = this; this = car(this);
@@ -2882,10 +2883,14 @@ apply:;
 		goto done;       // колбек закончен! надо просто выйти наверх
 	}
 	
-	ERROR(261, this); // is not a procedure
+	// this is not a procedure
+	ERROR(261, this);
 
 // error handling (calling mcp function)
 error:;
+	// store real procedure if
+	if ((r5 == this) && (type == TCLOSURE || type == TPROCEDURE))
+		r5 = R1; // top level "this"
 	this = R0;
 	R3 = r3; R4 = r4; R5 = r5; R6 = r6;
 

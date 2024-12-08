@@ -5,7 +5,9 @@
 
    (import
       (scheme core)
+      (scheme list)
       (src vm) (owl ff)
+      (owl math)
       (lang primop))
 
 (begin
@@ -43,16 +45,76 @@
             (eq? x-type type-enum+)
             (eq? x-type type-enum-) )))
 
+; todo: collect all names of similar function
+(define (procedure->name env a)
+   (vm:cast
+      (call/cc (lambda (return)
+         (define (walk lib env)
+            (ff-for-each (lambda (key value)
+                  (define procedure (ref (ref value 2) 2))
+                  (if (eq? procedure a) ; #(defined #(value #function))
+                     ; todo: add synonims search
+                     (return (if lib [key 'from lib 'library] [key]))))
+               env))
+
+         ; search for toplevel symbol
+         (walk #f env)
+         ; then search all libraries.
+         (for-each (lambda (lib)
+               (if (ff? (cdr lib))
+                  (walk (car lib) (cdr lib))))
+            (ref (ref (env '*libraries* [#f [#f ()]]) 2) 2))
+         ; no procedure name found
+         ['lambda]))
+      9))
+
    (define (op-name env op)
       (cond
          ((and (enum? op) (less? op 256))
-            (primop-name op))
+            [(primop-name op)])
          ((vector? op)
-            'vector)
-         ((ff? op)
-            'object)
+            ['vector])
+         ((object? op)
+            ['object])
          (else
-            'procedure)))
+            (procedure->name env op)) ))
+
+   (define (arity-error-description env a f b)
+      (if (integer? b)
+         (case (type f)
+            ; todo: type-closure
+            (type-closure
+               (arity-error-description env a (ref f 1) b))
+            (type-procedure
+               (arity-error-description env a (ref f 1) b))
+            (type-bytecode
+               (define name (op-name env a))
+               (if (eq? (ref f 0) JAF)
+                  (let cycle ((ip 0) (expects #n))
+                     (case (ref f ip)
+                        (JAF (cycle (+ ip (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)) 4)
+                                    (cons (-- (ref f (+ ip 1))) expects)))
+                        (JAX (cycle (+ ip (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)) 4)
+                                    (cons* (list 'more 'than (-- (ref f (+ ip 1)))) expects)))
+                        (else
+                           (cons* b 'but name 'expects
+                              (if (null? (cdr expects))
+                                 expects
+                                 (list 'one 'of (make-vector expects)))))))
+                  (list b 'for name)))
+            (else
+               ;; (if (and (bytevector? a) (eq? (ref a 0) 11)) ; we can try to calculate valid arities
+               (list b)))
+      else
+         (cons* (car b) 'but
+            (op-name env a)
+            (cons* 'expects
+               (if (pair? (cdr b)) ; (given . (takes-from . takes-to)
+                  (if (cddr b)
+                     (list 'from (cadr b) 'to (cddr b))
+                     (list 'at 'least (cadr b)))
+               else ; (given . takes)
+                  (cdr b))))))
 
    (define (verbose-ol-error env code a b)
       (if (eq? (type code) type-closure) ; continuation?
@@ -65,21 +127,7 @@
 
                (ARITY-ERROR ; 17
                   (cons* (ref '|wrong number of arguments:| 1)
-                     (if (integer? b)
-                        ; todo: add smart analyzer of bytecode to find
-                        ;       exact count of supported procedure arguments
-                        ;       if no arguments count provided
-                        (cons* b #null)
-                     else ; assert (pair b)
-                        (cons* (car b) 'but
-                           (op-name env a)
-                           (cons* 'expects
-                              (if (pair? (cdr b)) ; (given . (takes-from . takes-to)
-                                 (if (cddr b)
-                                    (cons* 'from (cadr b) 'to (cddr b) null)
-                                    (cons* 'at 'least (cadr b) null))
-                              else ; (given . takes)
-                                 (cons* (cdr b) null)))))))
+                     (arity-error-description env a a b)))
 
                ; not a procedure
                ((258 261)
