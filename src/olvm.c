@@ -354,6 +354,7 @@ typedef word* R;
 #define TSTRING                     (3)  // type-string
 #define TSYMBOL                     (4)  // type-symbol
 #define TSTRINGWIDE                 (5)  // type-string-wide
+#define TNAME                       (9)  // type-name // experimental type
 
 #define TPORT                       (12) // type-port
 #define TCONST                      (13) // type-const

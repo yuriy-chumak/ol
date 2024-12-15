@@ -26,6 +26,7 @@
       (owl sort)
       (owl io)
       (only (src vm) NEW)
+      (only (src vm) ARITY-ERROR)
       (lang primop)
       (lang assemble)
       (lang closure))
@@ -490,7 +491,7 @@
             (['call rator rands]
                ;; compile as primop call, bind if rator is lambda or a generic call
                (let ((op (and (eq? (ref rator 1) 'value) (primitive? (ref rator 2)))))
-                  (if op
+                  (if op ; primitive? returns primitive number if primitive
                      (case (car rands)
                         (['lambda-var fixed? formals body]
                            ; assert (fixed? == #true)
@@ -498,10 +499,9 @@
                               (rtl-primitive regs op formals (cdr rands)
                                  (λ (regs) (rtl-any regs body)))
                               ;; fixme: should be a way to show just parts of AST nodes, which may look odd
-                              (runtime-error "error 17 ->"
-                                 (ref '|wrong number of arguments:| 1) (length (cdr rands))
-                                    'but (primop-name op)
-                                    'expects (length formals))))
+                              (runtime-error ARITY-ERROR (cons*
+                                    op
+                                    (length (cdr rands))))))
                         (else
                            (runtime-error "bad primitive args: " rands)))
                      (case rator
@@ -513,10 +513,9 @@
                                  ;;; note that this is an alias thing...
                                  (if (eq? (length formals) (length args))
                                     (rtl-any (create-aliases regs formals args) body)
-                                    (runtime-error "error 17 ->"
-                                       (ref '|wrong number of arguments:| 1) (length args)
-                                          'but 'lambda
-                                          'expects (length formals))))))
+                                    (runtime-error ARITY-ERROR (cons*
+                                          'lambda
+                                          (cons* (length args) (length formals))))))))
                         (else
                            (rtl-call regs rator rands))))))
             (else

@@ -12,6 +12,7 @@
       (owl list)
       (owl list-extra)
       (owl io)
+      (only (src vm) ARITY-ERROR)
       (lang env))
 
    (begin
@@ -177,10 +178,9 @@
                      (case (lookup env sym)
                         (['recursive formals deps]
                            (unless (eq? (length formals) (length rands))
-                              (runtime-error "error 17 ->"
-                                 (ref '|wrong number of arguments:| 1) (length rands)
-                                    'but exp
-                                    'expects (length formals)))
+                              (runtime-error ARITY-ERROR (cons*
+                                 (ref (ref exp 2) 2) ; #(call #(var loop) (...))
+                                 (length rands) (length formals))))
                            (let ((sub-env (env-bind env formals)))
                               (mkcall rator
                                  (append

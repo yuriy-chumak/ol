@@ -13,6 +13,7 @@
       (owl math)
       (lang gensym)
       (owl io)
+      (only (src vm) ARITY-ERROR)
       (lang primop))
 
    (begin
@@ -123,10 +124,9 @@
                            (mklambda formals body)
                            rands env cont free)))
                   (else
-                     (runtime-error "error 17 ->"
-                        (ref '|wrong number of arguments:| 1) (length rands)
-                           'but 'lambda
-                           'expects 'at 'least (-- (length formals))))))
+                     (runtime-error ARITY-ERROR (cons*     ; #false means "at least"
+                        'lambda
+                        (length rands) (-- (length formals)) #false)))))
             (['call rator2 rands2]
                (lets
                   ((this free (fresh free))

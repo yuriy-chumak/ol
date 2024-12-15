@@ -69,67 +69,97 @@
       9))
 
    (define (op-name env op)
-      (cond
-         ((and (enum? op) (less? op 256))
-            [(primop-name op)])
-         ((vector? op)
-            ['vector])
-         ((object? op)
-            ['object])
+      (case (type op)
+         (type-enum+
+            (if (less? op 256)
+               (vm:cast [(primop-name op)] 9)
+            else
+               (vm:cast [op] 9)))
+         (type-symbol
+            (vm:cast [op] 9))
+         (type-vector
+            (vm:cast op 9))
+         (type-pair ; sexp
+            (vm:cast op 9))
+         ;;    ['vector]) ; todo: procedure->name or vector (if no name)
+         ;; ((object? op)
+         ;;    ['object]) ; todo: procedure->name or object (if no name)
          (else
             (procedure->name env op)) ))
 
-   (define (arity-error-description env a f b)
-      (if (integer? b)
-         (case (type f)
-            ; todo: type-closure
-            (type-closure
-               (arity-error-description env a (ref f 1) b))
-            (type-procedure
-               (arity-error-description env a (ref f 1) b))
-            (type-bytecode
-               (define name (op-name env a))
-               (if (eq? (ref f 0) JAF)
-                  (let cycle ((ip 0) (expects #n))
-                     (case (ref f ip)
-                        (JAF (cycle (+ ip (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)) 4)
-                                    (cons (-- (ref f (+ ip 1))) expects)))
-                        (JAX (cycle (+ ip (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)) 4)
-                                    (cons* (list 'more 'than (-- (ref f (+ ip 1)))) expects)))
-                        (else
-                           (cons* b 'but name 'expects
-                              (if (null? (cdr expects))
-                                 expects
-                                 (list 'one 'of (make-vector expects)))))))
-                  (list b 'for name)))
-            (else
-               ;; (if (and (bytevector? a) (eq? (ref a 0) 11)) ; we can try to calculate valid arities
-               (list b)))
-      else
-         (cons* (car b) 'but
-            (op-name env a)
-            (cons* 'expects
-               (if (pair? (cdr b)) ; (given . (takes-from . takes-to)
-                  (if (cddr b)
-                     (list 'from (cadr b) 'to (cddr b))
-                     (list 'at 'least (cadr b)))
-               else ; (given . takes)
-                  (cdr b))))))
+   (define (but x)
+      ; (string-append (number->string x) ", but"))
+      (vm:alloc type-string
+         (format-number x (list #\, #\space #\b #\u #\t) 10)))
 
+   ; a - function, f - function bytecode, b - arguments count
+   ; b = one of:
+   ;  given,
+   ;  (given . takes)
+   ;  (given . (takes-from . takes-to)
+   (define (arity-error-description env a f b)
+      (case (type f)
+         (type-closure
+            (arity-error-description env a (ref f 1) b))
+         (type-procedure
+            (arity-error-description env a (ref f 1) b))
+         (type-bytecode
+            (define name (procedure->name env a))
+            (if (or (eq? (ref f 0) JAF) (eq? (ref f 0) JAX))
+               (let cycle ((ip 0) (expects #n))
+                  (case (ref f ip)
+                     (JAF (cycle (+ ip (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)) 4)
+                                 (cons (-- (ref f (+ ip 1))) expects)))
+                     (JAX (cycle (+ ip (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)) 4)
+                                 (cons (list 'at 'least (-- (ref f (+ ip 1)))) expects)))
+                     (else
+                        (cons* (but b) name 'expects
+                           (if (null? (cdr expects))
+                              (if (pair? (car expects)) (car expects) expects)
+                              (list 'one 'of (make-vector (reverse expects))))))))
+               (list b 'for name)))
+         ; primop, vector, etc.
+         (else
+            (define name (op-name env a))
+            (if (null? b)
+               (list name) ; just show error
+            else
+               (if (pair? b) ; (given . ...)
+                  (cons* (but (car b)) name 'expects
+                     (if (pair? (cdr b)) ; (given . (takes-from . takes-to)
+                        (if (cddr b)
+                           (list 'from (cadr b) 'to (cddr b))
+                           (list 'at 'least (cadr b)))
+                     else                ; (given . takes)
+                        (list (cdr b))))
+               else ; just given
+                  (case (type a)
+                     (type-enum+ ; primop, find expected arguments count
+                        (list (but b) name 'expects
+                           (call/cc (lambda (found) ; expected count
+                              (for-each (lambda (prim)
+                                    (if (eq? a (ref prim 2))
+                                       (found (ref prim 3))))
+                                 *primops*)
+                              'error)))) ; this should not be happen
+                     ; todo: handle vectors, etc.
+                     (else
+                        (list b 'for name))))))))
+
+   ; returns detailed description of error as list
    (define (verbose-ol-error env code a b)
-      (if (eq? (type code) type-closure) ; continuation?
-         (list a b)
-      else
+      (define (describe code a b)
          (list "error" code "->"
             (case code
                (0
                   `(unsupported vm code ,a))
 
                (ARITY-ERROR ; 17
-                  (cons* (ref '|wrong number of arguments:| 1)
+                  (cons* "wrong number of arguments:"
                      (arity-error-description env a a b)))
 
                ; not a procedure
+               ; bug: 258 library fail
                ((258 261)
                   `("operator is not a procedure:" ,a))
 
@@ -191,5 +221,12 @@
                (else
                   (if (less? code 256)
                      `(,(primop-name code) reported error ": " ,a " " ,b)
-                     `(,code " .. " ,a " " ,b)))))))
+                     `(,code " .. " ,a " " ,b))))))
+
+      (if (eq? (type code) type-closure) ; continuation, is a (runtime-error)
+         (if (eq? a ARITY-ERROR)
+            (describe a (car b) (cdr b))
+            (list a b)) ; just show runtime-error
+      else ; generate our description
+         (describe code a b)))
 ))

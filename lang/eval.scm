@@ -718,7 +718,7 @@
                         (repl
                            (env-keep env
                               (λ (name)
-                                 (if (or (primop-of name) (has? op name))
+                                 (if (or (primitive? name) (has? op name))
                                     name
                                     #false)))
                            in))
