@@ -7,6 +7,8 @@
 
    (export
       raise raise-continuable
+      error-object?
+      error-object-message     ; * macro
       with-exception-handler)
 
    (import
@@ -22,32 +24,42 @@
          (lambda (resume)
             (vm:mcp resume 5 flag obj))))
 
-   ; temporary is equal to 'raise'
+   ; equal to 'raise'
    (define raise-continuable raise)
 
-   ; 
-   (define (with-exception-handler handler thunk)
-      (define name ['with-exception-handler]) ; anonymous
-      (actor-linked name thunk)
+   (define (error-object? obj)
+      (and
+         (vector? obj)
+         (eq? (size obj) 4)
+         (or (eq? (ref obj 1) 'error)
+             (eq? (ref obj 1) 'crash))))
 
-      (case (await name)
-         ;; ok
+   (define-syntax error-object-message
+      (syntax-rules (verbose-ol-error interaction-environment)
+         ((error-object-message err)
+            (vector-apply err (lambda (class code reason info)
+               (verbose-ol-error
+                  (interaction-environment) code reason info))))))
+
+   ; error classes: 'error, 'crash (todo: rename 'crash to 'critical?)
+   (define (with-exception-handler handler thunk)
+      (define issue (await
+         (actor-linked ['with-exception-handler] thunk)))
+      (case issue
+         ;; ok, no issues
          (['finished result]
             result)
 
-         ; (VM::FAIL ...), vm pushed an error
-         (['crash opcode a b]
-            (handler (verbose-ol-error #e opcode a b)))
+         ; olvm critical errors (todo: rename to 'critical?)
+         (['crash code a b]
+            (handler issue))
 
-         ; (raise info)
-         ; note, these could easily be made resumable by storing cont
+         ; (runtime-error code info) or (raise info)
          (['error code reason info]
-            (handler
-               (if (eq? reason flag)
-                  info
-                  (verbose-ol-error #e code reason info))))
+            (handler (if (eq? reason flag) info issue)))
 
+         ; should not be happened
          (else is foo
-            (runtime-error "something wrong" foo))))
+            (runtime-error 'with-exception-handler foo))))
 
 ))

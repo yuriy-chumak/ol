@@ -3,4 +3,5 @@
 3
 3
 3
-error detected. (What is 'not-a-func'?)
+error detected.
+  (eval failed with (What is 'not-a-func'?))

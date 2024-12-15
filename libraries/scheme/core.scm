@@ -1599,14 +1599,12 @@
       ; procedure:  (with-exception-handler handler thunk)  * (scheme exceptions)
       ; procedure:  (raise obj) * (scheme exceptions)
       ; procedure:  (raise-continuable obj)  * (scheme exceptions)
-      ;  note: temporary is equal to 'raise'
-
-      ; procedure:  (error message obj ...)
+      ; procedure:  (error message obj ...)  * (scheme exceptions)
       ; procedure:  (error-object? obj)
-      ; procedure:  (error-object-message error-object)
-      ; procedure:  (error-object-irritants error-object)
-      ; procedure:  (read-error? obj)
-      ; procedure:  (file-error? obj)
+      ; macro:      (error-object-message error-object)
+      ; procedure:  (error-object-irritants error-object) * no
+      ; procedure:  (read-error? obj) * no
+      ; procedure:  (file-error? obj) * no
 
       ; -- i'm here ----------------------
 

@@ -20,6 +20,8 @@
 ;; error handling
 (with-exception-handler
    (lambda (x)
-      (print "error detected. " (cadr x)))
+      (print "error detected.\n  "
+         (error-object-message x)))
+
    (lambda ()
       (print (eval '(not-a-func 1 2)))))
