@@ -113,9 +113,11 @@ CFLAGS += -D_FILE_OFFSET_BITS=64
 ## debug/release flags
 CFLAGS_CHECK   := -O0 -g3 -Wall -DWARN_ALL
 CFLAGS_DEBUG   := -O0 -g3 -Wall
-CFLAGS_DEBUG   += -DCAR_CHECK=1 -DCDR_CHECK=1
+CFLAGS_DEBUG   += -DCAR_CHECK=1 -DCDR_CHECK=1 -DNTRACE
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 CFLAGS_RELEASE += -Wno-unused-result -g0
+CFLAGS_TRACE   := -O0 -g3 -Wall
+CFLAGS_TRACE   += -DCAR_CHECK=1 -DCDR_CHECK=1
 
 VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1\``-`git rev-list HEAD --count`-`git log --pretty=format:'%h' -n 1`)
 
@@ -178,8 +180,16 @@ clean:
 debug: CFLAGS += $(CFLAGS_DEBUG)
 debug: vm ol olvm libol.so
 
+trace: CFLAGS += $(CFLAGS_TRACE)
+trace: vm ol olvm libol.so
+
 release: CFLAGS += $(CFLAGS_RELEASE)
 release: vm ol olvm libol.so
+
+# new one special hardened target
+paranoid: CFLAGS += $(CFLAGS_RELEASE)
+paranoid: CFLAGS += -DCAR_CHECK=1 -DCDR_CHECK=1
+paranoid: vm ol olvm libol.so
 
 perf: CFLAGS += -O2 -g3 -DNDEBUG -Wall
 perf: vm ol olvm libol.so
@@ -193,14 +203,14 @@ minimal: CFLAGS += -DOLVM_FFI=0 -DHAVE_SOCKETS=1 -DHAVE_DLOPEN=0 -DHAVE_SANDBOX=
 minimal: release
 
 # ffi test build
-ffi: CFLAGS += $(CFLAGS_DEBUG)
+ffi: CFLAGS += $(CFLAGS_TRACE)
 ffi: src/olvm.c extensions/ffi.c tests/ffi.c
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
 	   tests/ffi.c \
 	   $(CFLAGS) $(L)
 	@echo Ok.
-ffi32: CFLAGS += $(CFLAGS_DEBUG) -m32
+ffi32: CFLAGS += $(CFLAGS_TRACE) -m32
 ffi32: src/olvm.c extensions/ffi.c tests/ffi.c
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \

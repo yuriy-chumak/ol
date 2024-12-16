@@ -2589,8 +2589,14 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define A5  reg[ip[5]]
 
 // generate errors and crashes
+#ifndef NTRACE
+#define TRACE(...) D(__VA_ARGS__)
+#else
+#define TRACE(...) {}
+#endif
+
 #define ERROR5(type,mcp_n, code,a,b) { \
-	D("VM " type " AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code,a,b); \
+	TRACE("VM " type " AT %s:%d (%s) -> %d/%p/%p", __FILE__, __LINE__, __FUNCTION__, code,a,b); \
 	r4 = I(code);    r3 = I(mcp_n);\
 	r5 = (word) (a);\
 	r6 = (word) (b);\
