@@ -98,7 +98,7 @@
                            (answer (s/[ \n]+/ /g (list->string answer)))
                            (_ (write-char #\. stderr))
                            ; handle value printing
-                           (output (when (member (ref (car code) 1) '(display write write-simple print))
+                           (output (when #t ;(member (ref (car code) 1) '(display write write-simple print))
                               (define bak (dup stdout))
                               (define port (open-output-string))
                               (dup port stdout)
@@ -106,18 +106,25 @@
 
                            (env (vector-apply (supereval code env) (lambda (ok? test env)
                               (define actual (s/[ \n]+$// ; remove trailing newline
-                                 (if output
-                                    ; handle special case with "Print"
-                                    (vector-apply output (lambda (port bak)
-                                       ;; todo: flush
-                                       (dup bak stdout)
-                                       (close-port bak)
-                                       (get-output-string port)))
-                                 else
-                                    ; common case with returned value
-                                    (define buffer (open-output-string))
-                                    (write-simple test buffer)
-                                    (get-output-string buffer)) ))
+                                       ; handle prints
+                                 (let*((output (vector-apply output (lambda (port bak)
+                                          ;; todo: flush
+                                          (dup bak stdout)
+                                          (close-port bak)
+                                          (get-output-string port))))
+                                       (output (if (string-eq? output "") ; no output?
+                                       then
+                                          (define buffer (open-output-string))
+                                          (write-simple test buffer)
+                                          (get-output-string buffer)
+                                       else output)))
+                                    output)))
+                                       
+                                 ;; else
+                                 ;;    ; common case with returned value
+                                 ;;    (define buffer (open-output-string))
+                                 ;;    (write-simple test buffer)
+                                 ;;    (get-output-string buffer)) ))
                               ; compare
                               (if (and (not (null? (cdar expressions)))
                                        (not (string=? answer actual)))
