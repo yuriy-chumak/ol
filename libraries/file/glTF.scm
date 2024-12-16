@@ -17,29 +17,32 @@
 (begin
    (setq vref vector-ref)
 
-   (import (owl io)) ;temp
-   (define (print-array title array) ;temp
-      (print title)
-      (vector-for-each (lambda (a)
-            (print "   " a))
-         array))
-   (import (only (otus lisp) typename))
+   (import (owl io))
+   ;; (define (print-array title array) ;temp
+   ;;    (print title)
+   ;;    (vector-for-each (lambda (a)
+   ;;          (print "   " a))
+   ;;       array))
+   ;; (import (only (otus lisp) typename))
 
    (import (prefix (otus base64) base64:))
 
-   (define uint32 (let-parse* (
+   (define skip32 (let-parse* (
          (b0 byte) (b1 byte) (b2 byte) (b3 byte))
       0))
+   (define (viota . args)
+      (list->vector (apply iota args)))
+
    (define glTF-parser
       (either
          ; binary glTF
          (let-parse* (
                ; 12-byte header
                (header (word "glTF" #t))
-               (version uint32)
-               (flen uint32)
+               (version skip32)
+               (flen skip32)
                ; Chunk 0 (JSON)
-               (clen uint32)
+               (clen skip32)
                (ctype (word "JSON" #t))
                (json json-parser)
                (spaces (greedy* (imm #\space)))
@@ -94,6 +97,7 @@
                                  (claim GL_ELEMENT_ARRAY_BUFFER)))
                            (mesh 'primitives [])))
                      (glTF 'meshes))
+                  ; todo: skip image buffer data
                   ; no, use as array buffer
                   GL_ARRAY_BUFFER))))
 
@@ -102,14 +106,13 @@
             (define buffer (vref buffers (bufferView 'buffer)))
             (define offset (bufferView 'byteOffset 0))
             (glBufferData target (bufferView 'byteLength)
-               (cons type-vptr (cons buffer offset)) ; trick: &buffer[offset] for fft-any
+               (cons type-vptr (cons buffer offset)) ; is &buffer[offset] for fft-any
                GL_STATIC_DRAW)
 
             (glBindBuffer target 0)
             (put bufferView 'vbo (unbox VBO)))
          (glTF 'bufferViews)
          (list->vector (iota (size (glTF 'bufferViews)))) ))
-      ; (print-array "bufferViews:" bufferViews)
 
       ; accessors
       ; https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-accessor
@@ -123,7 +126,7 @@
             ((string-eq? at "MAT2") 4)
             ((string-eq? at "MAT3") 9)
             ((string-eq? at "MAT4") 16) ))
-      ;(print-array "accessors:" accessors)
+      ;; (print-array "accessors:" accessors)
 
       ; images
       (define images (vector-map (lambda (image)
@@ -138,8 +141,6 @@
                   (define buffer (vref buffers (bufferView 'buffer)))
                   (define byteOffset (bufferView 'byteOffset))
                   (define byteLength (bufferView 'byteLength))
-                  ;; (define bv (bytevector-copy buffer byteOffset (+ byteOffset byteLength)))
-                  ;; (bytevector->file bv (string-append "image" (number->string byteOffset)))
                   (SOIL_load_OGL_texture_from_memory
                      (cons buffer byteOffset) byteLength ; &buffer[byteOffset]
                      SOIL_LOAD_RGBA SOIL_CREATE_NEW_ID 0)))
@@ -197,7 +198,7 @@
                         (accessor-type->GL (accessor 'type))
                         ; data type of each component
                         (accessor 'componentType) ; direct mapped to GL_FLOAT etc. constants
-                        1 ;(accessor 'normalized 0) ; direct mapping to GL_TRUE..GL_FALSE
+                        (accessor 'normalized 0) ; direct mapping to GL_TRUE..GL_FALSE
                         ; stride & offset
                         (bufferView 'byteStride 0)
                         (accessor 'byteOffset 0))
@@ -253,7 +254,6 @@
                   (put primitive 'vao (unbox VAO)))
                (mesh 'primitives))))
          (glTF 'meshes)))
-      ;(print-array "meshes:" meshes)
 
       (ff-replace glTF {
          'buffers #false ; free binary buffer data, reduce memory usage
