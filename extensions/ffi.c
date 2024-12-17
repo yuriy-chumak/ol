@@ -1719,6 +1719,9 @@ size_t arguments_size(word args, word rtty, size_t* total)
 					*total += reference_size(arg); // in words
 					break;
 
+				case TSYMBOL:
+					arg = car(arg);
+					// fall through
 				case TSTRING:
 					*total += rawstream_size(arg); // exact size
 					break;
@@ -1850,7 +1853,7 @@ again:;
 			break;
 		}
 		default:
-			E("unsupported type-string-side source.");
+			E("unsupported type-string-wide source.");
 		}
 	}
 }
