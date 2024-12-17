@@ -1,4 +1,3 @@
-(define *path* (cons ".." *path*))
 (define-library (lib sdl2)
  (import
   (otus lisp) (otus ffi))
@@ -67,6 +66,7 @@
    SDL_RenderClear
    SDL_RenderPresent
    SDL_RenderCopy
+   SDL_SetRenderDrawColor
 
    SDL_CreateTextureFromSurface
 
@@ -314,6 +314,7 @@
 (define SDL_RenderClear (sdl2 fft-int "SDL_RenderClear" SDL_Renderer*))
 (define SDL_RenderPresent (sdl2 fft-void "SDL_RenderPresent" SDL_Renderer*))
 (define SDL_RenderCopy (sdl2 fft-int "SDL_RenderCopy" SDL_Renderer* SDL_Texture* SDL_Rect* SDL_Rect*))
+(define SDL_SetRenderDrawColor (sdl2 int "SDL_SetRenderDrawColor" SDL_Renderer* fft-int8 fft-int8 fft-int8 fft-int8))
 
 (define SDL_CreateTextureFromSurface (sdl2 SDL_Texture* "SDL_CreateTextureFromSurface" SDL_Renderer* SDL_Surface*))
 
