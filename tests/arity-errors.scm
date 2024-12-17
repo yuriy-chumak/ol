@@ -71,3 +71,32 @@
    (lambda ()
       (raise "hello, i'm error!")
 ))
+
+; - syscalls
+(with-exception-handler
+   (lambda (x)
+      (print "error detected. " x)
+      (if (error-object? x)
+         (print "  " (error-object-message x))))
+   (lambda ()
+      (syscall)
+))
+
+(with-exception-handler
+   (lambda (x)
+      (print "error detected. " x)
+      (if (error-object? x)
+         (print "  " (error-object-message x))))
+   (lambda ()
+      (syscall 0 1 2 3 4 5 6 7 8 9)
+))
+
+; - some math (case-lambda too)
+(with-exception-handler
+   (lambda (x)
+      (print "error detected. " x)
+      (if (error-object? x)
+         (print "  " (error-object-message x))))
+   (lambda ()
+      (/)
+))
