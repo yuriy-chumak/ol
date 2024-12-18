@@ -85,7 +85,7 @@
    ;; alarm = (TIMEOUT . #(thread #(<read|write>-timeout fd ms)))
    (define (remove-alarms-by-thread alarms thread)
       (remove (λ (alarm)
-            (eq? (cadr alarm) thread))
+            (eq? (ref (cdr alarm) 1) thread))
          alarms))
 
    (define (wakeup rs ws alarms fd reason)
