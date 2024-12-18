@@ -245,7 +245,7 @@ The most important differences are:
 The full list can be read in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
 
 Some Ol limitations:
-  * `apply` arguments count is **limited to 256** in Ol (use `fold` otherwise).
+  * `apply` arguments count is **limited to 249** in Ol (use `fold` otherwise).
 
 ### Supported SRFI
 * srfi-0 - `cond-expand`, builtin

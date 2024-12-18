@@ -113,7 +113,7 @@ All:
     - note: Negative vector indices can be used to access the n-th element from the end of the vector. This means that "-1" is the last element of the vector, "-2" is before the last element, "-n" is the n-th element from the end of the vector.
 
 * 6.10. Control features
-  * `apply` arguments count is **limited to 256** in Ol, but *unlimited* in Scheme.
+  * `apply` arguments count is **limited to 249** in Ol, but *unlimited* in Scheme.
     - note: Use `fold` instead in such cases, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
 
 * 6.13.3. Output
