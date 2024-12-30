@@ -5,13 +5,13 @@
 
 (export AL_EXT_vorbis
 
-   AL_FORMAT_VORBIS_EXT
+   AL_FORMAT_VORBIS
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define AL_EXT_vorbis (al:QueryExtension "AL_EXT_vorbis"))
 
-   (define AL_FORMAT_VORBIS_EXT               #x10003)
+   (define AL_FORMAT_VORBIS               #x10003)
 
 ))

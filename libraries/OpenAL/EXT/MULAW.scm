@@ -5,15 +5,15 @@
 
 (export AL_EXT_MULAW
 
-   AL_FORMAT_MONO_MULAW_EXT
-   AL_FORMAT_STEREO_MULAW_EXT
+   AL_FORMAT_MONO_MULAW
+   AL_FORMAT_STEREO_MULAW
 )
 
 ; ---------------------------------------------------------------------------
 (begin
    (define AL_EXT_MULAW (al:QueryExtension "AL_EXT_MULAW"))
 
-   (define AL_FORMAT_MONO_MULAW_EXT               #x10014)
-   (define AL_FORMAT_STEREO_MULAW_EXT             #x10015)
+   (define AL_FORMAT_MONO_MULAW               #x10014)
+   (define AL_FORMAT_STEREO_MULAW             #x10015)
 
 ))

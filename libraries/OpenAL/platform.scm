@@ -9,7 +9,6 @@
 
    ; AL types
    ALboolean
-   ALchar    ALchar*
    ALbyte
    ALubyte
    ALshort
@@ -21,19 +20,19 @@
    ALfloat            ALfloat&
    ALdouble
 
-   ALvoid
-   ALvoid*
+   ALvoid    ALvoid*
 
-   ; minimal required AL functions set
+   ; minimal required AL set
    alGetString
       AL_VENDOR
       AL_RENDERER
       AL_VERSION
       AL_EXTENSIONS
 
-   ; WGL/GLX/CGL/EGL/... platform functions
-   al:GetProcAddress ; * ol internal
-   al:QueryExtension ; * ol specific
+   ; AL helpers
+   al:GetProcAddress  ; * ol internal
+   alc:GetProcAddress ; * ol internal
+   al:QueryExtension  ; * ol specific
 
    AL_LIBRARY)
 
@@ -74,12 +73,11 @@
 
 ; ============================================================================
 (begin
-   (define AL AL_LIBRARY)
+   (setq AL AL_LIBRARY)
 
    ; -------------------------------------------------------------------------
    ; -- types
    (define ALboolean fft-char)
-   (define ALchar    fft-char)  (define  ALchar* type-string)
    (define ALbyte    fft-char)
    (define ALubyte   fft-unsigned-char)
    (define ALshort   fft-short)
@@ -99,31 +97,76 @@
    (define ALvoid    fft-void)
    (define ALvoid*   type-vptr)
 
-   (setq GetProcAddress (AL type-vptr "alGetProcAddress" type-string))
+   ; -- ALC --
+   (setq ALC AL)
+
+   (define ALCdevice* type-vptr)
+   (define ALCcontext* type-vptr)
+
+   (define ALCboolean fft-char)
+   (define ALCchar    fft-char)
+      (define ALCchar* type-string)
+   (define ALCbyte    fft-char)
+   (define ALCubyte   fft-unsigned-char)
+   (define ALCshort   fft-short)
+   (define ALCushort  fft-unsigned-short)
+   (define ALCint     fft-int)
+      (define ALCint*  (fft* ALCint))
+      (define ALCint&  (fft& ALCint))
+   (define ALCuint    fft-unsigned-int)
+      (define ALCuint*  (fft* ALCuint))
+      (define ALCuint&  (fft& ALCuint))
+   (define ALCsizei   fft-int)
+   (define ALCenum    fft-int)
+   (define ALCfloat   fft-float)
+   (define ALCdouble  fft-double)
+
+   (define ALCvoid    fft-void)
+   (define ALCvoid*   type-vptr)
 
    ; -------------------------------------------------------------------------
-
    ; Strings AL_VENDOR and AL_RENDERER together uniquely specify a platform.
    ; They do not change from release to release.
    (define AL_VENDOR     #xB001)
    (define AL_RENDERER   #xB003)
    (define AL_VERSION    #xB002)
    (define AL_EXTENSIONS #xB004)
+   (define ALC_EXTENSIONS #x1006)
 
-   ; Some basic functions
-   (define alGetString (AL ALchar* "alGetString" ALenum))
+   ; Minimal required AL/ALC function set
+   (define alGetString (AL type-string "alGetString" ALenum))
+   (define alcGetString (ALC type-string "alcGetString" ALCdevice* ALenum))
+   (define alcGetCurrentContext (ALC ALCcontext* "alcGetCurrentContext"))
+   (define alcGetContextsDevice (ALC ALCdevice* "alcGetContextsDevice" ALCcontext*))
 
+   (setq alGetProcAddress (AL type-vptr "alGetProcAddress" type-string))
    (define (al:GetProcAddress type name . prototype)
       (let ((rtti (cons type prototype))
-            (function (GetProcAddress name)))
+            (function (alGetProcAddress name)))
+         (if function
+            (lambda args
+               (ffi function rtti args)))))
+
+   (setq alcGetProcAddress (ALC type-vptr "alcGetProcAddress" type-string))
+   (define (alc:GetProcAddress type name . prototype)
+      (let ((rtti (cons type prototype))
+            (function (alcGetProcAddress name)))
          (if function
             (lambda args
                (ffi function rtti args)))))
 
    (define (al:QueryExtension extension)
       (let ((extensions (c/ / (or ; split by space character
-                  (alGetString AL_EXTENSIONS)
-                  "")))) ; if no extensions - use empty string
+               (cond
+                  ; ALC
+                  ((and (>= (size extension) 4) (string-eq? (substring extension 0 4) "ALC_"))
+                     (define context (alcGetCurrentContext))
+                     (define device (alcGetContextsDevice context))
+                     (alcGetString device ALC_EXTENSIONS))
+                  ; all others
+                  (else
+                     (alGetString AL_EXTENSIONS)))
+               "")))) ; use empty string if no extensions
          (if (member extension extensions)
             then (print-to stderr "Checking " extension " support... ok.") #true
             else (print-to stderr "Checking " extension " support... not found.") #false)))
