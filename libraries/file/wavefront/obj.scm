@@ -26,15 +26,19 @@
          (comment get-rest-of-line))
       #true))
 (define get-mtllib
-   (let-parses(
-         (skip (get-word "mtllib " #t))
-         (name get-rest-of-line))
-      name))
+   (either
+      (let-parses(
+            (skip (get-word "mtllib " #t))
+            (name get-rest-of-line))
+         (bytes->string name))
+      (epsilon #false)))
 (define get-usemtl
-   (let-parses(
-         (skip (get-word "usemtl " #t))
-         (name get-rest-of-line))
-      name))
+   (either
+      (let-parses(
+            (skip (get-word "usemtl " #t))
+            (name get-rest-of-line))
+         (bytes->string name))
+      (epsilon #false)))
 
 (define get-g
    (let-parses(
@@ -89,14 +93,10 @@
          (a (get-either
                get-number
                (get-epsilon #f)))
-         (skip (get-imm #\/))
-         (b (get-either
-               get-number
-               (get-epsilon #f)))
-         (skip (get-imm #\/))
-         (c (get-either
-               get-number
-               (get-epsilon #f))))
+         (skip (either (get-imm #\/) (epsilon #false)))
+         (b (either get-number (epsilon #f)))
+         (skip (either (get-imm #\/) (epsilon #false)))
+         (c (either get-number (epsilon #f))) )
       [a b c]))
 
 (define get-f
@@ -117,7 +117,7 @@
          (faces (get-greedy+ get-f))
          (skip (get-greedy* get-l)))
       (cons
-         (bytes->string usemtl)
+         usemtl
          faces)))
 
 ; main
@@ -127,10 +127,11 @@
          (mtllib get-mtllib)
          (objects (greedy+ (let-parses (
                (name (get-either get-g get-o))
-               (v (get-greedy+ get-v))
+               (v (greedy+ get-v))
                (vt (get-greedy* get-vt))
                (vn (get-greedy* get-vn))
-               (facegroups (get-greedy+ facegroup-parser)))
+               (facegroups (get-greedy+ facegroup-parser))
+               )
             {
                'name  (bytes->string name)
                'v  v
@@ -139,13 +140,14 @@
                'facegroups facegroups
             }))))
       {
-         'mtllib  (bytes->string mtllib)
+         'mtllib  mtllib
          'v  (foldr append '() (map (lambda (o) (o 'v  '())) objects))
          'vt (foldr append '() (map (lambda (o) (o 'vt '())) objects))
          'vn (foldr append '() (map (lambda (o) (o 'vn '())) objects))
          'o (map (lambda (o) {
                   'name (o 'name)
-                  'facegroups (o 'facegroups) })
+                  'facegroups (o 'facegroups)
+                  })
                objects)
       }))
 

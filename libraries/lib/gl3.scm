@@ -3,10 +3,9 @@
    (scheme base)
    (owl math) (otus async)
    (lib gl config)
-   (lib gl2) (OpenGL version-3-0))
+   (lib gl2) (OpenGL 3.0))
 (export
    (exports (lib gl2))
-   (exports (OpenGL version-3-0))
 
    gl:set-context-version ; recreate OpenGL with version
 )

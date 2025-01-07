@@ -2,6 +2,7 @@
 (import
    (scheme core)
    (scheme bytevector)
+   (scheme list)
    (lib gl) (OpenGL version-2-1))
 (export
    gl:create-program
