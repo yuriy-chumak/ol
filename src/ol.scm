@@ -361,13 +361,12 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                (system-stderr "Failed to enter the sandbox.\nYou must have SECCOMP support enabled.\n")
                (halt 2)))
 
-
          ; ohai:
          (if interactive?
-            (print "Welcome to Otus Lisp " (cdr version)
+            (print "Welcome to Otus Lisp " (cdr version) "."
                (if sandbox? ", you feel restricted" "")
                "\n"
-               (if embed? "" "type ',help' to help, ',quit' to end session.")))
+               (if embed? "" "Type ',help' for help, ',quit' to exit.")))
 
          (if embed?
             (let*((this (box (vm:pin env)))
