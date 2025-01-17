@@ -1269,11 +1269,12 @@
             (let loop ((exps (car exps)) (env env))
                (define exp (car exps))
                (define out (eval exp env))
+
                (if (eq? (ref out 1) 'ok)
                   (if (null? (cdr exps))
                      out
-                     (loop (cdr exps) env))
+                     (loop (cdr exps) (ref out 3)))
                   out))
-            (runtime-error "invalid sexp" str)))
+            (runtime-error "invalid sexp(s)" str)))
 
 ))

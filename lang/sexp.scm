@@ -75,7 +75,7 @@
          symbol-lead-chars
          numeric-chars
          (alist->ff
-            (map putT (string->runes "'/\""))  ;; we can use "'`/"" as part of symbol names
+            (map putT (string->runes "'`#/\""))  ;; we can use ['`#/"] as part of symbol names
       )))
 
       (define (symbol-lead-char? n)
