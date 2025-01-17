@@ -199,7 +199,9 @@
             (if (eq? res #true) ;; would block
                (if block?
                   (begin
-                     (wait-read fd 10000) ; 10 seconds
+                     (if (eq? fd stdin)
+                        (sleep 2)
+                        (wait-read fd 10000)) ;10 seconds
                      (try-get-block fd block-size #true))
                   res)
                res))) ;; is #false, eof or bvec
