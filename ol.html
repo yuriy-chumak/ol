@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <link  href="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.35.3/css/jquery.terminal.min.css" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.35.3/js/jquery.terminal.min.js"></script>
+
+    <!-- To use ANSI formatting in jQuery Terminal, you only need to include one file -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/unix_formatting.js"></script>
+</head>
+<body style="background:#0b0b13">
+<div id="terminal" class="terminal">
+  <noscript><b>Looks like you have disabled scripts for this page. Please enable it to continue working with.</b></noscript>
+</div>
+
+<script>"use strict";
+// WASM:
+function wasmSupported() {
+  try {
+      if (typeof WebAssembly === "object"
+       && typeof WebAssembly.instantiate === "function") {
+         const module = new WebAssembly.Module(Uint8Array.of(0x0, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00));
+         if (module instanceof WebAssembly.Module)
+            return new WebAssembly.Instance(module) instanceof WebAssembly.Instance;
+      }
+   } catch (e){}
+   return false;
+};
+
+// TERMINAL:
+var terminal;
+$('#terminal').terminal(function(command, terminal) {
+  var text = unescape(encodeURIComponent(command));
+
+  terminal.set_prompt('');
+  terminal.lastline = false;
+  WA.stdin = WA.stdin + text + "\n";
+}, {
+   //prompt: 'Please wait, loading library files...',
+   prompt: 'Booting Virtual Machine...',
+   name: 'repl',
+   greetings: '',
+   enabled: false,
+   height: 400,
+   lastline: false,
+
+   onInit: function(term) {
+      terminal = term;
+   }
+});
+
+
+var WA = {
+  args: ['WASM'],
+
+  print: text => {
+    if (text == "> ") {
+      terminal.lastline = false;
+      terminal.set_prompt('> ');
+      return;
+    }
+    if (text.startsWith("Welcome to Otus Lisp"))
+      text = text.replace(", ',quit' to end session", " with function words");
+
+    // show the output
+    let lines = text.split("\n");
+
+    if (lines.length == 1) { // no newlines in string
+      if (terminal.lastline)
+        terminal.update(-1, terminal.lastline = terminal.lastline + text);
+      else
+        terminal.echo(terminal.lastline = text);
+    }
+    else {
+      for (let i = 0; i < lines.length-1; i++) {
+        let line = lines[i];
+        if (terminal.lastline)
+          terminal.update(-1, terminal.lastline + line);
+        else
+          terminal.echo(line);
+        terminal.lastline = false;
+      }
+      let line = lines[lines.length-1];
+      if (line == "")
+        terminal.lastline = false;
+      else
+        terminal.echo(terminal.lastline = text);
+    }
+  },
+  error: (code, msg) => {
+    WA.print('ERROR: ' + code + ' - ' + msg + '\n')
+  },
+  started: () => {
+    terminal.clear();
+    terminal.focus();
+    terminal.set_prompt('');
+  },
+};
+</script>
+
+<script defer src="terminal.js" data-wasm="terminal.wasm"></script>
+</body>
+</html>
