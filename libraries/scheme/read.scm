@@ -1,12 +1,15 @@
 (define-library (scheme read)
 (export
-   read)
+   read
+   readline)
 
 (import
    (scheme core)
    (only (lang sexp) sexp)
    (owl io)
    (owl io scheduler)
+   (owl parse)
+   (owl string)
    (otus async))
 
 (begin
@@ -17,7 +20,9 @@
          (case in
             (#f #null)  ; port error
             (#t ; input is not ready
-               (await (mail io-scheduler-name ['read-timeout port 3000])) ; 3 second wait
+               (if (eq? port stdin)
+                  (sleep 2)
+                  (wait-read port 3000)) ; 3 seconds wait
                (unbuffered-input-stream port))
             (#eof      ; end-of-file
                (unless (eq? port stdin)
@@ -27,7 +32,7 @@
                (cons (ref in 0) (unbuffered-input-stream port))))))
 
    ; * internal function
-   (define (read-impl port)
+   (define (sexp-reader port)
       (let* ((l r p val ((sexp)
                            #null ; no left part of stream
                            (unbuffered-input-stream port)
@@ -37,11 +42,32 @@
          (when l
             val)))
 
-   ; public
    (define read (case-lambda
       ((port)
-         (read-impl port))
+         (sexp-reader port))
       (()
-         (read-impl stdin))))
+         (sexp-reader stdin))))
+
+
+   (define (line-reader port)
+      (let* ((l r p val ((let-parse* (
+                              (runes (greedy* (rune-if (lambda (r) (not (eq? r #\newline))))))
+                              (newline (either (imm #\newline) (epsilon #eof))))
+                           (if (and (null? runes) (eq? newline #eof))
+                              #false
+                              (runes->string runes)))
+                           #null ; no left part of stream
+                           (unbuffered-input-stream port)
+                           0 ; start position in the stream
+                           (λ (l r p v) ; ok
+                              (values l r p v)))))
+         (when l
+            val)))
+
+   (define readline (case-lambda
+      ((port)
+         (line-reader port))
+      (()
+         (line-reader stdin))))
 
 ))
