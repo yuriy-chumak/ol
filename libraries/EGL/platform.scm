@@ -38,7 +38,7 @@
          (define EGLNativePixmapType fft-int)
          (define EGLNativeWindowType fft-int)
 
-         (setq library-name #false)
+         (setq library-name "gl2es.wasm")
       ))
    )
 
