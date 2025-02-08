@@ -9,7 +9,6 @@
  * btw, FFI is Fatal Familial Insomnia too. Hmmm...
  */
 
-
 /*!
  * ### Source file: extensions/ffi.c
  */
@@ -44,7 +43,9 @@
 
 
 // use virtual machine declaration from the olvm source code
+#ifndef __OLVM_H__
 #include <ol/vm.h>
+#endif
 
 #define unless(...) if (! (__VA_ARGS__))
 #define max(a,b) ((a) > (b) ? (a) : (b))
@@ -72,7 +73,9 @@
 #endif
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
+# ifndef __WAJIC__
+#	include <emscripten.h>
+# endif
 #endif
 
 #include <sys/mman.h> // we have own win32 implementation
@@ -852,85 +855,169 @@ __ASM__(".globl mips32_call", // inline assembly should start with .globl <func_
 // ------------------------------------------
 #elif __EMSCRIPTEN__
 
+// 	fmask is two-bits width with high bit 1 as a mark
 static
-ret_t asmjs_call(word args[], int fmask, void* function, int type)
+ret_t wasm32_call(word arg[], int fmask, void* function, int type)
 {
-//	printf("asmjs_call(%p, %d, %p, %d)\n", args, fmask, function, type);
+	assert(sizeof(int_t) == sizeof(word));
+	assert(sizeof(float) == sizeof(word));
+
+	ret_t r;
+	const int_t* argi = (int_t*)arg;
+	const float* argf = (float*)arg;
+
+	int rtype = type;
+	switch (type) {
+		case TINT8: case TINT16: case TINT32:
+		case TUINT8: case TUINT16: case TUINT32:
+		case TVPTR:   // assert (sizeof(void*) == sizeof(uint32_t))
+		case TSTRING: // type-string == void*
+			rtype = TINT32;
+			break;
+	}
+
+	#define CALL(variables, values) \
+		switch (rtype) { \
+			case TVOID: \
+				((void (*) variables) function) values;\
+				return 1;\
+			case TINT32:\
+				return (ret_t)\
+				((word (*) variables) function) values;\
+			case TFLOAT:\
+				*(float*)&r =\
+				((float(*) variables) function) values;\
+				return r;\
+			case TDOUBLE:\
+				*(double*)&r =\
+				((double(*)variables) function) values;\
+				return r;\
+		}
 
 	switch (fmask) {
-	case 0b1:
-		return (ret_t)(word)((word (*)  ())
-					 function) ();
-
-	case 0b10:
-		return (ret_t)(word)((word (*)  (int_t))
-					 function) (args[ 0]);
-
+	case 0b1: CALL((), ());
+	// 1
 	case 0b100:
-		return (ret_t)(word)((word (*)  (int_t, int_t))
-		             function) (args[ 0], args[ 1]);
+		CALL((int_t), (argi[ 0]));
+	case 0b110:
+		CALL((float), (argf[ 0]));
 	case 0b111:
-		return (ret_t)(word)((word (*)  (float, float))
-		             function) ((float)args[ 0], (float)args[ 1]);
+		CALL((double),(*(double*)&arg[ 0]));
 
-	case 0b1000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t))
-		             function) (args[ 0], args[ 1], args[ 2]);
-	case 0b1111:
-		return (ret_t)(word)((word (*)  (float, float, float))
-		             function) ((float)args[ 0], (float)args[ 1], (float)args[ 2]);
-
+	// 2
 	case 0b10000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t))
-		             function) (args[ 0], args[ 1], args[ 2], args[ 3]);
+		CALL((int_t, int_t),
+		     (argi[ 0], argi[ 1]));
+	case 0b11010:
+		CALL((float, float),
+		     (argf[ 0], argf[ 1]));
 	case 0b11111:
-//		printf("%f/%f/%f/%f\n", *(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
-		return (ret_t)(word)((word (*)  (float, float, float, float))
-		             function) (*(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
-	case 0b100000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t))
-		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
-		                        args[ 4]);
+		CALL((double,double),
+		     (*(double*)&arg[ 0], *(double*)&arg[ 2]));
+
+	// 3
 	case 0b1000000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t))
-		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
-		                        args[ 4], args[ 5]);
-	case 0b10000000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-	                                  int_t))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-	                            args[ 4], args[ 5], args[ 6]);
+		CALL((int_t, int_t, int_t),
+		     (argi[ 0], argi[ 1], argi[ 2]));
+	case 0b1101010:
+		CALL((float, float, float),
+		     (argf[ 0], argf[ 1], argf[ 2]));
+	case 0b1111111:
+		CALL((double, double, double),
+		     (*(double*)&arg[ 0], *(double*)&arg[ 2],
+		      *(double*)&arg[ 4]));
+
+	// 4
 	case 0b100000000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-	                                  int_t, int_t))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-	                            args[ 4], args[ 5], args[ 6], args[ 7]);
-	case 0b1000000000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-	                                  int_t, int_t, int_t))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-	                            args[ 4], args[ 5], args[ 6], args[ 7],
-	                            args[ 8]);
-	// 10:
-	case 0b10000000000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-	                                  int_t, int_t, int_t, int_t))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-	                            args[ 4], args[ 5], args[ 6], args[ 7],
-	                            args[ 8], args[ 9]);
-	case 0b100000000000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-	                                  int_t, int_t, int_t, int_t, int_t))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-	                            args[ 4], args[ 5], args[ 6], args[ 7],
-	                            args[ 8], args[ 9], args[10]);
-	case 0b1000000000000:
-		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-	                                  int_t, int_t, int_t, int_t, int_t, int_t))
-	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-	                            args[ 4], args[ 5], args[ 6], args[ 7],
-	                            args[ 8], args[ 9], args[10], args[11]);
-	default: E("Unsupported parameters count for ffi function: %d", fmask);
+		CALL((int_t, int_t, int_t, int_t),
+		     (argi[ 0], argi[ 1], argi[ 2], argi[ 3]));
+	case 0b110101010:
+		CALL((float, float, float, float),
+		     (argf[ 0], argf[ 1], argf[ 2], argf[ 3]));
+	case 0b111111111:
+		CALL((double, double, double, double),
+		     (*(double*)&arg[ 0], *(double*)&arg[ 2],
+		      *(double*)&arg[ 4], *(double*)&arg[ 6]));
+
+	// 5
+
+	// 6
+	case 0b1111111111111:
+		CALL((double, double, double, double, double, double),
+		     (*(double*)&arg[ 0], *(double*)&arg[ 2],
+		      *(double*)&arg[ 4], *(double*)&arg[ 6],
+		      *(double*)&arg[ 8], *(double*)&arg[10]));
+
+
+// 	case 0b10:
+// 		return (ret_t)(word)((word (*)  (int_t))
+// 					 function) (args[ 0]);
+
+// 	case 0b100:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t))
+// 		             function) (args[ 0], args[ 1]);
+// 	case 0b111:
+// 		return (ret_t)(word)((word (*)  (float, float))
+// 		             function) ((float)args[ 0], (float)args[ 1]);
+
+// 	case 0b1000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t))
+// 		             function) (args[ 0], args[ 1], args[ 2]);
+// 	case 0b1111:
+// 		return (ret_t)(word)((word (*)  (float, float, float))
+// 		             function) ((float)args[ 0], (float)args[ 1], (float)args[ 2]);
+
+// 	case 0b10000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t))
+// 		             function) (args[ 0], args[ 1], args[ 2], args[ 3]);
+// 	case 0b11111:
+// //		printf("%f/%f/%f/%f\n", *(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
+// 		return (ret_t)(word)((word (*)  (float, float, float, float))
+// 		             function) (*(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
+// 	case 0b100000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t))
+// 		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
+// 		                        args[ 4]);
+// 	case 0b1000000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t))
+// 		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
+// 		                        args[ 4], args[ 5]);
+// 	case 0b10000000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+// 	                                  int_t))
+// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+// 	                            args[ 4], args[ 5], args[ 6]);
+// 	case 0b100000000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+// 	                                  int_t, int_t))
+// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+// 	                            args[ 4], args[ 5], args[ 6], args[ 7]);
+// 	case 0b1000000000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+// 	                                  int_t, int_t, int_t))
+// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+// 	                            args[ 4], args[ 5], args[ 6], args[ 7],
+// 	                            args[ 8]);
+// 	// 10:
+// 	case 0b10000000000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+// 	                                  int_t, int_t, int_t, int_t))
+// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+// 	                            args[ 4], args[ 5], args[ 6], args[ 7],
+// 	                            args[ 8], args[ 9]);
+// 	case 0b100000000000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+// 	                                  int_t, int_t, int_t, int_t, int_t))
+// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+// 	                            args[ 4], args[ 5], args[ 6], args[ 7],
+// 	                            args[ 8], args[ 9], args[10]);
+// 	case 0b1000000000000:
+// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
+// 	                                  int_t, int_t, int_t, int_t, int_t, int_t))
+// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
+// 	                            args[ 4], args[ 5], args[ 6], args[ 7],
+// 	                            args[ 8], args[ 9], args[10], args[11]);
+	default: E("Unsupported parameters count for ffi function: %d", fmask >> 2);
 		return 0;
 	};
 }
@@ -2101,7 +2188,13 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
 	int f = 0;     // количество аргументов для af
 #elif __EMSCRIPTEN__
-	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float) + старший бит-маркер (установим в конце)
+	// двухбитная маска типа аргументов, 31 arguments maximum
+	//	00 - int
+	//	01 - reserved
+	//	10 - float
+	//	11 - double
+	// + старший бит-маркер,
+	long fpmask = 1;
 #elif _WIN32
 	// nothing special for Windows (both x32 and x64)
 #endif
@@ -2200,8 +2293,11 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		IFaarch64(if (i < 8))
 		args[i] = 0; // обнулим
 
+		// подготовим маску к следующему аргументу
 #if (__x86_64__ && (__unix__ || __APPLE__)) // LP64, but without arm64
-		fpmask <<= 1; // подготовим маску к следующему аргументу
+		fpmask <<= 1;
+#elif __EMSCRIPTEN__
+		fpmask <<= 2;
 #endif
 
 #if __aarch64__
@@ -2252,7 +2348,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			SERIALIZE(&args[i], type, conv) // todo: change to args[i++] and i+=2 for 32-bit
 
 		// floating point handlers
-		// for 32-bits: doubles fills two words
 #	if (__x86_64__ && (__unix__ || __APPLE__))
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&ad[d++] = conv(arg); --i;\
@@ -2268,13 +2363,15 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				STORE_F(conv, type, arg);\
 				++i; f++;\
 		})
+		// WebAssembly
 #	elif __EMSCRIPTEN__
 		#define STORE_F(conv, type, arg) ({\
-				fpmask |= 1 << i;\
+				fpmask |= 0b10;\
 				*(type*)&args[i] = conv(arg);\
 		})
 		#define STORE_D(conv, type, arg) ({\
-				STORE_F(conv, type, arg);\
+				fpmask |= 0b11;\
+				*(type*)&args[i] = conv(arg);\
 				++i;\
 		})
 #	elif __mips__ /* 32-bit mips */
@@ -2291,6 +2388,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				*(type*)&args[i] = conv(arg);\
 		})
 #		if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__
+		// 32-bits: doubles fills two words
 		#define STORE_D(conv, type, arg) ({\
 			STORE_F(conv, type, arg);\
 			++i;\
@@ -2764,11 +2862,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		p = (word*)cdr(p);
 		t = (t == RNULL) ? t : (word*)cdr(t);
 	}
-
-#ifdef __EMSCRIPTEN__
-	fpmask |= 1 << i;
-#endif
-	assert ((word)t == INULL); // количество аргументов совпало!
+	assert ((word)t == INULL); // количество аргументов должно совпадать
 
 	size_t pB = OLVM_pin(this, B); // todo: if writeback || TVOID
 	size_t pC = OLVM_pin(this, C); // todo: if writeback || TVOID
@@ -2810,7 +2904,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		got = mips32_call(args, i, function, returntype & 0x3F);
 
 #elif __EMSCRIPTEN__
-		got = asmjs_call(args, fpmask, function, returntype & 0x3F);
+		// todo: handle 64-bit calls
+		got = wasm32_call(args, fpmask, function, returntype & 0x3F);
 
 #elif __sparc64__
 		got = call_x(args, i, function, returntype & 0x3F);

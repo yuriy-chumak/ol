@@ -1042,6 +1042,30 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 
 #endif
 
+#ifdef __WAJIC__
+#	include <wajic.h>
+#	define typeof __typeof__
+#	define SYSCALL_GETRLIMIT 0
+#	define SYSCALL_GETRUSAGE 0
+
+# ifndef OLVM_NOASYNC
+#	define WA_CORO_IMPLEMENT_NANOSLEEP
+#	include <wajic_coro.h>
+	WA_EXPORT(FuncCoro) int FuncCoro(void* data) { return 0; }
+void emscripten_sleep(unsigned int ms) { WaCoroSleep(ms); }
+# else
+void emscripten_sleep(unsigned int ms) { }
+# endif
+
+void emscripten_run_script(const char *script) { }
+int emscripten_run_script_int(const char *script) { return 0; }
+char *emscripten_run_script_string(const char *script) { return 0; }
+
+# ifdef REPL
+#	include "tmp/repl.c"
+# endif
+#endif
+
 #ifdef __EMSCRIPTEN__
 #	define SYSCALL_PRCTL 0
 
@@ -1304,7 +1328,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #endif
 
 #ifdef __EMSCRIPTEN__
-#include <emscripten.h>
+# ifndef __WAJIC__
+#	include <emscripten.h>
+# endif
 #endif
 
 #ifdef __ANDROID__
@@ -2790,6 +2816,12 @@ apply:;
 			// время потока вышло, переключим на следующий
 			ticker = TICKS;
 
+#ifdef __WAJIC__
+# ifndef OLVM_NOASYNC
+			WaCoroYield();
+# endif
+#endif
+
 			// if mcp present,
 			if (R0 != IFALSE) {
 				// save vm state and enter mcp cont at R0!
@@ -4075,11 +4107,21 @@ loop:;
 					r = new_bytevector(read);
 				else if (read == 0)
 					r = (R) IEOF;
-				else if (err == EAGAIN) { // (may be the same value as EWOULDBLOCK) (POSIX.1)
-					#ifdef __EMSCRIPTEN__
-					emscripten_sleep(500);
-					#endif
-					r = (R) ITRUE;
+				else {
+#ifdef __EMSCRIPTEN__
+# ifdef __WAJIC__
+#  ifndef OLVM_NOASYNC
+					if (portfd == 0) {
+						WaCoroYield();
+						r = (R) ITRUE;
+					}
+#  endif
+# else
+					emscripten_sleep();
+# endif
+#endif
+					if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
+						r = (R) ITRUE;
 				}
 
 				break;
@@ -4628,9 +4670,15 @@ loop:;
 				int_t us = numberp(A1);
 
 				#ifdef __EMSCRIPTEN__
-					//int_t ms = us / 1000;
+					int_t ms = us / 1000;
+				# ifdef __WAJIC__
+				#  ifndef OLVM_NOASYNC
+					WaCoroSleep(ms);
+				#  endif
+				# else
 					//emscripten_sleep(ms);
 					r = (word*) ITRUE;
+				# endif
 				#endif
 				#ifdef _WIN32// for Windows
 					int_t ms = us / 1000;
@@ -5877,6 +5925,14 @@ int main(int argc, char** argv)
 #ifdef __ANDROID__
 	LIBRARY_FILENAME = argv[0];
 #endif
+#ifdef __WAJIC__
+# ifndef OLVM_NOASYNC
+	// setup WAjic asyncify
+	WaCoro coroSub;
+	coroSub = WaCoroInitNew(FuncCoro, "FuncCoro", 0, 0);
+	WaCoroFree(coroSub);
+# endif
+#endif
 
 	//  vm special key: if command line is "--version" then print a version
 #ifndef REPL
@@ -5957,8 +6013,12 @@ int main(int argc, char** argv)
 		if (fstat(file, &st))
 			goto can_not_stat_file;
 
-		// empty file, or pipe, or fifo...
-		if (st.st_size != 0) {
+		// ol handle pipes/fifos as a text scripts.
+		// (but olvm can't)
+#ifndef REPL
+		if (st.st_size != 0)
+#endif
+		{
 			int pos = read(file, &bom, 1);  // прочитаем один байт
 			if (pos != 1)
 				goto can_not_read_file;
@@ -5999,11 +6059,9 @@ int main(int argc, char** argv)
 				argc--; argv++; // бинарный файл заменяет repl, скорректируем строку аргументов
 			}
 		}
-#ifdef REPL
-		// ol handle pipes/fifos as a text scripts.
-#else
-		// but olvm can't handle files with unknown size,
-		//  because can't deserialize such things.
+#ifndef REPL
+		// olvm can't handle files with unknown size,
+		//   because can't deserialize such binaries.
 		else
 			goto invalid_binary_script;
 #endif

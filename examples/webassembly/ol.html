@@ -11,7 +11,7 @@
     <!-- To use ANSI formatting in jQuery Terminal, you only need to include one file -->
     <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/unix_formatting.js"></script>
 </head>
-<body style="background:#0b0b13">
+<body>
 <div id="terminal" class="terminal">
   <noscript><b>Looks like you have disabled scripts for this page. Please enable it to continue working with.</b></noscript>
 </div>
@@ -51,8 +51,6 @@ $('#terminal').terminal(function(command, terminal) {
       terminal = term;
    }
 });
-
-
 
 
 var WA = {
@@ -99,10 +97,68 @@ var WA = {
     terminal.clear();
     terminal.focus();
     terminal.set_prompt('');
+
+    // make code examples available to push
+    var elements = document.getElementsByTagName('code');
+    for(var i = 0; i < elements.length; i++){
+      let element = elements[i];
+
+      let div = element.parentElement;
+      let button = document.createElement("button");
+      button.appendChild(document.createTextNode("отправить в терминал"));
+      button.onclick = function() { execute(element); };
+
+      div.appendChild(button)
+    }
   },
 };
 </script>
 
+<script>
+  function execute(element)
+  {
+    let text = element.textContent;
+    terminal.focus();
+    if (text.indexOf("\n") == 0)
+        text = text.substring(1);
+    //WA.print(text);
+    terminal.exec(text);
+  }
+</script>
 <script defer src="ol.js" data-wasm="ol.wasm"></script>
+
+<pre><code data-language="ol">
+(define (pi numbers)
+   (let loop ((q 1) (r 0) (t 1) (k 1) (n 3) (l 3) (numbers numbers))
+      (unless (eq? numbers 0)
+         (if (< (- (+ (* 4 q) r) t) (* n t))
+            (begin
+               (display n) (if (eq? q 1) (display "."))
+               (loop (* q  10)
+                     (* 10 (- r (* n t)))
+                     t
+                     k
+                     (- (div (* 10 (+ (* 3 q) r)) t) (* 10 n))
+                     l
+                     (- numbers 1)))
+            (begin
+               (loop (* q k)
+                     (* (+ (* 2 q) r) l)
+                     (* t l)
+                     (+ k 1)
+                     (div (+ (* q (* 7 k)) 2 (* r l)) (* t l))
+                     (+ l 2)
+                     numbers))))))
+</code></pre>
+<pre><code data-language="ol">
+(pi 100)
+</code></pre>
+<pre><code data-language="ol">
+(pi 256)
+</code></pre>
+<pre><code data-language="ol">
+(pi 1024)
+</code></pre>
+
 </body>
 </html>
