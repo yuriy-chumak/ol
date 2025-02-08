@@ -3546,9 +3546,13 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 			#else
 				value =   *(float*) &argi[i++];
 			#endif
+		#if OLVM_INEXACTS
 			heap->fp = fp;
 			A[a] = d2ol(heap, value);
 			fp = heap->fp;
+		#else
+			A[a] = (word) new_inexact(value);
+		#endif
 			break;
 		}
 		case I(TDOUBLE): {
@@ -3568,9 +3572,13 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 			#else
 				value =   *(double*) &argi[i++]; i++;
 			#endif
+		#if OLVM_INEXACTS
 			heap->fp = fp;
 			A[a] = d2ol(heap, value);
 			fp = heap->fp;
+		#else
+			A[a] = (word) new_inexact(value);
+		#endif
 			break;
 		}
 		case I(TSTRING): {
