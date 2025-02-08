@@ -63,17 +63,20 @@ includes/ol/vm.h: src/olvm.c
 tmp/repl.c: olvm repl
 # vim
 ifneq ($(shell command -v xxd 2>/dev/null),)
-	xxd --include repl >tmp/repl.c
+	echo "__attribute__((used))" >$@
+	xxd --include repl          >>$@
 else
 # coreutils
 ifneq ($(shell command -v od 2>/dev/null),)
+	echo "__attribute__((used))" >$@
 	od -An -vtx1 repl| tr -d '\n'| sed \
 	   -e 's/^ /0x/' -e 's/ /,0x/g' \
 	   -e 's/^/unsigned char repl[] = {/' \
-	   -e 's/$$/};/'> $@
+	   -e 's/$$/};/' >>$@
 else
 # olvm
-	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (display x) (display ",")) (file->bytestream "repl")) (display "0};")'| ./olvm repl> tmp/repl.c
+	echo "__attribute__((used))" >$@
+	echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (display x) (display ",")) (file->bytestream "repl")) (display "0};")'| ./olvm repl >>$@
 endif
 endif
 
