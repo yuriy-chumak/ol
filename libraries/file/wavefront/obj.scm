@@ -20,6 +20,11 @@
          (number get-number))
       (inexact number)))
 
+(define get-integer
+   (let-parse* (
+         (numbers (get-greedy+ (get-byte-if (lambda (x) (<= #\0 x #\9))))))
+      (list->number numbers 10)))
+
 (define get-comment
    (let-parses(
          (sign (get-imm #\#))
@@ -90,13 +95,11 @@
       [x y z]))
 (define get-v-vt-vn
    (let-parses(
-         (a (get-either
-               get-number
-               (get-epsilon #f)))
+         (a (either get-integer (epsilon #f)))
          (skip (either (get-imm #\/) (epsilon #false)))
-         (b (either get-number (epsilon #f)))
+         (b (either get-integer (epsilon #f)))
          (skip (either (get-imm #\/) (epsilon #false)))
-         (c (either get-number (epsilon #f))) )
+         (c (either get-integer (epsilon #f))) )
       [a b c]))
 
 (define get-f
