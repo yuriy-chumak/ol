@@ -2633,7 +2633,7 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define ERROR2(code, a) ERROR3(code, this, a)
 #define ERROR(...) ERROR_MACRO(__VA_ARGS__, NOTHING,ERROR3,ERROR2,, NOTHING)(__VA_ARGS__)
 
-// CHECK is an ERROR simplification
+// CHECK produce ERRORs
 #define CHECK(exp, errorcode, a)  if (!(exp)) ERROR(errorcode, this, a);
 
 // "CRASH" is a critical error (produces 'crash, mcp #3)
@@ -2641,8 +2641,8 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define CRASH2(code, a) CRASH3(code, this, a)
 #define CRASH(...) ERROR_MACRO(__VA_ARGS__, NOTHING,CRASH3,CRASH2,, NOTHING)(__VA_ARGS__)
 
-// "ASSERT" is a "CRASH" simplification
-#define ASSERT(exp, errorcode, a) if (!(exp)) CRASH(errorcode, a, INULL);
+// "ASSERT" produce "CRASH"es
+#define ASSERT(exp, errorcode, a) if (!(exp)) ERROR(errorcode, a, INULL);
 
 // "ARITY_ERROR" macro
 #if OLVM_NO_ADVANCED_ARITY_ERROR
@@ -3889,7 +3889,7 @@ loop:;
 	// bind vector to registers
 	case VECTORAPPLY: { /* bind <vector > <n> <r0> .. <rn> */
 		word *vector = (word *) reg[*ip++];
-		ASSERT(is_reference(vector), vector, I(10101));
+		CHECK(is_reference(vector), vector, I(10101));
 
 		word pos = 1, n = *ip++;
 		//word hdr = *tuple;
