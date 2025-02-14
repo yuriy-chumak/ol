@@ -346,6 +346,7 @@ typedef word* R;
 
 #define reference_size(x)           ((header_size(*reference(x)) - 1))
 #define rawstream_size(x)           ((header_size(*reference(x)) - 1) * sizeof(word) - header_pads(*reference(x)))
+#define payload_offset(x)           (((word)(x)) + 1)
 
 
 // types:
@@ -429,7 +430,7 @@ typedef word* R;
 #define ref(ob, n)                  ((reference(ob))[n])
 #define car(ob)                     (ref(ob, 1))
 #define cdr(ob)                     (ref(ob, 2))
-#define payload(o)                  (&car(o))
+#define payload(o)                  &car(o)
 
 #define caar(o)                     car(car (o))
 #define cadr(o)                     car(cdr (o))
@@ -1049,21 +1050,18 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #	define SYSCALL_GETRUSAGE 0
 
 # ifndef OLVM_NOASYNC
-#	define WA_CORO_IMPLEMENT_NANOSLEEP
-#	include <wajic_coro.h>
+	#define WA_CORO_IMPLEMENT_NANOSLEEP
+	#include <wajic_coro.h>
 	WA_EXPORT(FuncCoro) int FuncCoro(void* data) { return 0; }
-void emscripten_sleep(unsigned int ms) { WaCoroSleep(ms); }
+	void emscripten_sleep(unsigned int ms) { WaCoroSleep(ms); }
 # else
-void emscripten_sleep(unsigned int ms) { }
+	void emscripten_sleep(unsigned int ms) { }
 # endif
 
-void emscripten_run_script(const char *script) { }
-int emscripten_run_script_int(const char *script) { return 0; }
-char *emscripten_run_script_string(const char *script) { return 0; }
-
-# ifdef REPL
-#	include "tmp/repl.c"
-# endif
+	// TBD.
+	void emscripten_run_script(const char *script) { }
+	int emscripten_run_script_int(const char *script) { return 0; }
+	char *emscripten_run_script_string(const char *script) { return 0; }
 #endif
 
 #ifdef __EMSCRIPTEN__
@@ -2546,7 +2544,7 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 	// создадим в топе два временных объекта со значениями всех регистров и пинов
 #ifndef OLVM_NOPINS
     word pins = (word)new(TVECTOR, ol->cr);
-    memcpy(payload(pins), ol->pin, ol->cr * sizeof(word));
+    memcpy((void*)payload(pins), ol->pin, ol->cr * sizeof(word));
 #else
     word pins = IFALSE;
 #endif
@@ -2564,7 +2562,7 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 	while (--p >= 1) r[p-1] = regs[p];
 
 #ifndef OLVM_NOPINS
-    memcpy(ol->pin, payload(pins), ol->cr * sizeof(word));
+    memcpy(ol->pin, (void*)payload(pins), ol->cr * sizeof(word));
 #endif
 
 	// закончили, почистим за собой:
