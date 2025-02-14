@@ -370,30 +370,30 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
 
          (if embed?
             (let*((this (box (vm:pin env)))
-                  (eval (lambda (result args)
-                           (case result
-                              (['ok value env]
-                                 (vm:unpin (unbox this))
-                                 (set-car! this (vm:pin env))
-                                 (if (null? args)
-                                    value
-                                    (apply value args)))
-                              (else is error
-                                 (print-to stderr "error: " (ref error 2))
-                                 #false))))
+                  (explain (lambda (result args)
+                        (case result
+                           (['ok value env]
+                              (vm:unpin (unbox this))
+                              (set-car! this (vm:pin env))
+                              (if (null? args)
+                                 value
+                                 (apply value args)))
+                           (else is error
+                              (print-to stderr "error: " (ref error 2))
+                              #false))))
                   (evaluate (lambda (expression)
-                           (halt
-                              (let*((env (vm:deref (unbox this)))
-                                    (exp args (uncons expression #f)))
-                                 (case (type exp)
-                                    (type-string
-                                       (eval (eval-string exp env) args))
-                                    (type-string-wide
-                                       (eval (eval-string exp env) args))
-                                    (type-enum+
-                                       (eval (eval-repl (vm:deref exp) env #f evaluate) args))
-                                    (type-bytevector
-                                       (eval (eval-repl (fasl-decode (bytevector->list exp) #f) (vm:deref (unbox this)) #f evaluate) args))))))))
+                        (halt
+                           (let*((env (vm:deref (unbox this)))
+                                 (exp args (uncons expression #f)))
+                              (case (type exp)
+                                 (type-string
+                                    (explain (eval-string exp env) args))
+                                 (type-string-wide
+                                    (explain (eval-string exp env) args))
+                                 (type-enum+
+                                    (explain (eval-repl (vm:deref exp) env #f evaluate) args))
+                                 (type-bytevector
+                                    (explain (eval-repl (fasl-decode (bytevector->list exp) #f) env #f evaluate) args))))))))
                ; return pinned evaluator to the caller
                (halt (vm:pin evaluate)))
          else
