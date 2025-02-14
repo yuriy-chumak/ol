@@ -894,19 +894,19 @@ word*p = new (TVECTOR, 13);\
 #define new_bytevector(length) new_alloc(TBYTEVECTOR, length)
 
 #define NEW_STRING2(string, length) ({\
-	char* _str = string;\
-	int _strln = length;\
-word* p = new_alloc(TSTRING, _strln);\
-	char* ptr = (char*)&p[1];\
-	while (_strln--)\
-		*ptr++ = *_str++;\
+	char* _st2 = string;\
+	int _strl2 = length;\
+word* p = new_alloc(TSTRING, _strl2);\
+	char* _ptr = (char*)&p[1];\
+	while (_strl2--)\
+		*_ptr++ = *_st2++;\
 	/*return*/ p;\
 })
 
 #define NEW_STRING(string) ({\
-	char* str = string;\
-	int strln = strlen(str);\
-	NEW_STRING2(str, strln);\
+	char* _st1 = string;\
+	int strl1 = strlen(_st1);\
+	NEW_STRING2(_st1, strl1);\
 })
 
 #define NEW_STRING_MACRO(_1, _2, NAME, ...) NAME
