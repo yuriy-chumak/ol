@@ -1,11 +1,10 @@
 #!/usr/bin/env ol
 
-; let's preconfigure our (lib gl)
-; this feature requires latest Ol
-(define-config (lib gl) {
-   'width 1280
-   'height 720
-})
+; let's preconfigure (lib gl)
+(import
+   (lib gl config))
+(config 'set 'width 1280)
+(config 'set 'height 720)
 
 ; create opengl window
 (import (lib gl))

@@ -41,10 +41,10 @@
          ; GLX_DOUBLEBUFFER не требует аргумента
          (vi (glXChooseVisual dpy screen (list
                4 ; GLX_RGBA
-               8  (get config 'red 8)   ; GLX_RED_SIZE
-               9  (get config 'green 8) ; GLX_GREEN_SIZE
-               10 (get config 'blue 8)  ; GLX_BLUE_SIZE
-               12 (get config 'depth 24); GLX_DEPTH_SIZE
+               8  (config 'red 8)   ; GLX_RED_SIZE
+               9  (config 'green 8) ; GLX_GREEN_SIZE
+               10 (config 'blue 8)  ; GLX_BLUE_SIZE
+               12 (config 'depth 24); GLX_DEPTH_SIZE
                5 ; GLX_DOUBLEBUFFER
                None))))
 

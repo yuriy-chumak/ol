@@ -43,8 +43,8 @@
    ;gl:finish ; if renderer exists - wait for window close, else just glFinish
 
 (begin
-   (define WIDTH  (get config 'width  854))
-   (define HEIGHT (get config 'height 480))
+   (define WIDTH  (config 'width  854))
+   (define HEIGHT (config 'height 480))
 
    ; assume that window size can not be large than 16777215 for x32 build
    ;                                  and 72057594037927935 for x64 build.
