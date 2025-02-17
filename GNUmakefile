@@ -401,3 +401,6 @@ tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
 	tar -rf $$tar0 tmp/OpenGL.tar --transform 's|.*|./OpenGL/|' ;\
 	tar -vf $$tar0 --wildcards --delete './lib/gtk-3/*' ;\
 	tar -rf $$tar0 tmp/gtk-3.tar --transform 's|.*|./lib/gtk-3/|'
+
+# libbt
+-include extras/libbt/Makefile
