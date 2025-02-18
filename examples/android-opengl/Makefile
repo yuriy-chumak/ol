@@ -68,7 +68,7 @@ restart:
 
 logcat:
 	adb logcat -v color \
-	    ol:D name.yuriychumak.ol.gui:V gl2es:E \
+	    ol:D name.yuriychumak.ol.gui:V gl2es:V \
 	    threaded_app:V nativeloader:E \
 	    AndroidRuntime:E DEBUG:V *:F
 

@@ -60,7 +60,7 @@ we got error
 # error-object?
 `(error-object? obj)`, *procedure*
 
-Returns *#true* if *obj* is an object created by [`error`](#error) (or by `runtime-error`) or raised by olvm.
+Returns *#true* if *obj* is an object created by [error](#error) (or by `runtime-error`) or raised by olvm.
 
 ```
 > (with-exception-handler

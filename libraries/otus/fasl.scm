@@ -122,6 +122,7 @@
                (loop (++ n) (cons (ref bvec n) out)))))
 
       (define (encode-inexact val tail copybytes)
+         ; todo: must be written in little-endian
          (let ((t (type val))
                (s (size val)))
             (cons* 2 t

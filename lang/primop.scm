@@ -3,7 +3,9 @@
 
 (export
       primop-of primitive?
+      ;; primop-code
       primop-name ;; primop → symbol | primop
+      ;; primop-argc
       *special-forms*
       special-bind-primop? variable-input-arity?
       multiple-return-variable-primop? opcode-arity-ok? opcode-arity-ok-2?)
@@ -24,6 +26,17 @@
       (define (primop-of val)
          (get prim-opcodes val #false))
 
+      ;; (define prim-opcodes2 ;; ff of wrapper-fn → opcode
+      ;;    (fold (λ (ff node)
+      ;;             (put ff (ref node 5) node))
+      ;;       #empty *primops*))
+
+      ;; (define fff (make-vector '(#f #f #f)))
+      ;; (define (primop-code val)
+      ;;    (ref (prim-opcodes2 val fff) 2))
+
+      ;; (define (primop-args val)
+      ;;    (ref (prim-opcodes2 val fff) 3))
 
       (define primitive? primop-of)
 
@@ -39,6 +52,14 @@
                         (ref (car primops) 1))
                      (else
                         (loop (cdr primops))))))))
+
+      ;; (define (primop-argc op)
+      ;;    (call/cc (lambda (found) ; expected count
+      ;;       (for-each (lambda (prim)
+      ;;             (if (eq? op (ref prim 2))
+      ;;                (found (ref prim 3))))
+      ;;          *primops*)
+      ;;       'error))) ; this should not be happen
 
       ;; from cps
       (define (special-bind-primop? op) ; vector-apply and ff-apply

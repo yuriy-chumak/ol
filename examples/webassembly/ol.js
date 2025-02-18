@@ -5,7 +5,7 @@ var print = WA.print || (WA.print = msg => console.log(msg.replace(/\n$/, '')));
 var error = WA.error || (WA.error = (code, msg) => print('[ERROR] ' + code + ': ' + msg + '\n'));
 WA.stdin = WA.stdin || "";
 // Some global memory variables/definition
-var ASM, MEM, MU8, MU32, FPTS = [0,0,0], WASM_STACK_SIZE = 67108864, WASM_HEAP = 67511792, WASM_HEAP_MAX = (WA.maxmem||256*1024*1024); //default max 256MB
+var ASM, MEM, MU8, MU32, FPTS = [0,0,0], WASM_STACK_SIZE = 67108864, WASM_HEAP = 67512384, WASM_HEAP_MAX = (WA.maxmem||256*1024*1024); //default max 256MB
 
 // A generic abort function that if called stops the execution of the program and shows an error
 var STOP, abort = WA.abort = function(code, msg)

@@ -160,7 +160,7 @@
 
             (glUseProgram (car po))
             (glUniform1i (glGetUniformLocation (car po) "matrix") 0)
-            ;(glUniform1f (glGetUniformLocation (car po) "shift") (options 'shift 0))
+            (glUniform1f (glGetUniformLocation (car po) "shift") (options 'shift 0))
             (glUniform1i (glGetUniformLocation (car po) "normalize") (if (options 'normalize #f) 1 0))
             (glColor3f 1 1 1)
             (glBindTexture GL_TEXTURE_2D (car id))
@@ -234,6 +234,7 @@
 
 ; custom output
 (define (show-calculated-answer answer label)
+   (print "show-calculated-answer")
    ; calculated answer
    (define select (fold max 0 (matrix->list answer)))
    ; show correct answer
@@ -276,43 +277,46 @@
 
 ; common functions
 (define (calculate-loss)
-   ; прогоним проверку по 100 рандомным картинкам
-   (define N 100)
-   (/ (fold (lambda (S _)
-               (define p (+ (random-integer (size test-images)) 1))
-               (define test-label (ref test-labels p))
-               (define test-image (ref test-images p))
-               (define shifted (Shift test-image (map (lambda (lr)
-                                                         (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
-                                                   (Padding test-image))))
+   0)
+;; (define (calculate-loss)
+;;    (print "calculate-loss")
+;;    ; прогоним проверку по 100 рандомным картинкам
+;;    (define N 100)
+;;    (/ (fold (lambda (S _)
+;;                (define p (+ (random-integer (size test-images)) 1))
+;;                (define test-label (ref test-labels p))
+;;                (define test-image (ref test-images p))
+;;                (define shifted (Shift test-image (map (lambda (lr)
+;;                                                          (+ (random-integer (- (cdr lr) (car lr) -1)) (car lr)))
+;;                                                    (Padding test-image))))
 
-               (define layer0 (Reshape shifted (list 1 (Size shifted)))) ; input layer
+;;                (define layer0 (Reshape shifted (list 1 (Size shifted)))) ; input layer
 
-               (define layer1 (Logistic (matrix·matrix layer0 (neuron1))))
-               (define layer2 (Logistic (matrix·matrix layer1 (neuron2))))
-               ;; (define layer3 (Logistic (matrix·matrix layer2 matrix3)))
+;;                (define layer1 (Logistic (matrix·matrix layer0 (neuron1))))
+;;                (define layer2 (Logistic (matrix·matrix layer1 (neuron2))))
+;;                ;; (define layer3 (Logistic (matrix·matrix layer2 matrix3)))
 
-               (define output (Reshape layer2 (list (Size layer2)))) ; back to vector
-               ;; (define ok (Matrix~ 1 (list->vector (map (lambda (i)  ; correct answer
-               ;;       (if (eq? i test-label) #i1 #i0))
-               ;;    (iota 10)))))
-               ;; (+ S (/
-               ;;    (fold (lambda (dx ok out)
-               ;;             (+ dx (** (- ok out) 2)))
-               ;;       0
-               ;;       (matrix->list ok)
-               ;;       (matrix->list output)) (Size output)) ))
-               (define ok (- (fold (lambda (ok i)
-                     (if (> (Ref output i) (Ref output ok))
-                        i ok))
-                  1
-                  (iota (Size output) 1)) 1))
-               (if (= ok test-label)
-                  (+ S 1)
-                  S))
-         0
-         (iota N))
-      (inexact N)))
+;;                (define output (Reshape layer2 (list (Size layer2)))) ; back to vector
+;;                ;; (define ok (Matrix~ 1 (list->vector (map (lambda (i)  ; correct answer
+;;                ;;       (if (eq? i test-label) #i1 #i0))
+;;                ;;    (iota 10)))))
+;;                ;; (+ S (/
+;;                ;;    (fold (lambda (dx ok out)
+;;                ;;             (+ dx (** (- ok out) 2)))
+;;                ;;       0
+;;                ;;       (matrix->list ok)
+;;                ;;       (matrix->list output)) (Size output)) ))
+;;                (define ok (- (fold (lambda (ok i)
+;;                      (if (> (Ref output i) (Ref output ok))
+;;                         i ok))
+;;                   1
+;;                   (iota (Size output) 1)) 1))
+;;                (if (= ok test-label)
+;;                   (+ S 1)
+;;                   S))
+;;          0
+;;          (iota N))
+;;       (inexact N)))
 
 ; calculate raw loss on random data
 (when (null? (Loss))
@@ -321,6 +325,8 @@
 
 ; test functions
 (define (test id)
+   (print "test " id)
+
    ; let's select random test image
    (define p (if id id (+ (random-integer (size test-images)) 1)))
    ;; (define p 35)
@@ -334,9 +340,11 @@
    ;; (define shifted image)
    ; show the input
    ((INPUT 'update) shifted)
-   ((NEURON3 'update) (Reshape shifted (list (Size shifted) 1))) ; TEMP
+   (print "x")
+   ;((NEURON3 'update) (Reshape shifted (list (Size shifted) 1))) ; TEMP
    ; correct answer
    (define label (ref test-labels p))
+   (print "label: " label)
 
    ;; calculations:
    (define matrix1 (neuron1))   ; матрица нейрона 1 (hidden layer)
@@ -354,10 +362,12 @@
    ; нарисуем нейроны
    ((NEURON1 'update) matrix1)
    ((NEURON2 'update) matrix2)
+   (print "test ok")
    #false)
 
 ; work functions
 (define (step N)
+   (print "step " N)
    (let loop ((input #false)
               (matrix1 (neuron1)) ; матрица нейрона 1 (hidden layer)
               (matrix2 (neuron2)) ; матрица нейрона 2 (hidden layer)

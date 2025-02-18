@@ -1,7 +1,7 @@
-all: out/ol
+all: standalone
 
 clean:
-	rm -f out/ol pvenv.tar
+	rm -f standalone pvenv.tar
 
 # just ensure main binary is built
 ../../olp:
@@ -9,8 +9,7 @@ clean:
 
 
 # cooking
-out/ol: ../../olp pvenv.tar
-	mkdir -p out
+standalone: ../../olp pvenv.tar
 	cp $< $@
 	objcopy --remove-section    .tar $@
 	objcopy --add-section       .tar=pvenv.tar \
@@ -18,6 +17,6 @@ out/ol: ../../olp pvenv.tar
 	   $@ $@
 	@echo Ok.
 
-pvenv.tar: ../../olp autorun.lisp
+pvenv.tar: ../../olp run.scm
 	objcopy --dump-section .tar=pvenv.tar $<
-	tar -rf $@ autorun.lisp --transform 's|.*|.|'
+	tar -rf $@ run.scm --transform 's|.*|.|'

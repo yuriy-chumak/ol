@@ -320,6 +320,27 @@
 
       ; find name by function ref
       (define (function-name-getter env)
+         ;; (lambda (a default)
+         ;;    (vm:cast
+         ;;       (call/cc (lambda (return)
+         ;;          (define (walk lib env)
+         ;;             (ff-for-each (lambda (key value)
+         ;;                   (define procedure (ref (ref value 2) 2))
+         ;;                   (if (eq? procedure a) ; #(defined #(value #function))
+         ;;                      ; todo: add synonims search
+         ;;                      (return (if lib [key 'from lib 'library] [key]))))
+         ;;                env))
+
+         ;;          ; search for toplevel symbol
+         ;;          (walk #f env)
+         ;;          ; then search all libraries.
+         ;;          (for-each (lambda (lib)
+         ;;                (if (ff? (cdr lib))
+         ;;                   (walk (car lib) (cdr lib))))
+         ;;             (ref (ref (env '*libraries* [#f [#f ()]]) 2) 2))
+         ;;          ; no procedure name found
+         ;;          [default]))
+         ;;       9))) ; special "name"
          (lambda (function default)
             (call/cc (lambda (return)
                (let loop ((kvs (ff-iter env)))

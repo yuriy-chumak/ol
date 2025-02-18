@@ -85,6 +85,8 @@
             (#eof   (cons* #\# #\e #\o #\f k))
             (else   (cons* #\# #\? #\? k))))
 
+      ; todo: import code from the (lang error)
+      ;       and use (this 'env)
       (define (cook-function this obj k)
          (if (regex? obj)
             (format-string (ref obj 2) k)

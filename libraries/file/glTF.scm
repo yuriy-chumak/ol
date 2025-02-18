@@ -49,7 +49,7 @@
                ; Chunk 1 (BIN)
                (skips (lazy+ byte))
                (ctype (word "BIN\0" #t))
-               (bin (greedy+ byte)) )
+               (bin (greedy+ byte)) ) ; todo: read as bytevector
             ; replace buffers[0] with buffer data
             ; assert "(size buffers) == 1"
             (put json 'buffers (vector-map (lambda (buffer)

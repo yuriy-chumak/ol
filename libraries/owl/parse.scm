@@ -18,6 +18,7 @@
       byte
       byte-if
       byte-between
+      ; bytes ; reading bytevector
 
       imm ; todo: rename
       word

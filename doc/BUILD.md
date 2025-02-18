@@ -156,7 +156,7 @@ Floating point olvm customization
 
 |Variable         |Value                          |Meaning |
 |-----------------|-------------------------------|--------|
-|OLVM_INEXACT_TYPE| float\|double, default double |Internal inexact type representation|
+|~~OLVM_INEXACT_TYPE~~| float\|double, default double |Internal inexact type representation|
 
 Additionally you can disable the following olvm features by setting the variables to 0 (-Dxxx=0):
 

@@ -13,7 +13,13 @@
       glfwCreateWindow
       glfwDestroyWindow
       glfwWindowShouldClose
+      ;glfwSetWindowShouldClose
+      ;glfwSetWindowTitle
+      ;glfwSetWindowIcon
+      ;glfwGetWindowPos
+      ;glfwSetWindowPos
       glfwGetWindowSize
+
 
       glfwPollEvents
 

@@ -39,6 +39,9 @@
       for-each fold
       =
       
+      ; experimental features
+      ; define-config
+
       (exports (lang error)))
 
    (import
@@ -140,5 +143,18 @@
                   (each (lambda (b)
                            (equal? a b))
                      bs)) ))))
+
+
+   ; experimental feature
+   ; not included into REPL!
+   (define-syntax define-config
+      (syntax-rules (export config import otus lisp)
+         ((define-config (...lib) data)
+            (define-library (...lib config)
+            (export config) (import (otus lisp))
+            (begin
+               (setq config data)
+            ))
+         )))
 
 ))

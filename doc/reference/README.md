@@ -39,6 +39,11 @@ Examples are provided in two forms:
 
 All provided examples are tested with the Ol's latest build each time the code is submitted to GitHub.
 
+Language Reference
+------------------
+
+- [Otus Lisp type system](ol-type-system.md).
+
 
 List of Standard procedures
 ---------------------------
