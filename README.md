@@ -16,7 +16,7 @@
 
 
 Otus Lisp, Version 2.6
-========================
+======================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
@@ -102,11 +102,12 @@ Q/A
         1 + 2 * 3 - sqrt(4)
      ))
    5
+
    ; '\\' is a short for infix-notation
    > (print (\\  1 + 2 * 3 - sqrt(4) ))
    5
 
-   ; you can view result of transformations with ",expand"
+   ; you can review result of transformations with ",expand"
    > ,expand (\\  1 + 2 * 3 - sqrt(4) )
    (- (+ 1 (* 2 3)) (sqrt 4))
    ```
@@ -118,9 +119,9 @@ Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (
 [The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
 
-Table of Contents
+TABLE OF CONTENTS
 -----------------
-1. [Build/Install](#build--install)
+1. [Build/Run/Install](#build--run--install)
    * [Advanced](doc/BUILD.md)
    * [Cross-Compilation](doc/CROSS-COMPILATION.md)
    * [Embedding](#embedding-ol)
@@ -136,8 +137,8 @@ Table of Contents
 1. [License](#license)
 
 
-BUILD / INSTALL
----------------
+BUILD / RUN / INSTALL
+---------------------
 
 #### BUILD REQUIREMENTS
 
@@ -153,7 +154,7 @@ $ make
 Advanced build instructions: [doc/BUILD.md](doc/BUILD.md)
 
 
-##### RUN
+#### RUN
 ```
 $ ./ol
 Welcome to Otus Lisp 2.6
@@ -161,10 +162,10 @@ type ',help' to help, ',quit' to end session.
 > 
 ```
 
-The Ol binary includes a rich set of features (lists, vectors and bytevectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, async functions and actors, etc.) and can be used as a completely standalone.  
+The Ol binary includes a rich set of features (lists, vectors and bytevectors, ansi and unicode strings, infinite precision math, associative arrays aka "ff"s, i/o streams, lazy evaluations, regular expressions, continuations, exceptions, lexer parsers, async functions and actors, etc.) and can be used as a completely standalone.
 
 
-##### INSTALL
+#### INSTALL
 ```
 $ sudo make install
 ```
@@ -172,7 +173,7 @@ $ sudo make install
 Note: by default we use */usr/bin/ol* for Ol binary, and */usr/lib/ol/* folder for Ol libraries.
 
 
-##### UNINSTALL
+#### UNINSTALL
 ```
 $ sudo make uninstall
 ```
@@ -193,15 +194,13 @@ LEARNING
 The Otus Lisp language is based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with minor changes and useful extensions.
 
 You can find working Ol examples at:
-* [Standard procedures](doc/reference/) list (under construction),
+* [Standard procedures](doc/reference/) list (constantly improving),
 * [RosettaCode](http://rosettacode.org/wiki/Category:Ol) Ol page,
 * [Tests](tests/) and [Examples](examples/) repository folders,
-* Embed usage sample available as toy [pacman game](examples/pacman/) sample,
-* Android sample code available at [android](examples/android/) folder.
+* Android example code available at [android](examples/android/) folder.
 
 
-For example:
-
+Additionally,
 * "LogicWire" and "Digital rain" examples demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)):
   * https://github.com/yuriy-chumak/ol/tree/master/examples/LogicWire ([idea source](https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/))
     <img src="https://raw.githubusercontent.com/yuriy-chumak/ol/master/doc/img/2023-04-10-21-47.gif" width="50%" height="50%">
@@ -227,25 +226,25 @@ The most important differences are:
 * Ol is definitely **case sensitive**.
 * Numbers WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
   - `integer?` for inexact numbers always returns **#false** in Ol.
+  - note: Use `inexact` function to convert number into inexact form, or prefix number with `#i` directly (like `#i0.123` for inexact 0.123).
 * **No** `set!` in Ol (Ol is purely functional!),
-  - note: Use `define` instead.
-  - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions [are provided](doc/reference/pairs-and-lists.md#set-car).
+  - note: Use `define`, `define-values`, `let`, `let*`, `letrec`, and `letrec*` instead.
+  - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions [are provided](doc/reference/pairs-and-lists.md#set-car), but is not recommended to be used.
+  - note: Inexact numbers can be changed with `vm:set!`, but is not recommended to be used.
   - note: Dynamic variables are available via `(scheme dynamic-bindings)` [library](doc/reference/dynamic-bindings.md).
-* CHARACTERS in Ol are **small numbers** (aka 'enums'), but with special *character* type in Scheme.
+* CHARACTERS in Ol are **small numbers** (aka 'enums'), but special *character* type in Scheme.
   - note: Ol supports the full Unicode 15.0.0 (2022 Sep 13) character set.
   - note: To write a character use `write-char`, otherwise you'll write a number.
-* NEGATIVE indices in `substring` are **valid** in Ol (means "from the end of string").
-* NEGATIVE vector indices are **valid** in Ol (means "from the end of vector").
+* NEGATIVE indices in `substring` are **valid** in Ol (means "from the end of string", -1 means a last *rune*).
+* NEGATIVE vector indices are **valid** in Ol (means "from the end of vector", -1 means a last element).
 * Ol has **extended form** of `case` (with vectors support),
-* Ol has **extended form** of `if` (with `then` and `else` [keywords]((doc/reference/)),
-* Ol has **builtin dictionary** numeric and symbolic keys,
-* Ol has builtin **regular expressions**,
-* Ol has an awfully **powerful macro system** in addition to Scheme's hygienic one.
+* Ol has **extended form** of `if` (with `then` and `else` [keywords](doc/reference/)),
+* Ol has **builtin dictionary** numeric and symbolic keys (the [reference](doc/reference/ffs.md) page),
+* Ol has builtin **regular expressions** (the [reference](doc/reference/regex.md) page),
+* Ol has an awfully **powerful macro system** in addition to Scheme's hygienic one (a brief [notes and examples](doc/reference/macros.md)).
+* `apply` arguments count is **limited to 249** in Ol (use a `fold` otherwise).
 
-The full list can be read in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
-
-Some Ol limitations:
-  * `apply` arguments count is **limited to 249** in Ol (use `fold` otherwise).
+The nearly full differences list can be found in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
 
 ### Supported SRFI
 * srfi-0 - `cond-expand`, builtin
@@ -253,15 +252,27 @@ Some Ol limitations:
 * srfi-71 - `(let* ((a b (values..`, builtin
 * srfi-87 - `<=` in `case`, builtin
 
+
 DEPRECATIONS
 ------------
 
+* 2.6 -> 2.7 (which is planned, but i'm not sure about)
+  - i'm thinking about changing `(wait ms)` to `(wait s)`, it means the seconds usage instead of milliseconds.
+
+* 2.5 -> 2.6
+  - feature `ol-2.5` changed to `ol-2.6`.
+  - removed deprecated libraries `(scheme srfi-Nnn)`, use `(srfi Nnn)` instead,
+  - i/o scheduler enabled by default for reads,
+  - `write` function made r7rs-compliant,
+  - `(owl format)` moved to `(otus format)`.
+
 * 2.4 -> 2.5
-  - feature `ol-2.4`` changed to `ol-2.5`.
+  - feature `ol-2.4` changed to `ol-2.5`.
   - `(system args port...)` changed to `(execvp args port...)`. New `(system command)` introduced.
   - `(OpenGL version-X.Y)` libraries changed to `(OpenGL X.Y)`.
   - `fft-size-t` changed to `fft-size_t`.
   - `HAS_...` build variables changed to convenient `HAVE_...`.
+
 * 2.3 -> 2.4
   - `(ilist ...)` is deprecated. Use `(cons* ...)` instead.
   - `(interact ...)` from (owl ~~interop~~ async) is deprecated. Use `(await (mail ...))` instead.
