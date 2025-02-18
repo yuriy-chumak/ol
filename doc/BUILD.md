@@ -45,14 +45,10 @@ $ cc src/olvm.c  -std=gnu99 -O2  -lm -ldl  -o vm
 ##### Build ol (with integrated REPL):
 
 ```bash
-$ xxd --include repl >tmp/repl.c
-OR
-$ echo '(display "unsigned char repl[] = {") (lfor-each (lambda (x) (for-each display (list x ","))) (file->bytestream "repl")) (display "0};")'| ./vm repl >tmp/repl.c
-THEN
-$ cc src/olvm.c tmp/repl.c  -DREPL=repl  -std=gnu99 -O2  -lm -ldl  -o ol
+$ cc src/olvm.c -DREPL=repl  src/repl.S  -std=gnu99 -O2  -lm -ldl  -o ol
 ```
 
-Note: for some platforms, build can be done without using the `xxd` tool or vm itself.
+Note: for some cases build can be done in alternate way.
 ```bash
 $ ld -r -b binary -o repl.o repl
 $ cc src/olvm.c -DREPL=_binary_repl_start  repl.o  -std=gnu99 -O2  -lm -ldl  -o ol

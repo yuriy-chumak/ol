@@ -245,7 +245,7 @@ ol:
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
 	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L) \
-	   tmp/repl.c -DREPL=repl
+	   src/repl.S -DREPL=repl
 	@echo Ok.
 
 olp: CFLAGS += $(CFLAGS_RELEASE)
@@ -254,7 +254,7 @@ olp: tmp/pvenv.tar
 	   extensions/ffi.c -Iincludes \
 	   -DOLVM_TARVENV=1 -DOLVM_TARVFOLDERS=1 \
 	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L) \
-	   tmp/repl.c -DREPL=repl
+	   src/repl.S -DREPL=repl
 	objcopy --add-section       .tar=tmp/pvenv.tar \
 	        --set-section-flags .tar=noload,readonly \
 	   $@ $@
@@ -263,7 +263,7 @@ libol.so:
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
 	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L) \
-	   tmp/repl.c -DREPL=repl \
+	   src/repl.S -DREPL=repl \
 	   -DOLVM_NOMAIN -shared -fPIC
 	@echo Ok.
 
@@ -285,7 +285,7 @@ selfexec: ol
 # require mingw-w64-i686-dev (+ gcc-mingw-w64-i686) or/and mingw-w64-x86-64-dev (+ gcc-mingw-w64-x86-64)
 ol%.exe: MINGWCFLAGS += -std=gnu99 -fno-exceptions
 ol%.exe: MINGWCFLAGS += $(CFLAGS_RELEASE)
-ol%.exe: src/olvm.c extensions/ffi.c tmp/repl.c
+ol%.exe: src/olvm.c extensions/ffi.c src/repl.S
 	$(MGCC) \
 	   $^ -o $@ \
 	   -DREPL=repl \

@@ -281,14 +281,14 @@ endif
 	@printf "\n"
 
 # -- embed --------------------------------------------------------
-testing-embed: tests/embed.c src/olvm.c includes/ol/ol.h tmp/repl.c
+testing-embed: tests/embed.c src/olvm.c includes/ol/ol.h src/repl.S
 	@echo "embed testing"
 	@echo "----------------------------------------"
 	@echo "tests/embed.c"
 ifeq ($(DEV_MACHINE),1) # main development platform, special case
 ifeq ($(HAS_32CDEFS),1)
 	@echo "   debug-32:"
-	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	$(CC) tests/embed.c src/olvm.c src/repl.S $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed32d \
 	   -Iincludes -lm $(CFLAGS_DEBUG) -m32 -Wno-unused-function
 	@if tmp/embed32d >/dev/null; then\
@@ -298,7 +298,7 @@ ifeq ($(HAS_32CDEFS),1)
 	   touch $(FAILED) ;\
 	fi
 	@echo "   release-32:"
-	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	$(CC) tests/embed.c src/olvm.c src/repl.S $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed32r \
 	   -Iincludes -lm $(CFLAGS_RELEASE) -m32 -Wno-unused-function
 	@if tmp/embed32r >/dev/null; then\
@@ -310,7 +310,7 @@ ifeq ($(HAS_32CDEFS),1)
 endif
 ifeq ($(HAS_64CDEFS),1)
 	@echo "   debug-64:"
-	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	$(CC) tests/embed.c src/olvm.c src/repl.S $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed64d \
 	   -Iincludes -lm $(CFLAGS_DEBUG) -m64 -Wno-unused-function
 	@if tmp/embed64d >/dev/null; then\
@@ -320,7 +320,7 @@ ifeq ($(HAS_64CDEFS),1)
 	   touch $(FAILED) ;\
 	fi
 	@echo "   release-64:"
-	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	$(CC) tests/embed.c src/olvm.c src/repl.S $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embed64r \
 	   -Iincludes -lm $(CFLAGS_RELEASE) -m64 -Wno-unused-function
 	@if tmp/embed64r >/dev/null; then\
@@ -332,7 +332,7 @@ ifeq ($(HAS_64CDEFS),1)
 endif
 else # regular case
 	@echo "   debug:"
-	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	$(CC) tests/embed.c src/olvm.c src/repl.S $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embedd \
 	   -Iincludes -lm $(CFLAGS_DEBUG) -Wno-unused-function
 	@if tmp/embedd >/dev/null; then\
@@ -342,7 +342,7 @@ else # regular case
 	   touch $(FAILED) ;\
 	fi
 	@echo "   release:"
-	$(CC) tests/embed.c src/olvm.c tmp/repl.c $(CFLAGS) $(L) -DOLVM_NOMAIN \
+	$(CC) tests/embed.c src/olvm.c src/repl.S $(CFLAGS) $(L) -DOLVM_NOMAIN \
 	   -DOLVM_FFI=1 extensions/ffi.c -o tmp/embedr \
 	   -Iincludes -lm $(CFLAGS_RELEASE) -Wno-unused-function
 	@if tmp/embedr >/dev/null; then\

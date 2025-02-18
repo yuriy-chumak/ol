@@ -3,10 +3,10 @@ vm: src/olvm.c
 vm: extensions/ffi.c
 ol: src/olvm.c
 ol: extensions/ffi.c
-ol: tmp/repl.c
+ol: src/repl.S
 libol.so: src/olvm.c
 libol.so: extensions/ffi.c
-libol.so: tmp/repl.c
+libol.so: src/repl.S
 
 # win/wine
 ol%.exe: src/olvm.c

@@ -23,7 +23,7 @@ LOCAL_MODULE   := ol
 LOCAL_CFLAGS   += $(OL_CFLAGS) -DHAVE_DLOPEN=1 -DHAVE_SOCKETS=1 -DREPL=repl
 
 LOCAL_SRC_FILES := ../src/olvm.c
-LOCAL_SRC_FILES += ../tmp/repl.c
+LOCAL_SRC_FILES += ../src/repl.S
 LOCAL_SRC_FILES += ../extensions/ffi.c
 #LOCAL_SRC_FILES += ../tests/ffi.c # only for tests/ffi.scm
 
@@ -63,7 +63,7 @@ LOCAL_SHARED_LIBRARIES := olvm
 LOCAL_CFLAGS   += $(OL_CFLAGS)
 LOCAL_CFLAGS   += -DREPL=repl
 # extensions (jni + repl)
-LOCAL_SRC_FILES+= ../extensions/jni.c ../tmp/repl.c
+LOCAL_SRC_FILES+= ../extensions/jni.c ../src/repl.S
 
 LOCAL_LDFLAGS  := -Xlinker --export-dynamic
 LOCAL_LDLIBS   += -llog -landroid
