@@ -1,3 +1,4 @@
+[ -d tmp ] || mkdir -p tmp
 
 
 # CC0 by https://opengameart.org/content/another-space-background-track

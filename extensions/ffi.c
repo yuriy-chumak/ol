@@ -6,7 +6,7 @@
  *
  * Тут у нас реализация ffi механизма. Примеры в lib/opengl.scm, lib/sqlite.scm, etc.
  *
- * btw, FFI is Fatal Familial Insomnia too. Hmmm...
+ * btw, FFI is also Fatal Familial Insomnia. Hmmm...
  */
 
 /*!
@@ -19,11 +19,6 @@
 // http://autocad.xarch.at/lisp/ffis.html
 //
 // Utf-8 https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
-
-// type* - list or vector, todo: remove list as a pointer to vector, only vector must be
-// struct* - list
-// struct** - vector of lists
-
 
 #ifndef OLVM_FFI
 // ffi have no sense without dlopen/dlsym
@@ -66,16 +61,15 @@
 #define __builtin_memcpy memcpy
 #endif
 
-
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
 
 #ifdef __EMSCRIPTEN__
-# ifndef __WAJIC__
-#	include <emscripten.h>
-# endif
+#ifndef __WAJIC__
+#include <emscripten.h>
+#endif
 #endif
 
 #include <sys/mman.h> // we have own win32 implementation

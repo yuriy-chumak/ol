@@ -207,15 +207,12 @@ Additionally,
   * https://github.com/yuriy-chumak/ol/tree/master/examples/Matrix
     !["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
 
-* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/examples/pacman
-
-!["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
-
+* "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/examples/pacman  
+  !["pacman" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png)
 
 * "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/examples/Newton.
-You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.
-
-!["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
+You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.  
+  !["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
 
 
 R<sup>7</sup>RS DIFFERENCES

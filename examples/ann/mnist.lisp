@@ -9,10 +9,10 @@
 
 ; neural topology setup:
 ; ------------------------------------------------------------
-(define INPUT-LEN 784) ; every input image has 28 * 28 pixels,
+(define INPUT-LEN (* 28 28)) ; input image = (28 * 28) pixels,
 (define OUTPUT-LEN 10) ; and only 10 possible numbers (0 .. 9)
 
-(define LAYER1-LEN 99); size of intermediate (hidden) layer 1
+(define LAYER1-LEN 99) ; size of intermediate (hidden) layer 1
 
 ; ------------------------------------------------------------
 
