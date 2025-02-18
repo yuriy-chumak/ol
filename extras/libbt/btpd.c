@@ -1,6 +1,6 @@
 #include "btpd.h"
 
-#include <openssl/sha.h>
+#include "boringssl/crypto/sha.h"
 #include <signal.h>
 
 static uint8_t m_peer_id[20];

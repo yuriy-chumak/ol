@@ -2,6 +2,7 @@
 
 #include <getopt.h>
 #include <time.h>
+#include <pthread.h>
 
 int btpd_daemon_phase = 2;
 int first_btpd_comm[2];
@@ -26,7 +27,7 @@ writepid(void)
 }
 
 static void
-setup_daemon(int daemonize, const char *dir)
+setup_daemon(const char *dir)
 {
     char c;
     pid_t pid;
@@ -65,7 +66,7 @@ setup_daemon(int daemonize, const char *dir)
         if ((btpd_dir = strdup(wd)) == NULL)
             btpd_err("Out of memory.\n");
     }
-
+/*
     if (daemonize) {
         if (pipe(first_btpd_comm) < 0)
             btpd_err("Failed to create pipe (%s).\n", strerror(errno));
@@ -83,7 +84,7 @@ setup_daemon(int daemonize, const char *dir)
         if (pid != 0)
             exit(0);
     }
-
+*/
     if ((pidfd = open("pid", O_CREAT|O_WRONLY, 0666)) == -1)
         btpd_err("Couldn't open 'pid' (%s).\n", strerror(errno));
 
@@ -147,10 +148,10 @@ usage(void)
         "\t\tn = -1 : Upload to every interested peer.\n"
         "\t\tn =  0 : Dont't upload to anyone.\n"
         "\t\tn >  0 : Upload to at most n peers simultaneously.\n"
-        "\n"
+/*        "\n"
         "--no-daemon\n"
         "\tKeep the btpd process in the foregorund and log to std{out,err}.\n"
-        "\tThis option is intended for debugging purposes.\n"
+        "\tThis option is intended for debugging purposes.\n"*/
         "\n"
         "-p n, --port n\n"
         "\tListen at port n. Default is 6881.\n"
@@ -175,10 +176,10 @@ static struct option longopts[] = {
     { "prealloc", required_argument,    &longval,       3 },
     { "max-uploads", required_argument, &longval,       4 },
     { "max-peers", required_argument,   &longval,       5 },
-    { "no-daemon", no_argument,         &longval,       6 },
+    { "no-daemon", no_argument,         &longval,       6 },  // disabled always
     { "logfile", required_argument,     &longval,       7 },
     { "ipcprot", required_argument,     &longval,       8 },
-    { "empty-start", no_argument,       &longval,       9 },
+    { "empty-start", no_argument,       &longval,       9 },  // always run from scratch
     { "ip", required_argument,          &longval,       10 },
     { "logmask", required_argument,     &longval,       11 },
     { "numwant", required_argument,     &longval,       12 },
@@ -186,95 +187,100 @@ static struct option longopts[] = {
     { NULL,     0,                      NULL,           0 }
 };
 
-int
-main(int argc, char **argv)
+
+
+void* libbt_thread(void* vargp)
 {
-    char *dir = NULL, *log = NULL;
-    int daemonize = 1, opt4 = 0, opt6 = 0;
+    evloop();
+    btpd_err("Exit from evloop with error (%s).\n", strerror(errno));
+}
 
-    for (;;) {
-        switch (getopt_long(argc, argv, "46d:p:", longopts, NULL)) {
-        case -1:
-            goto args_done;
-        case '4':
-            opt4 = 1;
-            break;
-        case '6':
-            opt6 = 1;
-            break;
-        case 'd':
-            dir = optarg;
-            break;
-        case 'p':
-            net_port = atoi(optarg);
-            break;
-        case 0:
-            switch (longval) {
-            case 1:
-                net_bw_limit_in = atoi(optarg) * 1024;
-                break;
-            case 2:
-                net_bw_limit_out = atoi(optarg) * 1024;
-                break;
-            case 3:
-                cm_alloc_size = atoi(optarg) * 1024;
-                break;
-            case 4:
-                net_max_uploads = atoi(optarg);
-                break;
-            case 5:
-                net_max_peers = atoi(optarg);
-                break;
-            case 6:
-                daemonize = 0;
-                break;
-            case 7:
-                log = optarg;
-                break;
-            case 8:
-                ipcprot = strtol(optarg, NULL, 8);
-                break;
-            case 9:
-                empty_start = 1;
-                break;
-            case 10:
-                tr_ip_arg = optarg;
-                break;
-            case 11:
-                btpd_logmask = atoi(optarg);
-                break;
-            case 12:
-                net_numwant = (unsigned)atoi(optarg);
-                break;
-            default:
-                usage();
-            }
-            break;
-        case '?':
-        default:
-            usage();
-        }
-    }
-args_done:
-    argc -= optind;
-    argv += optind;
 
-    if (opt6) {
-        net_ipv6 = 1;
-        if (!opt4)
-            net_ipv4 = 0;
-    }
 
-    if (argc > 0)
-        usage();
+EXPORT int
+libbt_main(/*int argc, char **argv*/)
+{
+//     char *dir = NULL, *log = NULL;
+//     int opt4 = 0, opt6 = 0;
 
-    setup_daemon(daemonize, dir);
+//     for (;;) {
+//         switch (getopt_long(argc, argv, "46d:p:", longopts, NULL)) {
+//         case -1:
+//             goto args_done;
+//         case '4':
+//             opt4 = 1;
+//             break;
+//         case '6':
+//             opt6 = 1;
+//             break;
+//         case 'd':
+//             dir = optarg;
+//             break;
+//         case 'p':
+//             net_port = atoi(optarg);
+//             break;
+//         case 0:
+//             switch (longval) {
+//             case 1:
+//                 net_bw_limit_in = atoi(optarg) * 1024;
+//                 break;
+//             case 2:
+//                 net_bw_limit_out = atoi(optarg) * 1024;
+//                 break;
+//             case 3:
+//                 cm_alloc_size = atoi(optarg) * 1024;
+//                 break;
+//             case 4:
+//                 net_max_uploads = atoi(optarg);
+//                 break;
+//             case 5:
+//                 net_max_peers = atoi(optarg);
+//                 break;
+//             case 7:
+//                 log = optarg;
+//                 break;
+//             case 8:
+//                 ipcprot = strtol(optarg, NULL, 8);
+//                 break;
+//             case 10:
+//                 tr_ip_arg = optarg;
+//                 break;
+//             case 11:
+//                 btpd_logmask = atoi(optarg);
+//                 break;
+//             case 12:
+//                 net_numwant = (unsigned)atoi(optarg);
+//                 break;
+//             default:
+//                 usage();
+//             }
+//             break;
+//         case '?':
+//         default:
+//             usage();
+//         }
+//     }
+// args_done:
+//     argc -= optind;
+//     argv += optind;
+
+//     if (opt6) {
+//         net_ipv6 = 1;
+//         if (!opt4)
+//             net_ipv4 = 0;
+//     }
+
+//     if (argc > 0)
+//         usage();
+
+	char *dir = "tmp";
+    setup_daemon(dir);
 
     if (evloop_init() != 0)
         btpd_err("Failed to initialize evloop (%s).\n", strerror(errno));
 
     btpd_init();
-
+/*
     if (daemonize) {
         if (freopen("/dev/null", "r", stdin) == NULL)
             btpd_err("freopen of stdin failed (%s).\n", strerror(errno));
@@ -283,20 +289,21 @@ args_done:
         if (dup2(fileno(stderr), fileno(stdout)) < 0)
             btpd_err("dup2 failed (%s).\n", strerror(errno));
         first_btpd_exit(0);
-    }
+    }*/
     setlinebuf(stdout);
     setlinebuf(stderr);
 
     btpd_daemon_phase = 0;
-
+/*
     if (!empty_start)
         active_start();
-    else
+    else */
         active_clear();
+/*
+    evloop();*/
 
-    evloop();
-
-    btpd_err("Exit from evloop with error (%s).\n", strerror(errno));
-
+	pthread_t thread_id;
+	pthread_create(&thread_id, NULL, libbt_thread, NULL);
+	
     return 1;
 }

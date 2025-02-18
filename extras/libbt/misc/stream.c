@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <openssl/sha.h>
+#include "../boringssl/crypto/sha.h"
 
 #include "metainfo.h"
 #include "subr.h"

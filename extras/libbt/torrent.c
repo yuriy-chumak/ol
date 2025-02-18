@@ -1,6 +1,6 @@
 #include "btpd.h"
 
-#include <openssl/sha.h>
+#include "boringssl/crypto/sha.h"
 
 #define SAVE_INTERVAL 300
 

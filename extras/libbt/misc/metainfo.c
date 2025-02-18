@@ -6,7 +6,7 @@
 #include <string.h>
 #include <strings.h>
 
-#include <openssl/sha.h>
+#include "../boringssl/crypto/sha.h"
 
 #include "benc.h"
 #include "metainfo.h"

@@ -21,7 +21,7 @@
 
 #include "btpd.h"
 
-#include <openssl/sha.h>
+#include "boringssl/crypto/sha.h"
 #include <stream.h>
 
 static void

@@ -60,6 +60,15 @@
 #define BTPD_L_POL      0x00000020
 #define BTPD_L_BAD      0x00000040
 
+#if defined(_WIN32)
+#	define EXPORT __declspec(dllexport)
+#elif defined(__EMSCRIPTEN__)
+#	define EXPORT EMSCRIPTEN_KEEPALIVE
+#else
+#	define EXPORT __attribute__ ((__visibility__("default")))
+#endif
+
+
 extern long btpd_seconds;
 
 void btpd_init(void);
