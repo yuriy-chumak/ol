@@ -1797,7 +1797,7 @@ __attribute__((__used__))
 static int pvenv_open (const char *filename, int flags, int mode, void* userdata) {
 	(void) userdata;
 	// pvenv support only reading files, and not folders
-	if (pvenv && filename && !(flags & (O_WRONLY | O_RDWR | O_DIRECTORY))) {
+	if (pvenv && filename && !(flags & (O_CREAT | O_WRONLY | O_TRUNC | O_RDWR | O_DIRECTORY))) {
 		int len;
 		char* memptr;
 		if (memptr = pvenv_find(pvenv, filename, &len)) {
@@ -1812,7 +1812,7 @@ static int pvenv_open (const char *filename, int flags, int mode, void* userdata
 	if (fd == -1 || flags & O_DIRECTORY)
 		return fd;
 	struct stat st;
-	if (!fstat(fd, &st) || S_ISDIR(st.st_mode)) {
+	if (fstat(fd, &st) || S_ISDIR(st.st_mode)) {
 		close(fd);
 		return -1;
 	}
