@@ -154,7 +154,7 @@
       (begin
          (define (ls folder)
             (list "/bin/sh" "-c" (string-append
-               "ls -lah " folder)))
+               "ls -lah \"" folder "\"")))
 
          (define line-skips 1)
          (define get-line (let-parse* (
@@ -214,8 +214,8 @@
    ; todo: add "download arrow" to download full folder or zip at the right of filename
    (define (sendfile filename)
       (define realname
-         (s/%20/ /g
-         (s/[?].*$// filename)))
+         (s/[?].*$//
+         (s/^\/+// filename))) ; remove all leading "/"
 
       (for-each display (list "Sending '\e[0;33m" realname "\e[0;0m'... "))
       (define stat (syscall 4 (if (string? realname) (c-string realname))))
@@ -353,8 +353,27 @@
          ((and (eq? (size request) 3)
                (string-eq? (ref request 1) "GET"))
             (define filename (ref request 2))
-            (sendfile (if (string-eq? filename "/") "."
-               (s/^\/+// filename)))) ; remove all leading "/"
+            (define realname
+               (if (m/%/ filename)
+               then
+                  (define parts (c/%/ filename))
+                  (bytes->string
+                     (fold append
+                        (string->bytes (car parts))
+                        (map
+                           (lambda (arg)
+                              (print "arg: " arg)
+                              (if (>= (string-length arg) 2)
+                              then
+                                 (cons
+                                    (string->number (substring arg 0 2) 16)
+                                    (string->list (substring arg 2)))
+                              else
+                                 (string->list arg)))
+                        (cdr parts))))
+               else
+                  filename))
+            (sendfile (if (string-eq? realname "/") "." realname)))
          (else
             (sendfile 404))))
    (send "HTTP/1.0 404 Not Found\r\n"
