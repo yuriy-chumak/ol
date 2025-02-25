@@ -4199,11 +4199,12 @@ loop:;
 
 				char* s = string(A1);
 				int f = number(A2);
+				int blocking = (argc > 2 && A3 == ITRUE) ? 1 : 0; // todo: A3 != IFALSE
 				int flg = (f & 01000 ? O_CREAT : 0)
 				        | (f & 00100 ? O_TRUNC : 0)
 				        | (f & 00002 ? O_RDWR  : 0)
-				        | (f & 0100000 ? O_BINARY : 0);
-				int blocking = (argc > 2 && A3 == ITRUE) ? 1 : 0; // todo: A3 != IFALSE
+				        | (f & 0100000 ? O_BINARY : 0)
+						| (!blocking ? O_NONBLOCK : 0);
 				int mode =     (argc > 3 && A4 != IFALSE)
 			 	    ? number(A4)
 				    : S_IRUSR | S_IWUSR;
@@ -4221,11 +4222,8 @@ loop:;
 #endif
 
 				// regular file? (id less than VMAX, then we return port as value)
-				if ((unsigned long)file <= VMAX) {
-					if (!blocking)
-					    set_blocking(file, 0); // and set "non-blocking" mode
+				if ((unsigned long)file <= VMAX)
 					r = (R) make_port(file);
-				}
 				else // port as reference
 					r = new_port((unsigned long)file);
 
