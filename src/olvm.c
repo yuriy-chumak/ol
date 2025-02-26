@@ -4203,8 +4203,10 @@ loop:;
 				int flg = (f & 01000 ? O_CREAT : 0)
 				        | (f & 00100 ? O_TRUNC : 0)
 				        | (f & 00002 ? O_RDWR  : 0)
-				        | (f & 0100000 ? O_BINARY : 0)
-						| (!blocking ? O_NONBLOCK : 0);
+#ifndef _WIN32
+						| (!blocking ? O_NONBLOCK : 0)
+#endif
+				        | (f & 0100000 ? O_BINARY : 0);
 				int mode =     (argc > 3 && A4 != IFALSE)
 			 	    ? number(A4)
 				    : S_IRUSR | S_IWUSR;
