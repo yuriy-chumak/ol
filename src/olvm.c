@@ -1052,7 +1052,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 # ifndef OLVM_NOASYNC
 	#define WA_CORO_IMPLEMENT_NANOSLEEP
 	#include <wajic_coro.h>
-	WA_EXPORT(FuncCoro) int FuncCoro(void* data) { return 0; }
+	int FuncCoro(void* data) { return 0; }
 	void emscripten_sleep(unsigned int ms) { WaCoroSleep(ms); }
 # else
 	void emscripten_sleep(unsigned int ms) { }
@@ -1464,7 +1464,13 @@ int (*puname)(struct utsname* out) = uname;
 void yield()
 {
 #ifdef __EMSCRIPTEN__
+# ifdef __WAJIC__
+#  ifndef OLVM_NOASYNC
+	WaCoroYield();
+#  endif
+# else
 	emscripten_sleep(1);
+# endif
 #else
 # if defined(__unix__) || defined(__APPLE__)
 	sched_yield();
