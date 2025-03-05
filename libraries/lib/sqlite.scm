@@ -38,7 +38,29 @@
   ; Extended Result Codes
     ; TBD.
   ; Flags For File Open Operations
-    ; TBD.
+   SQLITE_OPEN_READONLY
+   SQLITE_OPEN_READWRITE
+   SQLITE_OPEN_CREATE
+   SQLITE_OPEN_DELETEONCLOSE
+   SQLITE_OPEN_EXCLUSIVE
+   SQLITE_OPEN_AUTOPROXY
+   SQLITE_OPEN_URI
+   SQLITE_OPEN_MEMORY
+   SQLITE_OPEN_MAIN_DB
+   SQLITE_OPEN_TEMP_DB
+   SQLITE_OPEN_TRANSIENT_DB
+   SQLITE_OPEN_MAIN_JOURNAL
+   SQLITE_OPEN_TEMP_JOURNAL
+   SQLITE_OPEN_SUBJOURNAL
+   SQLITE_OPEN_SUPER_JOURNAL
+   SQLITE_OPEN_NOMUTEX
+   SQLITE_OPEN_FULLMUTEX
+   SQLITE_OPEN_SHAREDCACHE
+   SQLITE_OPEN_PRIVATECACHE
+   SQLITE_OPEN_WAL
+   SQLITE_OPEN_NOFOLLOW
+   SQLITE_OPEN_EXRESCODE
+   SQLITE_OPEN_MASTER_JOURNAL
   ; Device Characteristics
     ; TBD.
   ; File Locking Levels
@@ -152,9 +174,9 @@
    ;sqlite3_progress_handler
 
   ; Creation / Destruction / Info
-    sqlite3_open ; int (const char* filename, sqlite3**)
+   sqlite3_open
    ;sqlite3_open16 ; int (const char* filename, sqlite3**)
-   ;sqlite3_open_v2 ; int (const char* filename, sqlite3**, int, const char*)
+   sqlite3_open_v2
 
   ; Closing A Database Connection
     sqlite3_close ; int (sqlite3*)
@@ -506,6 +528,30 @@
    ; https://www.sqlite.org/c3ref/open.html
    ; ex: file:data.db?mode=ro&cache=private
    (define sqlite3_open (sqlite int "sqlite3_open" type-string sqlite3**))
+   (define sqlite3_open_v2 (sqlite int "sqlite3_open_v2" type-string sqlite3** int type-string))
+   (define SQLITE_OPEN_READONLY         #x00000001)
+   (define SQLITE_OPEN_READWRITE        #x00000002)
+   (define SQLITE_OPEN_CREATE           #x00000004)
+   (define SQLITE_OPEN_DELETEONCLOSE    #x00000008)
+   (define SQLITE_OPEN_EXCLUSIVE        #x00000010)
+   (define SQLITE_OPEN_AUTOPROXY        #x00000020)
+   (define SQLITE_OPEN_URI              #x00000040)
+   (define SQLITE_OPEN_MEMORY           #x00000080)
+   (define SQLITE_OPEN_MAIN_DB          #x00000100)
+   (define SQLITE_OPEN_TEMP_DB          #x00000200)
+   (define SQLITE_OPEN_TRANSIENT_DB     #x00000400)
+   (define SQLITE_OPEN_MAIN_JOURNAL     #x00000800)
+   (define SQLITE_OPEN_TEMP_JOURNAL     #x00001000)
+   (define SQLITE_OPEN_SUBJOURNAL       #x00002000)
+   (define SQLITE_OPEN_SUPER_JOURNAL    #x00004000)
+   (define SQLITE_OPEN_NOMUTEX          #x00008000)
+   (define SQLITE_OPEN_FULLMUTEX        #x00010000)
+   (define SQLITE_OPEN_SHAREDCACHE      #x00020000)
+   (define SQLITE_OPEN_PRIVATECACHE     #x00040000)
+   (define SQLITE_OPEN_WAL              #x00080000)
+   (define SQLITE_OPEN_NOFOLLOW         #x01000000)
+   (define SQLITE_OPEN_EXRESCODE        #x02000000)
+   (define SQLITE_OPEN_MASTER_JOURNAL   #x00004000)
 
   ; Closing A Database Connection
    (define sqlite3_close (sqlite int "sqlite3_close" sqlite3*))
