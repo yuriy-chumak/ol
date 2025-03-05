@@ -98,6 +98,8 @@
 
       ; fft data manipulation helpers
       vptr->string
+      vptr->bool
+      vptr->value
 
       vptr->bytevector
       bytevector->void*
@@ -372,6 +374,12 @@
 
    (define (vptr->string vptr)
       (cast vptr type-string))
+
+   (define (vptr->bool vptr)
+      (cast vptr fft-bool))
+
+   (define (vptr->value vptr type)
+      (cast vptr type))
 
    (define (bytevector->float bvec offset)
       (let ((void* (make-vptr)))
