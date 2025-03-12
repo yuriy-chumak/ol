@@ -117,6 +117,8 @@
       (setq *big-one* (cons 1 #null))
       (setq *first-bignum* (cons 0 *big-one*))
       (setq *big-zero* (cons 0 #null))
+      ; internal constant, don't export
+      (setq |-0.0| (inexact 0))
 
       ;
       ; let's recalculate platform dependent math constants:
@@ -124,6 +126,7 @@
          (vm:new type-constructor (lambda (args)
                ; platform-dependent floating point constants
                (vm:set! +nan.0 (fsqrt -1))
+               (vm:set! |-0.0| (fmul -1 #i0))
             #T)))
       (math-constructor! '())
 
@@ -2221,6 +2224,7 @@
                (cond
                   ; must be compared with `equal?`, because of possible ffi result
                   ((equal? num #i0) (cons* #\0 #\. #\0 tl))
+                  ((equal? num |-0.0|) (cons* #\- #\0 #\. #\0 tl))
                   ((equal? num +inf.0) (cons* #\+ #\i #\n #\f #\. #\0 tl))
                   ((equal? num -inf.0) (cons* #\- #\i #\n #\f #\. #\0 tl))
                   ((equal? num +nan.0) (cons* #\+ #\n #\a #\n #\. #\0 tl))
