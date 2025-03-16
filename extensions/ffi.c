@@ -3636,11 +3636,11 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 				value =   *(float*) &argi[i++];
 			#endif
 		#if OLVM_INEXACTS
+			A[a] = (word) new_inexact(value);
+		#else
 			heap->fp = fp;
 			A[a] = d2ol(heap, value);
 			fp = heap->fp;
-		#else
-			A[a] = (word) new_inexact(value);
 		#endif
 			break;
 		}
@@ -3662,11 +3662,11 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 				value =   *(double*) &argi[i++]; i++;
 			#endif
 		#if OLVM_INEXACTS
+			A[a] = (word) new_inexact(value);
+		#else
 			heap->fp = fp;
 			A[a] = d2ol(heap, value);
 			fp = heap->fp;
-		#else
-			A[a] = (word) new_inexact(value);
 		#endif
 			break;
 		}
