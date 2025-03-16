@@ -5740,42 +5740,53 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			type = *hp++; assert (!(type & ~0x3F)); // type is 6 bits long
 			size = get_nat(&hp);
 
-			int words = WALIGN(size);
-			int pads = WPADS(size);
-
-			unsigned char *p = (unsigned char*)&car(new (type, words, pads));
-
+#ifdef OLVM_INEXACTS
 			// inexact numbers
-// is it a big-endian target architecture?
+			if (type == TINEXACT) { // assert (size == 4 || size == 8)
+				unsigned char *p;
+				inexact_t t;
+			// is it a big-endian target architecture?
 #if (defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN) || \
     (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) ||\
 	(defined(__BIG_ENDIAN__)) || \
     (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIBSEB) || defined(__MIBSEB) || defined(__MIBSEB__))
-#	ifdef OLVM_INEXACTS
-			if (type == TINEXACT) {
+				// assert size == 4 || size == 8
 				int s = size;
+				p = fp + size;
 				while (size--)
 					p[size] = *hp++;
-				p += s;
-			}
-			else
-#	endif
+				t = (size == 4) ? *(float*)fp : *(double*)fp;
 // is it a little-endian target architecture?
 #elif\
     (defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN) || \
     (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) ||\
 	(defined(__LITTLE_ENDIAN__)) || \
     (defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIBSEL) || defined(__MIBSEL) || defined(__MIBSEL__))
-			// nothing to do
+				t = (size == 4) ? *(float*)hp : *(double*)hp;
+				hp += size;
 #else
 #	error "Unknown target endianness arcitecture"
 #endif
+				size = sizeof(inexact_t); // new size
+				int words = WALIGN(size);
+				p = (unsigned char*)&car(new (type, words, WPADS(size)));
+
+				*(inexact_t*)p = t;
+			}
+			else
+#endif
 			// обычные байтовые последовательности
+			{
+				int words = WALIGN(size);
+				int pads = WPADS(size);
+
+				unsigned char *p = (unsigned char*)&car(new (type, words, pads));
 				while (size--)
 					*p++ = *hp++;
-			// not required, but may be usefull
-			while (pads--)
-				*p++ = 0;
+				// is not required, but may be usefull
+				while (pads--)
+					*p++ = 0;
+			}
 			break;
 		}
 		default:
