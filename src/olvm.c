@@ -2364,16 +2364,10 @@ static_assert(offsetof(olvm_t, heap) == 0, "heap_t must be first field of olvm_t
 // machine floating point support, internal functions
 #if OLVM_INEXACTS
 // todo: add disabling ol2d (for machines without doubles), or better reusing as ol2f
+// todo: add speedup (limit iterations number)
 static
 double ol2d_convert(word p) {
-	double v = 0;
-	double m = 1;
-	while (p != INULL) {
-		v += value(car(p)) * m;
-		m *= HIGHBIT;
-		p = cdr(p);
-	}
-	return v;
+	return (p == INULL) ? 0 : ol2d_convert(cdr(p)) * HIGHBIT + value(car(p));
 }
 
 OLVM_PUBLIC
@@ -2401,16 +2395,10 @@ double OL2D(word arg) {
 	}
 }
 
+// TODO: optimize for early exit
 static
 float ol2f_convert(word p) {
-	float v = 0;
-	float m = 1;
-	while (p != INULL) {
-		v += value(car(p)) * m;
-		m *= HIGHBIT;
-		p = cdr(p);
-	}
-	return v;
+	return (p == INULL) ? 0 : ol2f_convert(cdr(p)) * HIGHBIT + value(car(p));
 }
 OLVM_PUBLIC
 float OL2F(word arg) {
