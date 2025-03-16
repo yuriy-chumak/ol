@@ -6073,29 +6073,29 @@ int main(int argc, char** argv)
 
 	set_signal_handlers();
 
-#if	HAVE_SOCKETS && defined(_WIN32)
+#ifdef _WIN32
+#	if	HAVE_SOCKETS
 	WSADATA wsaData;
 	int sock_init = WSAStartup(MAKEWORD(2,2), &wsaData);
 	if (sock_init  != 0) {
 		E("WSAStartup failed with error: %d", sock_init);
 		return 1;
 	}
-#endif
+#	endif
 
 // larger uname
-#if	HAVE_DLOPEN && defined(_WIN32)
+#	if	HAVE_DLOPEN
 	void* libuname = dlopen("ol-uname.dll", 0);
 	if (libuname) {
 		void* f = dlsym(libuname, "uname");
 		if (f)
 			uname = (int (*)(struct utsname*))f;
 	}
-#endif
+#	endif
 
-#if defined(_WIN32)
 	if (_isatty(STDIN_FILENO))
 		win32_io_setup(); // <win32/unistd-ext.h>
-#endif
+#endif // _WIN32
 
 	// configuring OL_HOME (if not exists):
 #ifndef PREFIX
