@@ -45,11 +45,11 @@ Reads valid json data, i.e. number, string, boolean, array, or object (collectio
 100000000000000000
 
 ; number with a dot is read as inexact
-> (read-json "12.34")
-12.3399999
+> (read-json "2.135")
+2.13499999
 
-> (read-json "1.1e17")
-1.1e17
+> (read-json "2.5e17")
+2.5e17
 
 ;; Strings
 > (read-json "\"hello\"")
