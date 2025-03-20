@@ -1,0 +1,15 @@
+(import (lib sdl3lite))
+
+; main
+(define result (SDL_AppInit #f (length *command-line*) *command-line*))
+(unless (= result SDL_APP_FAILURE)
+   (define event (make-SDL_Event))
+   (let loop ()
+      (unless (= (SDL_AppEvent #f event) SDL_APP_SUCCESS)
+         (let subloop ()
+            (unless (= (SDL_PollEvent event) 0)
+               (subloop)))
+         (SDL_AppIterate #f)
+         (loop)))
+   (SDL_AppQuit #f SDL_APP_FAILURE))
+(exit result)
