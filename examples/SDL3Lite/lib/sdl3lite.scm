@@ -75,6 +75,42 @@
    ;...
    SDL_PollEvent
 
+   ; SDL_GLContext
+   SDL_GL_SetAttribute
+      SDL_GL_RED_SIZE
+      SDL_GL_GREEN_SIZE
+      SDL_GL_BLUE_SIZE
+      SDL_GL_ALPHA_SIZE
+      SDL_GL_BUFFER_SIZE
+      SDL_GL_DOUBLEBUFFER
+      SDL_GL_DEPTH_SIZE
+      SDL_GL_STENCIL_SIZE
+      SDL_GL_ACCUM_RED_SIZE
+      SDL_GL_ACCUM_GREEN_SIZE
+      SDL_GL_ACCUM_BLUE_SIZE
+      SDL_GL_ACCUM_ALPHA_SIZE
+      SDL_GL_STEREO
+      SDL_GL_MULTISAMPLEBUFFERS
+      SDL_GL_MULTISAMPLESAMPLES
+      SDL_GL_ACCELERATED_VISUAL
+      SDL_GL_RETAINED_BACKING
+      SDL_GL_CONTEXT_MAJOR_VERSION
+      SDL_GL_CONTEXT_MINOR_VERSION
+      SDL_GL_CONTEXT_FLAGS
+      SDL_GL_CONTEXT_PROFILE_MASK
+      SDL_GL_SHARE_WITH_CURRENT_CONTEXT
+      SDL_GL_FRAMEBUFFER_SRGB_CAPABLE
+      SDL_GL_CONTEXT_RELEASE_BEHAVIOR
+      SDL_GL_CONTEXT_RESET_NOTIFICATION
+      SDL_GL_CONTEXT_NO_ERROR
+      SDL_GL_FLOATBUFFERS
+      SDL_GL_EGL_PLATFORM
+   SDL_GL_CreateContext
+   SDL_GL_DestroyContext
+   SDL_GL_SwapWindow
+
+   ; useful ffi types
+   GLfloat*
 )
 
 (cond-expand   
@@ -95,18 +131,16 @@
 
 (begin
 
-;(define WIDTH 1280)
-;(define HEIGHT 920)
-(unless SDL3
-   (runtime-error "Can't load sdl3lite library." sdl3-err))
+   (unless SDL3
+      (runtime-error "Can't load sdl3lite library." sdl3-err))
 
-;; ; ===================================================
-;; ; helper function
-;; (define bitwise-ior
-;;    (case-lambda
-;;       ((a b) (bor a b))
-;;       ((a) a)
-;;       ((a . bs) (fold bor a bs))))
+   ; ===================================================
+   ; helper function
+   (define bitwise-ior
+      (case-lambda
+         ((a b) (bor a b))
+         ((a) a)
+         ((a . bs) (fold bor a bs))))
 
    (setq int fft-int)
    (setq void fft-void)
@@ -120,9 +154,8 @@
    (setq SDL_Texture* type-vptr)
    (setq SDL_FRect* type-vptr) ; type-bytevector?
 
-   (setq SDL_QuitEvent* type-bytevector)
-   (setq SDL_DisplayEvent* type-bytevector)
-   (setq SDL_Event* type-bytevector)
+   ; usefull 
+   (define GLfloat* (fft* fft-float))
 
    ; ------------------------
    ; SDL_AppResult
@@ -193,10 +226,52 @@
    (define SDL_RenderTexture (SDL3 bool "SDL_RenderTexture" SDL_Renderer* SDL_Texture* SDL_FRect* SDL_FRect*))
 
    ; SDL_Event
+   (setq SDL_QuitEvent* type-bytevector)
+   (setq SDL_DisplayEvent* type-bytevector)
+   (setq SDL_Event* type-bytevector)
    (define (make-SDL_Event) (make-bytevector 16))
    (define (SDL_Event->type event) (bytevector->int32 event 0))
    (define SDL_EVENT_FIRST 0)
    (define SDL_EVENT_QUIT #x100)
    ; ...
    (define SDL_PollEvent (SDL3 int "SDL_PollEvent" SDL_Event*))
+
+   ; SDL_GLContext
+   (setq SDL_GLAttr int)
+   (setq SDL_GLContext* type-vptr)
+   (define SDL_GL_SetAttribute (SDL3 bool "SDL_GL_SetAttribute" SDL_GLAttr int))
+   (define SDL_GL_CreateContext (SDL3 SDL_GLContext* "SDL_GL_CreateContext" SDL_Window*))
+   (define SDL_GL_DestroyContext (SDL3 void "SDL_GL_DestroyContext" SDL_GLContext*))
+   (define SDL_GL_SwapWindow (SDL3 bool "SDL_GL_SwapWindow" SDL_Window*))
+   (define SDL_GL_RED_SIZE 0)
+   (define SDL_GL_GREEN_SIZE 1)
+   (define SDL_GL_BLUE_SIZE 2)
+   (define SDL_GL_ALPHA_SIZE 3)
+   (define SDL_GL_BUFFER_SIZE 4)
+   (define SDL_GL_DOUBLEBUFFER 5)
+   (define SDL_GL_DEPTH_SIZE 6)
+   (define SDL_GL_STENCIL_SIZE 7)
+   (define SDL_GL_ACCUM_RED_SIZE 8)
+   (define SDL_GL_ACCUM_GREEN_SIZE 9)
+   (define SDL_GL_ACCUM_BLUE_SIZE 10)
+   (define SDL_GL_ACCUM_ALPHA_SIZE 11)
+   (define SDL_GL_STEREO 12)
+   (define SDL_GL_MULTISAMPLEBUFFERS 13)
+   (define SDL_GL_MULTISAMPLESAMPLES 14)
+   (define SDL_GL_ACCELERATED_VISUAL 15)
+   (define SDL_GL_RETAINED_BACKING 16)
+   (define SDL_GL_CONTEXT_MAJOR_VERSION 17)
+   (define SDL_GL_CONTEXT_MINOR_VERSION 18)
+   (define SDL_GL_CONTEXT_FLAGS 19)
+   (define SDL_GL_CONTEXT_PROFILE_MASK 20)
+   (define SDL_GL_SHARE_WITH_CURRENT_CONTEXT 21)
+   (define SDL_GL_FRAMEBUFFER_SRGB_CAPABLE 22)
+   (define SDL_GL_CONTEXT_RELEASE_BEHAVIOR 23)
+   (define SDL_GL_CONTEXT_RESET_NOTIFICATION 24)
+   (define SDL_GL_CONTEXT_NO_ERROR 25)
+   (define SDL_GL_FLOATBUFFERS 26)
+   (define SDL_GL_EGL_PLATFORM 27)
+
+   ; OpenGL_Compatibility_Init
+   ;(define OpenGL_Compatibility_Init (SDL3 void "OpenGL_Compatibility_Init" int int))
 ))
