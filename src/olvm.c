@@ -104,15 +104,15 @@
 // основной data type, зависит от разрядности машины
 typedef uintptr_t word;
 
-// arm, armv7-a, armv8-a: 4;  arch64: 8;
+// arm, armv7-a, armv8-a: 4; aarch64: 8;
 // risc-v 32: 4;           risc-v 64: 8;
 // wasm:      4;
 // x86:       4;              x86-64: 8;
 // mips:      4;              mips64: 8;
 // ppc:       4;      ppc64, ppc64le: 8;
 
-// raspberty pi:  armv-8
-// apple m1: arch64
+// raspberty pi: armv8
+// apple m1: aarch64
 
 
 // OL Virtual Machine type
@@ -136,7 +136,7 @@ size_t OLVM_pin(olvm_t* ol, word ref); // pin can realloc RPS (Register and Pin 
 word OLVM_deref(olvm_t* ol, size_t p);
 word OLVM_unpin(olvm_t* ol, size_t p);
 # else
-typedef size_t (*olvm_pin_t)(olvm_t* ol, word ref); extern olvm_pin_t OLVM_pin;
+typedef size_t (*olvm_pin_t)(olvm_t* ol, word ref); extern olvm_pin_t   OLVM_pin;
 typedef word (*olvm_deref_t)(olvm_t* ol, size_t p); extern olvm_deref_t OLVM_deref;
 typedef word (*olvm_unpin_t)(olvm_t* ol, size_t p); extern olvm_unpin_t OLVM_unpin;
 # endif
@@ -183,7 +183,7 @@ typedef double (*ol2d_t)(word arg);                 extern ol2d_t OL2D;
 // todo: move "r" bit left to allow 128-bit machines
 // http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
-#define IPOS      8  // === bits offset of (struct value_t, value), deprecated name
+//efine IPOS      8  // === bits offset of (struct value_t, value), deprecated name
 #define VPOS      8  // === bits offset of (struct value_t, value)
 
 #define TPOS      2  // === bits offset of (struct header_t, type) and (struct value_t, type)
@@ -232,7 +232,7 @@ object_t
 	union {
 		struct header_t {
 			unsigned char mark : 1;    // always 0, (1 only during GC) =
-			unsigned char i    : 1;    // always 1, (0 only during GC)  = 8 bits
+			unsigned char i    : 1;    // always 1, (0 only during GC) = 8 bits
 			unsigned char type : 6;    // object type                  =
 
 			unsigned char padding : 3; // number of padding (empty) bytes after the end of reasonable object data
@@ -338,7 +338,7 @@ typedef word* R;
 
 // всякая всячина:
 #define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size
-#define object_size(x)              (header_size(x)) // todo: remove this, rename to header_size
+#define object_size(x)              (header_size(x))
 #define header_pads(x)              (unsigned char) ((((word)(x)) >> VPOS) & 7) // header_t(x).padding
 
 #define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
@@ -379,8 +379,9 @@ typedef word* R;
 #define TTHREAD                     (31) // type-thread-state
 
 // numbers (value type)
-// A FIXNUM is an exact integer that is small enough to fit in a machine word.
-// todo: rename TFIX to TSHORT or TSMALLINT, TINT to TLARGE or TLARGEINT
+// An ENUM is an exact integer that is small enough to fit in a machine word.
+// todo: rename TINT to TLARGE or TLARGEINT
+// TODO: rename TENUM to TINT, and TINT to TLONG
 #define TENUMP                       (0) // type-enum+ // small integer
 #define TENUMN                      (32) // type-enum-
 // numbers (reference type)
