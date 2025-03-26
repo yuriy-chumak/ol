@@ -2101,26 +2101,21 @@ word* chase(word* pos) {
 static
 void mark(word *pos, word *end, heap_t* heap)
 {
-#if DEBUG_GC
-	marked = 0;
-#endif
+	word genstart = (word)heap->genstart; // начало молодого поколения
+
 //	assert(pos is NOT flagged)
 	while (pos != end) {
-		word val = ref(pos, 0); // pos header
-		if (is_reference(val) && val >= (word)heap->genstart) { // genstart - начало молодого поколения
-			if (is_flagged(val))
-				pos = chase((word*) val);
-			else {
-				word hdr =*((word*) val);
-#if DEBUG_GC
-				marked++;
-#endif
+		word val = *pos;
 
+		if (is_reference(val) && val >= genstart) {
+			if (is_flagged(val))
+				pos = chase((word*)val);
+			else {
 				word* ptr = (word*)val;
-				*pos = *ptr;
+				word hdr = *pos = *ptr;
 				*ptr = ((word)pos | 1);
 
-				unless (hdr & (RAWBIT|1))
+				unless (hdr & (RAWBIT | 1))
 					pos = ((word *) val) + object_size(hdr);
 			}
 		}
@@ -2173,7 +2168,7 @@ word *sweep(word* end, heap_t* heap)
 static
 word gc(heap_t *heap, long query, word regs)
 {
-	word *fp;
+	register word *fp;
 	if (query == -1) { // do the full gc?
 		query = 0;
 		heap->genstart = heap->begin; // reset generations
