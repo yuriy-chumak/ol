@@ -164,19 +164,20 @@
 
       ;; bvec port → bool
       (define (write-really bvec fd)
-         (let ((end (size bvec)))
-            (if (eq? end 0)
-               #true
-               (let loop ()
-                  (let ((wrote (try-write-block fd bvec end)))
-                     (cond
-                        ((eq? wrote end) #true) ;; ok, wrote the whole chunk
-                        ((eq? wrote 0) ;; 0 = EWOULDBLOCK
-                           (sleep 2) ;; fixme: adjustable delay rounds
-                           (loop))
-                        (wrote ;; partial write
-                           (write-really (bvec-tail bvec wrote) fd))
-                        (else #false))))))) ;; write error or other failure
+         (when (port? fd)
+            (let ((end (size bvec)))
+               (if (eq? end 0)
+                  #true
+                  (let loop ()
+                     (let ((wrote (sys:write fd bvec end)))
+                        (cond
+                           ((eq? wrote end) #true) ;; ok, wrote the whole chunk
+                           ((eq? wrote 0) ;; 0 = EWOULDBLOCK
+                              (sleep 2) ;; fixme: adjustable delay rounds
+                              (loop))
+                           (wrote ;; partial write
+                              (write-really (bvec-tail bvec wrote) fd))
+                           (else #false)))))))) ;; write error or other failure
 
       ;; how many bytes (max) to add to output buffer before flushing it to the fd
       (define output-buffer-size 4096)
