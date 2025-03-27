@@ -1725,6 +1725,7 @@ typedef ssize_t (write_t)(int fd, void *buf, size_t count, void* userdata);
 typedef int     (stat_t) (const char *filename, struct stat *st, void* userdata);
 
 typedef void    (idle_t) (void* userdata);
+typedef word    (*ffi_t) (struct olvm_t*, word*);
 
 // notes: 64-bit versions of Windows use 32-bit handles for
 //	interoperability. When sharing a handle between 32-bit
@@ -2771,31 +2772,26 @@ apply:;
 			}
 			ERROR(1032, this, index);
 		}
-		else
-#if OLVM_FFI // unsafe must be enabled
-		// running ffi function
+#if OLVM_FFI
+		else // running ffi function
 		if (type == TVPTR) { // todo: change to special type or/and add a second word - function name (== [ptr function-name])
                              // todo: use same type by longer size, with function name
+							 // note: we don't need to save "this"
+			ffi_t function = (ffi_t) car(this);
 			word* args = (word*)INULL;
 			for (int i = acc; i > 1; i--)
 				args = cons(reg[i+2], args);
 
-			word (*function)(struct olvm_t*, word*) = (word (*)(struct olvm_t*, word*)) car(this);  assert (function);
-
-			heap->fp = fp;
-
-			size_t c = OLVM_pin(ol, R3);
+			heap->fp = fp; // GC may be called
 			word x = function(ol, args);
-			reg = ol->reg; // pin can realloc registers!
 			fp = heap->fp;
 
-			this = OLVM_unpin(ol, c);
-
-			R3 = x; acc = 1;
+			this = R3;
+			R3 = x; acc = 1; // no arguments, just result
 			goto apply;
 		}
-		else
 #endif
+		else
 		if (type == TCONSTRUCTOR) {
 			this = car(this);
 			goto apply;
