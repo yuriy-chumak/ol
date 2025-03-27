@@ -202,6 +202,10 @@ slim:
 	HAVE_SOCKETS=0 HAVE_DLOPEN=0 HAVE_SANDBOX=1 \
 	$(MAKE) -B release olvm
 
+fast:
+	CFLAGS="-march=native -mtune=native" \
+	$(MAKE) -B release olvm
+
 minimal: CFLAGS += -DOLVM_FFI=0 -DHAVE_SOCKETS=1 -DHAVE_DLOPEN=0 -DHAVE_SANDBOX=0
 minimal: release
 
