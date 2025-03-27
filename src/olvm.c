@@ -2684,16 +2684,19 @@ apply:;
 	word type = 0;
 	if (is_reference(this)) {
 		type = reference_type (this);
+		if (type == TPROCEDURE) { // (58% for "yes")
+			R1 = this; this = car(this);
+		}
+		else
 		if (type == TCLOSURE) { // (66% for "yes")
 			R1 = this; this = car(this);
 			R2 = this; this = car(this);
 		}
 		else
-		if (type == TPROCEDURE) { // (58% for "yes")
-			R1 = this; this = car(this);
+		if (type == TBYTECODE) {
+			;// nothing
 		}
-		else
-		// ff's low bits have special meaning
+		else // ff's low bits have special meaning
 		if ((type & 0x3C) == TFF) { // (95% for "no")
 			// ff assumed to be valid
 			word continuation = R3;
@@ -2715,8 +2718,7 @@ apply:;
 
 			goto apply;
 		}
-		else
-		// new feature: vectors as functions
+		else // new feature: vectors as functions
 		if (type == TVECTOR) {
 			word continuation = R3;
 			if (acc != 2)
@@ -2761,7 +2763,6 @@ apply:;
 			goto apply;
 		}
 		else
-		if (type != TBYTECODE)
 			ERROR(258, this);
 
 		// А не стоит ли нам переключить поток?
