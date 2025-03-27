@@ -2396,6 +2396,7 @@ static
 float ol2f_convert(word p) {
 	return (p == INULL) ? 0 : ol2f_convert(cdr(p)) * HIGHBIT + value(car(p));
 }
+
 OLVM_PUBLIC
 float OL2F(word arg) {
 	if (is_enum(arg))
@@ -2421,17 +2422,21 @@ float OL2F(word arg) {
 	}
 }
 
-// TODO: add memory checking
+// memory checking is not needed, machine "double"
+//  (up to 1.79e+308) always will fit into safe memory reserve
 word d2ol(struct heap_t* heap, double v) {
 	word* fp;
+	double i; // integer component of v
+
 	// check for non representable numbers:
 	if (v == INFINITY || v == -INFINITY || v == NAN)
-		return IFALSE; // todo: return +inf.0, -inf.0, +nan.0
+		return IFALSE; // TODO?: return +inf.0, -inf.0, +nan.0
 
+	// go
 	fp = heap->fp;
 
-	word a, b = INULL;
-	double i;
+	// есть fraction часть?
+	word b = INULL;
 	if (modf(v, &i) != 0) {
 		word* p = fp;
 
@@ -2464,12 +2469,12 @@ word d2ol(struct heap_t* heap, double v) {
 		}
 	}
 
-	// word a = INULL;
-	// число целое?
+	// теперь обработаем целую часть
 	// числа должны лежать в обратном порядке, как мы их и получаем
 	// но в память то мы их кладем в обратном! так что нужен реверс
+	word a = INULL;
 	if (1) {
-		int negative = v < 0;  v = v < 0 ? -v : v;
+		int negative = v < 0;  v = negative ? -v : v;
 		if (v < (double)HIGHBIT)
 			a = negative ? make_value(TENUMN, v) : make_value(TENUMP, v);
 		else {
