@@ -6470,45 +6470,33 @@ word OLVM_unpin(struct olvm_t* ol, size_t p)
 // ffi callbacks support
 word OLVM_apply(struct olvm_t* ol, word object, word args)
 {
-	ol->this = object; // lambda для обратного вызова
-//	ol->ticker = ol->bank ? ol->bank : 999;
-//	ol->bank = 0;
+	ol->this = object;
 	// assert (is_reference(ol->this));
 	// assert (reference_type(ol->this) != TTHREAD);
 
-	// надо сохранить значения, иначе их уничтожит GC
-	// todo: складывать их в память! и восстанавливать оттуда же
-	word* reg = ol->reg;
+	word* R = ol->reg;
 
-//	reg[NR + 0] = reg[0]; // не надо, mcp
-//	reg[NR + 1] = reg[1]; // не надо
-//	reg[NR + 2] = reg[2]; // не надо
-	reg[NR + 3] = reg[3]; // continuation/result
+	// сохраним старый контекст:
+	size_t r3 = OLVM_pin(ol, R[3]); // continuation/result
 
 	// вызовем колбек:
-//	reg[0] = IFALSE;  // не надо, продолжаем использовать mcp
-	reg[3] = IRETURN; // команда выхода из колбека
+//	R[0] = IFALSE;  // не надо, продолжаем использовать mcp
+	R[3] = IRETURN; // команда выхода из колбека
 	ol->arity = 1;
 
 	size_t a = 4;
 	while (args != INULL) {
-		reg[a] = car(args);
-		a++,
-		ol->arity++;
+		R[a] = car(args);
+		a++, ol->arity++;
 		args = cdr(args);
 	}
 
 	runtime(ol);
+	word z = R[3]; // callback result
 
-	word r = reg[3]; // callback result
-	// возврат из колбека,
-	// reg, NR могли измениться
-	reg[3] = reg[NR + 3];
-//	reg[2] = reg[NR + 2]; // не надо
-//	reg[1] = reg[NR + 1]; // не надо
-//	reg[0] = reg[NR + 0]; // не надо, продолжаем использовать MCP
-
-	return r;
+	// восстановим контекст и вернем значение
+	R[3] = OLVM_unpin(ol, r3);
+	return z;
 }
 
 
