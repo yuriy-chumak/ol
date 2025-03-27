@@ -2901,121 +2901,127 @@ mcp:;
 // main vm execution loop
 mainloop:;
 	// ip - счетчик команд (опкод - младшие 6 бит команды, старшие 2 бита - модификатор(если есть) опкода)
-	#	define MODD(i, n) ((i) + ((n)<<6))
 	// Rn - регистр машины (reg[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
 	// todo: exchange NOP and APPLY operation codes
 
 	// todo: add "HLT" function (may be 0x0 ?)
-	// список команд смотреть в assembly.scm
+	#	define MODD(i, n) ((i) + ((n)<<6))
 
+	// список команд смотреть в assembly.scm
+	enum instruction_t {
 	// безусловный переход
-	#	define GOTO   2       // jmp a, nargs
-	#	define CLOS   3
+		GOTO  = 2,  // jmp a, nargs
+		CLOS  = 3,
 
 	// управляющие команды
-	#	define NOP   21
-	#	define APPLY 20
-	#	  define APPLYCONT MODD(APPLY, 1)
-	#	define RET   24
-	#	define RUN   50
-	#	define ARITY_ERROR 17
-	#	define VMEXIT 37
+		NOP   = 21,
+		APPLY = 20,
+		APPLYCONT = MODD(APPLY, 1),
+		RET   = 24,
+		RUN   = 50,
+		ARITY_ERROR = 17,
+		VMEXIT= 37,
 
-	#	define MCP   27
+		MCP   = 27,
 
-	#	define JAF   11
-	#	define JAX   12
-	#	define LDI   13      // LDE (13), LDN (77), LDT (141), LDF (205)
-	#	  define LDE MODD(LDI, 0)
-	#	  define LDN MODD(LDI, 1)
-	#	  define LDT MODD(LDI, 2)
-	#	  define LDF MODD(LDI, 3)
-	#	define LD    14
+		JAF   = 11,
+		JAX   = 12,
+		LDI   = 13,      // LDE (13), LDN (77), LDT (141), LDF (205)
+		  LDE = MODD(LDI, 0),
+		  LDN = MODD(LDI, 1),
+		  LDT = MODD(LDI, 2),
+		  LDF = MODD(LDI, 3),
+		LD    = 14,
 
-	#	define REFI   1      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
-	#	define MOVE   9      //
-	#	define MOV2   5      // optimization for MOVE + MOVE
+		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
+		MOVE  = 9,      //
+		MOV2  = 5,      // optimization for MOVE + MOVE
 
-	#	define JEQ    8      // jeq
-	#	define JP    16      // JZ (16), JN (80), JT (144), JF (208)
+		JEQ   = 8,      // jeq
+		JP    = 16,     // JZ (16), JN (80), JT (144), JF (208)
 
 	// примитивы языка:
-	#	define VMNEW 23     // make a typed object (fast and simple)
-	#	define VMMAKE 18    // make a typed object (slow, but smart)
-	#		define VMALLOC MODD(VMMAKE, 1)  // alloc a memory region
-	#	define VMCAST 22
-	#	define VMSETE 43
+		VMNEW   = 23,     // make a typed object (fast and simple)
+		VMMAKE  = 18,    // make a typed object (slow, but smart)
+		VMALLOC = MODD(VMMAKE, 1),  // alloc a memory region
+		VMCAST  = 22,
+		VMSETE  = 43,
 
-	#	define VMPIN   35
-	#	define VMUNPIN 60
-	#	define VMDEREF 25
+		VMPIN   = 35,
+		VMUNPIN = 60,
+		VMDEREF = 25,
 
-	#	define CONS  51
+	// 
+		CONS  = 51,
 
-	#	define TYPE  15
-	#	define SIZE  36
+		TYPE  = 15,
+		SIZE  = 36,
 
-	#	define CAR   52
-	#	define CDR   53
-	#	define REF   47
+		CAR   = 52,
+		CDR   = 53,
+		REF   = 47,
+
+	// ?
+		SETREF  = 10,
+		SETREFE = MODD(SETREF, 1), // set-ref!
 
 		// ?
-	#	define SETREF 10
-	#	  define SETREFE MODD(SETREF, 1) // set-ref!
+		EQQ   = 54,
+		LESSQ = 44,
 
-		// ?
-	#	define EQQ   54
-	#	define LESSQ 44
+		FP1 = 33,
+		  FSQRT = 0xFA,
+		  FSIN  = 0xFE,
+		  FCOS  = 0xFF,
+		  FTAN  = 0xF2,
+		  FATAN = 0xF3,
+		  FLOG  = 0xF1,
+		  FEXP  = 0x81,
+		  FASIN = 0x8E,
+		  FACOS = 0x8F,
+		  FFLOOR= 0xFC,
+		FP2 = 34,
+		  FLESSQ= 0xD9,
+		  FADD  = 0xC1,
+		  FSUB  = 0xE9,
+		  FMUL  = 0xC9,
+		  FDIV  = 0xF9,
+		//FATAN = 0xF3 // atan2
+		  FLOG2 = 0xF1,
+		  FEXPT = 0x81,
 
-	#	define FP1 33
-	#		define FSQRT 0xFA
-	#		define FSIN 0xFE
-	#		define FCOS 0xFF
-	#		define FTAN 0xF2
-	#		define FATAN 0xF3
-	#		define FLOG 0xF1
-	#		define FEXP 0x81
-	#		define FASIN 0x8E
-	#		define FACOS 0x8F
-	#		define FFLOOR 0xFC
-	#	define FP2 34
-	#		define FLESSQ 0xD9
-	#		define FADD 0xC1
-	#		define FSUB 0xE9
-	#		define FMUL 0xC9
-	#		define FDIV 0xF9
-	//#		define FATAN 0xF3
-	#		define FLOG2 0xF1
-	#		define FEXPT 0x81
+	// vectors, trees
+		VECTORAPPLY = 32,
+		FFAPPLY = 49,
 
-		// tuples, trees
-	#	define VECTORAPPLY 32
-	#	define FFAPPLY 49
+		FFLEAF    = 42, // make ff leaf
+		FFBLACK   = FFLEAF,
+		FFRED     = MODD(FFLEAF, 1),
+		FFTOGGLE  = 46, // toggle ff leaf color
+		FFREDQ    = 41, // is ff leaf read?
+		FFRIGHTQ  = MODD(FFREDQ, 1), // if ff leaf right?
 
-	#	define FFLEAF    42 // make ff leaf
-	#	define FFBLACK   FFLEAF
-	#	define FFRED     MODD(FFLEAF, 1)
-	#	define FFTOGGLE  46 // toggle ff leaf color
-	#	define FFREDQ    41 // is ff leaf read?
-	#	define FFRIGHTQ  MODD(FFREDQ, 1) // if ff leaf right?
+	// ALU
+		ADDITION       = 38,
+		DIVISION       = 26,
+		MULTIPLICATION = 39,
+		SUBTRACTION    = 40,
+		BINARY_AND     = 55,
+		BINARY_IOR     = 56,
+		BINARY_XOR     = 57,
+		SHIFT_RIGHT    = 58,
+		SHIFT_LEFT     = 59,
 
-		// ALU
-	#	define ADDITION       38
-	#	define DIVISION       26
-	#	define MULTIPLICATION 39
-	#	define SUBTRACTION    40
-	#	define BINARY_AND     55
-	#	define BINARY_IOR     56
-	#	define BINARY_XOR     57
-	#	define SHIFT_RIGHT    58
-	#	define SHIFT_LEFT     59
-
-	#	define CLOCK 61 // todo: remove and change to SYSCALL_GETTIMEOFDATE
+	// deprecated
+		CLOCK = 61, // todo: remove and change to SYSCALL_GETTIMEOFDATE
 
 	// operation SYStem interaction CALLs
-	#	define SYSCALL 63
+		SYSCALL = 63,
+	};
+
+	// operation SYStem interaction CALLs
 	#		define SYSCALL_SYSCALL ? // TODO: https://linux.die.net/man/2/syscall and remove redundant calls
 			// read, write, open, close must exist
 	#		define SYSCALL_READ 0    // 
