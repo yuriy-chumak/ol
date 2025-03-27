@@ -5584,28 +5584,23 @@ loop:;
 	}
 
 #ifndef OLVM_NOPINS
-	case VMPIN: {  // (vm:pin object) /pin object/ => pin id
+	case VMPIN: {  // (vm:pin object) /object/ => pin id
 		word object = A0;
 
 		int id = OLVM_pin(ol, object);
-		reg = ol->reg; // pin can realloc registers!
-
         A1 = (id > 3) ? I(id) : IFALSE;
 		ip += 2; break;
 	}
-	case VMUNPIN: { // vm:unpin => old pin value
+	case VMUNPIN: { // (vm:unpin pin) pin id => /object/, and free pin id
 		word pin = A0;
 		ASSERT (is_value(pin), pin, VMUNPIN);
 
 		int id = value(pin);
-        word o = OLVM_unpin(ol, id);
-		reg = ol->reg; // don't remove
-
-		A1 = o;
+		A1 = OLVM_unpin(ol, id);
 		ip += 2; break;
 	}
 
-	case VMDEREF: {// vm:deref /get pinned object value/
+	case VMDEREF: { // vm:deref /get pinned object value/
 		word pin = A0;
 		ASSERT (is_value(pin), pin, VMDEREF);
 
@@ -6435,10 +6430,11 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 // [0..3] - errors
 // 0 means "no space left"
 // 1 means "not a pinnable object"
+// note: no more triggering gc
 OLVM_PUBLIC
-size_t OLVM_pin(struct olvm_t* ol, word ref)
+size_t OLVM_pin(struct olvm_t* ol, word data)
 {
-	if (ref == IFALSE)
+	if (data == IFALSE)
 		return 1; // #false is not a pinnable object
 	size_t id = ol->ffpin;
 	size_t cr = ol->cr;
@@ -6447,24 +6443,28 @@ size_t OLVM_pin(struct olvm_t* ol, word ref)
 			goto ok;
 	}
 
-	// нету места, попробуем увеличить
-	size_t ncr = cr + cr / 3 + 1;
-    ol->heap.gc(ol, ncr - cr);
+	// мы НЕ ожидаеми, что будет много pinned объектов
+	// это плохая тактика, не делайте так!
+
+	// все пины заняты, попробуем увеличить список, но,
+	// так как пины участвуют в gc, подправим границу кучи
+	// (64 слова достаточно чтобы не выйти в опасную зону)
+	size_t ncr = cr + 64 + 1;
 
 	word* p = realloc(ol->pin, ncr * sizeof(word));
 	if (!p)
-		return 0; // no space left
+		return 0; // no free space left, can't pin
 	ol->pin = p;
 	ol->cr = ncr;
+	ol->heap.padding += (ncr - cr);
+	ol->heap.end -= (ncr - cr);
 
-    ol->heap.end -= ncr - cr;
-	ol->heap.padding += ncr - cr;
-
+	// cleanup newly created pins
 	for (size_t i = id; i < ncr; i++)
 		p[i] = IFALSE;
 
 ok:
-	ol->pin[id] = ref;
+	ol->pin[id] = data;
 	ol->ffpin = id + 1;
 	return id;
 }

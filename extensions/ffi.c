@@ -2227,9 +2227,9 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	// 1.1  ensure that all arguments will fit in heap
 	heap_t* heap = (heap_t*)this;
 	if (heap->fp + total > heap->end) {
-		size_t id = OLVM_pin(this, arguments);
+		size_t pin = OLVM_pin(this, arguments);
 		heap->gc(this, total);
-		arguments = OLVM_unpin(this, id);
+		arguments = OLVM_unpin(this, pin);
 
 		register word ABC = arguments;
 		A = car(ABC); ABC = cdr(ABC); // function
@@ -2858,17 +2858,16 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	}
 	assert ((word)t == INULL); // количество аргументов должно совпадать
 
-	size_t pB = OLVM_pin(this, B); // todo: if writeback || TVOID
-	size_t pC = OLVM_pin(this, C); // todo: if writeback || TVOID
-	heap->fp = fp; // сохраним, так как в call могут быть вызваны коллейблы, и они попортят fp
-
 //	if (fpmask == 15)
 //		__asm__("int $3");
 
 	ret_t got = 0; // результат вызова функции
 	int returntype = is_value(car(B)) ? value(car(B)) : reference_type(car(B)); // TODO: why reference type??
 
-	if (function)
+	if (function) {
+		size_t pin = OLVM_pin(this, arguments);
+		heap->fp = fp; // сохраним, так как в xxx_call() могут быть вызваны коллейблы, и они попортят fp
+
 #if  __x86_64__
 # if _WIN64
 		got = win64_call(args, i, function, returntype & 0x3F);
@@ -2931,13 +2930,17 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		break;
 	}*/
 #endif
+		// где гарантия, что C и B не поменялись? нет такой
+		fp = heap->fp;
+		arguments = OLVM_unpin(this, pin);
+
+		register word ABC = arguments;
+					  ABC = cdr(ABC); // skip A
+		B = car(ABC); ABC = cdr(ABC); // rtty
+		C = car(ABC); ABC = cdr(ABC); // args
+	}
 	else // just mirror argument
 		got = *(ret_t *)args;
-
-	// где гарантия, что C и B не поменялись?
-	fp = heap->fp;
-	B = OLVM_unpin(this, pB);
-	C = OLVM_unpin(this, pC);
 
 	// флажок, что среди параметров есть те, что надо заполнить (fft&) назад
 	if (writeback) {
