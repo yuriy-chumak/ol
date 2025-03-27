@@ -3266,7 +3266,7 @@ loop:;
 	 * Rt = (ref reg[a] reg[p]), p is unsinged
 	 */
 	case REFI: { // (24%)
-		word* Ra = (word*)A0; A2 = Ra[ip[1]]; // A2 = A0[p]
+		A2 = ref(A0, ip[1]); // A2 = A0[p]
 		ip += 3; break;
 	}
 	/*! #### MOVE a t
@@ -5702,7 +5702,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			if (type == TINEXACT) { // assert (size == 4 || size == 8)
 				unsigned char *p;
 				inexact_t t;
-			// is it a big-endian target architecture?
+// is it a big-endian target architecture?
 #if (defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN) || \
     (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) ||\
 	(defined(__BIG_ENDIAN__)) || \
