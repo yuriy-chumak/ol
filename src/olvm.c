@@ -2501,34 +2501,32 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 	// 	r[i] = IFALSE; // todo: use wmemset?
 
 	// assert (fp + N + 3 < ol->heap.end);
-	int p = 0, N = NR;
+	int p = 0, N = NR, C = 1;
 
-	// создадим в топе два временных объекта со значениями всех регистров и пинов
+	// создадим в топе временный объект со значениями всех регистров и пинов
 #ifndef OLVM_NOPINS
-    word pins = (word)new(TVECTOR, ol->cr);
-    memcpy((void*)payload(pins), ol->pin, ol->cr * sizeof(word));
-#else
-    word pins = IFALSE;
+	C += ol->cr;
 #endif
 
-	word *regs = new (TVECTOR, N + 2); // N for regs, 1 for this, 1 for pins
-	while (++p <= N) regs[p] = r[p-1]; // todo: use memcpy?
+	word *regs = new (TVECTOR, N + C); // N for regs, 1 for this, 1 for pins
+	while (++p <= N) regs[p] = r[p-1]; // save regs
 	regs[p] = ol->this;
-    regs[p + 1] = pins;
+#ifndef OLVM_NOPINS
+	memcpy(regs+p+1, ol->pin, ol->cr * sizeof(word));
+#endif
 
 	ol->heap.fp = fp; // выполним сборку мусора
-	regs = (word*)gc(&ol->heap, ws, (word)regs);
+	fp = regs = (word*)gc(&ol->heap, ws, (word)regs);
 
-    pins = regs[p + 1];         // и восстановим все пины и регистры, уже подкорректированные сборщиком
+	// и восстановим все пины и регистры, уже подкорректированные сборщиком
+#ifndef OLVM_NOPINS
+	memcpy(ol->pin, regs+p+1, ol->cr * sizeof(word));
+#endif
 	ol->this = regs[p];
 	while (--p >= 1) r[p-1] = regs[p];
 
-#ifndef OLVM_NOPINS
-    memcpy(ol->pin, (void*)payload(pins), ol->cr * sizeof(word));
-#endif
-
 	// закончили, почистим за собой:
-	ol->heap.fp = regs; // (вручную сразу удалим временный объект, это такая оптимизация)
+	ol->heap.fp = fp; // вручную удалим временный объект, (это оптимизация)
 	return 1;
 }
 
