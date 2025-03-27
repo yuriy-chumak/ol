@@ -2078,12 +2078,6 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 	return 0;
 }
 
-/* input desired allocation size and (the only) pointer to root object
-   return a pointer to the same object after heap compaction, possible heap size change and relocation */
-#if DEBUG_GC
-big_t marked;
-#endif
-
 // возвращается по цепочке "flagged" указателей назад
 static __inline__
 word* chase(word* pos) {
@@ -2162,6 +2156,11 @@ word *sweep(word* end, heap_t* heap)
 	return newobject;
 }
 
+#ifdef min
+#undef min
+#endif
+#define min(a,b) ((a) < (b) ? (a) : (b))
+
 //__attribute__ ((aligned(sizeof(word))))
 // heap: heap
 // query: sure to be able to alloc query words
@@ -2174,50 +2173,24 @@ word gc(heap_t *heap, long query, word regs)
 		query = 0;
 		heap->genstart = heap->begin; // reset generations
 	}
-	else
-		query += FREESPACE; // expected tmp objects buffer
+	// else
+	// 	query += FREESPACE; // expected tmp objects buffer
+	// TODO: add diagnostic callback "if (heap->oncb) heap->oncb(heap, deltatime)"
 
 	fp = heap->fp;
 	{
-		word *root = &fp[1];
-	//	word *root = fp + 1; // same
-
-		#if DEBUG_GC
-			clock_t gctime;
-			gctime = -(1000 * clock()) / CLOCKS_PER_SEC;
-		#endif
+		word *root = fp + 1;
+	//	word *root = &fp[1]; // same
 
 		// непосредственно сам процесс сборки
 		root[0] = regs;
 		mark(root, fp, heap);        // assert (root > fp)
 		fp = sweep(fp, heap);
 		regs = root[0];
-
-		// TODO: add diagnostic callback "if (heap->oncb) heap->oncb(heap, deltatime)"
-#if DEBUG_GC
-		static int tick = 0;
-		typedef long long int lld;
-		// show only full garbage collecting
-		if ((heap->genstart == heap->begin) || (tick++ > 999)) {
-			gctime += (1000 * clock()) / CLOCKS_PER_SEC;
-			struct tm tm = *localtime(&(time_t){time(NULL)});
-			char buff[70]; strftime(buff, sizeof buff, "%c", &tm);
-			fprintf(stderr,
-					"[%s], %sGC done in %d ms, used %2ld%% (%ld from %ld words), %lld live %s objects.\n", //marked %6d, moved %6d, pinned %2d, moved %8d bytes total\n",
-					buff/*asctime(&tm)*/,
-					heap->genstart == heap->begin ? "full " : "     ", (int)gctime,
-					((fp - (word*) heap->begin) * 100)/((heap->end - heap->begin)),
-					((fp - (word*) heap->begin)),      ((heap->end - heap->begin)),
-					(lld)marked, heap->genstart == heap->begin ? "total" : "young"
-				);
-			tick = 0;
-		}
-#endif
 	}
 	heap->fp = fp;
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
-
 	ptrdiff_t hsize = heap->end - heap->begin; // вся куча в словах
 	ptrdiff_t nfree = heap->end - (word*)regs; // свободно в словах
 	ptrdiff_t nused = hsize - nfree;           // использовано слов
@@ -2235,20 +2208,12 @@ word gc(heap_t *heap, long query, word regs)
 		if (nused > (hsize * 2 / 3)) {
 			if (nused < hsize)
 				nused = hsize;
-#if DEBUG_GC
-			fprintf(stderr, "Growing GC from %ld(%ld) to %ld(%ld), queried %ld\n",
-					hsize, hsize*W, nused + nused / 3, (nused + nused / 3) * W, query);
-#endif
-			// TODO: ограничить рост 300 мегабайтами
-			//       (после гигабайта растем линейно, а не экспоненциально)
-			regs += resize_heap(heap, nused + nused / 3) * W;
+			// TODO: ограничить рост 100 мегабайтами для x64 и 50 для x32
+			//       (после N растем линейно, а не экспоненциально)
+			regs += resize_heap(heap, nused + min(nused / 3, 12500000)) * W;
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
 		else if (nused < (hsize / 3)) {
-#if DEBUG_GC
-			fprintf(stderr, "Shrinking GC from %ld(%ld) to %ld(%ld), queried %ld\n",
-					hsize, hsize*W, hsize - hsize / 9, (hsize - hsize / 9) * W, query);
-#endif
 			regs += resize_heap(heap, hsize - hsize / 9) * W;
 		}
 		heap->genstart = (word*)regs; // always start new generation
@@ -2258,7 +2223,8 @@ word gc(heap_t *heap, long query, word regs)
 	// TODO: посчитать математически, на каком именно числе
 	//  стоит остановиться, чтобы ни слишком часто не проводить молодую сборку,
 	//  ни слишком часто старую. мне по тестам кажется, что 20% это вполне ок.
-	else if ((nfree - query) < hsize / 5) {
+	else
+	if (nused > (hsize * 4 / 5)) {  // if ((nfree - query) < hsize / 5) {
 		heap->genstart = heap->begin; // force start full generation
 		return gc(heap, query, regs);
 	}
