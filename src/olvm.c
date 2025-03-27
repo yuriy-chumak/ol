@@ -6171,10 +6171,9 @@ OLVM_new(unsigned char* bootstrap)
 	// выделим память машине:
 	// int max_heap_size = (W == 4) ? 4096 : 65535; // can be set at runtime
 
-	// в соответствии со стратегией сборки 50*1.3-33*0.9 и так как данные в бинарнике
-	// практически гарантированно "старое" поколение, выделим в два раза больше места.
-	int required_memory_size = words + max(words/4, FREESPACE);
-	size_t padding = GCPAD(NR + CR) + MEMPAD; // memory padding
+	// в соответствии со стратегией сборки выделим (3/2 words)
+	int required_memory_size = words + max(words/2, FREESPACE);
+	size_t padding = GCPAD(NR + CR) + MEMPAD;// memory padding
 
 	fp = heap->begin = (word*) malloc((required_memory_size + padding) * sizeof(word)); // at least one argument string always fits
 	if (!heap->begin) {
