@@ -485,6 +485,7 @@ struct heap_t
 	word *genstart;  // young generation begin pointer
 
 	size_t padding;  // safe padding area
+	size_t minimal;  // minimal memory space data
 
 	// вызвать GC если в памяти мало места (в словах)
 	// для безусловного вызова передать 0
@@ -2197,8 +2198,8 @@ word gc(heap_t *heap, long query, word regs)
 
 	// кучу перетрясли и уплотнили, посмотрим надо ли ее увеличить/уменьшить
 	ptrdiff_t hsize = heap->end - heap->begin; // вся куча в словах
-	ptrdiff_t nfree = heap->end - (word*)regs; // свободно в словах
-	ptrdiff_t nused = hsize - nfree;           // использовано слов
+	ptrdiff_t nfree = heap->end - heap->fp;    // свободно в словах
+	ptrdiff_t nused = heap->fp  - heap->begin; // использовано слов
 
 	nused += query; // сколько у нас должно скоро стать занятого места
 	if (heap->genstart == heap->begin) {
@@ -2215,10 +2216,11 @@ word gc(heap_t *heap, long query, word regs)
 				nused = hsize;
 			// TODO: ограничить рост 100 мегабайтами для x64 и 50 для x32
 			//       (после N растем линейно, а не экспоненциально)
-			regs += resize_heap(heap, nused + min(nused / 3, 12500000)) * W;
+			regs += resize_heap(heap, nused + min(nused / 3, 12500000)) * W; // todo: move to olvm_t heap options
 		}
 		// decrease heap size if more than 33% is free by 11% of the free space
-		else if (nused < (hsize / 3)) {
+		// don't reduce below minimal free space amount (important for small embed usage)
+		else if (nused < (hsize / 3) && nfree > heap->minimal) {
 			regs += resize_heap(heap, hsize - hsize / 9) * W;
 		}
 		heap->genstart = (word*)regs; // always start new generation
@@ -5371,6 +5373,25 @@ loop:;
 				r = new_vptr(ol->userdata);
 				break;
 
+			// todo: (1010 .. 1019) new GC interface
+			case 1010: // todo (gc memory)
+				CHECK_ARGC_EQ(1);
+				CHECK_NUMBERP_OR_FALSE(1);
+
+				GC(A1 == IFALSE ? -1 : number(A1));
+
+				break;
+			case 1011: { // set olvm->minimal
+				CHECK_ARGC_EQ(1);
+				CHECK_NUMBERP_OR_FALSE(1);
+
+				r = new_unumber(ol->heap.minimal);
+				if (A1 != IFALSE)
+					ol->heap.minimal = number(A1);
+				break;
+			}
+
+
 			// case 1007: // set memory limit (in mb) / // todo: переделать на другой номер
 			// 	r = new_number (ol->max_heap_size);
 			// 	ol->max_heap_size = value(A1);
@@ -6195,6 +6216,7 @@ OLVM_new(unsigned char* bootstrap)
 	heap->end = heap->begin + required_memory_size;
 	heap->genstart = heap->begin;
 	heap->padding = padding;
+	heap->minimal = FREESPACE;
 
 	// дефолтный сборщик мусора (можно заменить на свой)
 	heap->gc = OLVM_gc;
