@@ -154,7 +154,8 @@ typedef float (*ol2f_t)(word arg);                  extern ol2f_t OL2F;
 typedef double (*ol2d_t)(word arg);                 extern ol2d_t OL2D;
 #endif
 
-// -----------------------------------------------------
+// -=( OLVM Description )=----------------------------------------------------
+//
 // descriptor format
 // заголовок объекта, находится по адресу 0 (ob[0], *ob):
 //  [s...sss ????rppp tttttt10] // bit 2 у заголовков всегда выставлен в 1 (используется GC)
@@ -165,7 +166,7 @@ typedef double (*ol2d_t)(word arg);                 extern ol2d_t OL2D;
 //         |    '----------------> ????,    your tags here! e.g. tag for closing file descriptors in gc, etc. not used for now
 //         '---------------------> s...sss, object size in words
 //
-// а это то, что лежит в объектах - либо непосредственные значения, либо указатели на другие объекты:
+// а это то, что лежит в объектах (ob[1], ob[2], ...) - либо непосредственные значения, либо указатели на другие объекты:
 //                       .------------> value, if 'v' is set
 //                       |      .-----> type, if 'v' is set
 //                       |      |.----> 'value' bit
@@ -181,7 +182,6 @@ typedef double (*ol2d_t)(word arg);                 extern ol2d_t OL2D;
 // например, в спецполя складывать id функции, что вызывает mark для подпоинтеров,
 //	         и ptr на функцию, что делает финализацию.
 // todo: move "r" bit left to allow 128-bit machines
-// http://publications.gbdirect.co.uk/c_book/chapter6/bitfields.html
 
 //efine IPOS      8  // === bits offset of (struct value_t, value), deprecated name
 #define VPOS      8  // === bits offset of (struct value_t, value)
@@ -192,12 +192,12 @@ typedef double (*ol2d_t)(word arg);                 extern ol2d_t OL2D;
 #define SPOS     16  // === bits offset of (struct header_t, size)
 
 // ---==( value_t )==---
-// immediate Ol value
+// immediate value
 struct __attribute__ ((aligned(sizeof(word)), packed))
 value_t
 {
 	unsigned char mark : 1;    // always 0, (1 only during GC) =
-	unsigned char v    : 1;    // always 1                      = 8 bits
+	unsigned char v    : 1;    // always 1                      } 8 bits
 	unsigned char type : 6;    // value type                   =
 
 	unsigned char value[sizeof(word) - 1];
@@ -852,6 +852,7 @@ word*p = new (TVECTOR, 13);\
 #define CHAR_UNSIGNED 1
 #endif
 
+// todo: add size_t
 #define new_number(val) \
 	__builtin_choose_expr (\
 		 __builtin_types_compatible_p (typeof(val), int8_t) ||\
@@ -954,10 +955,10 @@ inexact_t f = (inexact_t) a;\
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
-#define __OLVM_VERSION__ "2.6.rc3"
+#define __OLVM_VERSION__ "2.6"
 #endif
 #ifndef lint
-__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
+__attribute__((used)) const char copyright[] = "@(#)(c) 2014-2025 Yuriy Chumak";
 #endif//lint
 
 #define unless(...) if (! (__VA_ARGS__))
@@ -1033,6 +1034,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #endif
 
 #ifdef __unix__
+// linux for qemu:   https://buildroot.uclibc.org/
 
 // FreeBSD, NetBSD, OpenBSD, macOS, etc.
 # ifndef __linux__
@@ -1374,6 +1376,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #endif//OLVM_BUILTIN_FMATH
 // -----------------------
 
+// --------------------------------------------------------------------------
 // memfd_create:
 #include <sys/mman.h>
 #if !HAVE_MEMFD_CREATE
@@ -1408,7 +1411,9 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2024 Yuriy Chumak";
 #	define memfd_create memfd_create_
 #	endif
 #endif
+// -----------------------
 
+// 
 #include <sys/utsname.h> // we have own win32 implementation
 #ifdef _WIN32
 int (*puname)(struct utsname* out) = uname;
@@ -1448,7 +1453,8 @@ int (*puname)(struct utsname* out) = uname;
 #endif
 
 
-// yield:
+// --------------------------------------------------------------------------
+// yield
 #ifdef __unix__
 # if !defined (__EMSCRIPTEN__) && HAS_CDEFS
 #	include <sys/cdefs.h>
@@ -1481,9 +1487,11 @@ void yield()
 # endif
 #endif
 }
+// -----------------------
 
-
+// --------------------------------------------------------------------------
 // sockets/sendfile:
+
 // sockets:
 #if HAVE_SOCKETS
 
@@ -1590,6 +1598,7 @@ void yield()
 # endif
 #endif
 
+// --------------------------------------------------------------------------
 // FFI support:
 #ifndef OLVM_FFI
 // ffi have no sense without dlopen/dlsym
@@ -1600,11 +1609,9 @@ void yield()
 #error "FFI requires PINS support"
 #endif
 
-
 #ifndef OLVM_CALLABLES
 #define OLVM_CALLABLES OLVM_FFI
 #endif
-
 
 // additional defines:
 #ifndef O_BINARY
@@ -1953,7 +1960,7 @@ static char* pvenv_main() {
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
 #define MEMPAD                     (1024) // space after end of heap to guarantee apply
-#define FREESPACE                  (4096) // expected working memory buffer (in words)
+#define FREESPACE                  (4096) // minimal working memory buffer (in words)
 
 // 1024 - некое магическое число, подразумевающее количество
 // памяти, используемой между вызовами apply. мои тесты пока показывают максимальное число 96
@@ -2173,8 +2180,6 @@ word gc(heap_t *heap, long query, word regs)
 		query = 0;
 		heap->genstart = heap->begin; // reset generations
 	}
-	// else
-	// 	query += FREESPACE; // expected tmp objects buffer
 	// TODO: add diagnostic callback "if (heap->oncb) heap->oncb(heap, deltatime)"
 
 	fp = heap->fp;
@@ -5791,7 +5796,7 @@ int count_fasl_objects(word *words, unsigned char *lang) {
 					int type = *op++;
 					if (type == TENUMP || type == TENUMN) {
 						size_t size = hp - op;
-						int words = (size < W) ? 1 : ((size + W-2) / (W-1)) * 3;
+						int words = (size < W) ? 1 : ((size + W-2) / (W-1)) * 3; // TODO: optimize
 						allocated += words;
 					}
 				}
@@ -6167,7 +6172,7 @@ OLVM_new(unsigned char* bootstrap)
 	word *fp;
 	heap_t* heap = &handle->heap;
 
-	// посчитаем сколько памяти нам надо для выполнения бинарника:
+	// посчитаем сколько памяти нам надо для выполнения бинарника
 	word words = 0;
 	word nobjs = count_fasl_objects(&words, bootstrap);
 	if (nobjs == 0)
@@ -6191,29 +6196,24 @@ OLVM_new(unsigned char* bootstrap)
 	heap->genstart = heap->begin;
 	heap->padding = padding;
 
-	// дефолтный сборщик мусора
+	// дефолтный сборщик мусора (можно заменить на свой)
 	heap->gc = OLVM_gc;
 
 	// handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты
 	// обязательно выделить n+1 объектов,
-	// последнее место зарезервировано для конструктора
+	// последнее место зарезервировано для конструктора.
+
+	// это временный объект на стеке, а не в куче. так что ...
 	word *ptrs = alloca((nobjs + 1) * sizeof(word));
 
-	// этот вектор содержит "неправильные" ссылки в смысле модели памяти ol,
-	// которые указывают вперед по куче, а не назад. но так как на него никто
-	// не ссылается, то этот объект будет спокойно удален во время первой же
-	// полной сборки кучи (которую стоило бы сделать в deserialize(), но 
-	// которую мы будем делать когда закончится место под новые объекты -
-	// для ускорения небольших задач и первичной реакции на пользователя).
 	fp = deserialize(ptrs, nobjs, bootstrap, fp);
 	if (!fp) {
-		E("Error: invalid bootstrap");
-		goto fail;
+		E("Error: invalid bootstrap"); goto fail;
 	}
 
-	// считаем, что в образе не осталось временных объектов
+	// ... считаем, что в образе больше нет временных объектов
 	heap->genstart = fp;
 
 	// подготовим регистры и закрепленные объекты (regs + pins):
