@@ -5766,16 +5766,15 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 #endif
 			// обычные байтовые последовательности
 			{
-				int words = WALIGN(size);
-				int pads = WPADS(size);
-
-				unsigned char *p = (unsigned char*)&car(new (type, words, pads));
+				unsigned char *p = (unsigned char*)&ref(new_alloc(type, size), 1);
 				while (size--)
 					*p++ = *hp++;
+#ifdef OLVM_SAFEPADS
 				// is not required, but may be usefull
-				while (pads--)
-					*p++ = 0;
+				*p++ = 0;
+#endif
 			}
+
 			break;
 		}
 		default:
