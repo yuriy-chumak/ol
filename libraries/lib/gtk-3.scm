@@ -1,13 +1,5 @@
 (define-library (lib gtk-3)
    (export
-      gtk_init
-      gtk_main
-      gtk_main_quit
-      gtk_main_iteration
-      gtk_events_pending
-
-      gtk_check_version
-
       make-GtkTextIter
       GtkTextIter*
 
@@ -43,9 +35,6 @@
       (lib glib-2)
       ;; (lib cairo)
 
-      (lib gdk-3)
-      (only (otus async) sleep)
-
       (lib gtk-3 gtk)
       (lib gtk-3 application)
 
@@ -65,14 +54,6 @@
 
 (begin
 
-   (define gtk_init (GTK3 fft-void "gtk_init" fft-int& (fft& (fft* type-string))))
-   (define gtk_main (GTK3 fft-void "gtk_main"))
-   (define gtk_main_quit  (GTK3 fft-void "gtk_main_quit"))
-   (define gtk_main_iteration (GTK3 gboolean "gtk_main_iteration"))
-   (define gtk_events_pending (GTK3 gboolean "gtk_events_pending"))
-
-   (define gtk_check_version (GTK3 type-string "gtk_check_version" guint guint guint))
-
    ; (lib gtk textiter)
    (define |sizeof GtkTextIter| 80)
    (define (make-GtkTextIter)
@@ -85,21 +66,4 @@
    (define GTK_RESPONSE_CANCEL -6)
    (define GTK_STOCK_OPEN      "gtk-open")
    (define GTK_RESPONSE_ACCEPT -3)
-
-   ; lisp
-   (define gtk_init (case-lambda
-      (() (gtk_init '(0) #f))
-      ((a1) (if (ff? a1)
-               (let* ((argv (a1 'argv #f)))
-                  (gtk_init (list (if argv (length argv) 0)) argv)
-                  (if (a1 'multithreaded #f)
-                     (gdk_threads_add_idle (G_CALLBACK
-                        (GTK_CALLBACK (userdata)
-                           (sleep 0)
-                           TRUE)) #f)))
-            else
-               (runtime-error "gtk_init: invalid options" a1)))
-      ((a1 a2)
-            (gtk_init a1 a2))
-   ))
 ))

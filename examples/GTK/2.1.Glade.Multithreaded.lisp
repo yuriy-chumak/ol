@@ -1,10 +1,9 @@
 #!/usr/bin/env ol
-(import (lib glib-2)
-   (lib gtk-3))
+(import (gtk-3))
 (import (only (olvm syscalls) strftime))
 
-;; explicitly init
-(gtk_init {
+;; explicit init
+(Gtk:init {
    'multithreaded #true
 })
 
@@ -13,13 +12,12 @@
 
 ;; demo infinite loop
 (async (lambda ()
+   (define label (GtkLabel
+      ((builder 'get-object) "label")))
+   (define button (GtkButton
+      ((builder 'get-object) "button")))
+
    (let infinity-loop ()
-
-      (define label (GtkLabel
-         ((builder 'get-object) "label")))
-      (define button (GtkButton
-         ((builder 'get-object) "button")))
-
       ((label 'set-text) (strftime "%X"))
       ((button 'set-text) (strftime "%S"))
 
@@ -33,11 +31,11 @@
       'on-destroy (lambda (this)
          ; properly stop running threads
          (for-each kill (running-threads))
-         (gtk_main_quit))
+         (Gtk:quit))
    }))
 
 ;; show it
 ((window 'show-all))
 
 ;; run
-(gtk_main)
+(Gtk:main)

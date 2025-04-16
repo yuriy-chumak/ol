@@ -1,13 +1,12 @@
 #!/usr/bin/env ol
-(import (lib glib-2)
-   (lib gtk-3))
+(import (gtk-3))
 
-;; application activate
+;; application setup
 (define (activate appl)
    ; create customized window with title
    (define window (GtkWindow appl {
-      'title "Customized Window"
-      'width 640 'height 360
+      'title "Gtk-3 Window"
+      'width 640  'height 360
       'icon "dialog-information"
    }))
 
@@ -15,9 +14,9 @@
    ((window 'show-all)))
 
 ;; create an application
-(define app (GtkApplication {
+(define application (GtkApplication {
    'on-activate activate
 }))
 
 ;; run
-((app 'run) (command-line))
+((application 'run) (command-line))

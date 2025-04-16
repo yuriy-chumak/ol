@@ -1,21 +1,20 @@
 #!/usr/bin/env ol
-(import (lib glib-2)
-   (lib gtk-3))
+(import (gtk-3))
 (import (only (olvm syscalls) strftime))
 
-;; application activate
+;; application setup
 (define (activate appl)
    ; create customized window with title
    (define window (GtkWindow appl {
-      'title "Multithreaded Window"
-      'width 640 'height 360
+      'title "Multithreaded Gtk-3 Window"
+      'width 640  'height 360
       'icon "dialog-information"
 
-      ; properly stop running threads
+      ; proper stopping of running threads
       'on-destroy (lambda (this)
          (print "Close pressed. Bye-bye.")
          (for-each kill (running-threads))
-         (g_application_quit (gtk_window_get_application (this 'ptr))))
+         (( (( (GtkWindow (this 'ptr)) 'get-application)) 'quit)) )
    }))
 
    ; add a label to the window

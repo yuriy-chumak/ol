@@ -1,9 +1,8 @@
 #!/usr/bin/env ol
-(import (lib glib-2)
-   (lib gtk-3))
+(import (gtk-3))
 
 ;; explicitly init
-(gtk_init)
+(Gtk:init)
 
 ;; load ui from the file
 (define builder
@@ -14,13 +13,13 @@
    ((builder 'get-object) "window") {
       'on-destroy (lambda (this)
          (print "Close pressed. Bye-bye.")
-         ; when we do a (gtk_main) we should use (gtk_main_quit)
-         ;   instead of (g_application_quit)
-         (gtk_main_quit))
+         ; when we do a (Gtk:main) we should use (Gtk:quit)
+         ;   instead of (GtkApplication 'quit)
+         (Gtk:quit))
    }))
 
 ;; show it
 ((window 'show-all))
 
 ;; run
-(gtk_main)
+(Gtk:main)

@@ -1,19 +1,18 @@
 #!/usr/bin/env ol
-(import (lib glib-2)
-   (lib gtk-3))
+(import (gtk-3))
 
-;; application activate
+;; application setup
 (define (activate appl)
-   ; create default window with a title
-   (define window (GtkWindow appl "Window"))
+   ; create default window
+   (define window (GtkWindow appl))
 
    ; show it
    ((window 'show-all)))
 
 ;; create an application
-(define app (GtkApplication {
+(define application (GtkApplication {
    'on-activate activate
 }))
 
 ;; run
-((app 'run) (command-line))
+((application 'run) (command-line))

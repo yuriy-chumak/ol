@@ -1,14 +1,12 @@
 #!/usr/bin/env ol
-(import
-   (lib glib-2)
-   (lib gtk-3))
+(import (gtk-3))
 
-; application init
+;; application setup
 (define (activate app)
    ; main application window
    (define window (GtkWindow app {
-      'title "Window With Content"
-      'width 320 'height 180
+      'title "Gtk-3 Window With Content"
+      'width 320  'height 180
    }))
 
    ; add a label to the window
@@ -16,7 +14,7 @@
       "Lorem ipsum dolor sit amet,\nconsectetur adipiscing elit."))
    ((window 'add) label)
 
-   ; display the window (and it's content)
+   ; display the window (with content)
    ((window 'show-all)))
 
 ;; create an application
