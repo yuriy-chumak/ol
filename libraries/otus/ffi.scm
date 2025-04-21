@@ -103,12 +103,16 @@
 
       vptr->bytevector
       bytevector->void*
-      bytevector->int16
-      bytevector->int32
-      bytevector->int64
 
-      bytevector->integer
+      bytevector->int16
+      bytevector->uint16
+      bytevector->int32
+      bytevector->uint32
+      bytevector->int64
+      bytevector->uint64
+
       bytevector->float
+      bytevector->double
    )
 
    (import
@@ -309,63 +313,6 @@
 
 );begin
 
-; ---------------------------------
-; endianness dependent functions
-(cond-expand
-   (little-endian
-      (begin
-         (define (bytevector->int16 bvec offset)
-            (+     (ref bvec    offset   )
-               (<< (ref bvec (+ offset 1))  8)))
-         (define (bytevector->int32 bvec offset)
-            (+     (ref bvec    offset   )
-               (<< (ref bvec (+ offset 1))  8)
-               (<< (ref bvec (+ offset 2)) 16)
-               (<< (ref bvec (+ offset 3)) 24)))
-         (define (bytevector->int64 bvec offset)
-            (+     (ref bvec    offset   )
-               (<< (ref bvec (+ offset 1))  8)
-               (<< (ref bvec (+ offset 2)) 16)
-               (<< (ref bvec (+ offset 3)) 24)
-               (<< (ref bvec (+ offset 4)) 32)
-               (<< (ref bvec (+ offset 5)) 40)
-               (<< (ref bvec (+ offset 6)) 48)
-               (<< (ref bvec (+ offset 7)) 56))) ))
-
-   (big-endian
-      (begin
-         (define (bytevector->int16 bvec offset)
-            (+     (ref bvec (+ offset 3))
-               (<< (ref bvec (+ offset 2))  8)))
-         (define (bytevector->int32 bvec offset)
-            (+     (ref bvec (+ offset 3))
-               (<< (ref bvec (+ offset 2))  8)
-               (<< (ref bvec (+ offset 1)) 16)
-               (<< (ref bvec    offset   ) 24)))
-         (define (bytevector->int64 bvec offset)
-            (+     (ref bvec (+ offset 7))
-               (<< (ref bvec (+ offset 6))  8)
-               (<< (ref bvec (+ offset 5)) 16)
-               (<< (ref bvec (+ offset 4)) 24)
-               (<< (ref bvec (+ offset 3)) 32)
-               (<< (ref bvec (+ offset 2)) 40)
-               (<< (ref bvec (+ offset 1)) 48)
-               (<< (ref bvec    offset   ) 56))) ))
-
-   (else
-      (runtime-error "ffi: unsupported platform endianness" *uname*)))
-
-;; (cond-expand
-;;    (little-endian
-;;       (begin
-;;             ;; (vm:cast
-;;             ;;    (fold (lambda (val offs)
-;;             ;;             (+ (<< val 8) (ref vector offs)))
-;;             ;;       0 (reverse (iota (size nullptr) offset)))
-;;             ;;    type-vptr))
-
-;;       ))
-
 (begin
 
    (define ffi:idf (make-vptr))
@@ -381,10 +328,23 @@
    (define (vptr->value vptr type)
       (cast vptr type))
 
+   (define (bytevector->int16 bvec offset)
+      (cast (cons bvec offset) (fft& fft-int16)))
+   (define (bytevector->uint16 bvec offset)
+      (cast (cons bvec offset) (fft& fft-uint16)))
+   (define (bytevector->int32 bvec offset)
+      (cast (cons bvec offset) (fft& fft-int32)))
+   (define (bytevector->uint32 bvec offset)
+      (cast (cons bvec offset) (fft& fft-uint32)))
+   (define (bytevector->int64 bvec offset)
+      (cast (cons bvec offset) (fft& fft-int64)))
+   (define (bytevector->uint64 bvec offset)
+      (cast (cons bvec offset) (fft& fft-uint64)))
+
    (define (bytevector->float bvec offset)
-      (let ((void* (make-vptr)))
-         (vm:set! void* 0 bvec offset (+ offset 4))
-         (ffi ffi:idf (list fft-float fft-void*) (list void*))))
+      (cast (cons bvec offset) (fft& fft-float)))
+   (define (bytevector->double bvec offset)
+      (cast (cons bvec offset) (fft& fft-double)))
 
    (define (bytevector->void* bvec offset)
       (let ((void* (make-vptr)))
@@ -393,31 +353,6 @@
    (define (vptr->bytevector vptr sizeof)
       (syscall 9 vptr sizeof))
 
-
-   (define (bytevector->integer bvec offset length)
-      (let ((number
-               (fold (lambda (val offs)
-                        (+ (<< val 8) (ref bvec offs)))
-                  0 (reverse (iota length offset))))
-            (max (<< 1 (* 8 length))))
-         (if (<= number (>> max 1))
-            number
-            (- number max))))
-
-   ;; (setq wordsize (size nullptr))
-
-   ;; (define (vptr->string vptr)
-   ;;    (fold string-append "#x"
-   ;;       (map (lambda (i)
-   ;;             (let ((hex "0123456789abcdef"))
-   ;;                (list->string (list
-   ;;                   (ref hex (>> (ref vptr i) 4))
-   ;;                   (ref hex (band (ref vptr i) 15))))))
-   ;;          (reverse (iota wordsize))))) ; todo: use (vm:endiannes)
-
-
-
-; see also: http://www.boost.org/doc/libs/1_55_0/libs/predef/doc/html/predef/reference/boost_os_operating_system_macros.html
 )
 
 ; notification for ",save":

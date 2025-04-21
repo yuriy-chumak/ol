@@ -726,5 +726,27 @@ type function(type* arg)
 ;; ;; (test-callback "callback_call_d" (list fft-double fft-double))
 ;; ;; (test-callback "callback_call_ifid" (list fft-double fft-int fft-float fft-int fft-double))
 
+; ---------------------------------------------------------------
+(define ffi:idf (make-vptr))
+(define (cast x t) ; cast vptr to the type t
+   (ffi ffi:idf (list t type-vptr) (list x)))
+
+(for-each (lambda (x)
+      (let*((name type (uncons x #f))
+            (function (this type-vptr name)))
+         (define ptr (function))
+         (try name cast ptr (fft& type))))
+   `( ("i8_1_ptr" . ,fft-int8)
+      ("i16_1_ptr" . ,fft-int16)
+      ("i32_1_ptr" . ,fft-int32)
+      ("i64_1_ptr" . ,fft-int64)
+      ("u8_1_ptr" . ,fft-uint8)
+      ("u16_1_ptr" . ,fft-uint16)
+      ("u32_1_ptr" . ,fft-uint32)
+      ("u64_1_ptr" . ,fft-uint64)
+      ("f32_1_ptr" . ,fft-float)
+      ("f64_1_ptr" . ,fft-double)
+   ))
+
 ;=============
 (print "done.")

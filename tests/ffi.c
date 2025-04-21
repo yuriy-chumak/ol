@@ -751,3 +751,23 @@ void debug_csicisc(struct csicisc_t* var)
 	printf(" and now we made +1 for all of these variables");
 	fflush(stdout);
 }
+
+// -----------------------------------------------------------------------------------
+// ptr to integers
+#define iptr(type,name,data) \
+type name = data;\
+void* name##_ptr() {\
+	return &name;\
+}
+
+iptr(int8_t, i8_1, 1)
+iptr(uint8_t, u8_1, 1)
+iptr(int16_t, i16_1, 1)
+iptr(uint16_t, u16_1, 1)
+iptr(int32_t, i32_1, 1)
+iptr(uint32_t, u32_1, 1)
+iptr(int64_t, i64_1, 1)
+iptr(uint64_t, u64_1, 1)
+iptr(float, f32_1, 1)
+iptr(double, f64_1, 1)
+

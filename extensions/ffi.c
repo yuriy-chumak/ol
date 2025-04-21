@@ -3156,15 +3156,56 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			break;
 		}
 
-		// returning structures
+		// returning data value by pointer or structures
 		case TPAIR: {
-			// currest simplest case
-			float* floats = (float*)&got;
-			inexact_t a = floats[0];
-			inexact_t b = floats[1];
-			result = new_list(TPAIR,
-				new_inexact(a),
-				new_inexact(b));
+			// data value by pointer
+			word b = car(B);
+			if (is_value(car(b)) && (value(car(b)) & FFT_REF)) {
+				switch (value(cdr(b))) {
+				// integers
+				case TINT8:
+					result = (word*) new_number (CV_INT8((void*)got));
+					break;
+				case TUINT8:
+					result = (word*) new_number (CV_UINT8((void*)got));
+					break;
+				case TINT16:
+					result = (word*) new_number (CV_INT16((void*)got));
+					break;
+				case TUINT16:
+					result = (word*) new_number (CV_UINT16((void*)got));
+					break;
+				case TINT32:
+					result = (word*) new_number (CV_INT32((void*)got));
+					break;
+				case TUINT32:
+					result = (word*) new_number (CV_UINT32((void*)got));
+					break;
+				case TINT64:
+					result = (word*) new_number (CV_INT64((void*)got));
+					break;
+				case TUINT64:
+					result = (word*) new_number (CV_UINT64((void*)got));
+					break;
+
+				// float/double
+				case TFLOAT:
+					result = (word*) new_inexact (CV_FLOAT((void*)got));
+					break;
+				case TDOUBLE:
+					result = (word*) new_inexact (CV_DOUBLE((void*)got));
+					break;
+				}
+			}
+			else {
+				// currest simplest case
+				float* floats = (float*)&got;
+				inexact_t a = floats[0];
+				inexact_t b = floats[1];
+				result = new_list(TPAIR,
+					new_inexact(a),
+					new_inexact(b));
+			}
 			break;
 		}
 	}
