@@ -93,7 +93,7 @@ CFLAGS += -DHAVE_SOCKETS=$(if $(HAVE_SOCKETS),$(HAVE_SOCKETS),0)
 CFLAGS += -DHAVE_DLOPEN=$(if $(HAVE_DLOPEN),$(HAVE_DLOPEN),0)
 CFLAGS += -DHAVE_SECCOMP=$(if $(HAVE_SECCOMP),$(HAVE_SECCOMP),0)
 
-CFLAGS += -DOLVM_SAFEPADS=1
+# CFLAGS += -DOLVM_SAFEPADS=1
 
 ifneq ($(HAVE_MEMFD_CREATE),)
 CFLAGS += -DHAVE_MEMFD_CREATE=$(HAVE_MEMFD_CREATE)
@@ -237,7 +237,7 @@ android: jni/*.c tmp/repl.c
 vm:
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
-	   $(CFLAGS) -DPREFIX=\"$(PREFIX)\" $(L)
+	   $(CFLAGS) $(CFLAGS_RELEASE) -DPREFIX=\"$(PREFIX)\" $(L) -lm
 	@echo Ok.
 
 vm.asm: CFLAGS += $(CFLAGS_RELEASE)
@@ -323,6 +323,7 @@ boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm
 	   echo '$(green)  \)  )  $(done)' ;\
 	   echo '$(green)___"_"___$(done)' ;\
 	   echo '$(green)Build Ok.$(done)' ;\
+	   touch src/repl.S ;\
 	else \
 	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
 	   cp -b $@ repl ;$(MAKE) $@ ;\
