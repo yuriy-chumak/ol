@@ -78,7 +78,7 @@
             (lambda vals
                (ok
                   (cond
-                     ((null? vals) "no vals")
+                     ((null? vals) #false)
                      ((null? (cdr vals)) (car vals))
                      (else (cons 'values vals)))
                   env))))
