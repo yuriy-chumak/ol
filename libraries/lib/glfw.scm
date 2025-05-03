@@ -42,6 +42,11 @@
                              (load-dynamic-library "libglfw.so.3")
                              (runtime-error "Can't load libglfw"
                                       "try to rebuild apk")))))
+   (Darwin
+      (begin
+         (define libglfw (or (load-dynamic-library "/opt/homebrew/lib/libglfw.dylib")
+                             (runtime-error "Can't load libglfw"
+                                      "try to rebuild apk")))))
    (else
       (begin
          (define libglfw (or (load-dynamic-library "libglfw.so")
