@@ -2597,13 +2597,13 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				}
 				int portfd = port(arg);
 				switch (portfd) {
-				case 0:
+				case 0: // stdin
 					STORE(IDF, word, STDIN_FILENO);
 					break;
-				case 1:
+				case 1: // stdout
 					STORE(IDF, word, STDOUT_FILENO);
 					break;
-				case 2:
+				case 2: // stderr
 					STORE(IDF, word, STDERR_FILENO);
 					break;
 				default:
@@ -2934,6 +2934,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		fp = heap->fp;
 		arguments = OLVM_unpin(this, pin);
 
+		// todo: optimize for "if writeback && returntype&0x3F == TVOID"
 		register word ABC = arguments;
 					  ABC = cdr(ABC); // skip A
 		B = car(ABC); ABC = cdr(ABC); // rtty

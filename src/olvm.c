@@ -5933,7 +5933,7 @@ int main(int argc, char** argv)
 	}
 	if (argc == 2 && strcmp(argv[1], "--version") == 0) {
 		E("olvm (Otus Lisp Virtual Machine) %s", __OLVM_VERSION__);
-		E("Copyright (c) 2014-2024 Yuriy Chumak");
+		E("Copyright (c) 2014-2025 Yuriy Chumak");
 		E("License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>");
 		E("License MIT: <https://en.wikipedia.org/wiki/MIT_License>");
 		E("This is free software: you are free to change and redistribute it.");
