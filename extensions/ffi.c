@@ -459,11 +459,18 @@ ret_t x86_call(word argv[], long i, void* function, long type);
 __ASM__("x86_call:", "_x86_call:", //"int $3",
 	"pushl %ebp",
 	"movl  %esp, %ebp",
+	"andl  $-16, %esp", // need to align stack
 
-	"movl  12(%ebp), %ecx",
+	"movl  12(%ebp), %ecx", // i
 	"test  %ecx, %ecx",
 	"jz    1f",
-	"movl  8(%ebp), %eax",
+
+	// gcc may use aligned SSE instructions,
+	"movl  %ecx, %eax",
+	"andl  $3, %eax",
+	"leal  -16(%esp,%eax,4),%esp",
+
+	"movl  8(%ebp), %eax",  // argv
 	"leal  -4(%eax,%ecx,4),%eax",
 "0:",
 	"pushl (%eax)",
@@ -471,7 +478,7 @@ __ASM__("x86_call:", "_x86_call:", //"int $3",
 	"decl  %ecx",
 	"jnz   0b",
 "1:",
-	"call  *16(%ebp)",
+	"call  *16(%ebp)",      // function
 
 	"movl  20(%ebp), %ecx", // проверка возвращаемого типа
 	"cmpl  $46, %ecx",      // TFLOAT
@@ -479,7 +486,7 @@ __ASM__("x86_call:", "_x86_call:", //"int $3",
 	"cmpl  $47, %ecx",      // TDOUBLE
 	"je    4f",
 "9:",
-	"leave",
+	"leave", // == "movl  %ebp, %esp", "popl %ebp",
 	"ret",
 
 // с плавающей точкой float

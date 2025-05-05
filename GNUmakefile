@@ -88,6 +88,7 @@ doc/olvm.md: src/olvm.c extensions/ffi.c
 ## os independent flags
 
 CFLAGS += -std=gnu99 -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables
+CFLAGS += -Wno-int-to-pointer-cast # x86 warnings
 #CFLAGS += -z noexecstack # required by new bin-utils 2.39
 CFLAGS += -DHAVE_SOCKETS=$(if $(HAVE_SOCKETS),$(HAVE_SOCKETS),0)
 CFLAGS += -DHAVE_DLOPEN=$(if $(HAVE_DLOPEN),$(HAVE_DLOPEN),0)
