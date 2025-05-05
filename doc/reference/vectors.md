@@ -23,7 +23,7 @@ Non-functional features: [vector-set!](#vector-set), [vector-copy!](#vector-copy
 # vector
 `(vector obj ...)`, *procedure*
 
-Returns a newly allocated vector whose elements contain the given arguments. It is analogous to list.
+Returns a newly allocated vector whose elements contain the given arguments. Like it does for a *list*.
 
 ```scheme
 (vector 'a 'b 'c)          ==>  ['a 'b 'c]
@@ -33,7 +33,7 @@ Returns a newly allocated vector whose elements contain the given arguments. It 
 ```
 
 # make-vector
-`(make-vector k)`, *procedure*
+`(make-vector k)`, *procedure*  
 `(make-vector k fill)`, *procedure*
 
 Returns a newly allocated vector of k elements. If a second argument is given, then each element is initialized to fill.
@@ -76,7 +76,7 @@ Returns the number of elements in vector as an exact integer.
 `(vector-ref vector k)`, *procedure*
 
 The vector-ref procedure returns the content of element *k* of vector *vector*.
-- `1` is for first element (not a `0`!!).
+- `0` is for first element (not a `1`!!).
 - `vector-length - 1` is for last element.
 
 > Note: The *primop* `ref` is another way to access vector elements indexed by **one**, negative indices are for counting from the last element to the first.
