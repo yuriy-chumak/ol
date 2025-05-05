@@ -3,9 +3,9 @@
       Gtk:init
       Gtk:main
       Gtk:quit
-      ;; gtk_main_quit
       ;; gtk_main_iteration
       ;; gtk_events_pending
+      GTK_CALLBACK
 
       ;; gtk_check_version
 

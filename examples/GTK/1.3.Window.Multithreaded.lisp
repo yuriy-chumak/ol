@@ -14,7 +14,9 @@
       'on-destroy (lambda (this)
          (print "Close pressed. Bye-bye.")
          (for-each kill (running-threads))
-         (( (( (GtkWindow (this 'ptr)) 'get-application)) 'quit)) )
+         (define app ((
+            (GtkWindow (this 'ptr)) 'get-application)))
+         ((app 'quit)))
    }))
 
    ; add a label to the window

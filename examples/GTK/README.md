@@ -25,12 +25,10 @@ You must have a gtk-3 library installed.
 Getting started
 ===============
 
-Import glib and gtk-3 libraries.
+Import gtk-3 library.
 
 ```scheme
-(import
-   (lib glib-2)
-   (lib gtk-3))
+(import (gtk-3))
 ```
 
 Window
@@ -39,7 +37,7 @@ Window
 In the simplest case we can create an application and a window manually.
 
 ```scheme
-;; application activate
+;; application setup
 (define (activate appl)
    ; create default window with a title
    (define window (GtkWindow appl "Window"))

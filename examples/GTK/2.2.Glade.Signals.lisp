@@ -1,10 +1,10 @@
 #!/usr/bin/env ol
-(import (lib glib-2)
-   (lib gtk-3)
+(import (gtk-3)
+   (lib glib-2)
    (lib gtk-3 message-dialog))
 
 ;; explicitly init
-(gtk_init)
+(Gtk:init)
 
 ;; load ui from the file
 (define builder
@@ -12,7 +12,9 @@
 
 ((builder 'add-callback-symbol) "button_clicked"
    (GTK_CALLBACK (ptr userdata)
-      (GtkMessageDialog (gtk_widget_get_toplevel ptr) {
+      (define widget (GtkWidget ptr))
+      (define topptr ((widget 'get-toplevel)))
+      (GtkMessageDialog topptr {
          'flags GTK_DIALOG_MODAL
          'type  GTK_MESSAGE_INFO
          'message "Hello World!"
@@ -21,8 +23,8 @@
 ((builder 'connect-signals))
 
 ;; change button text
-(((GtkButton ((builder 'get-object) "button"))
-   'set-text) "Click Me!")
+(define button (GtkButton ((builder 'get-object) "button")))
+((button 'set-text) "Click Me!")
 
 ;; setup main window
 (define window (GtkWindow
@@ -32,11 +34,11 @@
          (print "Close pressed. Bye-bye.")
          ; when we do a (gtk_main) we should use (gtk_main_quit)
          ;   instead of (g_application_quit)
-         (gtk_main_quit))
+         (Gtk:quit))
    }))
 
 ;; show it
 ((window 'show-all))
 
 ;; run
-(gtk_main)
+(Gtk:main)
