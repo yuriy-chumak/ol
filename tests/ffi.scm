@@ -34,10 +34,10 @@
 ;;    fft-char is signed by default
 ;;    we don't support rational numbers as fft&
 (print "Notes:
-  * no tests with type 'long' because 'long' is either 'int' or 'long long', depends on then OS
+  * no tests for type 'long' because 'long' is either 'int' or 'long long', depends on OS
     and is completely covered by other tests ('int' and 'long long').
   * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
-    capital chars for unsigned prefix;   'f' for float, 'd' for double.
+    capital chars for signed prefixes;  'f' for float, 'd' for double.
 ")
 ;;   * internal inexact numbers representation is '"
 ;;       (case (size #i1)

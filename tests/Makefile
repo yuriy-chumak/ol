@@ -143,11 +143,11 @@ test-ffi:
 	$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes \
 	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(ffi)$(affix)$(bits) $(L) \
 	   -fsigned-char # for ffi tests we should use char as signed by default
-	@printf "Testing $(ffi)$(affix)$(bits) ... "
+	@printf "Testing $(ffi)$(affix)$(bits)... "
 	@if $(ffi)$(affix)$(bits) repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
-	   echo $(ok);\
+	   printf $(ok)\\n;\
 	else \
-	   echo $(fail) ;\
+	   printf $(fail)\\n;\
 	   touch $(FAILED);\
 	fi
 ffi=tmp/ffi

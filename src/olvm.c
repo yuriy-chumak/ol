@@ -252,7 +252,7 @@ object_t
 // ------------------------------------------------------
 // ANSI integers - 
 #ifndef OLVM_ANSI_INT_LIMITS
-#define OLVM_ANSI_INT_LIMITS 0
+#define OLVM_ANSI_INT_LIMITS 1
 #endif
 
 // floating point numbers (inexact numbers in terms of Scheme) support
@@ -275,11 +275,9 @@ object_t
 #if SIZE_MAX == 0xffffffffU
 	typedef signed int_t __attribute__ ((mode (SI))); // four-byte integer (32 bits)
 	typedef unsigned big_t __attribute__ ((mode (DI))); // eight-byte integer (64 bits)
-	#define INT_T_MIN INT32_MIN
 #elif SIZE_MAX == 0xffffffffffffffffU
 	typedef signed int_t __attribute__ ((mode (DI))); // eight-byte integer (64 bits)
 	typedef unsigned big_t __attribute__ ((mode (TI))); // sixteen-byte integer (128 bits)
-	#define INT_T_MIN INT64_MIN
 #else
 #	error Unsupported platform bitness, only 32- and 64-bit versions are supported!
 #endif
@@ -797,8 +795,8 @@ word*p = new (TVECTOR, 13);\
 		})\
 	));})
 
-// special case (_v == INT_T_MIN) if no OLVM_ANSI_INT_LIMITS:
-//   val == minimal applicable integer for selected word width (INT_T_MIN value)
+// special case (_v == INT_?_MIN) if OLVM_ANSI_INT_LIMITS:
+//   val == minimal applicable integer for selected word width (INT_?_MIN value)
 //   that is equal to -2147483648 for 32-bit and -9223372036854775808 for 64-bit
 // in this case -val cenverts into "0" by machine math and we got invalid value
 //   so we need to compare val with INT_T_MIN and use a longer converter
@@ -810,9 +808,16 @@ word*p = new (TVECTOR, 13);\
 // I don't want to make a code completely unreadable to satisfy it.
 
 #if OLVM_ANSI_INT_LIMITS
-# define NOT_A_MIN_INT(i) (1)
+# define NOT_A_MIN_INT(i) \
+	__builtin_choose_expr(\
+		__builtin_types_compatible_p(typeof(i), int32_t),\
+			(i != INT32_MIN),\
+	__builtin_choose_expr(\
+		__builtin_types_compatible_p(typeof(i), int64_t),\
+			(i != INT64_MIN),\
+			1))
 #else
-# define NOT_A_MIN_INT(i) (i != INT_T_MIN)
+# define NOT_A_MIN_INT(i) (1)
 #endif
 
 #define new_snumber(val)  ({ \
