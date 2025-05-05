@@ -1,15 +1,8 @@
-// package name.otuslisp
-#define NATIVE(name) Java_lang_otuslisp_Ol_ ## name
-
 // Otus Lisp Java Native Interface
 #include <jni.h>
 
-#include <android/log.h>
-#define LOG_NAME "ol"
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,   LOG_NAME, __VA_ARGS__)
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,    LOG_NAME, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,   LOG_NAME, __VA_ARGS__)
-#define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_NAME, __VA_ARGS__)
+// package name.otuslisp
+#define NATIVE(name) Java_lang_otuslisp_Ol_ ## name
 
 // ----------------
 #include <stdint.h>
@@ -27,7 +20,7 @@
 
 #include <ol/ol.h>
 
-// ------------------------------------------------------------------------
+// ------------------------------------------------------------
 // TODO: make dynamic
 ol_t ol;
 struct {
@@ -38,8 +31,27 @@ struct {
 	write_t* write;
 	stat_t* stat;
 } old;
+
+// ---------------------------------------------------------------------------------
+// logging
+#ifdef __ANDROID__
+#	include <android/log.h>
+#	define LOG_NAME "ol"
+#	define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,   LOG_NAME, __VA_ARGS__)
+#	define LOGI(...) __android_log_print(ANDROID_LOG_INFO,    LOG_NAME, __VA_ARGS__)
+#	define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,   LOG_NAME, __VA_ARGS__)
+#	define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, LOG_NAME, __VA_ARGS__)
+#else
+#	define LOGD(...) printf(__VA_ARGS__)
+#	define LOGI(...) printf(__VA_ARGS__)
+#	define LOGE(...) printf(__VA_ARGS__)
+#	define LOGV(...) printf(__VA_ARGS__)
+#endif
+
+
 ///////////////////////////////////////////////////////////////////////////
 // android i/o
+#ifdef __ANDROID__
 #include <android/asset_manager_jni.h>
 
 static AAssetManager *asset_manager = NULL;
@@ -196,6 +208,7 @@ int assets_stat(const char *filename, struct stat *st, void* userdata)
 	AAsset_close(asset);
 	return 0;
 }
+#endif
 
 // ========================================================================
 // #ifndef OL_HOME
@@ -206,6 +219,7 @@ int assets_stat(const char *filename, struct stat *st, void* userdata)
 	extern unsigned char REPL[];
 #endif
 
+#ifdef __ANDROID__
 // static jobject java_asset_manager = NULL;
 JNIEXPORT void JNICALL NATIVE(nativeSetAssetManager)(JNIEnv *jenv, jobject jobj, jobject assetManager)
 {
@@ -216,6 +230,7 @@ JNIEXPORT void JNICALL NATIVE(nativeSetAssetManager)(JNIEnv *jenv, jobject jobj,
 	jniSetAssetManager(asset_manager);
 	LOGV("< nativeSetAssetManager()");
 }
+#endif
 
 JNIEXPORT
 void jniNew()
@@ -224,11 +239,13 @@ void jniNew()
 	ol.eval = 0;
 	OLVM_userdata(ol.vm, ol.vm);
 
+#ifdef __ANDROID__
 	old.open = OLVM_set_open(ol.vm, assets_open);
 	old.close = OLVM_set_close(ol.vm, assets_close);
 	old.read = OLVM_set_read(ol.vm, assets_read);
 	old.write = OLVM_set_write(ol.vm, assets_write); // stdout/stderr to logcat redirector included
 	old.stat = OLVM_set_stat(ol.vm, assets_stat);
+#endif
 }
 
 JNIEXPORT
@@ -237,11 +254,13 @@ void jniNewEmbed()
 	OL_new(&ol, REPL);
 	OLVM_userdata(ol.vm, &ol);
 
+#ifdef __ANDROID__
 	old.open = OLVM_set_open(ol.vm, assets_open);
 	old.close = OLVM_set_close(ol.vm, assets_close);
 	old.read = OLVM_set_read(ol.vm, assets_read);
 	old.write = OLVM_set_write(ol.vm, assets_write); // stdout/stderr to logcat redirector included
 	old.stat = OLVM_set_stat(ol.vm, assets_stat);
+#endif
 }
 
 JNIEXPORT

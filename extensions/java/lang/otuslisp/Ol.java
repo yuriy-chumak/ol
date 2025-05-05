@@ -45,9 +45,8 @@ public class Ol
 
 	// auto new
 	static {
-		Log.i(TAG, "{}");
-		System.loadLibrary("olvm");     // Ol virtual machine
-		System.loadLibrary("jni+repl"); // JNI + REPL :)
+		System.loadLibrary("olvm");// Ol Virtual Machine
+		System.loadLibrary("ol");  // Android JNI + REPL
 
 		// create the global Ol instance
 		nativeNew();

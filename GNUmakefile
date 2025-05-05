@@ -231,8 +231,8 @@ ffi32: src/olvm.c extensions/ffi.c tests/ffi.c
 
 ## android build
 NDK_ROOT ?=/opt/android/ndk
-android: jni/*.c tmp/repl.c
-	$(NDK_ROOT)/ndk-build
+android: extensions/android/jni/*.c tmp/repl.c
+	NDK_PROJECT_PATH=extensions/android $(NDK_ROOT)/ndk-build
 
 # ol
 vm:

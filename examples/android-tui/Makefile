@@ -7,8 +7,8 @@ help:
 
 # ---------------------------------------------------
 # link assets libraries
-$(shell [ -d assets/libraries ] || mkdir assets/libraries)
-$(shell [ -d assets/libraries/OpenGL ] || ln -s ../../../../libraries/OpenGL assets/libraries/OpenGL)
+#$(shell [ -d assets/libraries ] || mkdir assets/libraries)
+#$(shell [ -d assets/libraries/OpenGL ] || ln -s ../../../../libraries/OpenGL assets/libraries/OpenGL)
 
 # ===================================================
 APK_BASENAME?=debug
@@ -44,10 +44,9 @@ clean:
 	rm -f debug.apk debug.keystore
 
 start:
-	adb push main.lisp /sdcard/ol/main.lisp
-	adb shell am start -n name.yuriy_chumak.ol/name.yuriy_chumak.ol.NativeLoader
+	adb shell am start -n name.yuriy_chumak.ol.tui/name.yuriy_chumak.ol.tui.MainActivity
 stop:
-	adb shell am force-stop name.yuriy_chumak.ol
+	adb shell am force-stop name.yuriy_chumak.ol.tui
 
 restart:
 	$(MAKE) stop
@@ -58,17 +57,17 @@ restart:
 install:
 	adb -d install -r debug.apk
 	# grant default permissions
-	adb shell pm grant name.yuriy_chumak.ol android.permission.READ_EXTERNAL_STORAGE
+	# adb shell pm grant name.yuriy_chumak.ol android.permission.READ_EXTERNAL_STORAGE
 
 uninstall:
-	adb -d uninstall name.yuriy_chumak.ol
+	adb -d uninstall name.yuriy_chumak.ol.tui
 
 reinstall:
 	$(MAKE) uninstall
 	$(MAKE) install
 
 logcat:
-	adb logcat -v color ol:V threaded_app:V ol-ovr:V ol-egl:V gl2es:V *:F
+	adb logcat -v color ol:V threaded_app:V *:F
 
 #upload:
 #	adb shell mkdir -p /sdcard/ol/media
