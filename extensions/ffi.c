@@ -2305,9 +2305,14 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 #if __aarch64__
 		// arm logic - store extra arguments (for the stack) into args[8+]
+		# if __APPLE__ /* m1 */
+		#	define ALIGN_NSAA(e, t) ALIGN(e, t)
+		# else
+		#	define ALIGN_NSAA(e, t) ALIGN(e, int64_t)
+		# endif
 		// todo: move all related macro here
 		#define SAVE_ARM64(type, conv, arg) {\
-			ALIGN(e, type); \
+			ALIGN_NSAA(e, type); \
 			if (__builtin_expect((e > extra_len - sizeof(type)), 0)) { /* unlikely */ \
 				/* possible optimization (depends on compiler) - alloca only delta\
 				   and still use old extra. maybe create own assembly functions.*/ \
@@ -2320,6 +2325,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			*(type*)&extra[e] = (type) conv(arg);\
 			i-- /* adjust i (because later we have i++) */, e += sizeof(type);\
 		}
+		#	undef ALIGNST
 
 		#define STORE(conv, type, arg) ({\
 			if (__builtin_expect((i>7), 0)) \
@@ -2495,9 +2501,12 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 			// free variables, pointers and structures
 			case TANY: {
-				#if __aarch64__
-					if (t == RNULL) { // аргументы закончились, началась "..."
-						i = 8; d = 8;
+				// аргументы закончились, началась "..."
+				#if defined(__aarch64__) && defined(__APPLE__)
+					// M1 specific:
+					//  https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Update-code-that-passes-arguments-to-variadic-functions
+					if (t == RNULL) {
+						i = 8; d = 8; // i теперь всегда будет 8, так как аргументы падают в отдельный стек
 					}
 				#endif
 				// automatic types:
