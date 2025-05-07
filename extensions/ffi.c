@@ -1816,11 +1816,11 @@ size_t arguments_size(word args, word rtty, size_t* total)
 					*total += reference_size(arg); // in words
 					break;
 				case TSTRINGWIDE:
-					*total += reference_size(arg) * 4; // берем худший случай
+					*total += reference_size(arg) * 4; // worst case (all of chars are unicode-32)
 					break;
 				case TSTRINGDISPATCH:
 					// todo: if (string-len > 10000), use precise string calculation ?
-					*total += number(ref(arg, 1)) * 4; // берем худший случай
+					*total += number(ref(arg, 1)) * 4; // worst case (all of chars are unicode-32)
 					break;
 			}
 		}
