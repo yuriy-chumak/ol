@@ -1813,7 +1813,7 @@ size_t arguments_size(word args, word rtty, size_t* total)
 					arg = car(arg);
 					// fall through
 				case TSTRING:
-					*total += rawstream_size(arg); // exact size
+					*total += reference_size(arg); // in words
 					break;
 				case TSTRINGWIDE:
 					*total += reference_size(arg) * 4; // берем худший случай
