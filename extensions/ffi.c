@@ -508,9 +508,10 @@ __ASM__("x86_call:", "_x86_call:", //"int $3",
 // ------------------------------------------
 #elif __aarch64__
 
-// current limitation: no more than 8 integer and 8 floating point values
+// https://developer.arm.com/documentation/102374/0102/Procedure-Call-Standard
 // calling convention: IHI0055B_aapcs64.pdf
 // r0-r7 arguments, integer
+// x8 - Indirect result location register, TODO
 // v0-v7 arguments, floating
 // r9-r15: scratch registers
 // v16-v31: scratch registers
@@ -518,7 +519,8 @@ __ASM__("x86_call:", "_x86_call:", //"int $3",
 // notes:
 //   don't use r16, r17, r18
 //   don't forget "sudo DevToolsSecurity -enable" when debugging with lldb
-															 // mask is deprecated, todo: remove
+// https://github.com/ARM-software/abi-aa/blob/main/aapcs64/aapcs64.rst#parameter-passing
+
 // "static __attribute((__naked__))"" is unsupported, so
 ret_t arm64_call(word argv[], double ad[], long i, long d, char* extra, void* function, long type, long e);
 				//    x0             x1        x2      x3        x4           x5             x6        x7
@@ -552,11 +554,11 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"mov x8, #8",
 
 	// выравняем стек (по 16-байтовой границе!)
-	"orr x10, x7, #1",
-	"madd x10, x10, x8, x8", // +8 или +16, зависимо от x15 (не +0 или +8, так проще)
+	"orr x10, x7, #1", // точно сделаем +8, который сложится с x8 в +16
+	"madd x10, x10, x8, x8", // +8 или +16 (не +0 или +8, так проще. а стек, он резиновый)
 	"sub sp, sp, x10", // выделим в стеке место под аргументы
 
-	"mov x4, x4", // x4 - первый элемент стековых данных
+	"mov x4, x4", // x4 - первый элемент стековых данных (todo: can be removed)
 	"mov x3, sp",
 "6:", // Lpush
 	"cbz x7, 4f", // больше нечего пушить, goto Lgo
@@ -2189,7 +2191,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
 	int f = 0;     // количество аргументов для af
 #elif __EMSCRIPTEN__
-	// двухбитная маска типа аргументов, 31 arguments maximum
+	// двухбитная маска типа аргументов, 16 arguments maximum
 	//	00 - int
 	//	01 - reserved
 	//	10 - float
@@ -2308,7 +2310,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			ALIGN(e, type); \
 			if (__builtin_expect((e > extra_len - sizeof(type)), 0)) { /* unlikely */ \
 				/* possible optimization (depends on compiler) - alloca only delta\
-				   and still use old extra. maybe create own allembly functions.*/ \
+				   and still use old extra. maybe create own assembly functions.*/ \
 				int new_extra_len = extra_len + 8 * sizeof(word);\
 				char * new_extra = alloca(new_extra_len);\
 				memcpy(new_extra, extra, extra_len);\
@@ -2316,8 +2318,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				extra_len = new_extra_len;\
 			}\
 			*(type*)&extra[e] = (type) conv(arg);\
-			i--, e += sizeof(type);\
-		} // todo: remove i--
+			i-- /* adjust i (because later we have i++) */, e += sizeof(type);\
+		}
 
 		#define STORE(conv, type, arg) ({\
 			if (__builtin_expect((i>7), 0)) \
