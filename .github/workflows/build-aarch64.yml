@@ -1,4 +1,4 @@
-name: build macos
+name: build aarch64
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
       - master
 
 jobs:
-  macos-build:
+  linux-build:
     strategy:
       matrix:
-        os: [ macos-13, macos-latest ] # intel, m1
+        os: [ ubuntu-24.04-arm ]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
