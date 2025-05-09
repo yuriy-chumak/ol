@@ -86,20 +86,29 @@
 #	pragma GCC diagnostic ignored "-Wunused-label"
 #endif
 
-// 32/64 help macro
-#if __LP64__ || __LLP64__
-#	define IF32(...)
-#	define IFN32(...) __VA_ARGS__
-#else // __ILP32__
-#	define IF32(...) __VA_ARGS__
-#	define IFN32(...)
+// platform filters
+#if __x86_64__ && __unix__
+#	define IFx86_64_unix(...) __VA_ARGS__
+#else
+#	define IFx86_64_unix(...)
 #endif
 
-// platform filters
+#if __x86_64__
+#	define IFx86_64(...) __VA_ARGS__
+#else
+#	define IFx86_64(...)
+#endif
+
 #ifdef __aarch64__
 #	define IFaarch64(...) __VA_ARGS__
 #else
 #	define IFaarch64(...)
+#endif
+
+#ifdef __aarch64__
+#	define ONLYaarch64
+#else
+#	define ONLYaarch64 __attribute__((unused))
 #endif
 
 #ifdef __mips__
@@ -188,6 +197,7 @@
 typedef int64_t ret_t;
 
 #define IDF(...)   (__VA_ARGS__) // Identity function
+/* TODO: rename to TALIGN, typed align */
 #define ALIGN(ptr, type) \
 	__builtin_choose_expr(sizeof(type) > 1, ptr = ((ptr + sizeof(type) - 1) & -sizeof(type)), (void)0)
 
@@ -550,8 +560,12 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"ldr d7, [x1, #56]",
 
 "0:", // Lno_more_floats
-	"cbz x7, 4f",  // у нас есть что складывать в стек?
+	"cmp x2, #8", // у нас есть что складывать в стек?
+	"blt 4f",
 	"mov x8, #8",
+
+	"add x4, x0, #64", // &argv[8]
+	"sub x7, x2, #8",  // (i - 8)
 
 	// выравняем стек (по 16-байтовой границе!)
 	"orr x10, x7, #1", // точно сделаем +8, который сложится с x8 в +16
@@ -578,8 +592,8 @@ __ASM__("arm64_call:", "_arm64_call:", // "brk #0",
 	"ldr x5, [x0, #40]",
 	"ldr x4, [x0, #32]",
 "8:", // Lless2
-	"ldr x2, [x0, #16]",
 	"ldr x3, [x0, #24]",
+	"ldr x2, [x0, #16]",
 	"ldr x1, [x0, #8]",
 	"ldr x0, [x0]",
 
@@ -2149,9 +2163,9 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 	}
 	return ptr; // todo: word align?
 }
+
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
-
 EXPORT
 __attribute__((used))
 word* OLVM_ffi(olvm_t* this, word arguments)
@@ -2174,7 +2188,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
 
 // (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64/LLP64
-#if (__x86_64__ && (__unix__ || __APPLE__))
+#if (__x86_64__ && (__unix__ || __APPLE__)) // but not windows
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[18]; // 18? почему? это некий максимум?
 	int d = 0;     // количество аргументов для ad
@@ -2182,10 +2196,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #elif __aarch64__
 	double ad[8];
 	int d = 0;
-	// extra arguments:
-	int extra_len = 8 * sizeof(word); // default extra data size in bytes
-	char * extra = alloca(extra_len); // rename to __builtin_alloca
-	int e = 0; // указатель на стековые данные
 #elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
@@ -2247,10 +2257,21 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	}
 
 	word* fp = heap->fp;
+	// todo: add configuring api for next "32" etc.
+	// something like "set minimal stack size" or make dynamic
 #if __aarch64__
-	word* args = __builtin_alloca(8 * sizeof(word)); // stable arguments count
+	int args_len = max(words, 32) * sizeof(word);
+	word* args = __builtin_alloca(args_len); // GRNC + SA (stacked arguments)
+	#define GRNC 8 // General-purpose Register Number Count
+	#define FRNC 8 // Floating-point Register Number Count
+
+# if __APPLE__
+	char * extra = (char*) &args[GRNC];
+	int e = 0; // указатель на стековые данные
+# endif
 #else
 	word* args = __builtin_alloca(max(words, 16) * sizeof(word)); // minimum - 16 words for arguments
+	#define GRNC 6
 #endif
 	// todo: clear args array
 	// todo: clear ad array
@@ -2263,7 +2284,9 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	int writeback = 0; // has write-back in arguments (code speedup)
 
 	int i = 0;  // актуальное количество аргументов
-	int l = 0;  // нижняя граница для параметров больших структур (только linux?)
+#if (__x86_64__ && (__unix__ || __APPLE__))
+	int l = 0;  // нижняя граница для параметров больших структур (linux and inttel mac)
+#endif
 
 	// special case of returning a structure by value
 	// allocate a space for the return value
@@ -2287,14 +2310,11 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		word tty = is_pair(t) ? car(t) : I(TANY);
 		word arg = (word) car(p);
 
-		// #ifdef linux x64, struct-by-value-passing (check this), todo fix
-		if (i == 6 && l) { // ??
-			i = l;
+#if (__x86_64__ && (__unix__ || __APPLE__))		// linux x64 and mac intel, struct-by-value-passing (check this)
+		if (i == GRNC && l) { // ??
+			i = l; // check is l needed?
 		}
-		// #endif
-
-		IFaarch64(if (i < 8))
-		args[i] = 0; // обнулим
+#endif
 
 		// подготовим маску к следующему аргументу
 #if (__x86_64__ && (__unix__ || __APPLE__)) // LP64, but without arm64
@@ -2304,47 +2324,60 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #endif
 
 #if __aarch64__
-		// arm logic - store extra arguments (for the stack) into args[8+]
+		// TODO: add api to extend "extra" array or dynamically resize
+		// #define SAVE_ARM64(type, conv, arg) {
+		// 	ALIGN_NSAA(e, type);
+		// 	if (__builtin_expect((e > extra_len - sizeof(type)), 0)) { /* unlikely */
+		// 		/* possible optimization (depends on compiler) - alloca only delta
+		// 		   and still use old extra. maybe create own assembly functions.*/
+		// 		int new_extra_len = extra_len + 8 * sizeof(word);
+		// 		char * new_extra = alloca(new_extra_len);
+		// 		memcpy(new_extra, extra, extra_len);
+		// 		extra = new_extra;
+		// 		extra_len = new_extra_len;
+		// 	}
+		// 	*(type*)&extra[e] = (type) conv(arg);
+		// 	i-- /* adjust i (because later we have i++) */, e += sizeof(type);
+		// }
+
 		# if __APPLE__ /* m1 */
-		#	define ALIGN_NSAA(e, t) ALIGN(e, t)
-		# else
-		#	define ALIGN_NSAA(e, t) ALIGN(e, int64_t)
-		# endif
-		// todo: move all related macro here
-		#define SAVE_ARM64(type, conv, arg) {\
-			ALIGN_NSAA(e, type); \
-			if (__builtin_expect((e > extra_len - sizeof(type)), 0)) { /* unlikely */ \
-				/* possible optimization (depends on compiler) - alloca only delta\
-				   and still use old extra. maybe create own assembly functions.*/ \
-				int new_extra_len = extra_len + 8 * sizeof(word);\
-				char * new_extra = alloca(new_extra_len);\
-				memcpy(new_extra, extra, extra_len);\
-				extra = new_extra;\
-				extra_len = new_extra_len;\
-			}\
+		#define STORE_STCK(type, conv, arg) {\
+			ALIGN(e, type); \
 			*(type*)&extra[e] = (type) conv(arg);\
 			i-- /* adjust i (because later we have i++) */, e += sizeof(type);\
 		}
-		#	undef ALIGNST
-
 		#define STORE(conv, type, arg) ({\
-			if (__builtin_expect((i>7), 0)) \
-				SAVE_ARM64(type, conv, arg) \
+			if (__builtin_expect((i >= GRNC), 0)) \
+				STORE_STCK(type, conv, arg) \
 			else \
 				args[i] = (word) conv (arg);\
 		})
+		#define STORE_F(conv, type, arg) ({\
+			if (__builtin_expect((d >= FRNC), 0)) {\
+                i = max(i, GRNC); \
+				STORE_STCK(type, conv, arg) \
+            } else \
+				*(type*)&ad[d++] = conv(arg), --i;\
+		})
+		# else
+		#define STORE(conv, type, arg) ({\
+			args[i] = (word) conv (arg);\
+		})
+		#define STORE_F(conv, type, arg) ({\
+			if (d < FRNC) \
+				*(type*)&ad[d++] = conv(arg), --i;\
+			else { \
+				i = max(i, GRNC); \
+				*(type*)&args[i] = conv(arg);\
+			} \
+		})
+		# endif
+
 		#define STORE_SERIALIZE(type, conv) {\
 				word ptr = 0; \
 				SERIALIZE(&ptr, type, conv); \
 				STORE(IDF, void*, ptr); \
 			}
-		// floating point handlers
-		#define STORE_F(conv, type, arg) ({\
-			if (__builtin_expect((d>7), 0)) \
-				SAVE_ARM64(type, conv, arg) \
-			else \
-				*(type*)&ad[d++] = conv(arg), --i;\
-		})
 		#define STORE_D(conv, type, arg) \
 				STORE_F(conv, type, arg)
 
@@ -2506,7 +2539,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					// M1 specific:
 					//  https://developer.apple.com/documentation/xcode/writing-arm64-code-for-apple-platforms#Update-code-that-passes-arguments-to-variadic-functions
 					if (t == RNULL) {
-						i = 8; d = 8; // i теперь всегда будет 8, так как аргументы падают в отдельный стек
+						i = GRNC; d = FRNC; // теперь аргументы падают в отдельный стек
 					}
 				#endif
 				// automatic types:
@@ -2725,6 +2758,12 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			// doto: move to the standalone function named `struct2ol`
 			// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
 
+			// note the aarch64 special case:
+			//  if struct has 1..4 and only floats or has 1..4 and only
+			//  doubles then special parameter passing rule must be used
+			ONLYaarch64
+			unsigned count = 0, floats = 0, doubles = 0; // ONLY aarch64
+
 			// 1. calculate size
 			// todo: change to structure_size call (?)
 			size_t size = 0;
@@ -2740,17 +2779,41 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
 					( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
 					( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
-					( stv == TFLOAT                   ) ? sizeof(float) :
-					( stv == TDOUBLE                  ) ? sizeof(double) : 0;
+					( stv == TFLOAT                   ) ? (floats++, sizeof(float)) :
+					( stv == TDOUBLE                  ) ? (doubles++, sizeof(double)) :
+					sizeof(word);
 				size = ((size + subsize - 1) & -subsize) + subsize;
+				count++;
 			}
 			// total size should be word aligned (to fit into registers and memory)
 			size = (size + sizeof(word)-1) & -sizeof(word);
 
 			int j = i;
-#if __LP64__ || __LLP64__
+#if __aarch64__
+			// two special cases for HFA structures
+			if (count == floats && floats < 5 && d + floats <= FRNC) {
+				for (word a = arg, c = 0; c < floats; c++) {
+					if (a == INULL)
+						break;
+					*(float*)&ad[d++] = OL2F(car(a)); a = cdr(a);
+				}
+				goto next_argument;
+			}
+			if (count == doubles && doubles < 5 && d + doubles <= FRNC) {
+				for (word a = arg, c = 0; c < doubles; c++) {
+					if (a == INULL)
+						break;
+					ad[d++] = OL2D(car(a)); a = cdr(a);
+				}
+				goto next_argument;
+			}
+
+			// well, not an HFA, let's check the size
 			if (size > 16) // should send using stack
-				j = max(i, 6, l);
+				j = max(i, GRNC);
+#elif __x86_64__
+			if (size > 16) // should send using stack
+				j = max(i, GRNC, l);
 			int general = 0; // 8-bit block should go to general register(s)
 #endif
 			char* ptr = (char*)&args[j];
@@ -2784,11 +2847,15 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 						break;
 #endif
 				}
-				if (offset >= sizeof(word)) { // пришло время сложить данные в регистр
+
+				if (offset >= sizeof(word)) { // пришло время "сложить" данные в регистр
 					assert (offset % sizeof(word) == 0);
-#if __LP64__ || __LLP64__
+#ifdef __aarch64__
+					j += offset / sizeof(word);
+					ptr += sizeof(word);
+#elif __LP64__ || __LLP64__
 					if (general || (size > 16)) { // в регистр общего назначения
-#if (__x86_64__ && (__unix__ || __APPLE__))						
+#if __x86_64__
 						j++; fpmask <<= 1;
 						ptr += 8;
 #else
@@ -2813,32 +2880,32 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #endif
 					offset %= sizeof(word);
 				}
-				// аргументы закончились
+				// аргументы закончились?
 				if (p == INULL)
 					break;
 				assert (a != INULL);
-				// если аргументов недостаточно, пушаем 0?
+				// если аргументов недостаточно запушим 0?
 				// word arg = (a != INULL) ? car(a) : I(0);
 
 				switch (stv) {
 					case TINT8:  case TUINT8: {
 						*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
-						offset += 1; IFN32(general = 1);
+						offset += sizeof(int8_t); IFx86_64(general = 1);
 						break;
 					}
 					case TINT16: case TUINT16: {
 						*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
-						offset += 2; IFN32(general = 1);
+						offset += sizeof(int16_t); IFx86_64(general = 1);
 						break;
 					}
 					case TINT32: case TUINT32: {
 						*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
-						offset += 4; IFN32(general = 1);
+						offset += sizeof(int32_t); IFx86_64(general = 1);
 						break;
 					}
 					case TINT64: case TUINT64: {
 						*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
-						offset += 8; IFN32(general = 1);
+						offset += sizeof(int64_t); IFx86_64(general = 1);
 #if __ILP32__
 						j++; ptr += 4; offset -= 4;
 #endif
@@ -2847,12 +2914,12 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 					case TFLOAT: {
 						*(float *)&ptr[offset] = OL2F(car(a));
-						offset += 4;
+						offset += sizeof(float);
 						break;
 					}
 					case TDOUBLE: {
 						*(double*)&ptr[offset] = OL2D(car(a));
-						offset += 8;
+						offset += sizeof(double);
 #ifdef __ILP32__
 						j++; ptr += 4; offset -= 4;
 #endif
@@ -2861,16 +2928,18 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				}
 			}
 
-#ifndef __ILP32__
+#if __x86_64__
 			if (size > 16 && i < 6)
 				l = j;
 			else
 #endif
 				i = j;
 
-			i--; // adjust i (because later we have i++);
+			if (offset == 0)
+				i--; // no data left, adjust i (because later we have i++);
 		}
 		i++;
+next_argument:
 		p = (word*)cdr(p);
 		t = (t == RNULL) ? t : (word*)cdr(t);
 	}
@@ -2899,7 +2968,10 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		got = x86_call(args, i, function, returntype & 0x3F);
 
 #elif __aarch64__
-		got = arm64_call(args, ad, i, d, extra, function, returntype & 0x3F, WALIGN(e));
+# if __APPLE__ // M1 .. MN
+		i += WALIGN(e);
+# endif
+		got = arm64_call(args, ad, i, d, NULL, function, returntype & 0x3F, 0);
 
 #elif __arm__
 	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
