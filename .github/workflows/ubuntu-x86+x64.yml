@@ -1,4 +1,4 @@
-name: build macos
+name: linux x86/x64
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
       - master
 
 jobs:
-  macos-build:
+  linux-build:
     strategy:
       matrix:
-        os: [ macos-13, macos-latest ] # intel, m1
+        os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository
@@ -17,6 +17,9 @@ jobs:
 
     - name: Update submodules
       run: 'git submodule update --init --recursive'
+
+    - name: Install gcc-multilib (32-bit support)
+      run: 'sudo apt update; sudo apt install gcc-multilib -y'
 
     - name: Build
       run: 'make; make describe'

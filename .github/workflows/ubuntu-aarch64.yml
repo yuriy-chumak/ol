@@ -1,4 +1,4 @@
-name: build aarch64
+name: linux aarch64
 
 on:
   push:

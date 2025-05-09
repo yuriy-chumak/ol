@@ -1,4 +1,4 @@
-name: crossbuild windows
+name: win32 + win64
 
 on:
   push:
@@ -9,7 +9,7 @@ jobs:
   win-build:
     strategy:
       matrix:
-        os: [ ubuntu-22.04 ]
+        os: [ ubuntu-latest ]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository

@@ -8,9 +8,10 @@
 ```
 *Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
 
-[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/build%20linux/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-linux.yml)
-[![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/build%20macos/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-macos.yml)
-[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/crossbuild%20windows/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/build-windows.yml)
+[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86%2Fx64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-x86+x64.yml)
+[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-aarch64.yml)
+[![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/macos%20intel%2Fm1/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m1.yml)
+[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win32%20%2B%20win64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 <a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
 
@@ -74,7 +75,10 @@ Q/A
 
 1. Q. *.. **fatal error**: stdlib.h: No such file or directory.*  
    Q. *.. **fatal error**: bits/libc-header-start.h: No such file or directory.*  
-   A. Install gcc `multilib`, i.e. *sudo apt install gcc-multilib*.
+   A. Install gcc `multilib`, i.e.
+      * *apt install gcc-multilib* for debian-based,
+      * *apk add musl-dev* for alpine-based,
+      * etc.
 
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
    A. Yes, you are free to choose an MIT or LGPL license.
