@@ -213,22 +213,6 @@ fast:
 minimal: CFLAGS += -DOLVM_FFI=0 -DHAVE_SOCKETS=1 -DHAVE_DLOPEN=0 -DHAVE_SANDBOX=0
 minimal: release
 
-# ffi test build
-ffi: CFLAGS += $(CFLAGS_TRACE)
-ffi: src/olvm.c extensions/ffi.c tests/ffi.c
-	$(CC) src/olvm.c -o $@ \
-	   extensions/ffi.c -Iincludes \
-	   tests/ffi.c \
-	   $(CFLAGS) $(L)
-	@echo Ok.
-ffi32: CFLAGS += $(CFLAGS_TRACE) -m32
-ffi32: src/olvm.c extensions/ffi.c tests/ffi.c
-	$(CC) src/olvm.c -o $@ \
-	   extensions/ffi.c -Iincludes \
-	   tests/ffi.c \
-	   $(CFLAGS) $(L)
-	@echo Ok.
-
 ## android build
 NDK_ROOT ?=/opt/android/ndk
 android: extensions/android/jni/*.c tmp/repl.c
@@ -342,6 +326,9 @@ MAKEFILE_MAIN=1
 -include tests/rosettacode/Makefile
 -include config/Makefile
 -include debian/Makefile
+
+# test targets
+-include extras/debug.mk
 
 # documentation samples check
 check: check-reference
