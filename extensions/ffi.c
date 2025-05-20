@@ -1547,10 +1547,16 @@ size_t string2ol(char* ptr, word string, char* (cpy)(char*,word))
 }
 
 static
+void not_a_type(char* tname)
+{
+	E("invalid parameter value (requested %s)", tname);
+}
+
+static
 char* not_a_string(char* ptr, word string)
 {
 	(void) string;
-	E("invalid parameter value (requested string)");
+	not_a_type("string");
 	return ptr;
 }
 
@@ -2602,10 +2608,10 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 						break;
 					}
 					default:
-						E("invalid parameter value (requested vptr)");
+						not_a_type("vptr");
 					}
 				else
-					E("invalid parameter value (requested vptr)");
+					not_a_type("vptr");
 				break;
 
 
@@ -2618,7 +2624,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					break;
 
 				default:
-					E("invalid parameter values (requested bytevector)");
+					not_a_type("bytevector");
 				}
 				break;
 
@@ -2636,7 +2642,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				if (is_callable(arg))
 					STORE(IDF, word, car(arg));
 				else
-					E("invalid parameter values (requested callable)");
+					not_a_type("callable");
 				break;
 			}
 
@@ -2708,7 +2714,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 							store_structure(&fp, payload, 0, car(arg), cdr(arg));
 						}
 						else
-							E("invalid parameter type (requested vptr*)");
+							not_a_type("vptr*");
 						break;
 					}
 					case TSTRING: {
