@@ -2818,8 +2818,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				j = max(i, GRNC);
 #elif __x86_64__
 			if (size > 16) // should send using stack
+			int integer = 0; // 8-bit block should go to general register(s)
 				j = max(i, GRNC, l);
-			int general = 0; // 8-bit block should go to general register(s)
 #endif
 			char* ptr = (char*)&args[j];
 			size_t offset = 0;
@@ -2859,11 +2859,11 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					j += offset / sizeof(word);
 					ptr += sizeof(word);
 #elif __LP64__ || __LLP64__
-					if (general || (size > 16)) { // в регистр общего назначения
 #if __x86_64__
 						j++; fpmask <<= 1;
 						ptr += 8;
 #else
+					if (integer || (size > 16)) { // в целочисленный регистр
 						j++; ptr += 8;
 #endif
 
@@ -2878,7 +2878,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 						fpmask |= 1;
 #endif
 					}
-					general = 0;
+					integer = 0;
 #else
 					j += offset / sizeof(word);
 					ptr += sizeof(word);
@@ -2895,25 +2895,25 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				switch (stv) {
 					case TINT8:  case TUINT8: {
 						*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
-						offset += sizeof(int8_t); IFx86_64(general = 1);
+						offset += sizeof(int8_t); IFx86_64(integer = 1);
 						break;
 					}
 					case TINT16: case TUINT16: {
 						*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
-						offset += sizeof(int16_t); IFx86_64(general = 1);
+						offset += sizeof(int16_t); IFx86_64(integer = 1);
 						break;
 					}
 					case TINT32: case TUINT32: {
 						*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
-						offset += sizeof(int32_t); IFx86_64(general = 1);
+						offset += sizeof(int32_t); IFx86_64(integer = 1);
 						break;
 					}
 					case TINT64: case TUINT64: {
 						*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
-						offset += sizeof(int64_t); IFx86_64(general = 1);
 #if __ILP32__
 						j++; ptr += 4; offset -= 4;
 #endif
+						offset += sizeof(int64_t); IFx86_64(integer = 1);
 						break;
 					}
 
