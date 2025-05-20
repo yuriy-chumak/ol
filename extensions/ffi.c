@@ -2797,10 +2797,10 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				}
 				count++;
 			}
-			// total size should be word aligned (to fit into registers and memory)
-			size = (size + sizeof(word)-1) & -sizeof(word);
+			TALIGN(size, word); // total size should be word aligned
 
 			int j = i;
+			char* ptr;
 #if __aarch64__
 			// two special cases for HFA structures
 			if (count == fs && fs < 5 && d + fs <= FRNC) {
@@ -2822,16 +2822,34 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			}
 
 			// well, not an HFA, let's check the size
-			if (size > 16) // should send using stack
+			if (size > 16) // should send using stack //?
 				j = max(i, GRNC);
 #elif __x86_64__
-			if (size > 16) // should send using stack
 			int integer = 0; // 8-bit block should go to general register(s)
+#	if __unix__ || __APPLE__
+			if (size > 16) // should send using stack //?
 				j = max(i, GRNC, l);
-#endif
-			char* ptr = (char*)&args[j];
-			size_t offset = 0;
+#	else // _WIN32
+			if (size >= 16) {
+				// the caller-allocated temporary memory must be 16-byte aligned
+				int size16 = (size + 15) & -16;
+				ptr = (char*)malloc(size16 + 16);
+				ptr = (char*)(((word)ptr + 15) & -16);
 
+				args[i] = (word) ptr;
+			}
+			else
+#	endif
+#elif __i386__
+			if (size > 16) {
+				ptr = alloca(size);
+				args[i] = (word) ptr;
+			}
+			else
+#endif
+			ptr = (char*)&args[j];
+
+			size_t offset = 0;
 			for (word p = car(t), a = arg; ; p = cdr(p), a = cdr(a)) {
 				word subtype = (p != INULL) ? car(p) : I(0);
 
@@ -2843,56 +2861,61 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 						// offset = offset;
 						break;
 					case TINT16: case TUINT16:
-						offset = (offset + 1) & -2;
+						TALIGN(offset, int16_t);
 						break;
 					case TINT32: case TUINT32:
 					case TFLOAT:
-#if __ILP32__
-					case TINT64: case TUINT64:
-					case TDOUBLE: case 0: // 0 means "no more arguments"
-#endif
-						offset = (offset + 3) & -4;
+						TALIGN(offset, int32_t);
 						break;
-#if __LP64__ || __LLP64__
 					case TINT64: case TUINT64:
-					case TDOUBLE: case 0: // 0 means "no more arguments"
-						offset = (offset + 7) & -8;
+					case TDOUBLE:
+	#if	__i386__ && __unix__
+						TALIGN(offset, int32_t);
+	#else // _WIN32
+						TALIGN(offset, int64_t);
+	#endif
 						break;
-#endif
+					case 0: // 0 means "no more arguments"
+						TALIGN(offset, word);
+						break;
 				}
 
+#if __i386__
+				if (size <= 16)
+#elif _WIN64
+				if (size < 16)
+#endif
 				if (offset >= sizeof(word)) { // пришло время "сложить" данные в регистр
 					assert (offset % sizeof(word) == 0);
 #ifdef __aarch64__
 					j += offset / sizeof(word);
 					ptr += sizeof(word);
 #elif __LP64__ || __LLP64__
-#if __x86_64__
-						j++; fpmask <<= 1;
-						ptr += 8;
-#else
 					if (integer || (size > 16)) { // в целочисленный регистр
+#	if __x86_64__ && (__unix__ || __APPLE__)
+						fpmask <<= 1;
+#	endif
 						j++; ptr += 8;
-#endif
 
 						// если добрались до стека, а он уже что-то содержит
 						if (j == 6 && l)
 							j = l;
 					}
 					else { // в регистр с плавающей запятой
-#if (__x86_64__ && (__unix__ || __APPLE__))
+#	if (__x86_64__ && (__unix__ || __APPLE__))
 						// move from ptr to the ad
 						*(int64_t*)&ad[d++] = args[j];
 						fpmask |= 1;
-#endif
+#	endif
 					}
 					integer = 0;
 #else
 					j += offset / sizeof(word);
-					ptr += sizeof(word);
+					ptr += offset / sizeof(word) * sizeof(word);
 #endif
 					offset %= sizeof(word);
 				}
+
 				// аргументы закончились?
 				if (p == INULL)
 					break;
@@ -2918,9 +2941,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					}
 					case TINT64: case TUINT64: {
 						*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
-#if __ILP32__
-						j++; ptr += 4; offset -= 4;
-#endif
 						offset += sizeof(int64_t); IFx86_64(integer = 1);
 						break;
 					}
@@ -2933,18 +2953,19 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					case TDOUBLE: {
 						*(double*)&ptr[offset] = OL2D(car(a));
 						offset += sizeof(double);
-#ifdef __ILP32__
-						j++; ptr += 4; offset -= 4;
-#endif
 						break;
 					}
 				}
 			}
 
-#if __x86_64__
+#if __x86_64__ && (__unix__ || __APPLE__)
 			if (size > 16 && i < 6)
 				l = j;
 			else
+#elif _WIN64
+			if (size < 16)
+#elif __i386__
+			if (size <= 16)
 #endif
 				i = j;
 

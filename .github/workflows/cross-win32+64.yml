@@ -1,4 +1,4 @@
-name: win32 + win64
+name: win32/win64
 
 on:
   push:

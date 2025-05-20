@@ -1,7 +1,7 @@
 ```
                   small,
         `___`         embeddable
-        (O,O)             and
+        (o,O)             and
         \)  )          purely
       ---"-"---     functional!
   O t u s   L i s p
@@ -11,7 +11,7 @@
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86%2Fx64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-x86+x64.yml)
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-aarch64.yml)
 [![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/macos%20intel%2Fm1/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m1.yml)
-[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win32%20%2B%20win64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
+[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win32%2fwin64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 <a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
 
@@ -30,7 +30,7 @@ to call code written in another language (c, python, lua, etc).
 
 You can use Ol on Linux, Windows, macOS, Android, Chromebook*,
 (Open/Free/Net) BSD, Solaris and other operating systems based
-on various hardware architectures (intel, arm, ppc, mips, etc).
+on various hardware architectures (x86, arm, ppc, mips, etc.).
 
 Also, Ol is ported to the web (in WebAssembly form) and can be
 used in Chrome, Safari, Firefox, Edge, Opera, etc.
