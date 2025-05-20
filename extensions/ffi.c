@@ -197,8 +197,7 @@
 typedef int64_t ret_t;
 
 #define IDF(...)   (__VA_ARGS__) // Identity function
-/* TODO: rename to TALIGN, typed align */
-#define ALIGN(ptr, type) \
+#define TALIGN(ptr, type) \
 	__builtin_choose_expr(sizeof(type) > 1, ptr = ((ptr + sizeof(type) - 1) & -sizeof(type)), (void)0)
 
 // ------------------------------------------------------------------------------------
@@ -2014,7 +2013,7 @@ size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 {
 	word *fp;
 	#define SAVE(type, conv) {\
-		ALIGN(ptr, type);\
+		TALIGN(ptr, type);\
 		*(type*)(memory+ptr) = (type)conv(v);\
 		ptr += sizeof(type); \
 	}
@@ -2027,7 +2026,7 @@ size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 				p = cdr(p);
 				switch (value(p)) {
 					case TSTRING:
-						ALIGN(ptr, char**);
+						TALIGN(ptr, char**);
 						fp = *ffp;
 						store_string_array(&fp, (char***)(memory+ptr), v);
 						*ffp = fp;
@@ -2066,7 +2065,7 @@ size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 				break;
 
 			case TSTRING:
-				ALIGN(ptr, char*);
+				TALIGN(ptr, char*);
 				fp = *ffp;
 				store_string(&fp, (char**)(memory+ptr), v);
 				*ffp = fp;
@@ -2094,7 +2093,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				p = cdr(p);
 				switch (value(p)) {
 					case TSTRING:
-						// ALIGN(ptr, char**);
+						// TALIGN(ptr, char**);
 						// fp = *ffp;
 						// store_string_array(&fp, (char***)(memory+ptr), v);
 						// *ffp = fp;
@@ -2111,7 +2110,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 			if (v != IFALSE) // don't restore unspecified data
 			switch (value(p)) {
 				#define LOAD(type)\
-					ALIGN(ptr, type);\
+					TALIGN(ptr, type);\
 					type value = *(type*)(memory+ptr);\
 					ptr += sizeof(type);
 				#define WRITEBACK(type) { \
@@ -2147,7 +2146,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 
 			case TSTRING:
 				//printf("s");
-				//ALIGN(ptr, char*);
+				//TALIGN(ptr, char*);
 				//fp = *ffp;
 				//store_string(&fp, (char**)(memory+ptr), v);
 				//*ffp = fp;
@@ -2342,7 +2341,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 		# if __APPLE__ /* m1 */
 		#define STORE_STCK(type, conv, arg) {\
-			ALIGN(e, type); \
+			TALIGN(e, type); \
 			*(type*)&extra[e] = (type) conv(arg);\
 			i-- /* adjust i (because later we have i++) */, e += sizeof(type);\
 		}
@@ -2745,7 +2744,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				// pointer to structure
 				assert (is_pair(cdr(tty)));
 				size_t size = structure_size(0, cdr(tty));
-				ALIGN(size, int); // structure's padding
+				TALIGN(size, int); // structure's padding
 				void* payload = alloca(size);
 				STORE(IDF, word, payload);
 				store_structure(&fp, payload, 0, cdr(tty), arg);
