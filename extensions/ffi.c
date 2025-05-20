@@ -2345,7 +2345,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		// 	i-- /* adjust i (because later we have i++) */, e += sizeof(type);
 		// }
 
-		# if __APPLE__ /* m1 */
+#	if __APPLE__ /* m1 */
 		#define STORE_STCK(type, conv, arg) {\
 			TALIGN(e, type); \
 			*(type*)&extra[e] = (type) conv(arg);\
@@ -2364,7 +2364,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
             } else \
 				*(type*)&ad[d++] = conv(arg), --i;\
 		})
-		# else
+#	else
 		#define STORE(conv, type, arg) ({\
 			args[i] = (word) conv (arg);\
 		})
@@ -2376,7 +2376,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				*(type*)&args[i] = conv(arg);\
 			} \
 		})
-		# endif
+#	endif
 
 		#define STORE_SERIALIZE(type, conv) {\
 				word ptr = 0; \
@@ -2581,11 +2581,9 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				break;
 			}
 
-			// vptr should accept only vptr!
 			// void*
 			case TVPTR:
 			tvptr:
-				// temporary. please, change to "if (is_reference(arg) && reference_type(arg) == TVPTR)"
 				if (is_reference(arg))
 					switch (reference_type(arg)) {
 					case TVPTR:
@@ -2760,12 +2758,12 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		//	- S -----------------------------------------------
 			assert(is_pair(arg)); // structure by value, must be defined
 			// pack structure into bytevector
-			// doto: move to the standalone function named `struct2ol`
+			// todo: move to the standalone function named `struct2ol`
 			// https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
 
 			// note the aarch64 special case:
-			//  if struct has 1..4 and only floats or has 1..4 and only
-			//  doubles then special parameter passing rule must be used
+			//  if struct has 1..4 only floats or has 1..4 only doubles
+			//  then special parameter passing rule must be used
 			ONLYaarch64
 			unsigned count = 0, floats = 0, doubles = 0; // ONLY aarch64
 
