@@ -1580,7 +1580,7 @@ word* make_string(char* vptr, olvm_t* this)
 	}
 
 	// memory check
-	unsigned words = WALIGN(len * (utf8q ? sizeof(word) : sizeof(char)));
+	unsigned words = WORDS(len * (utf8q ? sizeof(word) : sizeof(char)));
 	if (fp + words > heap->end) {
 		heap->fp = fp;
 		heap->gc(this, words);
@@ -1634,19 +1634,19 @@ word* make_string(char* vptr, olvm_t* this)
 // 		switch (value(tty)) {
 // 		case TSTRING+PTR: // todo: remove PTR?
 // 			while (arg != INULL) {
-// 				*total += WALIGN(rawstream_size(arg)+1); // 1 for '\0'
+// 				*total += WORDS(rawstream_size(arg)+1); // 1 for '\0'
 // 				arg = cdr(arg);
 // 			}
 // 			break;
 // 		case TSTRINGWIDE+PTR:
 // 			while (arg != INULL) {
-// 				*total += WALIGN(utf8_len(arg)+1);
+// 				*total += WORDS(utf8_len(arg)+1);
 // 				arg = cdr(arg);
 // 			}
 // 			break;
 // 		case TSTRINGDISPATCH+PTR:
 // 			while (arg != INULL) {
-// 				*total += WALIGN(number(ref(arg, 1))+1); // todo: decode all as utf8_len and use FAST_STRING_CALC macro
+// 				*total += WORDS(number(ref(arg, 1))+1); // todo: decode all as utf8_len and use FAST_STRING_CALC macro
 // 				arg = cdr(arg);
 // 			}
 // 			break;
@@ -1769,7 +1769,7 @@ size_t pointer_calc(word args, word rtty, size_t* total)
 					size = reference_size(args);
 					break;
 			}
-			*total += WALIGN(size * subsize);
+			*total += WORDS(size * subsize);
 		}
 	}
 	else
@@ -2239,7 +2239,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		value(caar(B)) == TBYTEVECTOR)
 		// && value(cdar(B)) > sizeof(ret_t) // commented for speedup
 	{
-		total += WALIGN(value(cdar(B))) + 1;
+		total += WORDS(value(cdar(B))) + 1;
 	}
 
 	// ------------------------------------------------
@@ -2969,7 +2969,7 @@ next_argument:
 
 #elif __aarch64__
 # if __APPLE__ // M1 .. MN
-		i += WALIGN(e);
+		i += WORDS(e);
 # endif
 		got = arm64_call(args, ad, i, d, NULL, function, returntype & 0x3F, 0);
 

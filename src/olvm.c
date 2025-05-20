@@ -310,8 +310,8 @@ object_t
 
 #define W                           (sizeof (word))
 
-#define WALIGN(x)                   (((x) + W - 1) / W)
-#define WPADS(x)                    (WALIGN(x) * W - x) // (W - (x % W));
+#define WORDS(x)                    (((x) + W - 1) / W)
+#define WPADS(x)                    (WORDS (x) * W - x) // (W - (x % W));
 
 // V means Value
 typedef word V;
@@ -405,7 +405,7 @@ typedef word* R;
 #define is_npairn(ob)               (is_reference(ob) && (*(word*) (ob)) == make_header(TINTN,     3))
 #define is_rational(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TRATIONAL, 3))
 #define is_complex(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TCOMPLEX,  3))
-#define is_inexact(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TINEXACT,  1+WALIGN(sizeof(inexact_t)), WPADS(sizeof(inexact_t))))
+#define is_inexact(ob)              (is_reference(ob) && (*(word*) (ob)) == make_header(TINEXACT,  1 + WORDS(sizeof(inexact_t)), WPADS(sizeof(inexact_t))))
 
 #define is_string(ob)               (is_reference(ob) && reference_type (ob) == TSTRING)
 #define is_vector(ob)               (is_reference(ob) && reference_type (ob) == TVECTOR)
@@ -530,7 +530,7 @@ word*_b = NEW (size);\
 // allocate raw memory block
 #define new_alloc(type, length) ({\
 	int _size = (length);\
-	int _words = WALIGN(_size);\
+	int _words = WORDS(_size);\
 	int _pads = WPADS(_size);\
 	\
 word* p = new (type, _words, _pads);\
@@ -4066,7 +4066,7 @@ loop:;
 						count = ((heap->end - fp) - 1) * sizeof(word);
 				}
 
-				unsigned words = WALIGN(count) + 1; // in words
+				unsigned words = WORDS(count) + 1; // in words
 				if (fp + words > heap->end) {
 					GC(words);
 				}
@@ -4571,7 +4571,7 @@ loop:;
 					count = p - address;
 				}
 
-				unsigned words = WALIGN(count) + 1; // in words
+				unsigned words = WORDS(count) + 1; // in words
 				if (fp + words > heap->end) {
 					GC(words);
 				}
