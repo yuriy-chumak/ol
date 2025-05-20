@@ -2765,7 +2765,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			//  if struct has 1..4 only floats or has 1..4 only doubles
 			//  then special parameter passing rule must be used
 			ONLYaarch64
-			unsigned count = 0, floats = 0, doubles = 0; // ONLY aarch64
+			unsigned count = 0, fs = 0, ds = 0; // ONLY aarch64
 
 			// 1. calculate size
 			// todo: change to structure_size call (?)
@@ -2777,15 +2777,24 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				assert (is_value(subtype));
 				word stv = value(subtype);
 				// внутриструктурное выравнивание (по умолчанию)
-				size_t subsize = // todo: speedup use table
-					( stv == TINT8  || stv == TUINT8  ) ? sizeof(int8_t) :
-					( stv == TINT16 || stv == TUINT16 ) ? sizeof(int16_t) :
-					( stv == TINT32 || stv == TUINT32 ) ? sizeof(int32_t) :
-					( stv == TINT64 || stv == TUINT64 ) ? sizeof(int64_t) :
-					( stv == TFLOAT                   ) ? (floats++, sizeof(float)) :
-					( stv == TDOUBLE                  ) ? (doubles++, sizeof(double)) :
-					sizeof(word);
-				size = ((size + subsize - 1) & -subsize) + subsize;
+				switch (stv) {
+					case TINT8: case TUINT8:
+						size += sizeof(int8_t);  break;
+					case TINT16: case TUINT16:
+						TALIGN(size, int16_t); size += sizeof(int16_t);  break;
+					case TFLOAT:
+						fs++; // fall through
+					case TINT32: case TUINT32:
+						TALIGN(size, int32_t); size += sizeof(int32_t);  break;
+					case TDOUBLE:
+						ds++; // fall through
+					case TINT64: case TUINT64:
+	#if	__i386__ && __unix__
+						TALIGN(size, int32_t); size += sizeof(int64_t);  break;
+	#else
+						TALIGN(size, int64_t); size += sizeof(int64_t);  break;
+	#endif
+				}
 				count++;
 			}
 			// total size should be word aligned (to fit into registers and memory)
@@ -2794,16 +2803,17 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			int j = i;
 #if __aarch64__
 			// two special cases for HFA structures
-			if (count == floats && floats < 5 && d + floats <= FRNC) {
-				for (word a = arg, c = 0; c < floats; c++) {
+			if (count == fs && fs < 5 && d + fs <= FRNC) {
+				for (word a = arg, c = 0; c < fs; c++) {
 					if (a == INULL)
 						break;
-					*(float*)&ad[d++] = OL2F(car(a)); a = cdr(a);
+					*(float*)&
+					ad[d++] = OL2F(car(a)); a = cdr(a);
 				}
 				goto next_argument;
 			}
-			if (count == doubles && doubles < 5 && d + doubles <= FRNC) {
-				for (word a = arg, c = 0; c < doubles; c++) {
+			if (count == ds && ds < 5 && d + ds <= FRNC) {
+				for (word a = arg, c = 0; c < ds; c++) {
 					if (a == INULL)
 						break;
 					ad[d++] = OL2D(car(a)); a = cdr(a);
