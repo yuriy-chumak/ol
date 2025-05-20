@@ -2664,6 +2664,7 @@ static //__attribute__((aligned(8)))
 word runtime(struct olvm_t* ol)
 {
 	heap_t* heap = &ol->heap; // global vm heap
+
 	word *fp = heap->fp; // memory allocation pointer
 	word *reg = ol->reg; // virtual machine registers
 
@@ -2683,7 +2684,7 @@ word runtime(struct olvm_t* ol)
 #	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
 
 	// error handling optimized variables
-	register word r3,r4,r5,r6;
+	word r3,r4,r5,r6;
 
 #ifdef DEBUG_COUNT_OPS
     bzero(ops, sizeof(ops));
@@ -5737,7 +5738,6 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 #ifdef OLVM_INEXACTS
 			// inexact numbers
 			if (type == TINEXACT) { // assert (size == 4 || size == 8)
-				unsigned char *p;
 				inexact_t t;
 // is it a big-endian target architecture?
 #if (defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN) || \
@@ -5746,7 +5746,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
     (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIBSEB) || defined(__MIBSEB) || defined(__MIBSEB__))
 				// assert size == 4 || size == 8
 				int s = size;
-				p = fp + size;
+				unsigned char *p = fp + size;
 				while (size--)
 					p[size] = *hp++;
 				t = (size == 4) ? *(float*)fp : *(double*)fp;
@@ -5762,8 +5762,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 #	error "Unknown target endianness arcitecture"
 #endif
 				size = sizeof(inexact_t); // new size
-				int words = WALIGN(size);
-				p = (unsigned char*)&car(new (type, words, WPADS(size)));
+				unsigned char *p = (unsigned char*)&ref(new_alloc(type, size), 1);
 
 				*(inexact_t*)p = t;
 			}
