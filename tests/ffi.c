@@ -634,6 +634,7 @@ STRUCT2DECL(d, double, "%f")
 // -----------------------------------------------------------------------------------
 #include <stdarg.h>
 
+PUBLIC
 int format(const char *format, ...)
 {
     va_list ap;
@@ -688,6 +689,7 @@ struct args_t
 };
 
 #include <stdio.h>
+PUBLIC
 void debug_args(struct args_t* args)
 {
 	fflush(stdout);
@@ -717,6 +719,7 @@ struct csicisc_t
 	char c3;
 };
 
+PUBLIC
 void debug_csicisc(struct csicisc_t* var)
 {
 	fflush(stdout);
@@ -756,6 +759,7 @@ void debug_csicisc(struct csicisc_t* var)
 // ptr to integers
 #define iptr(type,name,data) \
 type name = data;\
+PUBLIC \
 void* name##_ptr() {\
 	return &name;\
 }
