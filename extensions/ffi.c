@@ -2896,14 +2896,10 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #endif
 				if (offset >= sizeof(word)) { // пришло время "сложить" данные в регистр
 					assert (offset % sizeof(word) == 0);
-#ifdef __aarch64__
-					j += offset / sizeof(word);
-					ptr += offset / sizeof(word) * sizeof(word);
-#elif __x86_64__ //__LP64__ || __LLP64__ // todo: change this
+
+#if __x86_64__ && (__unix__ || __APPLE__)
 					if (integer || (size > 16)) { // в целочисленный регистр
-#	if (__unix__ || __APPLE__)
 						fpmask <<= 1;
-#	endif
 						j++; ptr += 8;
 
 						// если добрались до стека, а он уже что-то содержит
@@ -2911,11 +2907,9 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 							j = l;
 					}
 					else { // в регистр с плавающей запятой
-#	if (__unix__ || __APPLE__)
 						// move from ptr to the ad
 						*(int64_t*)&ad[d++] = args[j];
 						fpmask |= 1;
-#	endif
 					}
 					integer = 0;
 #else
