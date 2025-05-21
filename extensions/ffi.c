@@ -2764,6 +2764,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			// note the aarch64 special case:
 			//  if struct has 1..4 only floats or has 1..4 only doubles
 			//  then special parameter passing rule must be used
+			// https://github.com/ARM-software/abi-aa/blob/main/aapcs64/aapcs64.rst#parameter-passing-rules
 			ONLYaarch64
 			unsigned count = 0, fs = 0, ds = 0; // ONLY aarch64
 
@@ -2797,6 +2798,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 				}
 				count++;
 			}
+			// todo: align for aarch64 for 8 bytes
 			TALIGN(size, word); // total size should be word aligned
 
 			int j = i;
@@ -2822,8 +2824,19 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			}
 
 			// well, not an HFA, let's check the size
-			if (size > 16) // should send using stack //?
-				j = max(i, GRNC);
+			// if (size > 16) { // should send using stack //?
+			// 	j = max(i, GRNC);
+			// 	//d = max(d, FRNC);
+			// }
+
+			// If the argument type is a Composite Type that is larger than 16 bytes,
+			// then the argument is copied to memory allocated by the caller and the
+			// argument is replaced by a pointer to the copy.
+			if (size > 16) {
+				ptr = (char*) alloca(size);
+				args[i] = (word) ptr;
+			}
+			else
 #elif __x86_64__
 			int integer = 0; // 8-bit block should go to general register(s)
 #	if __unix__ || __APPLE__
@@ -2875,6 +2888,9 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 						break;
 				}
 
+#if __aarch64__
+				if (size <= 16)
+#endif
 #if _WIN64
 				if (size < 16)
 #endif
@@ -2882,10 +2898,10 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					assert (offset % sizeof(word) == 0);
 #ifdef __aarch64__
 					j += offset / sizeof(word);
-					ptr += sizeof(word);
-#elif __LP64__ || __LLP64__
+					ptr += offset / sizeof(word) * sizeof(word);
+#elif __x86_64__ //__LP64__ || __LLP64__ // todo: change this
 					if (integer || (size > 16)) { // в целочисленный регистр
-#	if __x86_64__ && (__unix__ || __APPLE__)
+#	if (__unix__ || __APPLE__)
 						fpmask <<= 1;
 #	endif
 						j++; ptr += 8;
@@ -2895,7 +2911,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 							j = l;
 					}
 					else { // в регистр с плавающей запятой
-#	if (__x86_64__ && (__unix__ || __APPLE__))
+#	if (__unix__ || __APPLE__)
 						// move from ptr to the ad
 						*(int64_t*)&ad[d++] = args[j];
 						fpmask |= 1;
