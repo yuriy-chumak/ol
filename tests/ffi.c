@@ -611,8 +611,11 @@ struct name \
 PUBLIC \
 int name ## 2i(struct name a)\
 {\
-	printf(" = { " format " } -> ", a.x, a.y); fflush(stdout);\
-	return a.x + a.y;\
+	int out; \
+	printf(" = { " format " } -> ", a.x, a.y);\
+	out = a.x + a.y;\
+	printf("%d", out);  fflush(stdout);\
+	return out;\
 }
 
 #define STRUCT2DECL(name, type, format) \
@@ -630,7 +633,45 @@ STRUCT2DECL(q, long long, "%lld")
 STRUCT2DECL(f, float, "%f")
 STRUCT2DECL(d, double, "%f")
 
+// ---
+#define PRESTRUCT2(name, pretype, type1, type2, format) \
+struct name \
+{\
+	type1 x;\
+	type2 y;\
+};\
+PUBLIC \
+int name ## 2i(pretype pre, struct name a)\
+{\
+	int out; \
+	printf(" = { " format " } -> ", pre, a.x, a.y);\
+	out = pre + a.x + a.y;\
+	printf("%d", out);  fflush(stdout);\
+	return out;\
+}
 
+#define PRESTRUCT2DECL(name, pretype, type, format) \
+PRESTRUCT2(name ## c_, pretype, type, char, format " " "%d")\
+PRESTRUCT2(name ## s_, pretype, type, short, format " " "%d")\
+PRESTRUCT2(name ## i_, pretype, type, int, format " " "%d")\
+PRESTRUCT2(name ## q_, pretype, type, long long, format " " "%lld")\
+PRESTRUCT2(name ## f_, pretype, type, float, format " " "%f")\
+PRESTRUCT2(name ## d_, pretype, type, double, format " " "%f")
+
+#define PRESTRUCT2DECLDECL(name, pretype, format) \
+PRESTRUCT2DECL(_ ## name ## _ ## c, pretype, char,      format " " "%d") \
+PRESTRUCT2DECL(_ ## name ## _ ## s, pretype, short,     format " " "%d") \
+PRESTRUCT2DECL(_ ## name ## _ ## i, pretype, int,       format " " "%d") \
+PRESTRUCT2DECL(_ ## name ## _ ## q, pretype, long long, format " " "%lld") \
+PRESTRUCT2DECL(_ ## name ## _ ## f, pretype, float,     format " " "%f") \
+PRESTRUCT2DECL(_ ## name ## _ ## d, pretype, double,    format " " "%f")
+
+PRESTRUCT2DECLDECL(c, char, "%d")
+PRESTRUCT2DECLDECL(s, short, "%d")
+PRESTRUCT2DECLDECL(i, int, "%d")
+PRESTRUCT2DECLDECL(q, long long, "%lld")
+PRESTRUCT2DECLDECL(f, float, "%f")
+PRESTRUCT2DECLDECL(d, double, "%f")
 // -----------------------------------------------------------------------------------
 #include <stdarg.h>
 
