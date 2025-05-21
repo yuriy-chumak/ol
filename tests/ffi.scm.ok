@@ -424,7 +424,7 @@ int function(struct { type x, type y } a)
    _df_2i ((1 2))> = { 1.000000 2.000000 } -> 3 = 3
    _dd_2i ((1 2))> = { 1.000000 2.000000 } -> 3 = 3
 
-// (small) structure by value:
+// (small) structure by value with regular var before:
 int function(type a, struct { type x, type y } b)
 {
    return a + b.x + b.y;
@@ -645,6 +645,18 @@ int function(type a, struct { type x, type y } b)
    _d_dq_2i (1 (2 3))> = { 1.000000 2.000000 3 } -> 6 = 6
    _d_df_2i (1 (2 3))> = { 1.000000 2.000000 3.000000 } -> 6 = 6
    _d_dd_2i (1 (2 3))> = { 1.000000 2.000000 3.000000 } -> 6 = 6
+
+// (large) structure by value:
+int function(struct { type x1, ..., type x9 } a)
+{
+   return a.x1 + ... + a.x9;
+}
+   _ccccccccc_9i ((1 2 3 4 5 6 7 8 9))> = { 1 2 3 4 5 6 7 8 9 } -> 45 = 45
+   _sssssssss_9i ((1 2 3 4 5 6 7 8 9))> = { 1 2 3 4 5 6 7 8 9 } -> 45 = 45
+   _iiiiiiiii_9i ((1 2 3 4 5 6 7 8 9))> = { 1 2 3 4 5 6 7 8 9 } -> 45 = 45
+   _qqqqqqqqq_9i ((1 2 3 4 5 6 7 8 9))> = { 1 2 3 4 5 6 7 8 9 } -> 45 = 45
+   _fffffffff_9i ((1 2 3 4 5 6 7 8 9))> = { 1.000000 2.000000 3.000000 4.000000 5.000000 6.000000 7.000000 8.000000 9.000000 } -> 45 = 45
+   _ddddddddd_9i ((1 2 3 4 5 6 7 8 9))> = { 1.000000 2.000000 3.000000 4.000000 5.000000 6.000000 7.000000 8.000000 9.000000 } -> 45 = 45
 
 // qualified '(type . ...) for fft-any to type test:
 type function(type arg)

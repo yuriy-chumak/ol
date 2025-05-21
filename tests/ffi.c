@@ -672,6 +672,38 @@ PRESTRUCT2DECLDECL(i, int, "%d")
 PRESTRUCT2DECLDECL(q, long long, "%lld")
 PRESTRUCT2DECLDECL(f, float, "%f")
 PRESTRUCT2DECLDECL(d, double, "%f")
+
+// -- large structs
+#define STRUCT8(name, type, format) \
+struct name \
+{\
+	type x1;\
+	type x2;\
+	type x3;\
+	type x4;\
+	type x5;\
+	type x6;\
+	type x7;\
+	type x8;\
+	type x9;\
+};\
+PUBLIC \
+int name ## _9i(struct name a)\
+{\
+	int out; \
+	printf(" = { " format " " format " " format " " format " " format " " format " " format " " format " " format " } -> ", a.x1, a.x2, a.x3, a.x4, a.x5, a.x6, a.x7, a.x8, a.x9);\
+	out = a.x1 + a.x2 + a.x3 + a.x4 + a.x5 + a.x6 + a.x7 + a.x8 + a.x9;\
+	printf("%d", out);  fflush(stdout);\
+	return out;\
+}
+
+STRUCT8(_ccccccccc, char, "%d")
+STRUCT8(_sssssssss, short, "%d")
+STRUCT8(_iiiiiiiii, int, "%d")
+STRUCT8(_qqqqqqqqq, long long, "%lld")
+STRUCT8(_fffffffff, float, "%f")
+STRUCT8(_ddddddddd, double, "%f")
+
 // -----------------------------------------------------------------------------------
 #include <stdarg.h>
 
