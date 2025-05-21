@@ -2791,7 +2791,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					case TINT64: case TUINT64:
 	#if	__i386__ && __unix__
 						TALIGN(size, int32_t); size += sizeof(int64_t);  break;
-	#else
+	#else // _WIN32, _WIN64, aarch64, etc.
 						TALIGN(size, int64_t); size += sizeof(int64_t);  break;
 	#endif
 				}
@@ -2829,23 +2829,18 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 #	if __unix__ || __APPLE__
 			if (size > 16) // should send using stack //?
 				j = max(i, GRNC, l);
-#	else // _WIN32
+#	endif
+#	if _WIN64
 			if (size >= 16) {
-				// the caller-allocated temporary memory must be 16-byte aligned
-				int size16 = (size + 15) & -16;
-				ptr = (char*)malloc(size16 + 16);
-				ptr = (char*)(((word)ptr + 15) & -16);
-
+				// the caller-allocated temporary memory must be 16-byte aligned (?)
+				// int size16 = (size + 15) & -16;
+				// ptr = (char*)alloca(size16 + 16);
+				// ptr = (char*)(((word)ptr + 15) & -16);
+				ptr = (char*) alloca(size);
 				args[i] = (word) ptr;
 			}
 			else
 #	endif
-#elif __i386__
-			if (size > 16) {
-				ptr = alloca(size);
-				args[i] = (word) ptr;
-			}
-			else
 #endif
 			ptr = (char*)&args[j];
 
@@ -2871,7 +2866,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					case TDOUBLE:
 	#if	__i386__ && __unix__
 						TALIGN(offset, int32_t);
-	#else // _WIN32
+	#else // _WIN32, _WIN64, aarch64, etc.
 						TALIGN(offset, int64_t);
 	#endif
 						break;
@@ -2880,9 +2875,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 						break;
 				}
 
-#if __i386__
-				if (size <= 16)
-#elif _WIN64
+#if _WIN64
 				if (size < 16)
 #endif
 				if (offset >= sizeof(word)) { // пришло время "сложить" данные в регистр
@@ -2964,8 +2957,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			else
 #elif _WIN64
 			if (size < 16)
-#elif __i386__
-			if (size <= 16)
 #endif
 				i = j;
 
