@@ -541,6 +541,43 @@ int function(struct { type x, type y } a)
    (list    "c"      "s"       "i"     "q"           "f"       "d")
    (list fft-char fft-short fft-int fft-long-long fft-float fft-double))
 
+(print "
+// (small) structure by value with regular var before:
+int function(type a, struct { type x, type y } b)
+{
+   return a + b.x + b.y;
+}")
+(for-each (lambda (prename pretype)
+      (for-each (lambda (name type)
+               (for-each (lambda (subname subtype)
+                     (define realname (string-append "_" prename "_" name subname "_2i"))
+                     (define function (this fft-int realname pretype (list type subtype)))
+                     (for-each (lambda (arg)
+                           (apply try (cons* realname function arg)))
+                        (list '(1 (2 3)))))
+                  (list    "c"      "s"       "i"     "q"           "f"       "d")
+                  (list fft-char fft-short fft-int fft-long-long fft-float fft-double)) )
+         (list    "c"      "s"       "i"     "q"           "f"       "d")
+         (list fft-char fft-short fft-int fft-long-long fft-float fft-double)) )
+   (list    "c"      "s"       "i"     "q"           "f"       "d")
+   (list fft-char fft-short fft-int fft-long-long fft-float fft-double))
+
+; struct by value
+(print "
+// (large) structure by value:
+int function(struct { type x1, ..., type x9 } a)
+{
+   return a.x1 + ... + a.x9;
+}")
+(for-each (lambda (subname subtype)
+      (define realname (string-append "_" subname subname subname subname subname subname subname subname subname "_9i"))
+      (define function (this fft-int realname (list subtype subtype subtype subtype subtype subtype subtype subtype subtype)))
+      (for-each (lambda (arg)
+            (try realname function arg))
+         '((1 2 3 4 5 6 7 8 9))))
+   (list    "c"      "s"       "i"     "q"           "f"       "d")
+   (list fft-char fft-short fft-int fft-long-long fft-float fft-double))
+
 ;; ;; ; ----------------------------------------------------------------
 ;; ;; ;(print "returning a structure test:")
 ;; ;; ;

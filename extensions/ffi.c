@@ -2764,6 +2764,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			// note the aarch64 special case:
 			//  if struct has 1..4 only floats or has 1..4 only doubles
 			//  then special parameter passing rule must be used
+			// https://github.com/ARM-software/abi-aa/blob/main/aapcs64/aapcs64.rst#parameter-passing-rules
 			ONLYaarch64
 			unsigned count = 0, fs = 0, ds = 0; // ONLY aarch64
 
@@ -2791,12 +2792,13 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					case TINT64: case TUINT64:
 	#if	__i386__ && __unix__
 						TALIGN(size, int32_t); size += sizeof(int64_t);  break;
-	#else
+	#else // _WIN32, _WIN64, aarch64, etc.
 						TALIGN(size, int64_t); size += sizeof(int64_t);  break;
 	#endif
 				}
 				count++;
 			}
+			// todo: align for aarch64 for 8 bytes
 			TALIGN(size, word); // total size should be word aligned
 
 			int j = i;
@@ -2822,30 +2824,36 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			}
 
 			// well, not an HFA, let's check the size
-			if (size > 16) // should send using stack //?
-				j = max(i, GRNC);
+			// if (size > 16) { // should send using stack //?
+			// 	j = max(i, GRNC);
+			// 	//d = max(d, FRNC);
+			// }
+
+			// If the argument type is a Composite Type that is larger than 16 bytes,
+			// then the argument is copied to memory allocated by the caller and the
+			// argument is replaced by a pointer to the copy.
+			if (size > 16) {
+				ptr = (char*) alloca(size);
+				args[i] = (word) ptr;
+			}
+			else
 #elif __x86_64__
 			int integer = 0; // 8-bit block should go to general register(s)
 #	if __unix__ || __APPLE__
 			if (size > 16) // should send using stack //?
 				j = max(i, GRNC, l);
-#	else // _WIN32
+#	endif
+#	if _WIN64
 			if (size >= 16) {
-				// the caller-allocated temporary memory must be 16-byte aligned
-				int size16 = (size + 15) & -16;
-				ptr = (char*)malloc(size16 + 16);
-				ptr = (char*)(((word)ptr + 15) & -16);
-
+				// the caller-allocated temporary memory must be 16-byte aligned (?)
+				// int size16 = (size + 15) & -16;
+				// ptr = (char*)alloca(size16 + 16);
+				// ptr = (char*)(((word)ptr + 15) & -16);
+				ptr = (char*) alloca(size);
 				args[i] = (word) ptr;
 			}
 			else
 #	endif
-#elif __i386__
-			if (size > 16) {
-				ptr = alloca(size);
-				args[i] = (word) ptr;
-			}
-			else
 #endif
 			ptr = (char*)&args[j];
 
@@ -2871,7 +2879,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 					case TDOUBLE:
 	#if	__i386__ && __unix__
 						TALIGN(offset, int32_t);
-	#else // _WIN32
+	#else // _WIN32, _WIN64, aarch64, etc.
 						TALIGN(offset, int64_t);
 	#endif
 						break;
@@ -2880,21 +2888,18 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 						break;
 				}
 
-#if __i386__
+#if __aarch64__
 				if (size <= 16)
-#elif _WIN64
+#endif
+#if _WIN64
 				if (size < 16)
 #endif
 				if (offset >= sizeof(word)) { // пришло время "сложить" данные в регистр
 					assert (offset % sizeof(word) == 0);
-#ifdef __aarch64__
-					j += offset / sizeof(word);
-					ptr += sizeof(word);
-#elif __LP64__ || __LLP64__
+
+#if __x86_64__ && (__unix__ || __APPLE__)
 					if (integer || (size > 16)) { // в целочисленный регистр
-#	if __x86_64__ && (__unix__ || __APPLE__)
 						fpmask <<= 1;
-#	endif
 						j++; ptr += 8;
 
 						// если добрались до стека, а он уже что-то содержит
@@ -2902,11 +2907,9 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 							j = l;
 					}
 					else { // в регистр с плавающей запятой
-#	if (__x86_64__ && (__unix__ || __APPLE__))
 						// move from ptr to the ad
 						*(int64_t*)&ad[d++] = args[j];
 						fpmask |= 1;
-#	endif
 					}
 					integer = 0;
 #else
@@ -2964,8 +2967,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 			else
 #elif _WIN64
 			if (size < 16)
-#elif __i386__
-			if (size <= 16)
 #endif
 				i = j;
 
