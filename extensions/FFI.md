@@ -28,7 +28,7 @@ you can get type name for any type value using `typename` function (`(typename 3
 
 * no *half precision floating point* support yet,
 * no *quad-word integer* support yet,
-* no *unions* in *structures* support yet.
+* no *unions* support yet.
 
 ## TOC
 * [Basic example](#basic-example)

@@ -20,27 +20,31 @@ Otus Lisp, Version 2.6
 ======================
 [![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
 
-Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
+Otus Lisp (Ol in short) is a purely functional, multi-platform Lisp dialect with built-in FFI, regular expressions and infix math notation support.
 
 Ol implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
-but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
+but not limited to some SRFIs. It is tiny (~ 64KB), embeddable,
 and cross-platform;  provides a portable, high-level interface
 to call code written in another language (c, python, lua, etc).
+You can call native OS functions directly from your Ol program.
 
 You can use Ol on Linux, Windows, macOS, Android, Chromebook*,
 (Open/Free/Net) BSD, Solaris and other operating systems based
-on various hardware architectures (x86, arm, ppc, mips, etc.).
+on various hardware architectures (x86, arm, ppc, mips, etc.),
+and directly in the web browsers (in WebAssembly form).
 
-Also, Ol is ported to the web (in WebAssembly form) and can be
-used in Chrome, Safari, Firefox, Edge, Opera, etc.
+* [TOC](#table-of-contents)
+* [Otus Lisp Language Reference](doc/reference/README.md)
+* [FFI Examples](#ffi)
 
-* credits to:
+credits to
+----------
 [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests),
 [nullscm](https://github.com/nullscm) (usage, tests),
 Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
-* note: please check the [differences](#r7rs-differences) between Ol and Scheme R<sup>7</sup>RS.
+
 
 
 PACKAGING
@@ -59,7 +63,7 @@ PACKAGING
 
 * ~~**CentOS**, **Debian**, **openSUSE**, **RHEL**, **SL**, **SLE**, **Ubuntu**, **Univention** precompiled packages: [OpenSUSE Build Service](https://software.opensuse.org/download.html?project=home%3Ayuriy-chumak&package=ol).~~
 
-Some additional libraries can be installed using 'kiss' package manager. Usage instruction available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
+Some additional libraries can be installed using 'kiss' package manager. Instructions available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
 
 
 Q/A
@@ -76,8 +80,8 @@ Q/A
 1. Q. *.. **fatal error**: stdlib.h: No such file or directory.*  
    Q. *.. **fatal error**: bits/libc-header-start.h: No such file or directory.*  
    A. Install gcc `multilib`, i.e.
-      * *apt install gcc-multilib* for debian-based,
-      * *apk add musl-dev* for alpine-based,
+      * `apt install gcc-multilib` for debian-based,
+      * `apk add musl-dev` for alpine-based,
       * etc.
 
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
@@ -93,10 +97,10 @@ Q/A
       change `ol` to `ol - --port 8080` to use the custom port.
 
 1. Q. Why do you call the characters not "characters" but "runes"?  
-   A. Because they are *runes* - letters in a wide set of alphabets :)  
+   A. Because they are *runes* - universal naming for letters for a wide set of alphabets.
 
 1. Q. Do you have something like "sleep mode"?  
-   A. You can store the current REPL session with `,save "filename"`, just run later `ol filename` to continue saved session.
+   A. You can store the current REPL session with `,save "filename"` and exit Ol. Then just run `ol filename` later to continue the saved session.
 
 1. Q. I'm lost in prefix math notation, can you help me?  
    A. Ol has a special math library that provides infix math notation. Use the `(math infix-notation)` library.  
@@ -125,16 +129,18 @@ Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (
 
 TABLE OF CONTENTS
 -----------------
+1. [Packaging](#packaging)
 1. [Build/Run/Install](#build--run--install)
    * [Advanced](doc/BUILD.md)
    * [Cross-Compilation](doc/CROSS-COMPILATION.md)
    * [Embedding](#embedding-ol)
-1. [Packaging](#packaging)
 1. [Running](#running)
 1. [Language Reference](doc/reference/README.md)
    * [R<sup>7</sup>RS Differences](#r7rs-differences)
    * [Samples, Tests, Learning](#learning)
-1. [Deprecations](#deprecations)
+   * [Deprecations](#deprecations)
+1. [FFI](#ffi)
+   * [Advanced](extensions/FFI.md)
 1. [Hacking](#hacking)
 1. [Lisp sources in binary form](#binary-scripts)
 1. [Files](#files), [Docs](#documentation)
@@ -279,6 +285,36 @@ DEPRECATIONS
   - `(interact ...)` from (owl ~~interop~~ async) is deprecated. Use `(await (mail ...))` instead.
   - `(fork ...)`, `(fork-named ...)`, `(fork-server ...)` is deprecated. Use `(async ...)`, `(async 'name ...)`, `(actor ...)` instead.
 
+
+FFI
+---
+
+Using external "asin" function instead of built-in one:
+```scheme
+; import ffi library
+> (import (otus ffi))
+
+; load binary shared module (so or dll)
+> (define LIBM (load-dynamic-library "libm.so.6"))
+
+; declare external function prototype
+> (define asin (LIBM fft-double "asin" fft-double))
+
+; use the external function
+> (print (asin 0.5))
+0.523598775
+```
+
+Windows UI example:
+```scheme
+> (import (otus ffi))
+> (define USER32 (load-dynamic-library "user32"))
+> (define MessageBox (USER32 fft-int "MessageBoxA" type-vptr type-string type-string fft-int))
+
+; use the external function
+> (MessageBox #f "hello world" "message box" 1)
+1  ; 2 if you clicked "Cancel"
+```
 
 HACKING
 -------
