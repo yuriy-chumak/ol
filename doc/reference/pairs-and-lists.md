@@ -1,6 +1,6 @@
 Pairs and Lists
 ===============
-A *pair* (sometimes called a *dotted pair*) is a record structure with two fields called the *car* and *cdr* fields (for historical reasons). Pairs are created by the procedure `cons`. The car and cdr fields are accessed by the procedures `car` and `cdr`.
+A *pair* (sometimes called a *dotted pair*) is a record structure with two fields called the *car* and *cdr* fields (for historical reasons). Pairs are created by the procedure `cons`. The *car* and *cdr* fields are accessed by the procedures `car` and `cdr`.
 
 Pairs are used primarily to represent lists. A *list* can be defined recursively as either the empty list or a pair whose *car* is the first element of list and *cdr* is the remainder of list (which either the empty list or a pair whose ....).
 
@@ -19,7 +19,7 @@ Pairs are used primarily to represent lists. A *list* can be defined recursively
 [first](#first), [second](#second), [third](#third), [fourth](#fourth), [fifth](#fifth),
 [sixth](#sixth), [seventh](#seventh), [eighth](#eighth), [ninth](#ninth), [tenth](#tenth)
 
-### Non-functional features (very limited, use with care!)
+#### Non-functional features (very limited, use with care!)
 [set-car!](#set-car), [set-cdr!](#set-cdr), [list-set!](#list-set)
 
 # cons
