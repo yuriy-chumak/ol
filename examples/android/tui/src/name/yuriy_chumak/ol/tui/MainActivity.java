@@ -10,6 +10,9 @@ import lang.otuslisp.Ol;
 import name.yuriy_chumak.ol.tui.R;
 
 public class MainActivity extends Activity {
+	boolean running = true;
+	static String numbers = "";
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -30,15 +33,22 @@ public class MainActivity extends Activity {
 			Log.e("ol", ex.toString());
 		}
 
+		running = true;
 		new Thread() {
 			@Override
 			public void run()
 			{
-				while (true)
+				while (running)
 				try {
-					if (notepad.getText().length() > 2 && notepad.getText().charAt(notepad.getText().length() - 2) == '\n')
-						notepad.append(".");
-					notepad.append(Ol.eval("(pi)").toString());
+					if (numbers.length() == 1)
+						numbers += ".";
+					numbers += Ol.eval("(pi)");
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							notepad.setText(numbers);
+						}
+					});
 
 					Thread.sleep(1000);
 				}
@@ -46,20 +56,14 @@ public class MainActivity extends Activity {
 					Log.e("ol", ex.toString());
 				}
 			}
-		}.start();	// run the thread
+		}.start();
 	}
-
-	@Override
-	protected void onStart() {
-		super.onStart();
-		
-		Log.i("ol", "onStart()");
-	}	
 
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-
 		Log.i("ol", "onDestroy()");
+
+		running = false;
 	}
 }

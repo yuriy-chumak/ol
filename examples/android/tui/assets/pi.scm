@@ -1,20 +1,15 @@
 (define-library (pi)
-   (export
-      pi)
+   (export pi)
 
    (import (otus lisp))
 
 (begin
    (actor 'pi (lambda ()
-      ;; (let cycle ()
-      ;; (let*((envelope (wait-mail))
-      ;;       (sender msg envelope))
-      ;;    ()
    
       (let loop ((q 1) (r 0) (t 1) (k 1) (n 3) (l 3))
          (if (< (- (+ (* 4 q) r) t) (* n t))
             (begin
-               ; (display n)
+               ; (display n):
                (let*((envelope (wait-mail))
                      (sender msg envelope))
                   (mail sender n))

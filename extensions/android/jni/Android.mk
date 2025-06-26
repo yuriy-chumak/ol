@@ -19,7 +19,7 @@ OL_CFLAGS   += -I$(LOCAL_PATH)/$(OL_ROOT)/includes
 OL_CFLAGS   += -std=c99 -std=gnu11 -O3 -g0
 
 # -- OL ----------------------------------------------------------------------
-# OL executable (push to /data/local/tmp and run)
+# OL executable (put to /data/local/tmp and run)
 include $(CLEAR_VARS)
 LOCAL_MODULE  := executable
 LOCAL_MODULE_FILENAME := ol
