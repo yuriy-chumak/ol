@@ -1,0 +1,10 @@
+bin/
+dex/
+gen/
+lib/
+obj/
+
+src/name/yuriy_chumak/ol/nativeapp/R.java
+
+debug.apk
+debug.keystore

@@ -16,7 +16,7 @@
 
    (print "native:create-context('" title "')")
    ; initialize gl2es library
-   ((GL_LIBRARY fft-void "initialize_gl2es"))
+   ((GL_LIBRARY fft-void "gl2esInit"))
 
    ;; hack to get window size
    (define viewport '(0 0 0 0))
