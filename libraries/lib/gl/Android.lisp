@@ -1,24 +1,21 @@
 ; properties
-(define setup:autorender-mode #false)
+(define setup:autorender-mode
+   (load-dynamic-library "libmain.so"))
 
-;; (setq gl4es (load-dynamic-library "libgl4es.so"))
-;; (setq gl2es (load-dynamic-library "libgl2es.so"))
-;; (setq GLESv2 (load-dynamic-library "libGLESv2.so"))
+(setq MAIN (load-dynamic-library "libmain.so")) ; main ()
 
-(setq THIS (load-dynamic-library "libmain.so")) ; android shared code (todo: move to gl4es)
-;; (setq anlPollEvents (THIS fft-void "anlPollEvents"))
-;; (setq anlNextEvent (THIS fft-unsigned-int "anlNextEvent"))
-;; (setq anlSwapBuffers (THIS fft-void "anlSwapBuffers"))
+(setq anlPollEvents (MAIN fft-void "anlPollEvents"))
+(setq anlNextEvent (MAIN fft-unsigned-int "anlNextEvent"))
+(setq anlSwapBuffers (MAIN fft-void "anlSwapBuffers"))
 
 ; functions
 (define (native:create-context title)
-   ; context already created, just notify opengl
-
    (print "native:create-context('" title "')")
-   ; initialize gl2es library
+
+   ; initialize gl2es library, create context, etc.
    ((GL_LIBRARY fft-void "gl2esInit"))
 
-   ;; hack to get window size
+   ; hack to get window size
    (define viewport '(0 0 0 0))
    (define GL_VIEWPORT  #x0BA2)
    (glGetIntegerv GL_VIEWPORT viewport)
@@ -27,6 +24,7 @@
 
    (print "viewport: " viewport)
 
+   ; are we under VR headset?
    (define vr '(0))
    (define GL_VR  #x10C33)
    (glGetIntegerv GL_VR vr)
@@ -64,25 +62,27 @@
    #true)
 
 (define (native:swap-buffers context)
-   ;(if anlSwapBuffers (anlSwapBuffers))
-   #false)
+   (if anlSwapBuffers (anlSwapBuffers)))
 
 (define (native:process-events context handler)
-   #false)
-   ;; (anlPollEvents) ; collect events
-   ;; ; process events:
-   ;; (let loop ()
-   ;;    (define event (anlNextEvent))
-   ;;    (define t (>> event 16))
-   ;;    (define v (band event #xFFFF))
-   ;;    (unless (zero? t)
-   ;;       (case t
-   ;;          (2 ; AKEY_EVENT_ACTION_DOWN
-   ;;                (handler ['keyboard v]))
-   ;;          (3 ; AKEY_EVENT_ACTION_UP
-   ;;                #false)
-   ;;          (else #f))
-   ;;       (loop))))
+      ; collect events
+      (if anlPollEvents (anlPollEvents))
+      ; process events
+      (if anlNextEvent
+      (let loop ()
+         (define event (anlNextEvent))
+         (define t (>> event 16))
+         (define v (band event #xFFFF))
+         (unless (zero? t)
+            (case t
+               (1 ; AKEYCODE_BACK
+                     (handler ['quit]))
+               (2 ; AKEY_EVENT_ACTION_DOWN
+                     (handler ['keyboard v]))
+               (3 ; AKEY_EVENT_ACTION_UP
+                     #false)
+               (else #f))
+            (loop)))))
 
 ; -=( gl functions )=--------------------------------
 

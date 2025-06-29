@@ -11,8 +11,15 @@ BUILD_TOOLS = $(ANDROID_SDK)/build-tools/$(BUILD_TOOLS_VERN)
 ANDROID_JAR = $(ANDROID_SDK)/platforms/$(PLATFORM_VERN)/android.jar
 
 # -------------------------------------------------
+.PHONY: libs
+libs: # build ol native libraries
+	@echo --- building native code -----
+	$(MAKE) -C $(OL_ROOT) android
+
+# -------------------------------------------------
 # copy prebuilt native libraries (*.so)
 .PHONY: native
+native: libs
 
 lib/%.so: $(OL_ANDROID)/libs/%.so
 	@mkdir -p $(dir $@)

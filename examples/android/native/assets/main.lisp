@@ -1,7 +1,6 @@
 #!/usr/bin/env ol
 
 (import (lib gl))
-
 (import (OpenGL 1.0))
 
 ;; (define program (gl:create-program
@@ -24,7 +23,6 @@
 (mail 'opengl ['set 'autorender #t])
 
 (gl:set-renderer (lambda ()
-   ;; (glViewport 0 0 (gl:get-window-width) (gl:get-window-height))
    (glClearColor 0 1 0 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
@@ -42,14 +40,14 @@
    ;;            0 1 0) ; up
 
    ;; (glUseProgram program)
-   ;; (glBegin GL_QUADS)
-   ;;    (glColor3f 1 0 0)
-   ;;    (glVertex3f -3 +3 -2)
-   ;;    (glColor3f 0 1 0)
-   ;;    (glVertex3f +3 +3 -2)
-   ;;    (glColor3f 0 0 1)
-   ;;    (glVertex3f +3 -3 -2)
-   ;;    (glColor3f 0 1 1)
-   ;;    (glVertex3f -3 -3 -2)
-   ;; (glEnd)
+   (glBegin GL_QUADS)
+      (glColor3f 1 0 0)
+      (glVertex2f -0.3 +0.3)
+      (glColor3f 0 1 1)
+      (glVertex2f +0.3 +0.3)
+      (glColor3f 0 0 1)
+      (glVertex2f +0.3 -0.3)
+      (glColor3f 0 1 1)
+      (glVertex2f -0.3 -0.3)
+   (glEnd)
 ))

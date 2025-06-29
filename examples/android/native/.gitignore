@@ -8,3 +8,7 @@ src/name/yuriy_chumak/ol/nativeapp/R.java
 
 debug.apk
 debug.keystore
+
+assets/lib/
+assets/OpenGL/
+assets/otus/

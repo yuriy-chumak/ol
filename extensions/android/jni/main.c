@@ -42,7 +42,7 @@ struct events_t {
     struct event_t* pop;
 };
 
-struct events_t events;
+struct events_t events = { 0 };
 static void event_push(int type, int value)
 {
     if (events.push == events.pop - 1 || (events.push == events.end && events.pop == events.begin))
@@ -67,16 +67,18 @@ extern int opengles_init(struct android_app *app);
 static void init(struct android_app *app)
 {
     ILOG("Init.");
+	// new events array
     size_t count = 64;
-    events.begin = malloc(sizeof(struct event_t) * count);
-    events.end = events.begin + count;
-    events.push = events.pop = events.begin;
+	events.begin = malloc(sizeof(struct event_t) * count);
+	events.end = events.begin + count;
+	events.push = events.pop = events.begin;
 
     if ((Oculus = oculusgo_init(app)))
         return;
     if ((Opengl = opengles_init(app)))
         return;
     FLOG("No GL backend supported!!!");
+	// TODO: add Android Toast with error
     exit(-1);
 }
 
@@ -84,8 +86,12 @@ extern void oculusgo_done(struct android_app *app);
 extern void opengles_done(struct android_app *app);
 static void done(struct android_app *app)
 {
+    ILOG("Done.");
     if (Oculus) oculusgo_done(app);
     if (Opengl) opengles_done(app);
+
+	// free events array
+	free(events.begin);
 }
 
 extern void oculusgo_swap(void);
@@ -124,6 +130,8 @@ struct android_app *application;
 struct android_poll_source* poll_source;
 bool windowReady = false;
 bool appEnabled = false;
+bool appResumed = false;
+bool appDestroyed = false;
 
 #include <ol/ol.h>
 void jniNew();
@@ -136,6 +144,8 @@ void android_main(struct android_app *app)
 {
     application = app;
     ILOG("== main ==================================================================");
+
+	appDestroyed = false;
 
     // ANativeActivity_setWindowFlags(appl->activity, AWINDOW_FLAG_FULLSCREEN, 0);
     // AConfiguration_setOrientation(appl->config, ACONFIGURATION_ORIENTATION_LAND);
@@ -153,11 +163,6 @@ void android_main(struct android_app *app)
     application->onAppCmd = AndroidLifecycleCallback;
     application->onInputEvent = AndroidInputCallback;
 
-    // Initialize assets manager
-    // InitAssetManager(appl->activity->assetManager, appl->activity->internalDataPath);
-
-    // CORE.Storage.basePath = appl->activity->internalDataPath;
-
     // Android ALooper_pollAll() variables
     int pollResult = 0;
     int pollEvents = 0;
@@ -167,15 +172,14 @@ void android_main(struct android_app *app)
     while (!windowReady)
         while ((pollResult = ALooper_pollAll(0, NULL, &pollEvents, (void**)&poll_source)) >= 0)
             if (poll_source != NULL) poll_source->process(application, poll_source);
-
-    init(app);
+	// we continue here after APP_CMD_INIT_WINDOW received
 
     // пока что не можем привязать к gl2es через линковку, так как
     // не все нужные функции для ovr экспозятся.  TODO: исправить!
     void* gl2es = dlopen("libgl2es.so", RTLD_LAZY);
-    void (*initialize_gl2es)() = dlsym(gl2es, "initialize_gl2es");
-    if (initialize_gl2es)
-        initialize_gl2es();
+    void(*gl2esInit)() = dlsym(gl2es, "gl2esInit");
+    if (gl2esInit)
+        gl2esInit();
     void (*glHint)(GLenum pname, GLenum mode) = dlsym(gl2es, "glHint");
     if (glHint)   // GL_VR, сообщаем о поддержке VR
         glHint(0x10C33, Oculus ? GL_TRUE : GL_FALSE);
@@ -185,9 +189,14 @@ void android_main(struct android_app *app)
 
     jniNew();
     jniRun(1, (char *[]) { "main.lisp" });
+    ILOG("== done ==================================================================");
     jniDelete();
 
-    done(app);
+	ANativeActivity_finish(app->activity);
+    while (!appDestroyed)
+        while ((pollResult = ALooper_pollAll(0, NULL, &pollEvents, (void**)&poll_source)) >= 0)
+            if (poll_source != NULL) poll_source->process(application, poll_source);
+    ILOG("ok");
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -244,6 +253,7 @@ static void AndroidLifecycleCallback(struct android_app *app, int32_t cmd)
         case APP_CMD_START:          ILOG("APP_CMD_START");
             break;
         case APP_CMD_RESUME:         ILOG("APP_CMD_RESUME");
+			appResumed = true;
             break;
         case APP_CMD_GAINED_FOCUS:   ILOG("APP_CMD_GAINED_FOCUS");
             appEnabled = true;
@@ -252,6 +262,7 @@ static void AndroidLifecycleCallback(struct android_app *app, int32_t cmd)
             appEnabled = false;
             break;
         case APP_CMD_PAUSE:          ILOG("APP_CMD_PAUSE");
+			appResumed = false;
             break;
 
         case APP_CMD_SAVE_STATE:     ILOG("APP_CMD_SAVE_STATE");
@@ -260,15 +271,18 @@ static void AndroidLifecycleCallback(struct android_app *app, int32_t cmd)
             break;
 
         case APP_CMD_DESTROY:        ILOG("APP_CMD_DESTROY");
+			appDestroyed = true;
             break;
         case APP_CMD_CONFIG_CHANGED: ILOG("APP_CMD_CONFIG_CHANGED");
             break;
 
         case APP_CMD_INIT_WINDOW:    ILOG("APP_CMD_INIT_WINDOW");
+		    init(app);
             windowReady = true;
             break;
 
         case APP_CMD_TERM_WINDOW:    ILOG("APP_CMD_TERM_WINDOW");
+		    done(app);
             windowReady = false;
             break;
 
@@ -320,9 +334,11 @@ static int32_t AndroidInputCallback(struct android_app *app, AInputEvent *event)
                 case AKEYCODE_VOLUME_UP:
                 case AKEYCODE_VOLUME_DOWN:
                     return 0;
-                case AKEYCODE_BACK:  // disable
-                case AKEYCODE_MENU:
+                case AKEYCODE_MENU: // disable
                     return 1;
+                case AKEYCODE_BACK: // handle as exit
+					event_push(1, 0);
+					return 1;
             }
 
             return 0;

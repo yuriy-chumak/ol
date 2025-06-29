@@ -11,13 +11,17 @@
 #include <EGL/egl.h>     // Native platform windowing system interface
 EGLConfig Config;        // Graphic config
 
-EGLDisplay Display;      // Native display device (physical screen connection)
-EGLSurface Surface;      // Surface to draw on, framebuffers (connected to context)
-EGLContext Context;      // Graphic context, mode in which drawing can be done
+EGLDisplay Display = EGL_NO_DISPLAY;  // Native display device (physical screen connection)
+EGLSurface Surface = EGL_NO_SURFACE;  // Surface to draw on, framebuffers (connected to context)
+EGLContext Context = EGL_NO_CONTEXT;  // Graphic context, mode in which drawing can be done
 
 int opengles_init(struct android_app *app)
 {
 	ILOG("opengles_init");
+	if (Display != 0) {
+		ILOG("already initialized");
+		return 1;
+	}
 
 	if (app->window == NULL) {
 		ELOG("app->window: %p", app->window);
@@ -95,6 +99,20 @@ int opengles_init(struct android_app *app)
 
 int opengles_done(struct android_app *app)
 {
+	ILOG("opengles_done");
+    if (Display != EGL_NO_DISPLAY) {
+        eglMakeCurrent(Display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        if (Context != EGL_NO_CONTEXT)
+            eglDestroyContext(Display, Context);
+        if (Surface != EGL_NO_SURFACE)
+            eglDestroySurface(Display, Surface);
+        eglTerminate(Display);
+    }
+
+    Display = EGL_NO_DISPLAY;
+    Context = EGL_NO_CONTEXT;
+    Surface = EGL_NO_SURFACE;
+
 	return 0;
 }
 int opengles_swap(void)

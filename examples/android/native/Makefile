@@ -33,11 +33,6 @@ include $(OL_ANDROID)/rules.mk
 
 # change if you want
 KEYSTOREPWD = thepassword
-# -------------------------------------------------
-.PHONY: libs
-libs: # build ol native libraries
-	@echo --- building native code -----
-	$(MAKE) -C $(OL_ROOT) android
 
 # -------------------------------------------------
 # copy prebuilt native libraries (*.so)
@@ -68,7 +63,7 @@ install:
 	adb -d install -r $(APK_NAME)
 
 uninstall:
-	adb -d uninstall name.yuriy_chumak.ol.native
+	adb -d uninstall name.yuriy_chumak.ol.nativeapp
 
 clean:
 	rm -rf dex/ lib/ obj/
