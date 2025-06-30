@@ -15,7 +15,10 @@ help:
 	@echo "  make build - build a regular android app"
 	@echo "  make install - install built package"
 	@echo "  make uninstall - uninstall built package"
+	@echo ""
+	@echo "  make clean - delete intermediate files"
 
+.PHONY: build install uninstall clean
 # -------------------------------------------------
 # setup Ol and Android folders and toolsets
 OL_ROOT    ?= ../../..
@@ -113,3 +116,9 @@ build: native debug.keystore
 
 install:
 	adb -d install -r $(APK_NAME)
+
+uninstall:
+	adb -d uninstall name.yuriy_chumak.ol.embed
+
+clean:
+	rm -rf dex/ lib/ obj/

@@ -1,4 +1,4 @@
-package name.yuriy_chumak.ol.tui;
+package name.yuriy_chumak.ol.embed;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -7,7 +7,7 @@ import android.widget.TextView;
 
 import lang.otuslisp.Ol;
 
-import name.yuriy_chumak.ol.tui.R;
+import name.yuriy_chumak.ol.embed.R;
 
 public class MainActivity extends Activity {
 	boolean running = true;

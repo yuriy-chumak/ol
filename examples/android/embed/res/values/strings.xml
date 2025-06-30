@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Otus Lisp TUI Example</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="app_name">Otus Lisp Embed Example</string>
     <string name="note">The Number π.\nAll calculations are artificially slowed down for demonstration purposes (1 number per second).</string>
 
 </resources>

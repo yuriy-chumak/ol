@@ -1,0 +1,6 @@
+#!/bin/bash
+while :
+do
+	adb logcat -v color ol:V threaded_app:V nativeloader:E name.yuriy_chumak.ol.embed:V DEBUG:V *:F 
+	sleep 1
+done
