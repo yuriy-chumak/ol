@@ -36,11 +36,9 @@ KEYSTOREPWD = thepassword
 
 # -------------------------------------------------
 # copy prebuilt native libraries (*.so)
-LIBS=libol.so \
-     libolvm.so \
-     libvrapi.so \
+LIBS=libolvm.so \
+     libol.so \
      libgl2es.so \
-     libGLU.so \
      libmain.so
 $(foreach so,$(LIBS),$(eval $(call SO,$(so))))
 

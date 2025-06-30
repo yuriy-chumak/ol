@@ -1,4 +1,3 @@
-; properties
 (define setup:autorender-mode
    (load-dynamic-library "libmain.so"))
 

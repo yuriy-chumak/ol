@@ -1,4 +1,3 @@
-; properties
 (define setup:autorender-mode #true)
 
 

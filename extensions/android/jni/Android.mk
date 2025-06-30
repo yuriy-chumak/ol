@@ -88,7 +88,7 @@ include $(BUILD_SHARED_LIBRARY)
 ifneq ($(wildcard $(LOCAL_PATH)/vrApi/stub.c),)
 include $(CLEAR_VARS)
 LOCAL_MODULE   := main
-LOCAL_SHARED_LIBRARIES := olvm gl2es vrapi libol
+LOCAL_SHARED_LIBRARIES := olvm gl2es libol
 # TODO: move "vrapi" under define
 
 # configure

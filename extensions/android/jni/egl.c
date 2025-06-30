@@ -120,11 +120,3 @@ int opengles_swap(void)
 	return
 	eglSwapBuffers(Display, Surface);
 }
-
-
-// void init_egl2(struct android_app *app)
-// {
-// 	LOGI("init_egl2");
-// 	}
-// 	LOGI("init_egl2 done");
-// }

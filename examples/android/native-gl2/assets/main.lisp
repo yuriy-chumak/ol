@@ -23,9 +23,6 @@
    }"))
 
 ; draw
-;; (import (lib GLU))
-(mail 'opengl ['set 'autorender #t])
-
 (gl:set-renderer (lambda ()
    (glClearColor 0.2 0.2 0.2 1)
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))

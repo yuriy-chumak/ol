@@ -117,9 +117,29 @@ static bool ovrFramebuffer_Create(ovrFramebuffer *frameBuffer, GLenum colorForma
 long long FrameIndex = 1;
 double DisplayTime = 0.0;
 
+// libvrapi.so
+ovrInitializeStatus (*pvrapi_Initialize)( const ovrInitParms * initParms );
+int (*pvrapi_GetSystemPropertyInt)( const ovrJava * java, const ovrSystemProperty propType );
+ovrTextureSwapChain * (*pvrapi_CreateTextureSwapChain3)( ovrTextureType type, int64_t format, int width, int height, int levels, int bufferCount );
+int (*pvrapi_GetTextureSwapChainLength)( ovrTextureSwapChain * chain );
+unsigned int (*pvrapi_GetTextureSwapChainHandle)( ovrTextureSwapChain * chain, int index );
+ovrMobile * (*pvrapi_EnterVrMode)( const ovrModeParms * parms );
+double (*pvrapi_GetPredictedDisplayTime)( ovrMobile * ovr, long long frameIndex );
+ovrResult (*pvrapi_SubmitFrame2)( ovrMobile * ovr, const ovrSubmitFrameDescription2 * frameDescription );
+void (*pvrapi_LeaveVrMode)( ovrMobile * ovr );
+void (*pvrapi_Shutdown)();
+ovrTracking2 (*pvrapi_GetPredictedTracking2)( ovrMobile * ovr, double absTimeInSeconds );
+
 /****************************************************************************************/
 int oculusgo_init(struct android_app *app)
 {
+	// detect vrApi library
+	void* vrApi = dlopen("libvrapi.so", RTLD_LAZY);
+	if (!vrApi) {
+        ILOG("No vrapi library loaded");
+		return 0;
+	}
+
     // Initialize Java
     Java.Vm = app->activity->vm;
     (*Java.Vm)->AttachCurrentThread(Java.Vm, &Java.Env, NULL);
@@ -128,7 +148,7 @@ int oculusgo_init(struct android_app *app)
 
     // init
     ovrInitParms initParms = vrapi_DefaultInitParms(&Java);
-    int32_t initResult = vrapi_Initialize(&initParms);
+    int32_t initResult = pvrapi_Initialize(&initParms);
     if (initResult != VRAPI_INITIALIZE_SUCCESS) {
         ELOG("Failed to initialize VrApi");
         return 0;
@@ -249,13 +269,13 @@ int oculusgo_init(struct android_app *app)
     // тут надо подготовить буфера для вывода
     // 1. получим две текстурки (для левого и правого глаз)
     // assert GL_OVR_multiview2 && GL_OVR_multiview_multisampled_render_to_texture
-    assert (vrapi_GetSystemPropertyInt(&Java, VRAPI_SYS_PROP_MULTIVIEW_AVAILABLE));
+    assert (pvrapi_GetSystemPropertyInt(&Java, VRAPI_SYS_PROP_MULTIVIEW_AVAILABLE));
 
     // создадим фреймбуферы для левого и правого глаз
     for (int i = 0; i < 2; i++)
          ovrFramebuffer_Create(&FrameBuffer[i], GL_RGBA8,
-                                 vrapi_GetSystemPropertyInt(&Java, VRAPI_SYS_PROP_SUGGESTED_EYE_TEXTURE_WIDTH),
-                                 vrapi_GetSystemPropertyInt(&Java, VRAPI_SYS_PROP_SUGGESTED_EYE_TEXTURE_HEIGHT),
+                                 pvrapi_GetSystemPropertyInt(&Java, VRAPI_SYS_PROP_SUGGESTED_EYE_TEXTURE_WIDTH),
+                                 pvrapi_GetSystemPropertyInt(&Java, VRAPI_SYS_PROP_SUGGESTED_EYE_TEXTURE_HEIGHT),
                                  NUM_MULTI_SAMPLES);
 
     // ----------------------------------------------
@@ -270,7 +290,7 @@ int oculusgo_init(struct android_app *app)
 
     VLOG("eglGetCurrentSurface(EGL_DRAW) = %p", eglGetCurrentSurface(EGL_DRAW));
     VLOG("vrapi_EnterVrMode>");
-    Ovr = vrapi_EnterVrMode(&parms);
+    Ovr = pvrapi_EnterVrMode(&parms);
     VLOG("eglGetCurrentSurface(EGL_DRAW) = %p", eglGetCurrentSurface(EGL_DRAW));
 
     // vrapi_SetClockLevels( app->Ovr, app->CpuLevel, app->GpuLevel );
@@ -291,7 +311,7 @@ int oculusgo_init(struct android_app *app)
     ovrLayerLoadingIcon2 iconLayer = vrapi_DefaultLayerLoadingIcon2();
     iconLayer.Header.Flags |= VRAPI_FRAME_LAYER_FLAG_INHIBIT_SRGB_FRAMEBUFFER;
 
-    double predictedDisplayTime = vrapi_GetPredictedDisplayTime(Ovr, 0);
+    double predictedDisplayTime = pvrapi_GetPredictedDisplayTime(Ovr, 0);
 
     {
         const ovrLayerHeader2 * layers[] = {
@@ -307,7 +327,7 @@ int oculusgo_init(struct android_app *app)
         frameDesc.LayerCount = 2;
         frameDesc.Layers = layers;
 
-        vrapi_SubmitFrame2(Ovr, &frameDesc);
+        pvrapi_SubmitFrame2(Ovr, &frameDesc);
     }
 #endif
 
@@ -322,14 +342,16 @@ int oculusgo_init(struct android_app *app)
 
 int oculusgo_done(struct android_app *app)
 {
+	if (!pvrapi_Shutdown)
+		return 0;
     // todo: destroy all buffers. ovrFramebuffer_Destroy()
 
     VLOG("eglGetCurrentSurface(EGL_DRAW) = %p", eglGetCurrentSurface(EGL_DRAW));
     VLOG("vrapi_LeaveVrMode>");
-    vrapi_LeaveVrMode(Ovr);
+    pvrapi_LeaveVrMode(Ovr);
     VLOG("eglGetCurrentSurface(EGL_DRAW) = %p", eglGetCurrentSurface(EGL_DRAW));
 
-    vrapi_Shutdown();
+    pvrapi_Shutdown();
 
     eglMakeCurrent(Display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     eglDestroySurface(Display, Surface);
@@ -366,8 +388,8 @@ void begin()
     worldLayer.Header.Flags |= VRAPI_FRAME_LAYER_FLAG_CHROMATIC_ABERRATION_CORRECTION;
 
     // замапим нужные нам буфера для рисования (используем из примера)
-    double predictedDisplayTime = vrapi_GetPredictedDisplayTime(Ovr, ++FrameIndex);
-    ovrTracking2 tracking = vrapi_GetPredictedTracking2(Ovr, predictedDisplayTime);
+    double predictedDisplayTime = pvrapi_GetPredictedDisplayTime(Ovr, ++FrameIndex);
+    ovrTracking2 tracking = pvrapi_GetPredictedTracking2(Ovr, predictedDisplayTime);
 
     DisplayTime = predictedDisplayTime;
 
@@ -462,7 +484,7 @@ void end()
     frameDesc.Layers = layers;
 
     // Hand over the eye images to the time warp.
-    vrapi_SubmitFrame2(Ovr, &frameDesc);
+    pvrapi_SubmitFrame2(Ovr, &frameDesc);
 }
 
 
@@ -473,8 +495,8 @@ static bool ovrFramebuffer_Create(ovrFramebuffer *frameBuffer, GLenum colorForma
     frameBuffer->Height = height;
     frameBuffer->Multisamples = multisamples;
 
-    frameBuffer->ColorTextureSwapChain = vrapi_CreateTextureSwapChain3(VRAPI_TEXTURE_TYPE_2D, colorFormat, width, height, 1, 3);
-    frameBuffer->TextureSwapChainLength = vrapi_GetTextureSwapChainLength(frameBuffer->ColorTextureSwapChain);
+    frameBuffer->ColorTextureSwapChain = pvrapi_CreateTextureSwapChain3(VRAPI_TEXTURE_TYPE_2D, colorFormat, width, height, 1, 3);
+    frameBuffer->TextureSwapChainLength = pvrapi_GetTextureSwapChainLength(frameBuffer->ColorTextureSwapChain);
     frameBuffer->DepthBuffers = (GLuint *)malloc(frameBuffer->TextureSwapChainLength * sizeof(GLuint));
     frameBuffer->FrameBuffers = (GLuint *)malloc(frameBuffer->TextureSwapChainLength * sizeof(GLuint));
 
@@ -484,7 +506,7 @@ static bool ovrFramebuffer_Create(ovrFramebuffer *frameBuffer, GLenum colorForma
     for (int i = 0; i < frameBuffer->TextureSwapChainLength; i++)
     {
         // Create the color buffer texture.
-        GLuint colorTexture = vrapi_GetTextureSwapChainHandle(frameBuffer->ColorTextureSwapChain, i);
+        GLuint colorTexture = pvrapi_GetTextureSwapChainHandle(frameBuffer->ColorTextureSwapChain, i);
         glBindTexture(GL_TEXTURE_2D, colorTexture);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
