@@ -45,7 +45,16 @@ credits to
 Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
 
-
+Breaking changes (after 2.6)
+----------------------------
+The following breaking changes have been added to the master branch:
+* ❗ `values` with an empty argument list now returns *#false* instead of the string "no vals"
+* ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()*
+  but simply *#false* if nothing was returned,
+  use the "RETURNING" statement with INSERT and UPDATE if you want to return something.
+* ❗ Welcome invitation changed
+* ❗ `procedure?` made r7rs compatible (will now return *#false* for ff's)
+* ❗ arity errors changed (made more clear and descriptive)
 
 PACKAGING
 ---------

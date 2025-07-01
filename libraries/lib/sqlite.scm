@@ -765,9 +765,7 @@
       (let ((statement (apply sqlite:query (cons database (cons query args)))))
          (case statement
             (#f #false) ; error
-            (#t         ; ok, but no data returned
-               (let ((changes (sqlite3_changes database)))
-                  (if (less? 0 changes) changes)))
+            (#t #false) ; ok, but no data returned
             (else ; got a values!
                (let ((result (get-result-as-row statement)))
                   (sqlite3_finalize statement)
