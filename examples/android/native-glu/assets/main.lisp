@@ -24,8 +24,8 @@
    (glLoadIdentity)
    (gluPerspective 45 aspect 0.1 1000)
 
-   (define Y -2)
-   (define R -5)
+   (define Y -1.2)
+   (define R -3)
 
    (glMatrixMode GL_MODELVIEW)
    (glLoadIdentity)
@@ -34,7 +34,7 @@
       0 1 0)
 
    (define t (/ (mod (time-ms) 6283) #i1000))
-   (glTranslatef 0 -3 -8)
+   (glTranslatef 0 -2.1 -5)
    (glRotatef (* t 360/3.14) 0 1 0)
    (cube:draw)
 ))

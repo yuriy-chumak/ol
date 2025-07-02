@@ -3,7 +3,6 @@
 (import (lib gl))
 (import (OpenGL 2.1))
 
-(print "gl:create-program: " gl:create-program)
 (define program (gl:create-program
 "#version 120 // OpenGL 2.1
    void main() {
