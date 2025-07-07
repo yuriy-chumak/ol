@@ -50,7 +50,7 @@
 
       (mail 'opengl ['set 'vr-begin vr-begin])
       (mail 'opengl ['set 'vr-eye vr-update])
-      (mail 'opengl ['set 'vr-finish vr-flush])
+      (mail 'opengl ['set 'vr-flush vr-flush])
       (mail 'opengl ['set 'vr-end vr-end])
       
       ;; ...

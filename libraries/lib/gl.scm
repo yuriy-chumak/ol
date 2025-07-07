@@ -42,12 +42,14 @@
    ; todo:
    ;gl:finish ; if renderer exists - wait for window close, else just glFinish
 
+; -=( internal constants )=------------
 (begin
    (define WIDTH  (config 'width  854))
    (define HEIGHT (config 'height 480))
 
-   ; assume that window size can not be large than 16777215 for x32 build
-   ;                                  and 72057594037927935 for x64 build.
+   ; assume that window size can not be large than
+   ; 16777215 for x32 build, and
+   ; 72057594037927935 for x64 build.
    (define STATE [0 0 WIDTH HEIGHT]) ; x y width height
 
    ; public getters
@@ -99,11 +101,11 @@
             (glHint GL_VR_HINT 1) ; включает использование VR матриц
             ((this 'vr-begin))
             (for-each (lambda (eye)
-                  ((this 'vr-eye) eye)  ; prepare rendering through the eye
+                  ((this 'vr-eye) eye) ; prepare rendering through the eye
                   ; mirror actual viewport to the window:
                   (glGetIntegerv GL_VIEWPORT gl:window-dimensions)
                   (draw eye)
-                  ((this 'vr-finish)))  ; rendering through eye is finished
+                  ((this 'vr-flush)))  ; rendering through eye is finished
                '(1 2)) ; left eye = 1, right eye = 2
             ((this 'vr-end)) ; 
             (glHint GL_VR_HINT 0)

@@ -49,7 +49,7 @@ $(foreach so,$(LIBS),$(eval $(call SO,$(so))))
 assets: assets/lib/gl/config.scm
 assets: assets/lib/gl/Android.lisp
 assets: assets/lib/gl.scm
-assets: assets/lib/gl-2/gl2es.lisp
+assets: assets/lib/gl/gl2es.lisp
 assets: assets/OpenGL
 assets: assets/otus/case-apply.scm
 assets: assets/otus/ffi.scm
