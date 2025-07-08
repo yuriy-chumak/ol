@@ -32,6 +32,8 @@
    gl:force-render
    gl:swap-buffers
 
+   gl:splash-screen
+
    ; * internal use (with gl3 and gl4)
    native:enable-context native:disable-context
    native:swap-buffers
@@ -268,6 +270,52 @@
 
    (define (gl:set-resize-handler handler)
       (mail 'opengl ['set-resize-handler handler]))
+
+   (setq glEnable      (GL_LIBRARY GLvoid "glEnable" GLenum))
+      (setq GL_TEXTURE_2D #x0DE1)
+   (setq glDisable     (GL_LIBRARY GLvoid "glDisable" GLenum))
+   (setq glGenTextures (GL_LIBRARY GLvoid "glGenTextures" GLsizei GLuint&))
+   (setq glDeleteTextures (GL_LIBRARY GLvoid "glDeleteTextures" GLsizei GLuint*))
+   (setq glBindTexture (GL_LIBRARY GLvoid "glBindTexture" GLenum GLuint))
+   (setq glTexParameteri (GL_LIBRARY GLvoid "glTexParameteri" GLenum GLenum GLint))
+      (setq GL_TEXTURE_MAG_FILTER #x2800)
+      (setq GL_TEXTURE_MIN_FILTER #x2801)
+      (setq GL_LINEAR #x2601)
+   (setq glTexImage2D  (GL_LIBRARY GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum fft-any))
+      (setq GL_RGB #x1907)
+      (setq GL_UNSIGNED_BYTE #x1401)
+   (setq glColor3f     (GL_LIBRARY GLvoid "glColor3f" GLfloat GLfloat GLfloat))
+   (setq glBegin       (GL_LIBRARY GLvoid "glBegin" GLenum))
+      (setq GL_QUADS #x0007)
+   (setq glEnd         (GL_LIBRARY GLvoid "glEnd"))
+   (setq glVertex2f    (GL_LIBRARY GLvoid "glVertex2f" GLfloat GLfloat))
+   (setq glTexCoord2f  (GL_LIBRARY GLvoid "glTexCoord2f" GLfloat GLfloat))
+   (define (gl:splash-screen width height colors)
+      ;; (glGenTextures 1 id)
+      (glBindTexture GL_TEXTURE_2D 0) ;(car id))
+      ;; (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_LINEAR)
+      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_LINEAR)
+      (glTexImage2D GL_TEXTURE_2D 0 GL_RGB
+         width height
+         0 GL_RGB GL_UNSIGNED_BYTE colors)
+      ; рисуем на весь экран квадратик с текстурой
+      (glEnable GL_TEXTURE_2D)
+      (glColor3f 1 1 1)
+      (glBegin GL_QUADS)
+         (glTexCoord2f 0 0)
+         (glVertex2f -1  1)
+         (glTexCoord2f 0 1)
+         (glVertex2f -1 -1)
+         (glTexCoord2f 1 1)
+         (glVertex2f  1 -1)
+         (glTexCoord2f 1 0)
+         (glVertex2f  1  1)
+      (glEnd)
+      (gl:redisplay)
+      ;; (glDeleteTextures 1 id) ; и спокойно удалим сплеш текстуру
+      (glDisable GL_TEXTURE_2D)
+      #t
+   )
 
    ; -=( main )=--------------------------
    ; do a window creation:
