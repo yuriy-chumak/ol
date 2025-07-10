@@ -27,17 +27,21 @@
                   (get-word "89a" 'a89)))
             (width read-le2)
             (height read-le2)
+            ; flags:
             (fdsz byte)
             ; Global Color Table Flag = (fdsz >> 7) & 1
             ; Color Resolution        = (fdsz >> 4) & 7
+            (color-resolution (epsilon (+ (band (>> fdsz 4) #b111) 1)))
             ; Sort Flag               = (fdsz >> 3) & 1
             ; Global Color Table Size = (fdsz     ) & 7
-            ; TODO: assert global color table presense
+            (color-table-size (epsilon (<< 1 (+ (band fdsz #b111) 1))))
 
+            ; additional flags
             (background-color byte)
             (pixel-aspect-ratio byte) ; Aspect Ratio = (Pixel Aspect Ratio + 15) / 64
 
-            (color-table (times (<< 1 (+ (band fdsz #b111) 1))
+            ; color table
+            (color-table (times color-table-size
                   (let-parse* (
                         (r byte) (g byte) (b byte))
                      [r g b])))
@@ -79,11 +83,17 @@
 
             ; first frame
             (image-separator (imm #\,))
-            (? read-le2) ; Start of image from the left side of the screen
-            (? read-le2) ; Start of image from the top of the screen
-            (? read-le2) ; Width
-            (? read-le2) ; Height
+            (x read-le2) ; Start of image from the left side of the screen
+            (y read-le2) ; Start of image from the top of the screen
+            (w read-le2) ; Width
+            (h read-le2) ; Height
             (mmiip byte) ; TODO: support all fields
+            (local-color-map (if (eq? (band mmiip #x80) #x80)
+                  (times (<< 1 (+ (band mmiip #b111) 1)) ; local color map size
+                        (let-parse* (
+                              (r byte) (g byte) (b byte))
+                           [r g b]))
+                  (epsilon #false)))
 
             (key-size byte)
             (data (greedy+ (let-parse* (
@@ -98,11 +108,14 @@
          'width width
          'height height
          'fdsz fdsz
+         'color-resolution color-resolution
          'background-color background-color
 
          'color-table (list->vector color-table)
 
          'mmiip mmiip
+         'x x 'y y 'w w 'h h
+         'local-color-map (list->vector local-color-map)
          'key-size key-size
          'data data
       }))
@@ -121,6 +134,7 @@
          (if (equal? filename "-")
             stdin
             (open-input-file filename)))) ; note: no need to close port
+
 
    (define (gif->rgb24 gif)
       (define key-size (gif 'key-size))
@@ -159,16 +173,16 @@
                (loop basic-dict (+ clear 2) (>> stream width) #f out))
             ((= code stop)  ; decoding ended
                out)
-            (old
+            (old ; todo: cache (last old) and (last str)
                (if str
                then
-                  (define new (cons (car str) old))
+                  (define new (cons (last str) old))
                   (loop (put dict top new)
                      (+ top 1)
                      (>> stream width)
                      str (cons str out))
                else
-                  (define new (cons (car old) old))
+                  (define new (cons (last old) old))
                   (loop (put dict top new)
                      (+ top 1)
                      (>> stream width)
@@ -179,7 +193,7 @@
       ; indices became in reversed order and in two levels,
       ; 012345 image represented as '((5) (4 3 2) (1) (0))
       (define bytes (make-bytevector (* (gif 'width) (gif 'height) 3)))
-      (define colors (gif 'color-table))
+      (define colors (or (gif 'local-color-map #f) (gif 'color-table)))
       (let loop ((i (size bytes)) (indices indices))
          (unless (null? indices)
             (let subloop ((i i) (subindices (car indices)))
@@ -191,6 +205,7 @@
                   (set-ref! bytes (- i 2) (ref color 2))
                   (set-ref! bytes (- i 1) (ref color 3))
                   (subloop (- i 3) (cdr subindices))))))
+
       bytes)
 
 ))
