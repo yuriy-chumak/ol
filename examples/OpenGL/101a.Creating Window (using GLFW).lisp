@@ -13,7 +13,7 @@
 (glfwMakeContextCurrent window)
 
 ; import OpenGL functions
-(import (OpenGL 1.0))
+(import (OpenGL 1.1))
 
 ; global init
 (glClearColor 0.3 0.3 0.3 1)
