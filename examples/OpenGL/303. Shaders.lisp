@@ -29,28 +29,22 @@
 
 (define po (gl:create-program
 "#version 330 core
-	layout (location = 0) in vec3 position;
-	void main() {
-		gl_Position = vec4(position, 1.0);
-	}"
+   layout (location = 0) in vec3 position;
+   void main() {
+      gl_Position = vec4(position, 1.0);
+   }"
 "#version 330 core
-	out vec4 out_color;
-	uniform vec2 resolution;
-	void main(void) {
-		vec2 pos = (gl_FragCoord.xy/resolution.xy);
-		vec2 c = pos*vec2(4,3) - vec2(2.5, 1.5);
-		vec2 z = vec2(0.0,0.0);
-		vec4 col = vec4(0);
-		for (float i = 0.0; i < 100.0; i += 1.0) {
-			if (z.x*z.x + z.y*z.y >= 4.0) {
-				col = vec4(smoothstep(0.0, 100.0, i), smoothstep(4.0, 90.0, i), 0.0, 1.0);
-				break;
-			}
-			col = vec4(0.5, 1.0, 0.0, 1.0);
-			z = vec2(z.x*z.x-z.y*z.y, 2.*z.x*z.y)+c;
-		}
-		gl_FragColor = col;
-	}"))
+   out vec4 out_color;
+   uniform float time;
+   uniform vec2 resolution;
+   void main(void) {
+      vec2  p = 7.*(2.*gl_FragCoord.xy-resolution.xy)/resolution.y;
+      float m1 = sin(length(p)*0.3-time*0.3);
+      float m2 = sin(0.3*(length(p)*0.3-time*0.3));
+      float c1 = 0.012/abs(length(mod(p,2.0*m1)-m1)-0.3);
+      float c2 = 0.012/abs(length(mod(p,2.0*m2)-m2)-0.3);
+      out_color = vec4(vec3(1.,2.,8.)*c1+vec3(8.,2.,1.)*c2, 1.);
+   }"))
 
 
 ; draw loop
@@ -58,6 +52,7 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glUseProgram po)
+   (glUniform1f (glGetUniformLocation po "time") (/ (mod (time-ms) 1000000) #i1000))
    (glUniform2f (glGetUniformLocation po "resolution")
       (gl:get-window-width) (gl:get-window-height))
 

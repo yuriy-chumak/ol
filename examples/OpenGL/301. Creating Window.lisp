@@ -1,8 +1,6 @@
 #!/usr/bin/env ol
-(import (lib gl-3))
-(gl:set-window-title "1. Creating an OpenGL 3.0 Window")
-
-(gl:set-context-version 3 2)
+(import (lib gl 3.1))
+(gl:set-window-title "1. Creating an OpenGL 3.1 Window")
 
 ; let's check context version
 (define major (box 0))
@@ -13,7 +11,6 @@
 (print "OpenGL version: " (glGetString GL_VERSION))
 
 ; init
-(glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
 ; draw loop
