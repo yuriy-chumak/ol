@@ -1,0 +1,14 @@
+bin/
+dex/
+gen/
+lib/
+obj/
+
+src/name/yuriy_chumak/ol/newtondynamics/R.java
+
+debug.apk
+debug.keystore
+
+assets/lib/
+assets/OpenGL/
+assets/otus/

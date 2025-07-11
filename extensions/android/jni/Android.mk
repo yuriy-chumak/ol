@@ -362,141 +362,141 @@ include $(BUILD_SHARED_LIBRARY)
 endif
 endif
 
-# # -- newton-dynamics ---------------------------------------------------------
-# ifneq ("$(wildcard $(LOCAL_PATH)/newton-dynamics/LICENSE)","")
-# include $(CLEAR_VARS)
-# LOCAL_MODULE := newton-dynamics
-# LOCAL_SUBPATH = newton-dynamics/newton-dynamics/newton-3.14/sdk
+# -- newton-dynamics ---------------------------------------------------------
+ifneq ("$(wildcard $(LOCAL_PATH)/newton-dynamics/LICENSE)","")
+include $(CLEAR_VARS)
+LOCAL_MODULE := newton-dynamics
+LOCAL_SUBPATH = newton-dynamics/newton-3.14/sdk
 
-# # skip unsupported platforms
-# ifneq ("$(TARGET_ARCH_ABI)","arm64-v8a")
-# SRC_FILES += newton-dynamics/stub.c
-# else
+# skip unsupported platforms
+ifneq ("$(TARGET_ARCH_ABI)","arm64-v8a")
+$(info newton-dynamics does not support $(TARGET_ARCH_ABI) for now)
+else
 
-# # only arm64-v8a supported (todo: add x86_64)
-# LOCAL_CFLAGS += -fPIC \
-#                 -D_POSIX_VER \
-#                 -DDG_DISABLE_ASSERT \
-# 				\
-# 				-DHAVE_ARM_NEON_H -DHAVE_NEON=1 \
-#                 -mfloat-abi=hard -include "arm_neon.h"
+# only arm64-v8a supported (todo: add x86_64)
+LOCAL_CFLAGS += -fPIC \
+                -D_POSIX_VER \
+                -DDG_DISABLE_ASSERT \
+				\
+				-DHAVE_ARM_NEON_H -DHAVE_NEON=1 \
+                -mfloat-abi=hard -include "arm_neon.h"
 
-# # core
-# DG_PATH = $(LOCAL_SUBPATH)/dgCore
+# core
+DG_PATH = $(LOCAL_SUBPATH)/dgCore
 
-# LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(DG_PATH)
-# LOCAL_SRC_FILES += \
-# 	$(DG_PATH)/dg.cpp \
-# 	$(DG_PATH)/dgAABBPolygonSoup.cpp \
-# 	$(DG_PATH)/dgCRC.cpp \
-# 	$(DG_PATH)/dgConvexHull3d.cpp \
-# 	$(DG_PATH)/dgConvexHull4d.cpp \
-# 	$(DG_PATH)/dgDebug.cpp \
-# 	$(DG_PATH)/dgDelaunayTetrahedralization.cpp \
-# 	$(DG_PATH)/dgGeneralMatrix.cpp \
-# 	$(DG_PATH)/dgGeneralVector.cpp \
-# 	$(DG_PATH)/dgGoogol.cpp \
-# 	$(DG_PATH)/dgIntersections.cpp \
-# 	$(DG_PATH)/dgMatrix.cpp \
-# 	$(DG_PATH)/dgMemory.cpp \
-# 	$(DG_PATH)/dgMutexThread.cpp \
-# 	$(DG_PATH)/dgNode.cpp \
-# 	$(DG_PATH)/dgObb.cpp \
-# 	$(DG_PATH)/dgPolygonSoupBuilder.cpp \
-# 	$(DG_PATH)/dgPolygonSoupDatabase.cpp \
-# 	$(DG_PATH)/dgPolyhedra.cpp \
-# 	$(DG_PATH)/dgPolyhedraMassProperties.cpp \
-# 	$(DG_PATH)/dgProfiler.cpp \
-# 	$(DG_PATH)/dgQuaternion.cpp \
-# 	$(DG_PATH)/dgRandom.cpp \
-# 	$(DG_PATH)/dgRef.cpp \
-# 	$(DG_PATH)/dgRefCounter.cpp \
-# 	$(DG_PATH)/dgSmallDeterminant.cpp \
-# 	$(DG_PATH)/dgThread.cpp \
-# 	$(DG_PATH)/dgThreadHive.cpp \
-# 	$(DG_PATH)/dgTree.cpp \
-# 	$(DG_PATH)/dgTypes.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(DG_PATH)
+LOCAL_SRC_FILES += \
+	$(DG_PATH)/dg.cpp \
+	$(DG_PATH)/dgAABBPolygonSoup.cpp \
+	$(DG_PATH)/dgCRC.cpp \
+	$(DG_PATH)/dgConvexHull3d.cpp \
+	$(DG_PATH)/dgConvexHull4d.cpp \
+	$(DG_PATH)/dgDebug.cpp \
+	$(DG_PATH)/dgDelaunayTetrahedralization.cpp \
+	$(DG_PATH)/dgGeneralMatrix.cpp \
+	$(DG_PATH)/dgGeneralVector.cpp \
+	$(DG_PATH)/dgGoogol.cpp \
+	$(DG_PATH)/dgIntersections.cpp \
+	$(DG_PATH)/dgMatrix.cpp \
+	$(DG_PATH)/dgMemory.cpp \
+	$(DG_PATH)/dgMutexThread.cpp \
+	$(DG_PATH)/dgNode.cpp \
+	$(DG_PATH)/dgObb.cpp \
+	$(DG_PATH)/dgPolygonSoupBuilder.cpp \
+	$(DG_PATH)/dgPolygonSoupDatabase.cpp \
+	$(DG_PATH)/dgPolyhedra.cpp \
+	$(DG_PATH)/dgPolyhedraMassProperties.cpp \
+	$(DG_PATH)/dgProfiler.cpp \
+	$(DG_PATH)/dgQuaternion.cpp \
+	$(DG_PATH)/dgRandom.cpp \
+	$(DG_PATH)/dgRef.cpp \
+	$(DG_PATH)/dgRefCounter.cpp \
+	$(DG_PATH)/dgSmallDeterminant.cpp \
+	$(DG_PATH)/dgThread.cpp \
+	$(DG_PATH)/dgThreadHive.cpp \
+	$(DG_PATH)/dgTree.cpp \
+	$(DG_PATH)/dgTypes.cpp
 
-# # mesh geometry
-# DG_MESH_PATH = $(LOCAL_SUBPATH)/dgMeshUtil
+# mesh geometry
+DG_MESH_PATH = $(LOCAL_SUBPATH)/dgMeshUtil
 
-# LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(DG_MESH_PATH)
-# LOCAL_SRC_FILES += \
-# 	$(DG_MESH_PATH)/dgMeshEffect1.cpp \
-# 	$(DG_MESH_PATH)/dgMeshEffect2.cpp \
-# 	$(DG_MESH_PATH)/dgMeshEffect3.cpp \
-# 	$(DG_MESH_PATH)/dgMeshEffect4.cpp \
-# 	$(DG_MESH_PATH)/dgMeshEffect5.cpp \
-# 	$(DG_MESH_PATH)/dgMeshEffect6.cpp 
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(DG_MESH_PATH)
+LOCAL_SRC_FILES += \
+	$(DG_MESH_PATH)/dgMeshEffect1.cpp \
+	$(DG_MESH_PATH)/dgMeshEffect2.cpp \
+	$(DG_MESH_PATH)/dgMeshEffect3.cpp \
+	$(DG_MESH_PATH)/dgMeshEffect4.cpp \
+	$(DG_MESH_PATH)/dgMeshEffect5.cpp \
+	$(DG_MESH_PATH)/dgMeshEffect6.cpp 
 
-# # physics
-# DG_PHYSICS_PATH = $(LOCAL_SUBPATH)/dgPhysics
+# physics
+DG_PHYSICS_PATH = $(LOCAL_SUBPATH)/dgPhysics
 
-# LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(DG_PHYSICS_PATH)
-# LOCAL_SRC_FILES += \
-# 	$(DG_PHYSICS_PATH)/dgBallConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgBilateralConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgBody.cpp \
-# 	$(DG_PHYSICS_PATH)/dgBodyMasterList.cpp \
-# 	$(DG_PHYSICS_PATH)/dgBroadPhase.cpp \
-# 	$(DG_PHYSICS_PATH)/dgBroadPhaseAggregate.cpp \
-# 	$(DG_PHYSICS_PATH)/dgBroadPhaseMixed.cpp \
-# 	$(DG_PHYSICS_PATH)/dgBroadPhaseSegregated.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollision.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionBVH.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionBox.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionCapsule.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionChamferCylinder.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionCompound.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionCompoundFractured.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionCone.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionConvex.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionConvexHull.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionConvexPolygon.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionCylinder.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionDeformableMesh.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionDeformableSolidMesh.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionHeightField.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionIncompressibleParticles.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionInstance.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionLumpedMassParticles.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionMassSpringDamperSystem.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionMesh.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionNull.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionScene.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionSphere.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCollisionUserMesh.cpp \
-# 	$(DG_PHYSICS_PATH)/dgConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgContact.cpp \
-# 	$(DG_PHYSICS_PATH)/dgContactSolver.cpp \
-# 	$(DG_PHYSICS_PATH)/dgCorkscrewConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgDynamicBody.cpp \
-# 	$(DG_PHYSICS_PATH)/dgHingeConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgKinematicBody.cpp \
-# 	$(DG_PHYSICS_PATH)/dgNarrowPhaseCollision.cpp \
-# 	$(DG_PHYSICS_PATH)/dgSkeletonContainer.cpp \
-# 	$(DG_PHYSICS_PATH)/dgSlidingConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgUniversalConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgUpVectorConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgUserConstraint.cpp \
-# 	$(DG_PHYSICS_PATH)/dgWorld.cpp \
-# 	$(DG_PHYSICS_PATH)/dgWorldDynamicUpdate.cpp \
-# 	$(DG_PHYSICS_PATH)/dgWorldDynamicsParallelSolver.cpp \
-# 	$(DG_PHYSICS_PATH)/dgWorldDynamicsSimpleSolver.cpp \
-# 	$(DG_PHYSICS_PATH)/dgWorldPlugins.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(DG_PHYSICS_PATH)
+LOCAL_SRC_FILES += \
+	$(DG_PHYSICS_PATH)/dgBallConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgBilateralConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgBody.cpp \
+	$(DG_PHYSICS_PATH)/dgBodyMasterList.cpp \
+	$(DG_PHYSICS_PATH)/dgBroadPhase.cpp \
+	$(DG_PHYSICS_PATH)/dgBroadPhaseAggregate.cpp \
+	$(DG_PHYSICS_PATH)/dgBroadPhaseMixed.cpp \
+	$(DG_PHYSICS_PATH)/dgBroadPhaseSegregated.cpp \
+	$(DG_PHYSICS_PATH)/dgCollision.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionBVH.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionBox.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionCapsule.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionChamferCylinder.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionCompound.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionCompoundFractured.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionCone.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionConvex.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionConvexHull.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionConvexPolygon.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionCylinder.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionDeformableMesh.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionDeformableSolidMesh.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionHeightField.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionIncompressibleParticles.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionInstance.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionLumpedMassParticles.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionMassSpringDamperSystem.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionMesh.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionNull.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionScene.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionSphere.cpp \
+	$(DG_PHYSICS_PATH)/dgCollisionUserMesh.cpp \
+	$(DG_PHYSICS_PATH)/dgConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgContact.cpp \
+	$(DG_PHYSICS_PATH)/dgContactSolver.cpp \
+	$(DG_PHYSICS_PATH)/dgCorkscrewConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgDynamicBody.cpp \
+	$(DG_PHYSICS_PATH)/dgHingeConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgKinematicBody.cpp \
+	$(DG_PHYSICS_PATH)/dgNarrowPhaseCollision.cpp \
+	$(DG_PHYSICS_PATH)/dgSkeletonContainer.cpp \
+	$(DG_PHYSICS_PATH)/dgSlidingConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgUniversalConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgUpVectorConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgUserConstraint.cpp \
+	$(DG_PHYSICS_PATH)/dgWorld.cpp \
+	$(DG_PHYSICS_PATH)/dgWorldDynamicUpdate.cpp \
+	$(DG_PHYSICS_PATH)/dgWorldDynamicsParallelSolver.cpp \
+	$(DG_PHYSICS_PATH)/dgWorldDynamicsSimpleSolver.cpp \
+	$(DG_PHYSICS_PATH)/dgWorldPlugins.cpp
 
-# # engine files
-# DG_NEWTON_PATH = $(LOCAL_SUBPATH)/dgNewton
+# engine files
+DG_NEWTON_PATH = $(LOCAL_SUBPATH)/dgNewton
 
-# LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(DG_NEWTON_PATH)
-# LOCAL_SRC_FILES += \
-# 	$(DG_NEWTON_PATH)/Newton.cpp \
-# 	$(DG_NEWTON_PATH)/NewtonClass.cpp
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(DG_NEWTON_PATH)
+LOCAL_SRC_FILES += \
+	$(DG_NEWTON_PATH)/Newton.cpp \
+	$(DG_NEWTON_PATH)/NewtonClass.cpp
 
-# endif
+endif
 
-# #LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
-# LOCAL_LDLIBS := -ldl -llog
+#LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
+LOCAL_LDLIBS := -ldl -llog
 
-# include $(BUILD_SHARED_LIBRARY)
-# endif
+include $(BUILD_SHARED_LIBRARY)
+endif

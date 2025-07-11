@@ -1,0 +1,7 @@
+#!/bin/bash
+while :
+do
+	adb logcat -v color ol:V threaded_app:V ol-ovr:V ol-egl:V gl2es:E *:E \
+	    StorageChecker:S storaged:S
+	sleep 1
+done
