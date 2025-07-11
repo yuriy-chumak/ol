@@ -13,6 +13,9 @@ NATIVE_PLATFORMS = armeabi-v7a arm64-v8a x86 x86_64
 
 # end of setup
 
+# extract package name from AndroidManifest.xml
+PACKAGE=$(shell cat AndroidManifest.xml |sed -n 's/.*package="\([^"]*\)".*/\1/p')
+
 # -------------------------------------------------
 .PHONY: help
 help:
@@ -61,7 +64,11 @@ install:
 	adb -d install -r $(APK_NAME)
 
 uninstall:
-	adb -d uninstall name.yuriy_chumak.ol.nativeapp
+	adb -d uninstall $(PACKAGE)
 
 clean:
 	rm -rf dex/ lib/ obj/
+	rm -rf assets/lib assets/OpenGL assets/otus
+
+start:
+	adb shell am start -n $(PACKAGE)/.Main
