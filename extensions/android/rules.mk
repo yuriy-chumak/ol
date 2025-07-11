@@ -14,6 +14,7 @@ ANDROID_JAR = $(ANDROID_SDK)/platforms/$(PLATFORM_VERN)/android.jar
 .PHONY: libs
 libs: # build ol native libraries
 	@echo --- building native code -----
+	cd $(OL_ANDROID)/jni; ./configure; cd -
 	CFLAGS="-DCOMPATIBLE_QUADS=1" \
 	$(MAKE) -C $(OL_ROOT) android
 
