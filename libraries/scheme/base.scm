@@ -333,7 +333,7 @@
 
       ; 6.4.  Pairs and lists
       ; ...
-      ; due to frequent use, moved from (scheme cxr) to (scheme base)
+      ; moved from (scheme cxr) to (scheme base) due to frequent usage
       (define (caaar x) (car (car (car x))))
       (define (caadr x) (car (car (cdr x))))
       (define (cadar x) (car (cdr (car x))))

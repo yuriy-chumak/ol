@@ -1,7 +1,7 @@
 (define-library (scheme cxr)
    (export
-      caaar caadr cadar caddr
-      cdaar cdadr cddar cdddr
+      caaar caadr cadar caddr ; moved to (scheme base) due to frequent usage
+      cdaar cdadr cddar cdddr ; moved to (scheme base) due to frequent usage
 
       caaaar caaadr caadar caaddr
       cadaar cadadr caddar cadddr

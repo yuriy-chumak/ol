@@ -45,7 +45,7 @@ credits to
 Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
 
-Breaking changes (after 2.6)
+Breaking changes (master branch)
 ----------------------------
 The following breaking changes have been added to the master branch:
 * ❗ `values` with an empty argument list now returns *#false* instead of the string "no vals"
