@@ -437,37 +437,73 @@ Windows:
 BINARY SCRIPTS
 --------------
 
-OL can execute precompiled scripts. You can compile your script
-using this code:
+OL can execute precompiled scripts. While text lisp programs require REPL (400KB), libraries, and time to compile,
+the binary code needs only olvm (90K with FFI, 60K without FFI) and is ready to run the code immediately.
 
+You can compile your script using next code as a template:
+
+`template.scm`:
 ```scheme
-(define (main . args)
-   (print "hello !")) ; anything you want to compile
+; put anything you want to compile in a lambda
+(define (main args)
+   (print "arguments: " args)
 
+   (define out
+   (let faktr ((x (if (null? args)
+                     13
+                     (string->number (first args)))))
+      (if (= x 1)
+         1
+         (* x (faktr (- x 1))))))
+
+   (print "factorial: " out)
+
+   ; return execution result
+   ; (let it be number of digits in the out)
+   (ilog 10 out))
+
+; compile and save this lambda into binary file
 (fasl-save main "out.bl")
 ```
 
-where "out.bl" is your binary output file name.
-This code creates binary script that can be executed directly by ol or vm:
-
+Let's compile and check the output:
 ```bash
-$ ./vm out.bl
-hello !
+$ ol template.scm
 
-$ ./ol out.bl
-hello !
+$ ls -l out.bl
+-rw------- 1 user user 55549 Jul 21 23:13 out.bl
+
+$ xxd ./out.bl
+00000000: 0203 012b 0203 012d 0203 013d 0203 012a  ...+...-...=...*
+00000010: 0203 013c 0203 023c 3c02 0302 3e3e 0203  ...<...<<...>>..
+00000020: 0474 7970 6502 0303 6164 6401 0401 0901  .type...add.....
+00000030: 0401 0901 0401 0801 0401 0a01 0401 0901  ................
+                      ..........
+0000d8c0: 0d03 0206 0111 0111 0501 c50e 0c08 0202  ................
+0000d8d0: 1022 0b02 001d 0101 0205 0312 0401 0304  ."..............
+0000d8e0: 0306 0101 0407 0505 0804 0505 0603 0704  ................
+0000d8f0: 0208 0311 0111 0401 9a01 0210 00         .............
 ```
 
-:exclamation: Note: Since version 2.2.1 Ol supports "constructors" - functions that are automatically executed when loading the source. This is experimental feature with no name yet, but feature is tested and will be presented as a normal feature in the next build.
+Now you can use this binary code anywhere without changes, even under another OS and/or platform, even with embed olvm code.
 
-Constructors are called in "use" order. The order of independent constructors is undefined. If you want to specify the order of such constructors, create a function that uses them as variables in the correct order.
+```bash
+# fastrun with ol virtual machine
+$ olvm ./out.bl
+arguments: ()
+factorial: 6227020800
 
-So, starting from version 2.2.1 you should do:
-```scheme
-(define (main . args)
-   (print "hello !")) ; anything you want to compile
+# try with arguments and print execution result
+$ ol ./out.bl 42; echo returned: $?
+arguments: (42)
+factorial: 1405006117752879898543142606244511569936384000000000
+returned: 52
 
-(fasl-save (vm:new 63 main) "out.bl")
+# regular ol can do it too
+$ ol ./out.bl 7; echo returned: $?
+arguments: (7)
+factorial: 5040
+returned: 4
 ```
 
 VIRTUAL ENV
