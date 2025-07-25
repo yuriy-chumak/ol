@@ -1187,6 +1187,7 @@ double   CV_DOUBLE(ret_t* got) { return *(double*)  got; }
 word d2ol(struct heap_t* ol, double v);      // implemented in olvm.c
 double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 
+word* string2ol(olvm_t* this, char* vptr);   // implemented in olvm.c
 
 // -=( PTR and REF )=------------------------------------------------------
 // TODOs:
@@ -1539,7 +1540,7 @@ char* stringleaf2ol(char* ptr, word stringleaf)
 }
 
 static __inline__
-size_t string2ol(char* ptr, word string, char* (cpy)(char*,word))
+size_t copychars(char* ptr, word string, char* (cpy)(char*,word))
 {
 	char* end = cpy(ptr, string);
 	*end++ = 0;
@@ -1560,78 +1561,7 @@ char* not_a_string(char* ptr, word string)
 	return ptr;
 }
 
-static // decode native ptr into ol string
-word* make_string(char* vptr, olvm_t* this)
-{
-	heap_t* heap = (heap_t*)this;
-
-	word* fp;
-	fp = heap->fp;
-
-	word* string = (R)IFALSE;
-
-	// check for string length and utf-8 encoded characters
-	int ch, utf8q = 0;
-	size_t len = 0;
-	char* p = (char*)vptr;
-	while (ch = *p++) {
-		len++;
-		unless ((ch & 0b10000000) == 0b00000000) {
-			utf8q++;
-			p += ((ch & 0b11100000) == 0b11000000) ? 1 :
-			     ((ch & 0b11110000) == 0b11100000) ? 2 :
-			     ((ch & 0b11111000) == 0b11110000) ? 3 : 1; // todo: process error, show E("not a utf-8")
-		}
-	}
-
-	// memory check
-	unsigned words = WORDS(len * (utf8q ? sizeof(word) : sizeof(char)));
-	if (fp + words > heap->end) {
-		heap->fp = fp;
-		heap->gc(this, words);
-		fp = heap->fp;
-	}
-
-	// ansi
-	if (!utf8q) { // likely
-		string = new_alloc(TSTRING, len);
-		char* str = (char*) &car(string);
-		memcpy(str, (char*) vptr, len);
-	}
-	// utf8 (maximal size of utf-8 encoded character is 21 bit that is smaller than 24 bits for enum for 32-bit platforms)
-	// so we definitely can use I() instead of make_number()
-	// https://www.vertex42.com/ExcelTips/unicode-symbols.html
-	else {
-		word* str = string = new (TSTRINGWIDE, len);
-		unsigned char* p = (unsigned char*) vptr;
-		while (ch = *p) {
-			if ((ch & 0b10000000) == 0b00000000) { // ansi
-				*++str = I((word)(p[0]));
-				p += 1;
-			}
-			else if ((ch & 0b11100000) == 0b11000000) {
-				*++str = I(((word)(p[0]) & 0x1F) <<  6 | (word)(p[1] & 0x3F));
-				p += 2;
-			}
-			else if ((ch & 0b11110000) == 0b11100000) {
-				*++str = I(((word)(p[0]) & 0x0F) << 12 | (word)(p[1] & 0x3F) <<  6 | (word)(p[2] & 0x3F));
-				p += 3;
-			}
-			else if ((ch & 0b11111000) == 0b11110000) {
-				*++str = I(((word)(p[0]) & 0x07) << 18 | (word)(p[1] & 0x3F) << 12 | (word)(p[2] & 0x3F) << 6 | (word)(p[3] & 0x3F));
-				p += 4;
-			}
-			else { // invalid character (todo: add surrogates)
-				*++str = I('?');
-				p += 1;
-			}
-		}
-	}
-	heap->fp = fp;
-	return string;
-}
-
-
+// static // decode native ptr into ol string
 
 #define PTR FFT_PTR // just pointer
 #define REF FFT_REF // pointer with drawback
@@ -1885,7 +1815,7 @@ again:;
 	else {
 		fp = *ffp;
 		char* ptr = *memory = (char*) &fp[1];
-		new_bytevector(string2ol(ptr, str,
+		new_bytevector(copychars(ptr, str,
 			type == TSTRING ? chars2ol :
 			type == TSTRINGWIDE ? wchars2utf8 :
 			type == TSTRINGDISPATCH ? stringleaf2ol :
@@ -2729,7 +2659,7 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 							int stype = reference_type(str);
 							word ptr = *p++ = (word) &fp[1];
-							new_bytevector(string2ol((char*)ptr, str,
+							new_bytevector(copychars((char*)ptr, str,
 								stype == TSTRING ? chars2ol :
 								stype == TSTRINGWIDE ? wchars2utf8 :
 								stype == TSTRINGDISPATCH ? stringleaf2ol :
@@ -3238,7 +3168,7 @@ next_argument:
 			void* vptr = CV_VOIDP(&got);
 			if (vptr) {
 				heap->fp = fp;
-				result = make_string(vptr, this);
+				result = string2ol(this, vptr);
 				fp = heap->fp;
 			}
 			break;
@@ -3863,7 +3793,7 @@ int64_t callback(olvm_t* ol, size_t id, int_t* argi // TODO: change "ol" to "thi
 				value =   *(void**) &argi[i++];
 			#endif
 			heap->fp = fp;
-			A[a] = value ? (word)make_string(value, ol) : IFALSE;
+			A[a] = value ? (word)string2ol(ol, value) : IFALSE;
 			fp = heap->fp;
 			break;
 		}
