@@ -685,7 +685,7 @@
       (define get-hex
          (let-parse* (
                (b get-byte)
-               (hex (epsilon (char->hex b)))
+               (hex (get-epsilon (char->hex b)))
                (verify hex "bad hex digit"))
             hex))
 
@@ -738,8 +738,8 @@
             (get-imm #\\)     ;; \\ = \
             (get-imm #\])     ;; \] = ]
             (get-imm #\^)     ;; \^ = ^
-            (let-parse* ((: (imm #\x)) (char get-8bit)) char)  ;; \xhh
-            (let-parse* ((: (imm #\u)) (char get-16bit)) char) ;; \uhhhh
+            (let-parse* ((: (get-imm #\x)) (char get-8bit)) char)  ;; \xhh
+            (let-parse* ((: (get-imm #\u)) (char get-16bit)) char) ;; \uhhhh
          ))
 
       (define parse-quoted-char
