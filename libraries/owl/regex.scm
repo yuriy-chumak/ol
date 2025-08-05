@@ -637,27 +637,6 @@
       (define accept-space (pred space?))
       (define accept-nonspace (pred (λ (b) (not (space? b)))))
 
-      ;; \<x>
-      (define get-quoted-char
-         (let-parses
-            ((skip (get-imm #\\))
-             (val
-               (get-any-of
-                  (imm-val #\d accept-digit)       ;; \d = [0-9]
-                  (imm-val #\D accept-nondigit)    ;; \D = [^0-9]
-                  (imm-val #\. accept-dot)         ;; \. = .
-                  (imm-val #\w accept-word)        ;; \w = [_0-9a-zA-Z]
-                  (imm-val #\n (imm #\newline))    ;; \n = newline
-                  (imm-val #\r (imm #\return))     ;; \r = carriage return
-                  (imm-val #\t (imm #\tab))        ;; \t = tab
-                  (imm-val #\W accept-nonword)     ;; \W = [^_0-9a-zA-Z]
-                  (imm-val #\s accept-space)       ;; \s = [ \t\r\n\v\f]
-                  (imm-val #\S accept-nonspace)    ;; \S = [ \t\r\n\v\f]
-                  (imm-val #\\ (imm #\\))          ;; \\ = /
-                  (imm-val #\| (imm #\|))          ;; \| = |
-                  (imm-val #\/ (imm #\/)) )))      ;; \/ = /
-            val))
-
       ;; strings are already sequences of unicode code points, so no need to decode here
       ;; accept any non-special char
       (define get-plain-char
@@ -704,10 +683,11 @@
          (digit-values b #f))
 
       (define get-hex
-         (let-parses
-            ((b get-byte)
-             (verify (char->hex b) #false))
-            (char->hex b)))
+         (let-parse* (
+               (b get-byte)
+               (hex (epsilon (char->hex b)))
+               (verify hex "bad hex digit"))
+            hex))
 
       (define get-8bit
          (let-parses ((hi get-hex) (lo get-hex)) (bor (<< hi 4) lo)))
@@ -717,6 +697,31 @@
 
       (define get-32bit
          (let-parses ((hi get-16bit) (lo get-16bit)) (bor (<< hi 16) lo)))
+
+      ;; \<x>
+      (define get-quoted-char
+         (let-parses
+            ((skip (get-imm #\\))
+             (val
+               (get-any-of
+                  (imm-val #\d accept-digit)       ;; \d = [0-9]
+                  (imm-val #\D accept-nondigit)    ;; \D = [^0-9]
+                  (imm-val #\. accept-dot)         ;; \. = .
+                  (imm-val #\w accept-word)        ;; \w = [_0-9a-zA-Z]
+                  (imm-val #\n (imm #\newline))    ;; \n = newline
+                  (imm-val #\r (imm #\return))     ;; \r = carriage return
+                  (imm-val #\t (imm #\tab))        ;; \t = tab
+                  (imm-val #\W accept-nonword)     ;; \W = [^_0-9a-zA-Z]
+                  (imm-val #\s accept-space)       ;; \s = [ \t\r\n\v\f]
+                  (imm-val #\S accept-nonspace)    ;; \S = [^ \t\r\n\v\f]
+                  (imm-val #\\ (imm #\\))          ;; \\ = /
+                  (imm-val #\| (imm #\|))          ;; \| = |
+
+                  ;; (let-parse* ((: (get-imm #\c)) (char get-hex)) (imm char))    ;; \cX
+                  (let-parse* ((: (get-imm #\x)) (char get-8bit)) (imm char))   ;; \xhh
+                  (let-parses ((: (get-imm #\u)) (char get-16bit)) (imm char))  ;; \uhhhh
+                  (imm-val #\/ (imm #\/)) )))      ;; \/ = /
+            val))
 
       ;; todo: what is the quotation used for 32-bit \xhhhhhhhh?
       (define parse-quoted-char-body
@@ -733,8 +738,9 @@
             (get-imm #\\)     ;; \\ = \
             (get-imm #\])     ;; \] = ]
             (get-imm #\^)     ;; \^ = ^
-            (let-parses ((skip (get-imm #\x)) (char get-8bit)) char)    ;; \xhh
-            (let-parses ((skip (get-imm #\u)) (char get-16bit)) char))) ;; \uhhhh
+            (let-parse* ((: (imm #\x)) (char get-8bit)) char)  ;; \xhh
+            (let-parse* ((: (imm #\u)) (char get-16bit)) char) ;; \uhhhh
+         ))
 
       (define parse-quoted-char
          (let-parses
