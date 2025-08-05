@@ -54,7 +54,7 @@
       ;; the regexp is represented by a function which does stream matching
 
       ;; "", match nothing with great success
-      (define (epsilon ls buff ms cont)
+      (define (continue ls buff ms cont)
          (cont ls buff ms))
 
       ;; $, match input being null
@@ -201,7 +201,7 @@
       (define (plus rx) (rex-and rx (star rx)))
 
       ;; <rx>?
-      (define (quest rx) (rex-or rx epsilon))
+      (define (quest rx) (rex-or rx continue))
 
       ;;; non-greedy (altruistic?) quantifiers
 
@@ -216,7 +216,7 @@
       (define (alt-plus rx) (rex-and rx (alt-star rx)))
 
       ;; <rx>??
-      (define (alt-quest rx) (rex-or epsilon rx))
+      (define (alt-quest rx) (rex-or continue rx))
 
       ;;; repetitions
 
@@ -225,7 +225,7 @@
       ;; <rx>{n}
       (define (exactly n rx)
          (cond
-            ((eq? n 0) epsilon) ;; fixme: these could be handled by postprocessing later
+            ((eq? n 0) continue) ;; fixme: these could be handled by postprocessing later
             ((eq? n 1) rx)
             (else
                (λ (ls buff ms cont)
@@ -238,8 +238,8 @@
       ;; <rx>{,n}
       (define (at-most n rx)
          (cond
-            ((eq? n 0) epsilon) ; R{,0} = ""
-            ((eq? n 1) (rex-or rx epsilon)) ; R{,1} = "" | R
+            ((eq? n 0) continue) ; R{,0} = ""
+            ((eq? n 1) (rex-or rx continue)) ; R{,1} = "" | R
             (else
                (λ (ls buff ms cont)
                   (define (maybe ls buff ms n)
@@ -594,14 +594,14 @@
       ;; → (rex → rex')
       (define get-star
          (let-parses
-            ((skip (get-imm 42))
+            ((skip (get-imm #\*))
              (altp get-altp))
             (if altp alt-star star)))
 
       ;; a+ = aa*
       (define get-plus
          (let-parses
-            ((skip (get-imm 43))
+            ((skip (get-imm #\+))
              (altp get-altp))
             (if altp alt-plus plus)))
 
@@ -682,7 +682,7 @@
       (define get-digit
          (let-parses
             ((b get-byte)
-             (verify (digit? b) #false))
+             (verify (digit? b) "bad digit"))
             (- b #\0)))
 
       (define get-number
@@ -694,12 +694,11 @@
 
       ;; byte → #false | hex-value
       (define digit-values (alist->ff
-         (foldr append #null
-            (list
-               (map (lambda (d i) (cons d i)) (iota 10 #\0) (iota 10 0))  ;; 0-9
-               (map (lambda (d i) (cons d i)) (iota  6 #\A) (iota 6 10))  ;; A-F
-               (map (lambda (d i) (cons d i)) (iota  6 #\a) (iota 6 10))  ;; a-f
-               ))))
+         (append
+            (map cons (iota 10 #\0) (iota 10 0))  ;; 0-9
+            (map cons (iota  6 #\A) (iota 6 10))  ;; A-F
+            (map cons (iota  6 #\a) (iota 6 10))  ;; a-f
+         )))
 
       (define (char->hex b)
          (digit-values b #f))
@@ -788,7 +787,7 @@
                (λ (rx) (at-least n rx)))
             ((= n m)
                (if (eq? n 0)
-                  epsilon
+                  continue
                   (λ (rx) (exactly n rx))))
             ((< n m) ;; <= enforced when parsing but ok to double-check as this is only done once
                (if (eq? n 0)
@@ -891,7 +890,7 @@
       (define (get-regex)
          (let-parses
             ((hd (get-catn get-regex))
-             (tl (get-greedy* (let-parses ((skip (get-imm 124)) (rex (get-catn get-regex))) rex))))
+             (tl (get-greedy* (let-parses ((skip (get-imm #\|)) (rex (get-catn get-regex))) rex))))
             (fold rex-or hd tl)))
 
       (define get-matcher-regex
