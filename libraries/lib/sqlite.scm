@@ -713,32 +713,40 @@
          (display-to stderr END)
          (print-to stderr ", length: " YELLOW (length args) END))
 
-      (let ((statement (make-sqlite3_stmt)))
-         (unless (eq? 0 (sqlite3_prepare_v2 database query -1 statement #f))
-            (error "sqlite3 query preparation error:" (sqlite3_errmsg database)))
-         ; apply arguments:
-         (let loop ((n 1) (args args))
-            (unless (null? args)
-               (let ((arg (car args)))
-                  (if arg
-                     (cond
-                        ((integer? arg)
-                           (sqlite3_bind_int64  statement n arg))
-                        ((rational? arg)
-                           (sqlite3_bind_double statement n arg))
-                        ((inexact? arg)
-                           (sqlite3_bind_double statement n arg))
-                        ((string? arg)
-                           (sqlite3_bind_text   statement n arg -1 SQLITE_TRANSIENT))
-                        ((bytevector? arg)
-                           (sqlite3_bind_blob   statement n arg (size arg) SQLITE_TRANSIENT))
-                        ((null? arg)
-                           (sqlite3_bind_null   statement n))
-                        (else
-                           (error "Unsupported parameter type" arg)))
-                     (sqlite3_bind_null statement n))
-                  (loop (+ n 1) (cdr args)))))
-         ; analyze results:
+      (define statement (if (string? query)
+                           (let ((statement (make-sqlite3_stmt)))
+                              (unless (eq? 0 (sqlite3_prepare_v2 database query -1 statement #f))
+                                 (error "sqlite3 query preparation error:" (sqlite3_errmsg database)))
+                              statement)
+                        else
+                           (let ((statement query))
+                              (sqlite3_reset statement)
+                              statement)))
+      ; apply arguments:
+      (let loop ((n 1) (args args))
+         (unless (null? args)
+            (let ((arg (car args)))
+               (if arg
+                  (cond
+                     ((integer? arg)
+                        (sqlite3_bind_int64  statement n arg))
+                     ((rational? arg)
+                        (sqlite3_bind_double statement n arg))
+                     ((inexact? arg)
+                        (sqlite3_bind_double statement n arg))
+                     ((string? arg)
+                        (sqlite3_bind_text   statement n arg -1 SQLITE_TRANSIENT))
+                     ((bytevector? arg)
+                        (sqlite3_bind_blob   statement n arg (size arg) SQLITE_TRANSIENT))
+                     ((null? arg)
+                        (sqlite3_bind_null   statement n))
+                     (else
+                        (error "Unsupported parameter type" arg)))
+                  (sqlite3_bind_null statement n))
+               (loop (+ n 1) (cdr args)))))
+      ; analyze results:
+      (if (string? query)
+         ; good old string request
          (let ((code (sqlite3_step statement)))
             (if (eq? code SQLITE_ROW) ; query returned a dataset
                statement
@@ -755,24 +763,53 @@
                   (else
                      (error "SQL statement execution error:"
                         code (sqlite3_errmsg database))
-                     #false))))))
+                     #false))))
+      else
+         ; precompiled request:
+         (let loop ((code (sqlite3_step statement)))
+            (if (eq? code SQLITE_ROW)
+               (let ((result (get-result-as-row statement)))
+                  (if (pair? result)
+                     (cons
+                        (if (null? (cdr result)) (car result) result)
+                        (lambda () (loop (sqlite3_step statement))))
+                     #null))
+            else
+               (case code
+                  (SQLITE_DONE #null) ; request successful
+
+                  ; constraint violation is not a critical
+                  ; error, just return #false
+                  (SQLITE_CONSTRAINT #false)
+
+                  ; other errors should throw an error
+                  (else
+                     (error "SQL statement execution error:"
+                        code (sqlite3_errmsg database))
+                     #false))))
+
+      ))
 
    ; executes the statement and returns just one result
    ; if query was "update" or "insert" return a count of updated/inserted rows
    ; if you want to receive inserted key - use "RETURNING" syntax or
    ; (sqlite3_last_insert_rowid db) function.
    (define (sqlite:value database query . args)
-      (let ((statement (apply sqlite:query (cons database (cons query args)))))
-         (case statement
-            (#f #false) ; error
-            (#t #false) ; ok, but no data returned
-            (else ; got a values!
-               (let ((result (get-result-as-row statement)))
-                  (sqlite3_finalize statement)
-                  (if result
-                     (if (eq? (cdr result) #null)
-                        (car result)
-                        result)))))))
+      (if (string? query)
+         (let ((statement (apply sqlite:query (cons database (cons query args)))))
+            (case statement
+               (#f #false) ; error ; todo: raise error?
+               (#t #false) ; ok, but no data returned
+               (else ; got a values!
+                  (let ((result (get-result-as-row statement)))
+                     (sqlite3_finalize statement)
+                     (if result
+                        (if (eq? (cdr result) #null) ; single result returns as a single result, not a list of results with single element inside
+                           (car result)
+                           result))))))
+      else
+         (define v (apply sqlite:query (cons* database query args)))
+         (if (null? v) #f (car v))))
 
    (define (sqlite:for-each statement f)
       (case statement
