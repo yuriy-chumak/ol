@@ -331,11 +331,12 @@
    ;sqlite3_rekey_v2
    ;sqlite3_activate_see
 
-    sqlite:query
-    sqlite:value
+   sqlite:prepare
+   sqlite:query
+   sqlite:value
 
-    sqlite:for-each
-    sqlite:map)
+   sqlite:for-each
+   sqlite:map)
 
 ; ============================================================================
 (import
@@ -683,6 +684,14 @@
                            (sqlite3_column_bytes statement i) 0))
                         (else (error "Unsupported column type " i)))
                      args)))))))
+
+   ; при инвалидном запросе бросает runtime исключение
+   ; precompile query
+   (define (sqlite:prepare database query)
+      (define statement (make-sqlite3_stmt))
+      (unless (eq? (sqlite3_prepare_v2 database query -1 statement #f) 0)
+         (error "sqlite3 query preparation error:" (sqlite3_errmsg database)))
+      statement)
 
    ; при инвалидном запросе бросает runtime исключение
    ; select multiple values
