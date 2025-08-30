@@ -242,29 +242,33 @@
       (print-to stderr)
       (print-to stderr "new connect: " (getpeername fd))
       (print-to stderr id ": > " (timestamp) ", on-accept")
+
       (let loop ((stream (port->bytestream fd)))
-      (let*((request stream
-                  (let* ((l r p val (http-parser #null stream 0 ok)))
-                     (if (not l)
-                        (values #false r)
-                        (values val r))))
-            (close? (or
-                  (not request)
-                  (call/cc (lambda (close)
-                     (let ((Request (ref request 1))
-                           (Headers (ref request 2)))
-                        ;(print-to stderr id ": Request: \e[0;34m" Request "\e[0;0m")
-                        ;(print-to stderr id ": Headers: " Headers)
-                        (if (null? Request)
-                           (send "HTTP/1.0 400 Bad Request" "\r\n"
-                                 "Conneciton: close"        "\r\n"
-                                 "\r\n" "🤷")
-                        else
-                           (onRequest fd Request Headers stream close))))))))
-         (if (eq? close? #true)
-            (print-to stderr id (if (syscall 3 fd) ": socket closed" ": can't close socket"))
-         else
-            (loop (or close? stream)))))
+         (let*((request stream
+                     (let* ((l r p val (http-parser #null stream 0 ok)))
+                        (if (not l) ; not parsed
+                           (values #f val)
+                           (values val r))))
+               (close? (or
+                     (if (not request) stream) ; maybe #eof
+                     (call/cc (lambda (close)
+                        (let ((Request (ref request 1))
+                              (Headers (ref request 2)))
+                           ;(print-to stderr id ": Request: \e[0;34m" Request "\e[0;0m")
+                           ;(print-to stderr id ": Headers: " Headers)
+                           (if (null? Request)
+                              (send "HTTP/1.0 400 Bad Request" "\r\n"
+                                    "Conneciton: close"        "\r\n"
+                                    "\r\n" "🤷")
+                           else
+                              (onRequest fd Request (or Headers {}) stream close))))))))
+            (case close?
+               (#true
+                  (print-to stderr id (if (syscall 3 fd) ": socket closed" ": can't close socket")))
+               (#eof ; socket already closed because of port->bytestream
+                  (print-to stderr id ": socket closed (auto)"))
+               (else
+                  (loop (or close? stream))))))
       ; done.
       (let*((ss2 ms2 (clock)))
          (print-to stderr id ": < " (timestamp) ", on-accept processed in "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))
