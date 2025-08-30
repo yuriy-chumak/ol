@@ -1532,6 +1532,7 @@ void yield()
 
 # ifdef __APPLE__
 #	undef _POSIX_C_SOURCE // macos sendfile workaround
+
 #	include <sys/socket.h>
 #	include <netinet/in.h>
 
@@ -1552,6 +1553,7 @@ void yield()
 #	ifdef __APPLE__
 #		include <sys/types.h>
 #		include <sys/uio.h>
+int sendfile(int fd, int s, off_t offset, off_t *len, struct sf_hdtr *hdtr, int flags);
 #	endif
 #else
 # if HAVE_SOCKETS
