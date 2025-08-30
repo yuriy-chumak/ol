@@ -697,7 +697,7 @@
    ; select multiple values
    (define (sqlite:query database query . args)
       (debug
-         (print-to stderr MAGENTA query END)
+         (print-to stderr MAGENTA (if (string? query) query "#<query>") END)
          (display-to stderr YELLOW)
          (for-each (lambda (arg)
                (cond
