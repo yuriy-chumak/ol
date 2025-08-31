@@ -79,7 +79,7 @@
             (let*
                ((msg (cdr alarm))
                   (from req msg)
-                  (op port ms msg))
+                  (op port ms req))
                (eq? port fd)))
          alarms))
    ;; alarm = (TIMEOUT . #(thread #(<read|write>-timeout fd ms)))
