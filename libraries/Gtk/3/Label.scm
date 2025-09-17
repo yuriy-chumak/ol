@@ -1,21 +1,26 @@
-(define-library (gtk-3 label)
+(define-library (Gtk 3 Label)
    (export
       GtkLabel
    )
    (import
       (scheme base)
-      (otus ffi) (owl ff)
-      (lib gtk-3 gtk)
-      (lib gtk-3 label)
-      
-      (gtk-3 widget))
 
+      (Gtk 3 Gtk)
+      (Gtk 3 Widget)
+
+      (lib gtk-3 label))
+      
 (begin
    ; lisp interface
    (define GtkLabel
-      (define (make ptr options)
+      (define (make ctor ptr options)
          (define base (GtkWidget ptr options))
          (define this (ff-replace base {
+            'class 'Label  'superclass 'Widget
+            'super base
+
+            'Label ptr
+
             ; Fetches the text from the label of the button.
             'get-text (lambda ()
                (gtk_label_get_text ptr))
@@ -31,10 +36,8 @@
             ; Sets the labels text and attributes from markup.
             'set-markup (lambda (markup)
                (gtk_label_set_markup ptr markup))
-
-            ; internals
-            'super base
          }))
+
          ; setup and return
          (if (options 'text #f)
             ((this 'set-text) (options 'text)))
@@ -47,21 +50,26 @@
 
    ; main
    (case-lambda
-      (()   (make (gtk_label_new default-text) #e))
+      (()   (make make (gtk_label_new default-text) #e))
       ((a1) (cond
-               ((eq? (type a1) type-vptr)
-                  (make a1 #e))
+               ((vptr? a1)
+                  (make make a1 #e))
                ((string? a1)
-                  (make (gtk_label_new a1) #e))
+                  (make make (gtk_label_new a1) #e))
                ((ff? a1)
-                  (make (gtk_label_new (a1 'text default-text)) a1))
+                  (make make (gtk_label_new (a1 'text default-text)) a1))
                (else
-                  (runtime-error "GtkLabel: invalid argument" a1))))
+                  (error "GtkLabel" a1))))
       ((a1 op) (cond
-               ((and (eq? (type a1) type-vptr) (ff? op))
-                  (make a1 op))
+               ((and (vptr? a1) (ff? op))
+                  (make make a1 op))
                (else
-                  (runtime-error "GtkLabel: invalid arguments" (cons a1 op)))))
+                  (error "GtkLabel" a1 op))))
+      ; Inheritance
+      ((a1 a2 a3) (if (ctor? a1)
+                     (make a1 a2 a3)
+                     (error "GtkWidget" a1 a2 a3)))
+      
    ))
 
 ))

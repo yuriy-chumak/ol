@@ -1,24 +1,27 @@
-(define-library (gtk-3 window)
+(define-library (Gtk 3 Window)
    (export
       GtkWindow
    )
    (import
       (scheme base)
-      (otus ffi) (owl ff)
-      (lib gtk-3 gtk)
-      (lib gtk-3 application)
-      (lib gtk-3 window)
 
-      (gtk-3 widget)
-      (gtk-3 container)
-      (gtk-3 application))
+      (Gtk 3 Gtk)
+      (Gtk 3 Application)
+      ;; (Gtk 3 Widget)
+      (Gtk 3 Container)
+      
+      (lib gtk-3 application)
+      (lib gtk-3 window))
 
 (begin
-   (import (owl io))
    (define GtkWindow
-      (define (make ptr options)
-         (define base (GtkContainer ptr options))
+      (define (make ctor ptr options)
+         (define base (GtkContainer ctor ptr options))
          (define this (ff-replace base {
+            'class 'Window  'superclass 'Container
+            'super base
+
+            'Window ptr
 
             ; Sets the title of the GtkWindow.
             'set-title (lambda (title)
@@ -39,30 +42,29 @@
             ; Get ...
             'get-application (lambda ()
                (GtkApplication (gtk_window_get_application ptr)))
+
             ; Sets or unsets the GtkApplication associated with the window.
             'set-application (lambda (application)
                (cond
                   ((eq? (type application) type-vptr)
                      (gtk_window_set_application ptr application))
                   ((GObject? application)
-                     (gtk_window_set_application ptr (application 'ptr)))
+                     (gtk_window_set_application ptr (application 'Application)))
                   (else
                      (runtime-error "GtkWindow: set-application: invalid application" application))))
-
-            ; internals
-            'super base
          }))
-         ; apply options
-         (if (options 'application #f)
+
+         ;; apply options
+         (when (options 'application #f)
             ((this 'set-application) (options 'application)))
-         (if (options 'title #f)
+         (when (options 'title #f)
             ((this 'set-title) (options 'title)))
-         (if (options 'width (options 'height #f))
+         (when (options 'width (options 'height #f))
             ((this 'set-default-size) (options 'width 640) (options 'height 480)))
-         (if (options 'icon #f)
+         (when (options 'icon #f)
             ((this 'set-icon) (options 'icon)))
 
-         ; smart object
+         ;; smart object
          (GObject this))
 
    ; defaults
@@ -71,37 +73,38 @@
    ; main
    (case-lambda
       ((a1) (cond
-               ; gtk_builder_get_object:
-               ((eq? (type a1) type-vptr)
-                  (make a1 #e))
-               ; GtkApplication
-               ((GObject? a1)
-                  (make (gtk_window_new 0) {
+               ((vptr? a1) ; (GtkWindow (gtk_builder_get_object ...))
+                  (make make a1 #e))
+               ; (GtkWindow Application)
+               ((a1 'Application #f)
+                  (make make (gtk_window_new 0) {
                         'application a1
                      }))
                (else
                   (runtime-error "GtkWindow: invalid argument" a1)) ))
 
-      ((a1 op) (call/cc (lambda (return)
-               (cond
-                  ((and (eq? (type a1) type-vptr) (ff? op))
-                     (return (make a1 op)))
-                  ((GObject? a1) (cond
+      ((a1 op) (cond
+               ((and (vptr? a1) (ff? op))
+                  (make make a1 op))
+               ((a1 'Application #f)
+                  (cond
+                     ; (Application "window-title")
                      ((string? op)
-                        (return
-                           (make (gtk_window_new 0) {
-                              'title op
-                              'application a1
-                           })))
+                        (make make (gtk_window_new 0) {
+                           'title op
+                           'application a1
+                        }))
+                     ; (Application options)
                      ((ff? op)
-                        (return
-                           (make (gtk_window_new
-                              (case (op 'flags #f)
-                                 ('top-level 1)
-                                 ('popup 2)))
-                              (put op
-                                 'application a1
-                              )))) )))
-                  (runtime-error "GtkWindow: invalid arguments" (cons a1 op))) ))
+                        (make make (gtk_window_new (case (op 'flags #f)
+                                                      ('top-level 1)
+                                                      ('popup 2)))
+                           (put op
+                              'application a1
+                           )))
+                     (else
+                        (error "GtkWindow" a1 op)) ))
+               (else
+                  (error "GtkWindow" a1 op)) ))
    ))
 ))

@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (gtk-3)
+(import (Gtk 3.0)
    (lib glib-2)
    (lib gtk-3 message-dialog))
 
@@ -7,8 +7,7 @@
 (Gtk:init)
 
 ;; load ui from the file
-(define builder
-   (GtkBuilder "2.0.Glade.glade"))
+(define builder (GtkBuilder "2.0.Glade.glade"))
 
 ((builder 'add-callback-symbol) "button_clicked"
    (GTK_CALLBACK (ptr userdata)
@@ -24,18 +23,15 @@
 
 ;; change button text
 (define button (GtkButton ((builder 'get-object) "button")))
-((button 'set-text) "Click Me!")
+((button 'set-text) "CLICK ME!")
 
 ;; setup main window
-(define window (GtkWindow
-   ((builder 'get-object) "window") {
-      'title "Glade Signals Example"
-      'on-destroy (lambda (this)
-         (print "Close pressed. Bye-bye.")
-         ; when we do a (gtk_main) we should use (gtk_main_quit)
-         ;   instead of (g_application_quit)
-         (Gtk:quit))
-   }))
+(define window ((builder 'get-Window) "window" {
+   'title "Glade Signals Example"
+   'on-destroy (lambda (this)
+      (print "Close pressed. Bye-bye.")
+      (Gtk:quit))
+}))
 
 ;; show it
 ((window 'show-all))

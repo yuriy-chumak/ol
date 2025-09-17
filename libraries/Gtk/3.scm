@@ -1,4 +1,4 @@
-(define-library (gtk-3)
+(define-library (Gtk 3)
    (export
       Gtk:init
       Gtk:main
@@ -21,23 +21,23 @@
       ;; GTK_STOCK_OPEN
       ;; GTK_RESPONSE_ACCEPT
 
-      (exports (gtk-3 application))
+      (exports (Gtk 3 Application))
 
       ;; (exports (lib gtk-3 gtk))
-      (exports (gtk-3 widget))
-      (exports (gtk-3 window))
-      (exports (gtk-3 container))
+      (exports (Gtk 3 Widget))
+      (exports (Gtk 3 Container))
+      (exports (Gtk 3 Window))
 
       ;; (exports (lib gtk-3 box))
       ;; (exports (lib gtk-3 bbox))
       ;; (exports (lib gtk-3 adjustment))
 
-      (exports (gtk-3 label))
-      (exports (gtk-3 button))
+      (exports (Gtk 3 Label))
+      (exports (Gtk 3 Button))
       ;; (exports (lib gtk-3 list-store))
       ;; (exports (lib gtk-3 file-chooser))
       ;; (exports (lib gtk-3 file-chooser-dialog))
-      (exports (gtk-3 builder)))
+      (exports (Gtk 3 Builder)))
 
    (import
       (scheme core)
@@ -48,22 +48,22 @@
       (only (otus async) sleep)
       (lib gtk-3 gtk)
 
-      (gtk-3 application)
+      (Gtk 3 Application)
 
-      (gtk-3 widget)
-      (gtk-3 container)
-      (gtk-3 window)
+      (Gtk 3 Widget)
+      (Gtk 3 Container)
+      (Gtk 3 Window)
 
       ;; (lib gtk-3 box)
       ;; (lib gtk-3 bbox)
       ;; (lib gtk-3 adjustment)
 
-      (gtk-3 label)
-      (gtk-3 button)
+      (Gtk 3 Label)
+      (Gtk 3 Button)
       ;; (lib gtk-3 list-store)
       ;; (lib gtk-3 file-chooser)
       ;; (lib gtk-3 file-chooser-dialog)
-      (gtk-3 builder))
+      (Gtk 3 Builder))
 
 (begin
    (define Gtk:init (case-lambda
@@ -74,10 +74,12 @@
                   (if (a1 'multithreaded #f)
                      (gdk_threads_add_idle (G_CALLBACK
                         (GTK_CALLBACK (userdata)
-                           (sleep 0)
-                           TRUE)) #f)))
+                           (sleep 0) ; handle waiting threads
+                           TRUE))    ; G_SOURCE_CONTINUE
+                        #f)))
             else
                (runtime-error "gtk-init: invalid options" a1)))
+      ; legacy (native) call
       ((a1 a2)
             (gtk_init a1 a2))
    ))

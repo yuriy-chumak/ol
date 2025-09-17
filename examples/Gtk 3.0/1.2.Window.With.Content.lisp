@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (gtk-3))
+(import (Gtk 3.0))
 
 ;; application setup
 (define (activate app)

@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (gtk-3))
+(import (Gtk 3.0))
 (import (only (olvm syscalls) strftime))
 
 ;; application setup
@@ -14,8 +14,8 @@
       'on-destroy (lambda (this)
          (print "Close pressed. Bye-bye.")
          (for-each kill (running-threads))
-         (define app ((
-            (GtkWindow (this 'ptr)) 'get-application)))
+
+         (define app ((this 'get-application)))
          ((app 'quit)))
    }))
 
