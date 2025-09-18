@@ -2126,6 +2126,12 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		? value(car(B))             // normal return type
 		: reference_type(car(B));   // fft& & fft* return types
 
+	if ((cdr(B)|C) == INULL) {      // no argument types and no arguments (speedup)
+		got = ((ret_t (*)())function)();
+		fp = heap->fp; // update fp
+		goto handle_got_value;
+	}
+
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
 
@@ -3090,6 +3096,7 @@ next_argument:
 	}
 
 	// RETURN
+handle_got_value:
 	returntype &= 0x3F;
 	word* result = (word*)IFALSE;
 
