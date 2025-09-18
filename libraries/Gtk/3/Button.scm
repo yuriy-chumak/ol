@@ -11,9 +11,21 @@
       (lib gtk-3 gtk)
       (lib gtk-3 bin)
       (lib gtk-3 label)
+      (lib gtk-3 image)
+      (lib gtk-3 container)
       (lib gtk-3 button))
 
 (begin
+   (import (owl io))
+
+   ; helper function
+   (define set-label-markup (G_CALLBACK
+      (vm:pin (cons
+         (cons gint (list GObject* gint))
+         (lambda (widget userdata)
+            (when (g_type_check_instance_is_a widget GTK_TYPE_LABEL)
+               (gtk_label_set_markup widget (vm:deref userdata))))))))
+
    (define GtkButton
       (define (make ctor ptr options)
          (define base (GtkWidget ctor ptr options))
@@ -31,7 +43,30 @@
                   (gtk_button_set_label ptr text))
             ; Sets the labels text and attributes from markup.
             'set-markup (lambda (markup)
-                  (gtk_label_set_markup (gtk_bin_get_child ptr) markup))
+                  (define label (gtk_bin_get_child ptr))
+                  ; simple case, child is a GtkLabel
+                  (if (g_type_check_instance_is_a label GTK_TYPE_LABEL)
+                     (gtk_label_set_markup label markup)
+                  ; difficult case, GtkLabel is somewhere there
+                  else
+                     (define text (vm:pin markup))
+                     (gtk_container_foreach (gtk_bin_get_child label) set-label-markup text)
+                     (vm:unpin text))) ; avoid memory leaks
+
+            'set-image (lambda (name isize)
+               (cond
+                  ((string? name)
+                     (gtk_button_set_image ptr (gtk_image_new_from_stock name isize))
+                     (gtk_button_set_always_show_image ptr #t)) ; images inside buttons are not visible by default
+                  (else
+                     (error "unsupported"))))
+
+            'set-relief (lambda (relief)
+               (gtk_button_set_relief ptr
+                  (case relief
+                     ('normal GTK_RELIEF_NORMAL)
+                     ('half GTK_RELIEF_HALF)
+                     ('none GTK_RELIEF_NONE))))
 
             ; Sets the 'clicked' button event handler.
             'set-click-handler (GtkEventHandler "clicked" ())
@@ -41,6 +76,8 @@
          ; setup and return
          (when (options 'text #f)
             ((this 'set-text) (options 'text)))
+         (when (options 'markup #f)
+            ((this 'set-markup) (options 'markup)))
          (when (options 'on-click #f)
             ((this 'set-click-handler) (options 'on-click)))
 

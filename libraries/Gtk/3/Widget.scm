@@ -8,9 +8,12 @@
 
       (Gtk 3 Gtk)
 
-      (lib gtk-3 widget))
+      (lib gtk-3 widget)
+      (lib gtk-3 style-context)
+      (lib gtk-3 style-provider))
 
 (begin
+   (import (owl io))
    (define GtkWidget
       (define (make ctor ptr options)
          (define this {
@@ -29,6 +32,28 @@
 
             ; Signals that all holders of a reference to the widget should release the reference that they hold.
             'set-destroy-handler (GtkEventHandler "destroy" ())
+
+            ; StyleContext manipulations
+            'add-provider (lambda (css)
+               (define context (gtk_widget_get_style_context ptr))
+               (gtk_style_context_add_provider context (css 'CssProvider) GTK_STYLE_PROVIDER_PRIORITY_APPLICATION))
+            'add-class (lambda (class)
+               (define context (gtk_widget_get_style_context ptr))
+               (gtk_style_context_add_class context class))
+            'remove-class (lambda (class)
+               (define context (gtk_widget_get_style_context ptr))
+               (gtk_style_context_remove_class context class))
+            'has-class? (lambda (class)
+               (define context (gtk_widget_get_style_context ptr))
+               (gtk_style_context_has_class context class))
+
+            ; todo:
+            'add-css #false
+
+            'enable (lambda ()
+               (gtk_widget_set_sensitive ptr #t))
+            'disable (lambda ()
+               (gtk_widget_set_sensitive ptr #f))
 
             ;; ; Emitted when a button (typically from a mouse) is pressed.
             ;; 'set-button-press-handler (lambda (handler)

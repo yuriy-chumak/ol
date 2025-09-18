@@ -6,14 +6,24 @@
       (scheme base)
 
       (Gtk 3 Gtk)
-      (Gtk 3 Window)
+      (Gtk 3 Widget)
       (Gtk 3 Label)
-      ;; (lib gtk-3 application)
+      (Gtk 3 Button)
+
+      (Gtk 3 Window)
+
       (lib gtk-3 builder))
 
 (begin
    (define GtkBuilder
       (define (make ctor ptr options)
+         ; convert builder id into object
+         (define (get-Object Class)
+            (case-lambda
+               ((id) (Class (gtk_builder_get_object ptr id)))
+               ((id op)
+                     (Class (gtk_builder_get_object ptr id) op))))
+
          (define this {
             'Ptr* ptr ; raw pointer
             'class 'Builder  'superclass #false
@@ -24,7 +34,7 @@
                (> (gtk_builder_add_from_file ptr filename #f) 0))
 
             'add-from-string (lambda (string)
-               (> (gtk_builder_add_from_string ptr string #f) 0))
+               (> (gtk_builder_add_from_string ptr string -1 #f) 0))
 
             'add-callback-symbol (lambda (name handler)
                (define callback
@@ -47,15 +57,11 @@
             'get-object (lambda (id)
                (gtk_builder_get_object ptr id))
 
-            'get-Window (case-lambda
-               ((id) (GtkWindow (gtk_builder_get_object ptr id)))
-               ((id op)
-                     (GtkWindow (gtk_builder_get_object ptr id) op)) )
+            'get-Widget (get-Object GtkWidget)
+            'get-Window (get-Object GtkWindow)
 
-            'get-Label (case-lambda
-               ((id) (GtkLabel (gtk_builder_get_object ptr id)))
-               ((id op)
-                     (GtkLabel (gtk_builder_get_object ptr id) op)) )
+            'get-Label (get-Object GtkLabel)
+            'get-Button (get-Object GtkButton)
          })
 
          ;; apply options
