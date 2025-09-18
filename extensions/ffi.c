@@ -2103,8 +2103,11 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 // Главная функция механизма ffi:
 EXPORT
 __attribute__((used))
-word* OLVM_ffi(olvm_t* this, word arguments)
+word* OLVM_ffi(olvm_t* const this, word arguments)
 {
+	word* fp;
+	heap_t* const heap = (heap_t*)this;
+
 	// a - function address
 	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
 	// c - '(return-type . argument-types-list)
@@ -2122,19 +2125,24 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
 
-// (__x86_64__ && (__unix__ || __APPLE__)) || __aarch64__ // LP64/LLP64
-#if (__x86_64__ && (__unix__ || __APPLE__)) // but not windows
+#if _WIN32
+	// nothing special for Windows (both x32 and x64)
+
+#elif __x86_64__ // && (__unix__ || __APPLE__)), but not windows
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[18]; // 18? почему? это некий максимум?
 	int d = 0;     // количество аргументов для ad
 	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
+
 #elif __aarch64__
 	double ad[8];
 	int d = 0;
+
 #elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
 	int f = 0;     // количество аргументов для af
+
 #elif __EMSCRIPTEN__
 	// двухбитная маска типа аргументов, 16 arguments maximum
 	//	00 - int
@@ -2143,8 +2151,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 	//	11 - double
 	// + старший бит-маркер,
 	long fpmask = 1;
-#elif _WIN32
-	// nothing special for Windows (both x32 and x64)
 #endif
 
 	// переменные для промежуточных результатов
@@ -2179,7 +2185,6 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 
 	// ------------------------------------------------
 	// 1.1  ensure that all arguments will fit in heap
-	heap_t* heap = (heap_t*)this;
 	if (heap->fp + total > heap->end) {
 		size_t pin = OLVM_pin(this, arguments);
 		heap->gc(this, total);
@@ -2190,8 +2195,8 @@ word* OLVM_ffi(olvm_t* this, word arguments)
 		B = car(ABC); ABC = cdr(ABC); // rtty
 		C = car(ABC); ABC = cdr(ABC); // args
 	}
+	fp = heap->fp;
 
-	word* fp = heap->fp;
 	// todo: add configuring api for next "32" etc.
 	// something like "set minimal stack size" or make dynamic
 #if __aarch64__
