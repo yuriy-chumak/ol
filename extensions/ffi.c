@@ -2113,14 +2113,18 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	// c - '(return-type . argument-types-list)
 	register word ABC = arguments;
 	word A = car(ABC); ABC = cdr(ABC); // function
-	word B = car(ABC); ABC = cdr(ABC); // rtty
-	word C = car(ABC); ABC = cdr(ABC); // args
+	word B = car(ABC); ABC = cdr(ABC); // rtty, (cons type prototype)
+	word C = car(ABC); ABC = cdr(ABC); // args, (list arg1 arg2 .. argN)
 
 	assert (is_vptr(A));
 	assert (B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
 	assert (C == INULL || (is_reference(C) && reference_type(C) == TPAIR));
 
-	void *function = (void*) car(A); // "NULL" function means IDF function
+	ret_t got = 0; // результат вызова функции (* internal)
+	void *function = (void*)car(A); // "NULL" function means IDF function
+	int returntype = is_value(car(B))
+		? value(car(B))             // normal return type
+		: reference_type(car(B));   // fft& & fft* return types
 
 	// note: not working under netbsd. should be fixed.
 	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
@@ -2917,9 +2921,6 @@ next_argument:
 
 //	if (fpmask == 15)
 //		__asm__("int $3");
-
-	ret_t got = 0; // результат вызова функции
-	int returntype = is_value(car(B)) ? value(car(B)) : reference_type(car(B)); // TODO: why reference type??
 
 	if (function) {
 		size_t pin = OLVM_pin(this, arguments);
