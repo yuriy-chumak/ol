@@ -53,6 +53,8 @@
 
       GType
       g_type_check_instance_is_a
+      g_type_name_from_instance ; get type of widget
+      g_type_name
 
       G_CALLBACK
       G_TYPE_GTYPE
@@ -224,6 +226,8 @@
 (define G_TYPE_GTYPE ((GOBJECT GType "g_gtype_get_type"))) ; GIO?
 
 (define g_type_check_instance_is_a (GOBJECT gboolean "g_type_check_instance_is_a" GTypeInstance* GType))
+(define g_type_name_from_instance (GOBJECT gchar* "g_type_name_from_instance" GTypeInstance*))
+(define g_type_name (GOBJECT gchar* "g_type_name" GType))
 
 
 ; --=( GValue )=---------

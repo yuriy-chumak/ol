@@ -24,5 +24,5 @@
    (define gtk_container_add (GTK3 void "gtk_container_add" GtkContainer* GtkWidget*))
    (define gtk_container_remove (GTK3 void "gtk_container_remove" GtkContainer* GtkWidget*))
 
-   (define gtk_container_foreach (GTK3 fft-void "gtk_container_foreach" GtkContainer* GtkCallback gpointer))
+   (define gtk_container_foreach (GTK3 fft-void "gtk_container_foreach" GtkContainer* GtkCallback fft-any))
 ))

@@ -38,12 +38,16 @@
       ;; GTK_STYLE_REGION_TAB
 
       gtk_style_context_new
+      gtk_style_context_add_provider
+      gtk_style_context_add_class
+      gtk_style_context_remove_class
+      gtk_style_context_has_class
    )
    (import
       (scheme core)
       (otus ffi)
       (lib gtk-3 gtk)
-      (lib gtk-3 widget))
+      (lib gtk-3 style-provider))
 
 (begin
    (define GtkStyleContext* type-vptr)
@@ -51,9 +55,9 @@
    (define GTK_TYPE_STYLE_CONTEXT (gtk_style_context_get_type))
 
    (define gtk_style_context_new (GTK3 GtkStyleContext* "gtk_adjustment_new"))
-   ; ...
+   (define gtk_style_context_add_provider (GTK3 void "gtk_style_context_add_provider" GtkStyleContext* GtkStyleProvider* guint))
+   (define gtk_style_context_add_class (GTK3 void "gtk_style_context_add_class" GtkStyleContext* gchar*))
+   (define gtk_style_context_remove_class (GTK3 void "gtk_style_context_remove_class" GtkStyleContext* gchar*))
+   (define gtk_style_context_has_class (GTK3 void "gtk_style_context_has_class" GtkStyleContext* gchar*))
 
-   (define (GtkStyleContext props)
-      ;...
-      #false)
 ))

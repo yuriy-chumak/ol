@@ -72,7 +72,7 @@
       vptr->string
       vptr->bool
       vptr->value
-         fft-int16
+      fft-int16
    )
 
    (import
