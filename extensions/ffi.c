@@ -2245,8 +2245,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		value(cdar(B)) > sizeof(ret_t))
 	{
 		int len = value(cdar(B));
-		word* result = new_bytevector(len);
-		args[i++] = (word) &car(result);
+		args[i++] = (word) __builtin_alloca(len);
 	}
 
 	//__ASM__("brk #0");
