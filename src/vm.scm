@@ -32,8 +32,8 @@
       ; low-level types
       type-enum+ type-value+
       type-enum- type-value-
-      type-int+  type-integer+
-      type-int-  type-integer-
+      type-integer+
+      type-integer-
       type-rational
       type-complex
       type-inexact
@@ -61,8 +61,6 @@
 
       (setq type-enum+         0) ; value
       (setq type-enum-        32) ; value
-      (setq type-int+         40) ; reference
-      (setq type-int-         41) ; reference
 
       (setq type-value+        0) ; value
       (setq type-value-       32) ; value

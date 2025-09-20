@@ -52,7 +52,7 @@
    (begin
       (define ncar car)
       (define ncdr cdr)
-      (define (ncons a b) (vm:new type-int+ a b))
+      (define (ncons a b) (vm:new type-integer+ a b))
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
@@ -145,7 +145,7 @@
                ;; promote to bignum and random state
                (lets ((seed (* (+ seed 1) 11111111111111111111111)))
                   [#true (rand-walk rand-acc seed null) seed]))
-            ((eq? (type seed) type-int+)
+            ((eq? (type seed) type-integer+)
                ;; promote to random state
                [#true (rand-walk rand-acc seed null) seed])
             (else
@@ -285,7 +285,7 @@
             (values rs 0) ;; don't use any rands here
             (case (type max)
                (type-enum+ (rand-fixnum rs max))
-               (type-int+ (rand-bignum rs max))
+               (type-integer+ (rand-bignum rs max))
                (else (runtime-error "bad rand limit: " max)))))
 
       ;; a quick skew check. the modulo issue caused a >10% skew in some cases earlier
@@ -503,7 +503,7 @@
                      (lets ((rs n (rand rs denom)))
                         (values rs (< n nom))))))
             (type-enum- (values rs #false))
-            (type-int- (values rs #false))
+            (type-integer- (values rs #false))
             (else
                (if (eq? prob 0)
                   (values rs #false)

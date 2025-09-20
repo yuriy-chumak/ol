@@ -81,7 +81,7 @@
                            (if (good-enough? t s precision)
                               t
                               (loop t))))))))
-         (type-int+
+         (type-integer+
             (let*((s r (exact-integer-sqrt n))) ; r: remainder
                (cond
                   ((eq? r 0)
@@ -96,7 +96,7 @@
                               (loop t))))))))
          (type-enum-
             (complex 0 (:sqrt (abs n) precision)))
-         (type-int-
+         (type-integer-
             (complex 0 (:sqrt (abs n) precision)))
          (type-inexact
             (if (fless? n 0)

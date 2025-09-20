@@ -174,7 +174,7 @@
                      (vec-ref-digit v n))
                   (else
                      (vec-ref-digit (vec-dispatch-2 v n) (vm:and n *blob-leaf-max*)))))
-            (type-int+
+            (type-integer+
                (vec-ref-big v n))
             (else
                (runtime-error "blob-ref: bad index: " n))))
@@ -193,7 +193,7 @@
                   ((eq? (type v) type-bytevector) v)
                   ((less? n *blob-leaf-size*) v)
                   (else (vec-dispatch-2 v n))))
-            (type-int+
+            (type-integer+
                (vec-leaf-big v n))
             (else
                (runtime-error "blob-leaf-of: bad index: " n))))

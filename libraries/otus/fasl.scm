@@ -262,9 +262,9 @@
                ((value? value)
                   (vm:cast value atype))
                ((eq? atype type-enum+)
-                  (vm:cast value type-int+))
+                  (vm:cast value type-integer+))
                ((eq? atype type-enum-)
-                  (vm:cast value type-int-))
+                  (vm:cast value type-integer-))
                (else
                   (fail "invalid value type"))))))
 

@@ -13,7 +13,7 @@
 ;(define add (syscall 85 (cons
 ;   ; arguments ; no return type yet
 ;
-;   (list type-vptr type-vptr type-int+ (list type-string type-string type-string))
+;   (list type-vptr type-vptr type-integer+ (list type-string type-string type-string))
 ;   (lambda (userdata tcl argc argv)
 ;      (print (reverse argv))
 ;      ;(fold + '(1 2 3))
@@ -24,7 +24,7 @@
 ;)) #f #f))
 
 (define calculate (syscall 85 (cons
-   (list type-vptr type-vptr type-int+ (list type-string type-string))
+   (list type-vptr type-vptr type-integer+ (list type-string type-string))
    (lambda (userdata tcl argc argv)
       (let ((argv (reverse argv)))
          (Tcl_SetResult tcl (fold string-append "" (list "(" (cadr argv) ")")) #f))

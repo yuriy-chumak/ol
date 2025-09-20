@@ -109,9 +109,9 @@
             (STD_OUTPUT_HANDLE -11)
             (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
             (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (FillConsoleOutputCharacter (kernel32 type-vptr "FillConsoleOutputCharacterW" type-vptr type-enum+ type-int+ type-int+ type-vptr))
-            (FillConsoleOutputAttribute (kernel32 type-vptr "FillConsoleOutputAttribute" type-vptr type-int+ type-int+ type-int+ type-vptr))
-            (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-int+)))
+            (FillConsoleOutputCharacter (kernel32 type-vptr "FillConsoleOutputCharacterW" type-vptr type-enum+ type-integer+ type-integer+ type-vptr))
+            (FillConsoleOutputAttribute (kernel32 type-vptr "FillConsoleOutputAttribute" type-vptr type-integer+ type-integer+ type-integer+ type-vptr))
+            (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-integer+)))
       (lambda ()
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
                (csbi (make-bytevector 22)) ; CONSOLE_SCREEN_BUFFER_INFO
@@ -134,7 +134,7 @@
       (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
             (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
-            (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-int+)))
+            (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-integer+)))
       (lambda (x y)
          (let ((COORD (+ (band (- x 1) #xFFFF)
                          (<< (band (- y 1) #xFFFF) 16))))
@@ -150,7 +150,7 @@
             (STD_OUTPUT_HANDLE -11)
             (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
             (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
+            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-integer+)))
       (lambda (color)
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
                (csbi (make-bytevector 22))) ; CONSOLE_SCREEN_BUFFER_INFO
@@ -167,7 +167,7 @@
             (STD_OUTPUT_HANDLE -11)
             (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
             (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+)))
+            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-integer+)))
       (lambda (color)
          (let ((hConsole (GetStdHandle STD_OUTPUT_HANDLE))
                (csbi (make-bytevector 22))) ; CONSOLE_SCREEN_BUFFER_INFO
@@ -185,7 +185,7 @@
             (STD_OUTPUT_HANDLE -11)
             (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
             (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-int+))
+            (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-integer+))
 
             (hConsole (GetStdHandle STD_OUTPUT_HANDLE))
             (csbi (make-bytevector 22))) ; CONSOLE_SCREEN_BUFFER_INFO

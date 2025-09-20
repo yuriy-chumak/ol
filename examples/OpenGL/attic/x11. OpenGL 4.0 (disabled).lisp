@@ -75,7 +75,7 @@
 ;(XFree fbc)
 
 
-(define glXCreateContextAttribs  (glGetProcAddress type-port "glXCreateContextAttribsARB" type-port type-port type-int+ type-int+ type-bytevector))
+(define glXCreateContextAttribs  (glGetProcAddress type-port "glXCreateContextAttribsARB" type-port type-port type-integer+ type-integer+ type-bytevector))
 (print "glXCreateContextAttribsARB: " glXCreateContextAttribs)
 
 (define context (glXCreateContextAttribs display fbc0 0 1 (make-bytevector '(

@@ -463,8 +463,8 @@
       ;  * obj 1 and obj 2 are both exact numbers and are numer-
       ;    ically equal (in the sense of =)
          (let ((typea (type a)))
-         (if (or (eq? typea type-int+)
-                 (eq? typea type-int-)
+         (if (or (eq? typea type-integer+)
+                 (eq? typea type-integer-)
                  (eq? typea type-rational)
                  (eq? typea type-complex))
             (and
@@ -818,8 +818,8 @@
 
       type-enum+    ; * ol specific, short (value) positive integer number
       type-enum-    ; * ol specific, short (value) negative integer number
-      type-int+     ; * ol specific, long positive integer number, TODO: change to type-integer+
-      type-int-     ; * ol specific, long negative integer number, TODO: same
+      type-integer+     ; * ol specific, long positive integer number, TODO: change to type-integer+
+      type-integer-     ; * ol specific, long negative integer number, TODO: same
       type-rational
       type-complex
       type-inexact
@@ -835,9 +835,9 @@
       (define (integer? a)
          (case (type a)
             (type-enum+ #true)
-            (type-int+ #true)
+            (type-integer+ #true)
             (type-enum- #true)
-            (type-int- #true)))
+            (type-integer- #true)))
 
       (assert (integer? 3+0i)               ===>  #t) ; imag part is 0
       (assert (integer? 3+4i)               ===>  #f) ; imag part is not a 0
@@ -1787,7 +1787,7 @@
       ; 4.2.9  Case-lambda
       case-lambda ;  * (srfi 16)
       ; 6.2.1  Numerical types
-      type-enum+ type-enum- type-int+ type-int-
+      type-enum+ type-enum-
       type-value+ type-value-
       type-integer+ type-integer-
 

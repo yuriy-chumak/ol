@@ -106,8 +106,8 @@
             (type-string (fft* type-string))
             (type-enum+  (fft* fft-int))
             (type-enum-  (fft* fft-int))
-            (type-int+   (fft* fft-int))
-            (type-int-   (fft* fft-int))
+            (type-integer+   (fft* fft-int))
+            (type-integer-   (fft* fft-int))
             (else #false))
          (box value)))
 

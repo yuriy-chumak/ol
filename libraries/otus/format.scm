@@ -113,9 +113,9 @@
          type-const cook-const
          ; numbers (todo: maybe use number? and (getf .. 'number))
          type-enum+ cook-number
-         type-int+ cook-number
+         type-integer+ cook-number
          type-enum- cook-number
-         type-int- cook-number
+         type-integer- cook-number
          type-rational cook-number
          type-complex cook-number
          type-inexact cook-number
@@ -130,7 +130,7 @@
          ; others
          type-port (lambda (this obj k)
                (cons* #\# #\< #\f #\d #\space
-                  (format-number (vm:cast obj (if (value? obj) type-enum+ type-int+)) (cons* #\> k) 10)))
+                  (format-number (vm:cast obj (if (value? obj) type-enum+ type-integer+)) (cons* #\> k) 10)))
          type-vptr (lambda (this obj k)
                (cons* #\# #\v #\p #\t #\r k))
 

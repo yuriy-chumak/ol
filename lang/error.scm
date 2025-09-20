@@ -32,8 +32,8 @@
 
       type-enum+ 'type-enum+
       type-enum- 'type-enum-
-      type-int+ 'type-int+
-      type-int- 'type-int-
+      type-integer+ 'type-integer+
+      type-integer- 'type-integer-
       type-rational 'type-rational
       type-complex 'type-complex
       type-inexact 'type-inexact

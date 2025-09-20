@@ -362,7 +362,7 @@
                   (cond
                      ((eq? next (car ls)) ;; this elem matched
                         (match-list (cdr ls) val (cons next buff)))
-                     ((eq? (type next) type-int+) ;; try = for high code points
+                     ((eq? (type next) type-integer+) ;; try = for high code points
                         (if (= next (car ls))
                            (match-list (cdr ls) val (cons next buff))
                            (values #false #false)))

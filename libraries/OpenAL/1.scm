@@ -552,7 +552,7 @@
    (define alcCloseDevice (ALC ALvoid "alcCloseDevice" ALCdevice*))
 
    (define alcCreateContext (ALC ALCcontext* "alcCreateContext" ALCdevice* ALCint*))
-   (define alcMakeContextCurrent (ALC type-int+ "alcMakeContextCurrent" ALCcontext*))
+   (define alcMakeContextCurrent (ALC type-integer+ "alcMakeContextCurrent" ALCcontext*))
    (define alcDestroyContext (ALC ALvoid "alcDestroyContext" ALCcontext*))
 
    (define alcGetCurrentContext (ALC ALCcontext* "alcGetCurrentContext"))

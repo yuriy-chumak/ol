@@ -33,7 +33,7 @@
 
    (define Tcl_Interp* type-vptr)
    (define TclCommand type-vptr)
-   (define int type-int+)
+   (define int type-integer+)
 
    (define Tcl_FreeProc* fft-void) ; todo: set to ansi C "free"
    (define Tcl_CmdDeleteProc* fft-void) ; todo: same

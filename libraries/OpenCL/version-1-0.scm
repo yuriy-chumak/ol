@@ -191,16 +191,16 @@
    (define cl_uchar  type-enum+)
    (define cl_short  type-enum+)
    (define cl_ushort type-enum+)
-   (define cl_int    type-int+)  (define cl_int*  type-vptr)
-   (define cl_uint   type-int+)  (define cl_uint* type-vptr)
+   (define cl_int    type-integer+)  (define cl_int*  type-vptr)
+   (define cl_uint   type-integer+)  (define cl_uint* type-vptr)
    (define cl_long   type-int64)
    (define cl_ulong  type-int64)
    (define cl_half   type-enum+) ;?
    (define cl_float  fft-float)
    (define cl_double fft-double)
 
-   (define cl_platform_id type-int+)
-   (define cl_device_id type-int+)
+   (define cl_platform_id type-integer+)
+   (define cl_device_id type-integer+)
 
    (define cl_platform_id* type-vptr)
    (define cl_device_id* type-vptr)
@@ -583,11 +583,11 @@
 (define char* type-string)
 (define void* type-vptr)
 (define size_t* type-vptr)
-(define size_t type-int+)
+(define size_t type-integer+)
 (define CL_CALLBACK* type-port)
 
    (define clGetPlatformIDs     (CL cl_int "clGetPlatformIDs" cl_uint cl_platform_id* cl_uint*))
-   (define clGetPlatformInfo    (CL cl_int "clGetPlatformInfo" cl_platform_id cl_platform_info type-int+ void* size_t*))
+   (define clGetPlatformInfo    (CL cl_int "clGetPlatformInfo" cl_platform_id cl_platform_info type-integer+ void* size_t*))
    (define clGetDeviceIDs       (CL cl_int "clGetDeviceIDs" cl_platform_id cl_device_type cl_uint cl_device_id* cl_uint*))
    (define clGetDeviceInfo      (CL cl_int "clGetDeviceInfo" cl_device_id cl_device_info size_t void* size_t*))
 

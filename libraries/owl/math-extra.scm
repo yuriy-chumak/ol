@@ -83,7 +83,7 @@
       (define (isqrt n)
          (cond
             ((eq? (type n) type-enum-) (negate (isqrt (negate n))))
-            ((eq? (type n) type-int-) (negate (isqrt (negate n))))
+            ((eq? (type n) type-integer-) (negate (isqrt (negate n))))
             ((eq? n 0) 0)
             ((eq? n 1) 1)
             (else
@@ -174,9 +174,9 @@
             ((eq? b 2) (mul a a))
             ((eq? (type a) type-inexact) (fexpt a b))
             ((eq? (type b) type-enum+) (expt-loop a (sub b 1) a))
-            ((eq? (type b) type-int+) (expt-loop a (sub b 1) a))
+            ((eq? (type b) type-integer+) (expt-loop a (sub b 1) a))
             ((eq? (type b) type-enum-) (/ 1 (expt a (negate b))))
-            ((eq? (type b) type-int-) (/ 1 (expt a (negate b))))
+            ((eq? (type b) type-integer-) (/ 1 (expt a (negate b))))
             ((eq? (type b) type-rational) ;; todo: inexact if cannot be solved exactly
                (expt (iroot a (ref b 2)) (ref b 1)))
             ((eq? (type b) type-inexact) (fexpt a b))

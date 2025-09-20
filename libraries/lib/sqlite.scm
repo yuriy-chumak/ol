@@ -605,7 +605,7 @@
 
    (define sqlite3_column_blob (sqlite void* "sqlite3_column_blob" sqlite3_stmt* int))
    (define sqlite3_column_bytes (sqlite int "sqlite3_column_bytes" sqlite3_stmt* int))
-   ;(define sqlite3_column_bytes16 ; (dlsym % type-int+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
+   ;(define sqlite3_column_bytes16 ; (dlsym % type-integer+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
    (define sqlite3_column_double (sqlite fft-double "sqlite3_column_double" sqlite3_stmt* int))
    (define sqlite3_column_int (sqlite int "sqlite3_column_int" sqlite3_stmt* int))
    (define sqlite3_column_int64 (sqlite sqlite3_int64 "sqlite3_column_int" sqlite3_stmt* int))
@@ -623,7 +623,7 @@
 
    (define sqlite3_create_function_v2 (sqlite int "sqlite3_create_function_v2"   sqlite3* type-string int int fft-void* type-callable type-callable type-callable type-vptr))
    ;
-   ;(define sqlite3_value_int  (dlsym % type-int+ "sqlite3_value_int" sqlite3_value*))
+   ;(define sqlite3_value_int  (dlsym % type-integer+ "sqlite3_value_int" sqlite3_value*))
    (define sqlite3_result_int (sqlite fft-void "sqlite3_result_int" sqlite3_context* int))
    (define sqlite3_result_text (sqlite fft-void "sqlite3_result_text" sqlite3_context* type-string int fft-void)) ; we do not support destructors
 

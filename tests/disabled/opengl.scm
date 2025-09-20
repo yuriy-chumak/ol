@@ -49,15 +49,15 @@
 ; real code
 (define void    fft-void)
 (define GLvoid  fft-void)  ; void GLvoid
-(define GLenum  type-int+)  ; typedef unsigned int GLenum - fix+ значит, что это целое число
+(define GLenum  type-integer+)  ; typedef unsigned int GLenum - fix+ значит, что это целое число
 (define GLfloat fft-float) ; typedef float GLfloat (same as type-rational)
-(define GLint   type-int+)  ; typedef int GLint
-(define GLsizei type-int+)  ; typedef int GLsizei
-(define GLbitfield type-int+);typedef unsigned int GLbitfield;
+(define GLint   type-integer+)  ; typedef int GLint
+(define GLsizei type-integer+)  ; typedef int GLsizei
+(define GLbitfield type-integer+);typedef unsigned int GLbitfield;
 ;typedef double GLdouble;
-(define GLuint  type-int+)  ;typedef unsigned int GLuint;
+(define GLuint  type-integer+)  ;typedef unsigned int GLuint;
 (define GLboolean type-enum+);typedef unsigned char GLboolean;
-(define GLubyte type-int+)  ;typedef unsigned char GLubyte;
+(define GLubyte type-integer+)  ;typedef unsigned char GLubyte;
 (define GLubyte* type-string)
 (define GLclampf fft-float)
 

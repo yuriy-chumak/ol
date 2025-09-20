@@ -17,7 +17,7 @@
    (begin
       (define ncar car)
       (define ncdr cdr)
-      (define (ncons a b) (vm:new type-int+ a b))
+      (define (ncons a b) (vm:new type-integer+ a b))
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
