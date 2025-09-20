@@ -30,10 +30,10 @@
       NEW    ; used by (lang rtl)
 
       ; low-level types
-      type-enum+
-      type-enum-
-      type-int+
-      type-int-
+      type-enum+ type-value+
+      type-enum- type-value-
+      type-int+  type-integer+
+      type-int-  type-integer-
       type-rational
       type-complex
       type-inexact
@@ -63,6 +63,11 @@
       (setq type-enum-        32) ; value
       (setq type-int+         40) ; reference
       (setq type-int-         41) ; reference
+
+      (setq type-value+        0) ; value
+      (setq type-value-       32) ; value
+      (setq type-integer+     40) ; reference
+      (setq type-integer-     41) ; reference
       (setq type-rational     42) ; reference
       (setq type-complex      43) ; reference
       (setq type-inexact      44) ; reference, IEEE 754 64-bit binary

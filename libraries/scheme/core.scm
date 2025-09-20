@@ -1788,6 +1788,9 @@
       case-lambda ;  * (srfi 16)
       ; 6.2.1  Numerical types
       type-enum+ type-enum- type-int+ type-int-
+      type-value+ type-value-
+      type-integer+ type-integer-
+
       type-rational type-complex type-inexact
       ; 6.2.6  Numerical operations
       integer? rational? real? complex? number?
