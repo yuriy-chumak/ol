@@ -77,7 +77,7 @@
          (case (type o)
             (type-string #true)
             (type-string-wide #true)
-            (type-string-dispatch #true)
+            (type-superstring #true)
             (else #false)))
 
 
@@ -85,9 +85,9 @@
 
       (define (string-length str)
          (case (type str)
-            (type-string          (size str))
-            (type-string-wide     (size str))
-            (type-string-dispatch (ref str 1))
+            (type-string      (size str))
+            (type-string-wide (size str))
+            (type-superstring (ref str 1))
             ; todo: clarify the returning the runtime-error or simple #f
             (else (runtime-error "string-length: not a string: " str))))
 
@@ -115,7 +115,7 @@
                      (str-iter-leaf str tl 0 len))))
             (type-string-wide
                (str-iter-wide-leaf str tl 1))
-            (type-string-dispatch
+            (type-superstring
                (let loop ((pos 2))
                   (if (eq? pos (size str))
                      (str-iter-any (ref str pos) tl)
@@ -159,7 +159,7 @@
                      (str-iterr-leaf str tl (- len 1)))))
             (type-string-wide
                (str-iterr-wide-leaf str tl (size str)))
-            (type-string-dispatch
+            (type-superstring
                (let loop ((pos (size str)))
                   (if (eq? pos 2)
                      (str-iterr-any (ref str 2) tl)
@@ -228,9 +228,9 @@
                       (c d (split #null l q))
                       (subs (map finish-string (list a b c d)))
                       (len (fold + 0 (map string-length subs))))
-                     (vm:make type-string-dispatch (cons len subs))))
+                     (vm:make type-superstring (cons len subs))))
                (else
-                  (vm:make type-string-dispatch ;(+ n 1)
+                  (vm:make type-superstring ;(+ n 1)
                      (cons (fold + 0 (map string-length chunks)) chunks))))))
 
       (define (make-chunk rcps ascii?)
@@ -423,8 +423,7 @@
          (case (type str)
             (type-string      (ref str p))
             (type-string-wide (ref str (++ p)))
-            (type-string-dispatch
-                              (let loop ((i 2) (p p))
+            (type-superstring (let loop ((i 2) (p p))
                                  (define s (ref str i))
                                  (define l (string-length s))
                                  (when s

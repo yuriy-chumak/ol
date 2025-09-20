@@ -72,7 +72,7 @@
 
       (setq TBYTEVECTOR       19) ; reference, raw
       ; 20
-      (setq type-string-dispatch 21) ; reference
+      (setq type-superstring  21) ; reference
       ; 22 ?
       ; 23
 
