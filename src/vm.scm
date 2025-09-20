@@ -32,13 +32,28 @@
       ; low-level types
       type-enum+
       type-enum-
-      type-int+ type-int-
+      type-int+
+      type-int-
+      type-rational
+      type-complex
+      type-inexact
 
-      TRATIONAL TCOMPLEX TINEXACT
-      TPAIR TSYMBOL TVECTOR TBYTEVECTOR
-      TSTRING TSTRINGWIDE
-      TBYTECODE TPROCEDURE TCLOSURE TCONSTRUCTOR
-      TVPTR TCALLABLE)
+      type-pair
+      type-vector
+      type-symbol
+      type-bytevector
+      type-string
+      type-string-wide
+      type-superstring
+
+      type-bytecode
+      type-procedure
+      type-closure
+
+      type-thread-state
+
+      type-vptr
+      type-constructor)
 
    (begin
       ; -----------------------------------------------------------------------
@@ -48,15 +63,15 @@
       (setq type-enum-        32) ; value
       (setq type-int+         40) ; reference
       (setq type-int-         41) ; reference
-      (setq TRATIONAL         42) ; reference
-      (setq TCOMPLEX          43) ; reference
-      (setq TINEXACT          44) ; reference, IEEE 754 64-bit binary
+      (setq type-rational     42) ; reference
+      (setq type-complex      43) ; reference
+      (setq type-inexact      44) ; reference, IEEE 754 64-bit binary
 
-      (setq TPAIR              1) ; reference
-      (setq TVECTOR            2) ; reference
-      (setq TSTRING            3) ; reference, raw -> 35 (#b100000 + 3)?
-      (setq TSYMBOL            4) ; reference
-      (setq TSTRINGWIDE        5) ; reference, raw
+      (setq type-pair          1) ; reference
+      (setq type-vector        2) ; reference
+      (setq type-string        3) ; reference, raw -> 35 (#b100000 + 3)?
+      (setq type-symbol        4) ; reference
+      (setq type-string-wide   5) ; reference, raw
       ; 6
       ; 7
       ;setq type-ff-black-leaf 8) ; reference ; TODO: move to 28
@@ -71,13 +86,13 @@
       ;setq type-rlist-node   14) ; reference, used by rlist (not retested)
       (setq type-blob-dispatch 15) ; reference
 
-      (setq TBYTECODE         16) ; reference, a bytecode
-      (setq TPROCEDURE        17) ; reference, pure function
-      (setq TCLOSURE          18) ; reference, function with closures
+      (setq type-bytecode     16) ; reference, a bytecode
+      (setq type-procedure    17) ; reference, pure function
+      (setq type-closure      18) ; reference, function with closures
 
-      (setq TBYTEVECTOR       19) ; reference, raw
+      (setq type-bytevector   19) ; reference, raw
       ; 20
-      (setq TSUPERSTRING      21) ; reference
+      (setq type-superstring  21) ; reference
       ; 22 ?
       ; 23
 
@@ -88,9 +103,9 @@
 
       (setq type-thread-state 31) ; reference
 
-      (setq TVPTR             49) ; reference, blob
-      (setq TCALLABLE         61) ; reference, blob
-      (setq TCONSTRUCTOR      63) ; reference, autorun function(constructor)
+      (setq type-vptr         49) ; reference, blob
+      ; 61                        ; reference, ffi: TCALLABLE
+      (setq type-constructor  63) ; reference, autorun function(constructor)
 
 
       ; -------------------------------------------
@@ -128,10 +143,15 @@
       ;; Примитивные операции/операторы
 
       ; internal helpers
+      ; * makes primop record
       (setq primop (lambda (name in out code)
-         (vm:new TVECTOR name (ref code 0) in out code))) ; * makes primop record
+         (vm:new type-vector name (ref code 0) in out code)))
+
+      ; * makes bytecode from list
       (setq make-bytecode (lambda (bytecode)
-         (vm:alloc TBYTECODE bytecode))) ; * makes bytecode from list
+         (vm:alloc type-bytecode bytecode)))
+
+      ; * fast but limited version
       (setq list (lambda args args))
 
       ; -----------------------------------------------------------------------

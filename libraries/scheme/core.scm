@@ -119,9 +119,9 @@
       (setq make-vector ; #() and []
          (case-lambda
             ((v)
-               (vm:make TVECTOR v))
+               (vm:make type-vector v))
             ((k fill)
-               (vm:make TVECTOR k fill))))
+               (vm:make type-vector k fill))))
    
       ; * Identity function
       (setq idf (lambda (x) x))
@@ -465,8 +465,8 @@
          (let ((typea (type a)))
          (if (or (eq? typea type-int+)
                  (eq? typea type-int-)
-                 (eq? typea TRATIONAL)
-                 (eq? typea TCOMPLEX))
+                 (eq? typea type-rational)
+                 (eq? typea type-complex))
             (and
                (eq? typea (type b))
                (eqv? (car a) (car b))
@@ -478,7 +478,7 @@
       ;    as a finite composition of Scheme’s standard arith-
       ;    metic procedures, provided it does not result in a NaN
       ;    value.
-         (if (eq? typea TINEXACT)
+         (if (eq? typea type-inexact)
             (and
                (eq? typea (type b))
                (let loop ((n (-- (size a))))
@@ -820,9 +820,9 @@
       type-enum-    ; * ol specific, short (value) negative integer number
       type-int+     ; * ol specific, long positive integer number, TODO: change to type-integer+
       type-int-     ; * ol specific, long negative integer number, TODO: same
-      (define type-rational         TRATIONAL)
-      (define type-complex          TCOMPLEX)
-      (define type-inexact          TINEXACT)
+      type-rational
+      type-complex
+      type-inexact
 
       ; 6.2.2  Exactness
       ; 6.2.3  Implementation restrictions
@@ -997,12 +997,12 @@
       ;
       ; This data types related to olvm, not a part of r7rs
 
-      (define type-pair             TPAIR)    ; reference
-      (define type-vector           TVECTOR)  ; reference
-      (define type-string           TSTRING)  ; reference, bytevector of ansi chars
-      (define type-symbol           TSYMBOL)  ; reference
+      type-pair    ; reference
+      type-vector  ; reference
+      type-string  ; reference, bytevector of ansi chars
+      type-symbol  ; reference
 
-      (define type-string-wide      TSTRINGWIDE) ; reference, vector of unicode chars
+      type-string-wide ; reference, vector of unicode chars
 
       (define type-rlist-spine      10) ; reference
       (define type-blob-leaf        11) ; reference
@@ -1013,16 +1013,16 @@
       (define type-rlist-node       14) ; reference
       (define type-blob-dispatch    15) ; reference
 
-      (define type-bytecode         TBYTECODE)   ; reference, bytecode
-      (define type-procedure        TPROCEDURE)  ; reference, pure function
-      (define type-closure          TCLOSURE)    ; reference, function with closure(s)
-      (define type-constructor      TCONSTRUCTOR); reference, constructor
+      type-bytecode    ; reference, bytecode
+      type-procedure   ; reference, pure function
+      type-closure     ; reference, function with closure(s)
 
-      (define type-bytevector       TBYTEVECTOR) ; reference, bytevector
-      (define type-superstring      21) ; reference
+      type-bytevector  ; reference, bytevector
+      type-superstring ; reference
 
-      (define type-thread-state     31) ; reference
-      (define type-vptr             49) ; reference,  blob
+      type-thread-state; reference
+      type-vptr        ; reference,  blob
+      type-constructor ; reference, constructor
 
       ; 6.3  Booleans
       ;
