@@ -62,7 +62,7 @@
             ;;       (cond
             ;;          ((eq? (type handler) type-callable) ; callback
             ;;             handler)
-            ;;          ((and (eq? (type handler) type-enum+) ; pin?
+            ;;          ((and (eq? (type handler) type-value+) ; pin?
             ;;                (pair? (vm:deref handler))
             ;;                (function? (cdr (vm:deref handler))))
             ;;             (G_CALLBACK handler))

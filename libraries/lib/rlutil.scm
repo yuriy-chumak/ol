@@ -107,9 +107,9 @@
       ; Based on https://msdn.microsoft.com/en-us/library/windows/desktop/ms682022%28v=vs.85%29.aspx
       (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-value+))
             (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
-            (FillConsoleOutputCharacter (kernel32 type-vptr "FillConsoleOutputCharacterW" type-vptr type-enum+ type-integer+ type-integer+ type-vptr))
+            (FillConsoleOutputCharacter (kernel32 type-vptr "FillConsoleOutputCharacterW" type-vptr type-value+ type-integer+ type-integer+ type-vptr))
             (FillConsoleOutputAttribute (kernel32 type-vptr "FillConsoleOutputAttribute" type-vptr type-integer+ type-integer+ type-integer+ type-vptr))
             (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-integer+)))
       (lambda ()
@@ -133,7 +133,7 @@
    (win32?
       (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-value+))
             (SetConsoleCursorPosition   (kernel32 type-vptr "SetConsoleCursorPosition" type-vptr type-integer+)))
       (lambda (x y)
          (let ((COORD (+ (band (- x 1) #xFFFF)
@@ -148,7 +148,7 @@
    (win32?
       (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-value+))
             (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
             (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-integer+)))
       (lambda (color)
@@ -165,7 +165,7 @@
    (win32?
       (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-value+))
             (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
             (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-integer+)))
       (lambda (color)
@@ -183,7 +183,7 @@
    (win32?
       (let*((kernel32 (load-dynamic-library "kernel32.dll"))
             (STD_OUTPUT_HANDLE -11)
-            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-enum+))
+            (GetStdHandle               (kernel32 type-vptr "GetStdHandle" type-value+))
             (GetConsoleScreenBufferInfo (kernel32 type-vptr "GetConsoleScreenBufferInfo" type-vptr type-vptr))
             (SetConsoleTextAttribute (kernel32 type-vptr "SetConsoleTextAttribute" type-vptr type-integer+))
 

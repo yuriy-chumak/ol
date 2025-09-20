@@ -213,7 +213,7 @@
                      (λ () (values
                         ['prim op args to more]
                         (fold reg-touch (del uses to) args)))))
-                  (if (eq? (type to) type-enum+)
+                  (if (eq? (type to) type-value+)
                      ; retarget the sole argument if possible
                      (let ((good (use-list uses to)))
                         (retarget-first more to good uses

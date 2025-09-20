@@ -83,7 +83,7 @@
                      #false))
                (else
                   (accept (ls) buff ms cont))))
-         (if (eq? (type cp) type-enum+)
+         (if (eq? (type cp) type-value+)
             accept
             (runtime-error "match string cannot yet contain a " cp)))
 
@@ -140,7 +140,7 @@
          (call/cc
             (λ (ret)
                (fold (λ (ff n)
-                        (if (eq? (type n) type-enum+)
+                        (if (eq? (type n) type-value+)
                            (put ff n #true)
                         else
                            (ret #false)))

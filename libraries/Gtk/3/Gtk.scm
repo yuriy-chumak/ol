@@ -2,7 +2,7 @@
    (description "")
    (export
       vptr? ctor?
-      type-callable type-enum+
+      type-callable type-value+
       error
 
       GtkEventHandler G_SIGNAL_CONNECT
@@ -32,10 +32,10 @@
          ((G_SIGNAL_CONNECT name . body)
             (lambda (handler)
                (define callback (cond
-                  ((and (eq? (type handler) type-enum+) ; already cooked
+                  ((and (eq? (type handler) type-value+) ; already cooked
                         (function? (vm:deref handler)))
                      handler)
-                  ((and (eq? (type handler) type-enum+) ; make a new one
+                  ((and (eq? (type handler) type-value+) ; make a new one
                         (pair? (vm:deref handler))
                         (function? (cdr (vm:deref handler))))
                      (G_CALLBACK handler))

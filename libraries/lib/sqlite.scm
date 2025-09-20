@@ -605,7 +605,7 @@
 
    (define sqlite3_column_blob (sqlite void* "sqlite3_column_blob" sqlite3_stmt* int))
    (define sqlite3_column_bytes (sqlite int "sqlite3_column_bytes" sqlite3_stmt* int))
-   ;(define sqlite3_column_bytes16 ; (dlsym % type-integer+   "sqlite3_column_bytes" sqlite3_stmt* type-enum+))
+   ;(define sqlite3_column_bytes16 ; (dlsym % type-integer+   "sqlite3_column_bytes" sqlite3_stmt* type-value+))
    (define sqlite3_column_double (sqlite fft-double "sqlite3_column_double" sqlite3_stmt* int))
    (define sqlite3_column_int (sqlite int "sqlite3_column_int" sqlite3_stmt* int))
    (define sqlite3_column_int64 (sqlite sqlite3_int64 "sqlite3_column_int" sqlite3_stmt* int))

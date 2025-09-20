@@ -30,7 +30,7 @@
       type-thread-state 'type-thread
       type-vptr 'type-vptr
 
-      type-enum+ 'type-enum+
+      type-value+ 'type-value+
       type-enum- 'type-enum-
       type-integer+ 'type-integer+
       type-integer- 'type-integer-
@@ -42,7 +42,7 @@
    (define (enum? x)
       (let ((x-type (type x)))
          (or
-            (eq? x-type type-enum+)
+            (eq? x-type type-value+)
             (eq? x-type type-enum-) )))
 
 ; todo: collect all names of similar function
@@ -70,7 +70,7 @@
 
    (define (op-name env op)
       (case (type op)
-         (type-enum+
+         (type-value+
             (if (less? op 256)
                (vm:cast [(primop-name op)] 9)
             else
@@ -134,7 +134,7 @@
                         (list (cdr b))))
                else ; just given
                   (case (type a)
-                     (type-enum+ ; primop, find expected arguments count
+                     (type-value+ ; primop, find expected arguments count
                         (list (but b) name 'expects
                            (call/cc (lambda (found) ; expected count
                               (for-each (lambda (prim)

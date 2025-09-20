@@ -388,7 +388,7 @@ JNIEXPORT jobject JNICALL NATIVE(eval)(JNIEnv *jenv, jobject jobj, jarray args)
 		return (*jenv)->GetStaticObjectField(jenv, Boolean, TRUE);
 	}
 	if (is_number(r))
-	{ // type-enum+, type-enum-, type-int+, type-int-
+	{ // type-value+, type-enum-, type-integer+, type-integer-
 		jmethodID valueOf = (*jenv)->GetStaticMethodID(jenv, Integer, "valueOf", "(I)Ljava/lang/Integer;");
 		return (*jenv)->CallStaticObjectMethod(jenv, Integer, valueOf, (void *)ol2int(r));
 	}

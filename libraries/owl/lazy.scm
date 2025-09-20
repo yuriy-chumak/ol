@@ -152,7 +152,7 @@
 
       (define (lnums n)
          (case (type n)
-            (type-enum+ (lnums-fix n))
+            (type-value+ (lnums-fix n))
             (else (lnums-other n))))
 
       ;;; lazy lrange, with some fixnum hacks to make it run at decent speed
@@ -187,8 +187,8 @@
 
       (define (liota pos step end)
          (if (eq? step 1)
-            (if (eq? (type pos) type-enum+)
-               (if (eq? (type end) type-enum+)
+            (if (eq? (type pos) type-value+)
+               (if (eq? (type end) type-value+)
                   (liota-fix pos end)         ; positive fixnum range interval
                   (liota-walk-one pos end))    ; increment lrange
                (liota-walk-one pos end))

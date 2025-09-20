@@ -110,7 +110,7 @@
 
 
       (define (reg a)
-         (if (eq? (type a) type-enum+)
+         (if (eq? (type a) type-value+)
             (if (< a n-registers)
                a
                (runtime-error "register too high: " a))
@@ -165,7 +165,7 @@
                            (append (map reg args)
                               (cons (reg to)
                                  (assemble more fail))))))
-                  ((eq? (type to) type-enum+)
+                  ((eq? (type to) type-value+)
                      (if (opcode-arity-ok? op (length args) 1)
                         (cons op
                            (append (map reg args)
@@ -214,7 +214,7 @@
                   ((eq? val #empty)
                      (cons* LDE (reg to)
                         (assemble cont fail)))
-                  ((eq? (type val) type-enum+)
+                  ((eq? (type val) type-value+)
                      (let ((code (assemble cont fail)))
                         (if (> val 126) ;(or (> val 126) (< val -126)) ; would be a bug
                            (fail (list "ld: big value: " val)))

@@ -82,7 +82,7 @@
 
       (define (lcg-rands seed)
          (let ((seed (band (+ (* seed 1664525) 1013904223) #xffffffff)))
-            (if (eq? (type seed) type-enum+)
+            (if (eq? (type seed) type-value+)
                (lcons seed (lcg-rands seed))
                (lcons (ncar seed) (lcg-rands seed)))))
 
@@ -118,7 +118,7 @@
              (y z)
              (z w)
              (w (bxor w (bxor (>> w 19) (bxor t (>> t 8))))))
-            (if (eq? (type w) type-enum+)
+            (if (eq? (type w) type-value+)
                (cons w (cons 0
                   (λ () (xorshift-128 x y z w))))
                (cons (ncar w) (cons (ncar (ncdr w))
@@ -141,7 +141,7 @@
 
       (define (rand-succ seed)
          (cond
-            ((eq? (type seed) type-enum+)
+            ((eq? (type seed) type-value+)
                ;; promote to bignum and random state
                (lets ((seed (* (+ seed 1) 11111111111111111111111)))
                   [#true (rand-walk rand-acc seed null) seed]))
@@ -284,7 +284,7 @@
          (if (eq? max 0)
             (values rs 0) ;; don't use any rands here
             (case (type max)
-               (type-enum+ (rand-fixnum rs max))
+               (type-value+ (rand-fixnum rs max))
                (type-integer+ (rand-bignum rs max))
                (else (runtime-error "bad rand limit: " max)))))
 

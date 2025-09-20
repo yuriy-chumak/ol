@@ -392,7 +392,7 @@
       ;; 6.6.  Characters
 
       ; procedure:  (char? obj)
-      (define (char? o) (eq? (type o) type-enum+))
+      (define (char? o) (eq? (type o) type-value+))
 
       ; * internal staff
       (define (compare cmp a b)

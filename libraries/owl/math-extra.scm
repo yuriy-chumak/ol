@@ -52,7 +52,7 @@
       (define (nbits n f)
          (cond
             ((eq? n 0) f)
-            ((eq? (type n) type-enum+)
+            ((eq? (type n) type-value+)
                (lets ((hi lo (vm:shr n 1)))
                   (nbits hi (nat+1 f))))
             (else
@@ -173,7 +173,7 @@
             ((eq? b 1) a)
             ((eq? b 2) (mul a a))
             ((eq? (type a) type-inexact) (fexpt a b))
-            ((eq? (type b) type-enum+) (expt-loop a (sub b 1) a))
+            ((eq? (type b) type-value+) (expt-loop a (sub b 1) a))
             ((eq? (type b) type-integer+) (expt-loop a (sub b 1) a))
             ((eq? (type b) type-enum-) (/ 1 (expt a (negate b))))
             ((eq? (type b) type-integer-) (/ 1 (expt a (negate b))))

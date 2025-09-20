@@ -80,7 +80,7 @@
 
       (define (valid-code-point? val)
          (cond
-            ((eq? (type val) type-enum+) #true) ; 0 <= n < 65536
+            ((eq? (type val) type-value+) #true) ; 0 <= n < 65536
             ((eq? (type val) type-integer+) ;; 0 <= n <= last-code-point
                (<= val last-code-point))
             (else #false)))

@@ -31,7 +31,7 @@
                   (iputl these (ncdr num) val)))))
 
       (define (iput ff num val)
-         (if (eq? (type num) type-enum+)
+         (if (eq? (type num) type-value+)
             (let ((small (get ff tag empty)))
                (put ff tag
                   (put small num val)))
@@ -45,7 +45,7 @@
             def))
 
       (define (iget ff num def)
-         (if (eq? (type num) type-enum+)
+         (if (eq? (type num) type-value+)
             (get (get ff tag empty) num def)
             (igetl ff num def)))
 

@@ -53,7 +53,7 @@
    ; 3.1  Error handling
    (define (posix-error? obj)
       (and
-         (eq? (type obj) type-enum+)
+         (eq? (type obj) type-value+)
          (less? 0 obj)))
 
    (setq posix-error-names {

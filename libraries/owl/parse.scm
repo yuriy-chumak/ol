@@ -98,7 +98,7 @@
             ((let-parse* ((a . b) ...) first . rest)
                (let-parse* ((a . b) ...) (begin first . rest)))))
 
-      (define (char? o) (eq? (type o) type-enum+))
+      (define (char? o) (eq? (type o) type-value+))
 
       ;; bactrtrack function : l r fp why
       ; l - stream

@@ -390,7 +390,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                                     (explain (eval-string exp env) args))
                                  (type-string-wide
                                     (explain (eval-string exp env) args))
-                                 (type-enum+
+                                 (type-value+
                                     (explain (eval-repl (vm:deref exp) env #f evaluate) args))
                                  (type-bytevector
                                     (explain (eval-repl (fasl-decode (bytevector->list exp) #f) env #f evaluate) args))))))))

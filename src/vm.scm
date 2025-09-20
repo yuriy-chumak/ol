@@ -30,7 +30,7 @@
       NEW    ; used by (lang rtl)
 
       ; low-level types
-      type-enum+ type-value+
+      type-value+
       type-enum- type-value-
       type-integer+
       type-integer-
@@ -59,7 +59,6 @@
       ; -----------------------------------------------------------------------
       ; Virtual Machine Types List       Список типов данных виртуальной машины
 
-      (setq type-enum+         0) ; value
       (setq type-enum-        32) ; value
 
       (setq type-value+        0) ; value

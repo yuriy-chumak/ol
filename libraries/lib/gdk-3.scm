@@ -53,7 +53,7 @@
    (define GdkGLContext* fft-void*)
 
    (define GdkEvent* type-vptr)
-   (define GdkEventType type-enum+)
+   (define GdkEventType type-value+)
    (define gdouble& (fft& gdouble))
 
    (define gdk_event_get_event_type (GDK GdkEventType "gdk_event_get_event_type" GdkEvent*))

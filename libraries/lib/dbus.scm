@@ -104,7 +104,7 @@
       (cons
          (case (type value)
             (type-string (fft* type-string))
-            (type-enum+  (fft* fft-int))
+            (type-value+  (fft* fft-int))
             (type-enum-  (fft* fft-int))
             (type-integer+   (fft* fft-int))
             (type-integer-   (fft* fft-int))

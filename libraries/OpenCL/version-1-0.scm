@@ -187,15 +187,15 @@
 
    (define type-int64 44)
 
-   (define cl_char   type-enum+)
-   (define cl_uchar  type-enum+)
-   (define cl_short  type-enum+)
-   (define cl_ushort type-enum+)
+   (define cl_char   type-value+)
+   (define cl_uchar  type-value+)
+   (define cl_short  type-value+)
+   (define cl_ushort type-value+)
    (define cl_int    type-integer+)  (define cl_int*  type-vptr)
    (define cl_uint   type-integer+)  (define cl_uint* type-vptr)
    (define cl_long   type-int64)
    (define cl_ulong  type-int64)
-   (define cl_half   type-enum+) ;?
+   (define cl_half   type-value+) ;?
    (define cl_float  fft-float)
    (define cl_double fft-double)
 

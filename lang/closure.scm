@@ -28,7 +28,7 @@
             (eq? val #true)
             (eq? val #false)
             (and
-               (eq? (type val) type-enum+)
+               (eq? (type val) type-value+)
                (less? val 127))
             (eq? val #null)))
 

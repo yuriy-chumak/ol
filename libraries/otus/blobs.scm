@@ -166,7 +166,7 @@
       ; vec x n -> vec[n] or fail
       (define (blob-ref v n)
          (case (type n)
-            (type-enum+
+            (type-value+
                (cond
                   ((bytevector? v)
                      (ref v n))
@@ -188,7 +188,7 @@
 
       (define (blob-leaf-of v n)
          (case (type n)
-            (type-enum+
+            (type-value+
                (cond
                   ((eq? (type v) type-bytevector) v)
                   ((less? n *blob-leaf-size*) v)
@@ -229,7 +229,7 @@
 
       (define (byte? val)
          (and
-            (eq? (type val) type-enum+)
+            (eq? (type val) type-value+)
             (eq? val (vm:and val 255))))
 
       ;; list -> list of leaf nodes

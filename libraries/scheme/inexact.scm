@@ -68,7 +68,7 @@
 
    (define (:sqrt n precision)
       (case (type n)
-         (type-enum+
+         (type-value+
             (let*((s r (exact-integer-sqrt n))) ; r: remainder
                (cond
                   ((eq? r 0)
