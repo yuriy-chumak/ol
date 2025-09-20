@@ -62,7 +62,7 @@ Number notation allows the use of a radix prefix for binary (`#b`), octal (`#o`)
 * *+inf.0* is a positive infinity. Always inexact, there is no exact analogue.
 * *-inf.0* is a negative infinity. Always inexact, there is no exact analogue.
 * *+nan.0* is a not-a-number. Always inexact, there is no exact analogue.
-* There is no constant for negative exact zero. *+0*, *0*, and *-0* are always read as just "0" (not positive, not negative). But if you really need it, you can get one using the Ol syntax `(vm:cast 0 type-enum-)`.
+* There is no constant for negative exact zero. *+0*, *0*, and *-0* are always read as just "0" (not positive, not negative). But if you really need it, you can get one using the Ol syntax `(vm:cast 0 type-value-)`.
   * Note: you can't create *positive zero*.
 * There is no constant for negative inexact zero. *#i+0*, *#i0*, and *#i-0* are always read as just "#i0" (not positive, not negative). But if you really need it, you can get one using the syntax `(* -1 #i0)`.
   * Note: you can't create *positive zero*.
@@ -81,7 +81,7 @@ Please don't use *-0* if you can. The behavior of such numbers is unspecified, p
 
 ```scheme
 ; there is no convenient way to create -0
-> (define |-0| (vm:cast 0 type-enum-))
+> (define |-0| (vm:cast 0 type-value-))
 > (define |-0.0| (* -1 #i0))
 
 (< |-0| 0)                    ==>  #true
