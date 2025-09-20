@@ -10,6 +10,7 @@
 ; todo: change (vm:div hi lo b) to (vm:div lo hi b)
 
 (define-library (src vm)
+   (description "Low-level Virtual Machine constants and primops")
    (export
       apply apply/cc arity-error
       call-with-current-continuation
@@ -28,8 +29,12 @@
 
       NEW    ; used by (lang rtl)
 
-      ; types
-      TENUM+ TENUM- TINT+ TINT- TRATIONAL TCOMPLEX TINEXACT
+      ; low-level types
+      type-enum+
+      type-enum-
+      type-int+ type-int-
+
+      TRATIONAL TCOMPLEX TINEXACT
       TPAIR TSYMBOL TVECTOR TBYTEVECTOR
       TSTRING TSTRINGWIDE
       TBYTECODE TPROCEDURE TCLOSURE TCONSTRUCTOR
@@ -39,10 +44,10 @@
       ; -----------------------------------------------------------------------
       ; Virtual Machine Types List       Список типов данных виртуальной машины
 
-      (setq TENUM+             0) ; value
-      (setq TENUM-            32) ; value
-      (setq TINT+             40) ; reference
-      (setq TINT-             41) ; reference
+      (setq type-enum+         0) ; value
+      (setq type-enum-        32) ; value
+      (setq type-int+         40) ; reference
+      (setq type-int-         41) ; reference
       (setq TRATIONAL         42) ; reference
       (setq TCOMPLEX          43) ; reference
       (setq TINEXACT          44) ; reference, IEEE 754 64-bit binary
@@ -72,7 +77,7 @@
 
       (setq TBYTEVECTOR       19) ; reference, raw
       ; 20
-      (setq type-superstring  21) ; reference
+      (setq TSUPERSTRING      21) ; reference
       ; 22 ?
       ; 23
 

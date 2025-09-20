@@ -463,8 +463,8 @@
       ;  * obj 1 and obj 2 are both exact numbers and are numer-
       ;    ically equal (in the sense of =)
          (let ((typea (type a)))
-         (if (or (eq? typea TINT+)
-                 (eq? typea TINT-)
+         (if (or (eq? typea type-int+)
+                 (eq? typea type-int-)
                  (eq? typea TRATIONAL)
                  (eq? typea TCOMPLEX))
             (and
@@ -816,10 +816,10 @@
       ; rational number
       ; integer
 
-      (define type-enum+            TENUM+)    ; * ol specific, short positive integer number
-      (define type-enum-            TENUM-)    ; * ol specific, short negative integer number
-      (define type-int+             TINT+)     ; * ol specific, long positive integer number
-      (define type-int-             TINT-)     ; * ol specific, long negative integer number
+      type-enum+    ; * ol specific, short (value) positive integer number
+      type-enum-    ; * ol specific, short (value) negative integer number
+      type-int+     ; * ol specific, long positive integer number, TODO: change to type-integer+
+      type-int-     ; * ol specific, long negative integer number, TODO: same
       (define type-rational         TRATIONAL)
       (define type-complex          TCOMPLEX)
       (define type-inexact          TINEXACT)
