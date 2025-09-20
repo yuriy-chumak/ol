@@ -114,7 +114,7 @@
          ; numbers (todo: maybe use number? and (getf .. 'number))
          type-value+ cook-number
          type-integer+ cook-number
-         type-enum- cook-number
+         type-value- cook-number
          type-integer- cook-number
          type-rational cook-number
          type-complex cook-number

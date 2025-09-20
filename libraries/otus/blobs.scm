@@ -449,7 +449,7 @@
                tl))) ; size field in root is a number → skip
 
       (define (blob-iterr-loop v p)
-         (if (eq? type-enum- (type p))
+         (if (eq? type-value- (type p))
             null
             (iterr-any-leaf (blob-leaf-of v p)
                (λ () (blob-iterr-loop v (- p *blob-leaf-size*))))))

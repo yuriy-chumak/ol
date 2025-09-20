@@ -88,7 +88,7 @@
       ;; encode the integer number
       (define (encode-integer val tail)
          (cons 0
-            (cons (if (negative? val) type-enum- type-value+)
+            (cons (if (negative? val) type-value- type-value+)
                (send-number (abs val) tail))))
 
 
@@ -263,7 +263,7 @@
                   (vm:cast value atype))
                ((eq? atype type-value+)
                   (vm:cast value type-integer+))
-               ((eq? atype type-enum-)
+               ((eq? atype type-value-)
                   (vm:cast value type-integer-))
                (else
                   (fail "invalid value type"))))))

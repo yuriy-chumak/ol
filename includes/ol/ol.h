@@ -187,7 +187,7 @@ struct olvm_t {
 		assert (is_reference(p) && "argument should be reference");\
 		(unsigned char)(((*(uintptr_t*)(p)) >> 2) & 0x3F); })
 
-//! returns not 0 if argument is a small number (type-value+ or type-enum-)
+//! returns not 0 if argument is a small number (type-value+ or type-value-)
 #define is_enum(x) ({ uintptr_t s = (uintptr_t)(x);\
 		is_value(s) ?\
 			vtype(s) == 0 || vtype(s) == 32\

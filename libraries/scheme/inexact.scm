@@ -94,7 +94,7 @@
                            (if (good-enough? t s precision)
                               t
                               (loop t))))))))
-         (type-enum-
+         (type-value-
             (complex 0 (:sqrt (abs n) precision)))
          (type-integer-
             (complex 0 (:sqrt (abs n) precision)))

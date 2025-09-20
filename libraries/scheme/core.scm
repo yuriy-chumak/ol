@@ -817,7 +817,7 @@
       ; integer
 
       type-value+    ; * ol specific, short (value) positive integer number
-      type-enum-    ; * ol specific, short (value) negative integer number
+      type-value-    ; * ol specific, short (value) negative integer number
       type-integer+     ; * ol specific, long positive integer number, TODO: change to type-integer+
       type-integer-     ; * ol specific, long negative integer number, TODO: same
       type-rational
@@ -836,7 +836,7 @@
          (case (type a)
             (type-value+ #true)
             (type-integer+ #true)
-            (type-enum- #true)
+            (type-value- #true)
             (type-integer- #true)))
 
       (assert (integer? 3+0i)               ===>  #t) ; imag part is 0
@@ -1787,7 +1787,6 @@
       ; 4.2.9  Case-lambda
       case-lambda ;  * (srfi 16)
       ; 6.2.1  Numerical types
-      type-enum-
       type-value+ type-value-
       type-integer+ type-integer-
 

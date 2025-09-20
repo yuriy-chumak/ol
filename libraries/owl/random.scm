@@ -502,7 +502,7 @@
                         (values rs (eq? n 0)))
                      (lets ((rs n (rand rs denom)))
                         (values rs (< n nom))))))
-            (type-enum- (values rs #false))
+            (type-value- (values rs #false))
             (type-integer- (values rs #false))
             (else
                (if (eq? prob 0)

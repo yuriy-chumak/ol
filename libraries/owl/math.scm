@@ -150,7 +150,7 @@
          (case (type x)
             (type-value+ #true)
             (type-integer+ #true)
-            (type-enum- #false) ; early exit for speedup
+            (type-value- #false) ; early exit for speedup
             (type-rational
                (let* ((n d x))
                   (positive? n)))
@@ -175,7 +175,7 @@
       ; procedure:  (negative? z)
       (define (negative? x)
          (case (type x)
-            (type-enum- #true)
+            (type-value- #true)
             (type-integer- #true)
             (type-value+ #false) ; early exit for speedup
             (type-rational
@@ -211,8 +211,8 @@
             (type-value+
                (if (eq? num 0)
                   0
-                  (vm:cast num type-enum-)))      ;; a  -> -a
-            (type-enum- (vm:cast num type-value+)) ;; -a ->  a
+                  (vm:cast num type-value-)))      ;; a  -> -a
+            (type-value- (vm:cast num type-value+)) ;; -a ->  a
             ; big numbers
             (type-integer+  (make-int- num))          ;;  A -> -A
             (type-integer-  (make-int+ num))          ;; -A -> A
@@ -286,11 +286,11 @@
                   (type-value+ (less? a b))
                   (type-integer+ #true)
                   (else #false)))
-            (type-enum-
+            (type-value-
                (case (type b)
                   (type-value+ #true)
                   (type-integer+ #true)
-                  (type-enum- (less? b a))
+                  (type-value- (less? b a))
                   (else #false)))
             (type-integer+
                (case (type b)
@@ -310,7 +310,7 @@
             (type-value+ (if (eq? (type b) type-inexact)
                            (equal? (inexact a) b)
                            (eq? a b)))
-            (type-enum- (if (eq? (type b) type-inexact)
+            (type-value- (if (eq? (type b) type-inexact)
                            (equal? (inexact a) b)
                            (eq? a b)))
             (type-integer+
@@ -370,7 +370,7 @@
       (define (nlen n)
          (cond
             ((eq? (type n) type-value+) 1)
-            ((eq? (type n) type-enum-) 1)
+            ((eq? (type n) type-value-) 1)
             (else
                (let loop ((n n) (i 0))
                   (if (null? n)
@@ -424,7 +424,7 @@
                (lets ((r uf? (vm:sub a b)))
                   (if uf?
                      (lets ((r _ (vm:sub b a))) ;; could also fix here by adding or bitwise
-                        (vm:cast r type-enum-))
+                        (vm:cast r type-value-))
                      r)))))
 
       ; bignum - fixnum -> either
@@ -452,7 +452,7 @@
          (let ((res (sub-big-number b a #true)))
             ; res is either fixnum or bignum
             (case (type res)
-               (type-value+ (vm:cast res type-enum-))
+               (type-value+ (vm:cast res type-value-))
                (else (ncons- (car res) (cdr res))))))
 
 
@@ -498,7 +498,7 @@
                (let ((neg (sub-digits b a #false #true)))
                   (cond
                      ((eq? neg 0) neg)
-                     ((eq? (type neg) type-value+) (vm:cast neg type-enum-))
+                     ((eq? (type neg) type-value+) (vm:cast neg type-value-))
                      (else (ncons- (car neg) (cdr neg))))))
             (else
                (sub-digits a b #false #true))))
@@ -510,7 +510,7 @@
             (if overflow?
                (ncons- r *big-one*)
             else
-               (vm:cast r type-enum-))))
+               (vm:cast r type-value-))))
 
 
       ; for changing the (default positive) sign of unsigned operations
@@ -521,7 +521,7 @@
                   (negative foo)))
             ((negative x)
                (if (eq? (type x) type-value+)
-                  (vm:cast x type-enum-)
+                  (vm:cast x type-value-)
                   (ncons- (car x) (cdr x))))))
 
       ;;;
@@ -533,28 +533,28 @@
             (type-value+ ; a signed fixnum
                (case (type b)
                   (type-value+ (add-small->positive a b))            ;; +a + +b -> c | C
-                  (type-enum- (sub-small->pick-sign a b))         ;; +a + -b -> +c | -c, underflow determines sign
+                  (type-value- (sub-small->pick-sign a b))         ;; +a + -b -> +c | -c, underflow determines sign
                   (type-integer+ (add-number-big a b))               ;; +a + +B -> +C
                   (type-integer- (sub-number-big a b #true))         ;; +a + -B -> -c | -C
                   (else (big-bad-args 'add a b))))
-            (type-enum-
+            (type-value-
                (case (type b)
                   (type-value+ (sub-small->pick-sign b a))         ;; -a + +b == +b + -a -> as above (no need to recurse)
-                  (type-enum- (add-small->negative a b))         ;; -a + -b -> -c | -C
+                  (type-value- (add-small->negative a b))         ;; -a + -b -> -c | -C
                   (type-integer+ (sub-big-number b a #true))            ;; -a + +B == +B - +a -> sub-big-number
                   (type-integer- (vm:cast (add-number-big a b) type-integer-))   ;; -a + -B == -C == -(a + B)
                   (else (big-bad-args 'add a b))))
             (type-integer+
                (case (type b)
                   (type-value+ (add-number-big b a))               ;; +A + +b -> +C
-                  (type-enum- (sub-big-number a b #true))            ;; +A + -b == -b + +A -> as above
+                  (type-value- (sub-big-number a b #true))            ;; +A + -b == -b + +A -> as above
                   (type-integer+ (add-big a b #false))                  ;; +A + +B == +C
                   (type-integer- (sub-big a b))                     ;; +A + -B == +c | -c | +C | -C
                   (else (big-bad-args 'add a b))))
             (type-integer-
                (case (type b)
                   (type-value+ (sub-number-big b a #true))            ;; -A + +b == +b + -A -> as above
-                  (type-enum- (vm:cast (add-number-big b a) type-integer-))      ;; -A + -b == -b + -A = -C -> as above
+                  (type-value- (vm:cast (add-number-big b a) type-integer-))      ;; -A + -b == -b + -A = -C -> as above
                   (type-integer+ (sub-big b a))                     ;; -A + +B == +B + -A -> as above
                   (type-integer- (vm:cast (add-big a b #false) type-integer-))      ;; -A + -B == -(A + B)
                   (else (big-bad-args 'add a b))))
@@ -569,28 +569,28 @@
             (type-value+ ; a signed fixnum
                (case (type b)
                   (type-value+   (sub-small->pick-sign a b))         ;; +a - +b -> as +a + -b
-                  (type-enum- (add-small->positive a b))         ;; +a - -b -> as +a + +b
+                  (type-value- (add-small->positive a b))         ;; +a - -b -> as +a + +b
                   (type-integer+ (sub-number-big a b #true))            ;; +a - +B -> as +a + -B
                   (type-integer-   (add-number-big a b))            ;; +a - -B -> as +a + +B
                   (else (big-bad-args '- a b))))
-            (type-enum-
+            (type-value-
                (case (type b)
                   (type-value+ (add-small->negative a b))            ;; -a - +b -> as -a + -b
-                  (type-enum- (sub-small->pick-sign b a))         ;; -a - -b -> as -a + +b
+                  (type-value- (sub-small->pick-sign b a))         ;; -a - -b -> as -a + +b
                   (type-integer+ (vm:cast (add-number-big a b) type-integer-))   ;; -a - +B -> as -a + -B
                   (type-integer- (sub-big-number b a #true))         ;; -a - -B -> as -a + +B
                   (else (big-bad-args '- a b))))
             (type-integer+
                (case (type b)
                   (type-value+ (sub-big-number a b #true))            ;; +A - +b -> as +A + -b
-                  (type-enum- (add-number-big b a))               ;; +A - -b -> as +A + +b
+                  (type-value- (add-number-big b a))               ;; +A - -b -> as +A + +b
                   (type-integer+ (sub-big a b))                     ;; +A - +B -> as +A + -B
                   (type-integer- (add-big a b #false))                  ;; +A - -B -> as +A + +B
                   (else (big-bad-args '- a b))))
             (type-integer-
                (case (type b)
                   (type-value+ (vm:cast (add-number-big b a) type-integer-))      ;; -A - +b -> as -A + -b
-                  (type-enum- (sub-number-big b a #true))            ;; -A - -b -> as -A + +b
+                  (type-value- (sub-number-big b a #true))            ;; -A - -b -> as -A + +b
                   (type-integer+ (vm:cast (add-big a b #false) type-integer-))         ;; -A - +B -> as -A + -B
                   (type-integer- (sub-big b a))                     ;; -A - -B -> as -A + +B
                   (else (big-bad-args '- a b))))
@@ -653,13 +653,13 @@
                   (if (eq? wor 0)
                      (case (type a)
                         (type-value+ (values-apply (vm:shr a bits) (lambda (hi lo) hi)))
-                        (type-enum- (values-apply (vm:shr a bits) (lambda (hi lo) (if (eq? hi 0) 0 (negate hi)))))
+                        (type-value- (values-apply (vm:shr a bits) (lambda (hi lo) (if (eq? hi 0) 0 (negate hi)))))
                         (type-integer+ (shift-right a bits))
                         (type-integer- (negative (shift-right a bits)))
                         (else (big-bad-args '>> a b)))
                      (case (type a)
                         (type-value+ 0)
-                        (type-enum- 0)
+                        (type-value- 0)
                         (type-integer+ (shift-right (drop-digits a wor) bits))
                         (type-integer-
                            (negative
@@ -710,11 +710,11 @@
                                  (extend-digits
                                     (ncons lo (ncons hi #null))
                                     words)))))
-                     (type-enum-
+                     (type-value-
                         (lets ((hi lo (vm:shl a bits)))
                            (if (eq? hi 0)
                               (if (eq? words 0)
-                                 (vm:cast lo type-enum-)
+                                 (vm:cast lo type-value-)
                                  (vm:cast
                                     (extend-digits (ncons lo #null) words)
                                     type-integer-))
@@ -1024,28 +1024,28 @@
                   (type-value+
                      (case (type b)
                         (type-value+ (mult-fixnums a b))                  ; +a * +b
-                        (type-enum- (negative (mult-fixnums a b)))      ; +a * -b
+                        (type-value- (negative (mult-fixnums a b)))      ; +a * -b
                         (type-integer+ (mult-num-big a b 0))               ; +a * +B
                         (type-integer- (negative (mult-num-big a b 0)))   ; +a * -b
                         (else (big-bad-args 'mul a b))))
-                  (type-enum-
+                  (type-value-
                      (case (type b)
                         (type-value+ (negative (mult-fixnums a b)))      ; -a * +b -> -c | -C
-                        (type-enum- (mult-fixnums a b))                  ; -a * -b -> +c | +C
+                        (type-value- (mult-fixnums a b))                  ; -a * -b -> +c | +C
                         (type-integer+ (vm:cast (mult-num-big a b 0) type-integer-))   ; -a * +B -> -C
                         (type-integer- (mult-num-big a b 0))            ; -a * -B -> +C
                         (else (big-bad-args 'mul a b))))
                   (type-integer+
                      (case (type b)
                         (type-value+ (mult-num-big b a 0))            ; +A * +b -> +C
-                        (type-enum- (vm:cast (mult-num-big b a 0) type-integer-))    ; +A * -b -> -C
+                        (type-value- (vm:cast (mult-num-big b a 0) type-integer-))    ; +A * -b -> -C
                         (type-integer+ (mult-big a b))               ; +A * +B -> +C
                         (type-integer- (vm:cast (mult-big a b) type-integer-))      ; +A * -B -> -C
                         (else (big-bad-args 'mul a b))))
                   (type-integer-
                      (case (type b)
                         (type-value+ (vm:cast (mult-num-big b a 0) type-integer-))      ; -A * +b -> -C
-                        (type-enum- (mult-num-big b a 0))               ; -A * -b -> +C
+                        (type-value- (mult-num-big b a 0))               ; -A * -b -> +C
                         (type-integer+ (vm:cast (mult-big a b) type-integer-))      ; -A * +B -> -C
                         (type-integer- (mult-big a b))                  ; -A * -B -> +C
                         (else (big-bad-args 'mul a b))))
@@ -1243,7 +1243,7 @@
                            (if (negative? d)
                               (values (ncons (addi d *first-bignum*) tl) #true) ; borrow
                               (values (ncons d tl) #false))))
-                     ((eq? (type d) type-enum-) ; borrow
+                     ((eq? (type d) type-value-) ; borrow
                         (values (ncons (addi d *first-bignum*) tl) #true))
                      (else
                         (values (ncons d tl) #false)))))))
@@ -1367,7 +1367,7 @@
 
       (define (divex bit bp a b out)
          (cond
-            ((eq? (type a) type-enum-) #false) ;; not divisible
+            ((eq? (type a) type-value-) #false) ;; not divisible
             ((eq? (type a) type-integer-) #false) ;; not divisible
             ((eq? a 0) (div-finish out))
             ((eq? (band a bit) 0) ; O(1)
@@ -1402,7 +1402,7 @@
       ; int nat -> int | #false
       (define (divide-exact a b)
          (case (type a)
-            (type-enum- (maybe-negate (divide-exact (negate a) b)))
+            (type-value- (maybe-negate (divide-exact (negate a) b)))
             (type-integer- (maybe-negate (divide-exact (negate a) b)))
             (else (nat-divide-exact a b))))
 
@@ -1427,12 +1427,12 @@
          (lets ((_ q r (vm:div 0 a b)))
             (if (eq? q 0)
                q
-               (vm:cast q type-enum-))))
+               (vm:cast q type-value-))))
 
       (define (div-big-num->negative a b)
          (lets ((q r (qr-big-small a b)))
             (case (type q)
-               (type-value+ (vm:cast q type-enum-))
+               (type-value+ (vm:cast q type-value-))
                (else (vm:cast q type-integer-)))))
 
       ; todo, drop this and use just quotrem
@@ -1443,28 +1443,28 @@
                (type-value+
                   (case (type b)
                      (type-value+ (lets ((_ q r (vm:div 0 a b))) q))   ; +a / +b -> +c
-                     (type-enum- (div-fixnum->negative a b))                  ; +a / -b -> -c | 0
+                     (type-value- (div-fixnum->negative a b))                  ; +a / -b -> -c | 0
                      (type-integer+ 0)                                             ; +a / +B -> 0
                      (type-integer- 0)                                             ; +a / -B -> 0
                      (else (big-bad-args 'div a b))))
-               (type-enum-
+               (type-value-
                   (case (type b)
                      (type-value+ (div-fixnum->negative a b))                  ; -a / +b -> -c | 0
-                     (type-enum- (lets ((_ q r (vm:div 0 a b))) q))             ; -a / -b -> +c
+                     (type-value- (lets ((_ q r (vm:div 0 a b))) q))             ; -a / -b -> +c
                      (type-integer+ 0)                                           ; -a / +B -> 0
                      (type-integer- 0)                                             ; -a / -B -> 0
                      (else (big-bad-args 'div a b))))
                (type-integer+
                   (case (type b)
                      (type-value+ (lets ((q r (qr-big-small a b))) q))   ; +A / +b -> +c | +C
-                     (type-enum- (div-big-num->negative a b))            ; +A / -b -> -c | -C
+                     (type-value- (div-big-num->negative a b))            ; +A / -b -> -c | -C
                      (type-integer+ (div-big a b))                           ; +A / +B -> 0 | +c | +C
                      (type-integer- (div-big->negative a (negate b)))      ; +A / -B -> 0 | -c | -C
                      (else (big-bad-args 'div a b))))
                (type-integer-
                   (case (type b)
                      (type-value+ (div-big-num->negative a b))            ; -A / +b -> -c | -C
-                     (type-enum- (lets ((q r (qr-big-small a b))) q))    ; -A / -b -> +c | +C
+                     (type-value- (lets ((q r (qr-big-small a b))) q))    ; -A / -b -> +c | +C
                      (type-integer+ (div-big->negative (negate a) b))                     ; -A / +B -> 0 | -c | -C
                      (type-integer- (div-big (negate a) (negate b)))                              ; -A / -B -> 0 | +c | +C
                      (else (big-bad-args 'div a b))))
@@ -1480,21 +1480,21 @@
             (type-value+
                (case (type b)
                   (type-value+ (fx% a b))
-                  (type-enum- (fx% a b))
+                  (type-value- (fx% a b))
                   (type-integer+ a)
                   (type-integer- a)
                   (else (big-bad-args 'remainder a b))))
-            (type-enum-
+            (type-value-
                (case (type b)
                   (type-value+ (negate (fx% a b)))
-                  (type-enum- (negate (fx% a b)))
+                  (type-value- (negate (fx% a b)))
                   (type-integer+ a)
                   (type-integer- a)
                   (else (big-bad-args 'remainder a b))))
             (type-integer+
                (case (type b)
                   (type-value+ (values-apply (qr-big-small a b) (lambda (q r) r)))
-                  (type-enum- (values-apply (qr-big-small a b) (lambda (q r) r)))
+                  (type-value- (values-apply (qr-big-small a b) (lambda (q r) r)))
                   (type-integer+ (nat-rem a b))
                   (type-integer- (nat-rem a (negate b)))
                   (else (big-bad-args 'remainder a b))))
@@ -1503,7 +1503,7 @@
                   (type-value+
                      (values-apply (qr-big-small a b)
                         (lambda (q r) (negate r))))
-                  (type-enum-
+                  (type-value-
                      (values-apply (qr-big-small a b)
                         (lambda (q r) (negate r))))
                   (type-integer+ (negate (nat-rem (negate a) b)))
@@ -1529,22 +1529,22 @@
                   (case (type b)
                      (type-value+ (values-apply (vm:div 0 a b) (lambda (_ q r) (values q r))))
                      (type-integer+ (values 0 a))
-                     (type-enum- (values-apply (vm:div 0 a b) (lambda (_ q r) (values (negate q) r))))
+                     (type-value- (values-apply (vm:div 0 a b) (lambda (_ q r) (values (negate q) r))))
                      (type-integer- (values 0 a))
                      (else (big-bad-args 'quotrem a b))))
                (type-integer+
                   (case (type b)
                      (type-value+ (values-apply (qr-big-small a b) (lambda (q r) (values q r))))
                      (type-integer+ (nat-quotrem a b))
-                     (type-enum- (values-apply (qr-big-small a b) (lambda (q r) (values (negate q) r))))
+                     (type-value- (values-apply (qr-big-small a b) (lambda (q r) (values (negate q) r))))
                      (type-integer- (values-apply (nat-quotrem a (negate b))
                               (lambda (q r) (values (negate q) r))))
                      (else (big-bad-args 'quotrem a b))))
-               (type-enum-
+               (type-value-
                   (case (type b)
                      (type-value+
                         (values-apply (vm:div 0 a b) (lambda (_ q r) (values (negate q) (negate r)))))
-                     (type-enum- (values-apply (vm:div 0 a b) (lambda (_ q r) (values q (negate r)))))
+                     (type-value- (values-apply (vm:div 0 a b) (lambda (_ q r) (values q (negate r)))))
                      (type-integer+ (values 0 a))
                      (type-integer- (values 0 a))
                      (else (big-bad-args 'quotrem a b))))
@@ -1553,7 +1553,7 @@
                      (type-value+
                         (lets ((q r (qr-big-small a b)))
                            (values (negate q) (negate r))))
-                     (type-enum- (values-apply (qr-big-small a b) (lambda (q r) (values q (negate r)))))
+                     (type-value- (values-apply (qr-big-small a b) (lambda (q r) (values q (negate r)))))
                      (type-integer+ (values-apply (nat-quotrem (negate a) b)
                               (lambda (q r) (values (negate q) (negate r)))))
                      (type-integer- (values-apply (nat-quotrem (negate a) (negate b))
@@ -1631,9 +1631,9 @@
       (define (gcd a b)
          (cond ; todo: change to case (TODO:)
             ; negates should be inlined
-            ((eq? (type a) type-enum-) (gcd (negate a) b))
+            ((eq? (type a) type-value-) (gcd (negate a) b))
             ((eq? (type a) type-integer-) (gcd (negate a) b))
-            ((eq? (type b) type-enum-) (gcd a (negate b)))
+            ((eq? (type b) type-value-) (gcd a (negate b)))
             ((eq? (type b) type-integer-) (gcd a (negate b)))
             ((eq? (type a) type-value+) (gcd-euclid a b))
             ((eq? (type b) type-value+) (gcd-euclid a b))
@@ -1652,7 +1652,7 @@
          (let ((f (gcd a b)))
             (if (eq? f 1)
                (cond
-                  ((eq? (type b) type-enum-) (make-rational (negate a) (negate b)))
+                  ((eq? (type b) type-value-) (make-rational (negate a) (negate b)))
                   ((eq? (type b) type-integer-) (make-rational (negate a) (negate b)))
                   (else (make-rational a b)))
                (rational (div a f) (div b f)))))
@@ -1689,7 +1689,7 @@
 
       (define (divide-rational a b)
          (cond
-            ((eq? (type b) type-enum-) (divide-rational (negate a) (negate b)))
+            ((eq? (type b) type-value-) (divide-rational (negate a) (negate b)))
             ((eq? (type b) type-integer-) (divide-rational (negate a) (negate b)))
             ; todo: change next one to (and (eq? (type b) type-value+) (eq?...)
             ((divide-simple a b) => (lambda (x) x))
@@ -1723,7 +1723,7 @@
                (case (type b)
                   (type-value+  (add-small->positive a b))
                   (type-integer+  (add-number-big a b))
-                  (type-enum-  (sub-small->pick-sign a b))
+                  (type-value-  (sub-small->pick-sign a b))
                   (type-integer-  (sub-number-big a b #true))
                   (type-rational  (lets ((x z b)) (make-rational (add (muli a z) x) z)))
                   (type-inexact  (fadd a b))
@@ -1733,16 +1733,16 @@
                (case (type b)
                   (type-value+ (add-number-big b a))
                   (type-integer+ (add-big a b #false))
-                  (type-enum- (sub-big-number a b #true))
+                  (type-value- (sub-big-number a b #true))
                   (type-integer- (sub-big a b))
                   (type-rational  (lets ((x z b)) (make-rational (add (muli a z) x) z)))
                   (type-inexact  (fadd a b))
                   (type-complex  (lets ((x y b)) (make-complex (add a x) y)))
                   (else (big-bad-args '+ a b))))
-            (type-enum-
+            (type-value-
                (case (type b)
                   (type-value+ (sub-small->pick-sign b a))
-                  (type-enum- (add-small->negative a b))
+                  (type-value- (add-small->negative a b))
                   (type-integer+ (sub-big-number b a #true))
                   (type-integer- (vm:cast (add-number-big a b) type-integer-))
                   (type-rational  (lets ((x z b)) (make-rational (add (muli a z) x) z)))
@@ -1752,7 +1752,7 @@
             (type-integer-
                (case (type b)
                   (type-value+ (sub-number-big b a #true))
-                  (type-enum- (vm:cast (add-number-big b a) type-integer-))
+                  (type-value- (vm:cast (add-number-big b a) type-integer-))
                   (type-integer+ (sub-big b a))
                   (type-integer- (vm:cast (add-big a b #false) type-integer-))
                   (type-rational  (lets ((x z b)) (make-rational (add (muli a z) x) z)))
@@ -1804,17 +1804,17 @@
             (type-value+
                (case (type b)
                   (type-value+ (sub-small->pick-sign a b))
-                  (type-enum- (add-small->positive a b))
+                  (type-value- (add-small->positive a b))
                   (type-integer+ (sub-number-big a b #true))
                   (type-integer- (add-number-big a b))
                   (type-rational  (let ((bl (ncdr b))) (sub (make-rational (muli a bl) bl) b)))
                   (type-inexact  (fsub a b))
                   (type-complex  (lets ((br bi b)) (make-complex (sub a br) (negate bi))))
                   (else (big-bad-args '- a b))))
-            (type-enum-
+            (type-value-
                (case (type b)
                   (type-value+ (add-small->negative a b))
-                  (type-enum- (sub-small->pick-sign b a))
+                  (type-value- (sub-small->pick-sign b a))
                   (type-integer+ (vm:cast (add-number-big a b) type-integer-))
                   (type-integer- (sub-big-number b a #true))
                   (type-rational  (let ((bl (ncdr b))) (sub (make-rational (muli a bl) bl) b)))
@@ -1824,7 +1824,7 @@
             (type-integer+
                (case (type b)
                   (type-value+ (sub-big-number a b #true))
-                  (type-enum- (add-number-big b a))
+                  (type-value- (add-number-big b a))
                   (type-integer+ (sub-big a b))
                   (type-integer- (add-big a b #false))
                   (type-rational  (let ((bl (ncdr b))) (sub (make-rational (muli a bl) bl) b)))
@@ -1834,7 +1834,7 @@
             (type-integer-
                (case (type b)
                   (type-value+ (vm:cast (add-number-big b a) type-integer-))
-                  (type-enum- (sub-number-big b a #true))
+                  (type-value- (sub-number-big b a #true))
                   (type-integer+ (vm:cast (add-big a b #false) type-integer-))
                   (type-integer- (sub-big b a))
                   (type-rational  (let ((bl (ncdr b))) (sub (make-rational (muli a bl) bl) b)))
@@ -1892,7 +1892,7 @@
                (case (type b)
                   (type-value+ (mult-fixnums a b))                 ; +a * +b
                   (type-integer+ (mult-num-big a b 0))               ; +a * +B
-                  (type-enum- (negative (mult-fixnums a b)))      ; +a * -b
+                  (type-value- (negative (mult-fixnums a b)))      ; +a * -b
                   (type-integer- (negative (mult-num-big a b 0)))    ; +a * -B
                   (type-rational  (divide-rational (mul a (ncar b)) (ncdr b)))
                   (type-inexact  (fmul a b))
@@ -1900,11 +1900,11 @@
                      (lets ((br bi b) (r (mul a br)) (i (mul a bi)))
                         (if (eq? i 0) r (make-complex r i))))
                   (else (big-bad-args 'mul a b))))
-            (type-enum-
+            (type-value-
                (case (type b)
                   (type-value+ (negative (mult-fixnums a b)))      ; -a * +b -> -c | -C
                   (type-integer+ (vm:cast (mult-num-big a b 0) type-integer-))   ; -a * +B -> -C
-                  (type-enum- (mult-fixnums a b))                  ; -a * -b -> +c | +C
+                  (type-value- (mult-fixnums a b))                  ; -a * -b -> +c | +C
                   (type-integer- (mult-num-big a b 0))            ; -a * -B -> +C
                   (type-rational  (divide-rational (mul a (ncar b)) (ncdr b)))
                   (type-inexact  (fmul a b))
@@ -1916,7 +1916,7 @@
                (case (type b)
                   (type-value+ (mult-num-big b a 0))            ; +A * +b -> +C
                   (type-integer+ (mult-big a b))               ; +A * +B -> +C
-                  (type-enum- (vm:cast (mult-num-big b a 0) type-integer-))    ; +A * -b -> -C
+                  (type-value- (vm:cast (mult-num-big b a 0) type-integer-))    ; +A * -b -> -C
                   (type-integer- (vm:cast (mult-big a b) type-integer-))      ; +A * -B -> -C
                   (type-rational  (divide-rational (mul a (ncar b)) (ncdr b)))
                   (type-inexact  (fmul a b))
@@ -1928,7 +1928,7 @@
                (case (type b)
                   (type-value+ (vm:cast (mult-num-big b a 0) type-integer-))      ; -A * +b -> -C
                   (type-integer+ (vm:cast (mult-big a b) type-integer-))      ; -A * +B -> -C
-                  (type-enum- (mult-num-big b a 0))               ; -A * -b -> +C
+                  (type-value- (mult-num-big b a 0))               ; -A * -b -> +C
                   (type-integer- (mult-big a b))                  ; -A * -B -> +C
                   (type-rational  (divide-rational (mul a (ncar b)) (ncdr b)))
                   (type-inexact  (fmul a b))
@@ -2025,7 +2025,7 @@
       (define (abs n)
          (case (type n)
             (type-value+ n)
-            (type-enum- (vm:cast n type-value+))
+            (type-value- (vm:cast n type-value+))
             (type-integer+ n)
             (type-integer- (ncons (ncar n) (ncdr n)))
             (type-rational (if (negative? n) (sub 0 n) n)) ; todo: speedup

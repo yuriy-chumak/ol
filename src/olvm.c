@@ -380,8 +380,8 @@ typedef word* R;
 // An ENUM is an exact integer that is small enough to fit in a machine word.
 // todo: rename TINT to TLARGE or TLARGEINT
 // TODO: rename TENUM to TINT, and TINT to TLONG
-#define TENUMP                       (0) // type-enum+ // small integer(s)
-#define TENUMN                      (32) // type-enum-
+#define TENUMP                       (0) // type-value+ // small integer(s)
+#define TENUMN                      (32) // type-value-
 // numbers (reference type)
 #define TINTP                       (40) // type-integer+ // large integer(s)
 #define TINTN                       (41) // type-integer-

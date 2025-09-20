@@ -31,7 +31,7 @@
 
       ; low-level types
       type-value+
-      type-enum- type-value-
+      type-value-
       type-integer+
       type-integer-
       type-rational
@@ -58,8 +58,6 @@
    (begin
       ; -----------------------------------------------------------------------
       ; Virtual Machine Types List       Список типов данных виртуальной машины
-
-      (setq type-enum-        32) ; value
 
       (setq type-value+        0) ; value
       (setq type-value-       32) ; value

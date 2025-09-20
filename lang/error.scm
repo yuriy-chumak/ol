@@ -31,7 +31,7 @@
       type-vptr 'type-vptr
 
       type-value+ 'type-value+
-      type-enum- 'type-enum-
+      type-value- 'type-value-
       type-integer+ 'type-integer+
       type-integer- 'type-integer-
       type-rational 'type-rational
@@ -43,7 +43,7 @@
       (let ((x-type (type x)))
          (or
             (eq? x-type type-value+)
-            (eq? x-type type-enum-) )))
+            (eq? x-type type-value-) )))
 
 ; todo: collect all names of similar function
 (define (procedure->name env a)
