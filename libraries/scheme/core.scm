@@ -1007,7 +1007,7 @@
       (define type-rlist-spine      10) ; reference
       (define type-blob-leaf        11) ; reference
 
-      (define type-port             12) ; value
+      (define type-port             12) ; value, reference
       (define type-const            13) ; value
 
       (define type-rlist-node       14) ; reference
@@ -1016,9 +1016,9 @@
       (define type-bytecode         TBYTECODE)   ; reference, bytecode
       (define type-procedure        TPROCEDURE)  ; reference, pure function
       (define type-closure          TCLOSURE)    ; reference, function with closure(s)
-      (define type-bytevector       TBYTEVECTOR) ; reference, bytevector
       (define type-constructor      TCONSTRUCTOR); reference, constructor
 
+      (define type-bytevector       TBYTEVECTOR) ; reference, bytevector
       (define type-superstring      21) ; reference
 
       (define type-thread-state     31) ; reference
@@ -1351,26 +1351,8 @@
 
       ; procedure:  (make-string k)
       ; procedure:  (make-string k char)
-;      (define make-string
-;         (case-lambda
-;            ((k) (vm:vm:alloc type-string k))
-;            ((k char) (app a (app b (appl cs appl) app) app))
-;            ((a) a)
-;            (() '()))))
-;         ()
-;         (list->string (repeat char n)))
-
       ; procedure:  (string char ...)
       ; procedure:  (string-length string)
-;      (define (string-length str)
-;         (case (type str)
-;            (type-string          (size str))
-;            (type-string-wide     (size str))
-;            (type-string-dispatch (ref str 1))
-;            ; todo: clarify the returning the runtime-error or simple #f
-;            (else
-;               (runtime-error "string-length: not a string: " str))))
-
       ; procedure:  (string-ref string k)
       ; procedure:  (string-set! string k char)
       ; procedure:  (string=? string1 string2)
