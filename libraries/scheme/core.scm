@@ -999,10 +999,10 @@
 
       (define type-pair             TPAIR)    ; reference
       (define type-vector           TVECTOR)  ; reference
-      (define type-string           TSTRING)  ; reference, blob / todo: -> 35 (#b100000 + 3)?
+      (define type-string           TSTRING)  ; reference, bytevector of ansi chars
       (define type-symbol           TSYMBOL)  ; reference
 
-      (define type-string-wide      TSTRINGWIDE) ; reference
+      (define type-string-wide      TSTRINGWIDE) ; reference, vector of unicode chars
 
       (define type-rlist-spine      10) ; reference
       (define type-blob-leaf        11) ; reference
@@ -1019,7 +1019,7 @@
       (define type-bytevector       TBYTEVECTOR) ; reference, bytevector
       (define type-constructor      TCONSTRUCTOR); reference, constructor
 
-      (define type-string-dispatch  21) ; reference
+      (define type-superstring      21) ; reference
 
       (define type-thread-state     31) ; reference
       (define type-vptr             49) ; reference,  blob
@@ -1824,7 +1824,7 @@
       type-const
       type-rlist-spine type-rlist-node
       type-port
-      type-string type-string-wide type-string-dispatch
+      type-string type-string-wide type-superstring
       type-thread-state
       type-vptr
       ;type-ff type-ff-r type-ff-red type-ff-red-r

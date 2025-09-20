@@ -108,7 +108,7 @@
          ; strings
          type-string cook-quoted-string
          type-string-wide cook-quoted-string
-         type-string-dispatch cook-quoted-string
+         type-superstring cook-quoted-string
          ; true, false, etc.
          type-const cook-const
          ; numbers (todo: maybe use number? and (getf .. 'number))
@@ -122,7 +122,7 @@
          ; strings
          type-string cook-string
          type-string-wide cook-string
-         type-string-dispatch cook-string
+         type-superstring cook-string
          ; functions
          type-procedure cook-function
          type-closure   cook-function
@@ -229,7 +229,7 @@
          ; strings
          type-string cook-quoted-string
          type-string-wide cook-quoted-string
-         type-string-dispatch cook-quoted-string
+         type-superstring cook-quoted-string
 
          'self-quoting? (lambda (this obj)
                            (define datum (this 'datum #f))

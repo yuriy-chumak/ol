@@ -18,7 +18,7 @@
       type-vector 'type-vector
       type-string 'type-string
       type-string-wide 'type-string-wide
-      type-string-dispatch 'type-string-dispatch
+      type-superstring 'type-superstring
       type-symbol 'type-symbol
       type-port 'type-port
       type-const 'type-const

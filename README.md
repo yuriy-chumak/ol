@@ -48,6 +48,10 @@ mt (tests, ideas).
 Breaking changes (master branch)
 ----------------------------
 The following breaking changes have been added to the master branch:
+* ❗ `type-string-displatch` type name changed to `type-superstring` (the old name caused confusing)
+  * you shoud use `string?` predicate to check the string,
+  * please, don't use internal type names in your code,
+  * if you want to use older name, add `(define type-string-displatch type-superstring)` as compat layer
 * ❗ `values` with an empty argument list now returns *#false* instead of the string "no vals"
 * ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()*
   but simply *#false* if nothing was returned,
