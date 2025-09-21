@@ -1353,7 +1353,7 @@ size_t utf8_len(word widestr)
     word t = reference_type(x); \
     t == TSTRING ? rawstream_size(x) :\
     t == TSTRINGWIDE ? utf8_len(x) :\
-    t == TSTRINGDISPATCH ? number(ref(x, 1)) :\
+    t == TSTRINGSUPER ? utf8_superlen(x) :\
     0; })
 
 
@@ -1579,7 +1579,7 @@ char* not_a_string(char* ptr, word string)
 // 				arg = cdr(arg);
 // 			}
 // 			break;
-// 		case TSTRINGDISPATCH+PTR:
+// 		case TSTRINGSUPER+PTR:
 // 			while (arg != INULL) {
 // 				*total += WORDS(number(ref(arg, 1))+1); // todo: decode all as utf8_len and use FAST_STRING_CALC macro
 // 				arg = cdr(arg);
@@ -2506,7 +2506,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				// any strings acts as "char*"
 				case TSTRING:
 				case TSTRINGWIDE:
-				case TSTRINGDISPATCH:
+				case TSTRINGSUPER:
 				case TSYMBOL: {
 					char* str;
 					store_string(&fp, &str, arg);

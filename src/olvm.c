@@ -369,7 +369,7 @@ typedef word* R;
 // static_assert (TFF & ~3 == TFF);
 
 #define TBYTEVECTOR                 (19) // type-bytevector
-#define TSTRINGDISPATCH             (21) // type-string-displatch
+#define TSTRINGSUPER                (21) // type-superstring
 
 #define TVECTORLEAF                 (11) // type-vector-leaf
 #define TVECTORDISPATCH             (15) // type-vector-dispatch
