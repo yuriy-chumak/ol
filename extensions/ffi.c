@@ -154,8 +154,8 @@
 //efine TSAFECALL   // Delphi/F-Pascal, not supported
 //efine TTHISCALL   // c++, use in toplevel code
 
-#define FFT_PTR    0x10000 // todo: change to 0x100 ? или другой уникальный небольшой тип
-#define FFT_REF    0x20000 // todo: change to 0x200 ? или другой уникальный небольшой тип
+#define FFT_PTR    (1)
+#define FFT_REF    (2)
 // possible speedup - FFT_REF = 0x30000 (include FFT_PTR)
 
 // -----------------

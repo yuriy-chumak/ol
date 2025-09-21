@@ -209,9 +209,9 @@
 
 ; type convertors
 (define (fft* type)
-   (cons #x10000 type))
+   (cons 1 type))
 (define (fft& type)
-   (cons #x20000 type))
+   (cons 2 type))
 
 (define type-callable 61)
 
