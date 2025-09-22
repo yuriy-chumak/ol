@@ -139,17 +139,29 @@ endif
 # 	@echo "passed!"
 
 # -=( ffi )=----------------------------------------
-test-ffi:
-	$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes \
+tests/ffi.c: tests/ffi.inc
+	touch $@
+tests/ffi.inc: tests/ffi.inc.generator
+	ol --home=tests $^ >$@
+
+test-ffi: tests/ffi.c
+	@$(CC) src/olvm.c $(CFLAGS) tests/ffi.c -Iincludes \
 	   -DOLVM_FFI=1 -Iincludes extensions/ffi.c -o $(ffi)$(affix)$(bits) $(L) \
 	   -fsigned-char # for ffi tests we should use char as signed by default
 	@printf "Testing $(ffi)$(affix)$(bits)... "
-	@if $(ffi)$(affix)$(bits) repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
-	   printf $(ok)\\n;\
+	@if $(ffi)$(affix)$(bits) repl --home=tests:~ <tests/ffi.big.scm | diff - tests/ffi.big.scm.ok >/dev/null; then\
+	   printf $(ok);\
 	else \
-	   printf $(fail)\\n;\
+	   printf $(fail);\
 	   touch $(FAILED);\
 	fi
+	@if $(ffi)$(affix)$(bits) repl <tests/ffi.scm | diff - tests/ffi.scm.ok >/dev/null; then\
+	   printf $(ok);\
+	else \
+	   printf $(fail);\
+	   touch $(FAILED);\
+	fi
+	@echo
 ffi=tmp/ffi
 
 
