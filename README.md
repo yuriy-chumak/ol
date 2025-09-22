@@ -25,8 +25,8 @@ Otus Lisp (Ol in short) is a purely functional, multi-platform Lisp dialect with
 Ol implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
 but not limited to some SRFIs. It is tiny (~ 64KB), embeddable,
-and cross-platform;  provides a portable, high-level interface
-to call code written in another language (c, python, lua, etc).
+and cross-platform.  Provides a portable, high-level interface
+to call code written in another language (C, Python, Lua, etc).
 You can call native OS functions directly from your Ol program.
 
 You can use Ol on Linux, Windows, macOS, Android, Chromebook*,
@@ -45,17 +45,21 @@ credits to
 Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
 
-Breaking changes (master branch)
-----------------------------
-The following breaking changes have been added to the master branch:
-* ❗ `type-string-displatch` type name changed to `type-superstring` (the old name caused confusing)
-  * you shoud use `string?` predicate to check the string,
-  * please, don't use internal type names in your code,
-  * if you want to use older name, add `(define type-string-displatch type-superstring)` as compat layer
+Breaking changes (master branch), as part of Ol 2.7 preparation
+---------------------------------------------------------------
+The following breaking changes have been added to the master branch as part of 2.7 version preparation:
+* ❗ internal type names are changed. please, don't use internal type names in your code, use predicates instead
+  * `type-string-displatch` type name changed to `type-superstring` (the old name caused confusing)️
+    * you shoud use `string?` predicate to check the string,
+    * if you want to use older name, add `(define type-string-displatch type-superstring)` as compat layer
+  * `type-enum+` changed to `type-value+` (accent on integer as a value)
+  * `type-enum-` changed to `type-value-` (same)
+  * `type-int+` changed to `type-integer+` (the fewer name trancations, the better)
+  * `type-int-` changed to `type-integer-` (same)
 * ❗ `values` with an empty argument list now returns *#false* instead of the string "no vals"
 * ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()*
-  but simply *#false* if nothing was returned,
-  use the "RETURNING" statement with INSERT and UPDATE if you want to return something.
+  but simply *#false* if nothing was returned
+  * use the "RETURNING" statement with INSERT and UPDATE if you want to return something.
 * ❗ Welcome invitation changed
 * ❗ `procedure?` made r7rs compatible (will now return *#false* for ff's)
 * ❗ arity errors changed (made more clear and descriptive)
@@ -96,6 +100,9 @@ Q/A
       * `apt install gcc-multilib` for debian-based,
       * `apk add musl-dev` for alpine-based,
       * etc.
+
+1. Q. */usr/include/linux/errno.h:1:10: fatal error: asm/errno.h: No such file or directory*
+   A. Install `linux-libc-dev:i386`
 
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
    A. Yes, you are free to choose an MIT or LGPL license.
