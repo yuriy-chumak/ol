@@ -1,0 +1,34 @@
+#!/usr/bin/env ol
+
+(define (|cc..c(n)2c| char n)
+   (string-append (apply string-append (repeat char n)) "2" char))
+(define (|c_cc..c(n)| char n)
+   (string-append char "_" (apply string-append (repeat char n))))
+
+(define (|type a1, type a2, .., type aN| typename n)
+   (apply string-append
+      (cons* typename " a1"
+         (map (lambda (i)
+               (string-append ", " typename " a" (number->string i)))
+            (iota (- n 1) 2)) )))
+
+(define (|%u %u .. %u(n)| format n)
+   (apply string-append
+      (cons* format
+         (map (lambda (i)
+               (string-append " " format))
+            (iota (- n 1) 2)) )))
+
+(define (|a1 + a2 + .. + aN| n)
+   (apply string-append
+      (cons* "a1"
+         (map (lambda (i)
+               (string-append " + a" (number->string i)))
+            (iota (- n 1) 2)) )))
+
+(define (|a1, a2, .., aN| n)
+   (apply string-append
+      (cons* "a1"
+         (map (lambda (i)
+               (string-append ", a" (number->string i)))
+            (iota (- n 1) 2)) )))

@@ -1,0 +1,77 @@
+#!/usr/bin/env ol
+,load "ffi.patterns"
+
+(define-syntax ~~
+   (syntax-rules ()
+      ((~~ '~~ name (quote function) . args)
+         (cons (symbol->string name) (function . args)))
+      ((~~ f . args)
+         (~~ '~~ f f . args))
+      ))
+
+(define ARGN 24)
+
+;; ---------------------------------------------
+(print "// (void)->type functions")
+(define testcase "
+type cN_(void)
+{
+   type y = value;
+   printf('{{ (void) => format }}', y); fflush(stdout);
+   return y;
+}")
+(print "/*" testcase "*/")
+
+(for-each (lambda (index typename format numbers)
+      (for-each (lambda (n) (print
+            (fold (lambda (testcase pair)
+                     (str-replace testcase (car pair) (cdr pair)))
+               (s/'/"/g testcase)
+               (list
+                  (cons "cN_" (string-append index (s/-/m/ (number->string n)) "_"))
+                  (cons "type" typename)
+                  (cons "format" format)
+                  (cons "value" (number->string n))
+               )) ))
+
+         numbers))
+   '("C")
+   '("unsigned char")
+   '("%u")
+   '((0 1 -1))
+)
+
+
+
+;; ---------------------------------------------
+(print "// simple type(n)->type functions")
+(define testcase "
+type c_cc..c(n)(type a1, type a2, .., type aN)
+{
+   type y = a1 + a2 + .. + aN;
+   printf('{{ %u %u .. %u(n) => format }}', a1, a2, .., aN, y); fflush(stdout);
+   return y;
+}")
+(print "/*" testcase "*/")
+
+(for-each (lambda (index typename format)
+      (for-each (lambda (n) (print
+            (fold (lambda (testcase pair)
+                     (str-replace testcase (car pair) (cdr pair)))
+               (s/'/"/g testcase)
+               (list
+                  (~~ '|c_cc..c(n)| index n) ; function name
+                  (~~ '|type a1, type a2, .., type aN| typename n) ; function args
+                  (~~ '|a1 + a2 + .. + aN| n)
+                  (~~ '|%u %u .. %u(n)| format n)
+                  (~~ '|a1, a2, .., aN| n)
+                  (cons "type" typename)
+                  (cons "format" format)
+               )) ))
+
+         (iota ARGN 1)))
+   ; unsigned types                                 ; signed types                               ; floating points
+   '("C"             "S"              "I"             "c"            "s"            "i"           "f"     "d"     )
+   '("unsigned char" "unsigned short" "unsigned int"  "signed char"  "signed short" "signed int"  "float" "double")
+   '("%u"            "%u"             "%u"            "%d"           "%d"           "%d"          "%f"    "%f"    ))
+
