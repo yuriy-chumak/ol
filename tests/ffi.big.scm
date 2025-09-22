@@ -20,6 +20,7 @@
 ;; disable testcases:
 ;; tbd.
 (define T #t)
+(define |cN_()| T)
 (define |c_cc..c(n)(1..P)| T)
 
 ;; note:
@@ -68,10 +69,32 @@
 
 (print "
 ---------------------------------------------------------------
+type cN_()
+{
+   type y = X;
+   printf('{{ () => format }}', y); fflush(stdout);
+   return y;
+}")
+(when |cN_()|
+(for-each (lambda (index typename Nn)
+      (for-each (lambda (n)
+            (define name (string-append index (s/-/m/ (number->string n)) "_"))
+            (define function (this typename name))
+
+            (try name function '()))
+         Nn))
+   ; unsigned types                                       ; signed types                                   ; floating points
+   '("C"                "S"                 "I"                "L"                     "c"                          "s"                            "i"                            "l"                           )
+   `(,fft-unsigned-char ,fft-unsigned-short ,fft-unsigned-int  ,fft-unsigned-long-long ,fft-signed-char             ,fft-signed-short              ,fft-signed-int                ,fft-signed-long-long         )
+   `((0 1 ,UINT8_MAX)   (0 1 ,UINT16_MAX)   (0 1 ,UINT32_MAX)  (0 1 ,UINT64_MAX)       (,INT8_MIN -1 0 1 ,INT8_MAX) (,INT16_MIN -1 0 1 ,INT16_MAX) (,INT32_MIN -1 0 1 ,INT32_MAX) (,INT64_MIN -1 0 1 ,INT64_MAX))
+))
+
+(print "
+---------------------------------------------------------------
 type c_cc..c(n)(type a1, type a2, .., type aN)
 {
    type y = a1 + a2 + .. + aN;
-   printf(' [ %u %u .. %u(n) => format ] ', a1, a2, .., aN, y); fflush(stdout);
+   printf('{{ %u %u .. %u(n) => format }}', a1, a2, .., aN, y); fflush(stdout);
    return y;
 }, n = (1 .. 24)")
 

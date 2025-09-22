@@ -1,30 +1,233 @@
-// (void)->type functions
+// ()->type functions
 /*
-type cN_(void)
+type cN_()
 {
-   type y = value;
-   printf('{{ (void) => format }}', y); fflush(stdout);
+   type y = valueSUFFIX;
+   printf('{{ () => format }}', y); fflush(stdout);
    return y;
 }*/
 
-unsigned char C0_(void)
+unsigned char C0_()
 {
    unsigned char y = 0;
-   printf("{{ (void) => %u }}", y); fflush(stdout);
+   printf("{{ () => %u }}", y); fflush(stdout);
    return y;
 }
 
-unsigned char C1_(void)
+unsigned char C1_()
 {
    unsigned char y = 1;
-   printf("{{ (void) => %u }}", y); fflush(stdout);
+   printf("{{ () => %u }}", y); fflush(stdout);
    return y;
 }
 
-unsigned char Cm1_(void)
+unsigned char C255_()
 {
-   unsigned char y = -1;
-   printf("{{ (void) => %u }}", y); fflush(stdout);
+   unsigned char y = 255;
+   printf("{{ () => %u }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned short S0_()
+{
+   unsigned short y = 0;
+   printf("{{ () => %u }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned short S1_()
+{
+   unsigned short y = 1;
+   printf("{{ () => %u }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned short S65535_()
+{
+   unsigned short y = 65535;
+   printf("{{ () => %u }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned int I0_()
+{
+   unsigned int y = 0;
+   printf("{{ () => %u }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned int I1_()
+{
+   unsigned int y = 1;
+   printf("{{ () => %u }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned int I4294967295_()
+{
+   unsigned int y = 4294967295;
+   printf("{{ () => %u }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned long long L0_()
+{
+   unsigned long long y = 0ULL;
+   printf("{{ () => %llu }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned long long L1_()
+{
+   unsigned long long y = 1ULL;
+   printf("{{ () => %llu }}", y); fflush(stdout);
+   return y;
+}
+
+unsigned long long L18446744073709551615_()
+{
+   unsigned long long y = 18446744073709551615ULL;
+   printf("{{ () => %llu }}", y); fflush(stdout);
+   return y;
+}
+
+signed char cm128_()
+{
+   signed char y = -128;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed char cm1_()
+{
+   signed char y = -1;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed char c0_()
+{
+   signed char y = 0;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed char c1_()
+{
+   signed char y = 1;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed char c127_()
+{
+   signed char y = 127;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed short sm32768_()
+{
+   signed short y = -32768;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed short sm1_()
+{
+   signed short y = -1;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed short s0_()
+{
+   signed short y = 0;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed short s1_()
+{
+   signed short y = 1;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed short s32767_()
+{
+   signed short y = 32767;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed int im2147483648_()
+{
+   signed int y = -2147483648;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed int im1_()
+{
+   signed int y = -1;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed int i0_()
+{
+   signed int y = 0;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed int i1_()
+{
+   signed int y = 1;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed int i2147483647_()
+{
+   signed int y = 2147483647;
+   printf("{{ () => %d }}", y); fflush(stdout);
+   return y;
+}
+
+signed long long lm9223372036854775807_()
+{
+   signed long long y = -9223372036854775807LL;
+   printf("{{ () => %lld }}", y); fflush(stdout);
+   return y;
+}
+
+signed long long lm1_()
+{
+   signed long long y = -1LL;
+   printf("{{ () => %lld }}", y); fflush(stdout);
+   return y;
+}
+
+signed long long l0_()
+{
+   signed long long y = 0LL;
+   printf("{{ () => %lld }}", y); fflush(stdout);
+   return y;
+}
+
+signed long long l1_()
+{
+   signed long long y = 1LL;
+   printf("{{ () => %lld }}", y); fflush(stdout);
+   return y;
+}
+
+signed long long l9223372036854775807_()
+{
+   signed long long y = 9223372036854775807LL;
+   printf("{{ () => %lld }}", y); fflush(stdout);
    return y;
 }
 // simple type(n)->type functions
