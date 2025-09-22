@@ -22,6 +22,7 @@ describe: all
 # default toolchain(s)
 CC ?= gcc
 LD ?= ld
+UNAME ?= $(shell uname -s)
 
 # win32 cross-compile
 MGCC32 ?= i686-w64-mingw32-gcc
@@ -87,12 +88,19 @@ doc/olvm.md: src/olvm.c extensions/ffi.c
 # ----------------------------------
 ## os independent flags
 
-CFLAGS += -std=gnu99 -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables
+CFLAGS += -std=gnu99
 CFLAGS += -Wno-int-to-pointer-cast # x86 warnings
-#CFLAGS += -z noexecstack # required by new bin-utils 2.39
+ifeq ($(UNAME),Linux)
+  CFLAGS += -z noexecstack # required by bin-utils 2.39+
+endif
+
 CFLAGS += -DHAVE_SOCKETS=$(if $(HAVE_SOCKETS),$(HAVE_SOCKETS),0)
 CFLAGS += -DHAVE_DLOPEN=$(if $(HAVE_DLOPEN),$(HAVE_DLOPEN),0)
 CFLAGS += -DHAVE_SECCOMP=$(if $(HAVE_SECCOMP),$(HAVE_SECCOMP),0)
+
+# size/speed opts
+CFLAGS += -fno-exceptions    # we don't use exceptions
+CFLAGS += -fno-unwind-tables -fno-asynchronous-unwind-tables  # keeps space, no speed impact
 
 # CFLAGS += -DOLVM_SAFEPADS=1
 
@@ -130,8 +138,6 @@ VERSION ?= $(shell echo `git describe --tags \`git rev-list --tags --max-count=1
 
 # ------------------------------------------------------
 ## os dependent flags
-
-UNAME ?= $(shell uname -s)
 
 # Linux
 ifeq ($(UNAME),Linux)
@@ -270,6 +276,9 @@ olvm: vm
 selfexec: ol
 	objcopy --add-section .lisp=selfexec.lisp \
 	        --set-section-flags .lisp=noload,readonly $^ $@
+
+# aarch64
+# ...
 
 # windows
 

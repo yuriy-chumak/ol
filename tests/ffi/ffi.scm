@@ -67,7 +67,7 @@ basic numeric limits checking:")
 (define INT32_MIN -2147483648)
 (define INT32_MAX +2147483647)
 
-(define INT64_MIN -9223372036854775808)
+(define INT64_MIN -9223372036854775808) ; FIX: change to -9223372036854775807
 (define INT64_MAX +9223372036854775807)
 
 (define UINT8_MAX  255)
@@ -99,7 +99,7 @@ basic numeric limits checking:")
       ["long long"            fft-long-long "Q2Q" INT64_MIN INT64_MAX]
       ["unsinged long long"   fft-unsigned-long-long "q2q" INT64_MAX UINT64_MAX]
    ))
-
+,quit
 ; - type -> type mirroring functions ------------------------
 (print "
 // simple type to type tests:

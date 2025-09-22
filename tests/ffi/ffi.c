@@ -44,6 +44,9 @@
 // f: float
 // d: double
 
+#include "ffi.inc"
+
+
 // simple type->type mirroring functions
 #define v2v(index, format, type) PUBLIC \
 type index##2##index(type x) \
@@ -848,3 +851,32 @@ iptr(uint64_t, u64_1, 1)
 iptr(float, f32_1, 1)
 iptr(double, f64_1, 1)
 
+
+// -- large objects tests
+char* uppercase(char* str)
+{
+	int len = strlen(str);
+	char* out = malloc(len+1);
+	memcpy(out, str, len+1);
+	for (int i = 0; i < len; i++)
+		if (out[i] >= 'a' && out[i] <= 'z')
+			out[i] -= 'a'-'A';
+	// caller must free "out"
+	return out;
+}
+
+wchar_t* wuppercase(wchar_t* str)
+{
+	int len = wcslen(str);
+	wchar_t* out = malloc((len+1) * sizeof(wchar_t));
+	memcpy(out, str, (len+1) * sizeof(wchar_t));
+	for (int i = 0; i < len; i++)
+		if (out[i] >= 'a' && out[i] <= 'z')
+			out[i] -= 'a'-'A';
+	// caller must free "out"
+	return out;
+}
+
+void print_string(char* format, char* str) {
+	printf(format, str);
+}
