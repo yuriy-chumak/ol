@@ -87,7 +87,7 @@ type cN_()
    ; unsigned types                                       ; signed types                                   ; floating points
    '("C"                "S"                 "I"                "L"                     "c"                          "s"                            "i"                            "l"                             "f"                 "d"                )
    `(,fft-unsigned-char ,fft-unsigned-short ,fft-unsigned-int  ,fft-unsigned-long-long ,fft-signed-char             ,fft-signed-short              ,fft-signed-int                ,fft-signed-long-long           ,fft-float          ,fft-double        )
-   `((0 1 ,UINT8_MAX)   (0 1 ,UINT16_MAX)   (0 1 ,UINT32_MAX)  (0 1 ,UINT64_MAX)       (,INT8_MIN -1 0 1 ,INT8_MAX) (,INT16_MIN -1 0 1 ,INT16_MAX) (,INT32_MIN -1 0 1 ,INT32_MAX) (,INT64_MIN -1 0 1 ,INT64_MAX)  (-1e10 -1 0 1 1e10) (-1e42 -1 0 1 1e42))
+   `((0 1 ,UINT8_MAX)   (0 1 ,UINT16_MAX)   (0 1 ,UINT32_MAX)  (0 1 ,UINT64_MAX)       (,INT8_MIN -1 0 1 ,INT8_MAX) (,INT16_MIN -1 0 1 ,INT16_MAX) (,INT32_MIN -1 0 1 ,INT32_MAX) (,INT64_MIN -1 0 1 ,INT64_MAX)  (-1e10 -1 0 1 1e10) (-1e48 -1 0 1 1e48))
 ))
 
 (print "
