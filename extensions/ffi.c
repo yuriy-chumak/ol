@@ -2126,9 +2126,19 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		? value(car(B))             // normal return type
 		: reference_type(car(B));   // fft& & fft* return types
 
-	if ((cdr(B)|C) == INULL) {      // no argument types and no arguments (speedup)
-		got = ((ret_t (*)())function)();
-		fp = heap->fp; // update fp
+	if ((cdr(B)|C) == INULL) {      // speedup: no argument types AND no arguments
+		if (returntype != TFLOAT && returntype != TDOUBLE)
+			got = ((ret_t (*)())function)();
+		else
+		switch (returntype) {
+			case TFLOAT:
+				*(float*)&got = ((float (*)())function)();
+				break;
+			case TDOUBLE:
+				*(double*)&got = ((double (*)())function)();
+				break;
+		}
+		fp = heap->fp; // function can call an ol code, so gc() can be called too
 		goto handle_got_value;
 	}
 

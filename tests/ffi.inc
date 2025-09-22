@@ -1,4 +1,4 @@
-// ()->type functions
+// function returning numeric types by value (neutral values, type limits)
 /*
 type cN_()
 {
@@ -228,6 +228,76 @@ signed long long l9223372036854775807_()
 {
    signed long long y = 9223372036854775807LL;
    printf("{{ () => %lld }}", y); fflush(stdout);
+   return y;
+}
+
+float fm10000000000_()
+{
+   float y = -10000000000.0f;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+float fm1_()
+{
+   float y = -1.0f;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+float f0_()
+{
+   float y = 0.0f;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+float f1_()
+{
+   float y = 1.0f;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+float f10000000000_()
+{
+   float y = 10000000000.0f;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+double dm1000000000000000000000000000000000000000000_()
+{
+   double y = -1000000000000000000000000000000000000000000.0;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+double dm1_()
+{
+   double y = -1.0;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+double d0_()
+{
+   double y = 0.0;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+double d1_()
+{
+   double y = 1.0;
+   printf("{{ () => %f }}", y); fflush(stdout);
+   return y;
+}
+
+double d1000000000000000000000000000000000000000000_()
+{
+   double y = 1000000000000000000000000000000000000000000.0;
+   printf("{{ () => %f }}", y); fflush(stdout);
    return y;
 }
 // simple type(n)->type functions
