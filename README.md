@@ -10,17 +10,20 @@
 
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86%2Fx64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-x86+x64.yml)
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-aarch64.yml)
+[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20mips%2032/64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-mips.yml)
+[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20mipsle%2032/64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-mipsle.yml)
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20ppc64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-ppc64.yml)
-<a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
 [![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/macos%20intel%2FmN/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+mN.yml)
 [![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win32%2fwin64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
-<a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
+<br/>
+<a href="https://yuriy-chumak.github.io/ol/"><img src="https://yuriy-chumak.github.io/ol/assets/view-project-page.svg"></a>
+
+<a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a>
+<a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a>
 
 
 Otus Lisp, Version 2.6
 ======================
-[![Visit the project page](https://yuriy-chumak.github.io/ol/assets/view-project-page.svg)](https://yuriy-chumak.github.io/ol/)
-
 Otus Lisp (Ol in short) is a purely functional, multi-platform Lisp dialect with built-in FFI, regular expressions and infix math notation support.
 
 Ol implements an extended subset of the R<sup>7</sup>RS Scheme
@@ -46,10 +49,22 @@ credits to
 Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
 
+
+Test Matrix
+-----------
+<a href="https://iaaa.port0.org/ol/test-matrix/"><img align="right" style="margin: 10px; " src="https://i.ibb.co/397jRs0G/image.png"></a>
+
+Every code change is automatically tested for regressions using github actions and our own test machine.
+It includes pack of core language [test suite](tests/), rosettacode [examples](tests/rosettacode/), ffi [tests](tests/ffi), and examples from the [list of language functions](doc/reference/README.md).
+
+Github actions results are provided as badges in the header. A test matrix with the results of each test for different platforms is available as a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (github doesn't allow javascript to be included in the readme, so you can follow the link or just click the preview image to open it).
+
+
 Breaking changes (master branch), as part of Ol 2.7 preparation
 ---------------------------------------------------------------
 The following breaking changes have been added to the master branch as part of 2.7 version preparation:
-* ❗ internal type names are changed. please, don't use internal type names in your code, use predicates instead
+* ❗ internal type names are changed (type codes are NOT changed).  
+  please, don't use internal type names in your code, use predicates instead
   * `type-string-displatch` type name changed to `type-superstring` (the old name caused confusing)️
     * you shoud use `string?` predicate to check the string,
     * if you want to use older name, add `(define type-string-displatch type-superstring)` as compat layer
@@ -260,7 +275,7 @@ The most important differences are:
   - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions [are provided](doc/reference/pairs-and-lists.md#set-car), but is not recommended to be used.
   - note: Inexact numbers can be changed with `vm:set!`, but is not recommended to be used.
   - note: Dynamic variables are available via `(scheme dynamic-bindings)` [library](doc/reference/dynamic-bindings.md).
-* CHARACTERS in Ol are **small numbers** (aka 'enums'), but special *character* type in Scheme.
+* CHARACTERS in Ol are **small numbers** (aka 'value+'), but special *character* type in Scheme.
   - note: Ol supports the full Unicode 15.0.0 (2022 Sep 13) character set.
   - note: To write a character use `write-char`, otherwise you'll write a number.
 * NEGATIVE indices in `substring` are **valid** in Ol (means "from the end of string", -1 means a last *rune*).
@@ -432,16 +447,12 @@ bye bye :/
 
 GNU/Linux, Unixes, *BSDs, macOS, ...
 ```bash
-$ ol scriptname.ol                # text script
-$ ol scriptname.bl                # binary (compiled) script
 $ echo '(print (+ 1 2 3))' | ol
 ```
 
 Windows:
 
 ```cmd
-> ol scriptname.ol
-> ol scriptname.bl
 > echo (print (+ 1 2 3)) | ol
 ```
 
@@ -449,7 +460,7 @@ Windows:
 BINARY SCRIPTS
 --------------
 
-OL can execute precompiled scripts. While text lisp programs require REPL (400KB), libraries, and time to compile,
+OL can execute precompiled scripts. While text lisp programs require REPL (450KB), libraries, and (small) time to compile,
 the binary code needs only olvm (90K with FFI, 60K without FFI) and is ready to run the code immediately.
 
 You can compile your script using next code as a template:
