@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  #if: false # This disables the entire workflow
   make-check:
     strategy:
       matrix:
@@ -27,7 +28,7 @@ jobs:
       run: 'make; make describe'
 
     - name: Apt update
-      run: 'sudo apt update'
+      run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Install MinGW toolchain
       run: 'sudo apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 -y'

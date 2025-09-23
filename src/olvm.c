@@ -5833,9 +5833,9 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 #	error "Unknown target endianness arcitecture"
 #endif
 				size = sizeof(inexact_t); // new size
-				unsigned char *p = (unsigned char*)&ref(new_alloc(type, size), 1);
+				unsigned char *q = (unsigned char*)&ref(new_alloc(type, size), 1);
 
-				*(inexact_t*)p = t;
+				*(inexact_t*)q = t;
 			}
 			else
 #endif

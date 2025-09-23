@@ -199,7 +199,7 @@ endif
 
 # ppc64 linux
 # ----------------------------
-ifeq ($(HAVE_AARCH64),1)
+ifeq ($(HAVE_PPC64),1)
 # 64-bit debug
 olvm-binaries: tmp/olvm-ppc64-debug
 
@@ -301,13 +301,13 @@ ifeq ($(HAVE_64CDEFS),1)
 	$(call scmtestok,tmp/olvm-x86_64-debug)
 	$(call scmtestok,tmp/olvm-x86_64-release)
 endif
-# AArch64
+# aarch64
 ifeq ($(HAVE_AARCH64),1)
 	$(call scmtestok,tmp/olvm-aarch64-debug,qemu-aarch64 -L /usr/aarch64-linux-gnu)
 	$(call scmtestok,tmp/olvm-aarch64-release,qemu-aarch64 -L /usr/aarch64-linux-gnu)
 endif
 # ppc64
-ifeq ($(HAVE_AARCH64),1)
+ifeq ($(HAVE_PPC64),1)
 	$(call scmtestok,tmp/olvm-ppc64-debug,qemu-ppc64 -L /usr/powerpc64-linux-gnu)
 	$(call scmtestok,tmp/olvm-ppc64-release,qemu-ppc64 -L /usr/powerpc64-linux-gnu)
 endif
@@ -384,17 +384,17 @@ define table-header
 			2) printf "| %-18s" `uname -m`;;\
 		esac ;\
 		case "`expr    $(HAVE_ARMV7) `" in \
-			1) printf "| ARMv7   ";;\
+			1) printf "| armv7   ";;\
 		esac ;\
 		case "`expr    $(HAVE_AARCH64) `" in \
-			1) printf "| AArch64 ";;\
+			1) printf "| aarch64 ";;\
 		esac ;\
 		case "`expr    $(HAVE_PPC64) `" in \
 			1) printf "| ppc64   ";;\
 		esac ;\
 		case "`expr \( $(HAVE_MINGW32) + $(HAVE_MINGW64) \) \* $(HAVE_WINE)`" in \
-			1) printf "| Windows ";;\
-			2) printf "| Windows           ";;\
+			1) printf "| windows ";;\
+			2) printf "| windows           ";;\
 		esac ;\
 	else \
 	: regular platform ;\

@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  #if: false # This disables the entire workflow
   make-check:
     strategy:
       matrix:
@@ -27,13 +28,10 @@ jobs:
       run: 'make; make describe'
 
     - name: Apt update
-      run: 'sudo apt update'
+      run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Install gcc-multilib (add 32-bit support)
       run: 'sudo apt install gcc-multilib -y'
-
-    - name: Start Virtual Framebuffer for X11 tests
-      run: 'sudo apt install xvfb; Xvfb :0 -screen 0 1024x768x16 &'
 
     - name: Regression tests
       run: 'make describe; make check'

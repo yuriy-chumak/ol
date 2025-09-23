@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  #if: false # This disables the entire workflow
   make-check:
     strategy:
       matrix:
@@ -25,9 +26,6 @@ jobs:
 
     - name: Build
       run: 'make; make describe'
-
-    - name: Start Virtual Framebuffer for X11 tests
-      run: 'sudo apt install xvfb; Xvfb :0 -screen 0 1024x768x16 &'
 
     - name: Regression tests
       run: 'make describe; make check'

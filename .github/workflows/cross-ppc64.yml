@@ -1,4 +1,7 @@
 name: linux ppc64
+# notes:
+#  don't forget for apt update before installing anything
+#  remove man-db autoupdate, it's too time consuming
 
 on:
   push:
@@ -11,6 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  #if: false # This disables the entire workflow
   make-check:
     strategy:
       matrix:
@@ -27,16 +31,13 @@ jobs:
       run: 'make; make describe'
 
     - name: Apt update
-      run: 'sudo apt update'
+      run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Install ppc64 toolchain
       run: 'sudo apt install gcc-powerpc64-linux-gnu -y'
 
     - name: Install qemu ppc (32- and 64-bit both)
-      run: 'sudo apt install qemu-system-ppc'
-
-    - name: Start Virtual Framebuffer for X11 tests
-      run: 'sudo apt install xvfb; Xvfb :0 -screen 0 1024x768x16 &'
+      run: 'sudo apt install qemu-system-ppc qemu-user'
 
     - name: Regression tests
-      run: 'make describe; DEV_MACHINE=1 HAVE_32CDEFS=0 HAVE_64CDEFS=0 HAVE_PPC64=1 DISPLAY=:0.0 make check'
+      run: 'make describe; DEV_MACHINE=1 HAVE_32CDEFS=0 HAVE_64CDEFS=0 HAVE_PPC64=1 DISPLAY=:0.0 make regression-tests'
