@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  linux-build:
+  make-check:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
@@ -25,4 +25,4 @@ jobs:
       run: 'make; make describe'
 
     - name: Regression tests
-      run: 'make describe check'
+      run: 'make check'
