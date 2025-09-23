@@ -18,11 +18,17 @@ jobs:
     - name: Update submodules
       run: 'git submodule update --init --recursive'
 
-    - name: Install gcc-multilib (32-bit support)
-      run: 'sudo apt update; sudo apt install gcc-multilib -y'
-
     - name: Build
       run: 'make; make describe'
 
+    - name: Apt update
+      run: 'sudo apt update'
+
+    - name: Install gcc-multilib (add 32-bit support)
+      run: 'sudo apt install gcc-multilib -y'
+
+    - name: Start Virtual Framebuffer for X11 tests
+      run: 'sudo apt install xvfb; Xvfb :0 -screen 0 1024x768x16 &'
+
     - name: Regression tests
-      run: 'make check'
+      run: 'make describe; make check'

@@ -22,4 +22,4 @@ jobs:
       run: 'make; make describe'
 
     - name: Regression tests
-      run: 'make check'
+      run: 'make describe; make check'

@@ -74,10 +74,10 @@ HAVE_PPC64 ?= 1
 endif
 endif
 
-# android (any)
-ifeq ($(shell adb devices | awk 'NR>1 {print}' | grep -q "device" && echo "Device connected" || echo "No device found"),Device connected)
-HAVE_ANDROID ?= 1
-endif
+## android (any)
+#ifeq ($(shell adb devices | awk 'NR>1 {print}' | grep -q "device" && echo "Device connected" || echo "No device found"),Device connected)
+#HAVE_ANDROID ?= 1
+#endif
 
 # i386 win32
 # apt install gcc-mingw-w64-i686

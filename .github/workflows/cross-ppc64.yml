@@ -1,4 +1,4 @@
-name: ppc64
+name: linux ppc64
 
 on:
   push:
@@ -21,6 +21,9 @@ jobs:
     - name: Build
       run: 'make; make describe'
 
+    - name: Apt update
+      run: 'sudo apt update'
+
     - name: Install ppc64 toolchain
       run: 'sudo apt install gcc-powerpc64-linux-gnu -y'
 
@@ -31,4 +34,4 @@ jobs:
       run: 'sudo apt install xvfb; Xvfb :0 -screen 0 1024x768x16 &'
 
     - name: Regression tests
-      run: 'DEV_MACHINE=1 HAS_32CDEFS=0 HAS_64CDEFS=0 DISPLAY=:0.0 make check'
+      run: 'make describe; DEV_MACHINE=1 HAVE_32CDEFS=0 HAVE_64CDEFS=0 HAVE_PPC64=1 DISPLAY=:0.0 make check'
