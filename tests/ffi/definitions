@@ -27,13 +27,13 @@
 (define uchar  fft-unsigned-char)
 (define ushort fft-unsigned-short)
 (define uint   fft-unsigned-int)
+(define ullong fft-unsigned-long-long)
 (define char   fft-signed-char)
 (define short  fft-signed-short)
 (define int    fft-signed-int)
+(define llong  fft-signed-long-long)
 (define float  fft-float)
 (define double fft-double)
-(define ulonglong fft-unsigned-long-long)
-(define longlong  fft-signed-long-long)
 
 ;; note:
 ;;    fft-char is signed by default

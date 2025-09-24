@@ -13,7 +13,7 @@
          (~~ '~~ f f . args))
       ))
 
-(define ARGN 24)
+(define MAX-ARGS-COUNT 24)
 
 ;; --------------------------------------------------
 (print "
@@ -82,9 +82,9 @@ void v_cc..c(n)(type a1, type a2, .., type aN)
                   (cons "format" format)
                )) ))
 
-         (iota ARGN 1)))
+         (iota (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT) 1)))
    ; unsigned types                                 ; signed types                               ; floating points
-   '("C"             "S"              "I"             "c"            "s"            "i"           "f"     "d"     )
-   '("unsigned char" "unsigned short" "unsigned int"  "signed char"  "signed short" "signed int"  "float" "double")
-   '("%u"            "%u"             "%u"            "%d"           "%d"           "%d"          "%f"    "%f"    ))
+   '("C"             "S"              "I"             "L"                  "c"            "s"            "i"           "l"         "f"     "d"     )
+   '("unsigned char" "unsigned short" "unsigned int"  "unsigned long long" "signed char"  "signed short" "signed int"  "long long" "float" "double")
+   '("%u"            "%u"             "%u"            "%llu"               "%d"           "%d"           "%d"          "%lld"      "%f"    "%f"    ))
 

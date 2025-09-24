@@ -312,7 +312,7 @@ double d1000000000000000000000000000000000000000000000000_()
    return y;
 }
 
-// simple type(n)->void functions
+// simple type(n) functions
 /*
 void v_cc..c(n)(type a1, type a2, .., type aN)
 {
@@ -679,6 +679,66 @@ void void_IIIIIIIIIIIIIIIIIIIIIIII(unsigned int a1, unsigned int a2, unsigned in
    printf("{{ %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24); fflush(stdout);
 }
 
+void void_L(unsigned long long a1)
+{
+   printf("{{ %llu }}", a1); fflush(stdout);
+}
+
+void void_LL(unsigned long long a1, unsigned long long a2)
+{
+   printf("{{ %llu %llu }}", a1, a2); fflush(stdout);
+}
+
+void void_LLL(unsigned long long a1, unsigned long long a2, unsigned long long a3)
+{
+   printf("{{ %llu %llu %llu }}", a1, a2, a3); fflush(stdout);
+}
+
+void void_LLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4)
+{
+   printf("{{ %llu %llu %llu %llu }}", a1, a2, a3, a4); fflush(stdout);
+}
+
+void void_LLLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4, unsigned long long a5)
+{
+   printf("{{ %llu %llu %llu %llu %llu }}", a1, a2, a3, a4, a5); fflush(stdout);
+}
+
+void void_LLLLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4, unsigned long long a5, unsigned long long a6)
+{
+   printf("{{ %llu %llu %llu %llu %llu %llu }}", a1, a2, a3, a4, a5, a6); fflush(stdout);
+}
+
+void void_LLLLLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4, unsigned long long a5, unsigned long long a6, unsigned long long a7)
+{
+   printf("{{ %llu %llu %llu %llu %llu %llu %llu }}", a1, a2, a3, a4, a5, a6, a7); fflush(stdout);
+}
+
+void void_LLLLLLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4, unsigned long long a5, unsigned long long a6, unsigned long long a7, unsigned long long a8)
+{
+   printf("{{ %llu %llu %llu %llu %llu %llu %llu %llu }}", a1, a2, a3, a4, a5, a6, a7, a8); fflush(stdout);
+}
+
+void void_LLLLLLLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4, unsigned long long a5, unsigned long long a6, unsigned long long a7, unsigned long long a8, unsigned long long a9)
+{
+   printf("{{ %llu %llu %llu %llu %llu %llu %llu %llu %llu }}", a1, a2, a3, a4, a5, a6, a7, a8, a9); fflush(stdout);
+}
+
+void void_LLLLLLLLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4, unsigned long long a5, unsigned long long a6, unsigned long long a7, unsigned long long a8, unsigned long long a9, unsigned long long a10)
+{
+   printf("{{ %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10); fflush(stdout);
+}
+
+void void_LLLLLLLLLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4, unsigned long long a5, unsigned long long a6, unsigned long long a7, unsigned long long a8, unsigned long long a9, unsigned long long a10, unsigned long long a11)
+{
+   printf("{{ %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11); fflush(stdout);
+}
+
+void void_LLLLLLLLLLLL(unsigned long long a1, unsigned long long a2, unsigned long long a3, unsigned long long a4, unsigned long long a5, unsigned long long a6, unsigned long long a7, unsigned long long a8, unsigned long long a9, unsigned long long a10, unsigned long long a11, unsigned long long a12)
+{
+   printf("{{ %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu %llu }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12); fflush(stdout);
+}
+
 void void_c(signed char a1)
 {
    printf("{{ %d }}", a1); fflush(stdout);
@@ -1037,6 +1097,66 @@ void void_iiiiiiiiiiiiiiiiiiiiiii(signed int a1, signed int a2, signed int a3, s
 void void_iiiiiiiiiiiiiiiiiiiiiiii(signed int a1, signed int a2, signed int a3, signed int a4, signed int a5, signed int a6, signed int a7, signed int a8, signed int a9, signed int a10, signed int a11, signed int a12, signed int a13, signed int a14, signed int a15, signed int a16, signed int a17, signed int a18, signed int a19, signed int a20, signed int a21, signed int a22, signed int a23, signed int a24)
 {
    printf("{{ %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24); fflush(stdout);
+}
+
+void void_l(long long a1)
+{
+   printf("{{ %lld }}", a1); fflush(stdout);
+}
+
+void void_ll(long long a1, long long a2)
+{
+   printf("{{ %lld %lld }}", a1, a2); fflush(stdout);
+}
+
+void void_lll(long long a1, long long a2, long long a3)
+{
+   printf("{{ %lld %lld %lld }}", a1, a2, a3); fflush(stdout);
+}
+
+void void_llll(long long a1, long long a2, long long a3, long long a4)
+{
+   printf("{{ %lld %lld %lld %lld }}", a1, a2, a3, a4); fflush(stdout);
+}
+
+void void_lllll(long long a1, long long a2, long long a3, long long a4, long long a5)
+{
+   printf("{{ %lld %lld %lld %lld %lld }}", a1, a2, a3, a4, a5); fflush(stdout);
+}
+
+void void_llllll(long long a1, long long a2, long long a3, long long a4, long long a5, long long a6)
+{
+   printf("{{ %lld %lld %lld %lld %lld %lld }}", a1, a2, a3, a4, a5, a6); fflush(stdout);
+}
+
+void void_lllllll(long long a1, long long a2, long long a3, long long a4, long long a5, long long a6, long long a7)
+{
+   printf("{{ %lld %lld %lld %lld %lld %lld %lld }}", a1, a2, a3, a4, a5, a6, a7); fflush(stdout);
+}
+
+void void_llllllll(long long a1, long long a2, long long a3, long long a4, long long a5, long long a6, long long a7, long long a8)
+{
+   printf("{{ %lld %lld %lld %lld %lld %lld %lld %lld }}", a1, a2, a3, a4, a5, a6, a7, a8); fflush(stdout);
+}
+
+void void_lllllllll(long long a1, long long a2, long long a3, long long a4, long long a5, long long a6, long long a7, long long a8, long long a9)
+{
+   printf("{{ %lld %lld %lld %lld %lld %lld %lld %lld %lld }}", a1, a2, a3, a4, a5, a6, a7, a8, a9); fflush(stdout);
+}
+
+void void_llllllllll(long long a1, long long a2, long long a3, long long a4, long long a5, long long a6, long long a7, long long a8, long long a9, long long a10)
+{
+   printf("{{ %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10); fflush(stdout);
+}
+
+void void_lllllllllll(long long a1, long long a2, long long a3, long long a4, long long a5, long long a6, long long a7, long long a8, long long a9, long long a10, long long a11)
+{
+   printf("{{ %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11); fflush(stdout);
+}
+
+void void_llllllllllll(long long a1, long long a2, long long a3, long long a4, long long a5, long long a6, long long a7, long long a8, long long a9, long long a10, long long a11, long long a12)
+{
+   printf("{{ %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12); fflush(stdout);
 }
 
 void void_f(float a1)
