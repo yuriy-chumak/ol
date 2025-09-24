@@ -1,0 +1,165 @@
+#!/usr/bin/env -S bash -c "make -s -C ../../.. ffi-tests"
+
+# tests without test results in %.%.ok file are legal,
+#   but can not be used in batch testing!
+TEST_FILES += $(patsubst %.ok,%,\
+                 $(wildcard tests/ffi/*.scm)\
+			     $(wildcard tests/ffi/*.bin))
+
+.PHONY: ffi-tests
+.PHONY: ffi-tests-native
+
+ffi-tests-native:
+	DEV_MACHINE=0 make ffi-tests
+
+# enable as part of regression testing
+regression-tests: ffi-tests
+
+# ============================================================
+# -- ffi binaries --------------------------------------------
+ffi-binaries:
+
+FFI_DEPS += $(OLVM_DEPS) tests/ffi/src.c tests/ffi/src.inc
+FFI_CFLAGS_DEBUG += $(OLVM_CFLAGS_DEBUG) tests/ffi/src.c
+FFI_CFLAGS_RELEASE += $(OLVM_CFLAGS_RELEASE) tests/ffi/src.c
+
+# i386 linux
+# ----------------------------
+ifeq ($(DEV_MACHINE)$(HAVE_32CDEFS),11)
+# 32-bit debug
+ffi-binaries: tmp/ffi-i386-debug
+
+tmp/ffi-i386-debug: CC=gcc
+tmp/ffi-i386-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT) -m32)
+
+# 32-bit release
+ffi-binaries: tmp/ffi-i386-release
+
+tmp/ffi-i386-release: CC=gcc
+tmp/ffi-i386-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT) -m32)
+
+endif
+
+# x86_64 linux
+# ----------------------------
+ifeq ($(DEV_MACHINE)$(HAVE_64CDEFS),11)
+# 64-bit debug
+ffi-binaries: tmp/ffi-x86_64-debug
+
+tmp/ffi-x86_64-debug: CC=gcc
+tmp/ffi-x86_64-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# 64-bit release
+ffi-binaries: tmp/ffi-x86_64-release
+
+tmp/ffi-x86_64-release: CC=gcc
+tmp/ffi-x86_64-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+# aarch64 linux
+# ----------------------------
+ifeq ($(DEV_MACHINE)$(HAVE_AARCH64),11)
+# 64-bit debug
+ffi-binaries: tmp/ffi-aarch64-debug
+
+tmp/ffi-aarch64-debug: CC=aarch64-linux-gnu-gcc
+tmp/ffi-aarch64-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# 64-bit release
+ffi-binaries: tmp/ffi-aarch64-release
+
+tmp/ffi-aarch64-release: CC=aarch64-linux-gnu-gcc
+tmp/ffi-aarch64-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+# ppc64 linux
+# ----------------------------
+ifeq ($(DEV_MACHINE)$(HAVE_PPC64),11)
+# 64-bit debug
+ffi-binaries: tmp/ffi-ppc64-debug
+
+tmp/ffi-ppc64-debug: CC=powerpc64-linux-gnu-gcc
+tmp/ffi-ppc64-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# 64-bit release
+ffi-binaries: tmp/ffi-ppc64-release
+
+tmp/ffi-ppc64-release: CC=powerpc64-linux-gnu-gcc
+tmp/ffi-ppc64-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+# win32
+# ----------------------------
+ifeq ($(DEV_MACHINE)$(HAVE_MINGW32),11)
+# 32-bit debug
+ffi-binaries: tmp/ffi-win32-debug.exe
+
+tmp/ffi-win32-debug.exe: CC=$(MGCC32)
+tmp/ffi-win32-debug.exe: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) -Iincludes/win32 -lws2_32)
+
+# 32-bit release.exe
+ffi-binaries: tmp/ffi-win32-release.exe
+
+tmp/ffi-win32-release.exe: CC=$(MGCC32)
+tmp/ffi-win32-release.exe: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) -Iincludes/win32 -lws2_32)
+
+endif
+
+# win64
+# ----------------------------
+ifeq ($(DEV_MACHINE)$(HAVE_MINGW64),11)
+# 64-bit debug
+ffi-binaries: tmp/ffi-win64-debug.exe
+
+tmp/ffi-win64-debug.exe: CC=$(MGCC64)
+tmp/ffi-win64-debug.exe: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) -Iincludes/win32 -lws2_32)
+
+# 64-bit release
+ffi-binaries: tmp/ffi-win64-release.exe
+
+tmp/ffi-win64-release.exe: CC=$(MGCC32)
+tmp/ffi-win64-release.exe: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) -Iincludes/win32 -lws2_32)
+
+endif
+
+# native binaries
+ifeq ($(DEV_MACHINE),0)
+
+# native debug
+# ----------------------------
+ffi-binaries: tmp/ffi-native-debug
+
+tmp/ffi-native-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(CFLAGS) $(CFLAGS_DEBUG) $(L))
+
+# native release
+ffi-binaries: tmp/ffi-native-release
+
+tmp/ffi-native-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(CFLAGS) $(CFLAGS_RELEASE) $(L))
+
+endif
+
+# ------ ffi tests -------------------------------------
+.SILENT: ffi-tests
+ffi-tests: ffi-binaries
+ffi-tests: $(wildcard tests/ffi/*.scm) \
+           $(wildcard tests/ffi/*.bin)
+	echo " "
+	echo "# FFI TESTS"
+	TESTS="$^" EXECUTABLE=ffi $(MAKE) tests

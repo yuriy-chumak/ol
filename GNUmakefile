@@ -11,8 +11,9 @@ all: release
 # detect external features
 -include configure.mk
 
-.PHONY: all release debug check slim config recompile install uninstall clean android
-.PHONY: describe
+.PHONY: all release debug slim config recompile install uninstall clean android
+.PHONY: check # global testing target
+.PHONY: describe # print built binary infos
 
 describe: all
 	./vm --version
@@ -277,6 +278,9 @@ selfexec: ol
 	objcopy --add-section .lisp=selfexec.lisp \
 	        --set-section-flags .lisp=noload,readonly $^ $@
 
+# aarch64
+# ...
+
 # windows
 
 # You can debug ol.exe using "winedbg --gdb ol.exe"
@@ -328,8 +332,17 @@ libraries/owl/math/infix.scm: tools/make-math-infix.scm vm
 MAKEFILE_MAIN=1
 -include extras/wasm.mk
 
--include tests/Makefile
--include tests/rosettacode/Makefile
+# tests
+check: # global testing target
+check-native:
+	DEV_MACHINE=0 $(MAKE) check
+
+-include extras/check.mk
+-include tests/check # language regression tests
+-include tests/rosettacode/check # rosettacode examples
+-include tests/ffi/check # ffi tests
+-include doc/reference/check # reference book tests
+
 -include config/Makefile
 -include debian/Makefile
 
@@ -337,11 +350,7 @@ MAKEFILE_MAIN=1
 -include extras/debug.mk
 
 # documentation samples check
-check: check-reference
-check-reference: release
-check-reference: $(wildcard doc/reference/*.md)
-	@echo "Testing reference samples:"
-	@./ol tools/check-reference.lisp $(filter %.md,$^) && echo $(ok) || echo $(failed)
+-include doc/reference/Makefile
 
 # win32 extensions
 -include extensions/win32/Makefile

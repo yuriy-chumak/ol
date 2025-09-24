@@ -1,0 +1,55 @@
+#!/usr/bin/env -S bash -c "make -s -C ../.. check-reference"
+
+# all *.md files are legal to test in batch testing
+TEST_FILES += $(wildcard doc/reference/*.md)
+
+.PHONY: check-reference
+.PHONY: check-reference-native
+
+check-reference-native:
+	DEV_MACHINE=0 make check-reference
+# ------------------------------------
+
+define check-reference
+    $3 $1 repl tools/check-reference.lisp "$2" 1>/dev/null 2>/dev/null ;\
+	   if [ $$? -eq 0 ]; then\
+	      printf \|$(ok) ;\
+	   else \
+	      printf \|$(fail);\
+	      touch $(FAILED);\
+	   fi
+endef
+
+check-reference: olvm-binaries
+check-reference: $(wildcard doc/reference/*.md)
+	@echo " "
+	@echo "# CHECK REFERENCE"
+	@$(eval F1LEN=$(shell for F in $(TEST_FILES); do echo $${#F}; done |sort -n| tail -1))
+	@$(call table-header, $(F1LEN))
+	@for F in $(filter %.md,$^); do \
+       printf "|%-$(F1LEN)s " "$$F" |sed 's/ /*/; s/ /./g; s/*/ /' ;\
+	   # i386 linux \
+	   if [ "$(DEV_MACHINE)$(HAVE_32CDEFS)" = "11" ]; then $(call check-reference,tmp/olvm-i386-debug,$$F); fi ;\
+	   if [ "$(DEV_MACHINE)$(HAVE_32CDEFS)" = "11" ]; then $(call check-reference,tmp/olvm-i386-release,$$F); fi ;\
+	   # x86_64 linux \
+	   if [ "$(DEV_MACHINE)$(HAVE_64CDEFS)" = "11" ]; then $(call check-reference,tmp/olvm-x86_64-debug,$$F); fi ;\
+	   if [ "$(DEV_MACHINE)$(HAVE_64CDEFS)" = "11" ]; then $(call check-reference,tmp/olvm-x86_64-release,$$F); fi ;\
+	   # aarch64 linux \
+	   if [ "$(DEV_MACHINE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm-aarch64-debug,$$F,$(AARCH64)); fi ;\
+	   if [ "$(DEV_MACHINE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm-aarch64-release,$$F,$(AARCH64)); fi ;\
+	   # ppc64 linux \
+	   if [ "$(DEV_MACHINE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm-ppc64-debug,$$F,$(PPC64)); fi ;\
+	   if [ "$(DEV_MACHINE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm-ppc64-release,$$F,$(PPC64)); fi ;\
+	   # win32 wine \
+	   if [ "$(DEV_MACHINE)$(HAVE_MINGW32)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm-win32-debug.exe,$$F,$(WINE)); fi ;\
+	   if [ "$(DEV_MACHINE)$(HAVE_MINGW32)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm-win32-release.exe,$$F,$(WINE)); fi ;\
+	   # win64 wine \
+	   if [ "$(DEV_MACHINE)$(HAVE_MINGW64)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm-win64-debug.exe,$$F,$(WINE)); fi ;\
+	   if [ "$(DEV_MACHINE)$(HAVE_MINGW64)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm-win64-release.exe,$$F,$(WINE)); fi ;\
+	   # native platform \
+	   if [ "$(DEV_MACHINE)" = "0" ]; then $(call check-reference,tmp/olvm-native-debug,$$F); fi ;\
+	   if [ "$(DEV_MACHINE)" = "0" ]; then $(call check-reference,tmp/olvm-native-release,$$F); fi ;\
+	   echo "|";\
+	done
+	@if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
+	@echo "$(green)passed!$(done)"
