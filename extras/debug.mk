@@ -5,10 +5,10 @@ $(error Use toplevel Makefile, please.)
 else
 
 ffi: CFLAGS += $(CFLAGS_TRACE)
-ffi: src/olvm.c extensions/ffi.c tests/ffi.c
+ffi: src/olvm.c extensions/ffi.c tests/ffi/src.c
 	$(CC) src/olvm.c -o $@ \
 	   extensions/ffi.c -Iincludes \
-	   tests/ffi.c \
+	   tests/ffi/src.c \
 	   src/repl.S -DREPL=repl \
 	   $(CFLAGS) $(L)
 	@echo Ok.

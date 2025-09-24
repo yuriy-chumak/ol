@@ -1,10 +1,10 @@
-#!/usr/bin/env -S bash -c "make -s -C ../../.. ffi-tests"
+#!/usr/bin/env -S bash -c "make -s -C ../.. ffi-tests"
 
 # tests without test results in %.%.ok file are legal,
 #   but can not be used in batch testing!
 TEST_FILES += $(patsubst %.ok,%,\
                  $(wildcard tests/ffi/*.scm)\
-			     $(wildcard tests/ffi/*.bin))
+                 $(wildcard tests/ffi/*.bin))
 
 .PHONY: ffi-tests
 .PHONY: ffi-tests-native
@@ -162,4 +162,4 @@ ffi-tests: $(wildcard tests/ffi/*.scm) \
            $(wildcard tests/ffi/*.bin)
 	echo " "
 	echo "# FFI TESTS"
-	TESTS="$^" EXECUTABLE=ffi $(MAKE) tests
+	TESTS="$^" EXECUTABLE=ffi TEST_HOME=tests/ffi $(MAKE) tests

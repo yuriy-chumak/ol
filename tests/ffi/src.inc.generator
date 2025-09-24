@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-,load "ffi.patterns"
+,load "definitions"
 
 (define-syntax ~~
    (syntax-rules ()

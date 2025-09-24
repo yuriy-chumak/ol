@@ -1,10 +1,10 @@
-#!/usr/bin/env -S bash -c "make -s -C ../../.. rosettacode-tests"
+#!/usr/bin/env -S bash -c "make -s -C ../.. rosettacode-tests"
 
 # tests without test results in %.%.ok file are legal,
 #   but can not be used in batch testing!
 TEST_FILES += $(patsubst %.ok,%,\
                  $(wildcard tests/rosettacode/*.scm)\
-			     $(wildcard tests/rosettacode/*.bin))
+                 $(wildcard tests/rosettacode/*.bin))
 
 .PHONY: rosettacode-tests
 .PHONY: rosettacode-tests-native

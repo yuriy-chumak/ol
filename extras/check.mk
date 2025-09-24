@@ -125,6 +125,11 @@ else  # disable any wine logging
 WINE ?= WINEDEBUG=-all wine cmd /c 
 endif
 
+# -- file list scripts -----
+define find
+	$(shell find "$1" -maxdepth 1 -name "$2" -print0 | sed 's/^|$/"/g')
+endef
+
 # -- build scripts ---------
 define build-olvm
 	@echo "------------------------------------------------------------------------------"
@@ -137,7 +142,9 @@ endef
 # -- scm <- scm.ok -------------------------------------------
 define scmtestok
 	@if ([ -f $1 ]); then\
-		if ([ -f $^.in ] && $2 $1 repl --home=libraries $^ <$^.in 2>&1 || $2 $1 repl --home=libraries $^ 2>&1) | diff $3 - $^.ok >/dev/null; then\
+		if ([ -f $^.in ] && $2 $1 repl --home=libraries:$(TEST_HOME) $^ <$^.in 2>&1 \
+		                 || $2 $1 repl --home=libraries:$(TEST_HOME) $^ 2>&1) \
+				| diff $3 - $^.ok >/dev/null; then\
 			printf \|$(ok) ;\
 		else \
 			printf \|$(fail);\

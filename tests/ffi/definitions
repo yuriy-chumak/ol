@@ -1,0 +1,101 @@
+#!/usr/bin/env ol
+
+(import (otus ffi))
+
+(define this (load-dynamic-library #f))
+(define (copy x) (vm:cast x (type x)))
+
+;; legend:
+;;    C - unsigned char
+;;    S - unsigned short
+;;    I - unsigned int
+;;    L - unsigned long
+;;    Q - unsigned long long
+;;    c - signed char
+;;    s - signed short
+;;    i - signed int
+;;    l - signed long
+;;    q - signed long long
+;;    f - float
+;;    d - double
+
+;; note:
+;;    fft-char is signed by default
+;;    we don't support rational numbers as fft&
+(print "Notes:
+  * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+    and is completely covered by other tests ('int' and 'long long').
+  * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+    capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+  * output inside {{ .. }} are native code output
+")
+
+; global numeric constants
+(define INT8_MIN -128)
+(define INT8_MAX +127)
+
+(define INT16_MIN -32768)
+(define INT16_MAX +32767)
+
+(define INT32_MIN -2147483648)
+(define INT32_MAX +2147483647)
+
+(define INT64_MIN -9223372036854775807)
+(define INT64_MAX +9223372036854775807)
+
+(define UINT8_MAX  255)
+(define UINT16_MAX 65535)
+(define UINT32_MAX 4294967295)
+(define UINT64_MAX 18446744073709551615)
+
+;; (define Pn '( ; 114 prime numbers
+(define primes '(
+       1     2     3     5     7    11   101   131   151   181   191   313
+     353   373   383   727   757   787   797   919   929 10301 10501 10601
+   11311 11411 12421 12721 12821 13331 13831 13931 14341 14741 15451 15551
+   16061 16361 16561 16661 17471 17971 18181 18481 19391 19891 19991 30103
+   30203 30403 30703 30803 31013 31513 32323 32423 33533 34543 34843 35053
+   35153 35353 35753 36263 36563 37273 37573 38083 38183 38783 39293 70207
+   70507 70607 71317 71917 72227 72727 73037 73237 73637 74047 74747 75557
+   76367 76667 77377 77477 77977 78487 78787 78887 79397 79697 79997 90709
+   91019 93139 93239 93739 94049 94349 94649 94849 94949 95959 96269 96469
+   96769 97379 97579 97879 98389 98689
+))
+;; (define Sn ; 114 consecutive numbers 1..n
+;;    (iota 114 1))
+
+; templates
+(define (|cc..c(n)2c| char n)
+   (string-append (apply string-append (repeat char n)) "2" char))
+(define (|c_cc..c(n)| char n)
+   (string-append char "_" (apply string-append (repeat char n))))
+
+(define (|type a1, type a2, .., type aN| typename n)
+   (apply string-append
+      (cons* typename " a1"
+         (map (lambda (i)
+               (string-append ", " typename " a" (number->string i)))
+            (iota (- n 1) 2)) )))
+
+(define (|%u %u .. %u(n)| format n)
+   (apply string-append
+      (cons* format
+         (map (lambda (i)
+               (string-append " " format))
+            (iota (- n 1) 2)) )))
+
+(define (|a1 + a2 + .. + aN| n)
+   (apply string-append
+      (cons* "a1"
+         (map (lambda (i)
+               (string-append " + a" (number->string i)))
+            (iota (- n 1) 2)) )))
+
+(define (|a1, a2, .., aN| n)
+   (apply string-append
+      (cons* "a1"
+         (map (lambda (i)
+               (string-append ", a" (number->string i)))
+            (iota (- n 1) 2)) )))
+
+; 

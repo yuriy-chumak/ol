@@ -1,10 +1,10 @@
-#!/usr/bin/env -S bash -c "make -s -C ../.. check-reference"
+#!/usr/bin/env -S bash -c "make -s -C .. regression-tests"
 
 # tests without test results in %.%.ok file are legal,
 #   but can not be used in batch testing!
 TEST_FILES += $(patsubst %.ok,%,\
                  $(wildcard tests/*.scm)\
-			     $(wildcard tests/*.bin))
+                 $(wildcard tests/*.bin))
 
 .PHONY: language-tests
 .PHONY: language-tests-native

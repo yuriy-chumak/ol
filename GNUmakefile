@@ -25,6 +25,9 @@ CC ?= gcc
 LD ?= ld
 UNAME ?= $(shell uname -s)
 
+# create temp folder
+$(shell mkdir -p tmp)
+
 # win32 cross-compile
 MGCC32 ?= i686-w64-mingw32-gcc
 MGCC64?=x86_64-w64-mingw32-gcc
