@@ -1,4 +1,7 @@
-name: linux x86/x64
+name: linux ppc64
+# notes:
+#  don't forget for apt update before installing anything
+#  remove man-db autoupdate, it's too time consuming
 
 on:
   push:
@@ -30,8 +33,11 @@ jobs:
     - name: Apt update
       run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
 
-    - name: Install gcc-multilib (add 32-bit support)
-      run: 'sudo apt install gcc-multilib -y'
+    - name: Install ppc64 toolchain
+      run: 'sudo apt install gcc-powerpc64-linux-gnu -y'
+
+    - name: Install qemu ppc (32- and 64-bit both)
+      run: 'sudo apt install qemu-system-ppc qemu-user'
 
     - name: Regression tests
-      run: 'make describe; make check'
+      run: 'make describe; DEV_MACHINE=1 HAVE_32CDEFS=0 HAVE_64CDEFS=0 HAVE_PPC64=1 DISPLAY=:0.0 make regression-tests'

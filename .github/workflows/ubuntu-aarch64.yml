@@ -5,8 +5,14 @@ on:
     branches:
       - master
 
+# save resources, stop outdated workflows
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  linux-build:
+  #if: false # This disables the entire workflow
+  make-check:
     strategy:
       matrix:
         os: [ ubuntu-24.04-arm ]
@@ -22,4 +28,4 @@ jobs:
       run: 'make; make describe'
 
     - name: Regression tests
-      run: 'make describe check'
+      run: 'make describe; make check'

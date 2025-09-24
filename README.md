@@ -10,9 +10,10 @@
 
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86%2Fx64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-x86+x64.yml)
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-aarch64.yml)
-[![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/macos%20intel%2Fm1/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m1.yml)
-[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win32%2fwin64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
+[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20ppc64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-ppc64.yml)
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a></br>
+[![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/macos%20intel%2FmN/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+mN.yml)
+[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win32%2fwin64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
 <a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a></br>
 
 
