@@ -9,6 +9,7 @@
 (print "
 ---------------------------------------------------------------
 parameterless function returning numeric type by value (neutral values, type limits)
+(such calls are optimized for execution, no stack and heap sizes check for params)
 type cN_()
 {
    type y = X;

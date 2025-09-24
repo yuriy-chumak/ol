@@ -1,4 +1,7 @@
 #!/usr/bin/env ol
+; some global test constants
+(define MAX-ARGS-COUNT 24) ; how much arguments we test maximally
+
 
 (import (otus ffi))
 
@@ -19,16 +22,28 @@
 ;;    f - float
 ;;    d - double
 
+; short type names
+(define void   fft-void)
+(define uchar  fft-unsigned-char)
+(define ushort fft-unsigned-short)
+(define uint   fft-unsigned-int)
+(define char   fft-signed-char)
+(define short  fft-signed-short)
+(define int    fft-signed-int)
+(define float  fft-float)
+(define double fft-double)
+(define ulonglong fft-unsigned-long-long)
+(define longlong  fft-signed-long-long)
+
 ;; note:
 ;;    fft-char is signed by default
 ;;    we don't support rational numbers as fft&
 (print "Notes:
-  * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
-    and is completely covered by other tests ('int' and 'long long').
-  * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
-    capital chars for unsigned prefixes;  'f' for float, 'd' for double.
-  * output inside {{ .. }} are native code output
-")
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} are native code output")
 
 ; global numeric constants
 (define INT8_MIN -128)
@@ -67,8 +82,8 @@
 ; templates
 (define (|cc..c(n)2c| char n)
    (string-append (apply string-append (repeat char n)) "2" char))
-(define (|c_cc..c(n)| char n)
-   (string-append char "_" (apply string-append (repeat char n))))
+(define (|v_cc..c(n)| char n)
+   (string-append "void_" (apply string-append (repeat char n))))
 
 (define (|type a1, type a2, .., type aN| typename n)
    (apply string-append

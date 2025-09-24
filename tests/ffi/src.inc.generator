@@ -1,5 +1,9 @@
 #!/usr/bin/env ol
+(display "/* ")
 ,load "definitions"
+(print " */\n")
+
+(print "#include <stdio.h>")
 
 (define-syntax ~~
    (syntax-rules ()
@@ -12,7 +16,10 @@
 (define ARGN 24)
 
 ;; --------------------------------------------------
-(print "// function returning numeric types by value (neutral values, type limits)")
+(print "
+// function returning numeric type by value (neutral values, type limits)
+// (such calls are optimized for fast execution)")
+
 (define testcase "
 type cN_()
 {
@@ -50,13 +57,13 @@ type cN_()
 
 
 ;; ---------------------------------------------
-(print "// simple type(n)->type functions")
+(print "
+// simple type(n) functions")
+
 (define testcase "
-type c_cc..c(n)(type a1, type a2, .., type aN)
+void v_cc..c(n)(type a1, type a2, .., type aN)
 {
-   type y = a1 + a2 + .. + aN;
-   printf('{{ %u %u .. %u(n) => format }}', a1, a2, .., aN, y); fflush(stdout);
-   return y;
+   printf('{{ %u %u .. %u(n) }}', a1, a2, .., aN); fflush(stdout);
 }")
 (print "/*" testcase "*/")
 
@@ -66,7 +73,7 @@ type c_cc..c(n)(type a1, type a2, .., type aN)
                      (str-replace testcase (car pair) (cdr pair)))
                (s/'/"/g testcase)
                (list
-                  (~~ '|c_cc..c(n)| index n) ; function name
+                  (~~ '|v_cc..c(n)| index n) ; function name
                   (~~ '|type a1, type a2, .., type aN| typename n) ; function args
                   (~~ '|a1 + a2 + .. + aN| n)
                   (~~ '|%u %u .. %u(n)| format n)
