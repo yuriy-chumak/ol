@@ -797,7 +797,7 @@ word*p = new (TVECTOR, 13);\
 
 // special case (_v == INT_?_MIN) if OLVM_ANSI_INT_LIMITS:
 //   val == minimal applicable integer for selected word width (INT_?_MIN value)
-//   that is equal to -2147483648 for 32-bit and -9223372036854775808 for 64-bit
+//   that is equal to -2147483648 for 32-bit and -9223372036854775807 for 64-bit
 // in this case -val cenverts into "0" by machine math and we got invalid value
 //   so we need to compare val with INT_T_MIN and use a longer converter
 //
@@ -1536,8 +1536,8 @@ void yield()
 #	include <sys/socket.h>
 #	include <netinet/in.h>
 
-#	include <arpa/inet.h> // for inet_addr()
-#	include <netdb.h>     // for gethostbyname()
+#	include <arpa/inet.h> // inet_addr()
+#	include <netdb.h>     // gethostbyname()
 # endif
 
 //#ifdef __ANDROID__
@@ -1547,14 +1547,15 @@ void yield()
 
 // sendfile:
 #if HAVE_SENDFILE
-#	ifdef __linux__
+# ifdef __linux__
 #		include <sys/sendfile.h>
-#	endif
-#	ifdef __APPLE__
+# endif
+# ifdef __APPLE__
 #		include <sys/types.h>
 #		include <sys/uio.h>
-int sendfile(int fd, int s, off_t offset, off_t *len, struct sf_hdtr *hdtr, int flags);
-#	endif
+	int // macos sendfile workaround declaration
+	sendfile(int fd, int s, off_t offset, off_t *len, struct sf_hdtr *hdtr, int flags);
+# endif
 #else
 # if HAVE_SOCKETS
 #	undef HAVE_SENDFILE
@@ -2297,7 +2298,7 @@ void set_signal_handlers()
 /***********************************************************************************
  * OL
  */
-struct olvm_t
+struct olvm_t // subclass of heap_t
 {
 	heap_t heap; // MUST be first!
 	jmp_buf ret; // emergency exit
@@ -4948,12 +4949,9 @@ loop:;
 
 				word function = (word)dlsym(module, name);
 				if (function)
-                    r = new_vptr(function);
-					// todo: in DEBUG mode : r = new_vptr(function, b);
-#ifdef OLVM_DLSYM_DEBUG
+                    r = new_vptr(function); // TODO: in DEBUG mode : r = new_vptr(function, b);
 				else
 					D("dlsym failed: %s", dlerror());
-#endif
 				break;
 			}
 			case SYSCALL_DLERROR: { // (dlerror)
@@ -5833,9 +5831,9 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 #	error "Unknown target endianness arcitecture"
 #endif
 				size = sizeof(inexact_t); // new size
-				unsigned char *p = (unsigned char*)&ref(new_alloc(type, size), 1);
+				unsigned char *q = (unsigned char*)&ref(new_alloc(type, size), 1);
 
-				*(inexact_t*)p = t;
+				*(inexact_t*)q = t;
 			}
 			else
 #endif

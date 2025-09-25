@@ -39,7 +39,7 @@
 
 // use virtual machine declaration from the olvm source code
 #ifndef __OLVM_H__
-#include <ol/vm.h>
+#	include <ol/vm.h>
 #endif
 
 #define unless(...) if (! (__VA_ARGS__))
@@ -50,26 +50,27 @@
 
 // alloca
 #if defined(__linux__) || defined(__APPLE__)
-#include <alloca.h>
+#	include <alloca.h>
 #endif
+
 #if defined(_WIN32)
-#include <malloc.h>
+#	include <malloc.h>
 #endif
 
 #ifndef __GNUC__
-#define __builtin_alloca alloca
-#define __builtin_memcpy memcpy
+#	define __builtin_alloca alloca
+#	define __builtin_memcpy memcpy
 #endif
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
+#	define WIN32_LEAN_AND_MEAN
+#	include <windows.h>
 #endif
 
 #ifdef __EMSCRIPTEN__
-#ifndef __WAJIC__
-#include <emscripten.h>
-#endif
+# ifndef __WAJIC__
+#	include <emscripten.h>
+# endif
 #endif
 
 #include <sys/mman.h> // we have own win32 implementation
@@ -132,15 +133,15 @@
 #define TINT16        (51)
 #define TINT32        (52)
 #define TINT64        (53)
-// tbd: 54 for int128_t
+#define TINT128       (54) // not implemented yet
 
 #define TUINT8        (55)
 #define TUINT16       (56)
 #define TUINT32       (57)
 #define TUINT64       (58)
-// tbd: 59 for uint128_t
+#define TUINT128      (59) // not implemented yet
 
-#define TMASK      0x00FFF
+#define TMASK      0x00FFF // ffi type mask
 
 #define TCDECL     0x01000
 //efine TSYSCALL    // OS/2, not supported/required
@@ -156,10 +157,9 @@
 
 #define FFT_PTR    (1)
 #define FFT_REF    (2)
-// possible speedup - FFT_REF = 0x30000 (include FFT_PTR)
 
 // -----------------
-// sizeof(intmax_t): // same as long long
+// sizeof(long long):
 //	arm, armv7a, armv8a, arm64: 8
 //	avr: 8
 //	risc-v 32, risc-v 64: 8
@@ -1338,7 +1338,6 @@ word* string2ol(olvm_t* this, char* vptr);   // implemented in olvm.c
 	cp < 0x110000 ? 4 : 1; })
 
 static // length of wide string in utf-8 encoded bytes
-__attribute__((unused))
 size_t utf8_len(word widestr)
 {
 	size_t len = 0;
@@ -1417,7 +1416,7 @@ int_t from_rational(word arg) {
 	return (a / b);
 }
 
-static
+static // TODO: rename to OL2I
 int_t to_int(word arg) {
 	if (is_enum(arg))
 		return enum(arg);
@@ -1441,7 +1440,7 @@ int_t to_int(word arg) {
 }
 
 #if UINT32_MAX == UINTPTR_MAX // 32-bit machines
-static
+static // TODO: rename to OL2LL
 int64_t to_int64(word arg) {
 	if (is_enum(arg))
 		return enum(arg);
@@ -2106,7 +2105,7 @@ __attribute__((used))
 word* OLVM_ffi(olvm_t* const this, word arguments)
 {
 	word* fp;
-	heap_t* const heap = (heap_t*)this;
+	heap_t* const heap = (heap_t*) this;
 
 	// a - function address
 	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
@@ -2407,7 +2406,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		//	- 0 -----------------------------------------------
 			if (is_value(tty))
 				switch (value(tty)) {
-				case TINT8:  case TUINT8:
+				case TINT8:  case TUINT8:  // possibe speedup: (46 <= value(tty) <= 53)
 				case TINT16: case TUINT16:
 				case TINT32: case TUINT32:
 				case TINT64: case TUINT64:
@@ -2488,7 +2487,6 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			// поинтер на данные
 			case TUNKNOWN:
 				STORE(IDF, word, &car(arg));
-			//	args[i] = (word) &car(arg);
 				break;
 
 			// free variables, pointers and structures
@@ -2502,8 +2500,8 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 					}
 				#endif
 				// automatic types:
-				if (is_value(arg))
-					STORE(to_int, int32_t, arg);
+				if (is_value(arg)) // any value as int
+					STORE(to_int, int_t, arg);
 				else
 				switch (reference_type(arg)) {
 				case TVPTR: // value of vptr
@@ -2513,6 +2511,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				case TBYTEVECTOR: // address of bytevector data (no copying to stack)
 					STORE(IDF, word, (word)&car(arg));
 					break;
+
 				// any strings acts as "char*"
 				case TSTRING:
 				case TSTRINGWIDE:
@@ -3190,7 +3189,7 @@ handle_got_value:
 			void* vptr = CV_VOIDP(&got);
 			if (vptr) {
 				heap->fp = fp;
-				result = string2ol(this, vptr);
+				result = string2ol(this, vptr); // todo: gc()?
 				fp = heap->fp;
 			}
 			break;
