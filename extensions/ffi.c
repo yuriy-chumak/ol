@@ -36,6 +36,18 @@
 #define OLVM_FFI_VECTORS 1
 #endif
 
+#ifndef OLVM_FFI_MEMSAVING_UTF8
+// configure stack size usage for unicode strings marshaling
+// 1: accurate
+//    a. calculate utf8 length,
+//    b. allocate such length
+//    c. encode string
+// 0: rough
+//    a. allocate size * 4 (size of maximal utf-8 codepoint)
+//    b. encode string
+#define OLVM_FFI_MEMSAVING_UTF8 0
+#endif
+
 
 // use virtual machine declaration from the olvm source code
 #ifndef __OLVM_H__
@@ -1346,15 +1358,58 @@ size_t utf8_len(word widestr)
 	return len;
 }
 
+static // length of wide string in utf-8 encoded bytes
+size_t utf8_superlen(word superstring)
+{
+	size_t len = 0;
+	int parts = reference_size(superstring) - 1;
+	for (int i = 0; i < parts; i++) {
+		word substr = ref(superstring, i + 2);
+		switch (reference_type(substr)) {
+		case TSTRING:
+			len += rawstream_size(substr);
+			break;
+		case TSTRINGWIDE:
+			len += utf8_len(substr);
+			break;
+		case TSTRINGSUPER:
+			len += utf8_superlen(substr);
+			break;
+		default:
+			D("internal error: invalid superstring element type %d", reference_type(substr));
+			break;
+		}
+	}
+	return len;
+}
+
+
 #define list_length(x) llen(x)
 #define vector_length(x) reference_size(x)
+
+// exact string length in runes
 #define string_length(x) ({ \
+    word t = reference_type(x); \
+    t == TSTRING ? rawstream_size(x) :\
+    t == TSTRINGWIDE ? reference_size(x) :\
+    t == TSTRINGSUPER ? unumber(ref(x, 1)) :\
+    0; })
+
+// accurate string length in utf8
+#define string_length_as_utf8(x) ({ \
     word t = reference_type(x); \
     t == TSTRING ? rawstream_size(x) :\
     t == TSTRINGWIDE ? utf8_len(x) :\
     t == TSTRINGSUPER ? utf8_superlen(x) :\
     0; })
 
+// rough string length in utf8 (len*4)
+#define string_length_as_utf8_rough(x) ({ \
+    word t = reference_type(x); \
+    t == TSTRING ? rawstream_size(x) :\
+    t == TSTRINGWIDE ? reference_size(x) * 4 :\
+    t == TSTRINGSUPER ? unumber(ref(x, 1)) * 4 :\
+    0; })
 
 // ol->c convertors
 static
@@ -1466,8 +1521,8 @@ int64_t to_int64(word arg) {
 #	define to_int64 to_int
 #endif
 
-static
-char* chars2ol(char* ptr, word string)
+static // TSTRING -> char array
+char* string2chars(char* ptr, word string)
 {
 	assert (is_string(string));
 	int size = rawstream_size(string);
@@ -1476,8 +1531,8 @@ char* chars2ol(char* ptr, word string)
 	return ptr + size;
 }
 
-static
-char* wchars2utf8(char* ptr, word widestring)
+static // TSTRINGWIDE -> utf8 char array
+char* widestring2chars(char* ptr, word widestring)
 {
 	//assert (is_stringwide(widestring));
 
@@ -1513,25 +1568,25 @@ char* wchars2utf8(char* ptr, word widestring)
 	return ptr;
 }
 
-static
-char* stringleaf2ol(char* ptr, word stringleaf)
+static // TSTRINGLEAF -> utf8 char array
+char* superstring2chars(char* ptr, word superstring)
 {
 	// assert (is_stringleaf(stringleaf));
-	int parts = reference_size(stringleaf) - 1;
+	int parts = reference_size(superstring) - 1;
 	for (int i = 0; i < parts; i++) {
-		word substr = ref(stringleaf, i + 2);
+		word substr = ref(superstring, i + 2);
 		switch (reference_type(substr)) {
 		case TSTRING:
-			ptr = chars2ol(ptr, substr);
+			ptr = string2chars(ptr, substr);
 			break;
 		case TSTRINGWIDE:
-			ptr = wchars2utf8(ptr, substr);
+			ptr = widestring2chars(ptr, substr);
 			break;
-		case TSTRINGDISPATCH:
-			ptr = stringleaf2ol(ptr, substr);
+		case TSTRINGSUPER:
+			ptr = superstring2chars(ptr, substr);
 			break;
 		default:
-			E("ffi error: invalid stringdispatch element type %d.\n", reference_type(substr));
+			D("internal error: invalid superstring element type %d", reference_type(substr));
 			break;
 		}
 	}
@@ -1539,11 +1594,71 @@ char* stringleaf2ol(char* ptr, word stringleaf)
 }
 
 static __inline__
-size_t copychars(char* ptr, word string, char* (cpy)(char*,word))
+size_t copychars(char* begin, word chars, char* (cpy)(char*,word))
 {
-	char* end = cpy(ptr, string);
+	char* end = cpy(begin, chars);
 	*end++ = 0;
-	return end - ptr;
+	return end - begin;
+}
+
+static // TSTRING -> widechar array
+widechar* string2widechars(widechar* ptr, word string)
+{
+	assert (is_string(string));
+
+	widechar* d = ptr;
+	int size = rawstream_size(string);
+	char* s = (char*) &car(string);
+
+	for (int i = 0; i < size; i++)
+		*d++ = (widechar)(*s++);
+	return ptr + size;
+}
+
+static // TSTRINGWIDE -> widechar array
+widechar* widestring2widechars(widechar* ptr, word widestring)
+{
+	//assert (is_stringwide(widestring));
+
+	widechar* d = ptr;
+	int size = reference_size(widestring);
+
+	for (int i = 1; i <= size; i++)
+		*d++ = (widechar)value(ref(widestring, i));
+	return ptr + size;
+}
+
+static // TSTRINGLEAF -> utf8 char array
+widechar* superstring2widechars(widechar* ptr, word superstring)
+{
+	// assert (is_stringleaf(stringleaf));
+	int parts = reference_size(superstring) - 1;
+	for (int i = 0; i < parts; i++) {
+		word substr = ref(superstring, i + 2);
+		switch (reference_type(substr)) {
+		case TSTRING:
+			ptr = string2widechars(ptr, substr);
+			break;
+		case TSTRINGWIDE:
+			ptr = widestring2widechars(ptr, substr);
+			break;
+		case TSTRINGSUPER:
+			ptr = superstring2widechars(ptr, substr);
+			break;
+		default:
+			D("internal error: invalid superstring element type %d", reference_type(substr));
+			break;
+		}
+	}
+	return ptr;
+}
+
+static __inline__
+size_t copywidechars(widechar* begin, word chars, widechar* (cpy)(widechar*, word))
+{
+	widechar* end = cpy(begin, chars);
+	*end++ = 0;
+	return (end - begin) * sizeof(widechar);
 }
 
 static
@@ -1553,7 +1668,7 @@ void not_a_type(char* tname)
 }
 
 static
-char* not_a_string(char* ptr, word string)
+void* not_a_string(void* ptr, word string)
 {
 	(void) string;
 	not_a_type("string");
@@ -1797,51 +1912,44 @@ size_t arguments_size(word args, word rtty, size_t* total)
 }
 
 // ---------------------------------------------
-// storing complex arguments
-// memory: is address to store
-// str: internal string
-static
-void store_string(word** ffp, char** memory, word str)
+static // TODO: check this
+size_t store_chars(char* ptr, word str)
 {
-	word* fp;
 again:;
 	// todo: add check to not copy the zero-ended string?
-	// note: no heap size checking required (done before)
 	int type = reference_type(str);
-	if (type == TSYMBOL) {
+	if (type == TSYMBOL) { // we can store symbols as strings
 		str = car(str); goto again;
 	}
-	else {
-		fp = *ffp;
-		char* ptr = *memory = (char*) &fp[1];
-		new_bytevector(copychars(ptr, str,
-			type == TSTRING ? chars2ol :
-			type == TSTRINGWIDE ? wchars2utf8 :
-			type == TSTRINGDISPATCH ? stringleaf2ol :
-			not_a_string));
-		*ffp = fp;
-	}
+
+	return copychars(ptr, str,
+		type == TSTRING ? string2chars :
+		type == TSTRINGWIDE ? widestring2chars :
+		type == TSTRINGSUPER ? superstring2chars :
+		(char*(*)(char*,word)) not_a_string);
 }
 
 static
 void store_string_array(word** ffp, char*** memory, word array)
 {
-	word* fp;
+	word* fp = *ffp;
 	if (is_pair(array) || array == INULL) {
 		int size = list_length(array);
-		fp = *ffp;
 		char** p = *memory = (char**) &fp[1];
 		new (TBYTEVECTOR, size, 0);
-		*ffp = fp;
 
 		while (array != INULL) {
-			store_string(ffp, p++, car(array));
+			int len = store_chars((char*)(fp+1), car(array)); // TODO: fix this!
+			*p++ = (char*)(fp+1);
+			new_bytevector(len);
+
 			array = cdr(array);
 		}
+		*ffp = fp;
 		return;
 	}
 	if (is_vector(array)) {
-
+		// TODO:
 		return;
 	}
 	assert (array == IFALSE);
@@ -1849,51 +1957,19 @@ void store_string_array(word** ffp, char*** memory, word array)
 }
 
 static
-void store_stringwide(word** ffp, word* memory, word str)
+size_t store_widechars(widechar* ptr, word str)
 {
-	word* fp;
 again:;
 	int type = reference_type(str);
 	if (type == TSYMBOL) {
-		str = car(str); goto again;
+		str = car(str); goto again; // we can store symbols as strings
 	}
-	else {
-		switch (type) {
-		// case TBYTEVECTOR: // Deprecated(?)
-		case TSTRING: {
-			int len = rawstream_size(str);
-			fp = *ffp;
-			widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
-			*ffp = fp;
 
-			widechar* p = unicode;
-			char* s = (char*)&car(str);
-			for (int i = 0; i < len; i++)
-				*p++ = (widechar)(*s++);
-			*p = 0;
-
-			*memory = (word) unicode;
-			break;
-		}
-		case TSTRINGWIDE: {
-			int len = reference_size(str);
-			fp = *ffp;
-			widechar* unicode = (widechar*) &car(new_bytevector ((len + 1) * sizeof(widechar))); // 1 for '\0'
-			*ffp = fp;
-
-			widechar* p = unicode;
-			word* s = (word*)&car(str);
-			for (int i = 0; i < len; i++)
-				*p++ = (widechar)value(*s++);
-			*p = 0;
-
-			*memory = (word) unicode;
-			break;
-		}
-		default:
-			E("unsupported type-string-wide source.");
-		}
-	}
+	return copywidechars(ptr, str,
+		type == TSTRING ? string2widechars :
+		type == TSTRINGWIDE ? widestring2widechars :
+		type == TSTRINGSUPER ? superstring2widechars :
+		(widechar*(*)(widechar*,word)) not_a_string);
 }
 
 // struct*
@@ -2517,10 +2593,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				case TSTRINGWIDE:
 				case TSTRINGSUPER:
 				case TSYMBOL: {
-					char* str;
-					store_string(&fp, &str, arg);
-					STORE(IDF, word, str);
-					break;
+					goto tstring;
 				}
 				case TINEXACT:
 					goto tdouble;
@@ -2580,14 +2653,29 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				break;
 
 			case TSTRING:
-			tstring:
-				store_string(&fp, (char**)&args[i], arg);
+			tstring: {
+				int len =
+				#if OLVM_FFI_MEMSAVING_UTF8
+					string_length_as_utf8_rough(arg) + 1;
+				#else
+					string_length_as_utf8(arg) + 1;
+				#endif
+				char* str = (char*) alloca(len);
+				store_chars(str, arg);
+
+				STORE(IDF, word, str);
 				break;
+			}
 
 			case TSTRINGWIDE:
-			tstringwide:
-				store_stringwide(&fp, &args[i], arg);
+			tstringwide: {
+				int len = (string_length(arg) + 1) * sizeof(widechar);
+				widechar* str = (widechar*)alloca(len);
+				store_widechars(str, arg);
+
+				STORE(IDF, word, str);
 				break;
+			}
 
 			case TCALLABLE: {
 				if (is_callable(arg))
@@ -2668,25 +2756,31 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 							not_a_type("vptr*");
 						break;
 					}
+					// char*[] as (fftX type-string)
 					case TSTRING: {
-						int size = list_length(arg);
+						assert (is_pair(arg));
+						int length = list_length(arg);
 
-						word* p = new (TBYTEVECTOR, size, 0);
-						STORE(IDF, word, ++p);
-
-						size++;
+						char** p = (char**) alloca(length * sizeof(word));
+						STORE(IDF, word, p);
 
 						word src = arg;
-						while (--size) {
-							word str = car(src);
+						while (src != INULL) {
+							word string = car(src);
+							if (string == IFALSE)
+								*p++ = (char*) 0;
+							else {
+								int len = 
+								#if OLVM_FFI_MEMSAVING_UTF8
+									string_length_as_utf8_rough(string) + 1;
+								#else
+									string_length_as_utf8(string) + 1;
+								#endif
 
-							int stype = reference_type(str);
-							word ptr = *p++ = (word) &fp[1];
-							new_bytevector(copychars((char*)ptr, str,
-								stype == TSTRING ? chars2ol :
-								stype == TSTRINGWIDE ? wchars2utf8 :
-								stype == TSTRINGDISPATCH ? stringleaf2ol :
-								not_a_string));
+								char* copy = (char*) alloca(len);
+								store_chars(copy, string);
+								*p++ = copy;
+							}
 
 							src = cdr(src);
 						}
