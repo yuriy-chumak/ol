@@ -1826,91 +1826,6 @@ size_t pointer_calc(word args, word rtty, size_t* total)
 	return 0;
 }
 
-static size_t structure_by_value(word args, word rtty, size_t* total)
-{
-	return 0;
-}
-
-// todo: добавить структуры by-value
-// todo: добавить вложенные указатели
-// todo: добавить вложенные указатели на структуры
-static
-size_t arguments_size(word args, word rtty, size_t* total)
-{
-	size_t words = 0;
-	while (args != INULL) { // пока есть аргументы
-		word arg = car(args);
-		word tty = is_pair(rtty) ? car(rtty) : I(TANY);
-
-		// type override?
-		again:
-		if (is_reference(arg)) {
-			if (tty == I(TANY) && is_pair(arg)) {
-				tty = car(arg); arg = cdr(arg);
-				goto again; // does it needed?
-			}
-			switch (reference_type(arg)) {
-				// pointer or structure-by-value
-				case TPAIR:
-				case TVECTOR: {
-					if (is_pair(tty)) {
-						int retype = car(tty);
-						// pointer (to array or structure)?
-						if (is_pointer(retype))
-							pointer_calc(arg, cdr(tty), total);
-						else {
-							// structure-by-value
-							size_t local = 0;
-							words += structure_by_value(arg, tty, &local) + local;
-						}
-					}
-					else
-						; // nothing special
-					break;
-				}
-				case TBYTEVECTOR:
-					*total += reference_size(arg); // in words
-					break;
-
-				case TSYMBOL:
-					arg = car(arg);
-					// fall through
-				case TSTRING:
-					*total += reference_size(arg); // in words
-					break;
-				case TSTRINGWIDE:
-					*total += reference_size(arg) * 4; // worst case (all of chars are unicode-32)
-					break;
-				case TSTRINGDISPATCH:
-					// todo: if (string-len > 10000), use precise string calculation ?
-					*total += number(ref(arg, 1)) * 4; // worst case (all of chars are unicode-32)
-					break;
-			}
-		}
-#if UINT64_MAX > UINTPTR_MAX
-		// 32-bit machines
-		else
-		switch (value(tty)) {
-			case TINT64: case TUINT64:
-			case TDOUBLE:
-#	if __mips__ // 32-bit mips,
-				words = (words+1)&-2; // dword align
-#	else
-				words += 1;
-#	endif
-		}
-#endif
-		words += 1;
-		args = cdr(args);
-		rtty = is_pair(rtty) ? cdr(rtty) : INULL;
-	}
-	if (rtty != INULL) {
-		E("Not enough arguments");
-		// return IFALSE; todo: do runtime-error
-	}
-	return words;
-}
-
 // ---------------------------------------------
 static // TODO: check this
 size_t store_chars(char* ptr, word str)
@@ -2176,187 +2091,17 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Главная функция механизма ffi:
-EXPORT
-__attribute__((used))
-word* OLVM_ffi(olvm_t* const this, word arguments)
-{
-	word* fp;
-	heap_t* const heap = (heap_t*) this;
 
-	// a - function address
-	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
-	// c - '(return-type . argument-types-list)
-	register word ABC = arguments;
-	word A = car(ABC); ABC = cdr(ABC); // function
-	word B = car(ABC); ABC = cdr(ABC); // rtty, (cons type prototype)
-	word C = car(ABC); ABC = cdr(ABC); // args, (list arg1 arg2 .. argN)
+// we'r copying arguments to the stack with "alloca"
+// because callee can execute callback and gc and caller arguments may became invalid
 
-	assert (is_vptr(A));
-	assert (B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
-	assert (C == INULL || (is_reference(C) && reference_type(C) == TPAIR));
+// TODO: in case of too large arguments size change "alloca" to chain of "malloc"s
+// and alloca only first entry pointer, move this under #define
 
-	ret_t got = 0; // результат вызова функции (* internal)
-	void *function = (void*)car(A); // "NULL" function means IDF function
-	int returntype = is_value(car(B))
-		? value(car(B))             // normal return type
-		: reference_type(car(B));   // fft& & fft* return types
+// note: not working under netbsd. should be fixed.
+// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
 
-	if ((cdr(B)|C) == INULL) {      // speedup: no argument types AND no arguments
-		if (returntype != TFLOAT && returntype != TDOUBLE)
-			got = ((ret_t (*)())function)();
-		else
-		switch (returntype) {
-			case TFLOAT:
-				*(float*)&got = ((float (*)())function)();
-				break;
-			case TDOUBLE:
-				*(double*)&got = ((double (*)())function)();
-				break;
-		}
-		fp = heap->fp; // function can call an ol code, so gc() can be called too
-		goto handle_got_value;
-	}
-
-	// note: not working under netbsd. should be fixed.
-	// static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
-
-#if _WIN32
-	// nothing special for Windows (both x32 and x64)
-
-#elif __x86_64__ // && (__unix__ || __APPLE__)), but not windows
-	// *nix x64 содержит отдельный массив чисел с плавающей запятой
-	double ad[18]; // 18? почему? это некий максимум?
-	int d = 0;     // количество аргументов для ad
-	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
-
-#elif __aarch64__
-	double ad[8];
-	int d = 0;
-
-#elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
-	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
-	float af[18]; // для флоатов отдельный массив (почему не 16?)
-	int f = 0;     // количество аргументов для af
-
-#elif __EMSCRIPTEN__
-	// двухбитная маска типа аргументов, 16 arguments maximum
-	//	00 - int
-	//	01 - reserved
-	//	10 - float
-	//	11 - double
-	// + старший бит-маркер,
-	long fpmask = 1;
-#endif
-
-	// переменные для промежуточных результатов
-
-	// ----------------------------------------------------------
-	// 1. do memory precalculations and count number of arguments
-
-	// TODO: добавить в общую структуру типов поле, куда кешировать
-	// все вот эти размеры. например, как [types cached-size]
-	// и детектировать по vector? со временем насовсем перейти
-
-	// words for args, total + words for GC
-	size_t total = 0;
-	size_t words = arguments_size(C, cdr (B), &total);
-	(void) words; // disable warning
-
-	// special case of returning a structure by value:
-	// http://www.sco.com/developers/devspecs/abi386-4.pdf
-	//
-	// Functions Returning Structures or Unions
-	//
-	// If a function returns a structure or union, then the caller provides space for the
-	// return value and places its address on the stack as argument word zero. In effect,
-	// this address becomes a ‘‘hidden’’ first argument. Having the caller supply the
-	// return object’s space allows re-entrancy.
-	if (is_pair(car(B)) && // ???
-		value(caar(B)) == TBYTEVECTOR)
-		// && value(cdar(B)) > sizeof(ret_t) // commented for speedup
-	{
-		total += WORDS(value(cdar(B))) + 1;
-	}
-
-	// ------------------------------------------------
-	// 1.1  ensure that all arguments will fit in heap
-	if (heap->fp + total > heap->end) {
-		size_t pin = OLVM_pin(this, arguments);
-		heap->gc(this, total);
-		arguments = OLVM_unpin(this, pin);
-
-		register word ABC = arguments;
-		A = car(ABC); ABC = cdr(ABC); // function
-		B = car(ABC); ABC = cdr(ABC); // rtty
-		C = car(ABC); ABC = cdr(ABC); // args
-	}
-	fp = heap->fp;
-
-	// todo: add configuring api for next "32" etc.
-	// something like "set minimal stack size" or make dynamic
-#if __aarch64__
-	int args_len = max(words, 32) * sizeof(word);
-	word* args = __builtin_alloca(args_len); // GRNC + SA (stacked arguments)
-	#define GRNC 8 // General-purpose Register Number Count
-	#define FRNC 8 // Floating-point Register Number Count
-
-# if __APPLE__
-	char * extra = (char*) &args[GRNC];
-	int e = 0; // указатель на стековые данные
-# endif
-#else
-	word* args = __builtin_alloca(max(words, 16) * sizeof(word)); // minimum - 16 words for arguments
-	#define GRNC 6
-#endif
-	// todo: clear args array
-	// todo: clear ad array
-	
-
-	// ==============================================
-	// 2. prepare arguments to push
-	word* p = (word*)C;   // ol arguments
-	word* t = (word*)cdr (B); // rtty
-	int writeback = 0; // has write-back in arguments (code speedup)
-
-	int i = 0;  // актуальное количество аргументов
-#if (__x86_64__ && (__unix__ || __APPLE__))
-	int l = 0;  // нижняя граница для параметров больших структур (linux and inttel mac)
-#endif
-
-	// special case of returning a structure by value
-	// allocate a space for the return value
-	if (is_pair(car(B)) &&
-		value(caar(B)) == TBYTEVECTOR &&
-		value(cdar(B)) > sizeof(ret_t))
-	{
-		int len = value(cdar(B));
-		args[i++] = (word) __builtin_alloca(len);
-	}
-
-	//__ASM__("brk #0");
-	// ==============================================
-	// PUSH
-	while ((word)p != INULL) { // пока есть аргументы
-		assert (reference_type(p) == TPAIR); // assert(list)
-		assert (t == RNULL || reference_type(t) == TPAIR); // assert(list)
-
-		// speedup: all except primitive types hide under fft-any
-		word tty = is_pair(t) ? car(t) : I(TANY);
-		word arg = (word) car(p);
-
-#if (__x86_64__ && (__unix__ || __APPLE__))		// linux x64 and mac intel, struct-by-value-passing (check this)
-		if (i == GRNC && l) { // ??
-			i = l; // check is l needed?
-		}
-#endif
-
-		// подготовим маску к следующему аргументу
-#if (__x86_64__ && (__unix__ || __APPLE__)) // LP64, but without arm64
-		fpmask <<= 1;
-#elif __EMSCRIPTEN__
-		fpmask <<= 2;
-#endif
-
+// макросы складывания значений в передаваемые массивы с параметрами
 #if __aarch64__
 		// TODO: add api to extend "extra" array or dynamically resize
 		// #define SAVE_ARM64(type, conv, arg) {
@@ -2475,6 +2220,148 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		})
 #		endif
 #	endif
+#endif
+
+EXPORT
+__attribute__((used))
+word* OLVM_ffi(olvm_t* const this, word arguments)
+{
+	word* fp;
+	heap_t* const heap = (heap_t*) this;
+
+	// a - function address
+	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
+	// c - '(return-type . argument-types-list)
+	register word ABC = arguments;
+	word A = car(ABC); ABC = cdr(ABC); // function
+	word B = car(ABC); ABC = cdr(ABC); // rtty, (cons type prototype)
+	word C = car(ABC); ABC = cdr(ABC); // args, (list arg1 arg2 .. argN)
+
+	assert (is_vptr(A));
+	assert (B != INULL && (is_reference(B) && reference_type(B) == TPAIR));
+	assert (C == INULL || (is_reference(C) && reference_type(C) == TPAIR));
+
+	void *function = (void*)car(A); // "NULL" function means IDF function
+	int returntype = is_value(car(B))
+		? value(car(B))             // normal return type
+		: reference_type(car(B));   // fft& & fft* return types ;?
+	ret_t got = 0;  // результат вызова функции (* internal)
+
+	if ((cdr(B)|C) == INULL) {      // speedup: no argument types AND no arguments
+		if (returntype != TFLOAT && returntype != TDOUBLE)
+			got = ((ret_t (*)())function)();
+		else
+		switch (returntype) {
+			case TFLOAT:
+				*(float*)&got = ((float (*)())function)();
+				break;
+			case TDOUBLE:
+				*(double*)&got = ((double (*)())function)();
+				break;
+		}
+		fp = heap->fp; // function can call an ol code, so gc() can be called too
+		goto handle_got_value;
+	}
+	fp = heap->fp;
+
+#if _WIN32
+	// nothing special for Windows (both x32 and x64)
+
+#elif __x86_64__ // && (__unix__ || __APPLE__)), but not windows
+	// *nix x64 содержит отдельный массив чисел с плавающей запятой
+	//double ad[18]; // 18? почему? это некий максимум?
+	double ad[24]; // мы тестируем 24, но можно сделать и больше
+	int d = 0;     // количество аргументов для ad
+	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
+
+#elif __aarch64__
+	double ad[8];
+	int d = 0;
+
+#elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
+	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
+	float af[18]; // для флоатов отдельный массив (почему не 16?)
+	int f = 0;     // количество аргументов для af
+
+#elif __EMSCRIPTEN__
+	// двухбитная маска типа аргументов, 16 arguments maximum
+	//	00 - int
+	//	01 - reserved
+	//	10 - float
+	//	11 - double
+	// + старший бит-маркер,
+	long fpmask = 1;
+#endif
+
+	size_t words = 256; // ol function call limitation
+						// let's reserve the maximal for the gods of speed
+	(void) words; // just disable warning
+
+#if __aarch64__
+	int args_len = max(words, 32) * sizeof(word);
+	word* args = alloca(args_len); // GRNC + SA (stacked arguments)
+	#define GRNC 8 // General-purpose Register Number Count
+	#define FRNC 8 // Floating-point Register Number Count
+
+# if __APPLE__
+	char * extra = (char*) &args[GRNC];
+	int e = 0; // указатель на стековые данные
+# endif
+#else
+	word* args = alloca(max(words, 16) * sizeof(word)); // minimum - 16 words for arguments
+	#define GRNC 6
+#endif
+
+	// ==============================================
+	// 2. prepare arguments to push
+	word* p = (word*)C;   // ol arguments
+	word* t = (word*)cdr (B); // rtty
+	int writeback = 0; // has write-back in arguments (code speedup)
+
+	int i = 0;  // актуальное количество аргументов
+#if (__x86_64__ && (__unix__ || __APPLE__))
+	int l = 0;  // нижняя граница для параметров больших структур (linux and inttel mac)
+#endif
+
+	// special case of returning a structure by value
+	// http://www.sco.com/developers/devspecs/abi386-4.pdf
+	//
+	// Functions Returning Structures or Unions
+	//
+	// If a function returns a structure or union, then the caller provides space for the
+	// return value and places its address on the stack as argument word zero. In effect,
+	// this address becomes a ‘‘hidden’’ first argument. Having the caller supply the
+	// return object’s space allows re-entrancy.
+	if (is_pair(car(B)) &&
+		value(caar(B)) == TBYTEVECTOR &&
+		value(cdar(B)) > sizeof(ret_t))
+	{
+		int len = value(cdar(B));
+		args[i++] = (word) alloca(len);
+	}
+
+	//__ASM__("brk #0");
+	// ==============================================
+	// PUSH
+	while ((word)p != INULL) { // пока есть аргументы
+		assert (reference_type(p) == TPAIR);
+		assert (t == RNULL || reference_type(t) == TPAIR);
+
+		// speedup: all but primitive types hide under fft-any
+		word tty = is_pair(t) ? car(t) : I(TANY);
+		word arg = (word) car(p);
+
+#if (__x86_64__ && (__unix__ || __APPLE__))		// linux x64 and mac intel, struct-by-value-passing (check this)
+		if (i == GRNC && l) { // ??
+			i = l; // check is l needed?
+		}
+#endif
+
+		// подготовим маску к следующему аргументу
+#if (__x86_64__ && (__unix__ || __APPLE__)) // LP64, but without arm64
+		fpmask <<= 1;
+#elif __EMSCRIPTEN__
+		fpmask <<= 2;
 #endif
 
 		push:
