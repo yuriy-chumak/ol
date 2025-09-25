@@ -178,9 +178,11 @@ tmp/olvm-native-release: $(OLVM_DEPS)
 endif
 
 # ------ language tests ---------------------------------------
+.SILENT: language-tests
 language-tests: olvm-binaries
 language-tests: $(wildcard tests/*.scm) $(wildcard tests/*.bin)
-	@echo " "
-	@echo "# LANGUAGE TESTS"
-	@TESTS="$^" EXECUTABLE=olvm $(MAKE) tests
+	echo " "
+	echo "# LANGUAGE TESTS"
+	FAILMARK=$(shell mktemp -u tmp/fail.language.XXXXXXXXX) \
+	TESTS="$^" EXECUTABLE=olvm $(MAKE) tests
 

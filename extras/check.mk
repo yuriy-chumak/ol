@@ -21,9 +21,6 @@ check: regression-tests
 ok:="$(green) ok $(done)"
 fail:="$(red)fail$(done)"
 
-# fail flag
-FAILED := $(shell mktemp -u /tmp/failed.XXXXXXXXX)
-
 # # win32 tests:
 # # apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
 
@@ -148,7 +145,7 @@ define scmtestok
 			printf \|$(ok) ;\
 		else \
 			printf \|$(fail);\
-			touch $(FAILED);\
+			echo $1: $^ >> $(FAILMARK);\
 		fi;\
 	fi
 endef
@@ -198,7 +195,7 @@ define bintestok
 			printf \|$(ok) ;\
 		else \
 			printf \|$(fail);\
-			touch $(FAILED);\
+			touch $(FAILMARK);\
 		fi;\
 	fi
 endef
@@ -281,16 +278,23 @@ define table-header
 	printf "|\n"
 endef
 
+# return 1 if test failed, check test running with unique id
+# fail flag
+
 tests:
+tests:
+	rm -f $(FAILMARK)
 	$(eval F1LEN=$(shell for F in $(TEST_FILES); do echo $${#F}; done |sort -n| tail -1))
 	$(call table-header, $(F1LEN))
 	for F in $(filter %.scm %.bin,$(TESTS)); do \
 	   if [ -e $$F.ok ] ;then \
 	      printf "|%-$(F1LEN)s " "$$F" |sed 's/ /*/; s/ /./g; s/*/ /' ;\
-	      EXECUTABLE=$(EXECUTABLE) $(MAKE) -s -B $$F.ok;\
+	      FAILMARK=$(FAILMARK) EXECUTABLE=$(EXECUTABLE) $(MAKE) -s -B $$F.ok;\
 	   fi ;\
 	done
-	if [ -e $(FAILED) ] ;then rm -f $(FAILED); exit 1 ;fi
-	echo "$(green)passed!$(done)"
+	case `test -f $(FAILMARK); echo $$?` in\
+	   0) echo "$(red)FAILED!$(done)";;\
+	   1) echo "$(green)passed!$(done)";;\
+	esac
 
 endif

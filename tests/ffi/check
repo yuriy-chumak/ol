@@ -162,4 +162,5 @@ ffi-tests: $(wildcard tests/ffi/*.scm) \
            $(wildcard tests/ffi/*.bin)
 	echo " "
 	echo "# FFI TESTS"
+	FAILMARK=$(shell mktemp -u tmp/fail.ffi.XXXXXXXXX) \
 	TESTS="$^" EXECUTABLE=ffi TEST_HOME=tests/ffi $(MAKE) tests
