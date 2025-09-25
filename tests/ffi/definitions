@@ -85,7 +85,7 @@
 (define (|v_cc..c(n)| char n)
    (string-append "void_" (apply string-append (repeat char n))))
 
-(define (|type a1, type a2, .., type aN| typename n)
+(define (|type a1, type a2, .., type an| typename n)
    (apply string-append
       (cons* typename " a1"
          (map (lambda (i)
@@ -99,14 +99,14 @@
                (string-append " " format))
             (iota (- n 1) 2)) )))
 
-(define (|a1 + a2 + .. + aN| n)
+(define (|a1 + a2 + .. + an| n)
    (apply string-append
       (cons* "a1"
          (map (lambda (i)
                (string-append " + a" (number->string i)))
             (iota (- n 1) 2)) )))
 
-(define (|a1, a2, .., aN| n)
+(define (|a1, a2, .., an| n)
    (apply string-append
       (cons* "a1"
          (map (lambda (i)

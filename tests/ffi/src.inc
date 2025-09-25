@@ -314,9 +314,9 @@ double d1000000000000000000000000000000000000000000000000_()
 
 // simple type(n) functions
 /*
-void v_cc..c(n)(type a1, type a2, .., type aN)
+void v_cc..c(n)(type a1, type a2, .., type an)
 {
-   printf('{{ %u %u .. %u(n) }}', a1, a2, .., aN); fflush(stdout);
+   printf('{{ %u %u .. %u(n) }}', a1, a2, .., an); fflush(stdout);
 }*/
 
 void void_C(unsigned char a1)
@@ -1398,3 +1398,16 @@ void void_dddddddddddddddddddddddd(double a1, double a2, double a3, double a4, d
 {
    printf("{{ %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24); fflush(stdout);
 }
+
+// all types together
+void v_CSILcsilfd(unsigned char a1, unsigned short a2, unsigned int a3, unsigned long long a4, signed char a5, signed short a6, signed int a7, long long a8, float a9, double a10)
+{
+   printf("{{ %u %u %u %llu %d %d %d %lld %f %f }}", a1, a2, a3, a4, a5, a6, a7, a8, a9, a10); fflush(stdout);
+}
+
+// mixed type1(n-1), type2 functions
+/*
+void v_cc..d[i]..c(N)(typeA a1, typeA a2, .., typeB b, .., type aN)
+{
+   printf('{{ %u %u .. %u .. %u(N) }}', a1, a2, .., b , .., aN); fflush(stdout);
+}*/

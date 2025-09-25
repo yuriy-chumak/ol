@@ -13,9 +13,9 @@
 
 (print "
 ---------------------------------------------------------------
-void v_cc..c(n)(type a1, type a2, .., type aN)
+void v_cc..c(n)(type a1, type a2, .., type an)
 {
-   printf('{{ %u %u .. %u(n) }}', a1, a2, .., aN); fflush(stdout);
+   printf('{{ %u %u .. %u(n) }}', a1, a2, .., an); fflush(stdout);
 }, n = (1 .. " MAX-ARGS-COUNT ")")
 
 (for-each (lambda (index typename Sn)
@@ -66,10 +66,3 @@ void v_cc..c(n)(type a1, type a2, .., type aN)
    (list uchar     ushort     uint       ullong     char     char     short     short     int       int       llong     llong    )
    (list UINT8_MAX UINT16_MAX UINT32_MAX UINT64_MAX INT8_MIN INT8_MAX INT16_MIN INT16_MAX INT32_MIN INT32_MAX INT64_MIN INT64_MAX)
 )
-
-;; ; special case:
-;; "L"          
-;; ulonglong    
-;; (,UINT64_MAX)
-
-;; ulonglong
