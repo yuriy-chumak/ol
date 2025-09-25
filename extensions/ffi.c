@@ -2375,17 +2375,11 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				case TINT16: case TUINT16:
 				case TINT32: case TUINT32:
 				case TINT64: case TUINT64:
+				case TFLOAT: case TDOUBLE:
 					arg = I(0); goto push;
 
-				case TFLOAT:
-					STORE_F(IDF, float, 0);
-					break;
-				case TDOUBLE:
-					IFmips32(i = (i+1)&-2); // 32-bit mips dword align
-					STORE_D(IDF, double, 0);
-					break;
 				default:
-					STORE(IDF, word, 0);
+					STORE(IDF, word, 0x0);
 				}
 			else
 			if (is_pointer(car(tty)))
@@ -2436,17 +2430,16 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			// -------------------
 			// с плавающей запятой:
 			case TFLOAT:
-				STORE_F(OL2F, float, arg);
+				STORE_F(OL2F, float, arg);  // check mips32: is "i = (i+1)&-2" alignment needed for float
 				break;
 			case TDOUBLE:
 			tdouble:
-				IFmips32(i = (i+1)&-2); // 32-bit mips dword align
-				STORE_D(OL2D, double, arg);
+				STORE_D(OL2D, double, arg); // already mips-ready
 				break;
 
 			// bool
 			case TBOOL:
-				STORE(IDF, _Bool, (arg == IFALSE) ? 0 : 1);
+				STORE(IDF, _Bool, (arg == IFALSE || arg == I(0)) ? 0 : 1); // added: "0" as false now is valid
 				break;
 
 			// поинтер на данные
@@ -2526,7 +2519,6 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				else
 					not_a_type("vptr");
 				break;
-
 
 			case TBYTEVECTOR:
 			tbytevector:
