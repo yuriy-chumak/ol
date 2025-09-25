@@ -1201,6 +1201,9 @@ double OL2D(word arg); float OL2F(word arg); // implemented in olvm.c
 
 word* string2ol(olvm_t* this, char* vptr);   // implemented in olvm.c
 
+// native arguments allocator
+#define ALLOCA(x) __builtin_alloca(x) // was: &car(new_bytevector(c))
+
 // -=( PTR and REF )=------------------------------------------------------
 // TODOs:
 //  * make memory allocator configurable new_bytevector/builtin_alloca
@@ -1209,7 +1212,7 @@ word* string2ol(olvm_t* this, char* vptr);   // implemented in olvm.c
 #define SERIALIZE_LIST(memory, type, convert)\
 	case TPAIR: {\
 		int c = list_length(arg);\
-		type* p = (type*) &new_bytevector(c * sizeof(type))[1];\
+		type* p = (type*) alloca(c * sizeof(type)); /* don't use ol heap */\
 		*memory = (word)p;\
 		\
 		word l = arg;\
@@ -1221,7 +1224,7 @@ word* string2ol(olvm_t* this, char* vptr);   // implemented in olvm.c
 #	define SERIALIZE_VECTOR(memory, type, convert)\
 	case TVECTOR: {\
 		int c = vector_length(arg);\
-		type* p = (type*) &new_bytevector(c * sizeof(type))[1];\
+		type* p = (type*) alloca(c * sizeof(type)); /* don't use ol heap */\
 		*memory = (word)p;\
 		\
 		word* l = &car(arg);\
@@ -1953,7 +1956,7 @@ size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 				switch (value(p)) {
 					case TSTRING:
 						TALIGN(ptr, char**);
-						fp = *ffp;
+						fp = *ffp; // TODO: store array in stack of OLVM_ff, instead of ol heap?
 						store_string_array(&fp, (char***)(memory+ptr), v);
 						*ffp = fp;
 						ptr += sizeof(char**);
@@ -1992,9 +1995,10 @@ size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
 
 			case TSTRING:
 				TALIGN(ptr, char*);
-				fp = *ffp;
-				store_string(&fp, (char**)(memory+ptr), v);
-				*ffp = fp;
+				// TODO: change to alloca
+				// fp = *ffp;
+				// store_string(&fp, (char**)(memory+ptr), v);
+				// *ffp = fp;
 				break;
 			// todo: type-string-wide, etc.
 			default:
@@ -2247,7 +2251,8 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		: reference_type(car(B));   // fft& & fft* return types ;?
 	ret_t got = 0;  // результат вызова функции (* internal)
 
-	if ((cdr(B)|C) == INULL) {      // speedup: no argument types AND no arguments
+	// speedup: no argument types AND no arguments
+	if ((cdr(B)|C) == INULL) {
 		if (returntype != TFLOAT && returntype != TDOUBLE)
 			got = ((ret_t (*)())function)();
 		else
@@ -2269,7 +2274,6 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 
 #elif __x86_64__ // && (__unix__ || __APPLE__)), but not windows
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
-	//double ad[18]; // 18? почему? это некий максимум?
 	double ad[24]; // мы тестируем 24, но можно сделать и больше
 	int d = 0;     // количество аргументов для ad
 	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
@@ -2293,22 +2297,20 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	long fpmask = 1;
 #endif
 
-	size_t words = 256; // ol function call limitation
-						// let's reserve the maximal for the gods of speed
+	size_t words = 64; // ol function call arguments count limitation
 	(void) words; // just disable warning
 
 #if __aarch64__
-	int args_len = max(words, 32) * sizeof(word);
-	word* args = alloca(args_len); // GRNC + SA (stacked arguments)
+	word* args = alloca(max(words, 32) * sizeof(word)); // GRNC + SA (stacked arguments)
 	#define GRNC 8 // General-purpose Register Number Count
 	#define FRNC 8 // Floating-point Register Number Count
 
 # if __APPLE__
 	char * extra = (char*) &args[GRNC];
-	int e = 0; // указатель на стековые данные
+	int e = 0; // указатель на стековые данные (used in STORE_STCK())
 # endif
 #else
-	word* args = alloca(max(words, 16) * sizeof(word)); // minimum - 16 words for arguments
+	word* args = alloca(max(words, 16) * sizeof(word)); // minimual 16 words for arguments
 	#define GRNC 6
 #endif
 
