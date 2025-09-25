@@ -51,7 +51,7 @@
       ; по-поводу calling convention:
       ; под Windows дефолтный конвеншен - __stdcall, под линукс - __cdecl
       ;  пока что пусть остается так.
-      __stdcall __cdecl __fastcall
+      __cdecl
 
        ; structures declaration
       struct
@@ -197,11 +197,11 @@
 
 
 ; Calling Conventions
-; default call is __stdcall for windows and __cdecl for linux (for x32)
+; default call is __stdcall for windows and __cdecl for linux
 ; you can directly provide required calling convention:
-(define (__cdecl    arg) (vm:ior arg #x1000))
-(define (__stdcall  arg) (vm:ior arg #x2000))
-(define (__fastcall arg) (vm:ior arg #x3000))
+(define (__cdecl    arg) arg)
+;; (define (__stdcall  arg) (vm:ior arg #x2000))
+;; (define (__fastcall arg) (vm:ior arg #x3000))
 
 (define-syntax struct
    (syntax-rules ()

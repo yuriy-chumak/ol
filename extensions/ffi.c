@@ -155,12 +155,12 @@
 
 #define TMASK      0x00FFF // ffi type mask
 
-#define TCDECL     0x01000
+#define TCDECL     0x00000
 //efine TSYSCALL    // OS/2, not supported/required
 //efine TOPTLINK    // VisualAge, not supported/required
 //efine TPASCAL     // Pascal, not supported/required
-#define TSTDCALL   0x02000
-#define TFASTCALL  0x03000
+//efine TSTDCALL   0x02000
+//efine TFASTCALL  0x03000
 //efine TVECTORCALL // VS2013, not supported/required
 //efine TDELPHI     // Delphi, not supported/required
 //efine TWATCOM     // Watcom, not supported/required
