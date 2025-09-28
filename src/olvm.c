@@ -4949,9 +4949,7 @@ loop:;
 
 				word function = (word)dlsym(module, name);
 				if (function)
-                    r = new_vptr(function); // TODO: in DEBUG mode : r = new_vptr(function, b);
-				else
-					D("dlsym failed: %s", dlerror());
+                    r = new_vptr(function);
 				break;
 			}
 			case SYSCALL_DLERROR: { // (dlerror)
