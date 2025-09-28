@@ -268,24 +268,28 @@
       ; described in this section into the primitive constructs de-
       ; scribed in the previous section.
 
-      ; 4.2.1  Binding constructs and sequencing
+      ; 4.2.2. Binding constructs
       ;
-      ; The three binding constructs let, let*, and letrec give
-      ; Scheme a block structure, like Algol 60. The syntax of the
-      ; three constructs is identical, but they differ in the regions
-      ; they establish for their variable bindings. In a let ex-
-      ; pression, the initial values are computed before any of the
-      ; variables become bound; in a let* expression, the bind-
-      ; ings and evaluations are performed sequentially; while in a
-      ; letrec expression, all the bindings are in effect while their
-      ; initial values are being computed, thus allowing mutually
-      ; recursive definitions.
+      ; The binding constructs let, let*, letrec, letrec*, let-values,
+      ; and let*-values give Scheme a block structure, like Algol 60.
+      ; In a let expression, the initial values are computed before
+      ; any of the variables become bound; in a let* expression, the
+      ; bindings and evaluations are performed sequentially; while in
+      ; letrec and letrec* expressions, all the bindings are in effect
+      ; while their initial values are being computed, thus allowing
+      ; mutually recursive definitions.
 
       ; syntax:  (letrec <bindings> <body>)
       (define-syntax letrec
          (syntax-rules (begin)
-            ((letrec ((?var ?val) ...) ?body) (let-eval (?var ...) (?val ...) ?body))
+            ((letrec ((var val) ...) body) (let-eval (var ...) (val ...) body))
             ((letrec vars body ...) (letrec vars (begin body ...)))))
+
+      ; syntax:  (letrec* <bindings> <body>)
+      (define-syntax letrec*
+         (syntax-rules (begin)
+            ((letrec* () . body) (begin . body))
+            ((letrec* ((var val) . rest) . body) (letrec ((var val)) (letrec* rest . body)))))
 
       ; syntax:  (let <bindings> <body>)
       ;          (let keyword <bindings> <body>) named let, see "4.2.4 Iteration"
@@ -295,6 +299,34 @@
                ((lambda (var ...) exp . rest) val ...))
             ((let keyword ((var init) ...) exp . rest)
                (letrec ((keyword (lambda (var ...) exp . rest))) (keyword init ...)))))
+
+      ; library syntax:  (let* <bindings> <body>)
+      (define-syntax let*
+         (syntax-rules (begin <=)
+            ((let* (((var ...) gen) . rest) . body)
+               (values-apply gen (lambda (var ...) (let* rest . body))))
+            ((let* ((var val) . rest-bindings) exp . rest-exps)
+               ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
+            ; http://srfi.schemers.org/srfi-71/srfi-71.html
+            ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
+               (values-apply (op . args)
+                  (lambda (var ...)
+                     (let* rest-bindings exp . rest-exps))))
+            ((let* ((var ... node) . rest-bindings) exp . rest-exps)
+               (vector-apply node
+                  (lambda (var ...)
+                     (let* rest-bindings exp . rest-exps))))
+            ((let* (((name ...) <= value) . rest) . code) ; currently unused, may be removed
+               (vector-apply value
+                  (lambda (name ...)
+                     (let* rest . code))))
+            ((let* ()) exp)
+            ((let* () exp . rest)
+               (begin exp . rest))))
+
+
+      ; 4.2.3. Sequencing
+      ;
 
       ; syntax:  (begin <expression1> <expression2> ...)
       (define-syntax begin
@@ -330,31 +362,6 @@
 
             ((begin first . rest)
                ((lambda (free) (begin . rest))  first))))
-
-      ; library syntax:  (let* <bindings> <body>)
-      (define-syntax let*
-         (syntax-rules (<=)
-            ((let* (((var ...) gen) . rest) . body)
-               (values-apply gen (lambda (var ...) (let* rest . body))))
-            ((let* ((var val) . rest-bindings) exp . rest-exps)
-               ((lambda (var) (let* rest-bindings exp . rest-exps)) val))
-            ; http://srfi.schemers.org/srfi-71/srfi-71.html
-            ((let* ((var ... (op . args)) . rest-bindings) exp . rest-exps)
-               (values-apply (op . args)
-                  (lambda (var ...)
-                     (let* rest-bindings exp . rest-exps))))
-            ((let* ((var ... node) . rest-bindings) exp . rest-exps)
-               (vector-apply node
-                  (lambda (var ...)
-                     (let* rest-bindings exp . rest-exps))))
-            ((let* (((name ...) <= value) . rest) . code) ; currently unused, may be removed
-               (vector-apply value
-                  (lambda (name ...)
-                     (let* rest . code))))
-            ((let* ()) exp)
-            ((let* () exp . rest)
-               (begin exp . rest))))
-
 
       ; 5.3  Variable definitions
 
@@ -1770,8 +1777,9 @@
       if and or
       ; 4.1.6  Assignments
       set! box unbox
-      ; 4.2.1  Binding constructs and Sequencing
-      letrec let begin let*
+      ; Binding constructs, Sequencing
+      letrec letrec* let let*
+      begin
       ; 5.3  Variable definitions
       define ;define*
       define-values
