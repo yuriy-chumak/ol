@@ -145,13 +145,13 @@ ifeq ($(DEV_MACHINE),0)
 ffi-binaries: tmp/ffi-native-debug
 
 tmp/ffi-native-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(CFLAGS) $(CFLAGS_DEBUG) $(L))
+	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_DEBUG) $(L))
 
 # native release
 ffi-binaries: tmp/ffi-native-release
 
 tmp/ffi-native-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(CFLAGS) $(CFLAGS_RELEASE) $(L))
+	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_RELEASE) $(L))
 
 endif
 

@@ -38,8 +38,9 @@ fail:="$(red)fail$(done)"
 MACHINE ?= $(shell uname -m)
 
 # try to maximal testings under main development platform
+# TODO: change to MULTIPLATFORM_MODE ?= 1
 ifeq ($(UNAME)-$(MACHINE),Linux-x86_64)
-DEV_MACHINE  ?= 1
+DEV_MACHINE ?= 1
 endif
 
 # note: use 2>/dev/null in "shell command" to avoid

@@ -7,7 +7,7 @@
 
 
 #ifdef __unix__
-#	define PUBLIC __attribute__ ((__visibility__("default"))) __attribute__((used))
+#	define PUBLIC __attribute__((used)) __attribute__ ((__visibility__("default")))
 #endif
 
 #ifdef _WIN32
@@ -15,7 +15,7 @@
 #endif
 
 #ifdef __APPLE__
-#	define PUBLIC __attribute__ ((__visibility__("default"))) __attribute__((used))
+#	define PUBLIC __attribute__((used)) __attribute__ ((__visibility__("default")))
 #endif
 
 #if 1
