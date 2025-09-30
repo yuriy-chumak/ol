@@ -40,4 +40,4 @@ jobs:
       run: 'sudo apt install qemu-system-ppc qemu-user'
 
     - name: Regression tests
-      run: 'make describe; DEV_MACHINE=1 HAVE_32CDEFS=0 HAVE_64CDEFS=0 HAVE_PPC64=1 DISPLAY=:0.0 make regression-tests'
+      run: 'make describe; DEV_MODE=1 HAVE_PLATFORM=0 HAVE_PPC64=1 DISPLAY=:0.0 make regression-tests'

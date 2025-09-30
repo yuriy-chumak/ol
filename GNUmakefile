@@ -336,9 +336,9 @@ MAKEFILE_MAIN=1
 -include extras/wasm.mk
 
 # tests
-check: # global testing target
+check: # main testing target
 check-native:
-	DEV_MACHINE=0 $(MAKE) check
+	DEV_MODE=0 $(MAKE) check
 
 -include extras/check.mk
 -include tests/check # language regression tests

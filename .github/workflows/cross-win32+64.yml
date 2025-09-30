@@ -46,4 +46,4 @@ jobs:
       run: 'wine cmd /c echo Wine environment created for %PROCESSOR_IDENTIFIER%'
 
     - name: Regression tests
-      run: 'make describe; DEV_MACHINE=1 HAVE_32CDEFS=0 HAVE_64CDEFS=0 DISPLAY=:0.0 make check'
+      run: 'make describe; DEV_MODE=1 HAVE_X86=0 HAVE_X86_64=0 DISPLAY=:0.0 make check'

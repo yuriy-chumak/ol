@@ -11,7 +11,7 @@ else
 .PHONY: regression-tests-native
 
 regression-tests-native:
-	DEV_MACHINE=0 make regression-tests
+	DEV_MODE=0 make regression-tests
 
 # enable as part of global testing
 check: regression-tests
@@ -37,30 +37,43 @@ fail:="$(red)fail$(done)"
 
 MACHINE ?= $(shell uname -m)
 
+# set to 0 to disable platforms automatic detection
+HAVE_PLATFORM ?= 1
+
 # try to maximal testings under main development platform
 # TODO: change to MULTIPLATFORM_MODE ?= 1
 ifeq ($(UNAME)-$(MACHINE),Linux-x86_64)
-DEV_MACHINE ?= 1
+DEV_MODE ?= 1
 endif
+DEV_MODE ?= 0
 
 # note: use 2>/dev/null in "shell command" to avoid
 #       make call optimization and really run shell.
 
+# -------------------------------------------
 # i386 linux
 # sudo apt-get install gcc-multilib
-HAVE_32CDEFS ?= $(call exists,-m32,sys/cdefs.h,exit)
+ifeq ($(call exists,-m32,sys/cdefs.h,exit),1)
+HAVE_X86 ?= $(HAVE_PLATFORM)
+endif
+HAVE_X86 ?= 0
 
 # x86_64 linux
-HAVE_64CDEFS ?= $(call exists,-m64,sys/cdefs.h,exit)
+ifeq ($(call exists,-m64,sys/cdefs.h,exit),1)
+HAVE_X86_64 ?= $(HAVE_PLATFORM)
+endif
+HAVE_X86_64 ?= 0
 
+# -------------------------------------------
 # aarch64 linux
 # sudo apt-get install gcc-aarch64-linux-gnu
 # qemu-system-aarch64, qemu-efi-aarch64
 ifneq ($(shell command -v aarch64-linux-gnu-gcc 2>/dev/null),)
 ifneq ($(shell command -v qemu-aarch64 2>/dev/null),)
-HAVE_AARCH64 ?= 1
+HAVE_AARCH64 ?= $(HAVE_PLATFORM)
 endif
 endif
+HAVE_AARCH64 ?= 0
 
 # -------------------------------------------
 # MIPS/MIPSEL linux
@@ -73,25 +86,27 @@ include extras/platforms/mipsel.mk
 # qemu-system-ppc64, qemu-efi-aarch64
 ifneq ($(shell command -v powerpc64-linux-gnu-gcc 2>/dev/null),)
 ifneq ($(shell command -v qemu-ppc64 2>/dev/null),)
-HAVE_PPC64 ?= 1
+HAVE_PPC64 ?= $(HAVE_PLATFORM)
 endif
 endif
+# -------------------------------------------
 
 ## android (any)
 #ifeq ($(shell adb devices 2>/dev/null | awk 'NR>1 {print}' | grep -q "device" && echo "Device connected" || echo "No device found"),Device connected)
 #HAVE_ANDROID ?= 1
 #endif
 
+# -------------------------------------------
 # i386 win32
 # apt install gcc-mingw-w64-i686
 ifneq ($(shell command -v $(MGCC32) 2>/dev/null),)
-HAVE_MINGW32 ?= 1
+HAVE_MINGW32 ?= $(HAVE_PLATFORM)
 endif
 
 # x86_64 win64
 # apt install gcc-mingw-w64-x86-64
 ifneq ($(shell command -v $(MGCC64) 2>/dev/null),)
-HAVE_MINGW64 ?= 1
+HAVE_MINGW64 ?= $(HAVE_PLATFORM)
 endif
 
 # dpkg --add-architecture i386 && apt-get update
@@ -99,20 +114,21 @@ endif
 # note: if you need to disable com ports under wine, then navigate to
 #       HKLM\Software\Wine and create a new empty String named 'com33' (or smth)
 ifneq ($(shell command -v wine 2>/dev/null),)
-HAVE_WINE ?= 1
+HAVE_WINE ?= $(HAVE_PLATFORM)
 endif
 
-# only platform native tests
-DEV_MACHINE ?= 0
+# -------------------------------------------
+# zero unassigned platforms
+HAVE_X86     ?= 0
+HAVE_X86_64  ?= 0
 
-# zero unassigned variables
-HAVE_64CDEFS ?= 0
-HAVE_32CDEFS ?= 0
 HAVE_ARMV7   ?= 0
 HAVE_AARCH64 ?= 0
 HAVE_ANDROID ?= 0
+
 HAVE_MINGW32 ?= 0
 HAVE_MINGW64 ?= 0
+
 HAVE_PPC64   ?= 0
 
 # qemu
@@ -122,6 +138,7 @@ PPC64 ?= qemu-ppc64 -L /usr/powerpc64-linux-gnu
 
 # wine
 HAVE_WINE ?= 0
+
 # wine is not required under WSL, so:
 ifdef WSL_DISTRO_NAME
 WINE ?=
@@ -159,21 +176,21 @@ endef
 
 %.scm.ok: %.scm
 # i386
-ifeq ($(DEV_MACHINE)$(HAVE_32CDEFS),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-i386-debug)
-	$(call scmtestok,tmp/$(EXECUTABLE)-i386-release)
+ifeq ($(DEV_MODE)$(HAVE_X86),11)
+	$(call scmtestok,tmp/$(EXECUTABLE)-x86-debug)
+	$(call scmtestok,tmp/$(EXECUTABLE)-x86-release)
 endif
 # x86_64
-ifeq ($(DEV_MACHINE)$(HAVE_64CDEFS),11)
+ifeq ($(DEV_MODE)$(HAVE_X86_64),11)
 	$(call scmtestok,tmp/$(EXECUTABLE)-x86_64-debug)
 	$(call scmtestok,tmp/$(EXECUTABLE)-x86_64-release)
 endif
 # aarch64
-ifeq ($(DEV_MACHINE)$(HAVE_AARCH64),11)
+ifeq ($(DEV_MODE)$(HAVE_AARCH64),11)
 	$(call scmtestok,tmp/$(EXECUTABLE)-aarch64-debug,$(AARCH64))
 	$(call scmtestok,tmp/$(EXECUTABLE)-aarch64-release,$(AARCH64))
 endif
-# mips(el)
+# mips/mipsel
 ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
 	$(call scmtestok,tmp/$(EXECUTABLE)-mips-debug,$(MIPS))
 	$(call scmtestok,tmp/$(EXECUTABLE)-mips-release,$(MIPS))
@@ -191,22 +208,26 @@ ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
 	$(call scmtestok,tmp/$(EXECUTABLE)-mips64el-release,$(MIPS64EL))
 endif
 # ppc64
-ifeq ($(DEV_MACHINE)$(HAVE_PPC64),11)
+ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
 	$(call scmtestok,tmp/$(EXECUTABLE)-ppc64-debug,$(PPC64))
 	$(call scmtestok,tmp/$(EXECUTABLE)-ppc64-release,$(PPC64))
 endif
+# win
+ifeq ($(DEV_MODE)$(HAVE_WINE),11)
+	printf "| "
+endif
 # win32
-ifeq ($(DEV_MACHINE)$(HAVE_MINGW32)$(HAVE_WINE),111)
+ifeq ($(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE),111)
 	$(call scmtestok,tmp/$(EXECUTABLE)-win32-debug.exe,$(WINE),--strip-trailing-cr)
 	$(call scmtestok,tmp/$(EXECUTABLE)-win32-release.exe,$(WINE),--strip-trailing-cr)
 endif
 # win64
-ifeq ($(DEV_MACHINE)$(HAVE_MINGW64)$(HAVE_WINE),111)
+ifeq ($(DEV_MODE)$(HAVE_MINGW64)$(HAVE_WINE),111)
 	$(call scmtestok,tmp/$(EXECUTABLE)-win64-debug.exe,$(WINE),--strip-trailing-cr)
 	$(call scmtestok,tmp/$(EXECUTABLE)-win64-release.exe,$(WINE),--strip-trailing-cr)
 endif
 # native binaries
-ifeq ($(DEV_MACHINE),0)
+ifeq ($(DEV_MODE),0)
 	$(call scmtestok,tmp/$(EXECUTABLE)-native-debug)
 	$(call scmtestok,tmp/$(EXECUTABLE)-native-release)
 endif
@@ -225,7 +246,7 @@ define bintestok
 endef
 
 # %.bin.ok: %.bin
-# ifeq ($(DEV_MACHINE),1) # main development platform, special case
+# ifeq ($(DEV_MODE),1) # main development platform, special case
 # ifeq ($(HAS_32CDEFS),1)
 # 	$(call bintestok,$(vm)d32,debug-32)
 # 	$(call bintestok,$(vm)r32,release-32)
@@ -257,10 +278,10 @@ define table-header
 	set -e
 	: header line 1
 	printf "| %-$1s" `uname`
-	if [ "$(DEV_MACHINE)" = "1" ]; \
+	if [ "$(DEV_MODE)" = "1" ]; \
 	then \
 	: main development platform, special case;\
-		case "`expr    $(HAVE_32CDEFS) + $(HAVE_64CDEFS) `" in \
+		case "`expr    $(HAVE_X86) + $(HAVE_X86_64) `" in \
 			1) printf "| %-8s" `uname -m`;;\
 			2) printf "| %-18s" `uname -m`;;\
 		esac ;\
@@ -282,8 +303,8 @@ define table-header
 			1) printf "| ppc64   ";;\
 		esac ;\
 		case "`expr \( $(HAVE_MINGW32) + $(HAVE_MINGW64) \) \* $(HAVE_WINE)`" in \
-			1) printf "| windows ";;\
-			2) printf "| windows           ";;\
+			1) printf "| | windows ";;\
+			2) printf "| | windows           ";;\
 		esac ;\
 	else \
 	: regular platform ;\
@@ -293,20 +314,21 @@ define table-header
 
 	: header line 1
 	printf "|%-$1s " "Test"
-	if [ "$(DEV_MACHINE)" = "1" ]; \
+	if [ "$(DEV_MODE)" = "1" ]; \
 	then \
 	: main development platform, special case;\
-	 	if [ "$(HAVE_32CDEFS)" = "1" ]; then printf "|32-d|32-r"; fi ;\
-	 	if [ "$(HAVE_64CDEFS)" = "1" ]; then printf "|64-d|64-r"; fi ;\
-	 	if [ "$(HAVE_ARMV7)"   = "1" ]; then printf "|32-d|32-r"; fi ;\
-	 	if [ "$(HAVE_AARCH64)" = "1" ]; then printf "|64-d|64-r"; fi ;\
-		if [ "$(HAVE_PPC64)"   = "1" ]; then printf "|64-d|64-r"; fi ;\
-	 	if [ "$(HAVE_MINGW32)$(HAVE_WINE)" = "11" ]; then printf "|32-d|32-r"; fi ;\
-	 	if [ "$(HAVE_MINGW64)$(HAVE_WINE)" = "11" ]; then printf "|64-d|64-r"; fi ;\
+		if [ "$(HAVE_X86)"      = "1" ]; then printf "|32-d|32-r"; fi ;\
+		if [ "$(HAVE_X86_64)"   = "1" ]; then printf "|64-d|64-r"; fi ;\
+		if [ "$(HAVE_ARMV7)"    = "1" ]; then printf "|32-d|32-r"; fi ;\
+		if [ "$(HAVE_AARCH64)"  = "1" ]; then printf "|64-d|64-r"; fi ;\
 		if [ "$(HAVE_MIPS)"     = "1" ]; then printf "|32-d|32-r"; fi ;\
 		if [ "$(HAVE_MIPS64)"   = "1" ]; then printf "|64-d|64-r"; fi ;\
 		if [ "$(HAVE_MIPSEL)"   = "1" ]; then printf "|32-d|32-r"; fi ;\
 		if [ "$(HAVE_MIPS64EL)" = "1" ]; then printf "|64-d|64-r"; fi ;\
+		if [ "$(HAVE_PPC64)"    = "1" ]; then printf "|64-d|64-r"; fi ;\
+		if [ "$(DEV_MODE)$(HAVE_WINE)"     = "11" ]; then printf "| "; fi ;\
+		if [ "$(HAVE_MINGW32)$(HAVE_WINE)" = "11" ]; then printf "|32-d|32-r"; fi ;\
+		if [ "$(HAVE_MINGW64)$(HAVE_WINE)" = "11" ]; then printf "|64-d|64-r"; fi ;\
 	else \
 	: regular platform ;\
 		printf "|dbg.|rel." ;\

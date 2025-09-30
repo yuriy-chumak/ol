@@ -299,7 +299,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
          (embed? (getf options 'embed))
          (compile? (getf options 'compile))
 
-         (home (get options 'home "~")) ; via command line or 
+         (home (get options 'home #false))
          (command-line args)
 
          (version (cons "OL" (get options 'version (cdr *version*))))
@@ -309,12 +309,20 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                   initial-environment
                   (list
                      ;(cons '*owl-names* initial-names)
-                     (cons '*path* (cons "." (filter string? (map (lambda (path)
-                           (if (and (eq? (size path) 1) (eq? (ref path 0) #\~)) ; fast (string-eq? path "~")
-                              (syscall 1016 "OL_HOME")
-                              path))
-                        ; fast way to detect windows.
-                        ((if (string=? (ref (or (syscall 63) [""]) 1) "Windows") c/;/ c/:/) home)))))
+                     (cons* '*path* "."
+                        ; if path has a ';' then use it as delimiter (like in windows),
+                        ; otherwise use ':' as any normal os (linux/bsd/etc).
+                        (let ((home (if home home "~")))
+                           (fold (lambda (pl path)
+                                    (if (and (eq? (size path) 1) (eq? (ref path 0) #\~)) ; fast (= path "~")
+                                       (let ((home (syscall 1016 "OL_HOME")))
+                                          (if home
+                                             (append ((if (m/;/ home) c/;/ c/:/) home) pl)
+                                             pl))
+                                    else
+                                       (cons path pl)))
+                              #n (reverse ((if (m/;/ home) c/;/ c/:/) home)))))
+
                      (cons '*interactive* interactive?)
                      (cons '*command-line* command-line)
                      ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead

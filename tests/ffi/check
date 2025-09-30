@@ -10,7 +10,7 @@ TEST_FILES += $(patsubst %.ok,%,\
 .PHONY: ffi-tests-native
 
 ffi-tests-native:
-	DEV_MACHINE=0 make ffi-tests
+	DEV_MODE=0 make ffi-tests
 
 # enable as part of regression testing
 regression-tests: ffi-tests
@@ -23,28 +23,28 @@ FFI_DEPS += $(OLVM_DEPS) tests/ffi/src.c tests/ffi/src.inc
 FFI_CFLAGS_DEBUG += $(OLVM_CFLAGS_DEBUG) tests/ffi/src.c
 FFI_CFLAGS_RELEASE += $(OLVM_CFLAGS_RELEASE) tests/ffi/src.c
 
-# i386 linux
+# x86 linux
 # ----------------------------
-ifeq ($(DEV_MACHINE)$(HAVE_32CDEFS),11)
+ifeq ($(DEV_MODE)$(HAVE_X86),11)
 # 32-bit debug
-ffi-binaries: tmp/ffi-i386-debug
+ffi-binaries: tmp/ffi-x86-debug
 
-tmp/ffi-i386-debug: CC=gcc
-tmp/ffi-i386-debug: $(FFI_DEPS)
+tmp/ffi-x86-debug: CC=gcc
+tmp/ffi-x86-debug: $(FFI_DEPS)
 	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT) -m32)
 
 # 32-bit release
-ffi-binaries: tmp/ffi-i386-release
+ffi-binaries: tmp/ffi-x86-release
 
-tmp/ffi-i386-release: CC=gcc
-tmp/ffi-i386-release: $(FFI_DEPS)
+tmp/ffi-x86-release: CC=gcc
+tmp/ffi-x86-release: $(FFI_DEPS)
 	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT) -m32)
 
 endif
 
 # x86_64 linux
 # ----------------------------
-ifeq ($(DEV_MACHINE)$(HAVE_64CDEFS),11)
+ifeq ($(DEV_MODE)$(HAVE_X86_64),11)
 # 64-bit debug
 ffi-binaries: tmp/ffi-x86_64-debug
 
@@ -63,7 +63,7 @@ endif
 
 # aarch64 linux
 # ----------------------------
-ifeq ($(DEV_MACHINE)$(HAVE_AARCH64),11)
+ifeq ($(DEV_MODE)$(HAVE_AARCH64),11)
 # 64-bit debug
 ffi-binaries: tmp/ffi-aarch64-debug
 
@@ -80,9 +80,79 @@ tmp/ffi-aarch64-release: $(FFI_DEPS)
 
 endif
 
+# MIPS linux
+# ----------------------------
+ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
+# mips debug
+ffi-binaries: tmp/ffi-mips-debug
+
+tmp/ffi-mips-debug: CC=mips-linux-gnu-gcc
+tmp/ffi-mips-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mips release
+ffi-binaries: tmp/ffi-mips-release
+
+tmp/ffi-mips-release: CC=mips-linux-gnu-gcc
+tmp/ffi-mips-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+ifeq ($(DEV_MODE)$(HAVE_MIPS64),11)
+# mips64 debug
+ffi-binaries: tmp/ffi-mips64-debug
+
+tmp/ffi-mips64-debug: CC=mips64-linux-gnuabi64-gcc
+tmp/ffi-mips64-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mips64 release
+ffi-binaries: tmp/ffi-mips64-release
+
+tmp/ffi-mips64-release: CC=mips64-linux-gnuabi64-gcc
+tmp/ffi-mips64-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
+# mipsel debug
+ffi-binaries: tmp/ffi-mipsel-debug
+
+tmp/ffi-mipsel-debug: CC=mipsel-linux-gnu-gcc
+tmp/ffi-mipsel-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mipsel release
+ffi-binaries: tmp/ffi-mipsel-release
+
+tmp/ffi-mipsel-release: CC=mipsel-linux-gnu-gcc
+tmp/ffi-mipsel-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
+# mips64el debug
+ffi-binaries: tmp/ffi-mips64el-debug
+
+tmp/ffi-mips64el-debug: CC=mips64el-linux-gnuabi64-gcc
+tmp/ffi-mips64el-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mips64el release
+ffi-binaries: tmp/ffi-mips64el-release
+
+tmp/ffi-mips64el-release: CC=mips64el-linux-gnuabi64-gcc
+tmp/ffi-mips64el-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
 # ppc64 linux
 # ----------------------------
-ifeq ($(DEV_MACHINE)$(HAVE_PPC64),11)
+ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
 # 64-bit debug
 ffi-binaries: tmp/ffi-ppc64-debug
 
@@ -101,7 +171,7 @@ endif
 
 # win32
 # ----------------------------
-ifeq ($(DEV_MACHINE)$(HAVE_MINGW32),11)
+ifeq ($(DEV_MODE)$(HAVE_MINGW32),11)
 # 32-bit debug
 ffi-binaries: tmp/ffi-win32-debug.exe
 
@@ -120,7 +190,7 @@ endif
 
 # win64
 # ----------------------------
-ifeq ($(DEV_MACHINE)$(HAVE_MINGW64),11)
+ifeq ($(DEV_MODE)$(HAVE_MINGW64),11)
 # 64-bit debug
 ffi-binaries: tmp/ffi-win64-debug.exe
 
@@ -138,7 +208,7 @@ tmp/ffi-win64-release.exe: $(FFI_DEPS)
 endif
 
 # native binaries
-ifeq ($(DEV_MACHINE),0)
+ifeq ($(DEV_MODE),0)
 
 # native debug
 # ----------------------------
