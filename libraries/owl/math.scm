@@ -120,13 +120,20 @@
       ; internal constant, don't export
       (setq |-0.0| (inexact 0))
 
-      ;
+      ; IEEE 754
       ; let's recalculate platform dependent math constants:
+      ;(setq |+inf.0| (fdiv 1 0)) ; 1 / 0 = +infin
+      ;(setq |-inf.0| (flog 0))   ; log( 0 ) = -infin
+      ;(setq |+nan.0| (fsqrt -1)) ; sqrt( -1 ) = NaN
+
       (define math-constructor!
          (vm:new type-constructor (lambda (args)
+               ; special -0 for corrent printed such numbers
+               (vm:set! |-0.0| (fmul -1 0))
                ; platform-dependent floating point constants
                (vm:set! +nan.0 (fsqrt -1))
-               (vm:set! |-0.0| (fmul -1 #i0))
+               (vm:set! +inf.0 (fdiv +1 0))
+               (vm:set! -inf.0 (fdiv -1 0))
             #T)))
       (math-constructor! '())
 
