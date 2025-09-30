@@ -523,9 +523,15 @@ VIRTUAL ENV
 
 A virtual environment is an Ol environment such that the libraries and scripts installed into it are isolated from those installed in other virtual environments and your operating system.
 
-Use `--home=folder` or `--home=folder1:folder2:...:folderN` Ol command line option, where ':' is a folder divider. Folder names '.' and '..' are allowed.
+To run Ol in a virtual environment you need:
+* set `OL_HOME=venv-path` environment variable, or
+* use `--home=venv-path` Ol command line option.
 
-These folders are linked to the Ol's `*path*` global symbol and can be used and changed at runtime freely.
+`venv-path` may contain more than one folder. In such cases, use the `;` or `:` separator between folders. You can also use the special folder name `~` to include the default home path.  
+Please note that if your *venv-path* contains ';', then that and only that character will be used as a separator. Therefore, if you run Ol on Windows and want to specify a single folder with a drive letter included, you must add ';' at the end to avoid separating the path with ':', for example, like `ol.exe --home=C:\VEnv;`.
+
+
+These folders are linked to the global `*path*` Ol's symbol and can be freely used and modified at runtime.
 
 PORTABLE FORM
 -------------

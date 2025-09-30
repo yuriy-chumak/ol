@@ -177,8 +177,8 @@ There is NO WARRANTY, to the extent permitted by law.|) 1))
    (substring (symbol->string '|
 Usage: ol [OPTION]... [--] [input-file [file-options]]
 
-   --home=<path(s)>    run in virtual environment, divide paths by ':'
-   --sandbox           run in sandboxed environment (if supported)
+   --home=<path(s)>    run in a venv. separate folders with ';' or ':'
+   --sandbox           run in an sandboxed environment (if supported!)
    --sandbox=<number>  run sandboxed with <number> Megs heap allocated
 
    --help              this help
@@ -265,7 +265,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                      (halt 1))
                   ((starts-with? (car args) "--home=")
                      (loop (put options 'home
-                              (substring (car args) 7 (string-length (car args))))
+                              (substring (car args) 7))
                            (cdr args)))
                      
                   ;; end of options and unknown option
