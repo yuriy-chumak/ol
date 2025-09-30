@@ -95,6 +95,76 @@ tmp/olvm-aarch64-release: $(OLVM_DEPS)
 
 endif
 
+# MIPS linux
+# ----------------------------
+ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
+# mips debug
+olvm-binaries: tmp/olvm-mips-debug
+
+tmp/olvm-mips-debug: CC=mips-linux-gnu-gcc
+tmp/olvm-mips-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mips release
+olvm-binaries: tmp/olvm-mips-release
+
+tmp/olvm-mips-release: CC=mips-linux-gnu-gcc
+tmp/olvm-mips-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+ifeq ($(DEV_MODE)$(HAVE_MIPS64),11)
+# mips64 debug
+olvm-binaries: tmp/olvm-mips64-debug
+
+tmp/olvm-mips64-debug: CC=mips64-linux-gnuabi64-gcc
+tmp/olvm-mips64-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mips64 release
+olvm-binaries: tmp/olvm-mips64-release
+
+tmp/olvm-mips64-release: CC=mips64-linux-gnuabi64-gcc
+tmp/olvm-mips64-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
+# mipsel debug
+olvm-binaries: tmp/olvm-mipsel-debug
+
+tmp/olvm-mipsel-debug: CC=mipsel-linux-gnu-gcc
+tmp/olvm-mipsel-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mipsel release
+olvm-binaries: tmp/olvm-mipsel-release
+
+tmp/olvm-mipsel-release: CC=mipsel-linux-gnu-gcc
+tmp/olvm-mipsel-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
+ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
+# mips64el debug
+olvm-binaries: tmp/olvm-mips64el-debug
+
+tmp/olvm-mips64el-debug: CC=mips64el-linux-gnuabi64-gcc
+tmp/olvm-mips64el-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mips64el release
+olvm-binaries: tmp/olvm-mips64el-release
+
+tmp/olvm-mips64el-release: CC=mips64el-linux-gnuabi64-gcc
+tmp/olvm-mips64el-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+endif
+
 # ppc64 linux
 # ----------------------------
 ifeq ($(DEV_MACHINE)$(HAVE_PPC64),11)

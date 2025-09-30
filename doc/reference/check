@@ -40,6 +40,15 @@ check-reference: $(wildcard doc/reference/*.md)
 	   # aarch64 linux \
 	   if [ "$(DEV_MACHINE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm-aarch64-debug,$$F,$(AARCH64)); fi ;\
 	   if [ "$(DEV_MACHINE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm-aarch64-release,$$F,$(AARCH64)); fi ;\
+	   # mips/mipsel \
+	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm-mips-debug,$$F,$(MIPS)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm-mips-release,$$F,$(MIPS)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS64)" = "11" ]; then $(call check-reference,tmp/olvm-mips64-debug,$$F,$(MIPS64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS64)" = "11" ]; then $(call check-reference,tmp/olvm-mips64-release,$$F,$(MIPS64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPSLE)" = "11" ]; then $(call check-reference,tmp/olvm-mipsle-debug,$$F,$(MIPSLE)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPSLE)" = "11" ]; then $(call check-reference,tmp/olvm-mipsle-release,$$F,$(MIPSLE)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS64LE)" = "11" ]; then $(call check-reference,tmp/olvm-mips64le-debug,$$F,$(MIPS64LE)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS64LE)" = "11" ]; then $(call check-reference,tmp/olvm-mips64le-release,$$F,$(MIPS64LE)); fi ;\
 	   # ppc64 linux \
 	   if [ "$(DEV_MACHINE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm-ppc64-debug,$$F,$(PPC64)); fi ;\
 	   if [ "$(DEV_MACHINE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm-ppc64-release,$$F,$(PPC64)); fi ;\

@@ -62,6 +62,12 @@ HAVE_AARCH64 ?= 1
 endif
 endif
 
+# -------------------------------------------
+# MIPS/MIPSEL linux
+include extras/platforms/mips.mk
+include extras/platforms/mipsel.mk
+
+# -------------------------------------------
 # ppc64 linux
 # sudo apt-get install gcc-powerpc64-linux-gnu
 # qemu-system-ppc64, qemu-efi-aarch64
@@ -167,6 +173,23 @@ ifeq ($(DEV_MACHINE)$(HAVE_AARCH64),11)
 	$(call scmtestok,tmp/$(EXECUTABLE)-aarch64-debug,$(AARCH64))
 	$(call scmtestok,tmp/$(EXECUTABLE)-aarch64-release,$(AARCH64))
 endif
+# mips(el)
+ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
+	$(call scmtestok,tmp/$(EXECUTABLE)-mips-debug,$(MIPS))
+	$(call scmtestok,tmp/$(EXECUTABLE)-mips-release,$(MIPS))
+endif
+ifeq ($(DEV_MODE)$(HAVE_MIPS64),11)
+	$(call scmtestok,tmp/$(EXECUTABLE)-mips64-debug,$(MIPS64))
+	$(call scmtestok,tmp/$(EXECUTABLE)-mips64-release,$(MIPS64))
+endif
+ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
+	$(call scmtestok,tmp/$(EXECUTABLE)-mipsel-debug,$(MIPSEL))
+	$(call scmtestok,tmp/$(EXECUTABLE)-mipsel-release,$(MIPSEL))
+endif
+ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
+	$(call scmtestok,tmp/$(EXECUTABLE)-mips64el-debug,$(MIPS64EL))
+	$(call scmtestok,tmp/$(EXECUTABLE)-mips64el-release,$(MIPS64EL))
+endif
 # ppc64
 ifeq ($(DEV_MACHINE)$(HAVE_PPC64),11)
 	$(call scmtestok,tmp/$(EXECUTABLE)-ppc64-debug,$(PPC64))
@@ -247,6 +270,14 @@ define table-header
 		case "`expr    $(HAVE_AARCH64) `" in \
 			1) printf "| aarch64 ";;\
 		esac ;\
+		case "`expr    $(HAVE_MIPS) + $(HAVE_MIPS64)`" in \
+			1) printf "| %-8s" 'mips';;\
+			2) printf "| %-18s" 'mips';;\
+		esac ;\
+		case "`expr    $(HAVE_MIPSEL) + $(HAVE_MIPS64EL)`" in \
+			1) printf "| %-8s" 'mipsel';;\
+			2) printf "| %-18s" 'mipsel';;\
+		esac ;\
 		case "`expr    $(HAVE_PPC64) `" in \
 			1) printf "| ppc64   ";;\
 		esac ;\
@@ -272,6 +303,10 @@ define table-header
 		if [ "$(HAVE_PPC64)"   = "1" ]; then printf "|64-d|64-r"; fi ;\
 	 	if [ "$(HAVE_MINGW32)$(HAVE_WINE)" = "11" ]; then printf "|32-d|32-r"; fi ;\
 	 	if [ "$(HAVE_MINGW64)$(HAVE_WINE)" = "11" ]; then printf "|64-d|64-r"; fi ;\
+		if [ "$(HAVE_MIPS)"     = "1" ]; then printf "|32-d|32-r"; fi ;\
+		if [ "$(HAVE_MIPS64)"   = "1" ]; then printf "|64-d|64-r"; fi ;\
+		if [ "$(HAVE_MIPSEL)"   = "1" ]; then printf "|32-d|32-r"; fi ;\
+		if [ "$(HAVE_MIPS64EL)" = "1" ]; then printf "|64-d|64-r"; fi ;\
 	else \
 	: regular platform ;\
 		printf "|dbg.|rel." ;\
