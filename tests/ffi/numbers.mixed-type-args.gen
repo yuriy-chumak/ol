@@ -1,0 +1,66 @@
+(print (s/'/"/g "
+// all types together
+PUBLIC
+void v_CSILcsilfd(unsigned char a1, unsigned short a2, unsigned int a3, unsigned long long a4, signed char a5, signed short a6, signed int a7, long long a8, float a9, double a10)
+{
+   printf('{{ %u %u %u %llu %d %d %d %lld %f %f }}', a1, a2, a3, a4, a5, a6, a7, a8, a9, a10); fflush(stdout);
+}"))
+
+
+(let ((MAX-ARGS-COUNT 16))
+(print "
+// mixed type1(n-1), type2 functions (arguments mixing)")
+
+(define testcase "
+PUBLIC
+void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
+{
+   printf('{{ %d %d .. %u .. %d(n) }}', a1, a2, .., b , .., aN); fflush(stdout);
+}")
+(print "/*" testcase "*/")
+
+(define indices '("C" "S" "I" "L" "c" "s" "i" "l" "f" "d"))
+(define typenames '("unsigned char" "unsigned short" "unsigned int" "unsigned long long" "signed char" "signed short" "signed int" "long long" "float" "double"))
+(define formats '("%u" "%u" "%u" "%llu" "%d" "%d" "%d" "%lld" "%f" "%f"))
+(assert (= (length indices) (length typenames) (length formats)))
+
+(for-each (lambda (N)
+(for-each (lambda (index typename format)
+      (for-each (lambda (indexA typenameA formatA indexB typenameB formatB)
+            (unless (= indexA indexB)
+            (when (cond
+                     ((= N 2)
+                        (define iA (length (member typenameA typenames)))
+                        (define iB (length (member typenameB typenames)))
+                        (> iA iB)) ; avoid same function names
+                     ;; not needed:
+                     ;; ((m/L|l/ indexA) (<= N (/ MAX-ARGS-COUNT 2)))
+                     ;; ((m/L|l/ indexB) (<= N (- MAX-ARGS-COUNT 1)))
+                     (else #true))
+            
+               (for-each (lambda (n) (print (begin
+                     ;; (names (cons name (names))) ; save names
+                     (fold (lambda (testcase pair)
+                              (str-replace testcase (car pair) (cdr pair)))
+                        (s/'/"/g testcase)
+                        (list
+                           (~~ '|v_cc..d[i]..c(n)| indexA indexB n N) ; function name
+                           (~~ '|typeA a1, typeA a2, .., typeB b, .., type an| typenameA typenameB n N) ; function args
+                           (~~ '|%d %d .. %u .. %d(n)| formatA formatB n N)
+                           (~~ '|a1, a2, .., b , .., aN| n N)
+                           (cons "typeA" typenameA)
+                           (cons "typeB" typenameB)
+                        )))))
+
+                  (iota N 1)))))
+         ; unsigned types, signed types, floating points
+         (repeat index (length indices))
+         (repeat typename (length typenames))
+         (repeat format (length formats))
+         indices
+         typenames
+         formats))
+   indices
+   typenames
+   formats
+)) (iota (- MAX-ARGS-COUNT 1) 2)))

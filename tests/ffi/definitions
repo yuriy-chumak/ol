@@ -1,7 +1,12 @@
 #!/usr/bin/env ol
 ; some global test constants
+; win64: minimal 5 (4 ints same 4 floats, 1 stack)
+; nix64: minimal 15 (6 ints, 8 floats, 1 stack)
+; x86:   minimal 1 (1 stack)
+; arm64: minimal 17 (8 ints, 8 floats, 1 stack)
+; arm32: minimal 21 (4 nums, 16 floats, 1 stack) ?
+; mips64: minimal ?
 (define MAX-ARGS-COUNT 24) ; how much arguments we test maximally
-
 
 (import (otus ffi))
 
@@ -43,7 +48,7 @@
    and is completely covered by other tests ('int' and 'long long').
  * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
    capital chars for unsigned prefixes;  'f' for float, 'd' for double.
- * output inside {{ .. }} are native code output")
+ * output inside {{ .. }} is native code output")
 
 ; global numeric constants
 (define INT8_MIN -128)
@@ -63,6 +68,11 @@
 (define UINT32_MAX 4294967295)
 (define UINT64_MAX 18446744073709551615)
 
+(define MAGIC8  #x01)
+(define MAGIC16 #x0203)
+(define MAGIC32 #x04050607)
+(define MAGIC64 #x08090A0B0C0D0E0F)
+
 ;; (define Pn '( ; 114 prime numbers
 (define primes '(
        1     2     3     5     7    11   101   131   151   181   191   313
@@ -79,6 +89,8 @@
 ;; (define Sn ; 114 consecutive numbers 1..n
 ;;    (iota 114 1))
 
+;; (import (scheme dynamic-bindings))
+
 ; templates
 (define (|cc..c(n)2c| char n)
    (string-append (apply string-append (repeat char n)) "2" char))
@@ -92,7 +104,7 @@
                (string-append ", " typename " a" (number->string i)))
             (iota (- n 1) 2)) )))
 
-(define (|%u %u .. %u(n)| format n)
+(define (|%d %d .. %d(n)| format n)
    (apply string-append
       (cons* format
          (map (lambda (i)
@@ -113,4 +125,32 @@
                (string-append ", a" (number->string i)))
             (iota (- n 1) 2)) )))
 
-; 
+(define (|v_cc..d[i]..c(n)| charA charB i n)
+   (string-append "v_" (apply string-append (map (lambda (x) (if (= x i) charB charA)) (iota n 1)))))
+
+(define (|typeA a1, typeA a2, .., typeB b, .., type an| typeA typeB i n)
+   (s/^, //
+   (apply string-append
+      (map (lambda (x)
+            (if (= x i)
+               (string-append ", " typeB " b")
+               (string-append ", " typeA " a" (number->string x))))
+         (iota n 1)))))
+
+(define (|%d %d .. %u .. %d(n)| formatA formatB i n)
+   (s/^ //
+   (apply string-append
+      (map (lambda (x)
+            (if (= x i)
+               (string-append " " formatB)
+               (string-append " " formatA)))
+         (iota n 1)))))
+
+(define (|a1, a2, .., b , .., aN| i n)
+   (s/^, //
+   (apply string-append
+      (map (lambda (x)
+            (if (= x i)
+               (string-append ", " " b")
+               (string-append ", " " a" (number->string x))))
+         (iota n 1)))))
