@@ -39,6 +39,8 @@ Ol реализован как расширенное подмножество S
 - [x] mips64
 - fully supported, but not yet tested: m68k, microblaze, or1k, ppc64, sh4, spark, spark64, ztensa.
 
+Текущий статус поддержки платформ можно посмотреть в [матрице тестирования](https://iaaa.port0.org/ol/test-matrix/).
+
 ### Протестированные операционные системы/устройства
 - [x] GNU/Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
 - [x] Windows: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.

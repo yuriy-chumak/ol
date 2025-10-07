@@ -48,6 +48,8 @@ Source codes can be accessed at the [official github repo](https://github.com/yu
 - [x] mips64
 - fully supported, but not yet tested: m68k, microblaze, or1k, ppc64, sh4, spark, spark64, ztensa.
 
+The current status of platform support can be found [in the test matrix](https://iaaa.port0.org/ol/test-matrix/).
+
 ### Tested operation systems/devices
 - [x] GNU/Linux: CentOS, Debian, Fedora, RHEL, SLE, ScientificLinux, Uninvention, openSUSE, Ubuntu.
 - [x] Windows: Windows 95, Windows 98, Windows ME, Windows NT, Windows 2000, Windows XP, Windows Vista, Windows 7, Windows 8, Windows 10.
