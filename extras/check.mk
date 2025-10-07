@@ -161,56 +161,67 @@ define build-olvm
 endef
 
 # -- scm <- scm.ok -------------------------------------------
+# name, platform, target, status
+define notify
+	[ -z "$(BACKEND_URL)" ] || \
+	curl -s "$(BACKEND_URL)" -X PUT \
+	     -H 'Content-Type: application/json' \
+	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'name':'$1', 'platform':'$2', 'target':'$3', 'status':$4}"
+endef
+
 define scmtestok
-	@if ([ -f $1 ]); then\
-		if ([ -f $^.in ] && $2 $1 repl --home=libraries:$(TEST_HOME) $^ <$^.in 2>&1 \
-		                 || $2 $1 repl --home=libraries:$(TEST_HOME) $^ 2>&1) \
-				| diff $3 - $^.ok >/dev/null; then\
+	@if ([ -f $1-$2-$3$6 ]); then\
+		if ([ -f $^.in ] && $4 $1-$2-$3$6 repl --home=libraries:$(TEST_HOME) $^ <$^.in 2>&1 \
+		                 || $4 $1-$2-$3$6 repl --home=libraries:$(TEST_HOME) $^ 2>&1) \
+				| diff $5 - $^.ok >/dev/null; then\
 			printf \|$(ok) ;\
+			$(call notify,$^,$2,$3,1) ;\
 		else \
 			printf \|$(fail);\
-			echo $1: $^ >> $(FAILMARK);\
+			echo $1-$2-$3$6: $^ >> $(FAILMARK);\
+			$(call notify,$^,$2,$3,0) ;\
 		fi;\
+		true; \
 	fi
 endef
 
 %.scm.ok: %.scm
 # i386
 ifeq ($(DEV_MODE)$(HAVE_X86),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-x86-debug)
-	$(call scmtestok,tmp/$(EXECUTABLE)-x86-release)
+	$(call scmtestok,tmp/$(EXECUTABLE),x86,debug)
+	$(call scmtestok,tmp/$(EXECUTABLE),x86,release)
 endif
 # x86_64
 ifeq ($(DEV_MODE)$(HAVE_X86_64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-x86_64-debug)
-	$(call scmtestok,tmp/$(EXECUTABLE)-x86_64-release)
+	$(call scmtestok,tmp/$(EXECUTABLE),x86_64,debug)
+	$(call scmtestok,tmp/$(EXECUTABLE),x86_64,release)
 endif
 # aarch64
 ifeq ($(DEV_MODE)$(HAVE_AARCH64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-aarch64-debug,$(AARCH64))
-	$(call scmtestok,tmp/$(EXECUTABLE)-aarch64-release,$(AARCH64))
+	$(call scmtestok,tmp/$(EXECUTABLE),aarch64,debug,$(AARCH64))
+	$(call scmtestok,tmp/$(EXECUTABLE),aarch64,release,$(AARCH64))
 endif
 # mips/mipsel
 ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-mips-debug,$(MIPS))
-	$(call scmtestok,tmp/$(EXECUTABLE)-mips-release,$(MIPS))
+	$(call scmtestok,tmp/$(EXECUTABLE),mips,debug,$(MIPS))
+	$(call scmtestok,tmp/$(EXECUTABLE),mips,release,$(MIPS))
 endif
 ifeq ($(DEV_MODE)$(HAVE_MIPS64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-mips64-debug,$(MIPS64))
-	$(call scmtestok,tmp/$(EXECUTABLE)-mips64-release,$(MIPS64))
+	$(call scmtestok,tmp/$(EXECUTABLE),mips64,debug,$(MIPS64))
+	$(call scmtestok,tmp/$(EXECUTABLE),mips64,release,$(MIPS64))
 endif
 ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-mipsel-debug,$(MIPSEL))
-	$(call scmtestok,tmp/$(EXECUTABLE)-mipsel-release,$(MIPSEL))
+	$(call scmtestok,tmp/$(EXECUTABLE),mipsel,debug,$(MIPSEL))
+	$(call scmtestok,tmp/$(EXECUTABLE),mipsel,release,$(MIPSEL))
 endif
 ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-mips64el-debug,$(MIPS64EL))
-	$(call scmtestok,tmp/$(EXECUTABLE)-mips64el-release,$(MIPS64EL))
+	$(call scmtestok,tmp/$(EXECUTABLE),mips64el,debug,$(MIPS64EL))
+	$(call scmtestok,tmp/$(EXECUTABLE),mips64el,release,$(MIPS64EL))
 endif
 # ppc64
 ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE)-ppc64-debug,$(PPC64))
-	$(call scmtestok,tmp/$(EXECUTABLE)-ppc64-release,$(PPC64))
+	$(call scmtestok,tmp/$(EXECUTABLE),ppc64,debug,$(PPC64))
+	$(call scmtestok,tmp/$(EXECUTABLE),ppc64,release,$(PPC64))
 endif
 # win
 ifeq ($(DEV_MODE)$(HAVE_WINE),11)
@@ -218,18 +229,18 @@ ifeq ($(DEV_MODE)$(HAVE_WINE),11)
 endif
 # win32
 ifeq ($(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE),111)
-	$(call scmtestok,tmp/$(EXECUTABLE)-win32-debug.exe,$(WINE),--strip-trailing-cr)
-	$(call scmtestok,tmp/$(EXECUTABLE)-win32-release.exe,$(WINE),--strip-trailing-cr)
+	$(call scmtestok,tmp/$(EXECUTABLE),win32,debug,$(WINE),--strip-trailing-cr,.exe)
+	$(call scmtestok,tmp/$(EXECUTABLE),win32,release,$(WINE),--strip-trailing-cr,.exe)
 endif
 # win64
 ifeq ($(DEV_MODE)$(HAVE_MINGW64)$(HAVE_WINE),111)
-	$(call scmtestok,tmp/$(EXECUTABLE)-win64-debug.exe,$(WINE),--strip-trailing-cr)
-	$(call scmtestok,tmp/$(EXECUTABLE)-win64-release.exe,$(WINE),--strip-trailing-cr)
+	$(call scmtestok,tmp/$(EXECUTABLE),win64,debug,$(WINE),--strip-trailing-cr,.exe)
+	$(call scmtestok,tmp/$(EXECUTABLE),win64,release,$(WINE),--strip-trailing-cr,.exe)
 endif
 # native binaries
 ifeq ($(DEV_MODE),0)
-	$(call scmtestok,tmp/$(EXECUTABLE)-native-debug)
-	$(call scmtestok,tmp/$(EXECUTABLE)-native-release)
+	$(call scmtestok,tmp/$(EXECUTABLE),native,debug)
+	$(call scmtestok,tmp/$(EXECUTABLE),native,release)
 endif
 	@printf "|\n"
 
@@ -347,7 +358,8 @@ tests:
 	for F in $(filter %.scm %.bin,$(TESTS)); do \
 	   if [ -e $$F.ok ] ;then \
 	      printf "|%-$(F1LEN)s " "$$F" |sed 's/ /*/; s/ /./g; s/*/ /' ;\
-	      FAILMARK=$(FAILMARK) EXECUTABLE=$(EXECUTABLE) $(MAKE) -s -B $$F.ok;\
+	      FAILMARK=$(FAILMARK) EXECUTABLE=$(EXECUTABLE) RUNNER=$(RUNNER) SESSION=$(SESSION) \
+	         $(MAKE) -s -B $$F.ok;\
 	   fi ;\
 	done
 	case `test -f $(FAILMARK); echo $$?` in\

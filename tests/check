@@ -250,9 +250,10 @@ endif
 # ------ language tests ---------------------------------------
 .SILENT: language-tests
 language-tests: olvm-binaries
+language-tests: RUNNER=LANGUAGE
 language-tests: $(wildcard tests/*.scm) $(wildcard tests/*.bin)
 	echo " "
-	echo "# LANGUAGE TESTS"
-	FAILMARK=$(shell mktemp -u tmp/fail.language.XXXXXXXXX) \
+	echo "# $(RUNNER) TESTS"
+	FAILMARK=$(shell mktemp -u tmp/do.$(RUNNER).XXXXXXXXX) \
+	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) \
 	TESTS="$^" EXECUTABLE=olvm $(MAKE) tests
-

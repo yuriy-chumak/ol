@@ -3,8 +3,8 @@
 # tests without test results in %.%.ok file are legal,
 #   but can not be used in batch testing!
 TEST_FILES += $(patsubst %.ok,%,\
-                 $(wildcard tests/ffi/*.scm)\
-                 $(wildcard tests/ffi/*.bin))
+                 $(wildcard tests/ffi/*.scm.ok)\
+                 $(wildcard tests/ffi/*.bin.ok))
 
 .PHONY: ffi-tests
 .PHONY: ffi-tests-native
@@ -228,9 +228,11 @@ endif
 # ------ ffi tests -------------------------------------
 .SILENT: ffi-tests
 ffi-tests: ffi-binaries
+ffi-tests: RUNNER=FFI
 ffi-tests: $(wildcard tests/ffi/*.scm) \
            $(wildcard tests/ffi/*.bin)
 	echo " "
-	echo "# FFI TESTS"
+	echo "# $(RUNNER) TESTS"
 	FAILMARK=$(shell mktemp -u tmp/fail.ffi.XXXXXXXXX) \
+	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) \
 	TESTS="$^" EXECUTABLE=ffi TEST_HOME=tests/ffi $(MAKE) tests

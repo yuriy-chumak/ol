@@ -1,0 +1,185 @@
+doctype html
+html
+  head
+    meta(charset="utf-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1, viewport-fit=cover")
+    title Ol Test Matrix
+    link(href="img/favicon.png", rel="icon", type="image/png")
+
+    link(href="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.4/dist/semantic.min.css", rel="stylesheet", type="text/css")
+
+    script(src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js")
+    script(src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.min.js")
+    script(src="https://cdn.jsdelivr.net/npm/fomantic-ui@2.9.4/dist/semantic.min.js")
+
+    style(type="text/css").
+      .table thead tr:nth-child(1) th:nth-child(2) {
+        border-left: 1px dashed gray !important;
+      }
+      .table thead tr:nth-child(1) th:nth-child(10) {
+        border-left: 1px dashed gray !important;
+      }
+      .table thead tr:nth-child(2) th:nth-child(1) {
+        border-left: 1px dashed gray !important;
+      }
+      .table thead tr:nth-child(2) th:nth-child(17) {
+        border-left: 1px dashed gray !important;
+      }
+      .table td:nth-child(2) {
+        border-left: 1px dashed gray !important;
+      }
+      .table td:nth-child(18) {
+        border-left: 1px dashed gray !important;
+      }
+
+  body
+    div#matrix
+      .ui.top.attached.label Regression tests, build {{ build.build }}, started {{ build.timestamp }} EET.
+      .ui.basic.segment.container
+        //- h2 {{ runner.name }}
+        table.ui.compact.collapsing.unstackable.small.table
+          template(v-for="runner in runners")
+            thead
+              tr
+                th(rowspan="2", class="b-right") {{ runner.name.charAt(0).toUpperCase() + runner.name.slice(1).toLowerCase() + " Tests" }}
+                template(v-for="platform in platforms")
+                  th(colspan="2" ) {{ platform }}
+              tr
+                th(v-for="run in runs") {{ run.target == "debug" ? "dbg." : "rel." }}
+            tbody
+              tr(v-for="test in runner.tests")
+                td {{ test }}
+                td(v-for="run in runs")
+                  i.icon.yellow.sync(:id="runner.name + ':' + test + ':' + run.platform + ':' + run.target")
+
+    script.
+      $MATRIX = new Vue({ el: '#matrix',
+        data: {
+          error: undefined,
+          build: { build: "-", timestamp: "-" },
+
+          runners: [],
+          platforms: [],
+          runs: [], // test runs
+        },
+        methods: {
+          Start: async function() {
+            console.log("Start");
+
+            this.build = await (await fetch('/ol/test-matrix/build-info')).json();
+
+            var response;
+            // setup platforms
+            response = await fetch('/ol/test-matrix/platforms');
+            this.platforms = await response.json();
+
+            let runs = [];
+            for (let platform of this.platforms) {
+              runs.push({
+                'platform': platform,
+                'target': 'debug'
+              });
+              runs.push({
+                'platform': platform,
+                'target': 'release'
+              });
+            }
+            this.runs = runs;
+
+            // setup runners
+            response = await fetch('/ol/test-matrix/runners');
+            this.runners = await response.json();
+            for (let runner in this.runners) {
+              this.runners[runner] = {
+                "name": this.runners[runner]
+              }
+            }
+
+            // setup test matrix
+            for (let i in this.runners) {
+              let runner = this.runners[i];
+              response = await fetch(`/ol/test-matrix/tests?runner=${runner.name}`);
+              runner.tests = await response.json();
+              this.$set(this.runners, i, runner);
+            }
+
+            // let's update matrix elements
+            this.$nextTick(() => {
+              for (runner of this.runners) {
+                //- for (test of runner.tests) {
+                //-   //- for (run of this.runs) {
+                //-   //-   let id = runner.name + test + run.platform + run.target;
+                //-   //-   fetch(`/ol/test-matrix/status?runner=${runner.name}&test=${test}&platform=${run.platform}&target=${run.target=='dbg.' ? 'debug' : 'release'}`)
+                //-   //-   .then(response => response.json())
+                //-   //-   .then(status => {
+                //-   //-     let icon = document.getElementById(id);
+                //-   //-     if (icon) switch (status) {
+                //-   //-       case 0:
+                //-   //-         icon.classList.remove('yellow', 'sync');
+                //-   //-         icon.classList.add('red', 'close');
+                //-   //-         break;
+                //-   //-       case 1:
+                //-   //-         icon.classList.remove('yellow', 'sync');
+                //-   //-         icon.classList.add('green', 'checkmark');
+                //-   //-         break;
+                //-   //-     }
+                //-   //-   })
+                //-   //- }
+                //-   let sid = runner.name + test;
+                //-   fetch(`/ol/test-matrix/test-status?runner=${runner.name}&test=${test}`)
+                //-   .then(response => response.json())
+                //-   .then(runs => {
+                //-     for (let run of runs) {
+                //-       let id = sid + run.platform + (run.target == "debug" ? "dbg." : "rel.");
+                //-       let icon = document.getElementById(id);
+                //-       if (icon) switch (run.status) {
+                //-         case 0:
+                //-           icon.classList.remove('yellow', 'sync');
+                //-           icon.classList.add('red', 'close');
+                //-           break;
+                //-         case 1:
+                //-           icon.classList.remove('yellow', 'sync');
+                //-           icon.classList.add('green', 'checkmark');
+                //-           break;
+                //-       }
+                //-     }
+                //-   })
+                //- }
+                let sid = runner.name;
+                fetch(`/ol/test-matrix/runner-status?runner=${runner.name}`)
+                .then(response => response.json())
+                .then(tests => {
+                  for (let run of tests) {
+                    let id = `${sid}:${run.test}:${run.platform}:${run.target}`;
+                    let icon = document.getElementById(id);
+                    if (icon) switch (run.status) {
+                      case 0:
+                        icon.classList.remove('yellow', 'sync');
+                        icon.classList.add('red', 'close');
+                        break;
+                      case 1:
+                        icon.classList.remove('yellow', 'sync');
+                        icon.classList.add('green', 'checkmark');
+                        break;
+                    }
+                  }
+                })
+              }
+            });
+          },
+
+          status: async function(runner, test, platform, target) {
+            return 1;
+            //- return response.json();
+          },
+          icon: function(runner, test, platform, target) {
+            //- let response = await fetch(`/ol/test-matrix/status?runner=${runner}&test=${test}&platform=${platform}&target=${target=='D' ? 'debug' : 'release'}`)
+            return 'green'; //, 'checkmark'];
+            //- 
+          }
+        },
+
+        created() {
+          this.Start();
+        },
+      });

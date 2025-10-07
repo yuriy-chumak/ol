@@ -18,9 +18,11 @@ regression-tests: rosettacode-tests
 # ------ rosettacode tests ----------------------------------------------
 .SILENT: rosettacode-tests
 rosettacode-tests: olvm-binaries
+rosettacode-tests: RUNNER=ROSETTACODE
 rosettacode-tests: $(wildcard tests/rosettacode/*.scm) \
                    $(wildcard tests/rosettacode/sorting_algorithms/*.scm)
 	echo " "
 	echo "# ROSETTRACODE.ORG OL EXAMPLES"
 	FAILMARK=$(shell mktemp -u tmp/fail.rosettacode.XXXXXXXXX) \
+	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) \
 	TESTS="$^" EXECUTABLE=olvm $(MAKE) tests

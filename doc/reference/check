@@ -1,7 +1,8 @@
 #!/usr/bin/env -S bash -c "make -s -C ../.. check-reference"
 
 # all *.md files are legal to test in batch testing
-TEST_FILES += $(wildcard doc/reference/*.md)
+TEST_FILES_REFERENCE := $(wildcard doc/reference/*.md)
+TEST_FILES += $(TEST_FILES_REFERENCE)
 
 .PHONY: check-reference
 .PHONY: check-reference-native
