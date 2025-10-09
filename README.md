@@ -14,7 +14,7 @@
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20mipsel%2032/64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-mipsel.yml)
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20ppc64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-ppc64.yml)
 [![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/macos%20intel%2FmN/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+mN.yml)
-[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win32%2fwin64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
+[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win(e)%2032/64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
 <br/>
 <a href="https://yuriy-chumak.github.io/ol/"><img src="https://yuriy-chumak.github.io/ol/assets/view-project-page.svg"></a>
 

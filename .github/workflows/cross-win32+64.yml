@@ -1,4 +1,4 @@
-name: win32/win64
+name: win(e) 32/64
 
 on:
   push:
