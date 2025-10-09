@@ -61,6 +61,7 @@ debug.keystore:
 build: native assets debug.keystore
 	@echo --- building java project -----
 	@echo - Create R.java from res:
+	mkdir -p res
 	$(BUILD_TOOLS)/aapt package -f -m \
 	   -S res -J src -M AndroidManifest.xml \
 	   -I $(ANDROID_JAR)

@@ -3,14 +3,14 @@
 # tests without test results in %.%.ok file are legal,
 #   but can not be used in batch testing!
 TEST_FILES += $(patsubst %.ok,%,\
-                 $(wildcard tests/rosettacode/*.scm)\
-                 $(wildcard tests/rosettacode/*.bin))
+                         $(wildcard tests/rosettacode/*.scm.ok)\
+                         $(wildcard tests/rosettacode/*.bin.ok))
 
 .PHONY: rosettacode-tests
 .PHONY: rosettacode-tests-native
 
 rosettacode-tests-native:
-	DEV_MODE=0 make rosettacode-tests
+	DEV_MODE=0 $(MAKE) rosettacode-tests
 
 # enable as part of regression testing
 regression-tests: rosettacode-tests

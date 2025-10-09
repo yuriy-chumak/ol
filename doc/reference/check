@@ -31,7 +31,7 @@ check-reference: $(wildcard doc/reference/*.md)
 	$(eval F1LEN=$(shell for F in $(TEST_FILES); do echo $${#F}; done |sort -n| tail -1))
 	$(call table-header, $(F1LEN))
 	for F in $(filter %.md,$^); do \
-       printf "|%-$(F1LEN)s " "$$F" |sed 's/ /*/; s/ /./g; s/*/ /' ;\
+	   printf "|%-$(F1LEN)s " "$$F" |sed 's/ /*/; s/ /./g; s/*/ /' ;\
 	   # i386 linux \
 	   if [ "$(DEV_MODE)$(HAVE_X86)" = "11" ]; then $(call check-reference,tmp/olvm-x86-debug,$$F); fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_X86)" = "11" ]; then $(call check-reference,tmp/olvm-x86-release,$$F); fi ;\
