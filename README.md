@@ -10,11 +10,11 @@
 
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86%2Fx64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-x86+x64.yml)
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-aarch64.yml)
-[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20mips%2032/64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-mips.yml)
-[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20mipsel%2032/64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-mipsel.yml)
+[![linux mips 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml)
+[![linux mipsel 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml)
 [![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20ppc64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-ppc64.yml)
 [![Github build macos status](https://github.com/yuriy-chumak/ol/workflows/macos%20intel%2FmN/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+mN.yml)
-[![Github build windows status](https://github.com/yuriy-chumak/ol/workflows/win(e)%2032/64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
+[![win(e) 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
 <br/>
 <a href="https://yuriy-chumak.github.io/ol/"><img src="https://yuriy-chumak.github.io/ol/assets/view-project-page.svg"></a>
 

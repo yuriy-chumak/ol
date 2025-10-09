@@ -37,7 +37,7 @@ html
       .ui.top.attached.label Regression tests, build {{ build.build }}, started {{ build.timestamp }} EET.
       .ui.basic.segment.container
         //- h2 {{ runner.name }}
-        table.ui.compact.collapsing.unstackable.small.table
+        table.ui.compact.collapsing.unstackable.small.single.line.table
           template(v-for="runner in runners")
             thead
               tr
@@ -152,15 +152,21 @@ html
                   for (let run of tests) {
                     let id = `${sid}:${run.test}:${run.platform}:${run.target}`;
                     let icon = document.getElementById(id);
-                    if (icon) switch (run.status) {
-                      case 0:
-                        icon.classList.remove('yellow', 'sync');
-                        icon.classList.add('red', 'close');
-                        break;
-                      case 1:
-                        icon.classList.remove('yellow', 'sync');
-                        icon.classList.add('green', 'checkmark');
-                        break;
+                    if (icon) {
+                      switch (run.status) {
+                        case 0:
+                          icon.classList.remove('yellow', 'sync');
+                          icon.classList.add('red', 'close');
+                          break;
+                        case 1:
+                          icon.classList.remove('yellow', 'sync');
+                          icon.classList.add('green', 'checkmark');
+                          break;
+                      }
+                      let td = icon.parentElement;
+                      if (td && run.status == 0) {
+                        td.classList.add('negative');
+                      }
                     }
                   }
                 })
