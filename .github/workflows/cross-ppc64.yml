@@ -14,7 +14,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  if: false # This disables the entire workflow
   make-check:
     strategy:
       matrix:
