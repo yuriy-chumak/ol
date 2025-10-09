@@ -1,0 +1,43 @@
+name: linux mips 32/64 
+# notes:
+#  don't forget for apt update before installing anything
+#  remove man-db autoupdate, it's too time consuming
+
+on:
+  push:
+    branches:
+      - master
+
+# save resources, stop outdated workflows
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  if: ${{ false }} # This disables the entire workflow
+  make-check:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Update submodules
+      run: 'git submodule update --init --recursive'
+
+    - name: Build
+      run: 'make; make describe'
+
+    - name: Apt update
+      run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
+
+    - name: Install mips toolchain (32- and 64-bit both)
+      run: 'sudo apt install gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 -y'
+
+    - name: Install qemu mips (32- and 64-bit both)
+      run: 'sudo apt install qemu-system-mips qemu-user'
+
+    - name: Regression tests
+      run: 'make describe; DEV_MODE=1 HAVE_PLATFORM=0 HAVE_MIPS=1 HAVE_MIPS64=1 make regression-tests'
