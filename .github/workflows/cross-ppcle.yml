@@ -1,4 +1,4 @@
-name: linux ppc64
+name: linux ppcle 64
 # notes:
 #  don't forget for apt update before installing anything
 #  remove man-db autoupdate, it's too time consuming
@@ -33,10 +33,10 @@ jobs:
       run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Install ppc64 toolchain
-      run: 'sudo apt install gcc-powerpc64-linux-gnu -y'
+      run: 'sudo apt install gcc-powerpc64le-linux-gnu -y'
 
     - name: Install qemu ppc (32- and 64-bit both)
       run: 'sudo apt install qemu-system-ppc qemu-user'
 
     - name: Regression tests
-      run: 'make describe; DEV_MODE=1 HAVE_PLATFORM=0 HAVE_PPC64=1 DISPLAY=:0.0 make regression-tests'
+      run: 'make describe; DEV_MODE=1 HAVE_PLATFORM=0 HAVE_PPC64LE=1 DISPLAY=:0.0 make regression-tests'

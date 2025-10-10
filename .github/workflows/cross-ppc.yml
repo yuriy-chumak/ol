@@ -1,0 +1,42 @@
+name: linux ppc 32/64
+# notes:
+#  don't forget for apt update before installing anything
+#  remove man-db autoupdate, it's too time consuming
+
+on:
+  push:
+    branches:
+      - master
+
+# save resources, stop outdated workflows
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  make-check:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Update submodules
+      run: 'git submodule update --init --recursive'
+
+    - name: Build
+      run: 'make; make describe'
+
+    - name: Apt update
+      run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
+
+    - name: Install ppc64 toolchain
+      run: 'sudo apt install gcc-powerpc-linux-gnu gcc-powerpc64-linux-gnu -y'
+
+    - name: Install qemu ppc (32- and 64-bit both)
+      run: 'sudo apt install qemu-system-ppc qemu-user'
+
+    - name: Regression tests
+      run: 'make describe; DEV_MODE=1 HAVE_PLATFORM=0 HAVE_PPC=1 HAVE_PPC64=1 DISPLAY=:0.0 make regression-tests'
