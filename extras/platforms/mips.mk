@@ -1,4 +1,4 @@
-# apt install qemu-system-mips, qemu-user
+# apt install qemu-system-mips qemu-user
 
 # apt install gcc-mips-linux-gnu
 ifneq ($(shell command -v mips-linux-gnu-gcc 2>/dev/null),)
@@ -31,7 +31,7 @@ test-matrix-subheader-mips:
 	if [ "$(HAVE_MIPS)"     = "1" ]; then printf "|32-d|32-r"; fi
 	if [ "$(HAVE_MIPS64)"   = "1" ]; then printf "|64-d|64-r"; fi
 
-# ----------------------------------------------------------------
+
 scmtest: scmtest-mips
 scmtest-mips:
 ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
@@ -44,36 +44,33 @@ ifeq ($(DEV_MODE)$(HAVE_MIPS64),11)
 endif
 
 # ----------------------------------------------------------------
-ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
 # mips debug
-olvm-binaries: tmp/olvm-mips-debug
-
-tmp/olvm-mips-debug: CC=mips-linux-gnu-gcc
-tmp/olvm-mips-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+tmp/%-mips-debug: CC=mips-linux-gnu-gcc
+tmp/%-mips-debug: $(TEST_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # mips release
+tmp/%-mips-release: CC=mips-linux-gnu-gcc
+tmp/%-mips-release: $(TEST_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+# mips64 debug
+tmp/%-mips64-debug: CC=mips64-linux-gnuabi64-gcc
+tmp/%-mips64-debug: $(TEST_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mips64 release
+tmp/%-mips64-release: CC=mips64-linux-gnuabi64-gcc
+tmp/%-mips64-release: $(TEST_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+# ----------------------------------------------------------------
+ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
+olvm-binaries: tmp/olvm-mips-debug
 olvm-binaries: tmp/olvm-mips-release
-
-tmp/olvm-mips-release: CC=mips-linux-gnu-gcc
-tmp/olvm-mips-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
 endif
 
 ifeq ($(DEV_MODE)$(HAVE_MIPS64),11)
-# mips64 debug
 olvm-binaries: tmp/olvm-mips64-debug
-
-tmp/olvm-mips64-debug: CC=mips64-linux-gnuabi64-gcc
-tmp/olvm-mips64-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# mips64 release
 olvm-binaries: tmp/olvm-mips64-release
-
-tmp/olvm-mips64-release: CC=mips64-linux-gnuabi64-gcc
-tmp/olvm-mips64-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
 endif

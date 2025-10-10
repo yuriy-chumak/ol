@@ -17,213 +17,41 @@ regression-tests: ffi-tests
 
 # ============================================================
 # -- ffi binaries --------------------------------------------
-ffi-binaries:
 
-FFI_DEPS += $(OLVM_DEPS) tests/ffi/src.c tests/ffi/src.inc
-FFI_CFLAGS_DEBUG += $(OLVM_CFLAGS_DEBUG) tests/ffi/src.c
-FFI_CFLAGS_RELEASE += $(OLVM_CFLAGS_RELEASE) tests/ffi/src.c
+FFI_DEPS = tests/ffi/src.c tests/ffi/src.inc
 
-# x86 linux
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_X86),11)
-# 32-bit debug
-ffi-binaries: tmp/ffi-x86-debug
+tmp/ffi-%-debug: TEST_DEPS += $(FFI_DEPS)
+tmp/ffi-%-debug: TEST_CFLAGS_DEBUG += tests/ffi/src.c
 
-tmp/ffi-x86-debug: CC=gcc
-tmp/ffi-x86-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT) -m32)
+tmp/ffi-%-release: TEST_DEPS += $(FFI_DEPS)
+tmp/ffi-%-release: TEST_CFLAGS_RELEASE += tests/ffi/src.c
 
-# 32-bit release
-ffi-binaries: tmp/ffi-x86-release
+-include tests/ffi/platforms/i86.mk
+-include tests/ffi/platforms/arm.mk
+-include tests/ffi/platforms/aarch64.mk
+-include tests/ffi/platforms/mips.mk
+-include tests/ffi/platforms/mipsel.mk
+-include tests/ffi/platforms/ppc.mk
+-include tests/ffi/platforms/ppcle64.mk
+-include tests/ffi/platforms/win(e).mk
 
-tmp/ffi-x86-release: CC=gcc
-tmp/ffi-x86-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT) -m32)
+# # native binaries
+# ifeq ($(DEV_MODE),0)
 
-endif
+# # native debug
+# # ----------------------------
+# ffi-binaries: tmp/ffi-native-debug
 
-# x86_64 linux
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_X86_64),11)
-# 64-bit debug
-ffi-binaries: tmp/ffi-x86_64-debug
+# tmp/ffi-native-debug: $(FFI_DEPS)
+# 	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_DEBUG) $(L))
 
-tmp/ffi-x86_64-debug: CC=gcc
-tmp/ffi-x86_64-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+# # native release
+# ffi-binaries: tmp/ffi-native-release
 
-# 64-bit release
-ffi-binaries: tmp/ffi-x86_64-release
+# tmp/ffi-native-release: $(FFI_DEPS)
+# 	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_RELEASE) $(L))
 
-tmp/ffi-x86_64-release: CC=gcc
-tmp/ffi-x86_64-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
-endif
-
-# aarch64 linux
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_AARCH64),11)
-# 64-bit debug
-ffi-binaries: tmp/ffi-aarch64-debug
-
-tmp/ffi-aarch64-debug: CC=aarch64-linux-gnu-gcc
-tmp/ffi-aarch64-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# 64-bit release
-ffi-binaries: tmp/ffi-aarch64-release
-
-tmp/ffi-aarch64-release: CC=aarch64-linux-gnu-gcc
-tmp/ffi-aarch64-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
-endif
-
-# MIPS linux
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
-# mips debug
-ffi-binaries: tmp/ffi-mips-debug
-
-tmp/ffi-mips-debug: CC=mips-linux-gnu-gcc
-tmp/ffi-mips-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# mips release
-ffi-binaries: tmp/ffi-mips-release
-
-tmp/ffi-mips-release: CC=mips-linux-gnu-gcc
-tmp/ffi-mips-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
-endif
-
-ifeq ($(DEV_MODE)$(HAVE_MIPS64),11)
-# mips64 debug
-ffi-binaries: tmp/ffi-mips64-debug
-
-tmp/ffi-mips64-debug: CC=mips64-linux-gnuabi64-gcc
-tmp/ffi-mips64-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# mips64 release
-ffi-binaries: tmp/ffi-mips64-release
-
-tmp/ffi-mips64-release: CC=mips64-linux-gnuabi64-gcc
-tmp/ffi-mips64-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
-endif
-
-ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
-# mipsel debug
-ffi-binaries: tmp/ffi-mipsel-debug
-
-tmp/ffi-mipsel-debug: CC=mipsel-linux-gnu-gcc
-tmp/ffi-mipsel-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# mipsel release
-ffi-binaries: tmp/ffi-mipsel-release
-
-tmp/ffi-mipsel-release: CC=mipsel-linux-gnu-gcc
-tmp/ffi-mipsel-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
-endif
-
-ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
-# mips64el debug
-ffi-binaries: tmp/ffi-mips64el-debug
-
-tmp/ffi-mips64el-debug: CC=mips64el-linux-gnuabi64-gcc
-tmp/ffi-mips64el-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# mips64el release
-ffi-binaries: tmp/ffi-mips64el-release
-
-tmp/ffi-mips64el-release: CC=mips64el-linux-gnuabi64-gcc
-tmp/ffi-mips64el-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
-endif
-
-# ppc64 linux
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
-# 64-bit debug
-ffi-binaries: tmp/ffi-ppc64-debug
-
-tmp/ffi-ppc64-debug: CC=powerpc64-linux-gnu-gcc
-tmp/ffi-ppc64-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# 64-bit release
-ffi-binaries: tmp/ffi-ppc64-release
-
-tmp/ffi-ppc64-release: CC=powerpc64-linux-gnu-gcc
-tmp/ffi-ppc64-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
-endif
-
-# win32
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_MINGW32),11)
-# 32-bit debug
-ffi-binaries: tmp/ffi-win32-debug.exe
-
-tmp/ffi-win32-debug.exe: CC=$(MGCC32)
-tmp/ffi-win32-debug.exe: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) -Iincludes/win32 -lws2_32)
-
-# 32-bit release.exe
-ffi-binaries: tmp/ffi-win32-release.exe
-
-tmp/ffi-win32-release.exe: CC=$(MGCC32)
-tmp/ffi-win32-release.exe: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) -Iincludes/win32 -lws2_32)
-
-endif
-
-# win64
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_MINGW64),11)
-# 64-bit debug
-ffi-binaries: tmp/ffi-win64-debug.exe
-
-tmp/ffi-win64-debug.exe: CC=$(MGCC64)
-tmp/ffi-win64-debug.exe: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) -Iincludes/win32 -lws2_32)
-
-# 64-bit release
-ffi-binaries: tmp/ffi-win64-release.exe
-
-tmp/ffi-win64-release.exe: CC=$(MGCC32)
-tmp/ffi-win64-release.exe: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) -Iincludes/win32 -lws2_32)
-
-endif
-
-# native binaries
-ifeq ($(DEV_MODE),0)
-
-# native debug
-# ----------------------------
-ffi-binaries: tmp/ffi-native-debug
-
-tmp/ffi-native-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_DEBUG) $(L))
-
-# native release
-ffi-binaries: tmp/ffi-native-release
-
-tmp/ffi-native-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_RELEASE) $(L))
-
-endif
+# endif
 
 # ------ ffi tests -------------------------------------
 .SILENT: ffi-tests
@@ -233,6 +61,6 @@ ffi-tests: $(wildcard tests/ffi/*.scm) \
            $(wildcard tests/ffi/*.bin)
 	echo " "
 	echo "# $(RUNNER) TESTS"
-	FAILMARK=$(shell mktemp -u tmp/fail.ffi.XXXXXXXXX) \
+	FAILMARK=$(shell mktemp -u tmp/fail.FFI.XXXXXXXXX) \
 	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) \
 	TESTS="$^" EXECUTABLE=ffi TEST_HOME=tests/ffi $(MAKE) tests

@@ -1,4 +1,5 @@
-# ----------------------------------------------------------------
+# dpkg --add-architecture i386 && apt-get update
+
 # i386 win32
 # apt install gcc-mingw-w64-i686
 ifneq ($(shell command -v $(MGCC32) 2>/dev/null),)
@@ -13,7 +14,6 @@ HAVE_MINGW64 ?= $(HAVE_PLATFORM)
 endif
 HAVE_MINGW64 ?= 0
 
-# dpkg --add-architecture i386 && apt-get update
 # apt install wine32
 # note: if you need to disable com ports under wine, then navigate to
 #       HKLM\Software\Wine and create a new empty String named 'com33' (or smth)
@@ -43,10 +43,10 @@ test-matrix-subheader-win(e):
 	if [ "$(HAVE_MINGW32)$(HAVE_WINE)" = "11" ]; then printf "|32-d|32-r"; fi
 	if [ "$(HAVE_MINGW64)$(HAVE_WINE)" = "11" ]; then printf "|64-d|64-r"; fi
 
-# ----------------------------------------------------------------
+
 scmtest: scmtest-win(e)
 scmtest-win(e):
-# win
+# win(e)
 ifeq ($(DEV_MODE)$(HAVE_WINE),11)
 	printf "| "
 endif
@@ -62,40 +62,33 @@ ifeq ($(DEV_MODE)$(HAVE_MINGW64)$(HAVE_WINE),111)
 endif
 
 # ----------------------------------------------------------------
-# win32
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_MINGW32),11)
-# 32-bit debug
-olvm-binaries: tmp/olvm-win32-debug.exe
-
-tmp/olvm-win32-debug.exe: CC=$(MGCC32)
-tmp/olvm-win32-debug.exe: $(OLVM_DEPS)
-	$(call build-olvm,$@,$(OLVM_CFLAGS_DEBUG) -Iincludes/win32 -lws2_32)
+# 32-bit debug.exe
+tmp/%-win32-debug.exe: CC=$(MGCC32)
+tmp/%-win32-debug.exe: $(TEST_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) -Iincludes/win32 -lws2_32)
 
 # 32-bit release.exe
-olvm-binaries: tmp/olvm-win32-release.exe
+tmp/%-win32-release.exe: CC=$(MGCC32)
+tmp/%-win32-release.exe: $(TEST_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) -Iincludes/win32 -lws2_32)
 
-tmp/olvm-win32-release.exe: CC=$(MGCC32)
-tmp/olvm-win32-release.exe: $(OLVM_DEPS)
-	$(call build-olvm,$@,$(OLVM_CFLAGS_RELEASE) -Iincludes/win32 -lws2_32)
-
-endif
-
-# win64
-# ----------------------------
-ifeq ($(DEV_MODE)$(HAVE_MINGW64),11)
 # 64-bit debug
-olvm-binaries: tmp/olvm-win64-debug.exe
-
-tmp/olvm-win64-debug.exe: CC=$(MGCC64)
-tmp/olvm-win64-debug.exe: $(OLVM_DEPS)
-	$(call build-olvm,$@,$(OLVM_CFLAGS_DEBUG) -Iincludes/win32 -lws2_32)
+tmp/%-win64-debug.exe: CC=$(MGCC64)
+tmp/%-win64-debug.exe: $(TEST_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) -Iincludes/win32 -lws2_32)
 
 # 64-bit release
+tmp/%-win64-release.exe: CC=$(MGCC32)
+tmp/%-win64-release.exe: $(TEST_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) -Iincludes/win32 -lws2_32)
+
+# ----------------------------------------------------------------
+ifeq ($(DEV_MODE)$(HAVE_MINGW32),11)
+olvm-binaries: tmp/olvm-win32-debug.exe
+olvm-binaries: tmp/olvm-win32-release.exe
+endif
+
+ifeq ($(DEV_MODE)$(HAVE_MINGW64),11)
+olvm-binaries: tmp/olvm-win64-debug.exe
 olvm-binaries: tmp/olvm-win64-release.exe
-
-tmp/olvm-win64-release.exe: CC=$(MGCC32)
-tmp/olvm-win64-release.exe: $(OLVM_DEPS)
-	$(call build-olvm,$@,$(OLVM_CFLAGS_RELEASE) -Iincludes/win32 -lws2_32)
-
 endif

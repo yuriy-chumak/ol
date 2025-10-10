@@ -4,7 +4,7 @@ else
 
 # test-matrix
 .PHONY: test-matrix
-test-matrix: BACKEND_URL=http://127.0.0.1:8008/ol/test-matrix
+test-matrix: BACKEND_URL=http://nuka:8008/ol/test-matrix
 test-matrix: SESSION=$(shell curl -s -X POST "$(BACKEND_URL)?build=$(VERSION)" 2>/dev/null)
 test-matrix:
 	BACKEND_URL=$(BACKEND_URL) SESSION=$(SESSION) \
@@ -46,83 +46,11 @@ DEV_MODE ?= 0
 # note: use 2>/dev/null in "shell command" to avoid
 #       make call optimization and really run shell.
 
-# ================================================================
-# i386 linux
-# sudo apt-get install gcc-multilib
-ifeq ($(call exists,-m32,sys/cdefs.h,exit),1)
-HAVE_X86 ?= $(HAVE_PLATFORM)
-endif
-HAVE_X86 ?= 0
 
-# x86_64 linux
-ifeq ($(call exists,-m64,sys/cdefs.h,exit),1)
-HAVE_X86_64 ?= $(HAVE_PLATFORM)
-endif
-HAVE_X86_64 ?= 0
-
-# ----------------------------------------------------------------
-test-matrix-header: test-matrix-header-x86
-test-matrix-header-x86:
-	case "`expr $(HAVE_X86) + $(HAVE_X86_64) `" in \
-		1) printf "| %-8s" `uname -m`;;\
-		2) printf "| %-18s" `uname -m`;;\
-	esac
-
-test-matrix-subheader: test-matrix-subheader-x86
-test-matrix-subheader-x86:
-	if [ "$(HAVE_X86)"    = "1" ]; then printf "|32-d|32-r"; fi
-	if [ "$(HAVE_X86_64)" = "1" ]; then printf "|64-d|64-r"; fi
-
-# ----------------------------------------------------------------
-scmtest: scmtest-x86
-scmtest-x86:
-# i386
-ifeq ($(DEV_MODE)$(HAVE_X86),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),x86,debug)
-	$(call scmtestok,tmp/$(EXECUTABLE),x86,release)
-endif
-# x86_64
-ifeq ($(DEV_MODE)$(HAVE_X86_64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),x86_64,debug)
-	$(call scmtestok,tmp/$(EXECUTABLE),x86_64,release)
-endif
-
-# ----------------------------------------------------------------
-ifeq ($(DEV_MODE)$(HAVE_X86),11)
-# 32-bit debug
-olvm-binaries: tmp/olvm-x86-debug
-
-tmp/olvm-x86-debug: CC=gcc
-tmp/olvm-x86-debug: $(OLVM_DEPS)
-	$(call build-olvm,$@,$(OLVM_CFLAGS_DEBUG) $(OLVM_EXPORT) -m32)
-
-# 32-bit release
-olvm-binaries: tmp/olvm-x86-release
-
-tmp/olvm-x86-release: CC=gcc
-tmp/olvm-x86-release: $(OLVM_DEPS)
-	$(call build-olvm,$@,$(OLVM_CFLAGS_RELEASE) $(OLVM_EXPORT) -m32)
-
-endif
-
-ifeq ($(DEV_MODE)$(HAVE_X86_64),11)
-# 64-bit debug
-olvm-binaries: tmp/olvm-x86_64-debug
-
-tmp/olvm-x86_64-debug: CC=gcc
-tmp/olvm-x86_64-debug: $(OLVM_DEPS)
-	$(call build-olvm,$@,$(OLVM_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# 64-bit release
-olvm-binaries: tmp/olvm-x86_64-release
-
-tmp/olvm-x86_64-release: CC=gcc
-tmp/olvm-x86_64-release: $(OLVM_DEPS)
-	$(call build-olvm,$@,$(OLVM_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
-endif
 
 # ================================================================
+# x86/x86_64
+-include extras/platforms/i86.mk
 # arm linux
 -include extras/platforms/arm.mk
 -include extras/platforms/aarch64.mk
@@ -131,7 +59,7 @@ endif
 -include extras/platforms/mipsel.mk
 # ppc linux
 -include extras/platforms/ppc.mk
--include extras/platforms/ppcle.mk
+-include extras/platforms/ppcle64.mk
 # x86 win(e)
 -include extras/platforms/win(e).mk
 
@@ -267,7 +195,6 @@ endef
 # return 1 if test failed, check test running with unique id
 # fail flag
 
-tests:
 tests:
 	rm -f $(FAILMARK)
 	$(eval F1LEN=$(shell for F in $(TEST_FILES); do echo $${#F}; done |sort -n| tail -1))

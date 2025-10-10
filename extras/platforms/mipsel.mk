@@ -31,7 +31,7 @@ test-matrix-subheader-mipsel:
 	if [ "$(HAVE_MIPSEL)"   = "1" ]; then printf "|32-d|32-r"; fi
 	if [ "$(HAVE_MIPS64EL)" = "1" ]; then printf "|64-d|64-r"; fi
 
-# ----------------------------------------------------------------
+
 scmtest: scmtest-mipsel
 scmtest-mipsel:
 ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
@@ -44,36 +44,33 @@ ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
 endif
 
 # ----------------------------------------------------------------
-ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
 # mipsel debug
-olvm-binaries: tmp/olvm-mipsel-debug
-
-tmp/olvm-mipsel-debug: CC=mipsel-linux-gnu-gcc
-tmp/olvm-mipsel-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+tmp/%-mipsel-debug: CC=mipsel-linux-gnu-gcc
+tmp/%-mipsel-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # mipsel release
+tmp/%-mipsel-release: CC=mipsel-linux-gnu-gcc
+tmp/%-mipsel-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+# mips64el debug
+tmp/%-mips64el-debug: CC=mips64el-linux-gnuabi64-gcc
+tmp/%-mips64el-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# mips64el release
+tmp/%-mips64el-release: CC=mips64el-linux-gnuabi64-gcc
+tmp/%-mips64el-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+# ----------------------------------------------------------------
+ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
+olvm-binaries: tmp/olvm-mipsel-debug
 olvm-binaries: tmp/olvm-mipsel-release
-
-tmp/olvm-mipsel-release: CC=mipsel-linux-gnu-gcc
-tmp/olvm-mipsel-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
 endif
 
 ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
-# mips64el debug
 olvm-binaries: tmp/olvm-mips64el-debug
-
-tmp/olvm-mips64el-debug: CC=mips64el-linux-gnuabi64-gcc
-tmp/olvm-mips64el-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# mips64el release
 olvm-binaries: tmp/olvm-mips64el-release
-
-tmp/olvm-mips64el-release: CC=mips64el-linux-gnuabi64-gcc
-tmp/olvm-mips64el-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
 endif

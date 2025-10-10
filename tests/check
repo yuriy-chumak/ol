@@ -20,10 +20,10 @@ regression-tests: language-tests
 olvm-binaries:
 
 OLVM_SRCS += src/olvm.c extensions/ffi.c
-OLVM_DEPS += vm # get deps from vm
+TEST_DEPS += vm # get deps from vm
 
-OLVM_CFLAGS_DEBUG += $(OLVM_CFLAGS) $(CFLAGS_DEBUG)
-OLVM_CFLAGS_RELEASE += $(OLVM_CFLAGS) $(CFLAGS_RELEASE)
+TEST_CFLAGS_DEBUG += $(OLVM_CFLAGS) $(CFLAGS_DEBUG)
+TEST_CFLAGS_RELEASE += $(OLVM_CFLAGS) $(CFLAGS_RELEASE)
 
 # common olvm build flags
 # TODO: don't forget to autosynchronize these flags with CFLAGS
@@ -54,13 +54,13 @@ ifeq ($(DEV_MODE),0)
 # ----------------------------
 olvm-binaries: tmp/olvm-native-debug
 
-tmp/olvm-native-debug: $(OLVM_DEPS)
+tmp/olvm-native-debug: $(TEST_DEPS)
 	$(call build-olvm,$@,$(CFLAGS) $(CFLAGS_DEBUG) $(L))
 
 # native release
 olvm-binaries: tmp/olvm-native-release
 
-tmp/olvm-native-release: $(OLVM_DEPS)
+tmp/olvm-native-release: $(TEST_DEPS)
 	$(call build-olvm,$@,$(CFLAGS) $(CFLAGS_RELEASE) $(L))
 
 endif

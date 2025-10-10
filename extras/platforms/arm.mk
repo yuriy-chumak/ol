@@ -8,4 +8,4 @@ test-matrix-header-arm:
 
 test-matrix-subheader: test-matrix-subheader-arm
 test-matrix-subheader-arm:
-	if [ "$(HAVE_ARMV7)"    = "1" ]; then printf "|32-d|32-r"; fi
+	if [ "$(HAVE_ARMV7)" = "1" ]; then printf "|32-d|32-r"; fi

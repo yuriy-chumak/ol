@@ -9,15 +9,20 @@ TEST_FILES += $(TEST_FILES_REFERENCE)
 
 check-reference-native:
 	DEV_MODE=0 make check-reference
-# ------------------------------------
 
+# enable as a part of global testing
+check: check-reference
+
+# ------------------------------------
 define check-reference
-    $3 $1 repl tools/check-reference.lisp "$2" 1>/dev/null 2>/dev/null ;\
+    $5 $1-$2-$3$6 repl tools/check-reference.lisp "$4" 1>/dev/null 2>/dev/null ;\
 	   if [ $$? -eq 0 ]; then\
 	      printf \|$(ok) ;\
+		  $(call notify,$4,$2,$3,1) ;\
 	   else \
 	      printf \|$(fail);\
-	      echo $1: $^ >> $(FAILMARK);\
+	      echo $1-$2-$3$6: $^ >> $(FAILMARK);\
+		  $(call notify,$4,$2,$3,0) ;\
 	   fi
 endef
 
@@ -25,43 +30,49 @@ endef
 check-reference: FAILMARK:=$(shell mktemp -u tmp/fail.reference.XXXXXXXXX)
 
 check-reference: olvm-binaries
+check-reference: RUNNER=REFERENCE
 check-reference: $(wildcard doc/reference/*.md)
 	echo " "
-	echo "# CHECK REFERENCE"
+	echo "# CHECK $(RUNNER)"
 	$(eval F1LEN=$(shell for F in $(TEST_FILES); do echo $${#F}; done |sort -n| tail -1))
 	$(call table-header, $(F1LEN))
 	for F in $(filter %.md,$^); do \
 	   printf "|%-$(F1LEN)s " "$$F" |sed 's/ /*/; s/ /./g; s/*/ /' ;\
 	   # i386 linux \
-	   if [ "$(DEV_MODE)$(HAVE_X86)" = "11" ]; then $(call check-reference,tmp/olvm-x86-debug,$$F); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_X86)" = "11" ]; then $(call check-reference,tmp/olvm-x86-release,$$F); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_X86)" = "11" ]; then $(call check-reference,tmp/olvm,x86,debug,$$F); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_X86)" = "11" ]; then $(call check-reference,tmp/olvm,x86,release,$$F); fi ;\
 	   # x86_64 linux \
-	   if [ "$(DEV_MODE)$(HAVE_X86_64)" = "11" ]; then $(call check-reference,tmp/olvm-x86_64-debug,$$F); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_X86_64)" = "11" ]; then $(call check-reference,tmp/olvm-x86_64-release,$$F); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_X86_64)" = "11" ]; then $(call check-reference,tmp/olvm,x86_64,debug,$$F); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_X86_64)" = "11" ]; then $(call check-reference,tmp/olvm,x86_64,release,$$F); fi ;\
 	   # aarch64 linux \
-	   if [ "$(DEV_MODE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm-aarch64-debug,$$F,$(AARCH64)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm-aarch64-release,$$F,$(AARCH64)); fi ;\
-	   # mips/mipsel \
-	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm-mips-debug,$$F,$(MIPS)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm-mips-release,$$F,$(MIPS)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MIPS64)" = "11" ]; then $(call check-reference,tmp/olvm-mips64-debug,$$F,$(MIPS64)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MIPS64)" = "11" ]; then $(call check-reference,tmp/olvm-mips64-release,$$F,$(MIPS64)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MIPSEL)" = "11" ]; then $(call check-reference,tmp/olvm-mipsle-debug,$$F,$(MIPSEL)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MIPSEL)" = "11" ]; then $(call check-reference,tmp/olvm-mipsle-release,$$F,$(MIPSEL)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MIPS64EL)" = "11" ]; then $(call check-reference,tmp/olvm-mips64le-debug,$$F,$(MIPS64EL)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MIPS64EL)" = "11" ]; then $(call check-reference,tmp/olvm-mips64le-release,$$F,$(MIPS64EL)); fi ;\
-	   # ppc64 linux \
-	   if [ "$(DEV_MODE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm-ppc64-debug,$$F,$(PPC64)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm-ppc64-release,$$F,$(PPC64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm,aarch64,debug,$$F,$(AARCH64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm,aarch64,release,$$F,$(AARCH64)); fi ;\
+	   # mips/mipsel linux \
+	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm,mips,debug,$$F,$(MIPS)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm,mips,release,$$F,$(MIPS)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS64)" = "11" ]; then $(call check-reference,tmp/olvm,mips64,debug,$$F,$(MIPS64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS64)" = "11" ]; then $(call check-reference,tmp/olvm,mips64,release,$$F,$(MIPS64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPSEL)" = "11" ]; then $(call check-reference,tmp/olvm,mipsel,debug,$$F,$(MIPSEL)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPSEL)" = "11" ]; then $(call check-reference,tmp/olvm,mipsel,release,$$F,$(MIPSEL)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS64EL)" = "11" ]; then $(call check-reference,tmp/olvm,mips64el,debug,$$F,$(MIPS64EL)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MIPS64EL)" = "11" ]; then $(call check-reference,tmp/olvm,mips64el,release,$$F,$(MIPS64EL)); fi ;\
+	   # ppc/ppc64le linux \
+	   if [ "$(DEV_MODE)$(HAVE_PPC)" = "11" ]; then $(call check-reference,tmp/olvm,ppc,debug,$$F,$(PPC)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_PPC)" = "11" ]; then $(call check-reference,tmp/olvm,ppc,release,$$F,$(PPC)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm,ppc64,debug,$$F,$(PPC64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm,ppc64,release,$$F,$(PPC64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_PPC64LE)" = "11" ]; then $(call check-reference,tmp/olvm,ppc64le,debug,$$F,$(PPC64LE)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_PPC64LE)" = "11" ]; then $(call check-reference,tmp/olvm,ppc64le,release,$$F,$(PPC64LE)); fi ;\
 	   # win32 wine \
-	   if [ "$(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm-win32-debug.exe,$$F,$(WINE)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm-win32-release.exe,$$F,$(WINE)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_WINE)" = "11" ]; then printf "| "; fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm,win32,debug,$$F,$(WINE),.exe); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm,win32,release,$$F,$(WINE),.exe); fi ;\
 	   # win64 wine \
-	   if [ "$(DEV_MODE)$(HAVE_MINGW64)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm-win64-debug.exe,$$F,$(WINE)); fi ;\
-	   if [ "$(DEV_MODE)$(HAVE_MINGW64)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm-win64-release.exe,$$F,$(WINE)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MINGW64)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm,win64,debug,$$F,$(WINE),.exe); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_MINGW64)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm,win64,release,$$F,$(WINE),.exe); fi ;\
 	   # native platform \
-	   if [ "$(DEV_MODE)" = "0" ]; then $(call check-reference,tmp/olvm-native-debug,$$F); fi ;\
-	   if [ "$(DEV_MODE)" = "0" ]; then $(call check-reference,tmp/olvm-native-release,$$F); fi ;\
+	   if [ "$(DEV_MODE)" = "0" ]; then $(call check-reference,tmp/olvm,native,debug,$$F); fi ;\
+	   if [ "$(DEV_MODE)" = "0" ]; then $(call check-reference,tmp/olvm,native,release,$$F); fi ;\
 	   echo "|";\
 	done
 	case `test -f $(FAILMARK); echo $$?` in\

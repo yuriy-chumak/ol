@@ -31,7 +31,7 @@ test-matrix-subheader-ppc:
 	if [ "$(HAVE_PPC)"   = "1" ]; then printf "|32-d|32-r"; fi
 	if [ "$(HAVE_PPC64)" = "1" ]; then printf "|64-d|64-r"; fi
 
-# ----------------------------------------------------------------
+
 scmtest: scmtest-ppc
 scmtest-ppc:
 ifeq ($(DEV_MODE)$(HAVE_PPC),11)
@@ -44,36 +44,33 @@ ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
 endif
 
 # ----------------------------------------------------------------
-ifeq ($(DEV_MODE)$(HAVE_PPC),11)
 # ppc debug
-olvm-binaries: tmp/olvm-ppc-debug
-
-tmp/olvm-ppc-debug: CC=powerpc-linux-gnu-gcc
-tmp/olvm-ppc-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+tmp/%-ppc-debug: CC=powerpc-linux-gnu-gcc
+tmp/%-ppc-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # ppc release
+tmp/%-ppc-release: CC=powerpc-linux-gnu-gcc
+tmp/%-ppc-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+# ppc64 debug
+tmp/%-ppc64-debug: CC=powerpc64-linux-gnu-gcc
+tmp/%-ppc64-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
+
+# ppc64 release
+tmp/%-ppc64-release: CC=powerpc64-linux-gnu-gcc
+tmp/%-ppc64-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+# ----------------------------------------------------------------
+ifeq ($(DEV_MODE)$(HAVE_PPC),11)
+olvm-binaries: tmp/olvm-ppc-debug
 olvm-binaries: tmp/olvm-ppc-release
-
-tmp/olvm-ppc-release: CC=powerpc-linux-gnu-gcc
-tmp/olvm-ppc-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
 endif
 
 ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
-# ppc64 debug
 olvm-binaries: tmp/olvm-ppc64-debug
-
-tmp/olvm-ppc64-debug: CC=powerpc64-linux-gnu-gcc
-tmp/olvm-ppc64-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
-
-# ppc64 release
 olvm-binaries: tmp/olvm-ppc64-release
-
-tmp/olvm-ppc64-release: CC=powerpc64-linux-gnu-gcc
-tmp/olvm-ppc64-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
 endif

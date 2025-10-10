@@ -20,7 +20,7 @@ test-matrix-subheader: test-matrix-subheader-ppcle
 test-matrix-subheader-ppcle:
 	if [ "$(HAVE_PPC64LE)" = "1" ]; then printf "|64-d|64-r"; fi
 
-# ----------------------------------------------------------------
+
 scmtest: scmtest-ppcle
 scmtest-ppcle:
 ifeq ($(DEV_MODE)$(HAVE_PPC64LE),11)
@@ -29,19 +29,18 @@ ifeq ($(DEV_MODE)$(HAVE_PPC64LE),11)
 endif
 
 # ----------------------------------------------------------------
-ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
 # ppc64le debug
-olvm-binaries: tmp/olvm-ppc64le-debug
-
-tmp/olvm-ppc64le-debug: CC=powerpc64le-linux-gnu-gcc
-tmp/olvm-ppc64le-debug: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_DEBUG) $(OLVM_EXPORT))
+tmp/%-ppc64le-debug: CC=powerpc64le-linux-gnu-gcc
+tmp/%-ppc64le-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # ppc64 release
+tmp/%-ppc64le-release: CC=powerpc64le-linux-gnu-gcc
+tmp/%-ppc64le-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
+
+# ----------------------------------------------------------------
+ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
+olvm-binaries: tmp/olvm-ppc64le-debug
 olvm-binaries: tmp/olvm-ppc64le-release
-
-tmp/olvm-ppc64le-release: CC=powerpc64le-linux-gnu-gcc
-tmp/olvm-ppc64le-release: $(FFI_DEPS)
-	$(call build-olvm,$@,$(FFI_CFLAGS_RELEASE) $(OLVM_EXPORT))
-
 endif
