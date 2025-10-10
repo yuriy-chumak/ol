@@ -1,4 +1,4 @@
-name: macos intel/mN
+name: macos intel/m
 
 on:
   push:
