@@ -38,7 +38,7 @@ void v_cc..c(n)(type a1, type a2, .., type an)
 (for-each (lambda (comment n)
       (print comment)
       (for-each (lambda (index typename)
-            ;; (define N (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
+            ;; (define N (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
             (define N MAX-ARGS-COUNT)
             (define name (|v_cc..c(n)| index N))
             (define rtty (repeat typename N)) ; args types

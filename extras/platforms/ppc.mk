@@ -46,22 +46,22 @@ endif
 # ----------------------------------------------------------------
 # ppc debug
 tmp/%-ppc-debug: CC=powerpc-linux-gnu-gcc
-tmp/%-ppc-debug: $(FFI_DEPS)
+tmp/%-ppc-debug: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # ppc release
 tmp/%-ppc-release: CC=powerpc-linux-gnu-gcc
-tmp/%-ppc-release: $(FFI_DEPS)
+tmp/%-ppc-release: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
 
 # ppc64 debug
 tmp/%-ppc64-debug: CC=powerpc64-linux-gnu-gcc
-tmp/%-ppc64-debug: $(FFI_DEPS)
+tmp/%-ppc64-debug: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # ppc64 release
 tmp/%-ppc64-release: CC=powerpc64-linux-gnu-gcc
-tmp/%-ppc64-release: $(FFI_DEPS)
+tmp/%-ppc64-release: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
 
 # ----------------------------------------------------------------

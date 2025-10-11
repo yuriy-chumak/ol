@@ -20,7 +20,7 @@ void v_cc..c(n)(type a1, type a2, .., type an)
 
 (for-each (lambda (index typename Sn)
       (define N MAX-ARGS-COUNT)
-      ;; (define N (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
+      ;; (define N (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
       (for-each (lambda (n)
             (define name (|v_cc..c(n)| index n))
             (define rtty (repeat typename n)) ; args types
@@ -32,7 +32,7 @@ void v_cc..c(n)(type a1, type a2, .., type an)
 
          (iota N 1)))
    ;      unsigned types      signed types                                 floating points
-   (list "C"    "S"    "I"    "L"    "c"    "c"     "s"    "s"     "i"    "i"     "l"    "l"    )
+   (list "C"    "S"    "I"    "Q"    "c"    "c"     "s"    "s"     "i"    "i"     "q"    "q"    )
    (list uchar  ushort uint   ullong char   char    short  short   int    int     llong  llong  )
    (list iota24 primes primes primes iota24 -iota24 primes -primes primes -primes primes -primes)
 )
@@ -40,7 +40,7 @@ void v_cc..c(n)(type a1, type a2, .., type an)
 (for-each (lambda (comment n)
       (print comment)
       (for-each (lambda (index typename)
-            ;; (define N (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
+            ;; (define N (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
             (define N MAX-ARGS-COUNT)
             (define name (|v_cc..c(n)| index N))
             (define rtty (repeat typename N)) ; args types
@@ -49,7 +49,7 @@ void v_cc..c(n)(type a1, type a2, .., type an)
             (define args (repeat n N))
             (try name function args))
          ;      unsigned types   signed types   floating points
-         (list "C"   "S"    "I"  "L"    "c"  "s"   "i" "l"  )
+         (list "C"   "S"    "I"  "Q"    "c"  "s"   "i" "q"  )
          (list uchar ushort uint ullong char short int llong) ))
    '("zeroes:" "defaults (#f):" "42s:")
    '( 0         #false           42)
@@ -57,14 +57,14 @@ void v_cc..c(n)(type a1, type a2, .., type an)
 
 (print "limits:")
 (for-each (lambda (index typename n)
-      (define N (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
+      (define N (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
       (define name (|v_cc..c(n)| index N))
       (define rtty (repeat typename N)) ; args types
       (define function (apply this (cons* void name rtty)))
 
       (try name function (repeat n N)))
    ;      unsigned types                          signed types
-   (list "C"       "S"        "I"        "L"        "c"      "c"      "s"       "s"       "i"       "i"       "l"       "l"      )
+   (list "C"       "S"        "I"        "Q"        "c"      "c"      "s"       "s"       "i"       "i"       "q"       "q"      )
    (list uchar     ushort     uint       ullong     char     char     short     short     int       int       llong     llong    )
    (list UINT8_MAX UINT16_MAX UINT32_MAX UINT64_MAX INT8_MIN INT8_MAX INT16_MIN INT16_MAX INT32_MIN INT32_MAX INT64_MIN INT64_MAX)
 )

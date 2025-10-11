@@ -21,6 +21,7 @@ olvm-binaries:
 
 OLVM_SRCS += src/olvm.c extensions/ffi.c
 TEST_DEPS += vm # get deps from vm
+TEST_DEPS += $(OLVM_SRCS)
 
 TEST_CFLAGS_DEBUG += $(OLVM_CFLAGS) $(CFLAGS_DEBUG)
 TEST_CFLAGS_RELEASE += $(OLVM_CFLAGS) $(CFLAGS_RELEASE)

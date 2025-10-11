@@ -1,7 +1,7 @@
 (print (s/'/"/g "
 // all types together
 PUBLIC
-void v_CSILcsilfd(unsigned char a1, unsigned short a2, unsigned int a3, unsigned long long a4, signed char a5, signed short a6, signed int a7, long long a8, float a9, double a10)
+void v_CSIQcsiqfd(unsigned char a1, unsigned short a2, unsigned int a3, unsigned long long a4, signed char a5, signed short a6, signed int a7, long long a8, float a9, double a10)
 {
    printf('{{ %u %u %u %llu %d %d %d %lld %f %f }}', a1, a2, a3, a4, a5, a6, a7, a8, a9, a10); fflush(stdout);
 }"))
@@ -19,7 +19,7 @@ void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
 }")
 (print "/*" testcase "*/")
 
-(define indices '("C" "S" "I" "L" "c" "s" "i" "l" "f" "d"))
+(define indices '("C" "S" "I" "Q" "c" "s" "i" "q" "f" "d"))
 (define typenames '("unsigned char" "unsigned short" "unsigned int" "unsigned long long" "signed char" "signed short" "signed int" "long long" "float" "double"))
 (define formats '("%u" "%u" "%u" "%llu" "%d" "%d" "%d" "%lld" "%f" "%f"))
 (assert (= (length indices) (length typenames) (length formats)))
@@ -34,8 +34,8 @@ void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
                         (define iB (length (member typenameB typenames)))
                         (> iA iB)) ; avoid same function names
                      ;; not needed:
-                     ;; ((m/L|l/ indexA) (<= N (/ MAX-ARGS-COUNT 2)))
-                     ;; ((m/L|l/ indexB) (<= N (- MAX-ARGS-COUNT 1)))
+                     ;; ((m/Q|q/ indexA) (<= N (/ MAX-ARGS-COUNT 2)))
+                     ;; ((m/Q|q/ indexB) (<= N (- MAX-ARGS-COUNT 1)))
                      (else #true))
             
                (for-each (lambda (n) (print (begin

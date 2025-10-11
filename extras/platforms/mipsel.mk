@@ -46,22 +46,22 @@ endif
 # ----------------------------------------------------------------
 # mipsel debug
 tmp/%-mipsel-debug: CC=mipsel-linux-gnu-gcc
-tmp/%-mipsel-debug: $(FFI_DEPS)
+tmp/%-mipsel-debug: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # mipsel release
 tmp/%-mipsel-release: CC=mipsel-linux-gnu-gcc
-tmp/%-mipsel-release: $(FFI_DEPS)
+tmp/%-mipsel-release: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
 
 # mips64el debug
 tmp/%-mips64el-debug: CC=mips64el-linux-gnuabi64-gcc
-tmp/%-mips64el-debug: $(FFI_DEPS)
+tmp/%-mips64el-debug: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # mips64el release
 tmp/%-mips64el-release: CC=mips64el-linux-gnuabi64-gcc
-tmp/%-mips64el-release: $(FFI_DEPS)
+tmp/%-mips64el-release: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
 
 # ----------------------------------------------------------------

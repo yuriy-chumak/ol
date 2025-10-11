@@ -41,7 +41,7 @@ html
           template(v-for="runner in runners")
             thead
               tr
-                th(rowspan="2", class="b-right") {{ runner.name.charAt(0).toUpperCase() + runner.name.slice(1).toLowerCase() + " Tests" }}
+                th(rowspan="2") {{ runner.name.charAt(0).toUpperCase() + runner.name.slice(1).toLowerCase() + " Tests" }}
                 template(v-for="platform in platforms")
                   th(colspan="2" ) {{ platform }}
               tr
@@ -50,7 +50,7 @@ html
               tr(v-for="test in runner.tests")
                 td {{ test }}
                 td(v-for="run in runs")
-                  i.icon.yellow.sync(:id="runner.name + ':' + test + ':' + run.platform + ':' + run.target")
+                  i.large.icon.yellow.seedling(:id="runner.name + ':' + test + ':' + run.platform + ':' + run.target")
 
     script.
       $MATRIX = new Vue({ el: '#matrix',

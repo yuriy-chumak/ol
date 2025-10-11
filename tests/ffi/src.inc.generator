@@ -15,9 +15,9 @@
 
 (define MAX-ARGS-COUNT 24)
 
-,load "numbers-paramless.scm.gen"
+,load "paramless.gen"
 ,load "same-type-args.gen"
-,load "numbers-mixed-type-args.scm.gen"
+,load "numbers.mixed-type-args.gen"
 
 ;; --------------------------------------------------
 ,quit
@@ -48,7 +48,7 @@
 ;;                   (cons "format" format)
 ;;                )) ))
 
-;;          (iota (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT) 1)))
+;;          (iota (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT) 1)))
 ;;    ; unsigned types                                 ; signed types                               ; floating points
 ;;    '("C"             "S"              "I"             "L"                  "c"            "s"            "i"           "l"         "f"     "d"     )
 ;;    '("unsigned char" "unsigned short" "unsigned int"  "unsigned long long" "signed char"  "signed short" "signed int"  "long long" "float" "double")

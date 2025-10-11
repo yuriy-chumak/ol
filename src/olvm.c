@@ -272,12 +272,13 @@ object_t
 // only 32- and 64-bit machines supported.
 // https://gcc.gnu.org/onlinedocs/gccint/Machine-Modes.html
 // define internal math types based on sizeof(size_t):
-#if SIZE_MAX == 0xffffffffU
+#if __UINTPTR_MAX__ == 0xffffffffU
 	typedef signed int_t __attribute__ ((mode (SI))); // four-byte integer (32 bits)
 	typedef unsigned big_t __attribute__ ((mode (DI))); // eight-byte integer (64 bits)
-#elif SIZE_MAX == 0xffffffffffffffffU
+#elif __UINTPTR_MAX__ == 0xffffffffffffffffU
 	typedef signed int_t __attribute__ ((mode (DI))); // eight-byte integer (64 bits)
-	typedef unsigned big_t __attribute__ ((mode (TI))); // sixteen-byte integer (128 bits)
+	//typedef unsigned big_t __attribute__ ((mode (TI))); (is not supported everywhere)
+	#define big_t __int128                        // sixteen-byte integer (128 bits)
 #else
 #	error Unsupported platform bitness, only 32- and 64-bit versions are supported!
 #endif
@@ -423,7 +424,7 @@ typedef word* R;
 #define is_boolean(ob)              ((ob == ITRUE) || (ob == IFALSE))
 
 // взять значение аргумента:
-#define value(v)                    ({ word x = (word)(v); assert(is_value(x));     (((word)(x)) >> VPOS); })
+#define value(v)                    ({ word x = (word)(v); /*assert(is_value(x));*/     (((word)(x)) >> VPOS); })
 #define deref(v)                    ({ word x = (word)(v); assert(is_reference(x)); *(word*)(x); })
 
 #define ref(ob, n)                  ((reference(ob))[n])
@@ -2015,12 +2016,12 @@ static char* pvenv_main() {
 #endif
 
 
-#if SIZE_MAX == 0xffffffffffffffff
-#	define MATH_64BIT 1
-#	define MATH_32BIT 0
-#elif SIZE_MAX == 0xffffffff
+#if __UINTPTR_MAX__ == 0xffffffff
 #	define MATH_64BIT 0
 #	define MATH_32BIT 1
+#elif __UINTPTR_MAX__ == 0xffffffffffffffff
+#	define MATH_64BIT 1
+#	define MATH_32BIT 0
 #else
 #	error Unsupported math bit-count
 #endif

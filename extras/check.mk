@@ -4,7 +4,7 @@ else
 
 # test-matrix
 .PHONY: test-matrix
-test-matrix: BACKEND_URL=http://nuka:8008/ol/test-matrix
+BACKEND_URL?=http://127.0.0.1:8008/ol/test-matrix
 test-matrix: SESSION=$(shell curl -s -X POST "$(BACKEND_URL)?build=$(VERSION)" 2>/dev/null)
 test-matrix:
 	BACKEND_URL=$(BACKEND_URL) SESSION=$(SESSION) \

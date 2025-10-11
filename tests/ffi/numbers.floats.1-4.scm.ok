@@ -1,0 +1,20 @@
+Notes:
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} is native code output
+
+---------------------------------------------------------------
+void v_cc..c(n)(type a1, type a2, .., type an)
+{
+   printf('{{ %d %d .. %d(n) }}', a1, a2, .., an); fflush(stdout);
+}, n = (1 .. 4)
+   (void_f 1) --> {{ 1.000000 }} = #true
+   (void_ff 1 2) --> {{ 1.000000 2.000000 }} = #true
+   (void_fff 1 2 3) --> {{ 1.000000 2.000000 3.000000 }} = #true
+   (void_ffff 1 2 3 4) --> {{ 1.000000 2.000000 3.000000 4.000000 }} = #true
+   (void_d 1) --> {{ 1.000000 }} = #true
+   (void_dd 1 2) --> {{ 1.000000 2.000000 }} = #true
+   (void_ddd 1 2 3) --> {{ 1.000000 2.000000 3.000000 }} = #true
+   (void_dddd 1 2 3 4) --> {{ 1.000000 2.000000 3.000000 4.000000 }} = #true

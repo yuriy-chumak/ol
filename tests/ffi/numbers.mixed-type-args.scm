@@ -15,7 +15,7 @@
 ---------------------------------------------------------------
 all numeric types together")
 
-(define name "v_CSILcsilfd")
+(define name "v_CSIQcsiqfd")
 (define function (this void name uchar ushort uint ullong char short int llong float double))
 (define F #f)
 
@@ -36,7 +36,7 @@ void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
    printf('{{ %d %d .. %u .. %d(n) }}', a1, a2, .., b , .., aN); fflush(stdout);
 }, n = " MAX-ARGS-COUNT "")
 
-(define indices '("C" "S" "I" "L" "c" "s" "i" "l" "f" "d"))
+(define indices '("C" "S" "I" "Q" "c" "s" "i" "q" "f" "d"))
 (define typenames (list fft-unsigned-char fft-unsigned-short fft-unsigned-int fft-unsigned-long-long fft-signed-char fft-signed-short fft-signed-int fft-long-long fft-float fft-double))
 (assert (= (length indices) (length typenames)))
 
@@ -65,7 +65,7 @@ void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
 
 
 ;; (for-each (lambda (index typename Sn)
-;;       (define N (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
+;;       (define N (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
 ;;       (for-each (lambda (n)
 ;;             (define name (|v_cc..c(n)| index n))
 ;;             (define rtty (repeat typename n)) ; args types
@@ -85,7 +85,7 @@ void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
 ;; (for-each (lambda (comment n)
 ;;       (print comment)
 ;;       (for-each (lambda (index typename)
-;;             (define N (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
+;;             (define N (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
 ;;             (define name (|v_cc..c(n)| index N))
 ;;             (define rtty (repeat typename N)) ; args types
 ;;             (define function (apply this (cons* void name rtty)))
@@ -101,7 +101,7 @@ void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
 
 ;; (print "limits:")
 ;; (for-each (lambda (index typename n)
-;;       (define N (if (m/L|l/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
+;;       (define N (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
 ;;       (define name (|v_cc..c(n)| index N))
 ;;       (define rtty (repeat typename N)) ; args types
 ;;       (define function (apply this (cons* void name rtty)))

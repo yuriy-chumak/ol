@@ -1,0 +1,60 @@
+Notes:
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} is native code output
+
+---------------------------------------------------------------
+void v_cc..c(n)(type a1, type a2, .., type an)
+{
+   printf('{{ %d %d .. %d(n) }}', a1, a2, .., an); fflush(stdout);
+}, n = (1 .. 4)
+   (void_C 1) --> {{ 1 }} = #true
+   (void_CC 1 2) --> {{ 1 2 }} = #true
+   (void_CCC 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_CCCC 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_S 1) --> {{ 1 }} = #true
+   (void_SS 1 2) --> {{ 1 2 }} = #true
+   (void_SSS 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_SSSS 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_I 1) --> {{ 1 }} = #true
+   (void_II 1 2) --> {{ 1 2 }} = #true
+   (void_III 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_IIII 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_Q 1) --> {{ 1 }} = #true
+   (void_QQ 1 2) --> {{ 1 2 }} = #true
+   (void_QQQ 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_QQQQ 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_c 1) --> {{ 1 }} = #true
+   (void_cc 1 2) --> {{ 1 2 }} = #true
+   (void_ccc 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_cccc 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_c -1) --> {{ -1 }} = #true
+   (void_cc -1 -2) --> {{ -1 -2 }} = #true
+   (void_ccc -1 -2 -3) --> {{ -1 -2 -3 }} = #true
+   (void_cccc -1 -2 -3 -4) --> {{ -1 -2 -3 -4 }} = #true
+   (void_s 1) --> {{ 1 }} = #true
+   (void_ss 1 2) --> {{ 1 2 }} = #true
+   (void_sss 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_ssss 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_s -1) --> {{ -1 }} = #true
+   (void_ss -1 -2) --> {{ -1 -2 }} = #true
+   (void_sss -1 -2 -3) --> {{ -1 -2 -3 }} = #true
+   (void_ssss -1 -2 -3 -4) --> {{ -1 -2 -3 -4 }} = #true
+   (void_i 1) --> {{ 1 }} = #true
+   (void_ii 1 2) --> {{ 1 2 }} = #true
+   (void_iii 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_iiii 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_i -1) --> {{ -1 }} = #true
+   (void_ii -1 -2) --> {{ -1 -2 }} = #true
+   (void_iii -1 -2 -3) --> {{ -1 -2 -3 }} = #true
+   (void_iiii -1 -2 -3 -4) --> {{ -1 -2 -3 -4 }} = #true
+   (void_q 1) --> {{ 1 }} = #true
+   (void_qq 1 2) --> {{ 1 2 }} = #true
+   (void_qqq 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_qqqq 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_q -1) --> {{ -1 }} = #true
+   (void_qq -1 -2) --> {{ -1 -2 }} = #true
+   (void_qqq -1 -2 -3) --> {{ -1 -2 -3 }} = #true
+   (void_qqqq -1 -2 -3 -4) --> {{ -1 -2 -3 -4 }} = #true

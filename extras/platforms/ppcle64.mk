@@ -31,12 +31,12 @@ endif
 # ----------------------------------------------------------------
 # ppc64le debug
 tmp/%-ppc64le-debug: CC=powerpc64le-linux-gnu-gcc
-tmp/%-ppc64le-debug: $(FFI_DEPS)
+tmp/%-ppc64le-debug: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT))
 
 # ppc64 release
 tmp/%-ppc64le-release: CC=powerpc64le-linux-gnu-gcc
-tmp/%-ppc64le-release: $(FFI_DEPS)
+tmp/%-ppc64le-release: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
 
 # ----------------------------------------------------------------
