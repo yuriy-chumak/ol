@@ -26,6 +26,9 @@ regression-tests-native:
 # enable as first part of global testing
 check: regression-tests
 
+tests/ffi/src.inc: tests/ffi/src.inc.generator ol
+	ol --home=libraries:tests/ffi $< >$@
+
 # -----------------------------
 # notifications:
 ok:="$(green) ok $(done)"
