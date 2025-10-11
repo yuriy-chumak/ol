@@ -17,6 +17,7 @@
 //
 // Design Issues for Foreign Function Interfaces
 // http://autocad.xarch.at/lisp/ffis.html
+// http://byteworm.com/2010/10/12/container/ (lambdas in c)
 //
 // Utf-8 https://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
 
@@ -396,7 +397,7 @@ __ASM__(//"int $3",
 	"leaq  -16(%rsp,%rax,8),%rsp", // выравнивание стека по 16-байтной границе
 
 	"leaq  -8(%rdi,%rdx,8), %rax",
-	"leaq  56(%rsi,%rcx,8), %rsi", // last float argument  (if any) 56=8*8-8
+	"leaq  56(%rsi,%rcx,8), %rsi", // last float argument  (if any) 56 = 8*8-8
 
 	"subq  $6, %rdx",
 "31:",
@@ -404,7 +405,7 @@ __ASM__(//"int $3",
 	"jc    33f", // bit 0 was set, so push float value
 "32:", // push fixed
 	"cmpq  $0, %rdx",
-	"jle   31b", // нету больше аргументов для fixed пуша
+	"jle   31b", // нет больше аргументов для fixed пуша
 	"pushq (%rax)",
 	"subq  $8, %rax",
 	"decq  %rdx",
@@ -414,7 +415,7 @@ __ASM__(//"int $3",
 	"jmp   31b",
 "33:", // push float
 	"cmpq  $0, %rcx",
-	"jle   31b", // нету больше аргументов для float пуша
+	"jle   31b", // нет больше аргументов для float пуша
 	"pushq (%rsi)",
 	"subq  $8, %rsi",
 	"decq  %rcx",
@@ -818,74 +819,183 @@ __ASM__(// "arm32_call:_arm32_call:",
 # endif
 
 // ------------------------------------------
-#elif __mips__ // 32-bit
+// #elif __mips64
+// // https://gcc.gnu.org/projects/mipso64-abi.html
+// __attribute__((__interrupt__))
+// ret_t mips64_call(word argv[], long i, void* function, long type);
+// 	// $a0: argv
+// 	// $a1: i
+// 	// $a2: function
+// 	// $a3: type
+// __ASM__(
+// ".globl mips64_call", // inline assembly should start with .globl <func_name>.
+// 	   "mips64_call:",
+// 	"daddiu $sp, $sp,-48",
+// 	"sd     $fp, 40($sp)",
+// 	"move   $fp, $sp",
 
-// https://refspecs.linuxfoundation.org/elf/mipsabi.pdf
-__attribute__((__interrupt__))
-ret_t mips32_call(word argv[], long i, void* function, long type);
-	// $a0: argv
-	// $a1: i
-	// $a2: function
-	// $a3: type
-__ASM__(".globl mips32_call", // inline assembly should start with .globl <func_name>.
-		"mips32_call:",
-	"addiu  $sp, $sp,-16",
-	"sw     $fp, 4($sp)",
-	"sw     $ra, 8($sp)",
-	// "sw     $a3, 0($sp)",
-	"move   $fp, $sp",
+// 	"move	$2,$0",
 
-	"ble  $a1, 4, $run",
+// "$ret:",
+// 	"move   $sp, $fp",
+// 	"ld     $fp, 40($sp)",
+// 	"daddiu $sp, $sp, 48",
+// 	"jr     $31",
+// 	"nop");
 
-	// align stack
-	"addi $t2, $a1, 1", // +1
-	"andi $t2, $t2, 1", // &1
-	"sll  $t2, $t2, 2", // *4
-	"sub  $sp, $sp, $t2",
+// #elif __mips__ // 32-bit
 
-	// let's push data to the stack
-	"li   $t1, 3", // current index
-	"mul  $t2, $a1, 4",
-	"add  $t0, $a0, $t2", // move t0 up to end of arguments list
-"$loop:"
-	"sub  $sp, $sp, 4",
-	"lw   $t2, 0($t0)",
-	"sw   $t2, 0($sp)",
-	"sub  $t0, $t0, 4",
-	"add  $t1, $t1, 1",
-	"bne  $t1, $a1, $loop",
+// // https://refspecs.linuxfoundation.org/elf/mipsabi.pdf
+// __attribute__((__interrupt__))
+// ret_t mips32_call(word argv[], long i, void* function, long type);
+// 	// $a0: argv
+// 	// $a1: i
+// 	// $a2: function
+// 	// $a3: type
+// __ASM__(
+// ".globl mips32_call", // inline assembly should start with .globl <func_name>.
+// 	   "mips32_call:",
+// 	"addiu  $sp, $sp,-16",
+// 	"sw     $fp, 4($sp)",
+// 	"sw     $ra, 8($sp)",
+// 	// "sw     $a3, 0($sp)",
+// 	"move   $fp, $sp",
 
-"$run:",
-	"move $t0, $a0", // t0 <- argv
-	"move $t9, $a2", // a2 - function
-	"lw   $a0, 0($t0)",
-	"lw   $a1, 4($t0)",
-	"lw   $a2, 8($t0)",
-	"lw   $a3, 12($t0)",
-	"sub  $sp, $sp, 16", // reserved space for $a0..$a3
-	"jalr $t9",
-	"nop",
-// 	"lw   $a3, 0($sp)",
-// 	"beq  $a3, 46, $conv", // TFLOAT
-// 	"bne  $a3, 47, $ret",  // TDOUBLE
-// "$conv:",
-// 	// "move $v0, $f0",
-// 	// "move $v1, $f1",
-// 	// return
-"$ret:",
-	"move   $sp, $fp",
-	"lw     $ra, 8($sp)",
-	"lw     $fp, 4($sp)",
-	"addiu  $sp, $sp, 16",
-	"jr     $ra",
-	"nop");
+// 	"ble  $a1, 4, $run",
+
+// 	// align stack
+// 	"addi $t2, $a1, 1", // +1
+// 	"andi $t2, $t2, 1", // &1
+// 	"sll  $t2, $t2, 2", // *4
+// 	"sub  $sp, $sp, $t2",
+
+// 	// let's push data to the stack
+// 	"li   $t1, 3", // current index
+// 	"mul  $t2, $a1, 4",
+// 	"add  $t0, $a0, $t2", // move t0 up to end of arguments list
+// "$loop:"
+// 	"sub  $sp, $sp, 4",
+// 	"lw   $t2, 0($t0)",
+// 	"sw   $t2, 0($sp)",
+// 	"sub  $t0, $t0, 4",
+// 	"add  $t1, $t1, 1",
+// 	"bne  $t1, $a1, $loop",
+
+// "$run:",
+// 	"move $t0, $a0", // t0 <- argv
+// 	"move $t9, $a2", // a2 - function
+// 	"lw   $a0, 0($t0)",
+// 	"lw   $a1, 4($t0)",
+// 	"lw   $a2, 8($t0)",
+// 	"lw   $a3, 12($t0)",
+// 	"sub  $sp, $sp, 16", // reserved space for $a0..$a3
+// 	"jalr $t9",
+// 	"nop",
+// // 	"lw   $a3, 0($sp)",
+// // 	"beq  $a3, 46, $conv", // TFLOAT
+// // 	"bne  $a3, 47, $ret",  // TDOUBLE
+// // "$conv:",
+// // 	// "move $v0, $f0",
+// // 	// "move $v1, $f1",
+// // 	// return
+// "$ret:",
+// 	"move   $sp, $fp",
+// 	"lw     $ra, 8($sp)",
+// 	"lw     $fp, 4($sp)",
+// 	"addiu  $sp, $sp, 16",
+// 	"j      $ra",
+// 	"nop");
 
 // ------------------------------------------
-#elif __EMSCRIPTEN__
+#elif __UINTPTR_MAX__ == 0xffffffffffffffffU // includes __mips64, __powerpc64__
+static
+ret_t x64_call(word arg[], int fmask, void* function, int type)
+{
+	ret_t r;
+	const int_t* argi = (int_t*)arg;
+	#define argf(i) *(float*)&arg[i]
+	const double* argd = (double*)arg;
 
+	int rtype = type;
+	switch (type) {
+		case TINT8:  case TINT16:  case TINT32:
+		case TUINT8: case TUINT16: case TUINT32: case TUINT64:
+		case TVPTR:   // assert (sizeof(void*) == sizeof(uint64_t))
+		case TSTRING: // type-string == void*
+			rtype = TINT64;
+			break;
+	}
+
+	#define CALL(variables, values) \
+		switch (rtype) { \
+			case TVOID: \
+				((void (*) variables) function) values;\
+				return 1;\
+			case TINT32:\
+				return (ret_t)\
+				((word (*) variables) function) values;\
+			case TFLOAT:\
+				*(float*)&r =\
+				((float(*) variables) function) values;\
+				return r;\
+			case TDOUBLE:\
+				*(double*)&r =\
+				((double(*)variables) function) values;\
+				return r;\
+		}
+
+	switch (fmask) {
+	case 0b1: CALL((), ());
+	// 1
+	case 0b100:
+		CALL((int_t), (argi[ 0]));
+	case 0b110:
+		CALL((float), (argf( 0)));
+	case 0b111:
+		CALL((double),(argd[ 0]));
+
+	// 2
+	case 0b10000:
+		CALL((int_t, int_t),
+		     (argi[ 0], argi[ 1]));
+	case 0b11010:
+		CALL((float, float),
+		     (argf( 0), argf( 1)));
+	case 0b11111:
+		CALL((double, double),
+		     (argd[ 0], argd[ 1]));
+
+	// 3
+	case 0b1000000:
+		CALL((int_t, int_t, int_t),
+		     (argi[ 0], argi[ 1], argi[ 2]));
+	case 0b1101010:
+		CALL((float, float, float),
+		     (argf( 0), argf( 1), argf( 2)));
+	case 0b1111111:
+		CALL((double, double, double),
+		     (argd[ 0], argd[ 1], argd[ 2]));
+
+	// 4
+	case 0b100000000:
+		CALL((int_t, int_t, int_t, int_t),
+		     (argi[ 0], argi[ 1], argi[ 2], argi[ 3]));
+	case 0b110101010:
+		CALL((float, float, float, float),
+		     (argf( 0), argf( 1), argf( 2), argf( 3)));
+	case 0b111111111:
+		CALL((double, double, double, double),
+		     (argd[ 0], argd[ 1], argd[ 2], argd[ 3]));
+
+	default: E("Unsupported parameters count for ffi function");
+		return 0;
+	};
+}
+
+#elif __UINTPTR_MAX__ == 0xffffffffU // includes __mips__, __EMSCRIPTEN__, __powerpc__
 // 	fmask is two-bits width with high bit 1 as a mark
 static
-ret_t wasm32_call(word arg[], int fmask, void* function, int type)
+ret_t x32_call(word arg[], int fmask, void* function, int type)
 {
 	assert(sizeof(int_t) == sizeof(word));
 	assert(sizeof(float) == sizeof(word));
@@ -893,10 +1003,11 @@ ret_t wasm32_call(word arg[], int fmask, void* function, int type)
 	ret_t r;
 	const int_t* argi = (int_t*)arg;
 	const float* argf = (float*)arg;
+	#define argd(i) *(double*)&arg[i]
 
 	int rtype = type;
 	switch (type) {
-		case TINT8: case TINT16: case TINT32:
+		case TINT8: case TINT16: 
 		case TUINT8: case TUINT16: case TUINT32:
 		case TVPTR:   // assert (sizeof(void*) == sizeof(uint32_t))
 		case TSTRING: // type-string == void*
@@ -930,7 +1041,7 @@ ret_t wasm32_call(word arg[], int fmask, void* function, int type)
 	case 0b110:
 		CALL((float), (argf[ 0]));
 	case 0b111:
-		CALL((double),(*(double*)&arg[ 0]));
+		CALL((double),(argd( 0)));
 
 	// 2
 	case 0b10000:
@@ -941,7 +1052,7 @@ ret_t wasm32_call(word arg[], int fmask, void* function, int type)
 		     (argf[ 0], argf[ 1]));
 	case 0b11111:
 		CALL((double,double),
-		     (*(double*)&arg[ 0], *(double*)&arg[ 2]));
+		     (argd( 0), argd( 2)));
 
 	// 3
 	case 0b1000000:
@@ -952,8 +1063,7 @@ ret_t wasm32_call(word arg[], int fmask, void* function, int type)
 		     (argf[ 0], argf[ 1], argf[ 2]));
 	case 0b1111111:
 		CALL((double, double, double),
-		     (*(double*)&arg[ 0], *(double*)&arg[ 2],
-		      *(double*)&arg[ 4]));
+		     (argd( 0), argd( 2), argd( 4)));
 
 	// 4
 	case 0b100000000:
@@ -964,8 +1074,7 @@ ret_t wasm32_call(word arg[], int fmask, void* function, int type)
 		     (argf[ 0], argf[ 1], argf[ 2], argf[ 3]));
 	case 0b111111111:
 		CALL((double, double, double, double),
-		     (*(double*)&arg[ 0], *(double*)&arg[ 2],
-		      *(double*)&arg[ 4], *(double*)&arg[ 6]));
+		     (argd( 0), argd( 2), argd( 4), argd( 6)));
 
 	// 5
 
@@ -976,156 +1085,11 @@ ret_t wasm32_call(word arg[], int fmask, void* function, int type)
 		      *(double*)&arg[ 4], *(double*)&arg[ 6],
 		      *(double*)&arg[ 8], *(double*)&arg[10]));
 
-
-// 	case 0b10:
-// 		return (ret_t)(word)((word (*)  (int_t))
-// 					 function) (args[ 0]);
-
-// 	case 0b100:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t))
-// 		             function) (args[ 0], args[ 1]);
-// 	case 0b111:
-// 		return (ret_t)(word)((word (*)  (float, float))
-// 		             function) ((float)args[ 0], (float)args[ 1]);
-
-// 	case 0b1000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t))
-// 		             function) (args[ 0], args[ 1], args[ 2]);
-// 	case 0b1111:
-// 		return (ret_t)(word)((word (*)  (float, float, float))
-// 		             function) ((float)args[ 0], (float)args[ 1], (float)args[ 2]);
-
-// 	case 0b10000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t))
-// 		             function) (args[ 0], args[ 1], args[ 2], args[ 3]);
-// 	case 0b11111:
-// //		printf("%f/%f/%f/%f\n", *(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
-// 		return (ret_t)(word)((word (*)  (float, float, float, float))
-// 		             function) (*(float*)&args[ 0], *(float*)&args[ 1], *(float*)&args[ 2], *(float*)&args[ 3]);
-// 	case 0b100000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t))
-// 		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
-// 		                        args[ 4]);
-// 	case 0b1000000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t))
-// 		             function) (args[ 0], args[ 1], args[ 2], args[ 3],
-// 		                        args[ 4], args[ 5]);
-// 	case 0b10000000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-// 	                                  int_t))
-// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-// 	                            args[ 4], args[ 5], args[ 6]);
-// 	case 0b100000000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-// 	                                  int_t, int_t))
-// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-// 	                            args[ 4], args[ 5], args[ 6], args[ 7]);
-// 	case 0b1000000000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-// 	                                  int_t, int_t, int_t))
-// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-// 	                            args[ 4], args[ 5], args[ 6], args[ 7],
-// 	                            args[ 8]);
-// 	// 10:
-// 	case 0b10000000000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-// 	                                  int_t, int_t, int_t, int_t))
-// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-// 	                            args[ 4], args[ 5], args[ 6], args[ 7],
-// 	                            args[ 8], args[ 9]);
-// 	case 0b100000000000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-// 	                                  int_t, int_t, int_t, int_t, int_t))
-// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-// 	                            args[ 4], args[ 5], args[ 6], args[ 7],
-// 	                            args[ 8], args[ 9], args[10]);
-// 	case 0b1000000000000:
-// 		return (ret_t)(word)((word (*)  (int_t, int_t, int_t, int_t, int_t, int_t,
-// 	                                  int_t, int_t, int_t, int_t, int_t, int_t))
-// 	                 function) (args[ 0], args[ 1], args[ 2], args[ 3],
-// 	                            args[ 4], args[ 5], args[ 6], args[ 7],
-// 	                            args[ 8], args[ 9], args[10], args[11]);
 	default: E("Unsupported parameters count for ffi function: %d", fmask >> 2);
 		return 0;
 	};
 }
 
-// ------------------------------------------
-#else // other platforms
-
-// http://byteworm.com/2010/10/12/container/ (lambdas in c)
-
-// https://en.wikipedia.org/wiki/X86_calling_conventions
-// x86 conventions: cdecl, syscall(OS/2), optlink(IBM)
-// pascal(OS/2, MsWin 3.x, Delphi), stdcall(Win32),
-// fastcall(ms), vectorcall(ms), safecall(delphi),
-// thiscall(ms)
-
-	// todo: ограничиться количеством функций поменьше
-	//	а можно сделать все в одной switch:
-	// todo: а можно лямбдой оформить и засунуть эту лябмду в функцию еще в get-proc-address
-	// todo: проанализировать частоту количества аргументов и переделать все в
-	//   бинарный if
-
-	// __attribute__((stdcall))
-/*						__stdcall // gcc style for lambdas in pure C
-	int (*stdcall[])(char*) = {
-			({ int $(char *str){ printf("Test: %s\n", str); } $; })
-	};*/
-	// http://www.agner.org/optimize/calling_conventions.pdf
-	#define CALL(conv) \
-		switch (i) {\
-		case  0: return (ret_t)(word)((conv word (*)  ())\
-						 function) ();\
-		case  1: return (ret_t)(word)((conv word (*)  (word))\
-						 function) (args[ 0]);\
-		case  2: return (ret_t)(word)((conv word (*)  (word, word))\
-		                 function) (args[ 0], args[ 1]);\
-		case  3: return (ret_t)(word)((conv word (*)  (word, word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2]);\
-		case  4: return (ret_t)(word)((conv word (*)  (word, word, word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3]);\
-		case  5: return (ret_t)(word)((conv word (*)  (word, word, word, word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                            args[ 4]);\
-		case  6: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                            args[ 4], args[ 5]);\
-		case  7: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-		                                  word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                            args[ 4], args[ 5], args[ 6]);\
-		case  8: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-		                                  word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                            args[ 4], args[ 5], args[ 6], args[ 7]);\
-		case  9: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-		                                  word, word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                            args[ 4], args[ 5], args[ 6], args[ 7],\
-		                            args[ 8]);\
-		case 10: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-		                                  word, word, word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                            args[ 4], args[ 5], args[ 6], args[ 7],\
-		                            args[ 8], args[ 9]);\
-		case 11: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-		                                  word, word, word, word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3],\
-		                            args[ 4], args[ 5], args[ 6], args[ 7],\
-		                            args[ 8], args[ 9], args[10]);\
-		case 12: return (ret_t)(word)((conv word (*)  (word, word, word, word, word, word, \
-		                                  word, word, word, word, word, word))\
-		                 function) (args[ 0], args[ 1], args[ 2], args[ 3], \
-		                            args[ 4], args[ 5], args[ 6], args[ 7], \
-		                            args[ 8], args[ 9], args[10], args[11]);\
-		default: E("Unsupported parameters count for ffi function: %d", i);\
-			return 0;\
-		};
-static
-inline ret_t call_x(word args[], int i, void* function, int type) {
-	CALL();
-}
 #endif
 // -- end of assembly part ------------------------------------------------------------
 // ------------------------------------------------------------------------------------
@@ -2106,7 +2070,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 // static_assert(sizeof(float) <= sizeof(word), "float size should not exceed the word size");
 
 // макросы складывания значений в передаваемые массивы с параметрами
-#if __aarch64__
+#if __aarch64__ // aarch64, m1, etc.
 		// TODO: add api to extend "extra" array or dynamically resize
 		// #define SAVE_ARM64(type, conv, arg) {
 		// 	ALIGN_NSAA(e, type);
@@ -2172,7 +2136,8 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		#define STORE_SERIALIZE(type, conv) \
 			SERIALIZE(&args[i], type, conv) // todo: change to args[i++] and i+=2 for 32-bit
 
-		// floating point handlers
+// ----------------------------------------
+// floating point handlers
 #	if (__x86_64__ && (__unix__ || __APPLE__))
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&ad[d++] = conv(arg); --i;\
@@ -2180,6 +2145,14 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		})
 		#define STORE_D(conv, type, arg) \
 				STORE_F(conv, type, arg)
+#	elif __i386__
+		#define STORE_F(conv, type, arg) ({\
+				*(type*)&args[i] = conv(arg);\
+		})
+		#define STORE_D(conv, type, arg) ({\
+				STORE_F(conv, type, arg);\
+				++i;\
+		})
 #	elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&af[f++] = conv(arg); --i;\
@@ -2188,41 +2161,40 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				STORE_F(conv, type, arg);\
 				++i; f++;\
 		})
-		// WebAssembly
-#	elif __EMSCRIPTEN__
+#	elif __mips64 || __powerpc64__
 		#define STORE_F(conv, type, arg) ({\
+				*(type*)&args[i] = conv(arg);\
 				fpmask |= 0b10;\
-				*(type*)&args[i] = conv(arg);\
 		})
 		#define STORE_D(conv, type, arg) ({\
+				*(type*)&args[i] = conv(arg);\
 				fpmask |= 0b11;\
-				*(type*)&args[i] = conv(arg);\
-				++i;\
 		})
-#	elif __mips__ /* 32-bit mips */
+#	elif __mips__ || __powerpc__ || __EMSCRIPTEN__
 		#define STORE_F(conv, type, arg) ({\
-				i = (i+1)&-2; /*dword align*/\
 				*(type*)&args[i] = conv(arg);\
+				fpmask |= 0b10;\
 		})
 		#define STORE_D(conv, type, arg) ({\
-				STORE_F(conv, type, arg);\
+				*(type*)&args[i] = conv(arg);\
+				fpmask |= 0b11;\
 				++i;\
 		})
 #	else
-		#define STORE_F(conv, type, arg) ({\
-				*(type*)&args[i] = conv(arg);\
-		})
-#		if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__
-		// 32-bits: doubles fills two words
-		#define STORE_D(conv, type, arg) ({\
-			STORE_F(conv, type, arg);\
-			++i;\
-		})
-#		else
-		#define STORE_D(conv, type, arg) ({\
-				STORE_F(conv, type, arg);\
-		})
-#		endif
+// 		#define STORE_F(conv, type, arg) ({\
+// 				*(type*)&args[i] = conv(arg);\
+// 		})
+// #		if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__
+// 		// 32-bits: doubles fills two words
+// 		#define STORE_D(conv, type, arg) ({\
+// 			STORE_F(conv, type, arg);\
+// 			++i;\
+// 		})
+// #		else
+// 		#define STORE_D(conv, type, arg) ({\
+// 				STORE_F(conv, type, arg);\
+// 		})
+// #		endif
 #	endif
 #endif
 
@@ -2234,11 +2206,11 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	heap_t* const heap = (heap_t*) this;
 
 	// a - function address
-	// b - arguments (may be a pair with type in car and argument in cdr - not yet done)
+	// b - arguments (may be a pairs with type in car and argument in cdr)
 	// c - '(return-type . argument-types-list)
 	register word ABC = arguments;
 	word A = car(ABC); ABC = cdr(ABC); // function
-	word B = car(ABC); ABC = cdr(ABC); // rtty, (cons type prototype)
+	word B = car(ABC); ABC = cdr(ABC); // rtti, (cons type prototype)
 	word C = car(ABC); ABC = cdr(ABC); // args, (list arg1 arg2 .. argN)
 
 	assert (is_vptr(A));
@@ -2253,6 +2225,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 
 	// speedup: no argument types AND no arguments
 	if ((cdr(B)|C) == INULL) {
+		// likely
 		if (returntype != TFLOAT && returntype != TDOUBLE)
 			got = ((ret_t (*)())function)();
 		else
@@ -2264,7 +2237,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				*(double*)&got = ((double (*)())function)();
 				break;
 		}
-		fp = heap->fp; // function can call an ol code, so gc() can be called too
+		fp = heap->fp; // function can call an ol code, so gc() may be called too
 		goto handle_got_value;
 	}
 	fp = heap->fp;
@@ -2277,6 +2250,9 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	double ad[24]; // мы тестируем 24, но можно сделать и больше
 	int d = 0;     // количество аргументов для ad
 	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
+	// TODO: add constant fpmaskshift = 1 or 2
+#elif __i386__
+	// nothing special
 
 #elif __aarch64__
 	double ad[8];
@@ -2287,21 +2263,22 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
 	int f = 0;     // количество аргументов для af
 
-#elif __EMSCRIPTEN__
+#else // all rest platforms default floating point handling
+	  // __mips__ || __powerpc__ || __EMSCRIPTEN__ || (__UINTPTR_MAX__ == 0xffffffffU)
 	// двухбитная маска типа аргументов, 16 arguments maximum
-	//	00 - int
-	//	01 - reserved
+	//	00 - word
 	//	10 - float
 	//	11 - double
+	//	01 - reserved
 	// + старший бит-маркер,
 	long fpmask = 1;
 #endif
 
-	size_t words = 64; // ol function call arguments count limitation
+	size_t words = 144; // / sizeof(word); // default ol function call arguments
 	(void) words; // just disable warning
 
+	word* args = alloca(max(words, 8) * sizeof(word)); // GRNC + SA (stacked arguments)
 #if __aarch64__
-	word* args = alloca(max(words, 32) * sizeof(word)); // GRNC + SA (stacked arguments)
 	#define GRNC 8 // General-purpose Register Number Count
 	#define FRNC 8 // Floating-point Register Number Count
 
@@ -2310,19 +2287,18 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	int e = 0; // указатель на стековые данные (used in STORE_STCK())
 # endif
 #else
-	word* args = alloca(max(words, 16) * sizeof(word)); // minimual 16 words for arguments
 	#define GRNC 6
 #endif
 
 	// ==============================================
 	// 2. prepare arguments to push
-	word* p = (word*)C;   // ol arguments
+	word* p = (word*)C;  // ol arguments
 	word* t = (word*)cdr (B); // rtty
 	int writeback = 0; // has write-back in arguments (code speedup)
 
 	int i = 0;  // актуальное количество аргументов
 #if (__x86_64__ && (__unix__ || __APPLE__))
-	int l = 0;  // нижняя граница для параметров больших структур (linux and inttel mac)
+	int l = 0;  // нижняя граница для параметров больших структур (linux and intel mac)
 #endif
 
 	// special case of returning a structure by value
@@ -2360,9 +2336,11 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 #endif
 
 		// подготовим маску к следующему аргументу
-#if (__x86_64__ && (__unix__ || __APPLE__)) // LP64, but without arm64
+#if (__x86_64__ && (__unix__ || __APPLE__))
 		fpmask <<= 1;
-#elif __EMSCRIPTEN__
+#elif __i386__ || __aarch64__ || __ARM_EABI__
+		// nothing special
+#else   // __mips__ || __powerpc__ || __EMSCRIPTEN__ || (__UINTPTR_MAX__ == 0xffffffffU)
 		fpmask <<= 2;
 #endif
 
@@ -2430,11 +2408,11 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			// -------------------
 			// с плавающей запятой:
 			case TFLOAT:
-				STORE_F(OL2F, float, arg);  // check mips32: is "i = (i+1)&-2" alignment needed for float
+				STORE_F(OL2F, float, arg);
 				break;
 			case TDOUBLE:
 			tdouble:
-				STORE_D(OL2D, double, arg); // already mips-ready
+				STORE_D(OL2D, double, arg);
 				break;
 
 			// bool
@@ -2477,6 +2455,8 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				case TSYMBOL: {
 					goto tstring;
 				}
+
+				// inexact numbers - as doubles (maximize precision)
 				case TINEXACT:
 					goto tdouble;
 
@@ -2915,71 +2895,47 @@ next_argument:
 		size_t pin = OLVM_pin(this, arguments);
 		heap->fp = fp; // сохраним, так как в xxx_call() могут быть вызваны коллейблы, и они попортят fp
 
-#if  __x86_64__
-# if _WIN64
-		got = win64_call(args, i, function, returntype & 0x3F);
-# endif
-# if __unix__ || __linux__ || __APPLE__ // System V (unix, linux, osx)
-		got = nix64_call(args, ad, max(i, l), d, fpmask, function, returntype & 0x3F);
-# endif
+		// ------------------------------------
+		#if  __x86_64__
+		# if _WIN64
+			got = win64_call(args, i, function, returntype & 0x3F);
+		# endif
+		# if __unix__ || __linux__ || __APPLE__ // System V (unix, linux, osx)
+			got = nix64_call(args, ad, max(i, l), d, fpmask, function, returntype & 0x3F);
+		# endif
+		// ------------------------------------
+		#elif __i386__
+			// cdecl and stdcall in our case are same, so...
+			got = x86_call(args, i, function, returntype & 0x3F);
+		// ------------------------------------
+		#elif __aarch64__
+		# if __APPLE__ // m1 .. mN
+			i += WORDS(e);
+		# endif
+			got = arm64_call(args, ad, i, d, NULL, function, returntype & 0x3F, 0);
+		// ------------------------------------
+		#elif __arm__
+			// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
+		# ifndef __ARM_PCS_VFP
+			got = arm32_call(args, i, function);
+		# else // (?)
+			got = arm32_call(args, NULL,
+	        	i, 0,
+	        	function, returntype & 0x3F); //(?)
+		# endif
+		// ------------------------------------
+		#elif __UINTPTR_MAX__ == 0xffffffffffffffffU
+			// any x64 platform
+			got = x64_call(args, fpmask, function, returntype & 0x3F);
+		#elif __UINTPTR_MAX__ == 0xffffffffU
+			// any x32 platform
+			got = x32_call(args, fpmask, function, returntype & 0x3F);
+		#else
+			assert ("Unsupported platform" && 0);
+			got = 0;
+		#endif
+		// ------------------------------------
 
-#elif __i386__
-		// cdecl and stdcall in our case are same, so...
-		got = x86_call(args, i, function, returntype & 0x3F);
-
-#elif __aarch64__
-# if __APPLE__ // M1 .. MN
-		i += WORDS(e);
-# endif
-		got = arm64_call(args, ad, i, d, NULL, function, returntype & 0x3F, 0);
-
-#elif __arm__
-	// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
-#	ifndef __ARM_PCS_VFP
-		got = arm32_call(args, i, function);
-#	else // (?)
-		got = arm32_call(args, NULL,
-	        i, 0,
-	        function, returntype & 0x3F); //(?)
-#	endif
-
-#elif __mips__
-		got = mips32_call(args, i, function, returntype & 0x3F);
-
-#elif __EMSCRIPTEN__
-		// todo: handle 64-bit calls
-		got = wasm32_call(args, fpmask, function, returntype & 0x3F);
-
-#elif __sparc64__
-		got = call_x(args, i, function, returntype & 0x3F);
-
-#else // ALL other
-		got = call_x(args, i, function, returntype & 0x3F);
-
-/*	inline ret_t call_cdecl(word args[], int i, void* function, int type) {
-		CALL(__cdecl);
-	}
-	inline ret_t call_stdcall(word args[], int i, void* function, int type) {
-		CALL(__stdcall);
-	}
-
-	switch (returntype >> 6) {
-	case 0:
-	case 1:
-		got = call_cdecl(args, i, function, returntype & 0x3F);
-		break;
-	case 2:
-		got = call_stdcall(args, i, function, returntype & 0x3F);
-		break;
-	// FASTCALL: (3)
-	case 3:
-	// THISCALL: (4)
-	// ...
-	default:
-		E("Unsupported calling convention %d", returntype >> 6);
-		break;
-	}*/
-#endif
 		// где гарантия, что C и B не поменялись? нет такой
 		fp = heap->fp;
 		arguments = OLVM_unpin(this, pin);
