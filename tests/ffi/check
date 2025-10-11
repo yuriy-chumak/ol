@@ -15,6 +15,11 @@ ffi-tests-native:
 # enable as part of regression testing
 regression-tests: ffi-tests
 
+ffi-tests: ol
+ffi-tests: tests/ffi/src.inc
+tests/ffi/src.inc: tests/ffi/src.inc.generator
+	ol --home=libraries:tests/ffi $< >$@
+
 # ============================================================
 # -- ffi binaries --------------------------------------------
 

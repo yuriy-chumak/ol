@@ -2153,6 +2153,13 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				STORE_F(conv, type, arg);\
 				++i;\
 		})
+#	elif _WIN32 // win64
+		#define STORE_F(conv, type, arg) ({\
+				*(type*)&args[i] = conv(arg);\
+		})
+		#define STORE_D(conv, type, arg) ({\
+				STORE_F(conv, type, arg);\
+		})
 #	elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&af[f++] = conv(arg); --i;\
@@ -2161,7 +2168,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				STORE_F(conv, type, arg);\
 				++i; f++;\
 		})
-#	elif __mips64 || __powerpc64__
+#	elif __UINTPTR_MAX__ == 0xffffffffffffffffU // __mips64 || __powerpc64__
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
 				fpmask |= 0b10;\
@@ -2170,7 +2177,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				*(type*)&args[i] = conv(arg);\
 				fpmask |= 0b11;\
 		})
-#	elif __mips__ || __powerpc__ || __EMSCRIPTEN__
+#	elif __UINTPTR_MAX__ == 0xffffffffU //__mips__ || __powerpc__ || __EMSCRIPTEN__
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
 				fpmask |= 0b10;\
@@ -2180,21 +2187,6 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				fpmask |= 0b11;\
 				++i;\
 		})
-#	else
-// 		#define STORE_F(conv, type, arg) ({\
-// 				*(type*)&args[i] = conv(arg);\
-// 		})
-// #		if __SIZEOF_DOUBLE__ > __SIZEOF_PTRDIFF_T__
-// 		// 32-bits: doubles fills two words
-// 		#define STORE_D(conv, type, arg) ({\
-// 			STORE_F(conv, type, arg);\
-// 			++i;\
-// 		})
-// #		else
-// 		#define STORE_D(conv, type, arg) ({\
-// 				STORE_F(conv, type, arg);\
-// 		})
-// #		endif
 #	endif
 #endif
 
@@ -2338,7 +2330,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		// подготовим маску к следующему аргументу
 #if (__x86_64__ && (__unix__ || __APPLE__))
 		fpmask <<= 1;
-#elif __i386__ || __aarch64__ || __ARM_EABI__
+#elif __i386__ || __aarch64__ || __ARM_EABI__ || _WIN32
 		// nothing special
 #else   // __mips__ || __powerpc__ || __EMSCRIPTEN__ || (__UINTPTR_MAX__ == 0xffffffffU)
 		fpmask <<= 2;
