@@ -23,7 +23,7 @@
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a>
 
 
-Otus Lisp, Version 2.6
+Otus Lisp
 ======================
 Otus Lisp (Ol in short) is a purely functional, multi-platform Lisp dialect with built-in FFI, regular expressions and infix math notation support.
 
@@ -45,10 +45,18 @@ and directly in the web browsers (in WebAssembly form).
 
 credits to
 ----------
+Aki Helin ([Owl Lisp](https://gitlab.com/owl-lisp/owl) author),
 [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests),
 [nullscm](https://github.com/nullscm) (usage, tests),
 Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
+
+
+Versions
+--------
+
+Version **2.6** is stable.  
+Version **2.7** is in beta state. It is planned for release by the end of this year (2025).
 
 
 Test Matrix
