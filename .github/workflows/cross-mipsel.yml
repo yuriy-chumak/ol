@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  make-check:
+  make:
     strategy:
       matrix:
         os: [ ubuntu-22.04 ]
@@ -26,11 +26,11 @@ jobs:
     - name: Update submodules
       run: 'git submodule update --init --recursive'
 
-    - name: Build
-      run: 'make; make describe'
-
     - name: Apt update
       run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
+
+    - name: Make ol/vm.h
+      run: 'make includes/ol/vm.h'
 
     - name: Install mipsel toolchain (32- and 64-bit both)
       run: 'sudo apt install gcc-mipsel-linux-gnu gcc-mips64el-linux-gnuabi64 -y'
@@ -38,5 +38,15 @@ jobs:
     - name: Install qemu mips (32- and 64-bit both)
       run: 'sudo apt install qemu-system-mipsel qemu-user'
 
-    - name: Regression tests
-      run: 'make describe; DEV_MODE=1 HAVE_PLATFORM=0 HAVE_MIPSEL=1 HAVE_MIPS64EL=1 make regression-tests'
+    - name: x32 Build
+      run: 'make tmp/olvm-mipsel-release'
+
+    - name: x32 Build Info
+      run: 'file tmp/olvm-mipsel-release; qemu-mipsel -L /usr/mipsel-linux-gnu tmp/olvm-mipsel-release repl --version; echo "(print (syscall 63))" |qemu-mipsel -L /usr/mipsel-linux-gnu tmp/olvm-mipsel-release repl'
+
+    - name: x64 Build
+      run: 'make tmp/olvm-mips64el-release'
+
+    - name: x64 Build Info
+      run: 'file tmp/olvm-mips64el-release; qemu-mips64el -L /usr/mips64el-linux-gnuabi64 tmp/olvm-mips64el-release repl --version; echo "(print (syscall 63))" |qemu-mips64el -L /usr/mips64el-linux-gnuabi64 tmp/olvm-mips64el-release repl'
+

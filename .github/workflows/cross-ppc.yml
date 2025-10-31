@@ -49,3 +49,4 @@ jobs:
 
     - name: x64 Build Info
       run: 'file tmp/olvm-ppc64-release; qemu-ppc64 -L /usr/powerpc64-linux-gnu tmp/olvm-ppc64-release repl --version; echo "(print (syscall 63))" |qemu-ppc64 -L /usr/powerpc64-linux-gnu tmp/olvm-ppc64-release repl'
+
