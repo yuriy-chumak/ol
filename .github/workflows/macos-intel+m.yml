@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  make-check:
+  make:
     strategy:
       matrix:
         os: [ macos-13, macos-latest ] # intel, m1
@@ -24,7 +24,7 @@ jobs:
       run: 'git submodule update --init --recursive'
 
     - name: Build
-      run: 'make; make describe'
+      run: 'make'
 
-    - name: Regression tests
-      run: 'make describe; make check'
+    - name: Build Info
+      run: 'file ol; make describe'

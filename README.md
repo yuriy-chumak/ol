@@ -6,26 +6,39 @@
       ---"-"---     functional!
   O t u s   L i s p
 ```
-*Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
 
-[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86%2Fx64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-x86+x64.yml)
-[![Github build linux status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-aarch64.yml)
+[![linux x86 status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86%2Fx64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-x86+x64.yml)
+[![linux aarch64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-aarch64.yml)
 [![linux mips 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml)
 [![linux mipsel 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml)
 [![linux ppc 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml)
 [![linux ppcle 64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle.yml)
-[![macos intel/mN](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml)
+[![macos intel/m](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml)
 [![win(e) 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
-<br/>
-<a href="https://yuriy-chumak.github.io/ol/"><img src="https://yuriy-chumak.github.io/ol/assets/view-project-page.svg"></a>
 
+<a href="https://iaaa.port0.org/ol/test-matrix/"><img align="right" style="margin: 10px; " src="doc/img/test-matrix.png"></a>
+
+Every code change is automatically tested for regressions using github actions and our own test machine.
+It includes a set of core language [test suite](tests/), rosettacode [examples](tests/rosettacode/), ffi [tests](tests/ffi), and [language functions reference](doc/reference/README.md) examples.
+
+Github actions results are provided as badges above.  
+A test matrix with the results of each test for different platforms is available as a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (github doesn't allow javascript to be included in the readme, so you can follow the link or just click the preview image to open it).
+* [Q/A](#q-a)
+
+Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
+Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available.
+[The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
+
+<br/>
 <a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a>
 <a href="https://twitter.com/otus_lisp"><img align="right" src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20%40otus_lisp"></a>
+<a href="https://yuriy-chumak.github.io/ol/"><img align="right" src="https://yuriy-chumak.github.io/ol/assets/view-project-page.svg"></a>
 
 
-Otus Lisp
-======================
-Otus Lisp (Ol in short) is a purely functional, multi-platform Lisp dialect with built-in FFI, regular expressions and infix math notation support.
+# OTUS LISP
+Otus Lisp (Ol in short) is a purely functional, multi-platform
+Lisp dialect with built-in FFI, regular expressions, and infix
+math notation support.
 
 Ol implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
@@ -39,64 +52,33 @@ You can use Ol on Linux, Windows, macOS, Android, Chromebook*,
 on various hardware architectures (x86, arm, ppc, mips, etc.),
 and directly in the web browsers (in WebAssembly form).
 
-* [TOC](#table-of-contents)
-* [Otus Lisp Language Reference](doc/reference/README.md)
-* [FFI Examples](#ffi)
 
-credits to
-----------
-Aki Helin ([Owl Lisp](https://gitlab.com/owl-lisp/owl) author),
+### credits to
+Aki Helin ([Owl Lisp](https://gitlab.com/owl-lisp/owl) author), that gave birth to Otus Lisp,  
 [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests),
 [nullscm](https://github.com/nullscm) (usage, tests),
 Odysseus (tests, ideas, math corrections),
 mt (tests, ideas).
 
-
-Versions
---------
-
-Version **2.6** is stable.  
-Version **2.7** is in beta state. It is planned for release by the end of this year (2025).
-
-
-Test Matrix
------------
-<a href="https://iaaa.port0.org/ol/test-matrix/"><img align="right" style="margin: 10px; " src="https://i.ibb.co/397jRs0G/image.png"></a>
-
-Every code change is automatically tested for regressions using github actions and our own test machine.
-It includes pack of core language [test suite](tests/), rosettacode [examples](tests/rosettacode/), ffi [tests](tests/ffi), and examples from the [list of language functions](doc/reference/README.md).
-
-Github actions results are provided as badges in the header. A test matrix with the results of each test for different platforms is available as a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (github doesn't allow javascript to be included in the readme, so you can follow the link or just click the preview image to open it).
+### additional readings
+* [Ol Language Reference](doc/reference/README.md)
+* [Ol vs R<sup>7</sup>RS](doc/R7RS-DIFFERENCES.md)
+* [FFI for Advanced Devs](extensions/FFI.md)
+* [Ol Infix Math](doc/reference/infix-notation.md)
+* [CHANGELOG](doc/CHANGELOG.md)
 
 
-Breaking changes (master branch), as part of Ol 2.7 preparation
----------------------------------------------------------------
-The following breaking changes have been added to the master branch as part of 2.7 version preparation:
-* ❗ internal type names are changed (type codes are NOT changed).  
-  please, don't use internal type names in your code, use predicates instead
-  * `type-string-displatch` type name changed to `type-superstring` (the old name caused confusing)️
-    * you shoud use `string?` predicate to check the string,
-    * if you want to use older name, add `(define type-string-displatch type-superstring)` as compat layer
-  * `type-enum+` changed to `type-value+` (accent on integer as a value)
-  * `type-enum-` changed to `type-value-` (same)
-  * `type-int+` changed to `type-integer+` (the fewer name trancations, the better)
-  * `type-int-` changed to `type-integer-` (same)
-* ❗ `values` with an empty argument list now returns *#false* instead of the string "no vals"
-* ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()*
-  but simply *#false* if nothing was returned
-  * use the "RETURNING" statement with INSERT and UPDATE if you want to return something.
-* ❗ Welcome invitation changed
-* ❗ `procedure?` made r7rs compatible (will now return *#false* for ff's)
-* ❗ arity errors changed (made more clear and descriptive)
+# VERSIONS
+Current version is **[2.6](tree/2.6)**.  
+Version **2.7** is in beta state. It is planned for release by the end of this (2025) year.
 
-PACKAGING
----------
 
+# PACKAGING
 [![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
 [![Packaging status](https://repology.org/badge/tiny-repos/ol.svg)](https://repology.org/project/ol/versions)
 [![latest packaged version(s)](https://repology.org/badge/latest-versions/ol.svg)](https://repology.org/project/ol/versions)
 
-* Ubuntu (and it's descendants such as Mint, Pop!_OS, Xubuntu, etc.) users may use the official [project ppa](https://launchpad.net/~yuriy-chumak/+archive/ubuntu/ol).
+* Ubuntu (and it's descendants such as Mint, Pop!_OS, Xubuntu, etc.) users may use the official [project ppa](https://launchpad.net/~yuriy-chumak/+archive/ubuntu/ol) as:
   ```shell
   $ sudo add-apt-repository ppa:yuriy-chumak/ol
   $ sudo apt update
@@ -108,16 +90,15 @@ PACKAGING
 Some additional libraries can be installed using 'kiss' package manager. Instructions available at [**ol-packages** repository](https://github.com/yuriy-chumak/ol-packages).
 
 
-Q/A
----
+# Q/A
 
 1. Q. Some folders **are empty** (i.e. "libraries/OpenGL"), is it ok?  
    A. Yes, it's ok. Some parts of Ol project are separated into their own independent repositories.  
       Use `git clone --recursive` to get a full project. Or `git submodule init; git submodule update` to update existing one.
 
-1. Q. Why no **arrow keys** processing and a history in Ol command line?  
-   A. For the gods of simplicity. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
-      (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and run as just `ol`).
+1. Q. Why doesn't the Ol command line handle **arrow keys** and history?
+   A. For the gods of simplicity. Use an external tool to such behaviour. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
+      (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and then run as just `ol`).
 
 1. Q. *.. **fatal error**: stdlib.h: No such file or directory.*  
    Q. *.. **fatal error**: bits/libc-header-start.h: No such file or directory.*  
@@ -166,34 +147,64 @@ Q/A
    ```
 
 
-Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
-Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available (the previous Freenode channel is closed).
+Breaking changes (master branch), as part of Ol 2.7 preparation
+===============================================================
+The following breaking changes have been added to the master branch as part of 2.7 version preparation:
+* ❗ internal type names are changed (type codes are NOT changed).  
+  please, don't use internal type names in your code, use predicates instead
+  * `type-string-displatch` type name changed to `type-superstring` (the old name caused confusing)️
+    * you shoud use `string?` predicate to check the string,
+    * if you want to use older name, add `(define type-string-displatch type-superstring)` as compat layer
+  * `type-enum+` changed to `type-value+` (accent on integer as a value)
+  * `type-enum-` changed to `type-value-` (same)
+  * `type-int+` changed to `type-integer+` (the fewer name trancations, the better)
+  * `type-int-` changed to `type-integer-` (same)
+* ❗ `values` with an empty argument list now returns *#false* instead of the string "no vals"
+* ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()*
+  but simply *#false* if nothing was returned
+  * use the "RETURNING" statement with INSERT and UPDATE if you want to return something.
+* ❗ Welcome invitation changed
+* ❗ `procedure?` made r7rs compatible (will now return *#false* for ff's)
+* ❗ arity errors changed (made more clear and descriptive)
 
-[The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
+R<sup>7</sup>RS DIFFERENCES
+===========================
 
-TABLE OF CONTENTS
------------------
-1. [Packaging](#packaging)
-1. [Build/Run/Install](#build--run--install)
-   * [Advanced](doc/BUILD.md)
-   * [Cross-Compilation](doc/CROSS-COMPILATION.md)
-   * [Embedding](#embedding-ol)
-1. [Running](#running)
-1. [Language Reference](doc/reference/README.md)
-   * [R<sup>7</sup>RS Differences](#r7rs-differences)
-   * [Samples, Tests, Learning](#learning)
-   * [Deprecations](#deprecations)
-1. [FFI](#ffi)
-   * [Advanced](extensions/FFI.md)
-1. [Hacking](#hacking)
-1. [Lisp sources in binary form](#binary-scripts)
-1. [Files](#files), [Docs](#documentation)
-1. [License](#license)
+The most important differences are:
+
+* Ol is definitely **case sensitive**.
+* Numbers WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
+  - `integer?` for inexact numbers always returns **#false** in Ol.
+  - note: Use `inexact` function to convert number into inexact form, or prefix number with `#i` directly (like `#i0.123` for inexact 0.123).
+* **No** `set!` in Ol (Ol is purely functional!),
+  - note: Use `define`, `define-values`, `let`, `let*`, `letrec`, and `letrec*` instead.
+  - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions [are provided](doc/reference/pairs-and-lists.md#set-car), but is not recommended to be used.
+  - note: Inexact numbers can be changed with `vm:set!`, but is not recommended to be used.
+  - note: Dynamic variables are available via `(scheme dynamic-bindings)` [library](doc/reference/dynamic-bindings.md).
+* CHARACTERS in Ol are **small numbers** (aka 'value+'), but special *character* type in Scheme.
+  - note: Ol supports the full Unicode 15.0.0 (2022 Sep 13) character set.
+  - note: To write a character use `write-char`, otherwise you'll write a number.
+* NEGATIVE indices in `substring` are **valid** in Ol (means "from the end of string", -1 means a last *rune*).
+* NEGATIVE vector indices are **valid** in Ol (means "from the end of vector", -1 means a last element).
+* Ol has **extended form** of `case` (with vectors support),
+* Ol has **extended form** of `if` (with `then` and `else` [keywords](doc/reference/)),
+* Ol has **builtin dictionary** numeric and symbolic keys (the [reference](doc/reference/ffs.md) page),
+* Ol has builtin **regular expressions** (the [reference](doc/reference/regex.md) page),
+* Ol has an awfully **powerful macro system** in addition to Scheme's hygienic one (a brief [notes and examples](doc/reference/macros.md)).
+* `apply` arguments count is **limited to 249** in Ol (use a `fold` otherwise).
+
+The nearly full differences list can be found in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
+
+### Supported SRFI
+* srfi-0 - `cond-expand`, builtin
+* srfi-16 - `case-lambda`, builtin
+* srfi-71 - `(let* ((a b (values..`, builtin
+* srfi-87 - `<=` in `case`, builtin
 
 
 BUILD / RUN / INSTALL
----------------------
+=====================
 
 #### BUILD REQUIREMENTS
 
@@ -234,17 +245,8 @@ $ sudo make uninstall
 ```
 
 
-CHANGELOG
----------
-
-[doc/CHANGELOG.md](doc/CHANGELOG.md)
-<a href="https://twitter.com/otus_lisp"><img align="right"
-src="https://img.shields.io/twitter/url/https/twitter.com/otus_lisp.svg?style=social&label=Follow%20the%20%40otus_lisp%20development%20process%20on%20Twitter"
-alt="Follow the @otus_lisp development process on Twitter."></a>
-
-
 LEARNING
---------
+========
 
 The Otus Lisp language is based on [Scheme R<sup>7</sup>RS](https://small.r7rs.org/) ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)) with minor changes and useful extensions.
 
@@ -268,41 +270,6 @@ Additionally,
 * "Newton dynamics" sample demonstrates extended native libraries usage (the [newton-dynamics](http://newtondynamics.com), physical simulation engine) with callbacks (C to Lisp automatic translation) - https://github.com/yuriy-chumak/ol/tree/master/examples/Newton.
 You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton-dynamics) core library.  
   !["newton" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/newton.png)
-
-
-R<sup>7</sup>RS DIFFERENCES
----------------------------
-
-The most important differences are:
-
-* Ol is definitely **case sensitive**.
-* Numbers WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
-  - `integer?` for inexact numbers always returns **#false** in Ol.
-  - note: Use `inexact` function to convert number into inexact form, or prefix number with `#i` directly (like `#i0.123` for inexact 0.123).
-* **No** `set!` in Ol (Ol is purely functional!),
-  - note: Use `define`, `define-values`, `let`, `let*`, `letrec`, and `letrec*` instead.
-  - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions [are provided](doc/reference/pairs-and-lists.md#set-car), but is not recommended to be used.
-  - note: Inexact numbers can be changed with `vm:set!`, but is not recommended to be used.
-  - note: Dynamic variables are available via `(scheme dynamic-bindings)` [library](doc/reference/dynamic-bindings.md).
-* CHARACTERS in Ol are **small numbers** (aka 'value+'), but special *character* type in Scheme.
-  - note: Ol supports the full Unicode 15.0.0 (2022 Sep 13) character set.
-  - note: To write a character use `write-char`, otherwise you'll write a number.
-* NEGATIVE indices in `substring` are **valid** in Ol (means "from the end of string", -1 means a last *rune*).
-* NEGATIVE vector indices are **valid** in Ol (means "from the end of vector", -1 means a last element).
-* Ol has **extended form** of `case` (with vectors support),
-* Ol has **extended form** of `if` (with `then` and `else` [keywords](doc/reference/)),
-* Ol has **builtin dictionary** numeric and symbolic keys (the [reference](doc/reference/ffs.md) page),
-* Ol has builtin **regular expressions** (the [reference](doc/reference/regex.md) page),
-* Ol has an awfully **powerful macro system** in addition to Scheme's hygienic one (a brief [notes and examples](doc/reference/macros.md)).
-* `apply` arguments count is **limited to 249** in Ol (use a `fold` otherwise).
-
-The nearly full differences list can be found in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
-
-### Supported SRFI
-* srfi-0 - `cond-expand`, builtin
-* srfi-16 - `case-lambda`, builtin
-* srfi-71 - `(let* ((a b (values..`, builtin
-* srfi-87 - `<=` in `case`, builtin
 
 
 DEPRECATIONS

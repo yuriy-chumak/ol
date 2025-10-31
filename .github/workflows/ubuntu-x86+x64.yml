@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  make-check:
+  make:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
@@ -23,8 +23,11 @@ jobs:
     - name: Update submodules
       run: 'git submodule update --init --recursive'
 
-    - name: Build
-      run: 'make; make describe'
+    - name: x64 Build
+      run: 'make release'
+
+    - name: x64 Build Info
+      run: file ol; make describe
 
     - name: Apt update
       run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
@@ -32,5 +35,11 @@ jobs:
     - name: Install gcc-multilib (add 32-bit support)
       run: 'sudo apt install gcc-multilib -y'
 
-    - name: Regression tests
-      run: 'make describe; make check'
+    - name: Clean
+      run: 'make clean'
+
+    - name: x32 Build
+      run: 'CFLAGS=-m32 make'
+
+    - name: x32 Build Info
+      run: file ol; make describe

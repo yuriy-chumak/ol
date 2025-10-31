@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  make-check:
+  make:
     strategy:
       matrix:
         os: [ ubuntu-latest ]
@@ -23,14 +23,17 @@ jobs:
     - name: Update submodules
       run: 'git submodule update --init --recursive'
 
-    - name: Build
-      run: 'make; make describe'
-
     - name: Apt update
       run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Install MinGW toolchain
       run: 'sudo apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 -y'
+
+    - name: x32 Build
+      run: 'make ol32.exe'
+
+    - name: x64 Build
+      run: 'make ol64.exe'
 
     - name: Install 32-bit subsystem
       run: 'sudo dpkg --add-architecture i386; sudo apt update'
@@ -44,5 +47,8 @@ jobs:
     - name: Create wine prefix
       run: 'wine cmd /c echo Wine environment created for %PROCESSOR_IDENTIFIER%'
 
-    - name: Regression tests
-      run: 'make describe; DEV_MODE=1 HAVE_PLATFORM=0 DISPLAY=:0.0 make check'
+    - name: x32 Build Info
+      run: 'file ol32.exe; DISPLAY=:0.0 wine ol32.exe --version; echo "(print (syscall 63))" |DISPLAY=:0.0 wine ol32.exe'
+
+    - name: x64 Build Info
+      run: 'file ol64.exe; DISPLAY=:0.0 wine ol64.exe --version; echo "(print (syscall 63))" |DISPLAY=:0.0 wine ol64.exe'
