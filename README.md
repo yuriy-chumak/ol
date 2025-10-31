@@ -19,11 +19,11 @@
 <a href="https://iaaa.port0.org/ol/test-matrix/"><img align="right" style="margin: 10px; " src="doc/img/test-matrix.png"></a>
 
 Every code change is automatically tested for regressions using github actions and our own test machine.
-It includes a set of core language [test suite](tests/), rosettacode [examples](tests/rosettacode/), ffi [tests](tests/ffi), and [language functions reference](doc/reference/README.md) examples.
+It includes a set of core language [test suite](tests/), rosettacode [examples](tests/rosettacode/), [ffi tests](tests/ffi), and [language functions reference](doc/reference/README.md) examples.
 
 Github actions results are provided as badges above.  
 A test matrix with the results of each test for different platforms is available as a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (github doesn't allow javascript to be included in the readme, so you can follow the link or just click the preview image to open it).
-* [Q/A](#q-a)
+* [Q/A](#qa)
 
 Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
 Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available.
@@ -92,13 +92,13 @@ Some additional libraries can be installed using 'kiss' package manager. Instruc
 
 # Q/A
 
+1. Q. Why doesn't the Ol command line handle **arrow keys** and history?  
+   A. For the gods of simplicity. Use an external tool to such behaviour. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
+      (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and then run as just `ol`).
+
 1. Q. Some folders **are empty** (i.e. "libraries/OpenGL"), is it ok?  
    A. Yes, it's ok. Some parts of Ol project are separated into their own independent repositories.  
       Use `git clone --recursive` to get a full project. Or `git submodule init; git submodule update` to update existing one.
-
-1. Q. Why doesn't the Ol command line handle **arrow keys** and history?
-   A. For the gods of simplicity. Use an external tool to such behaviour. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
-      (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and then run as just `ol`).
 
 1. Q. *.. **fatal error**: stdlib.h: No such file or directory.*  
    Q. *.. **fatal error**: bits/libc-header-start.h: No such file or directory.*  
@@ -107,7 +107,7 @@ Some additional libraries can be installed using 'kiss' package manager. Instruc
       * `apk add musl-dev` for alpine-based,
       * etc.
 
-1. Q. */usr/include/linux/errno.h:1:10: fatal error: asm/errno.h: No such file or directory*
+1. Q. */usr/include/linux/errno.h:1:10: fatal error: asm/errno.h: No such file or directory*  
    A. Install `linux-libc-dev:i386`
 
 1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
