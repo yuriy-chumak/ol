@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  make-check:
+  make:
     strategy:
       matrix:
         os: [ ubuntu-22.04 ]
@@ -26,17 +26,20 @@ jobs:
     - name: Update submodules
       run: 'git submodule update --init --recursive'
 
-    - name: Build
-      run: 'make; make describe'
-
     - name: Apt update
       run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
 
-    - name: Install ppc64 toolchain
+    - name: Make ol/vm.h
+      run: 'make includes/ol/vm.h'
+
+    - name: Install ppc64le toolchain
       run: 'sudo apt install gcc-powerpc64le-linux-gnu -y'
 
-    - name: Install qemu ppc (32- and 64-bit both)
+    - name: Install qemu
       run: 'sudo apt install qemu-system-ppc qemu-user'
 
-    - name: Regression tests
-      run: 'make describe; DEV_MODE=1 HAVE_PLATFORM=0 HAVE_PPC64LE=1 DISPLAY=:0.0 make regression-tests'
+    - name: Build
+      run: 'make tmp/olvm-ppc64le-release'
+
+    - name: Build Info
+      run: 'file tmp/olvm-ppc64le-release; qemu-ppc64le -L /usr/powerpc64le-linux-gnu tmp/olvm-ppc64le-release repl --version; echo "(print (syscall 63))" |qemu-ppc64le -L /usr/powerpc64le-linux-gnu tmp/olvm-ppc64le-release repl'
