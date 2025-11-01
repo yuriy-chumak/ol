@@ -23,11 +23,11 @@ It includes a set of core language [test suite](tests/), rosettacode [examples](
 
 Github actions results are provided as badges above.  
 A test matrix with the results of each test for different platforms is available as a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (github doesn't allow javascript to be included in the readme, so you can follow the link or just click the preview image to open it).
-* [Q/A](#qa)
 
-Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
-Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available.
-[The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
+### ✨ Note
+* Please see the frequently asked questions and answers in the [Q/A](#qa) section. This may prove important!
+* Scheme R<sup>7</sup>RS vs Ol [topic](#r7rs-differences) may be interested too.
+
 
 <br/>
 <a href="https://mastodon.social/@otus_lisp"><img align="right" src="https://img.shields.io/mastodon/follow/111901537687270934"></a>
@@ -52,13 +52,16 @@ You can use Ol on Linux, Windows, macOS, Android, Chromebook*,
 on various hardware architectures (x86, arm, ppc, mips, etc.),
 and directly in the web browsers (in WebAssembly form).
 
+* 64KB is a typical size of the Otus Lisp Virtual Machine (olvm) binary and may vary across platforms.
+  Olvm can run compiled Ol code standalone or in embedded form.
+* The typical size of Ol with FFI and Compiler is 480KB (less than a megabyte. cool, huh?).
 
 ### credits to
-Aki Helin ([Owl Lisp](https://gitlab.com/owl-lisp/owl) author), that gave birth to Otus Lisp,  
-[the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (ideas, usage, lot of tests),
-[nullscm](https://github.com/nullscm) (usage, tests),
-Odysseus (tests, ideas, math corrections),
-mt (tests, ideas).
+Aki Helin (author of [Owl Lisp](https://gitlab.com/owl-lisp/owl), the project that gave birth to Otus Lisp),  
+[the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (for ideas, usage, and lot of tests),
+[nullscm](https://github.com/nullscm) (for usage and tests),
+Odysseus (for tests, ideas, and math corrections),
+mt (for tests and ideas).
 
 ### additional readings
 * [Ol Language Reference](doc/reference/README.md)
@@ -67,6 +70,9 @@ mt (tests, ideas).
 * [Ol Infix Math](doc/reference/infix-notation.md)
 * [CHANGELOG](doc/CHANGELOG.md)
 
+Join the online [gitter.im chat](https://gitter.im/otus-lisp/Lobby).
+Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (alternate [lightweight](https://web.libera.chat/gamja/#otus-lisp) web-client) channel is available.
+[The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
 # VERSIONS
 Current version is **[2.6](tree/2.6)**.  
@@ -92,59 +98,67 @@ Some additional libraries can be installed using 'kiss' package manager. Instruc
 
 # Q/A
 
-1. Q. Why doesn't the Ol command line handle **arrow keys** and history?  
-   A. For the gods of simplicity. Use an external tool to such behaviour. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
-      (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and then run as just `ol`).
+* Otus Lisp
+   1. Q. Why doesn't the Ol command line handle **arrow keys** and history?  
+      A. For the gods of simplicity. Use an external tool to such behaviour. I recommend to use an [rlwrap](https://github.com/hanslub42/rlwrap) tool  
+         (run as `rlwrap ol` in terminal, or add an `alias ol="rlwrap /usr/bin/env ol"` line to your *~/.bashrc* and then run as just `ol`).
 
-1. Q. Some folders **are empty** (i.e. "libraries/OpenGL"), is it ok?  
-   A. Yes, it's ok. Some parts of Ol project are separated into their own independent repositories.  
-      Use `git clone --recursive` to get a full project. Or `git submodule init; git submodule update` to update existing one.
+   1. Q. Why when I enter 1.23 I get **123/100** and not 1.23?  
+      A. Because Ol was designed to behave identically across all supported platforms.  
+         Floating-point math varies across platforms, so Ol uses exact numbers by default. If you want to use real floating-point numbers, enter `#i1.23` or `(inexact 1.23)`.
 
-1. Q. *.. **fatal error**: stdlib.h: No such file or directory.*  
-   Q. *.. **fatal error**: bits/libc-header-start.h: No such file or directory.*  
-   A. Install gcc `multilib`, i.e.
-      * `apt install gcc-multilib` for debian-based,
-      * `apk add musl-dev` for alpine-based,
-      * etc.
+   1. Q. Do you have something like a "**hibernate mode**"?  
+      A. You can save yours current session with `,save "filename-you-want"` and exit Ol.
+         Then, simply run Ol as `ol filename-you-want` any time later to continue the saved session.
 
-1. Q. */usr/include/linux/errno.h:1:10: fatal error: asm/errno.h: No such file or directory*  
-   A. Install `linux-libc-dev:i386`
+* Source code
+   1. Q. Some folders **are empty** (i.e. "libraries/OpenGL"), is it ok?  
+      A. Yes, it's ok. Some parts of Ol project are separated into their own independent repositories.  
+         Use `git clone --recursive` to get a full project. Or `git submodule init; git submodule update` to update existing one.
 
-1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
-   A. Yes, you are free to choose an MIT or LGPL license.
+   1. Q. *.. **fatal error**: stdlib.h: No such file or directory.*  
+      Q. *.. **fatal error**: bits/libc-header-start.h: No such file or directory.*  
+      A. Install gcc `multilib`, i.e.
+         * `apt install gcc-multilib` for debian-based,
+         * `apk add musl-dev` for alpine-based,
+         * etc.
 
-1. Q. I want to run Ol in **a venv** (Virtual ENVironment). Can I?  
-   A. Yes. Use `--home=yours-venv-folder` command line option ([more about](#virtual-env) venv).  
-      Additionally, you can embed such a venv into the Ol executable itself (the [portable](#portable-form) form).
+   1. Q. */usr/include/linux/errno.h:1:10: fatal error: asm/errno.h: No such file or directory*  
+      A. Install `linux-libc-dev:i386`
 
-1. Q. Anything else interesting?  
-   A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
-      Just type `echo ,load http/server| ol` in command line (or `,l http/server` inside Ol session),  
-      change `ol` to `ol - --port 8080` to use the custom port.
+   1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  
+      A. Yes, you are free to choose an MIT or LGPL license.
 
-1. Q. Why do you call the characters not "characters" but "runes"?  
-   A. Because they are *runes* - universal naming for letters for a wide set of alphabets.
+* Extras
+   1. Q. I want to run Ol in **a venv** (Virtual ENVironment). Can I?  
+      A. Yes. Use `--home=yours-venv-folder` command line option ([more about](#virtual-env) venv).  
+         Additionally, you can embed such a venv into the Ol executable itself (the [portable](#portable-form) form).
 
-1. Q. Do you have something like "sleep mode"?  
-   A. You can store the current REPL session with `,save "filename"` and exit Ol. Then just run `ol filename` later to continue the saved session.
+   1. Q. Why do you call the characters not "characters" but "**runes**"?  
+      A. Because they are *runes* - universal naming for letters for a wide set of alphabets.
 
-1. Q. I'm lost in prefix math notation, can you help me?  
-   A. Ol has a special math library that provides infix math notation. Use the `(math infix-notation)` library.  
-   ```scheme
-   > (import (math infix-notation))
-   > (print (infix-notation
-        1 + 2 * 3 - sqrt(4)
-     ))
-   5
+   1. Q. Anything else interesting?  
+      A. Yes, Ol provides **simplest HTTP web-server** for sharing a local folder over an inter/intra-net.  
+         Just type `echo ,load http/server| ol` in command line (or `,l http/server` inside Ol session),  
+         change `ol` to `ol - --port 8080` to use the custom port.
 
-   ; '\\' is a short for infix-notation
-   > (print (\\  1 + 2 * 3 - sqrt(4) ))
-   5
+   1. Q. I'm lost in prefix math notation, can you help me?  
+      A. Ol has a special math library that provides **infix math** notation. Use the `(math infix-notation)` library.  
+      ```scheme
+      > (import (math infix-notation))
+      > (print (infix-notation
+         1 + 2 * 3 - sqrt(4)
+      ))
+      5
 
-   ; you can review result of transformations with ",expand"
-   > ,expand (\\  1 + 2 * 3 - sqrt(4) )
-   (- (+ 1 (* 2 3)) (sqrt 4))
-   ```
+      ; '\\' is a short for infix-notation
+      > (print (\\  1 + 2 * 3 - sqrt(4) ))
+      5
+
+      ; you can review result of transformations with ",expand"
+      > ,expand (\\  1 + 2 * 3 - sqrt(4) )
+      (- (+ 1 (* 2 3)) (sqrt 4))
+      ```
 
 
 Breaking changes (master branch), as part of Ol 2.7 preparation
@@ -194,7 +208,7 @@ The most important differences are:
 * Ol has an awfully **powerful macro system** in addition to Scheme's hygienic one (a brief [notes and examples](doc/reference/macros.md)).
 * `apply` arguments count is **limited to 249** in Ol (use a `fold` otherwise).
 
-The nearly full differences list can be found in [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
+The nearly full differences list can be found in the external [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
 
 ### Supported SRFI
 * srfi-0 - `cond-expand`, builtin
