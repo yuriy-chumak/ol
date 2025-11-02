@@ -27,6 +27,7 @@ FFI_DEPS = tests/ffi/src.c tests/ffi/src.inc
 
 tmp/ffi-%-debug: TEST_DEPS += $(FFI_DEPS)
 tmp/ffi-%-debug: TEST_CFLAGS_DEBUG += tests/ffi/src.c
+tmp/ffi-%-debug: tests/ffi/src.c tests/ffi/src.inc src/olvm.c extensions/ffi.c
 
 tmp/ffi-%-release: TEST_DEPS += $(FFI_DEPS)
 tmp/ffi-%-release: TEST_CFLAGS_RELEASE += tests/ffi/src.c
@@ -57,6 +58,8 @@ tmp/ffi-%-release: TEST_CFLAGS_RELEASE += tests/ffi/src.c
 # 	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_RELEASE) $(L))
 
 # endif
+
+ffi-binaries:
 
 # ------ ffi tests -------------------------------------
 .SILENT: ffi-tests

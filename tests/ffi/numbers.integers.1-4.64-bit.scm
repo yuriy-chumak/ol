@@ -33,8 +33,8 @@ void v_cc..c(n)(type a1, type a2, .., type an)
             (try name function args))
 
          (iota N 1)))
-   ;      unsigned types      signed types
-   (list "C"    "S"    "I"    "c"    "c"     "s"    "s"     "i"    "i"    )
-   (list uchar  ushort uint   char   char    short  short   int    int    )
-   (list iota24 iota24 iota24 iota24 -iota24 iota24 -iota24 iota24 -iota24)
+   ;     unsigned type  signed type
+   (list "Q"            "q"    "q"    )
+   (list ullong         llong  llong  )
+   (list iota24         iota24 -iota24)
 ))

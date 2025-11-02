@@ -5,7 +5,6 @@
 #include <windows.h>
 #endif
 
-
 #ifdef __unix__
 #	define PUBLIC __attribute__((used)) __attribute__ ((__visibility__("default")))
 #endif
@@ -26,12 +25,7 @@
 #	define LOG printf
 #endif
 
-#define DONE(f)  LOG("<=" f "\n", r); return (r);
-
 #include <stdint.h>
-
-// TODO: change "q" to "l", and "Q" to "L"
-
 // type codes of function types:
 // c: char (unsigned)
 // C: signed char
@@ -44,6 +38,7 @@
 // f: float
 // d: double
 
+#define DONE(f)  LOG("<=" f "\n", r); return (r);
 #include "src.inc"
 
 
