@@ -23,8 +23,8 @@ type cN_()
 
             (try name function '()))
          Nn))
-   ; unsigned types                                            ; signed types
-   '("C"                "S"                 "I"                "c"                          "s"                            "i"                           )
-   `(,fft-unsigned-char ,fft-unsigned-short ,fft-unsigned-int  ,fft-signed-char             ,fft-signed-short              ,fft-signed-int               )
-   `((0 1 ,UINT8_MAX)   (0 1 ,UINT16_MAX)   (0 1 ,UINT32_MAX)  (,INT8_MIN -1 0 1 ,INT8_MAX) (,INT16_MIN -1 0 1 ,INT16_MAX) (,INT32_MIN -1 0 1 ,INT32_MAX))
+   ; unsigned types         ; signed types
+   '("Q"                     "q"                           )
+   `(,fft-unsigned-long-long ,fft-signed-long-long         )
+   `((0 1 ,UINT64_MAX)       (,INT64_MIN -1 0 1 ,INT64_MAX))
 )

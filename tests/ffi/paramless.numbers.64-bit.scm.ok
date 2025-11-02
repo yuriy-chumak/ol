@@ -1,0 +1,24 @@
+Notes:
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} is native code output
+
+---------------------------------------------------------------
+parameterless function returning numeric type by value (neutral values, type limits)
+(such calls are optimized for execution, no stack and heap sizes check for params)
+type cN_()
+{
+   type y = X;
+   printf('{{ () => format }}', y); fflush(stdout);
+   return y;
+}
+   (Q0_) --> {{ () => 0 }} = 0
+   (Q1_) --> {{ () => 1 }} = 1
+   (Q18446744073709551615_) --> {{ () => 18446744073709551615 }} = 18446744073709551615
+   (qm9223372036854775807_) --> {{ () => -9223372036854775807 }} = -9223372036854775807
+   (qm1_) --> {{ () => -1 }} = -1
+   (q0_) --> {{ () => 0 }} = 0
+   (q1_) --> {{ () => 1 }} = 1
+   (q9223372036854775807_) --> {{ () => 9223372036854775807 }} = 9223372036854775807
