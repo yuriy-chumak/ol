@@ -119,7 +119,7 @@
       ; run the code in its own thread
       (define (evaluate-as exp env name)
          (define answer (await
-            (async-linked name
+            (actor-linked name
                (λ ()
                   (evaluate exp env)))))
          (define describe-error
