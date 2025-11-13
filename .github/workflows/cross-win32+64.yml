@@ -24,7 +24,7 @@ jobs:
       run: 'git submodule update --init --recursive'
 
     - name: Apt update
-      run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
+      run: 'sudo rm -f /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Install MinGW toolchain
       run: 'sudo apt install gcc-mingw-w64-i686 gcc-mingw-w64-x86-64 -y'

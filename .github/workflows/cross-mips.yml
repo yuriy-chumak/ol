@@ -27,7 +27,7 @@ jobs:
       run: 'git submodule update --init --recursive'
 
     - name: Apt update
-      run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
+      run: 'sudo rm -f /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Make ol/vm.h
       run: 'make includes/ol/vm.h'

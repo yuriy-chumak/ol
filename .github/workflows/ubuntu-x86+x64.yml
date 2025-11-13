@@ -30,7 +30,7 @@ jobs:
       run: file ol; make describe
 
     - name: Apt update
-      run: 'sudo rm /var/lib/man-db/auto-update; sudo apt update'
+      run: 'sudo rm -f /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Install gcc-multilib (add 32-bit support)
       run: 'sudo apt install gcc-multilib -y'
