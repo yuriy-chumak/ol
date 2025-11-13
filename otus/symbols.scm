@@ -15,6 +15,8 @@
       (otus async))
 
 (begin
+   (setq Symbols 'Symbols)
+
    (define (symbol->string str)
       (if (symbol? str)
          (ref str 1)))
@@ -24,7 +26,7 @@
 
    (define (string->symbol str) ; todo: move to (otus symbols)?
       (if (string? str)
-         (await (mail 'symbols str)))) ; doesn't work without valid 'symbols coroutine
+         (await (mail Symbols str)))) ; doesn't work without valid handler coroutine
 
    (define (format-symbol obj tl)
       (format-string
@@ -111,11 +113,9 @@
             (let ((new (string->uninterned-symbol str)))
                (values (put-symbol root new) new)))))
 
-   ; call before
    (define (fork-symbol-interner symbols)
-      (actor 'symbols (lambda ()
-         (define codes (fold put-symbol empty-symbol-tree symbols))
-         (let loop ((codes codes))
+      (actor Symbols (lambda ()
+         (let loop ((codes (fold put-symbol empty-symbol-tree symbols)))
             (let*((envelope (wait-mail))
                   (sender msg envelope)  ; assert (string? msg)
                   (codes symbol (string->interned-symbol codes msg)))
