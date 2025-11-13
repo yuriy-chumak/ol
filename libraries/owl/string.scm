@@ -278,9 +278,7 @@
       ; fixme: str-app is VERY temporary
       ; figure out how to handle balancing. 234-trees with occasional rebalance?
       (define (str-app a b)
-         (runes->string (append
-            (string->runes a)
-            (string->runes b))))
+         (runtime-error "str-app is deprecated"))
 
       (define (compare-strings op a b)
          (cond
@@ -306,10 +304,16 @@
             (compare-strings eq? (str-iter a) (str-iter b))))
 
       (define string-append (case-lambda
-         ((a)   a)
-         ((a b) (str-app a b))
-         ((a b . c)
-            (fold str-app a (cons b c)))))
+         ((str) str)
+         ((a b)
+            (runes->string
+               (str-foldr cons
+                  (str-foldr cons #n b) a)))
+         ((. c)
+            (runes->string
+               (foldr (lambda (str tl)
+                     (str-foldr cons tl str))
+                  #n c))) ))
       
       (define string->list string->runes)
       (define list->string runes->string)
