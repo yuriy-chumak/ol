@@ -65,6 +65,8 @@
       open-input-string
       open-output-string
       get-output-string
+
+      read-line
    )
 
    (import
@@ -74,6 +76,7 @@
       (owl io scheduler)
       (owl queue)
       (owl string)
+      (only (owl parse) rune)
       (owl list-extra)
       (owl ff)
       (otus blobs)
@@ -562,4 +565,26 @@
             (display-to port str)
             (syscall 8 port 0 0)
             port))
+
+      (define read-line
+         (define (ok l r p v)
+            (values l r p v))
+         (define (read-line port)
+            (define stream (port->bytestream port))
+            (let loop ((out #n) (stream stream))
+               (let* ((l r p val (rune #null stream 0 ok)))
+                  (cond
+                     ((eq? val #\newline)
+                        (runes->string (reverse out)))
+                     ((eq? val #eof)
+                        (unless (null? out)
+                           (runes->string (reverse out))))
+                     ((eq? val #\return) ; skip CR
+                        (loop out r))
+                     (else
+                        (loop (cons val out) r))))))
+         (case-lambda
+            (() (read-line stdin))
+            ((port) (read-line port))))
+      
 ))
