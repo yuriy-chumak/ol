@@ -19,6 +19,9 @@
       (if (symbol? str)
          (ref str 1)))
 
+   (define (string->uninterned-symbol str)
+      (vm:new type-symbol str))
+
    (define (string->symbol str) ; todo: move to (otus symbols)?
       (if (string? str)
          (await (mail 'symbols str)))) ; doesn't work without valid 'symbols coroutine
@@ -39,7 +42,8 @@
    (define empty-symbol-tree #false)
    (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
-   ; #false = s1 is less, 0 = equal, 1 = s1 is more
+   ; #false = s1 is less, 0 = are equal, 1 = s1 is greater
+   ; TODO: use str-compare or smth.
    (define (walk s1 s2)
       (cond
          ((null? s1)
@@ -50,8 +54,7 @@
          ((pair? s1)
             (cond
                ((pair? s2)
-                  (lets
-                     ((a as s1)
+                  (let*((a as s1)
                         (b bs s2))
                      (cond
                         ((eq? a b) (walk as bs))
@@ -59,16 +62,14 @@
                         (else #true))))
                ((null? s2) 1)
                (else (walk s1 (s2)))))
-         (else (walk (s1) s2))))
+         (else
+            (walk (s1) s2))))
 
-   ; сравнить две строки
+   ; compare two string
    (define (compare s1 s2)
-      (walk (str-iter s1) (str-iter s2)))
+      (walk (string->stream s1) (string->stream s2)))
 
    ; FIXME, add a typed ref instruction
-
-   (define (string->uninterned-symbol str)
-      (vm:new type-symbol str))
 
    ; lookup node str sym -> node' sym'
    (define (maybe-lookup-symbol node str)

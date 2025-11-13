@@ -22,8 +22,10 @@
       format-string
       format-quoted-string
       str-iter           ; "a .. n" -> lazy (a .. n) list
+      string->stream     ; string to lazy stream
       str-iterr          ; "a .. n" -> lazy (n .. a) list
       str-iter-bytes     ; "a .. n" -> lazy (a .. n) list of UTF-8 encoded bytes
+      string->utf8stream ; string to lazy utf8 stream
       str-fold           ; fold over code points, as in lists (todo: remove)
       str-foldr          ; ditto                              (todo: remove)
       str-app            ; a ++ b, temp                       (todo: remove)
@@ -120,15 +122,17 @@
             (else
                (runtime-error "str-iter: not a string: " str))))
 
-      (define (str-iter str) (str-iter-any str #null))
+      (define (string->stream str) (str-iter-any str #null))
+      (define str-iter string->stream)
 
-      (define (str-iter-bytes str)
+      (define (string->utf8stream str)
          (ledit
             (lambda (codepoint)
                (if (less? codepoint #x80)
                   #false ;; keep the old one
                   (encode-point codepoint #null)))
             (str-iter str)))
+      (define str-iter-bytes string->utf8stream)
 
       ;;; iterate backwards
 
@@ -398,6 +402,8 @@
             (lets
                ((a la (uncons la #false))
                 (b lb (uncons lb #false)))
+            (let*((a la (uncons la #false))
+                  (b lb (uncons lb #false)))
                (cond
                   ((not a) (if b 1 2))
                   ((not b) 3)
