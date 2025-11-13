@@ -51,7 +51,6 @@
       (scheme bytevector)
       (owl lazy)
       (lang macro)
-      (lang intern)
       (lang primop)
       (only (owl regex) string->regex))
 

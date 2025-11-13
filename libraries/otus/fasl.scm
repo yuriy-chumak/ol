@@ -43,10 +43,13 @@
       (scheme core)
       (scheme list)
 
+      (otus symbols)
+
       (owl math)
       (owl ff)
       (owl lazy)
       (owl rlist)
+      (owl string)
       (otus async))
 
    (begin
@@ -376,7 +379,7 @@
                then
                   (cond
                      ((symbol? obj)
-                        (await (mail 'intern (ref obj 1))))
+                        (string->symbol (symbol->string obj))) ; fast version is (await (mail 'symbols (ref obj 1))))
                      ((pair? obj)
                         (cons
                            (loop (car obj))

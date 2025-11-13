@@ -13,9 +13,6 @@
       list->string       ; aka runes->string
       string->list       ; aka string->runes
 
-      symbol->string     ; moved from (lang intern)
-      string->symbol     ; moved from (lang intern)
-
       string-length
       string-eq?
       string-append
@@ -69,7 +66,6 @@
    (import (owl list-extra))
    (import (owl lazy))
    (import (owl math))
-   (import (only (otus async) await mail)) ; used by string->symbol
 
    ; ------------------------------------
    (begin
@@ -196,14 +192,6 @@
       (define (format-string str tl) (str-foldr encode-point tl str))
       (define (format-quoted-string str tl)
          (str-foldr encode-quoted-point tl str))
-
-      (define (symbol->string str)
-         (if (symbol? str)
-            (ref str 1)))
-      (define (string->symbol str) ; todo: move to (otus symbol)?
-         (if (string? str)
-            (await (mail 'intern str)))) ; do not work without (lang intern)
-
 
       ;; making strings (temp)
 

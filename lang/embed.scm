@@ -7,7 +7,7 @@
       (owl ff) (owl list)
       (scheme vector)
       (owl io) (owl math)
-      (lang intern)
+      (otus symbols)
       (lang assemble)
       (lang threading))
 

@@ -1,7 +1,6 @@
 (define-library (file xpm)
 (import
    (otus lisp)
-   (only (lang intern) string->symbol)
    (only (lang sexp) list->number)
    (file parser))
 

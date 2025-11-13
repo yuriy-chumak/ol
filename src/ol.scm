@@ -48,7 +48,7 @@
 (define *loaded* '())   ;; can be removed soon, used by old ,load and ,require
 
 ; let's prepare a new Ol compiler
-(import (lang intern))
+(import (otus symbols))
 (import (lang threading))
 
 (import (lang gensym))

@@ -204,6 +204,7 @@
    string->list
    string->number  ; (scheme misc)
    string->symbol
+   string->uninterned-symbol ; * ol specific
    string->utf8
    string->vector
    string->bytes   ; * ol specific
@@ -268,6 +269,7 @@
       (scheme string)
       (scheme exceptions)
       (srfi 1)
+      (otus symbols)
       (owl io) (owl math) (owl math-extra)
       (scheme inexact)
       (owl string)

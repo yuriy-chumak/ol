@@ -70,6 +70,9 @@
                         (loop (L) #t))))
                (display "}"))
 
+            ((symbol? L)
+               (jsonify (symbol->string L)))
+
             ((null? L)
                (display "null"))
          )))

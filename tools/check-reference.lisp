@@ -3,7 +3,6 @@
 (import (owl parse))
 (import (lang sexp))
 (import (scheme repl))
-(import (lang intern))
 
 (define isatty (syscall 1016 (c-string "MAKE_TERMOUT")))
 (define RED (if isatty "\x1B;[22;31m" ""))

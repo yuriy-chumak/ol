@@ -33,7 +33,6 @@
       (owl lazy)
       (owl io) ; testing
       (owl unicode)
-      (only (lang intern) string->uninterned-symbol)
       (only (owl regex) get-sexp-regex))
 
    (begin
@@ -551,7 +550,7 @@
 
       (define hashbang+sexp
          (let-parse* (
-               (-- (maybe hashbang #f));; skip leading "#! ...\n"
+               (hb (maybe hashbang #f)) ; skip leading "#! ...\n"
                (value (sexp)))
             value))
 
