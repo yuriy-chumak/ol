@@ -55,9 +55,6 @@
 #	include <ol/vm.h>
 #endif
 
-#define unless(...) if (! (__VA_ARGS__))
-#define max(a,b) ((a) > (b) ? (a) : (b))
-
 #include <string.h>
 #include <unistd.h>
 
@@ -115,6 +112,11 @@
 
 #ifdef __aarch64__
 #	define IFaarch64(...) __VA_ARGS__
+# if __APPLE__
+#	define IFapple(...) __VA_ARGS__
+# else
+#	define IFapple(...)
+# endif
 #else
 #	define IFaarch64(...)
 #endif
@@ -131,6 +133,9 @@
 #	define IFmips32(...)
 #endif
 
+
+// maximal applicable return type of called functions
+typedef int64_t ret_t;
 
 // ffi type system
 #define TVOID         (48)
@@ -198,20 +203,30 @@
 	// encoding of Unicode text. In the Windows world, there are ANSI
 	// strings (the system codepage on the current machine, subject to
 	// total unportability) and there are Unicode strings (stored
-	// internally as UTF-16LE).
-	// We just use UTF-16LE subset for now.
+	// internally as UTF-16LE).  We just use UTF-16LE subset for now.
 	typedef WCHAR widechar;
 #else
 	typedef wchar_t widechar;
 #endif
 
 // ------------------
-// maximal applicable return type of called functions
-typedef int64_t ret_t;
-
 #define IDF(...)   (__VA_ARGS__) // Identity function
 #define TALIGN(ptr, type) \
 	__builtin_choose_expr(sizeof(type) > 1, ptr = ((ptr + sizeof(type) - 1) & -sizeof(type)), (void)0)
+#define unless(...) if (! (__VA_ARGS__))
+
+#define max2(a,b) ({ \
+	typeof (a) _a = (a); \
+	typeof (b) _b = (b); \
+    _a > _b ? _a : _b; \
+})
+#define max3(a,b,c) max2(a, max2(b, c))
+
+#ifdef max
+#undef max
+#endif
+#define MAX_MACRO(_1, _2, _3, NAME, ...) NAME
+#define max(...) MAX_MACRO(__VA_ARGS__, max3, max2, NOTHING, NOTHING)(__VA_ARGS__)
 
 // ------------------------------------------------------------------------------------
 // -- assembly part -------------------------------------------------------------------
@@ -709,7 +724,7 @@ __ASM__(//"arm32_call:_arm32_call:",
 // __ARM_PCS_VFP, __ARM_PCS
 // __ARM_ARCH_7A__
 //
-static __attribute((__naked__)) // do not remove "naked", arm32 require this form of function!
+static __attribute((__naked__)) // do not remove "naked", arm32 requires this form of function!
 ret_t arm32_call(word argv[], float af[], long i, long f, void* function, long type) {
 __ASM__(// "arm32_call:_arm32_call:",
 	// "BKPT",
@@ -907,7 +922,7 @@ __ASM__(// "arm32_call:_arm32_call:",
 // 	"nop");
 
 // ------------------------------------------
-#elif __UINTPTR_MAX__ == 0xffffffffffffffffU // includes __mips64, __powerpc64__
+#elif __UINTPTR_MAX__ == 0xffffffffffffffffU
 static
 ret_t x64_call(word arg[], int fmask, void* function, int type)
 {
@@ -1096,19 +1111,6 @@ ret_t x32_call(word arg[], int fmask, void* function, int type)
 
 // ------------------
 // tools
-#define max2(a,b) ({ \
-	typeof (a) _a = (a); \
-	typeof (b) _b = (b); \
-    _a > _b ? _a : _b; \
-})
-#define max3(a,b,c) max2(a, max2(b, c))
-
-#ifdef max
-#undef max
-#endif
-#define MAX_MACRO(_1, _2, _3, NAME, ...) NAME
-#define max(...) MAX_MACRO(__VA_ARGS__, max3, max2, NOTHING, NOTHING)(__VA_ARGS__)
-
 static
 int llen(word list)  {
 	int i = 0;
@@ -1462,7 +1464,7 @@ int_t to_int(word arg) {
 }
 
 #if UINT32_MAX == UINTPTR_MAX // 32-bit machines
-static // TODO: rename to OL2LL
+static // TODO: rename to OL2LL or OL2Q
 int64_t to_int64(word arg) {
 	if (is_enum(arg))
 		return enum(arg);
@@ -2128,11 +2130,18 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		#define STORE_D(conv, type, arg) \
 				STORE_F(conv, type, arg)
 
-#else
+#else	// !__aarch64__
 		// todo: fix 32-bit STORE?
 		// todo: change to args[i++] ?
+#	if __UINTPTR_MAX__ == 0xffffffffffffffffU
 		#define STORE(conv, type, arg) \
 			args[i] = (type) conv(arg)
+#	else			// == 0xffffffffU
+		#define STORE(conv, type, arg) \
+			__builtin_choose_expr(__builtin_types_compatible_p(type, int64_t), \
+				*(type*)&args[i++] = (type) conv(arg), \
+				*(type*)&args[i]   = (type) conv(arg))
+#	endif
 		#define STORE_SERIALIZE(type, conv) \
 			SERIALIZE(&args[i], type, conv) // todo: change to args[i++] and i+=2 for 32-bit
 
@@ -2141,7 +2150,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 #	if (__x86_64__ && (__unix__ || __APPLE__))
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&ad[d++] = conv(arg); --i;\
-				fpmask |= 1;\
+				atmask |= 1;\
 		})
 		#define STORE_D(conv, type, arg) \
 				STORE_F(conv, type, arg)
@@ -2171,20 +2180,20 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 #	elif __UINTPTR_MAX__ == 0xffffffffffffffffU // __mips64 || __powerpc64__
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
-				fpmask |= 0b10;\
+				atmask |= 0b10;\
 		})
 		#define STORE_D(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
-				fpmask |= 0b11;\
+				atmask |= 0b11;\
 		})
 #	elif __UINTPTR_MAX__ == 0xffffffffU //__mips__ || __powerpc__ || __EMSCRIPTEN__
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
-				fpmask |= 0b10;\
+				atmask |= 0b10;\
 		})
 		#define STORE_D(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
-				fpmask |= 0b11;\
+				atmask |= 0b11;\
 				++i;\
 		})
 #	endif
@@ -2202,7 +2211,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	// c - '(return-type . argument-types-list)
 	register word ABC = arguments;
 	word A = car(ABC); ABC = cdr(ABC); // function
-	word B = car(ABC); ABC = cdr(ABC); // rtti, (cons type prototype)
+	word B = car(ABC); ABC = cdr(ABC); // rtti, (cons rettype prototype)
 	word C = car(ABC); ABC = cdr(ABC); // args, (list arg1 arg2 .. argN)
 
 	assert (is_vptr(A));
@@ -2217,32 +2226,37 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 
 	// speedup: no argument types AND no arguments
 	if ((cdr(B)|C) == INULL) {
+		assert (function && "nullary ffi function must be valid");
 		// likely
-		if (returntype != TFLOAT && returntype != TDOUBLE)
+		if (returntype != TFLOAT && returntype != TDOUBLE) {
 			got = ((ret_t (*)())function)();
-		else
-		switch (returntype) {
-			case TFLOAT:
-				*(float*)&got = ((float (*)())function)();
-				break;
-			case TDOUBLE:
-				*(double*)&got = ((double (*)())function)();
-				break;
+			fp = heap->fp; // function can call an ol code, so gc() may be called too
+			goto return_result;
 		}
-		fp = heap->fp; // function can call an ol code, so gc() may be called too
-		goto handle_got_value;
+		else if (returntype == TFLOAT) {
+			*(float*)&got = ((float (*)())function)();
+			fp = heap->fp;
+			goto return_inexact_result;
+		}
+		else if (returntype == TDOUBLE) {
+			*(double*)&got = ((double (*)())function)();
+			fp = heap->fp;
+			goto return_inexact_result;
+		}
+		__builtin_unreachable();
 	}
 	fp = heap->fp;
 
+	// ---------------------------------------------------------------------------------
 #if _WIN32
 	// nothing special for Windows (both x32 and x64)
 
-#elif __x86_64__ // && (__unix__ || __APPLE__)), but not windows
+#elif __x86_64__ // && (__unix__ || __APPLE__))
 	// *nix x64 содержит отдельный массив чисел с плавающей запятой
 	double ad[24]; // мы тестируем 24, но можно сделать и больше
 	int d = 0;     // количество аргументов для ad
-	long fpmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
-	// TODO: add constant fpmaskshift = 1 or 2
+	long atmask = 0; // маска для типа аргументов, (0-int, 1-float point), (63 maximum?)
+	// TODO: add constant atmaskshift = 1 or 2
 #elif __i386__
 	// nothing special
 
@@ -2255,19 +2269,18 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
 	int f = 0;     // количество аргументов для af
 
-#else // all rest platforms default floating point handling
-	  // __mips__ || __powerpc__ || __EMSCRIPTEN__ || (__UINTPTR_MAX__ == 0xffffffffU)
+#else // all the rest platforms default floating point handling
+	  // __mips__ || __powerpc__ || __EMSCRIPTEN__
 	// двухбитная маска типа аргументов, 16 arguments maximum
 	//	00 - word
+	//	01 - quad (long long)
 	//	10 - float
 	//	11 - double
-	//	01 - reserved
-	// + старший бит-маркер,
-	long fpmask = 1;
+	long atmask = 1; // + старший бит-маркер,
 #endif
 
-	size_t words = 144; // / sizeof(word); // default ol function call arguments
-	(void) words; // just disable warning
+	size_t words = 144; // default ol function call arguments
+	(void) words; // just disable warning(s)
 
 	word* args = alloca(max(words, 8) * sizeof(word)); // GRNC + SA (stacked arguments)
 #if __aarch64__
@@ -2329,11 +2342,11 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 
 		// подготовим маску к следующему аргументу
 #if (__x86_64__ && (__unix__ || __APPLE__))
-		fpmask <<= 1;
+		atmask <<= 1;
 #elif __i386__ || __aarch64__ || __ARM_EABI__ || _WIN32
 		// nothing special
 #else   // __mips__ || __powerpc__ || __EMSCRIPTEN__ || (__UINTPTR_MAX__ == 0xffffffffU)
-		fpmask <<= 2;
+		atmask <<= 2;
 #endif
 
 		push:
@@ -2364,7 +2377,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			// -------------------
 			// целочисленные типы:
 
-	#if __aarch64__
+	#if __aarch64__ // TODO: why? retest
 			case TINT8:  case TUINT8:
 				STORE(to_int, int8_t, arg);
 				break;
@@ -2375,7 +2388,6 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				STORE(to_int, int32_t, arg);
 				break;
 			case TINT64: case TUINT64:
-				IFmips32(i = (i+1)&-2); // 32-bit mips dword align
 				STORE(to_int, int64_t, arg);
 				break;
 	#else
@@ -2388,8 +2400,9 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			case TINT64: case TUINT64:
 	# if UINT64_MAX > UINTPTR_MAX
 				// 32-bit machines
-				IFmips32(i = (i+1)&-2); // 32-bit mips dword align
-				*(int64_t*)&args[i++] = to_int64(arg);
+				// IFmips32(i = (i+1)&-2); // 32-bit mips dword align
+				// *(int64_t*)&args[i++] = to_int64(arg);
+				STORE(to_int64, int64_t, arg); i++; // todo: add "i++" to the macro
 	# else
 				// 64-bit machines
 				STORE(to_int, int64_t, arg);
@@ -2799,7 +2812,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 
 #if __x86_64__ && (__unix__ || __APPLE__)
 					if (integer || (size > 16)) { // в целочисленный регистр
-						fpmask <<= 1;
+						atmask <<= 1;
 						j++; ptr += 8;
 
 						// если добрались до стека, а он уже что-то содержит
@@ -2809,7 +2822,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 					else { // в регистр с плавающей запятой
 						// move from ptr to the ad
 						*(int64_t*)&ad[d++] = args[j];
-						fpmask |= 1;
+						atmask |= 1;
 					}
 					integer = 0;
 #else
@@ -2880,7 +2893,7 @@ next_argument:
 	}
 	assert ((word)t == INULL); // количество аргументов должно совпадать
 
-//	if (fpmask == 15)
+//	if (atmask == 15)
 //		__asm__("int $3");
 
 	if (function) {
@@ -2893,7 +2906,7 @@ next_argument:
 			got = win64_call(args, i, function, returntype & 0x3F);
 		# endif
 		# if __unix__ || __linux__ || __APPLE__ // System V (unix, linux, osx)
-			got = nix64_call(args, ad, max(i, l), d, fpmask, function, returntype & 0x3F);
+			got = nix64_call(args, ad, max(i, l), d, atmask, function, returntype & 0x3F);
 		# endif
 		// ------------------------------------
 		#elif __i386__
@@ -2918,10 +2931,10 @@ next_argument:
 		// ------------------------------------
 		#elif __UINTPTR_MAX__ == 0xffffffffffffffffU
 			// any x64 platform
-			got = x64_call(args, fpmask, function, returntype & 0x3F);
+			got = x64_call(args, atmask, function, returntype & 0x3F);
 		#elif __UINTPTR_MAX__ == 0xffffffffU
 			// any x32 platform
-			got = x32_call(args, fpmask, function, returntype & 0x3F);
+			got = x32_call(args, atmask, function, returntype & 0x3F);
 		#else
 			assert ("Unsupported platform" && 0);
 			got = 0;
@@ -3027,7 +3040,7 @@ next_argument:
 	}
 
 	// RETURN
-handle_got_value:
+return_result:
 	returntype &= 0x3F;
 	word* result = (word*)IFALSE;
 
@@ -3141,6 +3154,7 @@ handle_got_value:
 		// возвращаемый тип не может быть TRATIONAL, так как непонятна будет точность
 		case TFLOAT:
 		case TDOUBLE: {
+		return_inexact_result:;
 			inexact_t value =
 				(returntype == TFLOAT)
 					? CV_FLOAT(&got)
