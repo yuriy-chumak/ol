@@ -569,8 +569,31 @@
       (define read-line
          (define (ok l r p v)
             (values l r p v))
+         (define (read-byte fd)
+            (let ((res (sys:read fd 1)))
+               (if (eq? res #true) ;; would block
+               then
+                  (if (eq? fd stdin)
+                     (sleep 2)
+                     (wait-read fd 10000)) ;10 seconds
+                  (read-byte fd)
+               else
+                  (ref res 0)))) ;; is #false, eof or bvec
+         (define (bytestream fd)
+            (λ ()
+               (let ((byte (read-byte fd)))
+                  (cond
+                     ((eof? byte)
+                        (maybe-close-port fd)
+                        #null)
+                     ((not byte)
+                        #null)
+                     (else
+                        (cons byte
+                           (bytestream fd)))))))
+
          (define (read-line port)
-            (define stream (port->bytestream port))
+            (define stream (bytestream port))
             (let loop ((out #n) (stream stream))
                (let* ((l r p val (rune #null stream 0 ok)))
                   (cond
