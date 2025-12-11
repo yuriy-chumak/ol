@@ -66,8 +66,9 @@
       open-output-string
       get-output-string
 
-      read-line
       unbuffered-input-stream
+      read-char
+      read-line
    )
 
    (import
@@ -585,8 +586,23 @@
                (else
                   (cons (ref in 0) (unbuffered-input-stream port))))))
 
+      (define read-char
+         (define (read-char port)
+            (let* ((l r p val (rune #null
+                                 (unbuffered-input-stream port)
+                                 0 ; not used, any value
+                                 (λ (l r p v) ; ok
+                                    (values l r p v)))))
+               (when l
+                  val)))
+         (case-lambda
+            ((port)
+               (read-char port))
+            (()
+               (read-char stdin))))
+
       (define read-line
-         (define (line-reader port)
+         (define (read-line port)
             (let* ((l r p val ((let-parse* (
                                     (runes (greedy* (rune-if (lambda (r) (not (eq? r #\newline))))))
                                     (newline (either (imm #\newline) (epsilon #eof))))
@@ -603,8 +619,8 @@
 
          (case-lambda
             ((port)
-               (line-reader port))
+               (read-line port))
             (()
-               (line-reader stdin))))
+               (read-line stdin))))
 
 ))
