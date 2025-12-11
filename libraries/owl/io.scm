@@ -67,6 +67,7 @@
       get-output-string
 
       read-line
+      unbuffered-input-stream
    )
 
    (import
@@ -82,6 +83,7 @@
       (otus blobs)
       (otus format)
       (owl math)
+      (owl parse)
       (otus fasl)
       (owl lazy)
       (scheme bytevector)
@@ -566,48 +568,43 @@
             (syscall 8 port 0 0)
             port))
 
-      (define read-line
-         (define (ok l r p v)
-            (values l r p v))
-         (define (read-byte fd)
-            (let ((res (sys:read fd 1)))
-               (if (eq? res #true) ;; would block
-               then
-                  (if (eq? fd stdin)
+      (define (unbuffered-input-stream port)
+         (lambda ()
+            (define in (syscall 0 port 1))
+            (case in
+               (#f #null)  ; port error
+               (#t ; input is not ready
+                  (if (eq? port stdin)
                      (sleep 2)
-                     (wait-read fd 10000)) ;10 seconds
-                  (read-byte fd)
-               else
-                  (ref res 0)))) ;; is #false, eof or bvec
-         (define (bytestream fd)
-            (λ ()
-               (let ((byte (read-byte fd)))
-                  (cond
-                     ((eof? byte)
-                        (maybe-close-port fd)
-                        #null)
-                     ((not byte)
-                        #null)
-                     (else
-                        (cons byte
-                           (bytestream fd)))))))
+                     (wait-read port 3000)) ; 3 seconds wait
+                  (unbuffered-input-stream port))
+               (#eof      ; end-of-file
+                  (unless (eq? port stdin)
+                     (close-port port))
+                  #null)
+               (else
+                  (cons (ref in 0) (unbuffered-input-stream port))))))
 
-         (define (read-line port)
-            (define stream (bytestream port))
-            (let loop ((out #n) (stream stream))
-               (let* ((l r p val (rune #null stream 0 ok)))
-                  (cond
-                     ((eq? val #\newline)
-                        (runes->string (reverse out)))
-                     ((eq? val #eof)
-                        (unless (null? out)
-                           (runes->string (reverse out))))
-                     ((eq? val #\return) ; skip CR
-                        (loop out r))
-                     (else
-                        (loop (cons val out) r))))))
+      (define read-line
+         (define (line-reader port)
+            (let* ((l r p val ((let-parse* (
+                                    (runes (greedy* (rune-if (lambda (r) (not (eq? r #\newline))))))
+                                    (newline (either (imm #\newline) (epsilon #eof))))
+                                 (if (and (null? runes) (eq? newline #eof))
+                                    #false
+                                    (runes->string runes)))
+                                 #null ; no left part of stream
+                                 (unbuffered-input-stream port)
+                                 0 ; start position in the stream
+                                 (λ (l r p v) ; ok
+                                    (values l r p v)))))
+               (when l
+                  val)))
+
          (case-lambda
-            (() (read-line stdin))
-            ((port) (read-line port))))
-      
+            ((port)
+               (line-reader port))
+            (()
+               (line-reader stdin))))
+
 ))

@@ -448,7 +448,11 @@
 
 
       ; 6.13.  Input and output
-      ; read
+      ; procedure: (read)       * (scheme read) library
+      ; procedure: (read port)  * (scheme read) library
+
+      ; procedure: (read-line)  * io
+      ; procedure: (read-line port)  * io
       (define (eof-object) #eof)
       (define (eof-object? o) (eq? o #eof))
 
