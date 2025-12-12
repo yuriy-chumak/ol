@@ -32,3 +32,6 @@ jobs:
 
     - name: Build Info
       run: 'file ol; make describe'
+
+    - name: Check Reference
+      run: make check-reference-native

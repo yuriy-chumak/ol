@@ -56,3 +56,6 @@ jobs:
 
     - name: x64 Build Info
       run: 'file ol64.exe; DISPLAY=:0.0 wine ol64.exe --version; echo "(print (syscall 63))" |DISPLAY=:0.0 wine ol64.exe'
+
+    - name: Check Reference
+      run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_WINE=1 HAVE_MINGW32=1 HAVE_MINGW64=1 make check-reference

@@ -47,3 +47,6 @@ jobs:
 
     - name: Build Info
       run: 'file tmp/olvm-ppc64le-release; qemu-ppc64le -L /usr/powerpc64le-linux-gnu tmp/olvm-ppc64le-release repl --version; echo "(print (syscall 63))" |qemu-ppc64le -L /usr/powerpc64le-linux-gnu tmp/olvm-ppc64le-release repl'
+
+    - name: Check Reference
+      run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_PPC64LE=1 make check-reference
