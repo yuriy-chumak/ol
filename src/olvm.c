@@ -4693,6 +4693,13 @@ loop:;
 							r = (word*) ITRUE;
 						break;
 					}
+					case 4: {
+						int flags = fcntl(portfd, F_GETFD);
+						if (flags != -1)
+							r = (word*) new_unumber(flags);
+						break;
+					}
+
 				}
 				break;
 			}
