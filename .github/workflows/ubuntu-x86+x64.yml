@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 # save resources, stop outdated workflows
 concurrency:
@@ -43,3 +44,6 @@ jobs:
 
     - name: x32 Build Info
       run: file ol; make describe
+
+    - name: Check Reference
+      run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_X86=1 HAVE_X86_64=1 make check-reference
