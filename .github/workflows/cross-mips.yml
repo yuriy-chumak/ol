@@ -54,3 +54,5 @@ jobs:
     - name: x64 Build Info
       run: 'file tmp/olvm-mips64-release; qemu-mips64 -L /usr/mips64-linux-gnuabi64 tmp/olvm-mips64-release repl --version; echo "(print (syscall 63))" |qemu-mips64 -L /usr/mips64-linux-gnuabi64 tmp/olvm-mips64-release repl'
 
+    - name: Check Reference
+      run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_MIPS=1 HAVE_MIPS64=1 make check-reference
