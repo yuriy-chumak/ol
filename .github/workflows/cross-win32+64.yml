@@ -1,9 +1,13 @@
 name: win(e) 32/64
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
+
+env:
+  TERM: xterm-256color
 
 # save resources, stop outdated workflows
 concurrency:
