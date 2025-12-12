@@ -34,4 +34,4 @@ jobs:
       run: 'file ol; make describe'
 
     - name: Check Reference
-      run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_AARCH64=1 make check-reference
+      run: make check-reference-native
