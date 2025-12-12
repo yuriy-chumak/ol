@@ -76,6 +76,6 @@ check-reference: $(wildcard doc/reference/*.md)
 	   echo "|";\
 	done
 	case `test -f $(FAILMARK); echo $$?` in\
-	   0) echo "$(red)FAILED!$(done)";;\
-	   1) echo "$(green)passed!$(done)";;\
+	   0) echo "$(red)FAILED!$(done)"; exit 1;;\
+	   1) echo "$(green)passed!$(done)"; exit 0;;\
 	esac

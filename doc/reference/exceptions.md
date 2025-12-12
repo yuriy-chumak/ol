@@ -22,7 +22,7 @@ Returns the results of invoking *thunk*. *Handler* is a lambda with excatly one 
 ```scheme
 > (with-exception-handler
      (lambda (err)
-        (print "we got exception"))
+        (print "we got exception 2"))
      (lambda ()
         (mod 123 "17")))
 we got exception
