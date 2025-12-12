@@ -40,7 +40,7 @@ tmp/%-ppc64le-release: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT))
 
 # ----------------------------------------------------------------
-ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
+ifeq ($(DEV_MODE)$(HAVE_PPC64LE),11)
 olvm-binaries: tmp/olvm-ppc64le-debug
 olvm-binaries: tmp/olvm-ppc64le-release
 endif

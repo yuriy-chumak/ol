@@ -18,7 +18,7 @@ jobs:
   make:
     strategy:
       matrix:
-        os: [ macos-13, macos-latest ] # intel, m1
+        os: [ macos-14, macos-latest ] # intel, m1
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout repository

@@ -4681,7 +4681,7 @@ loop:;
 					case SYSCALL_IOCTL_TIOCGETA: {
 						#ifdef _WIN32
 							if (_isatty(portfd))
-						#else
+						#else // normal OSes
 							struct termios t;
 							if (tcgetattr(portfd, &t) != -1)
 						#endif
@@ -4694,7 +4694,13 @@ loop:;
 						break;
 					}
 					case 4: {
-						int flags = fcntl(portfd, F_GETFD);
+						int flags;
+						#ifdef _WIN32
+							struct _stat st;
+							flags = _fstat(portfd, &st);
+						#else // normal OSes
+							flags = fcntl(portfd, F_GETFD);
+						#endif						
 						if (flags != -1)
 							r = (word*) new_unumber(flags);
 						break;
