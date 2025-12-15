@@ -161,8 +161,8 @@
 ;;       path))
 
 ; =========================================================
-(print
-(text-encode (fasl-load "repl" #f
+(for-each print
+(text-encode (fasl-load "../../repl" #f
    ;; (list
    ;;    1 2 (list "xx")
    ;; stdin)

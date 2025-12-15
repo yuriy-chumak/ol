@@ -17,11 +17,11 @@
       string-eq?
       string-append
       c-string           ; str → #false | UTF-8 encoded null-terminated raw data string
-      null-terminate     ; see ^
+      null-terminate     ; see ^ ; TODO: remove
       finish-string      ; useful to construct a string with sharing (todo: remove)
       format-string
       format-quoted-string
-      str-iter           ; "a .. n" -> lazy (a .. n) list
+      str-iter           ; "a .. n" -> lazy (a .. n) list, deprecated
       string->stream     ; string to lazy stream
       str-iterr          ; "a .. n" -> lazy (n .. a) list
       str-iter-bytes     ; "a .. n" -> lazy (a .. n) list of UTF-8 encoded bytes
@@ -272,6 +272,7 @@
       (define (str-app a b)
          (runtime-error "str-app is deprecated"))
 
+      ; ? if a < b
       (define (compare-strings op a b)
          (cond
             ((pair? a)
@@ -399,9 +400,6 @@
       ;; 1 = sa smaller, 2 = equal, 3 = sb smaller
       (define (str-compare cook sa sb)
          (let loop ((la (cook (str-iter sa))) (lb (cook (str-iter sb))))
-            (lets
-               ((a la (uncons la #false))
-                (b lb (uncons lb #false)))
             (let*((a la (uncons la #false))
                   (b lb (uncons lb #false)))
                (cond

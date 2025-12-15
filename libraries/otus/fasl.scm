@@ -28,6 +28,8 @@
 ;
 ;  <field> = 0 <type> <val>...<val> -- immediate
 ;          = <N> -- pointer to nth last object
+;
+; note: use (deserialize) to intern symbols
 
 ;; todo: add a version which handles symbols and ff's specially
    (export

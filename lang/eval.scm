@@ -38,8 +38,6 @@
       (lang ast)
       (lang env)
       (otus async)
-      (owl time) ;; for testing metadata
-      (otus blobs)
       (owl io)
       (owl math)
       (owl list-extra)
@@ -82,6 +80,7 @@
                      (else (cons 'values vals)))
                   env))))
 
+      ; main compiler workchain:
       ; (op exp env) -> #(ok exp' env') | #(fail info)
       (define compiler-passes
          (list
@@ -238,15 +237,6 @@
                   (values rchunks #true))
                (else
                   (maybe-get-input (cons chunk rchunks) fd #false)))))
-
-      (define (push-chunks data rchunks)
-         (if (null? rchunks)
-            data
-            (append data
-               (foldr append null
-                  (map blob->list (reverse rchunks))))))
-
-      ; -> lazy list of parser results, possibly ending to ... (fail <pos> <info> <lst>)
 
    ; (parser ll ok fail pos)
    ;      -> (ok ll' fail' val pos)

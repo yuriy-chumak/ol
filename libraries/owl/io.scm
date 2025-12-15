@@ -535,27 +535,33 @@
                   (close-port port)
                   outcome))))
 
+
       (define (fasl-save obj path)
          (bytestream->file
             (fasl-encode obj)
             path))
 
+      ; load symbols as uninterned
       (define (fasl-load path fail-val)
          (let ((bs (file->bytestream path)))
             (if bs
                (fasl-decode bs fail-val)
                fail-val)))
 
+      ; load symbols as interned
       (define (deserialize-file path fail)
          (let ((stream (file->bytestream path)))
             (if stream (deserialize stream fail) fail)))
 
+      ; ...
       (define (port->string port)
          (bytes->string (port->bytestream port)))
 
       (define (file->string port)
          (bytes->string (file->bytestream port)))
 
+
+      ; open-input-string / open-output-string / get-output-string
       (define (open-output-string)
          (syscall 85))
 
@@ -579,7 +585,7 @@
                      (sleep 2)
                      (wait-read port 3000)) ; 3 seconds wait
                   (unbuffered-input-stream port))
-               (#eof      ; end-of-file
+               (#eof      ; end-of-file, will close port
                   (unless (eq? port stdin)
                      (close-port port))
                   #null)

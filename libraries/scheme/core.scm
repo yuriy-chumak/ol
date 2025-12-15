@@ -1,4 +1,5 @@
 ; minimal set of Scheme (including Ol subset)
+; TODO: rename to (otus core)
 (define-library (scheme core)
    (version 2.0)
    (license MIT/LGPL3)

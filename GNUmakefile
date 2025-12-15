@@ -339,7 +339,7 @@ ol.exe: ol64.exe tmp/pvenv.tar # by default 64-bit exe
 
 # compiling the Ol language
 recompile: boot.fasl
-boot.fasl: vm repl src/*.scm lang/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
+boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
 	@vm repl --version="$(VERSION)" --home=libraries \
 	   src/ol.scm
 	@if diff boot.fasl repl>/dev/null;then\

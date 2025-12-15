@@ -1,4 +1,4 @@
-#!../../ol
+#!/usr/bin/env ol
 
 (import (owl io))  ; reimport i/o lib to use a smart (wait-mail)
 

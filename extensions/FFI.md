@@ -1,28 +1,28 @@
 # FFI olvm Extension
 
-FFI (Foreign Function Interface) is an OLVM (Otus Lisp Virtual Machine) extension
-by which a program written in Ol (Otus Lisp) can call routines or make use of services
-provided by the OS (Operation System) or third-party libraries.
+FFI (Foreign Function Interface) is an extension of OLVM (Otus Lisp Virtual Machine)
+that allows a program written in OL (Otus Lisp) to call external routines or use services
+provided by the OS (operation system) or third-party libraries.
 
-For example, you can use Sqlite library without including support for it directly in olvm nor writing any C code.
+For example, you can use the Sqlite library directly without including it's support in olvm and without writing any C code.
 
 ### Glossary
 
-* `value` is an integer number fits in olvm word (machine word minus 8 bits),
+* `value` - an integer that fits in the olvm word (machine word minus 8 bits),
   - -16777215 .. +16777215 integers for 32-bit machines,
   - -72057594037927935 .. +72057594037927935 integers for 64-bit machines,
-  - #true, #false, #null, other olvm constants.
-* `reference` is any other Ol object (big and floating point numbers, strings, vectors, functions, etc.),
-* `callable` is a special formed Ol function that can be called from the external (native) code.
+  - #true, #false, #null, and other olvm constants.
+* `reference` - any other Ol object (big integers, complex and floating point numbers, rationals, strings, vectors, functions, etc.),
+* `callable` - a special formed Ol-function that can be called from the external (native) code directly.
 
-We use some common names for types in tables:
-  * `integer-types` means type-enum+, type-enum-, type-int+, and type-int-.
+We use some common names for types in the tables:
+  * `integer-types` means type-value+, type-value-, type-integer+, and type-integer-.
   * `number-types` means integer-types, type-rational, type-inexact, and type-complex.
-  * `string-types` means type-string, type-string-wide, and type-string-dispatch.
-  * `structure-type` means a list (possibly with nested lists) of structure types in consistent order.
+  * `string-types` means type-string, type-string-wide, and type-superstring (mix of strings and wide strings).
+  * `structure-type` means a list (possibly with nested lists) of structure member types, in consistent order.
 
-You can get the type of any Ol object using `type` function (`(type -12)` produces 32),
-you can get type name for any type value using `typename` function (`(typename 32)` produces 'type-enum-).
+You can get the type value of any Ol object using `type` function (`(type -12)` produces 32, for example),
+you can get type name for any type value using `typename` function (`(typename 32)` produces 'type-value-).
 
 ### Limitations
 
@@ -53,6 +53,7 @@ you can get type name for any type value using `typename` function (`(typename 3
 
 ## Basic Example
 
+#### Posix (Linux, *BSD, etc.) example
 If you want to import function(s) from the native dynamic library, follow these steps:
 
 1. Import the ffi library: `(import (otus ffi))`,
@@ -70,17 +71,26 @@ $ ol
 Welcome to Otus Lisp 2.3.1-3172-43e20773
 type ',help' to help, ',quit' to end session.
 > (import (otus ffi))
-;; Library (otus ffi) added
-;; Imported (otus ffi)
+
 > (define libm (load-dynamic-library "libm.so.6"))
-;; Defined libm
 > (define asin (libm fft-double "asin" fft-double))
-;; Defined asin
+
 > (print (asin 0.5))
 0.523598775
 #true
 > ,quit
 bye-bye.
+```
+
+#### Windows example
+```scheme
+> (import (otus ffi))
+> (define USER32 (load-dynamic-library "user32"))
+> (define MessageBox (USER32 fft-int "MessageBoxA" type-vptr type-string type-string fft-int))
+
+; use the external function
+> (MessageBox #f "hello world" "message box" 1)
+1  ; 2 if you clicked "Cancel"
 ```
 
 
