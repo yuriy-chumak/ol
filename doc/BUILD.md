@@ -18,13 +18,13 @@ You should have GCC 3.2+ (with gcc-multilib and binutils) or CLANG 3.5+ installe
 
 MacOS users should have xcode-tools installed.
 
-Windows support requires MinGW installed. Wine cross-compilation is also supported.
+Windows support requires MinGW installed (only cross-compilation is supported, use WSL if you'r building under Windows).
 
-WebAssembly binary compilation requires Emscripten 1.37.40+.
+WebAssembly binary compilation requires llvm.
 
-If you want to build 32-bit binaries under 64-bit linux system, do `sudo apt-get install gcc-multilib`.
+32-bit linux builds requires gcc-multilib.
 
-### BUILD IN SIMPLEST WAY
+### BUILD IN SIMPLE WAY
 
 ```bash
 $ make; make install

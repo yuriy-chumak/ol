@@ -225,6 +225,7 @@ BUILD / RUN / INSTALL
 * GCC 3.2+ / CLANG 3.5+
 * GNU MAKE
 
+Type `make help` (gmake for *BSD) to see a list of available targets.
 
 #### BUILD
 

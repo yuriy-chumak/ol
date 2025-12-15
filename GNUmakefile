@@ -14,6 +14,33 @@ all: release
 .PHONY: all release debug slim config recompile install uninstall clean android
 .PHONY: check # global testing target
 .PHONY: describe # print built binary infos
+.PHONY: help targets # print available targets
+
+help:
+	@echo Usage: make [target] ...
+	@echo Targets:
+	@echo "  help      Print this message and exit."
+	@echo "  targets   Print this message and exit."
+	@echo
+	@echo "  all       (default) Build release"
+	@echo "  release   Build release version"
+	@echo "  debug     Build debug version"
+	@echo "  slim      Build slim olvm (without sockets, dlopen, ffi)"
+	@echo "  minimal   Build minimal olvm (like slim but slimmer)"
+	@echo "  android   Build android binaries"
+	@echo
+	@echo "  olp       Build portable ol version (with libraries included into binary)"
+	@echo "  libol.so  Shared ol library"
+	@echo
+	@echo "  ol.exe    Cross-compile portable windows binary"
+	@echo "  ol32.exe  Cross-compile portable windows 32-bit binary"
+	@echo "  ol64.exe  Cross-compile portable windows 64-bit binary"
+	@echo
+	@echo "  recompile Recompile Otus Lisp Language (REPL binary)"
+	@echo
+	@echo "  check     Do the full test run"
+
+targets: help
 
 describe: all
 	./vm --version
