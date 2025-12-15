@@ -3,7 +3,8 @@
       pipe
       close-pipe
       execvp waitpid
-      system)
+      system
+      popen)
    (import
       (scheme core)
       (scheme list)
@@ -55,4 +56,32 @@
 
    (define (system command)
       (syscall 1017 (c-string command)))
+
+   ; mode chars:
+   ;  "w" - write to stdin (ref result 1) manually,
+   ;  "r" - read stdout (ref result 2) and skip stderr (typically printed to terminal),
+   ;  "R" - read stdout AND stderr together,
+   ;  "E" - read stderr (ref result 3) separately
+   (define popen
+      (define (popen command mode)
+         (define In (if (m/w/ mode) (pipe #b01) #f))
+         (define Out (if (m/r|R/ mode) (pipe #b10) #f)) ; "R" means read both stderr and stdout
+         (define Err (if (m/E/ mode) (pipe #b10) #f))
+
+         ; TODO: add Windows and MacOS support
+         (define command-line (list "/bin/sh" "-c"
+            (string-append command (if (m/R/ mode) " 2>&1" ""))))
+         (define Pid (execvp command-line In Out Err))
+         (when Pid [
+               (if In (cdr In))
+               (if Out (car Out))
+               (if Err (car Err))
+               Pid
+            ]))
+      (case-lambda
+         ((command)
+            (popen command "r"))
+         ((command mode)
+            (popen command mode)) ))
+
 ))
