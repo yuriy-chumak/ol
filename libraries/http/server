@@ -212,7 +212,7 @@
    ; send file to output stream
    ; todo: list zip files content
    ; todo: add "download arrow" to download full folder or zip at the right of filename
-   (define (sendfile filename)
+   (define (sendfile filename onlyhead)
       (define realname
          (s/[?].*$//
          (s/^\/+// filename))) ; remove all leading "/"
@@ -226,63 +226,64 @@
          ((not (zero? (band (ref stat 3) #o0040000)))
             (display "<folder> ")
             (define folder realname)
-            ; list folder:
-            (define Out (pipe))
-            (define Pid (execvp (ls folder) #f Out))
-
             (send "HTTP/1.0 200 OK\r\n"
                "Connection: close\r\n"
                "Content-Type: " "text/html" "\r\n"
                "Server: " (car *version*) "/" (cdr *version*) "\r\n"
                "\r\n")
-            (send "<meta charset='UTF-8'>")
-            (send "<pre>")
-            (send "<h3>" folder "</h3>")
-            ; skip first dummy lines
-            (define stream (let loop ((n line-skips) (stream (port->bytestream (car Out))))
-                              ;; (print "n = " n)
-                              (if (= n 0) stream
-                              else
-                                 (define parsed (try-parse get-line stream))
-                                 (if parsed
-                                    (let* ((line stream parsed))
-                                       (loop (- n 1) stream))))))
+            ; list folder:
+            (unless onlyhead
+               (define Out (pipe))
+               (define Pid (execvp (ls folder) #f Out))
 
-            ; ls -la
-            (let loop ((stream stream))
-               (define parsed (try-parse get-line stream))
-               (if parsed
-                  (let* ((line stream parsed))
-                     (unless (null? line)
-                        (define columns (parse split line realname "not a file record" #f))
-                        (if columns
-                        then
-                           ;; (print "columns: " columns)
-                           (send (s/</&lt;/ (s/>/&gt;/ (car columns))))
-                           (send
-                              "<a href='"
-                                 (cond
-                                    ((string-eq? (cdr columns) ".")
-                                       (string-append "/" realname))
-                                    ((string-eq? (cdr columns) "..")
-                                       ; don't show ".." for top folder
-                                       ;; (unless (string-eq? realname ".")
-                                          (print "filename: " (cdr columns))
-                                          (print "realname: " realname)
-                                          (print "    name: " (s/[\/\\]?[^\/]+$// realname))
-                                          (string-append "/" (s/[\/\\]?[^\/]+$// realname)))
-                                    (else
-                                       (string-append "/" realname "/" (cdr columns))))
-                              "'>"
-                              (cdr columns)
-                              "</a>")
-                           ;(for-each send (cddr columns))
-                           (send "<br/>")
+               (send "<meta charset='UTF-8'>")
+               (send "<pre>")
+               (send "<h3>" folder "</h3>")
+               ; skip first dummy lines
+               (define stream (let loop ((n line-skips) (stream (port->bytestream (car Out))))
+                                 ;; (print "n = " n)
+                                 (if (= n 0) stream
+                                 else
+                                    (define parsed (try-parse get-line stream))
+                                    (if parsed
+                                       (let* ((line stream parsed))
+                                          (loop (- n 1) stream))))))
 
-                           (loop stream) )))))
-            (send "</pre>\n")
-            (send-uptime send)
-            (close-pipe Out)
+               ; ls -la
+               (let loop ((stream stream))
+                  (define parsed (try-parse get-line stream))
+                  (if parsed
+                     (let* ((line stream parsed))
+                        (unless (null? line)
+                           (define columns (parse split line realname "not a file record" #f))
+                           (if columns
+                           then
+                              ;; (print "columns: " columns)
+                              (send (s/</&lt;/ (s/>/&gt;/ (car columns))))
+                              (send
+                                 "<a href='"
+                                    (cond
+                                       ((string-eq? (cdr columns) ".")
+                                          (string-append "/" realname))
+                                       ((string-eq? (cdr columns) "..")
+                                          ; don't show ".." for top folder
+                                          ;; (unless (string-eq? realname ".")
+                                             (print "filename: " (cdr columns))
+                                             (print "realname: " realname)
+                                             (print "    name: " (s/[\/\\]?[^\/]+$// realname))
+                                             (string-append "/" (s/[\/\\]?[^\/]+$// realname)))
+                                       (else
+                                          (string-append "/" realname "/" (cdr columns))))
+                                 "'>"
+                                 (cdr columns)
+                                 "</a>")
+                              ;(for-each send (cddr columns))
+                              (send "<br/>")
+
+                              (loop stream) )))))
+               (send "</pre>\n")
+               (send-uptime send)
+               (close-pipe Out))
 
             (print OK)
             (close #t))
@@ -324,7 +325,8 @@
                   "Content-Length: " (ref stat 8) "\r\n"
                   "Server: " (car *version*) "/" (cdr *version*) "\r\n"
                   "\r\n")
-               (syscall 40 fd file 0 (ref stat 8)) ; sendfile
+               (unless onlyhead
+                  (syscall 40 fd file 0 (ref stat 8))) ; sendfile
                (close-port file)
                (print OK)
                (close #t)
@@ -349,33 +351,39 @@
    (when (port? fd)
       (define peer (syscall 51 fd))
       (print "Peer: " peer)
-      (cond
-         ((and (eq? (size request) 3)
-               (string-eq? (ref request 1) "GET"))
-            (define filename (ref request 2))
-            (define realname
-               (if (m/%/ filename)
-               then
-                  (define parts (c/%/ filename))
-                  (bytes->string
-                     (fold append
-                        (string->bytes (car parts))
-                        (map
-                           (lambda (arg)
-                              (print "arg: " arg)
-                              (if (>= (string-length arg) 2)
-                              then
-                                 (cons
-                                    (string->number (substring arg 0 2) 16)
-                                    (string->list (substring arg 2)))
-                              else
-                                 (string->list arg)))
-                        (cdr parts))))
-               else
-                  filename))
-            (sendfile (if (string-eq? realname "/") "." realname)))
-         (else
-            (sendfile 404))))
-   (send "HTTP/1.0 404 Not Found\r\n"
+      (when (eq? (size request) 3)
+         (define filename (ref request 2))
+         (define realname
+            (if (m/%/ filename)
+            then
+               (define parts (c/%/ filename))
+               (bytes->string
+                  (fold append
+                     (string->bytes (car parts))
+                     (map
+                        (lambda (arg)
+                           (print "arg: " arg)
+                           (if (>= (string-length arg) 2)
+                           then
+                              (cons
+                                 (string->number (substring arg 0 2) 16)
+                                 (string->list (substring arg 2)))
+                           else
+                              (string->list arg)))
+                     (cdr parts))))
+            else
+               filename))
+         (cond
+            ((string-eq? (ref request 1) "GET")
+               (sendfile (if (string-eq? realname "/") "." realname) #f))
+            ((string-eq? (ref request 1) "HEAD")
+               (sendfile (if (string-eq? realname "/") "." realname) #t))
+            (else
+               (send "HTTP/1.0 405 Method Not Allowed\r\n"
+                  "\r\n")
+               (close #t)))))
+
+   ; unsupported request
+   (send "HTTP/1.0 400 Bad Request\r\n"
          "\r\n")
    (close #t)))
