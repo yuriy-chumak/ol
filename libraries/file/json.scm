@@ -27,7 +27,10 @@
       (let jsonify ((L object))
          (cond
             ((string? L)
-               (for-each display `("\"" ,L "\"")))
+               (for-each display `(
+                  "\""
+                  ,(s/\n/\\n/g L) ; newlines
+                  "\"")))
             ((boolean? L)
                (display (if L "true" "false")))
 
