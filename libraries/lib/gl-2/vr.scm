@@ -10,6 +10,9 @@
    VR_MODELVIEW_MATRIX
    VR_PROJECTION_MATRIX
 
+   VR_WIDTH  VR_HEIGHT
+   ; todo: add (glGetIntegerv GL_DRAW_FRAMEBUFFER_BINDING &framebuffer) as public api
+
    gl:enable-vr
    gl:eye-matrix)
 
@@ -21,6 +24,9 @@
    ; glGetFloatv
    (define VR_PROJECTION_MATRIX (+ #x10000 GL_PROJECTION_MATRIX))
    (define VR_MODELVIEW_MATRIX  (+ #x10000 GL_MODELVIEW_MATRIX))
+
+   (define VR_WIDTH 2047)
+   (define VR_HEIGHT 511)
 
    (import (OpenGL ARB framebuffer_object)) ; TODO: try to avoid extension usage
    (import (owl io)) ; temp
@@ -59,39 +65,43 @@
       (mail 'opengl ['set 'autorender #T]))
 
    ; -=( headset )=-------------------------------
+
+      ; create eye framebuffer
+      (define (make-eye TEXW TEXH)
+         (define framebuffer (box 0))
+         (glGenFramebuffers 1 framebuffer)
+         (define texture (box 0))
+         (glGenTextures 1 texture)
+
+         (glBindTexture GL_TEXTURE_2D (unbox texture))
+         (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
+         (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
+         (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
+         (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
+         (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA TEXW TEXH 0 GL_RGBA GL_UNSIGNED_BYTE #f)
+         (glBindTexture GL_TEXTURE_2D 0) ; done
+
+         (glBindFramebuffer GL_FRAMEBUFFER (unbox framebuffer))
+         (glFramebufferTexture2D GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 GL_TEXTURE_2D (unbox texture) 0)
+
+         ; we have to create hardware depth buffer, if we want to use a depth
+         (define depthrenderbuffer (box 0))
+         (glGenRenderbuffers 1 depthrenderbuffer)
+         (glBindRenderbuffer GL_RENDERBUFFER (unbox depthrenderbuffer))
+         (glRenderbufferStorage GL_RENDERBUFFER GL_DEPTH_COMPONENT TEXW TEXH)
+         (glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (unbox depthrenderbuffer))
+         (glBindFramebuffer GL_FRAMEBUFFER 0) ; done
+
+         [(unbox framebuffer) (unbox texture)])
+
+
    (define (Headset) ; cheap lenses for android
       ;; ; 1. create two framebuffers, for the left and for the right eyes
       ;; ; todo: make buffer size depends on window dimensions
       ;; (define TEXW 1024)
       ;; (define TEXH 1024)
 
-      ;; (define (make-eye)
-      ;;    (define framebuffer (box 0))
-      ;;    (glGenFramebuffers 1 framebuffer)
-      ;;    (define texture (box 0))
-      ;;    (glGenTextures 1 texture)
-
-      ;;    (glBindTexture GL_TEXTURE_2D (unbox texture))
-      ;;    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S GL_CLAMP_TO_EDGE)
-      ;;    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T GL_CLAMP_TO_EDGE)
-      ;;    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
-      ;;    (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
-      ;;    (glTexImage2D GL_TEXTURE_2D 0 GL_RGBA TEXW TEXH 0 GL_RGBA GL_UNSIGNED_BYTE #f)
-      ;;    (glBindTexture GL_TEXTURE_2D 0) ; done
-
-      ;;    (glBindFramebuffer GL_FRAMEBUFFER (unbox framebuffer))
-      ;;    (glFramebufferTexture2D GL_FRAMEBUFFER GL_COLOR_ATTACHMENT0 GL_TEXTURE_2D (unbox texture) 0)
-
-      ;;    ; we have to create hardware depth buffer, if we want to use a depth
-      ;;    (define depthrenderbuffer (box 0))
-      ;;    (glGenRenderbuffers 1 depthrenderbuffer)
-      ;;    (glBindRenderbuffer GL_RENDERBUFFER (unbox depthrenderbuffer))
-      ;;    (glRenderbufferStorage GL_RENDERBUFFER GL_DEPTH_COMPONENT TEXW TEXH)
-      ;;    (glFramebufferRenderbuffer GL_FRAMEBUFFER GL_DEPTH_ATTACHMENT GL_RENDERBUFFER (unbox depthrenderbuffer))
-      ;;    (glBindFramebuffer GL_FRAMEBUFFER 0) ; done
-
-      ;;    [(unbox framebuffer) (unbox texture)])
-      
+   
       ;; ; final render program
       ;; (define show (gl:create-program
       ;; "#version 120 // OpenGL 2.1
@@ -210,8 +220,106 @@
    ; -=( openXR )=--------------------------------
 
    ; -=( stereoscopic )=--------------------------
+   ; side-by-side: left eye left imge, right eye right image
    (define (stereo mode)
       #f
+   )
+
+   ; todo: cross-eyed mode
+   ; todo: vertical stereo-pair
+   (define (vertical-stereopair)
+      (print "(vertical-stereopair)")
+      ; 1. create two framebuffers, for the left and for the right eyes
+      ; todo: make buffer size depends on window dimensions
+      (define W (+ VR_WIDTH 1))
+      (define H (+ VR_HEIGHT 1))
+
+      (define eyes [(make-eye W H) (make-eye W H)])
+      (print "eyes: " eyes)
+
+      (define window [(gl:get-window-width) (gl:get-window-height)]) ; todo: remove
+      (define &depth-test (box 0))
+      
+      ;; ; final render program
+      (define show (gl:create-program
+      "#version 120 // OpenGL 2.1
+         void main() {
+            gl_Position = gl_Vertex;
+         }"
+      "#version 120 // OpenGL 2.1
+         uniform vec2 view;
+         uniform sampler2D tex0;
+         uniform sampler2D tex1;
+         void main() {
+            vec2 st = gl_FragCoord.xy / vec2(view.x, view.y / 2.0);
+            if (st.y < 1.0)
+               gl_FragColor = texture2D(tex1, st);
+            else {
+               st.y -= 1.0;
+               gl_FragColor = texture2D(tex0, st);
+            }
+         }" ))
+         
+
+      ; subscribe
+      (mail 'opengl ['set 'vr-begin (lambda ()
+         ; todo: save all matrices?
+         ;; (glPushMatrix)
+         ;; (glPushMatrix)
+         ; todo?: save current program
+         #f
+      )])
+      ; eyes preparations
+      (mail 'opengl ['set 'vr-eye (lambda (eye)
+         ;; (print "vr-eye " eye)
+         ;; (glPopMatrix) (glPushMatrix) ; restore current matrix
+         
+         (glBindFramebuffer GL_DRAW_FRAMEBUFFER (ref (ref eyes eye) 1))
+         (glViewport 0 0 W H)
+      )])
+
+      (mail 'opengl ['set 'vr-flush (lambda ()
+         ;; (print "vr-flush")
+         #f ;; ? (glFinish)
+      )])
+
+      (mail 'opengl ['set 'vr-end (lambda ()
+         ;; (print "vr-end")
+         ;; (glPopMatrix) (glPopMatrix) ; restore states
+
+         (glGetIntegerv GL_DEPTH_TEST &depth-test)
+         (glDisable GL_DEPTH_TEST)
+         (glDisable GL_CULL_FACE)
+
+         (vector-apply gl:window-dimensions (lambda (x y w h)
+            (glViewport x y w h)))
+         (glBindFramebuffer GL_DRAW_FRAMEBUFFER 0)
+
+         (glUseProgram show)
+         (glUniform2f (glGetUniformLocation show "view") (gl:get-window-width) (gl:get-window-height))
+         (glUniform1i (glGetUniformLocation show "tex0") 0)
+         (glUniform1i (glGetUniformLocation show "tex1") 1)
+
+         (glActiveTexture GL_TEXTURE1)
+         (glBindTexture GL_TEXTURE_2D (ref (ref eyes 2) 2))
+         (glActiveTexture GL_TEXTURE0)
+         (glBindTexture GL_TEXTURE_2D (ref (ref eyes 1) 2))
+         (glBegin GL_QUADS)
+            (for-each (lambda (x y)
+                  (glVertex2f x y))
+               '(-1  1  1 -1)
+               '(-1 -1  1  1))
+         (glEnd)
+
+         (glUseProgram 0) ; todo: restore saved program
+         (glFinish)
+
+         (unless (eq? (unbox &depth-test) 0)
+            (glEnable GL_DEPTH_TEST))
+      )])
+
+      ; done. enable
+      (mail 'opengl ['set 'vr-mode 'vertical-stereopair])
    )
 
    (define (gl:enable-vr mode)
@@ -240,6 +348,8 @@
             (stereo mode))
          ; 'anaglyph 'crystaleyes 'vertical-stereopair 'vertical-anamorphic .......
 
+         ('vertical-stereopair
+            (vertical-stereopair))
 
 
             ;(mail 'opengl ...)

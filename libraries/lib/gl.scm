@@ -105,7 +105,8 @@
             (for-each (lambda (eye)
                   ((this 'vr-eye) eye) ; prepare rendering through the eye
                   ; mirror actual viewport to the window:
-                  (glGetIntegerv GL_VIEWPORT gl:window-dimensions)
+                  ; todo: add custom API for eye viewport
+                  ; (glGetIntegerv GL_VIEWPORT gl:window-dimensions)
                   (draw eye)
                   ((this 'vr-flush)))  ; rendering through eye is finished
                '(1 2)) ; left eye = 1, right eye = 2
