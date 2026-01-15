@@ -5,6 +5,7 @@ else
 # test-matrix
 .PHONY: test-matrix
 BACKEND_URL?=http://127.0.0.1:8008/ol/test-matrix
+
 test-matrix: SESSION=$(shell curl -s -X POST "$(BACKEND_URL)?build=$(VERSION)" 2>/dev/null)
 test-matrix:
 	BACKEND_URL=$(BACKEND_URL) SESSION=$(SESSION) \
@@ -94,7 +95,7 @@ define notify
 	[ -z "$(BACKEND_URL)" ] || \
 	curl -s "$(BACKEND_URL)" -X PUT \
 	     -H 'Content-Type: application/json' \
-	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'name':'$1', 'platform':'$2', 'target':'$3', 'status':$4}"
+	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'name':'$1', 'platform':'$(if $(filter native,$2),$(PLATFORM),$2)', 'target':'$3', 'status':$4}"
 endef
 
 define scmtestok
