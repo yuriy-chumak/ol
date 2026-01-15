@@ -35,12 +35,12 @@ test-matrix-subheader-ppc:
 scmtest: scmtest-ppc
 scmtest-ppc:
 ifeq ($(DEV_MODE)$(HAVE_PPC),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),ppc,debug,$(PPC))
-	$(call scmtestok,tmp/$(EXECUTABLE),ppc,release,$(PPC))
+	$(call test-scm,$(TEST),$(PPC),tmp/$(EXECUTABLE),ppc,debug)
+	$(call test-scm,$(TEST),$(PPC),tmp/$(EXECUTABLE),ppc,release)
 endif
 ifeq ($(DEV_MODE)$(HAVE_PPC64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),ppc64,debug,$(PPC64))
-	$(call scmtestok,tmp/$(EXECUTABLE),ppc64,release,$(PPC64))
+	$(call test-scm,$(TEST),$(PPC64),tmp/$(EXECUTABLE),ppc64,debug)
+	$(call test-scm,$(TEST),$(PPC64),tmp/$(EXECUTABLE),ppc64,release)
 endif
 
 # ----------------------------------------------------------------

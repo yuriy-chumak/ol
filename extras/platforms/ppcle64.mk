@@ -24,8 +24,8 @@ test-matrix-subheader-ppcle:
 scmtest: scmtest-ppcle
 scmtest-ppcle:
 ifeq ($(DEV_MODE)$(HAVE_PPC64LE),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),ppc64le,debug,$(PPC64LE))
-	$(call scmtestok,tmp/$(EXECUTABLE),ppc64le,release,$(PPC64LE))
+	$(call test-scm,$(TEST),$(PPC64LE),tmp/$(EXECUTABLE),ppc64le,debug)
+	$(call test-scm,$(TEST),$(PPC64LE),tmp/$(EXECUTABLE),ppc64le,release)
 endif
 
 # ----------------------------------------------------------------

@@ -41,23 +41,23 @@ tmp/ffi-%-release: TEST_CFLAGS_RELEASE += tests/ffi/src.c
 -include tests/ffi/platforms/ppcle64.mk
 -include tests/ffi/platforms/win(e).mk
 
-# # native binaries
-# ifeq ($(DEV_MODE),0)
+# native binaries
+ifeq ($(DEV_MODE),0)
 
-# # native debug
-# # ----------------------------
-# ffi-binaries: tmp/ffi-native-debug
+# native debug
+# ----------------------------
+ffi-binaries: tmp/ffi-native-debug
 
-# tmp/ffi-native-debug: $(FFI_DEPS)
-# 	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_DEBUG) $(L))
+tmp/ffi-native-debug: $(FFI_DEPS)
+	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_DEBUG) $(L))
 
-# # native release
-# ffi-binaries: tmp/ffi-native-release
+# native release
+ffi-binaries: tmp/ffi-native-release
 
-# tmp/ffi-native-release: $(FFI_DEPS)
-# 	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_RELEASE) $(L))
+tmp/ffi-native-release: $(FFI_DEPS)
+	$(call build-olvm,$@,$(CFLAGS) tests/ffi/src.c $(CFLAGS_RELEASE) $(L))
 
-# endif
+endif
 
 ffi-binaries:
 

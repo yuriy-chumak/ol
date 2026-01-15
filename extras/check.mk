@@ -91,51 +91,53 @@ endef
 
 # -- scm <- scm.ok -------------------------------------------
 # name, platform, target, status
+# runner is a "test group"
 define notify
 	[ -z "$(BACKEND_URL)" ] || \
 	curl -s "$(BACKEND_URL)" -X PUT \
 	     -H 'Content-Type: application/json' \
-	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'name':'$1', 'platform':'$(if $(filter native,$2),$(PLATFORM),$2)', 'target':'$3', 'status':$4}"
+	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'name':'$1', 'platform':'$2', 'target':'$3', 'status':$4}"
 endef
 
-define scmtestok
-	@if ([ -f $1-$2-$3$6 ]); then\
-		if ([ -f $(TEST).in ] && $4 $1-$2-$3$6 repl --home=libraries:$(TEST_HOME) $(TEST) <$(TEST).in 2>&1 \
-		                      || $4 $1-$2-$3$6 repl --home=libraries:$(TEST_HOME) $(TEST) 2>&1) \
-				| diff $5 - $(TEST).ok >/dev/null; then\
-			printf \|$(ok) ;\
-			$(call notify,$(TEST),$2,$3,1) ;\
-		else \
-			printf \|$(fail);\
-			echo $1-$2-$3$6: $(TEST) >> $(FAILMARK);\
-			$(call notify,$(TEST),$2,$3,0) ;\
-		fi;\
-		true; \
+define test-scm # testfile wine-or-something executable platform debug/release executable-suffix diff-options # TEST=test-filename
+	@if ([ -f $3-$4-$5$6 ]); then\
+	    if ([ -f $1.in ] && $2 $3-$4-$5$6 repl --home=libraries:$(TEST_HOME) $1 <$1.in 2>&1 \
+	                     || $2 $3-$4-$5$6 repl --home=libraries:$(TEST_HOME) $1 2>&1) \
+	            | diff $7 - $1.ok >/dev/null; then\
+	        printf \|$(ok) ;\
+	        $(call notify,$1,$(or $(PLATFORM),$4),$5,1) ;\
+	    else \
+	        printf \|$(fail);\
+	        echo $3-$4-$5$6: $1 >> $(FAILMARK);\
+	        $(call notify,$1,$(or $(PLATFORM),$4),$5,0) ;\
+	    fi;\
+	    true; \
 	fi
 endef
 
 .PHONY: scmtest
 
 %.scm.ok: %.scm
+ifeq ($(DEV_MODE),0)   # native binaries
+	$(call test-scm,$^,,tmp/$(EXECUTABLE),native,debug)
+	$(call test-scm,$^,,tmp/$(EXECUTABLE),native,release)
+	printf "|"
+else                # multiplatform mode
 	TEST=$^ $(MAKE) -s scmtest
-# native binaries
-ifeq ($(DEV_MODE),0)
-	TEST=$^ $(call scmtestok,tmp/$(EXECUTABLE),native,debug)
-	TEST=$^ $(call scmtestok,tmp/$(EXECUTABLE),native,release)
 endif
-	@printf "|\n"
+	printf "\n"
 
 # -- bin <- bin.ok ------------------------------------------
-define bintestok
-	@if ([ -f $1 ]); then\
-		if ([ -f $^.in ] && $3 $1 $^ --home=libraries <$^.in || $3 $1 $^ --home=libraries) | diff $4 - $^.ok >/dev/null; then\
-			printf \|$(ok) ;\
-		else \
-			printf \|$(fail);\
-			touch $(FAILMARK);\
-		fi;\
-	fi
-endef
+# define bintestok
+# 	@if ([ -f $1 ]); then\
+# 		if ([ -f $^.in ] && $3 $1 $^ --home=libraries <$^.in || $3 $1 $^ --home=libraries) | diff $4 - $^.ok >/dev/null; then\
+# 			printf \|$(ok) ;\
+# 		else \
+# 			printf \|$(fail);\
+# 			touch $(FAILMARK);\
+# 		fi;\
+# 	fi
+# endef
 
 # %.bin.ok: %.bin
 # ifeq ($(DEV_MODE),1) # main development platform, special case
@@ -190,7 +192,7 @@ define table-header
 	: regular platform ;\
 		printf "|dbg.|rel." ;\
 	fi
-	printf "|\n"
+	printf "\n"
 endef
 
 # return 1 if test failed, check test running with unique id

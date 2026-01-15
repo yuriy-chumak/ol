@@ -39,6 +39,10 @@ help:
 	@echo "  recompile Recompile Otus Lisp Language (REPL binary)"
 	@echo
 	@echo "  check     Do the full test run"
+	@echo "  check-reference   only doc/reference tests"
+	@echo "  language-tests    only language tests (tests folder)"
+	@echo "  rosettacode-tests only rosettacode tests (tests/rosettacode folder)"
+	@echo "  ffi-tests         only ffi tests (tests/ffi folder)"
 
 targets: help
 

@@ -52,13 +52,13 @@ ifeq ($(DEV_MODE)$(HAVE_WINE),11)
 endif
 # win32
 ifeq ($(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE),111)
-	$(call scmtestok,tmp/$(EXECUTABLE),win32,debug,$(WINE),--strip-trailing-cr,.exe)
-	$(call scmtestok,tmp/$(EXECUTABLE),win32,release,$(WINE),--strip-trailing-cr,.exe)
+	$(call test-scm,$(TEST),$(WINE),tmp/$(EXECUTABLE),win32,debug,.exe,--strip-trailing-cr)
+	$(call test-scm,$(TEST),$(WINE),tmp/$(EXECUTABLE),win32,release,.exe,--strip-trailing-cr)
 endif
 # win64
 ifeq ($(DEV_MODE)$(HAVE_MINGW64)$(HAVE_WINE),111)
-	$(call scmtestok,tmp/$(EXECUTABLE),win64,debug,$(WINE),--strip-trailing-cr,.exe)
-	$(call scmtestok,tmp/$(EXECUTABLE),win64,release,$(WINE),--strip-trailing-cr,.exe)
+	$(call test-scm,$(TEST),$(WINE),tmp/$(EXECUTABLE),win64,debug,.exe,--strip-trailing-cr)
+	$(call test-scm,$(TEST),$(WINE),tmp/$(EXECUTABLE),win64,release,.exe,--strip-trailing-cr)
 endif
 
 # ----------------------------------------------------------------

@@ -30,13 +30,13 @@ scmtest: scmtest-i86
 scmtest-i86:
 # i386
 ifeq ($(DEV_MODE)$(HAVE_X86),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),x86,debug)
-	$(call scmtestok,tmp/$(EXECUTABLE),x86,release)
+	$(call test-scm,$(TEST),,tmp/$(EXECUTABLE),x86,debug)
+	$(call test-scm,$(TEST),,tmp/$(EXECUTABLE),x86,release)
 endif
 # x86_64
 ifeq ($(DEV_MODE)$(HAVE_X86_64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),x86_64,debug)
-	$(call scmtestok,tmp/$(EXECUTABLE),x86_64,release)
+	$(call test-scm,$(TEST),,tmp/$(EXECUTABLE),x86_64,debug)
+	$(call test-scm,$(TEST),,tmp/$(EXECUTABLE),x86_64,release)
 endif
 
 # ----------------------------------------------------------------

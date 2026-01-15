@@ -24,8 +24,8 @@ test-matrix-subheader-aarch64:
 scmtest: scmtest-aarch64
 scmtest-aarch64:
 ifeq ($(DEV_MODE)$(HAVE_AARCH64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),aarch64,debug,$(AARCH64))
-	$(call scmtestok,tmp/$(EXECUTABLE),aarch64,release,$(AARCH64))
+	$(call test-scm,$(TEST),$(AARCH64),tmp/$(EXECUTABLE),aarch64,debug)
+	$(call test-scm,$(TEST),$(AARCH64),tmp/$(EXECUTABLE),aarch64,release)
 endif
 
 # ----------------------------------------------------------------

@@ -1,4 +1,4 @@
-# apt install qemu-system-mips, qemu-user
+# apt install qemu-system-mips qemu-user
 
 # apt install gcc-mipsel-linux-gnu
 ifneq ($(shell command -v mipsel-linux-gnu-gcc 2>/dev/null),)
@@ -35,12 +35,12 @@ test-matrix-subheader-mipsel:
 scmtest: scmtest-mipsel
 scmtest-mipsel:
 ifeq ($(DEV_MODE)$(HAVE_MIPSEL),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),mipsel,debug,$(MIPSEL))
-	$(call scmtestok,tmp/$(EXECUTABLE),mipsel,release,$(MIPSEL))
+	$(call test-scm,$(TEST),$(MIPSEL),tmp/$(EXECUTABLE),mipsel,debug)
+	$(call test-scm,$(TEST),$(MIPSEL),tmp/$(EXECUTABLE),mipsel,release)
 endif
 ifeq ($(DEV_MODE)$(HAVE_MIPS64EL),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),mips64el,debug,$(MIPS64EL))
-	$(call scmtestok,tmp/$(EXECUTABLE),mips64el,release,$(MIPS64EL))
+	$(call test-scm,$(TEST),$(MIPS64EL),tmp/$(EXECUTABLE),mips64el,debug)
+	$(call test-scm,$(TEST),$(MIPS64EL),tmp/$(EXECUTABLE),mips64el,release)
 endif
 
 # ----------------------------------------------------------------

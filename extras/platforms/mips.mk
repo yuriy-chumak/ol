@@ -35,12 +35,13 @@ test-matrix-subheader-mips:
 scmtest: scmtest-mips
 scmtest-mips:
 ifeq ($(DEV_MODE)$(HAVE_MIPS),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),mips,debug,$(MIPS))
-	$(call scmtestok,tmp/$(EXECUTABLE),mips,release,$(MIPS))
+	$(call test-scm,$(TEST),$(MIPS),tmp/$(EXECUTABLE),mips,debug)
+	$(call test-scm,$(TEST),$(MIPS),tmp/$(EXECUTABLE),mips,release)
+
 endif
 ifeq ($(DEV_MODE)$(HAVE_MIPS64),11)
-	$(call scmtestok,tmp/$(EXECUTABLE),mips64,debug,$(MIPS64))
-	$(call scmtestok,tmp/$(EXECUTABLE),mips64,release,$(MIPS64))
+	$(call test-scm,$(TEST),$(MIPS64),tmp/$(EXECUTABLE),mips64,debug)
+	$(call test-scm,$(TEST),$(MIPS64),tmp/$(EXECUTABLE),mips64,release)
 endif
 
 # ----------------------------------------------------------------
