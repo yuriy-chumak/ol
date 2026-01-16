@@ -1,4 +1,4 @@
-# apt install qemu-system-ppc, qemu-user
+# apt install qemu-system-ppc qemu-user
 
 # apt install gcc-powerpc64le-linux-gnu
 ifneq ($(shell command -v powerpc64le-linux-gnu-gcc 2>/dev/null),)

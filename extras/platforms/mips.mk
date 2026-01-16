@@ -1,4 +1,5 @@
 # apt install qemu-system-mips qemu-user
+# use qemu version 6.2.0 (latest 8.2.2 is broken, returns 'Bus error')
 
 # apt install gcc-mips-linux-gnu
 ifneq ($(shell command -v mips-linux-gnu-gcc 2>/dev/null),)
