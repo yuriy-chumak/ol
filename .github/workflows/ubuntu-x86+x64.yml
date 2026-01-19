@@ -36,14 +36,14 @@ jobs:
     - name: Apt update
       run: 'sudo rm -f /var/lib/man-db/auto-update; sudo apt update'
 
-    - name: Install gcc-multilib (add 32-bit support)
-      run: 'sudo apt install gcc-multilib -y'
+    - name: Install 32-bit support
+      run: 'sudo apt install libc6-dev-i386 gcc-i686-linux-gnu -y'
 
     - name: Clean
       run: 'make clean'
 
     - name: x32 Build
-      run: 'CFLAGS=-m32 make'
+      run: 'CC=i686-linux-gnu-gcc make'
 
     - name: x32 Build Info
       run: file ol; make describe
