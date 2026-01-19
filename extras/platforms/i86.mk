@@ -1,6 +1,8 @@
-# apt install gcc-multilib
+# apt install ~~gcc-multilib~~
+# apt install libc6-dev-i386
 
 # x86 linux
+# apt install gcc-i686-linux-gnu
 ifeq ($(call exists,-m32,sys/cdefs.h,exit),1)
 HAVE_X86 ?= $(HAVE_PLATFORM)
 endif
@@ -41,12 +43,12 @@ endif
 
 # ----------------------------------------------------------------
 # x86 debug
-tmp/%-x86-debug: CC=gcc
+tmp/%-x86-debug: CC=i686-linux-gnu-gcc
 tmp/%-x86-debug: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_DEBUG) $(OLVM_EXPORT) -m32)
 
 # x86 release
-tmp/%-x86-release: CC=gcc
+tmp/%-x86-release: CC=i686-linux-gnu-gcc
 tmp/%-x86-release: $(TEST_DEPS)
 	$(call build-olvm,$@,$(TEST_CFLAGS_RELEASE) $(OLVM_EXPORT) -m32)
 
