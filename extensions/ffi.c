@@ -1010,12 +1010,11 @@ ret_t x64_call(word arg[], int fmask, void* function, int type)
 #elif __UINTPTR_MAX__ == 0xffffffffU // includes __mips__, __EMSCRIPTEN__, __powerpc__
 // 	fmask is two-bits width with high bit 1 as a mark
 static
-ret_t x32_call(word arg[], int fmask, void* function, int type)
+void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
 {
 	assert(sizeof(int_t) == sizeof(word));
 	assert(sizeof(float) == sizeof(word));
 
-	ret_t r;
 	const int_t* argi = (int_t*)arg;
 	const float* argf = (float*)arg;
 	#define argd(i) *(double*)&arg[i]
@@ -1034,18 +1033,19 @@ ret_t x32_call(word arg[], int fmask, void* function, int type)
 		switch (rtype) { \
 			case TVOID: \
 				((void (*) variables) function) values;\
-				return 1;\
+				*(int_t*)r = 1; return; \
 			case TINT32:\
-				return (ret_t)\
+				*(int_t*)r = \
 				((word (*) variables) function) values;\
+				return; \
 			case TFLOAT:\
-				*(float*)&r =\
+				*(float*)r = \
 				((float(*) variables) function) values;\
-				return r;\
+				return; \
 			case TDOUBLE:\
-				*(double*)&r =\
+				*(double*)r = \
 				((double(*)variables) function) values;\
-				return r;\
+				return; \
 		}
 
 	switch (fmask) {
@@ -2934,7 +2934,7 @@ next_argument:
 			got = x64_call(args, atmask, function, returntype & 0x3F);
 		#elif __UINTPTR_MAX__ == 0xffffffffU
 			// any x32 platform
-			got = x32_call(args, atmask, function, returntype & 0x3F);
+			x32_call(&got, args, atmask, function, returntype & 0x3F);
 		#else
 			assert ("Unsupported platform" && 0);
 			got = 0;
