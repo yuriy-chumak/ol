@@ -924,9 +924,8 @@ __ASM__(// "arm32_call:_arm32_call:",
 // ------------------------------------------
 #elif __UINTPTR_MAX__ == 0xffffffffffffffffU
 static
-ret_t x64_call(word arg[], int fmask, void* function, int type)
+void x64_call(ret_t r, word arg[], int fmask, void* function, int type)
 {
-	ret_t r;
 	const int_t* argi = (int_t*)arg;
 	#define argf(i) *(float*)&arg[i]
 	const double* argd = (double*)arg;
@@ -945,18 +944,19 @@ ret_t x64_call(word arg[], int fmask, void* function, int type)
 		switch (rtype) { \
 			case TVOID: \
 				((void (*) variables) function) values;\
-				return 1;\
-			case TINT32:\
-				return (ret_t)\
+				*(int_t*)r = 1; return; \
+			case TINT64:\
+				*(int_t*)r = \
 				((word (*) variables) function) values;\
+				return; \
 			case TFLOAT:\
-				*(float*)&r =\
+				*(float*)r = \
 				((float(*) variables) function) values;\
-				return r;\
+				return; \
 			case TDOUBLE:\
-				*(double*)&r =\
+				*(double*)r = \
 				((double(*)variables) function) values;\
-				return r;\
+				return; \
 		}
 
 	switch (fmask) {
@@ -2931,7 +2931,7 @@ next_argument:
 		// ------------------------------------
 		#elif __UINTPTR_MAX__ == 0xffffffffffffffffU
 			// any x64 platform
-			got = x64_call(args, atmask, function, returntype & 0x3F);
+			x64_call(&got, args, atmask, function, returntype & 0x3F);
 		#elif __UINTPTR_MAX__ == 0xffffffffU
 			// any x32 platform
 			x32_call(&got, args, atmask, function, returntype & 0x3F);
