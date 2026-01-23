@@ -61,7 +61,7 @@ So you can type `./ol --version` to get a version
 ```
 $ ./ol --version
 ol (Otus Lisp) 2.6
-Copyright (c) 2014-2024 Yuriy Chumak
+Copyright (c) 2014-2026 Yuriy Chumak
 License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>
 License MIT: <https://en.wikipedia.org/wiki/MIT_License>
 ...............

@@ -1,7 +1,7 @@
 Characters
 ==========
 
-Characters are *small* numbers (aka *enums*) that may represent printed characters such as letters and digits, or not. The entire range of Unicode 16.0.0 (Sep 10, 2024) is supported.
+Characters are *small* numbers (aka *enums*) that may represent printed characters such as letters and digits, or not. The entire range of Unicode Unicode 17.0.0 (Aug 20, 2025) is supported.
 
 Characters are written using the notation #\\<character\> or #\\<character name\> or #x\<hex scalar value\>.
 

@@ -76,7 +76,7 @@ Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (
 
 # VERSIONS
 Current version is **[2.6](tree/2.6)**.  
-Version **2.7** is in beta state. It is planned for release by the end of this (2025) year.
+Version **2.7** is in beta state. It is planned for release by the beginning of this (2026) year.
 
 
 # PACKAGING
@@ -572,22 +572,27 @@ or check the source codes - libraries/scheme/core.scm
 LICENSE
 -------
 
-Otus Lisp is available under 2 licenses:
-[MIT License](LICENSE) and
-[GNU ](COPYING)([L](COPYING.LESSER))[GPLv3 License](COPYING).
+This work is dual-licensed under [MIT](LICENSE-MIT) and
+[LGPL 3.0](LICENSE.LGPL-3.0+) (or any later LGPL version).
+You can choose between one of them if you use this work.  
 
-Copyright (c) 2011-2014 Aki Helin                         <br/>
-Copyright (c) 2014-2025 Yuriy Chumak                      <br/>
+Copyright (c) 2011-2014 Aki Helin                    <br/>
+Copyright (c) 2014-2026 Yuriy Chumak                 <br/>
 
 
 ----------------------------------------------------------------------
-
-Grew out of the Owl Lisp by Aki Helin: https://gitlab.com/owl-lisp/owl
-
 Thanks to:
-* [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) for the tests, ideas, and questions.
+* Aki Helin (author of [Owl Lisp](https://gitlab.com/owl-lisp/owl), the project that gave birth to Otus Lisp),  
+* [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (for ideas, usage, and lot of tests),
+* [nullscm](https://github.com/nullscm) (for usage and tests),
+* Odysseus (for tests, ideas, and math corrections),
+* mt (for tests and ideas).
 
-Resources:
+Additional resources:
 * http://groups.csail.mit.edu/mac/projects/scheme/
 * http://people.csail.mit.edu/jaffer/Scheme
 * http://r7rs.org
+
+
+---------------------------------------------------
+`SPDX-License-Identifier: MIT OR LGPL-3.0-or-later`

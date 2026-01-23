@@ -167,7 +167,7 @@
 ;; help strings
 (define copyright
    (substring (symbol->string '|
-Copyright (c) 2014-2025 Yuriy Chumak
+Copyright (c) 2014-2026 Yuriy Chumak
 License LGPLv3+: GNU LGPL version 3 or later <http://gnu.org/licenses/>
 License MIT: <https://en.wikipedia.org/wiki/MIT_License>
 This is free software: you are free to change and redistribute it.
