@@ -1,6 +1,6 @@
 # http://www.unicode.org/reports/tr44/#Other_Alphabetic
 UNICODE_SERVER=https://www.unicode.org/Public
-UNICODE_VERSION=16.0.0
+UNICODE_VERSION=17.0.0
 
 $(shell mkdir -p tmp)
 tmp/PropList.txt:
@@ -50,10 +50,7 @@ whitespace-chars.scm: tmp/PropList.txt
 	cat tmp/PropList.txt \
 	    |sed -n '/; White_Space/p' \
 	    |cut -d' ' -f1   \
-	    |cut -d'_' -f1,3 \
-	    |sed 's/\.\./_/' \
-	    |sed 's/^/_/' \
-	    |awk -f ../../../tools/translate_unicode_codes.awk \
+		|ol ../../../tools/translate_unicode_codes.scm \
 	    |tee -a $@ >/dev/null
 	echo '))' |tee -a $@ >/dev/null
 
