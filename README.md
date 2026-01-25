@@ -76,7 +76,10 @@ Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (
 
 # VERSIONS
 Current version is **[2.6](tree/2.6)**.  
-Version **2.7** is in beta state. It is planned for release by the beginning of this (2026) year.
+Version **2.7** is in beta state. It is planned for release by the beginning of this (2026) year.  
+<sub><sup>
+I'm really sorry for the delay. But maintaining the project amid the blackouts caused by the aggressive, fascist russian regime is a bit challenging. :(
+</sup></sub>
 
 
 # PACKAGING
