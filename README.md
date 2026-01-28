@@ -454,74 +454,25 @@ Windows:
 BINARY SCRIPTS
 --------------
 
-OL can execute precompiled scripts. While text lisp programs require REPL (450KB), libraries, and (small) time to compile,
-the binary code needs only olvm (90K with FFI, 60K without FFI) and is ready to run the code immediately.
+OL can compile and execute precompiled programs.
+While text-based lisp programs require compiler binary (450KB), libraries, and a (small) compilation time,
+binary code requires only olvm (60K w/o, 90K with FFI) and is ready for immediate execution.  
+Please keep in mind that FFI-related code must be initialized within the compiled code, not during compilation.
 
-You can compile your script using next code as a template:
+Ol 2.7 supports compilation from the command line.
+Set `-c` (or `--compile`) option and define output file name with `-o=filename` (you can skip -o option, then stdout will be used),
+and the script result will be compiled in binary form. For Ol 2.6, use `fasl-save` function.
 
-`template.scm`:
-```scheme
-; put anything you want to compile in a lambda
-(define (main args)
-   (print "arguments: " args)
+```shell
+$ echo "#true" |ol -c |xxd
+00000000: 000d 01                                  ...
 
-   (define out
-   (let faktr ((x (if (null? args)
-                     13
-                     (string->number (first args)))))
-      (if (= x 1)
-         1
-         (* x (faktr (- x 1))))))
-
-   (print "factorial: " out)
-
-   ; return execution result
-   ; (let it be number of digits in the out)
-   (ilog 10 out))
-
-; compile and save this lambda into binary file
-(fasl-save main "out.bl")
+$ echo "(lambda () 7)" |ol -c |xxd
+00000000: 0210 0a0b 0100 050e 0704 1804 1100       ..............
 ```
 
-Let's compile and check the output:
-```bash
-$ ol template.scm
+[Continue reading...](doc/BINARY-SCRIPTS.md)
 
-$ ls -l out.bl
--rw------- 1 user user 55549 Jul 21 23:13 out.bl
-
-$ xxd ./out.bl
-00000000: 0203 012b 0203 012d 0203 013d 0203 012a  ...+...-...=...*
-00000010: 0203 013c 0203 023c 3c02 0302 3e3e 0203  ...<...<<...>>..
-00000020: 0474 7970 6502 0303 6164 6401 0401 0901  .type...add.....
-00000030: 0401 0901 0401 0801 0401 0a01 0401 0901  ................
-                      ..........
-0000d8c0: 0d03 0206 0111 0111 0501 c50e 0c08 0202  ................
-0000d8d0: 1022 0b02 001d 0101 0205 0312 0401 0304  ."..............
-0000d8e0: 0306 0101 0407 0505 0804 0505 0603 0704  ................
-0000d8f0: 0208 0311 0111 0401 9a01 0210 00         .............
-```
-
-Now you can use this binary code anywhere without changes, even under another OS and/or platform, even with embed olvm code.
-
-```bash
-# fastrun with ol virtual machine
-$ olvm ./out.bl
-arguments: ()
-factorial: 6227020800
-
-# try with arguments and print execution result
-$ ol ./out.bl 42; echo returned: $?
-arguments: (42)
-factorial: 1405006117752879898543142606244511569936384000000000
-returned: 52
-
-# regular ol can do it too
-$ ol ./out.bl 7; echo returned: $?
-arguments: (7)
-factorial: 5040
-returned: 4
-```
 
 VIRTUAL ENV
 -----------

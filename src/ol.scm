@@ -69,6 +69,7 @@
 (import (lang embed))
 
 (import (olvm syscalls))
+(import (only (otus case-apply) arity))
 
 ; replace old (otus core) to the new one, (only (lang eval) *otus-core*)
 (define *libraries* ; заменим старую (otus core) на новую из (lang eval)
@@ -189,13 +190,14 @@ Usage: ol [OPTION]... [--] [input-file [file-options]]
    --no-interactive    make execution environment non-interactive (depr.)
    --non-interactive   make execution environment non-interactive
 
+   -c, --compile       compile last lambda to stdout
+   -o=<filename>       put the output into file <filename>
+   --entry             convert lambda to entry point
+
    --                  end of options list
    -                   stdin
 
 Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
-
-;; --compile-to=<filename> new experimental option to compile input-file
-;;                     result /must be (lambda (args) ...)/ into binary.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -253,11 +255,19 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                   ((string-eq? (car args) "--embed")
                      (loop (put options 'embed #t) (cdr args)))
 
-                  ;; new option: compile into binary
-                  ((starts-with? (car args) "--compile-to=")
-                     (loop (put options 'compile
-                              (substring (car args) 13))
+                  ;; compiler
+                  ((string-eq? (car args) "-c")
+                     (loop (put options 'compile #t) (cdr args)))
+                  ((string-eq? (car args) "--compile")
+                     (loop (put options 'compile #t) (cdr args)))
+                  ((starts-with? (car args) "-o=")
+                     (loop (put options 'output
+                              (substring (car args) 3))
                            (cdr args)))
+                  ((string-eq? (car args) "--entry")
+                     (loop (put
+                           (put options 'compile #t) ; assume it's compilation
+                                        '--entry #t) (cdr args)))
 
                   ;; home
                   ((string-eq? (car args) "--home")
@@ -409,17 +419,23 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
             (coroutine ['repl] (lambda ()
                (let*((lastone (repl-loop env file))
                      (lastone (if compile?
-                                 (let*((path compile?)
-                                       (port (open-output-file path)))
+                                 (let*((path (options 'output #f))
+                                       (port (if path (open-output-file path) stdout)))
                                     (if (not port)
-                                    then
                                        (print-to stderr "Could not open " path " for write")
-                                       #false ; error
                                     else
-                                       (write-bytes port (fasl-encode (make-entry lastone)))
-                                       (close-port port)))
+                                       (write-bytes port (fasl-encode
+                                          (if (options '--entry #f)
+                                             (if (eq? (arity lastone) -1) ; (lambda args ...)
+                                                (make-entry (lambda (args) (exit (apply lastone args))))
+                                             else
+                                                (runtime-error "Entry must be a variadric procedure"))
+                                          else
+                                             lastone)))
+                                       (if path (close-port port))
+                                       #true))
                                  lastone)))
-               (exit-thread lastone)))))))
+                  (exit-thread lastone)))))))
 
 ;;;
 ;;; Dump the new repl
