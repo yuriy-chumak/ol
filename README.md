@@ -188,13 +188,15 @@ The following breaking changes have been added to the master branch as part of 2
 R<sup>7</sup>RS DIFFERENCES
 ===========================
 
+Full differences list can be found in the [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
+
 The most important differences are:
 
 * Ol is definitely **case sensitive**.
 * Numbers WITHOUT PRECISION considered to be **exact** in Ol, but *inexact* in Scheme.
   - `integer?` for inexact numbers always returns **#false** in Ol.
   - note: Use `inexact` function to convert number into inexact form, or prefix number with `#i` directly (like `#i0.123` for inexact 0.123).
-* **No** `set!` in Ol (Ol is purely functional!),
+* **No** `set!` in Ol (Ol is a purely functional!),
   - note: Use `define`, `define-values`, `let`, `let*`, `letrec`, and `letrec*` instead.
   - note: Limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions [are provided](doc/reference/pairs-and-lists.md#set-car), but is not recommended to be used.
   - note: Inexact numbers can be changed with `vm:set!`, but is not recommended to be used.
@@ -202,16 +204,15 @@ The most important differences are:
 * CHARACTERS in Ol are **small numbers** (aka 'value+'), but special *character* type in Scheme.
   - note: Ol supports the full Unicode 15.0.0 (2022 Sep 13) character set.
   - note: To write a character use `write-char`, otherwise you'll write a number.
+* `apply` arguments count is **limited to 249** in Ol (but `list` elements count is unlimited, sure).
 * NEGATIVE indices in `substring` are **valid** in Ol (means "from the end of string", -1 means a last *rune*).
 * NEGATIVE vector indices are **valid** in Ol (means "from the end of vector", -1 means a last element).
 * Ol has **extended form** of `case` (with vectors support),
 * Ol has **extended form** of `if` (with `then` and `else` [keywords](doc/reference/)),
 * Ol has **builtin dictionary** numeric and symbolic keys (the [reference](doc/reference/ffs.md) page),
 * Ol has builtin **regular expressions** (the [reference](doc/reference/regex.md) page),
+* Ol has builtin **infix notation** (the [reference](doc/reference/infix-notation.md) page),
 * Ol has an awfully **powerful macro system** in addition to Scheme's hygienic one (a brief [notes and examples](doc/reference/macros.md)).
-* `apply` arguments count is **limited to 249** in Ol (use a `fold` otherwise).
-
-The nearly full differences list can be found in the external [doc/R7RS-DIFFERENCES.md](doc/R7RS-DIFFERENCES.md).
 
 ### Supported SRFI
 * srfi-0 - `cond-expand`, builtin
