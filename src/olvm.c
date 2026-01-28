@@ -3025,7 +3025,7 @@ mainloop:;
 		MOVE  = 9,      //
 		MOV2  = 5,      // optimization for MOVE + MOVE
 
-		JEQ   = 8,      // jeq
+		BEQ   = 8,      // Branch if EQual
 		JP    = 16,     // JZ (16), JN (80), JT (144), JF (208)
 
 	// примитивы языка:
@@ -3178,7 +3178,7 @@ loop:;
 	 * | #o/8 | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
 	 * |:-----|:----------:|:---------:|:-------:|:-----:|:-------:|:-------:|:--------:|:------:|
 	 * |**0o**| JIT        | REFI      | GOTO    | CLOS  |  -----  | MOV2    |  ------  |  ----  |
-	 * |**1o**| JEQ        | MOVE      | set-ref*| JAF   | JAX     | LD*     | LD       | TYPE   |
+	 * |**1o**| BEQ        | MOVE      | set-ref*| JAF   | JAX     | LD*     | LD       | TYPE   |
 	 * |**2o**| JP         |ARITY-ERROR| vm:make*|  ---  | APPLY   | NOP     | CAST     | NEW    |
 	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION | FEATURES| VMAX     | VSIZE  |
 	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE    | EXIT    | ADD      | MUL    |
@@ -3378,10 +3378,10 @@ loop:;
 	// todo: add MOV3?
 
 	// условные переходы
-	/*! #### JEQ a b o
-	 * Jump to ip+o if a == b, o is a two-byte binary value
+	/*! #### BEQ a b ow
+	 * Branch to ip+ow if a == b, ow is a two-byte binary value
 	 */
-	case JEQ: // (5%) jeq a b o, extended jump
+	case BEQ: // (5%) beq a b ow
 		if (A0 == A1) // 30% for "yes"
 			ip += (ip[3] << 8) + ip[2]; // little-endian
 		ip += 4; break;

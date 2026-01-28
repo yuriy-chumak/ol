@@ -487,7 +487,7 @@
                               (rtl-simple regs b (λ (regs bp)
                                  (let ((then (rtl-any regs then))
                                        (else (rtl-any regs else)))
-                                    ['jeq ap bp then else]))))))))))
+                                    ['beq ap bp then else]))))))))))
             (['call rator rands]
                ;; compile as primop call, bind if rator is lambda or a generic call
                (let ((op (and (eq? (ref rator 1) 'value) (primitive? (ref rator 2)))))

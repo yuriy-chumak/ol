@@ -22,7 +22,7 @@
 
       ; low level (assembly) commands
       GOTO RET ARITY-ERROR  ; used by (lang assemply) etc.
-      JEQ JZ JE JN JF JAF JAX
+      BEQ JZ JE JN JF JAF JAX
       CLOS
       LD LDE LDN LDT LDF
       MOVE REFI MOV2
@@ -129,8 +129,8 @@
       (setq LDT 141)  ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
       (setq LDF 205)  ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
 
-      ; conditional jumps
-      (setq JEQ   8)  ; jeq a b o1 o2
+      ; conditional branches
+      (setq BEQ   8)  ; beq a b o1 o2
       (setq JZ   16)  ; (+ 16 (<< 0 6))) ; jump-imm[0] if zero
       (setq JN   80)  ; (+ 16 (<< 1 6))) ; jump-imm[0] if null
       (setq JE  144)  ; (+ 16 (<< 2 6))) ; jump-imm[0] if empty

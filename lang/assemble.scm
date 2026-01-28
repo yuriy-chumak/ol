@@ -236,12 +236,12 @@
             ;((goto-clos op n)
             ;   (list GOTO-CLOS (reg op) n))
             ;; todo: all jumps could have parameterized lengths (0 = 1-byte, n>0 = 2-byte, being the max code length)
-            (['jeq a b then else]
+            (['beq a b then else]
                (let*((then (assemble then fail))
                      (else (assemble else fail))
                      (len (length else)))
                   (cond
-                     ((< len #xffff) (cons* JEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
+                     ((< len #xffff) (cons* BEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list need-a-bigger-jump-instruction len))))))
             (['jz a then else] ; todo: merge next four cases into one
                (jx JZ a then else))

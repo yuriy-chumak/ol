@@ -116,8 +116,8 @@
             ;   ['goto-proc (op fn) nargs])
             ;((goto-clos fn nargs)
             ;   ['goto-clos (op fn) nargs])
-            (['jeq a b then else]
-               ['jeq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)])
+            (['beq a b then else]
+               ['beq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (['jn a then else] ; todo: merge next four cases into one
                ['jn (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (['jz a then else]
@@ -157,7 +157,7 @@
              (uses (merge-usages then-uses else-uses))
              (uses (reg-touch uses a)))
             (case op
-               ((jeq)
+               ('beq
                   (values [op a b then else] (reg-touch uses b)))
                (else
                   (values [op a then else] uses)))))
@@ -279,8 +279,8 @@
             ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             ;((goto-clos op nargs)
             ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
-            (['jeq a b then else]
-               (rtl-retard-jump rtl-retard 'jeq a b     then else))
+            (['beq a b then else]
+               (rtl-retard-jump rtl-retard 'beq a b     then else))
             (['jn a then else]
                (rtl-retard-jump rtl-retard 'jn a empty  then else)) ; fp
             (['jf a then else]

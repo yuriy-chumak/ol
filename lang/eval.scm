@@ -528,7 +528,7 @@
                         (144(DIS 4 "JE"))
                         (208(DIS 4 "JF"))
 
-                        (8  (DIS 5 "JEQ"))
+                        (8  (DIS 5 "BEQ"))
                         (11 (DIS 4 "JAF"))
                         (12 (DIS 4 "JAX"))
 
