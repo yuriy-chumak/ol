@@ -13,6 +13,8 @@
             (case (ref func 0)
                (11 ; JAF
                   (-- (ref func 1)))
+               (12 ; JAX (indefinite arity)
+                  -1)
                (else
                   #false)))
          (type-procedure
