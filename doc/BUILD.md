@@ -11,111 +11,115 @@
 BUILD
 =====
 
+Ol makefiles contain many targets (for building, for testing, etc.) and can be difficult to understand.
+Below are listed simple recipes for manual olvm and ol buildings.
+
+
 ### BUILD REQUIREMENTS
 
-You should have gnu make installed.
 You should have GCC 3.2+ (with gcc-multilib and binutils) or CLANG 3.5+ installed.
 
-MacOS users should have xcode-tools installed.
+* MacOS users should have xcode-tools installed.
+* Windows support requires MinGW (only cross-compilation is supported, use WSL if you'r building under Windows).
+* WebAssembly binary compilation requires llvm.
+* 32-bit linux builds requires gcc-multilib.
 
-Windows support requires MinGW installed (only cross-compilation is supported, use WSL if you'r building under Windows).
-
-WebAssembly binary compilation requires llvm.
-
-32-bit linux builds requires gcc-multilib.
+For the automated builds you should have gnu make, not bsd make.
 
 ### BUILD IN SIMPLE WAY
 
 ```bash
 $ make; make install
 ```
-* Note: use *gmake* for unix clients
 * Note: use *make uninstall* to completely uninstall Ol.
 
-### BUILD IN REGULAR WAY
+### BUILD IN MANUAL WAY
 
-#### GNU/Linux:
+#### GNU/Linux
 
-##### Build olvm (ol virtual machine):
-
-```bash
-$ cc src/olvm.c  -std=gnu99 -O2  -lm -ldl  -o vm
-```
-
-##### Build ol (with integrated REPL):
+##### Build olvm (ol virtual machine)
 
 ```bash
-$ cc src/olvm.c -DREPL=repl  src/repl.S  -std=gnu99 -O2  -lm -ldl  -o ol
+$ cc src/olvm.c  -std=gnu99 -O2  -lm -ldl  -o olvm
 ```
 
-Note: for some cases build can be done in alternate way.
+##### Build ol (with integrated REPL and compiler)
+
+```bash
+$ cc src/olvm.c  -std=gnu99 -O2  -lm -ldl  -o ol \
+     src/repl.S -DREPL=repl
+```
+
+Note: for some cases build can be done in alternate way:
 ```bash
 $ ld -r -b binary -o repl.o repl
-$ cc src/olvm.c -DREPL=_binary_repl_start  repl.o  -std=gnu99 -O2  -lm -ldl  -o ol
+$ cc src/olvm.c  -std=gnu99 -O2  -lm -ldl  -o ol \
+     repl.o -DREPL=_binary_repl_start
 ```
 
-##### Build WebAssembly Binaries (in wasm form):
+##### ~~Build WebAssembly Binaries (in wasm form)~~
 
+~~\$ source {your-emsdk-path}/emsdk_env.sh~~  
+~~\$ make olvm.wasm~~
+
+~~This should create olvm.wasm and olvm.js - web assembly ol representation.
+An example usage of Ol as a built-in web application you can check at the official [project page](https://yuriy-chumak.github.io/ol/).~~
+
+#### Windows (cross-compile under Linux for Windows)
+
+##### Build olvm (ol virtual machine)
+
+Use `i686-w64-mingw32-gcc` for 32-bit, `x86_64-w64-mingw32-gcc` for 64-bit.
 ```bash
-$ source {your-emsdk-path}/emsdk_env.sh
-$ make olvm.wasm
+$ x86_64-w64-mingw32-gcc src/olvm.c  -std=gnu99 -O2 -lm -lws2_32  -o olvm.exe \
+                         -Iincludes/win32
 ```
 
-This should create olvm.wasm and olvm.js - web assembly ol representation.
-An example usage of Ol as a built-in web application you can check at the official [project page](https://yuriy-chumak.github.io/ol/).
-
-#### Windows:
-
-##### Build olvm (ol virtual machine):
-```cmd
-> set PATH=%PATH%;C:\MinGW\bin
-> gcc.exe src\olvm.c -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
-```
-##### Build ol (with integrated REPL):
-```cmd
-> set PATH=%PATH%;C:\MinGW\bin
-> ld -r -b binary -o tmp/repl.o repl
-> gcc.exe src\olvm.c tmp\repl.o -DREPL=repl -IC:\MinGW\include\ -LC:\MinGW\lib\ -std=gnu99 -O2  -lws2_32  -o ol
+##### Build ol (with integrated REPL and compiler)
+```bash
+$ x86_64-w64-mingw32-gcc src/olvm.c  -std=gnu99 -O2 -lm -lws2_32  -o ol.exe \
+                         src/repl.S -DREPL=repl -Iincludes/win32
 ```
 
-#### \*BSDs:
+#### \*BSDs
 
 You should include "c" library instead of "dl":
 
-##### Build only olvm (ol virtual machine):
+##### Build olvm (ol virtual machine)
+
 ```bash
-$ cc src/olvm.c  -std=gnu99 -O2  -lc -lm  -o vm
-```
-##### Build ol (with integrated REPL):
-```bash
-$ ld -r -b binary -o tmp/repl.o repl
-$ cc src/olvm.c tmp/repl.o  -std=gnu99 -O2  -lc -lm  -o ol -DREPL=_binary_repl_start
+$ cc src/olvm.c  -std=gnu99 -O2  -lm -lc  -o olvm
 ```
 
-#### Android:
+##### Build ol (with integrated REPL and compiler)
+
+```bash
+$ cc src/olvm.c  -std=gnu99 -O2  -lm -lc  -o ol \
+     src/repl.S -DREPL=repl
+```
+
+
+#### Android
 
 ```bash
 $ ndk-build
 ```
 
-#### Open webOS:
-
-Put toolchain/ol.bb bitbake recipe into any place of open webOs
-recipes folder (i.e. ./meta-oe/) and run "make ol" from root
-open webOs folder.
-
-Upload ol executable from BUILD/work/<build-name>/ol/<version>/build
-to machine /bin.
-
-Now you cat execute ol under webos command line or other way you
-would like.
-
 
 CUSTOMIZATION
 -------------
 
-If you want to enable/disable next olvm features, you can use -Dxxx or -Dxxx=y gcc/llvm syntax.
-You can check such flags at runtime using `(vm:features)` primop, or `(olvm features)` library in a high level manner.
+If you want to enable/disable next olvm features, you can use -Dxxx or -Dxxx=y gcc/llvm syntax.  
+You can check such flags at runtime using `(olvm features)` library.
+
+```scheme
+> (import (olvm features))
+
+> (vm:feature? HAVE_DLOPEN)  ; can we load shared libraries?
+#true
+> (vm:feature? OLVM_NOMAIN)  ; are we in embed mode?
+#false
+```
 
 ### Main Olvm Customizations
 
@@ -123,7 +127,7 @@ These variables enable or disable main parts of olvm.
 
 |Variable          |Value            |Meaning                                 |
 |------------------|-----------------|----------------------------------------|
-|REPL              |no default value |Which source code binary data is a REPL |
+|REPL              |no default value |Which binary data file is a REPL        |
 |OLVM_NOMAIN       | 1\|0, default 0 |Disable 'main' function                 |
 |OLVM_FFI          | 1\|0, default 1 |Enable FFI support                      |
 |OLVM_CALLABLES    | 1\|0, default 1 |Enable FFI callbacks support            |
@@ -145,8 +149,7 @@ You can override those values, sure.
 Please note that external libraries (like opengl, sqlite, etc.) support require HAVE_DLOPEN and OLVM_FFI enabled.
 
 
-
-Next options valid only if  provides OLVM_UNSAFES=1
+Next options valid only if OLVM_UNSAFES is enabled
 
 |Variable      |Value                          |Meaning |
 |--------------|-------------------------------|--------|
