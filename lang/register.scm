@@ -118,14 +118,14 @@
             ;   ['goto-clos (op fn) nargs])
             (['beq a b then else]
                ['beq (op a) (op b) (rtl-rename then op target fail) (rtl-rename else op target fail)])
-            (['jn a then else] ; todo: merge next four cases into one
-               ['jn (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
-            (['jz a then else]
-               ['jz (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
-            (['je a then else]
-               ['je (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
-            (['jf a then else]
-               ['jf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
+            (['bn a then else] ; todo: merge next four cases into one
+               ['bn (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
+            (['bz a then else]
+               ['bz (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
+            (['be a then else]
+               ['be (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
+            (['bf a then else]
+               ['bf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (else
                (runtime-error "rtl-rename: what is this: " code))))
 
@@ -281,14 +281,14 @@
             ;   (values code (fold reg-root empty (cons op (lrange 3 1 (+ 4 nargs))))))
             (['beq a b then else]
                (rtl-retard-jump rtl-retard 'beq a b     then else))
-            (['jn a then else]
-               (rtl-retard-jump rtl-retard 'jn a empty  then else)) ; fp
-            (['jf a then else]
-               (rtl-retard-jump rtl-retard 'jf a empty  then else)) ; fp
-            (['je a then else]
-               (rtl-retard-jump rtl-retard 'je a empty  then else)) ; fp
-            (['jz a then else]
-               (rtl-retard-jump rtl-retard 'jz a empty  then else)) ; fp
+            (['bn a then else]
+               (rtl-retard-jump rtl-retard 'bn a empty  then else)) ; fp
+            (['bf a then else]
+               (rtl-retard-jump rtl-retard 'bf a empty  then else)) ; fp
+            (['be a then else]
+               (rtl-retard-jump rtl-retard 'be a empty  then else)) ; fp
+            (['bz a then else]
+               (rtl-retard-jump rtl-retard 'bz a empty  then else)) ; fp
 ;            ((jab a type then else)
 ;               (rtl-retard-jump rtl-retard 'jab a type then else))
             (else

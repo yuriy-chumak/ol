@@ -523,14 +523,14 @@
                         (2  (DIS 3 "GOTO"))
                         (3  (DIS (+ (caddr src) 4) "CLOS")) ; todo: decode first closure argument in type
 
-                        (16 (DIS 4 "JZ"))
-                        (80 (DIS 4 "JN"))
-                        (144(DIS 4 "JE"))
-                        (208(DIS 4 "JF"))
+                        (16 (DIS 4 "BZ"))
+                        (80 (DIS 4 "BN"))
+                        (144(DIS 4 "BE"))
+                        (208(DIS 4 "BF"))
 
                         (8  (DIS 5 "BEQ"))
-                        (11 (DIS 4 "JAF"))
-                        (12 (DIS 4 "JAX"))
+                        (11 (DIS 4 "BNA"))
+                        (12 (DIS 4 "BNAV"))
 
 
                         (54 (DIS 4 "EQ?"))

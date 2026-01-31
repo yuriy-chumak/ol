@@ -364,7 +364,7 @@ You can use the REPL `,disassembly` (or `,dis`, or `,d`) command to disassemble 
 type: bytecode
 code: (11 1 0 5 14 1 4 24 4 17)
 disassembly '(length command . args):
-(4 JAF 1 0 5)
+(4 BNA 1 0 5)
 (3 LD 1 4)
 (2 RET 4)
 (1 ARITY-ERROR)
@@ -373,7 +373,7 @@ disassembly '(length command . args):
 type: procedure
 code: #((11 3 0 7 1 1 2 6 2 6 3 17) #<+>)
 disassembly '(length command . args):
-(4 JAF 3 0 7)
+(4 BNA 3 0 7)
 (4 REFI 1 2 6)
 (3 GOTO 6 3)
 (1 ARITY-ERROR)

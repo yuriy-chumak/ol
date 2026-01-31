@@ -22,7 +22,7 @@
 
       ; low level (assembly) commands
       GOTO RET ARITY-ERROR  ; used by (lang assemply) etc.
-      BEQ JZ JE JN JF JAF JAX
+      BEQ BZ BE BN BF BNA BNAV ; branches
       CLOS
       LD LDE LDN LDT LDF
       MOVE REFI MOV2
@@ -131,12 +131,12 @@
 
       ; conditional branches
       (setq BEQ   8)  ; beq a b o1 o2
-      (setq JZ   16)  ; (+ 16 (<< 0 6))) ; jump-imm[0] if zero
-      (setq JN   80)  ; (+ 16 (<< 1 6))) ; jump-imm[0] if null
-      (setq JE  144)  ; (+ 16 (<< 2 6))) ; jump-imm[0] if empty
-      (setq JF  208)  ; (+ 16 (<< 3 6))) ; jump-imm[0] if false
-      (setq JAF  11)  ; jump if arity failed
-      (setq JAX  12)  ; JAF with packing extra arguments in list
+      (setq BZ   16)  ; (+ 16 (<< 0 6))) ; branch if arg1 is zero
+      (setq BN   80)  ; (+ 16 (<< 1 6))) ; branch if arg1 is null
+      (setq BE  144)  ; (+ 16 (<< 2 6))) ; branch if arg1 is empty
+      (setq BF  208)  ; (+ 16 (<< 3 6))) ; branch if arg1 is false
+      (setq BNA  11)  ; branch if arity mismatch
+      (setq BNAV 12)  ; BNA with packing extra arguments in list
 
 
       ; -------------------------------------------

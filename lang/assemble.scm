@@ -132,7 +132,7 @@
       ;; ast fail-cont → code' | (fail-cont <reason>)
       (define (assemble code fail)
          (define need-a-bigger-jump-instruction "need a bigger jump instruction: length is ")
-         (define (jx OP a then else)
+         (define (br OP a then else)
             (let*((then (assemble then fail))
                   (else (assemble else fail))
                   (len (length else)))
@@ -243,14 +243,14 @@
                   (cond
                      ((< len #xffff) (cons* BEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list need-a-bigger-jump-instruction len))))))
-            (['jz a then else] ; todo: merge next four cases into one
-               (jx JZ a then else))
-            (['jn a then else]
-               (jx JN a then else))
-            (['je a then else]
-               (jx JE a then else))
-            (['jf a then else]
-               (jx JF a then else))
+            (['bz a then else] ; todo: merge next four cases into one
+               (br BZ a then else))
+            (['bn a then else]
+               (br BN a then else))
+            (['be a then else]
+               (br BE a then else))
+            (['bf a then else]
+               (br BF a then else))
             (else
                ;(print "assemble: what is " code)
                (fail (list "Unknown opcode " code)))))
@@ -275,14 +275,14 @@
                            (if fixed?
                               ; без проверки на арность проваливается тест "case-lambda"
                               ; todo: оставить проверку для lambda, забрать для всего остального
-                              (cons* JAF arity
+                              (cons* BNA arity
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes
                                     (if (null? tail)
                                        (list ARITY-ERROR)
                                        tail)))
-                              (cons* JAX (if fixed? arity (- arity 1))
+                              (cons* BNAV (if fixed? arity (- arity 1))
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
                                  (append bytes

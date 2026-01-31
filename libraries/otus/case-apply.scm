@@ -11,9 +11,9 @@
       (case (type func)
          (type-bytecode
             (case (ref func 0)
-               (11 ; JAF
+               (11 ; BNA
                   (-- (ref func 1)))
-               (12 ; JAX (indefinite arity)
+               (12 ; BNAV (indefinite arity)
                   -1)
                (else
                   #false)))

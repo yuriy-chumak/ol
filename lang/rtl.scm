@@ -466,22 +466,22 @@
                            (rtl-simple regs b (λ (regs bp)
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
-                                 ['jf bp then else]))))
+                                 ['bf bp then else]))))
                         ((empty-value? a) ; jump-if-empty
                            (rtl-simple regs b (λ (regs bp)
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
-                                 ['je bp then else]))))
+                                 ['be bp then else]))))
                         ((null-value? a) ; jump-if-null
                            (rtl-simple regs b (λ (regs bp)
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
-                                 ['jn bp then else]))))
+                                 ['bn bp then else]))))
                         ((zero-value? a) ; jump-if-false
                            (rtl-simple regs b (λ (regs bp)
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
-                                 ['jz bp then else]))))
+                                 ['bz bp then else]))))
                         (else
                            (rtl-simple regs a (λ (regs ap)
                               (rtl-simple regs b (λ (regs bp)

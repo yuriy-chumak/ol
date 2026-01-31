@@ -105,13 +105,15 @@
             (arity-error-description env a (ref f 1) b))
          (type-bytecode
             (define name (procedure->name env a))
-            (if (or (eq? (ref f 0) JAF) (eq? (ref f 0) JAX))
+            (if (or (eq? (ref f 0) BNA) (eq? (ref f 0) BNAV))
                (let cycle ((ip 0) (expects #n))
                   (case (ref f ip)
-                     (JAF (cycle (+ ip (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)) 4)
-                                 (cons (-- (ref f (+ ip 1))) expects)))
-                     (JAX (cycle (+ ip (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)) 4)
-                                 (cons (list 'at 'least (-- (ref f (+ ip 1)))) expects)))
+                     (BNA (cycle
+                              (+ ip 4 (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)))
+                              (cons (-- (ref f (+ ip 1))) expects)))
+                     (BNAV (cycle
+                              (+ ip 4 (<< (ref f (+ ip 2)) 8) (ref f (+ ip 3)))
+                              (cons (list 'at 'least (-- (ref f (+ ip 1)))) expects)))
                      (else
                         (cons* (but b) name 'expects
                            (if (null? (cdr expects))

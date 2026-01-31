@@ -3012,21 +3012,21 @@ mainloop:;
 
 		MCP   = 27,
 
-		JAF   = 11,
-		JAX   = 12,
-		LDI   = 13,      // LDE (13), LDN (77), LDT (141), LDF (205)
-		  LDE = MODD(LDI, 0),
+		LDI   = 13,     // LDE (13), LDN (77), LDT (141), LDF (205), TODO: rename to LDENTF
+		  LDE = MODD(LDI, 0), // TODO?: somewhere in feature reorder bytecodes
 		  LDN = MODD(LDI, 1),
 		  LDT = MODD(LDI, 2),
 		  LDF = MODD(LDI, 3),
-		LD    = 14,
+		LD    = 14,     // ld 
 
 		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
 		MOVE  = 9,      //
 		MOV2  = 5,      // optimization for MOVE + MOVE
 
 		BEQ   = 8,      // Branch if EQual
-		JP    = 16,     // JZ (16), JN (80), JT (144), JF (208)
+		BZNEF = 16,     // Branch if Zero (BZ, 16), Null (BN, 80), Empty (BE, 144), False (BF, 208)
+		BNA   = 11,     // Branch if Not Arity (arity mismatch)
+		BNAV  = 12,     // Branch if Not Arity Variadric
 
 	// примитивы языка:
 		VMNEW   = 23,     // make a typed object (fast and simple)
@@ -3175,16 +3175,16 @@ mainloop:;
 loop:;
 	/*! ### OLVM Codes
 	 * 
-	 * | #o/8 | o0         | o1        | o2      | o3    | o4      | o5      | o6       | o7     |
-	 * |:-----|:----------:|:---------:|:-------:|:-----:|:-------:|:-------:|:--------:|:------:|
-	 * |**0o**| JIT        | REFI      | GOTO    | CLOS  |  -----  | MOV2    |  ------  |  ----  |
-	 * |**1o**| BEQ        | MOVE      | set-ref*| JAF   | JAX     | LD*     | LD       | TYPE   |
-	 * |**2o**| JP         |ARITY-ERROR| vm:make*|  ---  | APPLY   | NOP     | CAST     | NEW    |
-	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION | FEATURES| VMAX     | VSIZE  |
-	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE    | EXIT    | ADD      | MUL    |
-	 * |**5o**| SUB        | FF:RED?   | FF:BLACK| SET!  | LESS?   |  -----  | FF:TOGGLE| REF    |
-	 * |**6o**|  --------  | FF:APPLY  | RUN     | CONS  | CAR     | CDR     | EQ?      | AND    |
-	 * |**7o**| IOR        | XOR       | SHR     | SHL   | UNPIN   | CLOCK   |  ------  | SYSCALL|
+	 * | #o/8 | o0         | o1        | o2      | o3    | o4       | o5      | o6       | o7     |
+	 * |:-----|:----------:|:---------:|:-------:|:-----:|:--------:|:-------:|:--------:|:------:|
+	 * |**0o**|            | REFI      | GOTO    | CLOS  |          | MOV2    |          |        |
+	 * |**1o**| BEQ        | MOVE      | set-ref+| BNA   | BNAV     | LD*     | LD       | TYPE   |
+	 * |**2o**| BZ/BN/BE/BF|ARITY-ERROR| vm:make+|       | APPLY    | NOP     | CAST     | NEW    |
+	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION  | FEATURES| VMAX     | VSIZE  |
+	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE     | EXIT    | ADD      | MUL    |
+	 * |**5o**| SUB        | FF:RED?   | FF:BLACK| SET!  | LESS?    |         | FF:TOGGLE| REF    |
+	 * |**6o**|            | FF:APPLY  | RUN     | CONS  | CAR      | CDR     | EQ?      | AND    |
+	 * |**7o**| IOR        | XOR       | SHR     | SHL   | UNPIN    | CLOCK   |          | SYSCALL|
 	 * 
 	 * * set-ref*: `set-ref`, `set-ref!`
 	 * * vm:make*: `vm:make`, `vm:alloc`
@@ -3386,13 +3386,13 @@ loop:;
 			ip += (ip[3] << 8) + ip[2]; // little-endian
 		ip += 4; break;
 
-	/*! #### JP a o (JZ, JN, JT, JF)
-	 * - JZ, jump if a == 0
-	 * - JN, jump if a == #null
-	 * - JE, jump if a == #empty
-	 * - JF, jump if a == #false
+	/*! #### Bx a o (BZ, BN, BT, BF)
+	 * - BZ, branch if a == 0
+	 * - BN, branch if a == #null
+	 * - BE, branch if a == #empty
+	 * - BF, branch if a == #false
 	 */
-	case JP: { // (10%) JZ, JN, JE, JF a hi lo
+	case BZNEF: { // (10%) BZ, BN, BE, BF a ow, conditional branch
 		static
 		const word I[] = { I(0), INULL, IEMPTY, IFALSE };
 		if (A0 == I[op>>6]) // 49% for "yes"
@@ -3400,9 +3400,9 @@ loop:;
 		ip += 3; break;
 	}
 
-	// (13%) for JAF and JAX
-	// NOTE: Don't combine JAF and JAX for the gods of speed
-	case JAF: {
+	// (13%) for BNA and BNAV
+	// NOTE: Don't combine BNA and BNAV for the gods of speed
+	case BNA: {
 		long arity = ip[0];
 		if (acc != arity)
 			ip += (ip[1] << 8) | ip[2];
@@ -3410,8 +3410,8 @@ loop:;
 		ip += 3; break;
 	}
 
-	// JAF eXtended, additionally packs extra arguments list
-	case JAX: {
+	// BNAV, additionally packs extra arguments list
+	case BNAV: {
 		long arity = ip[0];
 		if (acc >= arity) {
 			word tail = INULL;
