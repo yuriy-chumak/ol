@@ -117,9 +117,8 @@
       (setq CLOS  3) ; clos type, size, o, nenv, e0 ... en, t
       (setq RET  24)
 
-      ; set
+      ; copy
       (setq MOVE  9) ; move a, t:      Ra -> Rt
-      (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
       (setq MOV2  5) ; two moves, 4 args
 
       ; load
@@ -128,6 +127,7 @@
       (setq LDN  77)  ; (+ 13 (<< 1 6))) ; 77
       (setq LDT 141)  ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
       (setq LDF 205)  ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
+      (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
 
       ; conditional branches
       (setq BEQ   8)  ; beq a b o1 o2
@@ -151,7 +151,7 @@
       (setq make-bytecode (lambda (bytecode)
          (vm:alloc type-bytecode bytecode)))
 
-      ; * fast but limited version
+      ; * we don't have macro support yet
       (setq list (lambda args args))
 
       ; -----------------------------------------------------------------------

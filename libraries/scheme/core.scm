@@ -1164,19 +1164,13 @@
                (make k fill))))
 
       ; procedure:  (list obj ...)
+      ;  Q: why list is a macro, not a procedure?
+      ;  A: procedure arguments count is limited.
       (define-syntax list
          (syntax-rules ()
             ((list) '())
             ((list a . b)
                (cons a (list . b)))))
-
-      ; question:
-      ;  why list is a macro, not a procedure?
-      ; answer:
-      ;  the function unwraps to LD/LD/LD/LD/LD/MOV2/MOV2/MOV2/GOTO/JAX
-      ;  sequnce, but macro unwraps to LD/CONS/LD/CONS/LD/CONS.
-      ;  So, we have a good speedup, yeah?
-
 
       ; procedure:  (length list)
       ;  olvm notes: always returning fixnum, so can be checked by eq?, not only =

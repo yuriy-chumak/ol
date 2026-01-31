@@ -2997,20 +2997,21 @@ mainloop:;
 
 	// список команд смотреть в assembly.scm
 	enum instruction_t {
-	// безусловный переход
+		NOP   = 21,
+
+	// безусловные переходы
 		GOTO  = 2,  // jmp a, nargs
 		CLOS  = 3,
 
 	// управляющие команды
-		NOP   = 21,
 		APPLY = 20,
 		APPLYCONT = MODD(APPLY, 1),
 		RET   = 24,
 		RUN   = 50,
 		ARITY_ERROR = 17,
-		VMEXIT= 37,
+		VMEXIT = 37,
 
-		MCP   = 27,
+		MCP   = 27,     // MCP call
 
 		LDI   = 13,     // LDE (13), LDN (77), LDT (141), LDF (205), TODO: rename to LDENTF
 		  LDE = MODD(LDI, 0), // TODO?: somewhere in feature reorder bytecodes
@@ -3018,8 +3019,8 @@ mainloop:;
 		  LDT = MODD(LDI, 2),
 		  LDF = MODD(LDI, 3),
 		LD    = 14,     // ld 
+		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
 
-		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg)
 		MOVE  = 9,      //
 		MOV2  = 5,      // optimization for MOVE + MOVE
 
@@ -3186,8 +3187,8 @@ loop:;
 	 * |**6o**|            | FF:APPLY  | RUN     | CONS  | CAR      | CDR     | EQ?      | AND    |
 	 * |**7o**| IOR        | XOR       | SHR     | SHL   | UNPIN    | CLOCK   |          | SYSCALL|
 	 * 
-	 * * set-ref*: `set-ref`, `set-ref!`
-	 * * vm:make*: `vm:make`, `vm:alloc`
+	 * * set-ref+: `set-ref`, `set-ref!`
+	 * * vm:make+: `vm:make`, `vm:alloc`
 	 * * LD*: `LDE`, `LDN`, `LDT`, `LDF`
 	 */
 #ifdef DEBUG_COUNT_OPS
