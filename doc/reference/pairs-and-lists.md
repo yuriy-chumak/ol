@@ -1,6 +1,6 @@
 Pairs and Lists
 ===============
-A *pair* (sometimes called a *dotted pair*) is a record structure with two fields called the *car* and *cdr* fields (for historical reasons). Pairs are created by the procedure `cons`. The *car* and *cdr* fields are accessed by the procedures `car` and `cdr`.
+A *pair* (sometimes called a *dotted pair*) is a record structure with two fields called the *car* and *cdr* (for historical reasons). Pairs are created by the procedure [`cons`](#cons). The *car* and *cdr* fields are accessed by the procedures [`car`](#car) and [`cdr`](#cdr).
 
 Pairs are used primarily to represent lists. A *list* can be defined recursively as either the empty list or a pair whose *car* is the first element of list and *cdr* is the remainder of list (which either the empty list or a pair whose ....).
 
@@ -25,7 +25,7 @@ Pairs are used primarily to represent lists. A *list* can be defined recursively
 # cons
 `(cons obj1 obj2)`, *primop*
 
-Returns a newly allocated pair whose [car](#car) is *obj1* and whose [cdr](#cdr) is *obj2*.
+Returns a newly allocated pair whose car is *obj1* and whose cdr is *obj2*.  
 The pair is guaranteed to be different (in the sense of [`eq?`](equivalence-predicates.md?eq) and [`eqv?`](equivalence-predicates.md?eqv)) from every existing object.
 
 ```scheme
@@ -39,10 +39,10 @@ The pair is guaranteed to be different (in the sense of [`eq?`](equivalence-pred
 (cons #n 1)                   ==> '(() . 1)
 (cons 1 #f)                   ==> '(1 . #false)
 (cons #f 1)                   ==> '(#false . 1)
-(cons '(a b) 'c)              ==> '((a b) . c)
+(cons '(a b) 'c)              ==> '((a b) . c) ; () without dot inside is a list
 (cons '(a b) "abc")           ==> '((a b) . "abc")
-(cons '(a) '(b c d))          ==> '((a) b c d) ; pair with list makes a new list
-(cons 'a '(b c))              ==> '(a b c)
+(cons 'a '(b c))              ==> '(a b c) ; pair with cdr list makes a new list
+(cons '(a) '(b c d))          ==> '((a) b c d)
 (cons '(a b) '(c d))          ==> '((a b) c d)
 (cons '(a b) '(c #n))         ==> '((a b) c ())
 ```
@@ -66,7 +66,7 @@ Returns #true if *obj* is a pair, otherwise returns #false.
 # car
 `(car pair)`, *primop*
 
-Returns the contents of the car field of *pair*.
+Returns the contents of the car field of *pair*.  
 Note that it is an error to take the car of the not a pair.
 
 ```scheme
@@ -83,7 +83,7 @@ Note that it is an error to take the car of the not a pair.
 # cdr
 `(cdr pair)`, *primop*
 
-Returns the contents of the cdr field of *pair*.
+Returns the contents of the cdr field of *pair*.  
 Note that it is an error to take the cdr of the empty list.
 
 ```scheme
@@ -102,9 +102,11 @@ Note that it is an error to take the cdr of the empty list.
 
 Returns a newly allocated *list* of its arguments.
 
+In Ol, "list" is a macro because the number of procedure arguments is limited (to 249, due to virtual machine optimizations), but the number of macro arguments is not. If you want a procedure, you can use something like `(define lst (lambda args args))` or `(define (lst . args) args)`.
+
 ```scheme
 (list 1 2 3 4 5 6 7)          ==> '(1 2 3 4 5 6 7)
-(list 1 2 3)                  === (cons 1 (cons 2 (cons 3 #null)))
+(list 1 2 3)                  ===  (cons 1 (cons 2 (cons 3 #null)))
 (list 'a (+ 3 4) 'c)          ==> '(a 7 c)
 (list)                        ==> '()
 (list (list 1 2) (list 3 4))  ==> '((1 2) (3 4))
@@ -114,8 +116,10 @@ Returns a newly allocated *list* of its arguments.
 `(make-list k)`, *procedure*  
 `(make-list k fill)`, *procedure*
 
-Returns a newly allocated list of *k* elements.
-If a second argument is given, then each element is initialized to *fill*. Otherwise the initial contents of each element is #false.
+Returns a newly allocated list of *k* elements.  
+If a second argument is given, then each element is initialized to *fill*. Otherwise the initial contents of each element is #false.  
+
+The number of elements is limited to 16777215 on 32-bit architectures and 72057594037927935 on 64-bit architectures.
 
 ```scheme
 (make-list 4)     ==> '(#false #false #false #false)
@@ -126,13 +130,14 @@ If a second argument is given, then each element is initialized to *fill*. Other
 # list-copy
 `(list-copy obj)`, *procedure*
 
-Returns a newly allocated shallow copy of the given *obj* if it is a list.
+Returns a newly allocated **shallow** copy of the given *obj* if it is a list.  
 Only the pairs themselves are copied; the cars of the result are the same (in the sense of `eqv?`) as the cars of *list*.
 
 ```scheme
 (list-copy '())               ==> '()
 (list-copy '(1 2 (3) 4))      ==> '(1 2 (3) 4)
-(let ((l '(1 2)))
+
+(let ((l '(1 2 (3) 4)))
    (eq? (list-copy l) l))     ==>  #false
 
 (let*((x '("a" ("b" "c") "d"))
@@ -145,12 +150,12 @@ Only the pairs themselves are copied; the cars of the result are the same (in th
 
 The empty list. Mainly known as *'()*.
 
-`null` (deprecated, but still widely used) is the same as `#null`.
+`null` is the same as `#null` (deprecated, but still widely used).  
 `#n` is a one more synonym for `#null`.
 
 ```scheme
-#null  ==>  '()
-null   ==>  '() ; `null` is depraceted
+#null  ==> '()
+null   ==> '()  ; `null` is depreceted
 #n     ==>  #null
 ```
 
@@ -160,24 +165,30 @@ null   ==>  '() ; `null` is depraceted
 Returns #true if *obj* is the empty list, otherwise returns #false.
 
 ```scheme
-(null? 1)                     ==>  #false
-(null? '(a . b))              ==>  #false
 (null? '())                   ==>  #true
 (null? #null)                 ==>  #true
 (null? null)                  ==>  #true  ; `null` is deprecated
 (null? (cdr '(1)))            ==>  #true
+(null? '(a . b))              ==>  #false
+(null? (cdr '(a . b)))        ==>  #false
+(null? 0)                     ==>  #false
+(null? "")                    ==>  #false
 (null? #false)                ==>  #false
+(null? #i0.0)                 ==>  #false
+(null? 0/0)                   ==>  #false
 ```
 
 # cons*
 `(cons* obj ...)`, *macro*
 
-Returns a newly allocated improper(!) list of its arguments.
+Returns a newly allocated, possibly improper, list of its arguments.  
+To create a proper list, the last argument must be #null.
 
 ```scheme
+(cons* 1)                     ==>  1
 (cons* 1 2)                   ==> '(1 . 2)
 (cons* 'a (+ 3 4) 'c)         ==> '(a 7 . c)
-(cons* 1)                     ==>  1
+(cons* 'a (+ 3 4) 'c #n)      ==> '(a 7 c)
 ```
 
 # list?
