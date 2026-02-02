@@ -3030,11 +3030,11 @@ mainloop:;
 		BNAV  = 12,     // Branch if Not Arity Variadric
 
 	// примитивы языка:
-		VMNEW   = 23,     // make a typed object (fast and simple)
-		VMMAKE  = 18,    // make a typed object (slow, but smart)
+		VMNEW   = 23,   // make a typed object (fast and simple)
+		VMMAKE  = 18,   // make a typed object (slow, but smart)
 		VMALLOC = MODD(VMMAKE, 1),  // alloc a memory region
 		VMCAST  = 22,
-		VMSETE  = 43,
+		VMSETE  = 43,   // vm:set!
 
 		VMPIN   = 35,
 		VMUNPIN = 60,
@@ -3055,9 +3055,10 @@ mainloop:;
 		SETREFE = MODD(SETREF, 1), // set-ref!
 
 		// ?
-		EQQ   = 54,
-		LESSQ = 44,
+		EQQ   = 54, // eq?
+		LESSQ = 44, // less?
 
+		// floating point math
 		FP1 = 33,
 		  FSQRT = 0xFA,
 		  FSIN  = 0xFE,
@@ -3075,7 +3076,7 @@ mainloop:;
 		  FSUB  = 0xE9,
 		  FMUL  = 0xC9,
 		  FDIV  = 0xF9,
-		//FATAN = 0xF3 // atan2
+		  FATAN2= FATAN,
 		  FLOG2 = 0xF1,
 		  FEXPT = 0x81,
 
@@ -3122,7 +3123,7 @@ mainloop:;
 	#		define SYSCALL_FSYNC 74  //
 	#		define SYSCALL_EXECVP 59 //
 	#		define SYSCALL_WAITPID 61//
-	// 5, 6 - free
+	// 5, 6, 10, 11 - free
 	// 12 - reserved for memory functions
 	// #		define SYSCALL_BRK 12
 	// 14 - todo: set signal handling
@@ -3144,7 +3145,6 @@ mainloop:;
 	#		endif//
 
     #		define SYSCALL_ERRNO 60  // errno
-	#		define SYSCALL_GETDENTS 78
 
 	#		define SYSCALL_SENDFILE 40
 	#		define SYSCALL_MEMFD 85
@@ -3164,7 +3164,7 @@ mainloop:;
 	#		ifndef SYSCALL_PRCTL
 	#		define SYSCALL_PRCTL 157
 	#		endif
-	#		define SYSCALL_ARCHPRCTL 158
+	#		define SYSCALL_ARCHPRCTL 158 // disable unsafe syscalls
 	#		define SYSCALL_TIME 201
 
 	#		define SYSCALL_DLOPEN 174
@@ -4521,7 +4521,7 @@ loop:;
 				int socket = port(A1); // to
 				int filefd = port(A2); // from
 				off_t offset = number(A3);
-				int count = number(A4);// count
+				int count = number(A4);
 
 				ssize_t wrote= 0;
 				while (count > 0) {
@@ -4732,23 +4732,21 @@ loop:;
 
 				int_t us = numberp(A1);
 
-				#ifdef __EMSCRIPTEN__
+				#if defined(__EMSCRIPTEN__)
 					int_t ms = us / 1000;
 				# ifdef __WAJIC__
 				#  ifndef OLVM_NOASYNC
 					WaCoroSleep(ms);
 				#  endif
 				# else
-					//emscripten_sleep(ms);
+					emscripten_sleep(ms);
 					r = (word*) ITRUE;
 				# endif
-				#endif
-				#ifdef _WIN32// for Windows
+				#elif defined(_WIN32) // windows
 					int_t ms = us / 1000;
 					Sleep(ms); // in ms
 					r = (word*) ITRUE;
-				#endif
-				#if defined(__unix__) || defined(__APPLE__) // Linux, *BSD, MacOS, etc.
+				#else // Linux, *BSD, MacOS, etc.
 					struct timespec ts = { us / 1000000, (us % 1000000) * 1000 };
 					struct timespec rem;
 					if (nanosleep(&ts, &rem) != 0)
@@ -5647,7 +5645,7 @@ loop:;
 			*inexact = a / b;
 			break;
 	#if OLVM_BUILTIN_FMATH
-		case FATAN: // fatan2
+		case FATAN2: // fatan2
 			*inexact = atan2(a, b);
 			break;
 		case FLOG2: // flog2
