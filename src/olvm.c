@@ -3132,6 +3132,7 @@ mainloop:;
 	#		endif//
 
 	#		define SYSCALL_IOCTL_TIOCGETA 19
+	#		define SYSCALL_IOCTL_GETFD 4
 
 	#		define SYSCALL_PIPE 22
 	#		define SYSCALL_DUP 32
@@ -4694,16 +4695,18 @@ loop:;
 							r = (word*) ITRUE;
 						break;
 					}
-					case 4: {
+					case SYSCALL_IOCTL_GETFD: { // get fd flags
 						int flags;
 						#ifdef _WIN32
 							struct _stat st;
 							flags = _fstat(portfd, &st);
+							if (flags == 0)
+								r = (word*) new_unumber(st.st_mode);
 						#else // normal OSes
 							flags = fcntl(portfd, F_GETFD);
-						#endif						
-						if (flags != -1)
-							r = (word*) new_unumber(flags);
+							if (flags != -1)
+								r = (word*) new_unumber(flags);
+						#endif
 						break;
 					}
 
