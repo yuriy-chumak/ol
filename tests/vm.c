@@ -32,11 +32,11 @@
 		ASSERT(output assertion) \
 	END()
 
-#	define LDI   13      // LDE (13), LDN (77), LDT (141), LDF (205)
-#	  define LDE (LDI + 0*64)
-#	  define LDN (LDI + 1*64)
-#	  define LDT (LDI + 2*64)
-#	  define LDF (LDI + 3*64)
+#	define LDENTF 13      // LDE (13), LDN (77), LDT (141), LDF (205)
+#	  define LDE (LDENTF + 0*64)
+#	  define LDN (LDENTF + 1*64)
+#	  define LDT (LDENTF + 2*64)
+#	  define LDF (LDENTF + 3*64)
 #	define LD    14
 #	define RET   24
 
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 	int succeeded = 0;
 	int total = 0;
 
-	/// LDI
+	/// LDENTF
 	TESTCASE("LDE",  == 0x336, // #empty
 		//lambda(x)  LDE[6]  RET[6]
 		{ 2, TBYTECODE, 4,
@@ -97,13 +97,7 @@ int main(int argc, char** argv)
 	);
 
 
-	/// GOTO, APPLY, RET, RUN, ARITY_ERROR, SYS, LDI, LD, REFI, MOVE, MOV2
-	/// BEQ, Bx, BNA, VMNEW, VMRAW, RAWQ, CONS, TYPE, SIZE, CAST, CAR, CDR
-	/// REF, SETREF, SETREFE, EQ, LESS, CLOCK
-	/// SYSCALL: ...
-	/// UNREEL, TUPLEAPPLY, FFAPPLY, MKRED, MKBLACK, FFTOGGLE, FFREDQ, FFRIGHTQ
-	/// ADDITION, DIVISION, MULTIPLICATION, SUBTRACTION
-	/// BINARY_AND, BINARY_OR, BINARY_XOR, SHIFT_RIGHT, SHIFT_LEFT
+	/// .....
 
 	///
 	return (failed != 0);

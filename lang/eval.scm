@@ -538,7 +538,7 @@
 
                         (14 (DIS 3 "LD"))
 
-                        (13  (DIS 2 "LDI"))
+                        (13  (DIS 2 "LDE"))
                         (77  (DIS 2 "LDN"))
                         (141 (DIS 2 "LDT"))
                         (205 (DIS 2 "LDF"))

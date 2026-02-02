@@ -3013,11 +3013,11 @@ mainloop:;
 
 		MCP   = 27,     // MCP call
 
-		LDI   = 13,     // LDE (13), LDN (77), LDT (141), LDF (205), TODO: rename to LDENTF
-		  LDE = MODD(LDI, 0), // TODO?: somewhere in feature reorder bytecodes
-		  LDN = MODD(LDI, 1),
-		  LDT = MODD(LDI, 2),
-		  LDF = MODD(LDI, 3),
+		LDENTF = 13,     // LDE (13), LDN (77), LDT (141), LDF (205)
+		  LDE = MODD(LDENTF, 0), // TODO?: somewhere in feature reorder bytecodes
+		  LDN = MODD(LDENTF, 1),
+		  LDT = MODD(LDENTF, 2),
+		  LDF = MODD(LDENTF, 3),
 		LD    = 14,     // ld 
 		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
 
@@ -3335,13 +3335,13 @@ loop:;
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
 
-	/*! #### LDI r (LDE, LDN, LDT, LDF)
+	/*! #### LDENTF r (LDE, LDN, LDT, LDF)
 	 * - LDE Store `#empty` into register `r`
 	 * - LDN Store `#null` into register `r`
 	 * - LDT Store `#true` into register `r`
 	 * - LDF Store `#false` into register `r`
 	 */
-	case LDI: {  // (1%) 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
+	case LDENTF: {  // (1%) 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
 		static
 		const word I[] = { IEMPTY, INULL, ITRUE, IFALSE };
 		A0 = I[op>>6];
