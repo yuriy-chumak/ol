@@ -189,6 +189,9 @@
       (define-syntax λ                  ; * ol specific
          (syntax-rules ()
             ((λ . x) (lambda . x))))
+      (define-syntax \                  ; * ol specific
+         (syntax-rules ()
+            ((\ . x) (lambda . x))))
 
       ; 4.1.5  Conditionals
       ;
@@ -1767,7 +1770,7 @@
       ;  ff-apply vector-apply
 
       ; 4.1.4  Procedures
-      λ ; same as 'lambda'
+      λ \ ; same as 'lambda'
       ; 4.1.5, 4.2.2  Conditionals
       if and or
       ; 4.1.6  Assignments
