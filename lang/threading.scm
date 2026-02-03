@@ -34,7 +34,7 @@
    (begin
       ; debug messages
       ; question: maybe change to *threading-log-level* and use (less? LEVEL *debug-threading*) instead of naked if
-      (define *debug-threading* '(#t))
+      (define *debug-threading* '(#f))
 
       (define (sys:write fd buffer)
          (syscall 1 fd buffer #false))
