@@ -19,8 +19,8 @@
    (export
       make-writer  ;; names → ((obj tl) → (byte ... . tl)) ; TODO: remove
 
-      write-format-ff ; write, write-simple
-      print-format-ff ; display, print, print-to
+      write-formats ; write, write-simple
+      print-formats ; display, print, print-to
 
       format-any) ; convert argument to lazy utf-8 list, todo?: rename
 
@@ -102,7 +102,7 @@
 
       ; -------------------------------------------------
       ; (display), (print)
-      (define print-format-ff
+      (define print-formats
       {
          type-symbol cook-symbol
          ; strings
@@ -187,7 +187,7 @@
 
       ; 
       (define (print-formatter obj k)
-         (formatter print-format-ff obj k))
+         (formatter print-formats obj k))
 
       (define format-any print-formatter)
       (define format format-any)
@@ -195,7 +195,7 @@
       ; -------------------------------------------------
       ; receipe book
       ; (write), (write-simple)
-      (define write-format-ff (ff-replace print-format-ff {
+      (define write-formats (ff-replace print-formats {
          ; inexact form depends on 'datum
          type-inexact (lambda (this obj k)
                (if (this 'datum #f)
@@ -243,11 +243,11 @@
       }))
 
       (define (write-formatter obj k)
-         (formatter write-format-ff obj k))
+         (formatter write-formats obj k))
 
       ; ------------------------------
       (define (make-lazy-writer setup)
-         (define this (ff-replace write-format-ff setup))
+         (define this (ff-replace write-formats setup))
 
          (λ (val tl)
             (define output (formatter this val (delay tl)))
