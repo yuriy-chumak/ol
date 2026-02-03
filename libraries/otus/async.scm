@@ -87,8 +87,8 @@
       (define (link id)
          (mcp 23 id id))
 
-      (define (wait-mail)           (mcp 13 #false #false))
-      (define (check-mail)          (mcp 13 #false #true))
+      (define (wait-mail)  (mcp 13 #false #false))
+      (define (check-mail) (mcp 13 #false #true))
 
       (define (accept-mail pred)
          (let loop ((this (wait-mail)) (rev-spam '()))

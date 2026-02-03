@@ -140,7 +140,7 @@
 
       (define mcp-syscalls
          [
-            ; id: name of thread
+            ; id: name of the thread
             ; a: 
             ; b: 
             ; c:
@@ -301,7 +301,7 @@
 
             ; 17, catch or release a running thread (not touching mailbox etc)
             (λ (id cont catch? info todo done state tc)
-               (system-println "interop 17 - catch or release a running thread (not touching mailbox etc)")
+               ;; (system-println "interop 17 - catch or release a running thread (not touching mailbox etc)")
                (if catch?
                   (lets
                      ((all (append todo done))
@@ -326,29 +326,14 @@
                ; (system-println "interop 19 - set return value proposal")
                (tc (cons [id (λ () (cont b))] todo) done (put state return-value-tag b)))
 
-            ;;; 20 & 21 change during profiling
-
-            ; 20, start profiling, no-op during profiling returning 'already-profiling
-            #null
-            ;(λ (id cont b c todo done state tc)
-            ;   ; (system-println "interop 20 - start profiling")
-            ;   (tc (cons [id (λ () (cont 'already-profiling))] todo) done state))
-            ;
-            ; 21, end profiling, resume old ones, pass profiling info
-            #null
-            ;(λ (id cont b c todo done state tc)
-            ;   ; (system-println "interop 21 - end profiling, resume old ones")
-            ;   (lets
-            ;      ((prof (get state 'prof #false)) ;; ff storing profiling info
-            ;       (tc (get prof 'tc #false))      ;; normal thread scheduler
-            ;       (prof (del prof 'tc)))         ;; give just the collected data to thread
-            ;      (tc (cons [id (λ () (cont prof))] todo) done
-            ;         (del state 'prof))))
-
+            ; 20, start profiling, removed
+            #false
+            ; 21, end profiling, removed
+            #false
             ; 22, nestable parallel computation (deprecated, removed)
             #false
       
-            ; 23, link thread
+            ; 23, link thread (if you forgot "-linked")
             (λ (id cont target c todo done state tc)
                (lets
                   ((links (get state link-tag empty))
@@ -392,57 +377,14 @@
             ;; don't record anything for now for the rare thread starts and resumes with interop results
             state))
 
-;      (define mcp-syscalls
-;         (lets
-;            ((syscalls mcp-syscalls-during-profiling)
-;             (syscalls
-;               (set-ref syscalls 20
-;                  (λ (id cont b c todo done state tc)
-;                     ;; make a new thread scheduler using the other interop set
-;                     (define (scheduler self todo done state)
-;                        (if (eq? todo null)
-;                           (if (null? done)
-;                              (halt-thread-controller state)
-;                              (self self done null state))
-;                           (lets
-;                              ((this todo todo)
-;                               (id st this)
-;                               (state (update-state state st))
-;                               (op a b c (run st 0))) ; looks like never called?
-;                              ;(print "run returns: ")
-;                              (if (eq? op 1)
-;                                 ; out of time, usual suspect, short path here
-;                                 (self self todo (cons [id a] done) state)
-;                                 ((ref mcp-syscalls-during-profiling op) id a b c todo done state self))))) ; <- difference here
-;
-;                     (scheduler scheduler (cons [id (λ () (cont 'started-profiling))] todo) done
-;                        (put state 'prof           ;; profiling data is stored under key 'prof
-;                           (put empty 'tc tc)))))) ;; store normal scheduler there for resuming on interop 21
-;             (syscalls
-;               (set-ref syscalls 21 ;; end-profiling interop doesn't do anything when not profiling
-;                  (λ (id cont b c todo done state tc)
-;                     (tc tc (cons [id (λ () (cont 'not-profiling-you-fool))] todo) done state)))))
-;            syscalls))
-
-;      (define (enter-mcp controller threads state)
-;         ; could break here also when threads is just repl-input
-;         (controller controller
-;            (list
-;               ['mcp
-;                  (λ ()
-;                     ((get state signal-tag signal-halt) ; exit by default
-;                        threads state controller))])
-;            null empty))
-
 
       (define (thread-controller todo done state)
-         (if (eq? todo null)
+         ;; (print-to stderr "(thread-controller " todo " - " done " + " state)
+         (if (null? todo)
             (if (null? done)
-            then
-               ;; (print-to stderr "nothing left to run: " state)
                (halt-thread-controller state)  ;; nothing left to run, TODO: use last one code if no "shutdown" code
             else
-               (thread-controller done null state))    ;; new scheduler round
+               (thread-controller done #null state))    ;; new scheduler round
          else
             (let*((this todo todo)
                   (id st this))
@@ -452,7 +394,7 @@
                      ((ref mcp-syscalls op) id a b c todo done state thread-controller))))))
 
       (define (start-thread-controller threads)
-         (thread-controller threads #null #empty))
+         (thread-controller threads #null {}))
 
       ;; ;; signal handler which kills the 'repl-eval thread if there, or repl
       ;; ;; if not, meaning we are just at toplevel minding our own business.

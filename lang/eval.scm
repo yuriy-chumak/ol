@@ -367,7 +367,8 @@
             (display "\n")))
 
       (define (suspend path)
-         (let ((state (call/cc (λ (cont) (vm:mcp cont 16 #t #t)))))
+         (let ((state (call/cc (λ (cont)
+                        (vm:mcp cont 16 #t #t)))))
             (if (eq? state 'resumed)
                "Session restored."
             else

@@ -250,8 +250,8 @@
             (or
                ;; prime check is relatively fast (for deterministic range) so try it first
                (if (prime? n)
-                  (list (cons n 1))
-                  #false)
+                  (list (cons n 1)))
+               ;; sieve of atkin
                (let 
                   ((pows
                      (fold atkin-try (list n)   
