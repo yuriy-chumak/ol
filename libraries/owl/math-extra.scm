@@ -32,7 +32,6 @@
       (owl iff)
       (owl list-extra)
       (owl sort)
-      (only (otus async) por por*)
       (owl ff))
 
    (begin

@@ -17,9 +17,7 @@
       exit-thread shutdown
 
       ; * internal functions
-      start-nested-parallel-computation wrap-the-whole-world-to-a-thunk
-      ; release-thread catch-thread
-      par par* por por*)
+      start-nested-parallel-computation wrap-the-whole-world-to-a-thunk)
 
    (import
       (src vm)
@@ -81,11 +79,6 @@
          (mcp 19 value value) ;; set exit value proposal in thread scheduler
          (exit-thread value) value) ;; stop self and leave the rest (io etc) running to completion
 
-
-      ;; (executable ...) → (first-value . rest-ll) | (), or crash if something crashes in them
-      (define (par* ts)
-         (mcp 22 ts '()))
-
       (define (wrap-the-whole-world-to-a-thunk a b)
          (mcp 16 a b))
       (define (start-nested-parallel-computation a b)
@@ -93,24 +86,6 @@
 
       (define (link id)
          (mcp 23 id id))
-
-      ;; macro for calling from code directly
-      (define-syntax par
-         (syntax-rules ()
-            ((par exp ...)
-               (par* (list (λ () exp) ...)))))
-
-      (define (por* ts)
-         (let loop ((rss (par* ts)))
-            (cond
-               ((null? rss) #false)
-               ((car rss) => (λ (result) result))
-               (else (loop ((cdr rss)))))))
-
-      (define-syntax por
-         (syntax-rules ()
-            ((por exp ...)
-               (por* (list (λ () exp) ...)))))
 
       (define (wait-mail)           (mcp 13 #false #false))
       (define (check-mail)          (mcp 13 #false #true))

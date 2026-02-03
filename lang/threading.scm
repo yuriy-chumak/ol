@@ -345,12 +345,8 @@
             ;      (tc (cons [id (λ () (cont prof))] todo) done
             ;         (del state 'prof))))
 
-            ; 22, nestable parallel computation
-            (λ (id cont opts c todo done state tc)
-               ; (system-println "interop 22 - nestable parallel computation")
-               (lets
-                  ((por-state [cont opts c]))
-                  (tc (cons [id por-state] todo) done state)))
+            ; 22, nestable parallel computation (deprecated, removed)
+            #false
       
             ; 23, link thread
             (λ (id cont target c todo done state tc)
@@ -439,51 +435,6 @@
 ;            null empty))
 
 
-      ; (enter-mcp thread-controller done state) -- no way to go here without the poll, rethink that
-
-      ;; nested thread steps cause
-      ;;    - exit and false -> forget todo & done
-      ;;    - crash -> forget
-
-      ;; st=#(cont todo done) → finished? st'
-      ;; finished? = #f -> new state but no result yet, #t = result found and state is thunk, else error
-      ;; TODO: downgrade to single state and prune useless such nodes from tree whenever # of options is reduced down to 1
-      (define (step-parallel st)
-         (lets ((cont todo done st))
-            (if (null? todo)
-               (if (null? done)
-                  ;; no options left
-                  (values #true (λ () (cont null)))
-                  ;; rewind the track, spin the record and take it back
-                  (step-parallel [cont done null]))
-               (lets ((state todo todo))
-                  (if (eq? (type state) type-vector)
-                     (lets ((fini state (step-parallel state)))
-                        (if (eq? fini null)
-                           ;; crashed, propagate
-                           (values null state)
-                           ;; either par->single or single->value state change,
-                           ;; but consumed a quantum already so handle it in next round
-                           (values #false [cont todo (cons state done)])))
-                     (lets ((op a b c (vm:run state thread-quantum)))
-                        ;(print (list "run returns: " op a b c))
-                        (cond
-                           ((eq? op 1) ;; out of time, a is new state
-                              (values #false
-                                 [cont todo (cons a done)]))
-                           ((eq? op 2) ;; finished, return value and thunk to continue computation
-                              (values #true
-                                 (λ () (cont (cons a (λ () (start-nested-parallel-computation todo done)))))))
-                           ((eq? op 22) ;; start nested parallel computation
-                              (lets ((contp a) (todop b) (donep c)
-                                     (por-state [contp todop donep]))
-                                 (values #false
-                                    [cont todo (cons por-state done)])))
-                           (else
-                              ;; treat all other reasons and syscalls as errors
-                              (print "bad interop op within par: " op)
-                              (values null [op a b c])))))))))
-
       (define (thread-controller todo done state)
          (if (eq? todo null)
             (if (null? done)
@@ -493,27 +444,12 @@
             else
                (thread-controller done null state))    ;; new scheduler round
          else
-            (lets
-               ((this todo todo)
-                (id st this))
-               (if (eq? (type st) type-vector)
-                  ;; parallel or node, hunt next slice to run and proceed
-                  (lets ((fini stp (step-parallel st)))
-                     (cond
-                        ((not fini)
-                           ;; no result found yet but options remaining - keep on truckin
-                           (thread-controller todo (cons [id stp] done) state))
-                        ((eq? fini #true)
-                           ;; some result was found and stp is a thunk to proceed computation
-                           (thread-controller todo (cons [id stp] done) state))
-                        (else
-                           ;; TODO: something failed and stp is an error code. time to crash.
-                           (print "GONDOR!")
-                           "GONDOR!")))
-                  (lets ((op a b c (vm:run st thread-quantum)))
-                     (if (eq? op 1)
-                        (thread-controller todo (cons [id a] done) state)
-                        ((ref mcp-syscalls op) id a b c todo done state thread-controller)))))))
+            (let*((this todo todo)
+                  (id st this))
+               (lets ((op a b c (vm:run st thread-quantum)))
+                  (if (eq? op 1)
+                     (thread-controller todo (cons [id a] done) state)
+                     ((ref mcp-syscalls op) id a b c todo done state thread-controller))))))
 
       (define (start-thread-controller threads)
          (thread-controller threads #null #empty))

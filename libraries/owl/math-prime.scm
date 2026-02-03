@@ -18,7 +18,6 @@
       (owl list-extra)
       (owl math-extra)
       (owl sort)
-      (only (otus async) por por*)
       (owl ff))
 
    (begin
@@ -248,7 +247,7 @@
 
       (define (factor n)   
          (if (> n 1)
-            (por
+            (or
                ;; prime check is relatively fast (for deterministic range) so try it first
                (if (prime? n)
                   (list (cons n 1))
