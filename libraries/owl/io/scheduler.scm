@@ -11,7 +11,7 @@
       (only (scheme list) foldr) ; DEBUG
       (owl math) ; todo: use integer math for speed
       (owl lazy)
-      (only (otus format) format-any) ; DEBUG
+      (only (otus format) format) ; DEBUG
       (otus async))
 
 (begin
@@ -20,7 +20,7 @@
 
    (define stderr (vm:cast 2 type-port))
    (define (print . args)
-      (sys:write stderr (make-bytevector (foldr format-any '(#\newline) args))))
+      (sys:write stderr (make-bytevector (foldr format '(#\newline) args))))
 
    (define max-wait-timeout (* 60 60 1000)); hour
    (assert (or (less? max-wait-timeout (vm:vmax))

@@ -334,7 +334,7 @@
 
       ; TODO: speedup!!
       (define (display-to to obj)
-         (printer (format-any obj #n) 0 null to))
+         (printer (format obj #n) 0 null to))
 
       (define display (case-lambda
          ((obj) (display-to stdout obj))
@@ -351,10 +351,10 @@
 
       ; TODO: speedup!
       (define (print-to to . args)
-         (printer (foldr format-any '(#\newline) args) 0 #null to))
+         (printer (foldr format '(#\newline) args) 0 #null to))
 
       (define (print . args)
-         (printer (foldr format-any '(#\newline) args) 0 #null stdout))
+         (printer (foldr format '(#\newline) args) 0 #null stdout))
 
 
       ;; fixme: system-X do not belong here

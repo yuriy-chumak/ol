@@ -41,7 +41,7 @@
 
       (define stderr (vm:cast 2 type-port))
       (define (print . args)
-         (sys:write stderr (make-bytevector (foldr format-any '(#\newline) args))))
+         (sys:write stderr (make-bytevector (foldr format '(#\newline) args))))
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
@@ -68,9 +68,9 @@
                ((not st) ;; no such thread, or just no inbox
                   (when (car *debug-threading*)
                      (system-stderr "ol: dropping envelope to missing thread: ")
-                     (system-stderr (bytes->string (format-any to '(#\newline))))
+                     (system-stderr (bytes->string (format to '(#\newline))))
                      (system-stderr "    envelope: ")
-                     (system-stderr (bytes->string (format-any envelope '(#\newline)))))
+                     (system-stderr (bytes->string (format envelope '(#\newline)))))
                   (values #false state #false))
                (else ;; activate the state function
                   (values #true

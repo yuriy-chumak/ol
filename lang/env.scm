@@ -118,7 +118,7 @@
                      (fail (list "funny defined value: " funny)))))
             (['undefined]
                (fail
-               (let ((error (bytes->string (foldr format-any '() (list "'" exp "'?")))))
+               (let ((error (bytes->string (foldr format '() (list "'" exp "'?")))))
                   (cond
                      ((has? '(quit stop ret abort) exp)
                         (list "What is" error "\nDid you mean ',quit'? Enter ',help' to help."))

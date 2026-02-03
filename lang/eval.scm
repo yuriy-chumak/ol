@@ -268,12 +268,12 @@
                         (append (map (λ (x) 32) (lrange 0 1 ind))
                            (format-error (car lst) ind)))))
                ((pair? lst)
-                  (format-any (car lst)
+                  (format (car lst)
                      (cons #\space
                         (format-error (cdr lst) ind))))
                ((null? lst) '(#\newline))
                (else
-                  (format-any lst '(#\newline)))))
+                  (format lst '(#\newline)))))
          (write-bytes error-port
             (format-error lst 0)))
 
@@ -656,7 +656,7 @@
                   (repl-message
                      (bytes->string
                         (foldr
-                           (λ (x tl) (format-any x (cons #\space tl)))
+                           (λ (x tl) (format x (cons #\space tl)))
                            null
                            (cons "Words: "
                               (sort string<?
@@ -903,7 +903,7 @@
             (values 'error (list "Bad library name:" iset))))
 
       (define (any->string obj)
-         (list->string (format-any obj null)))
+         (list->string (format obj null)))
 
       (define (rational->decimal thing)
          (runes->string
@@ -949,7 +949,7 @@
                                  ;; file loaded, did we get the library?
                                  (let* ((status msg (import-set->library iset (env-get env '*libraries* #n) (lambda (a b) (values a b)))))
                                     (if (eq? status 'needed)
-                                       (fail (list "found file, but no proper library definition in it for" (bytes->string (format-any iset null)) "."))
+                                       (fail (list "found file, but no proper library definition in it for" (bytes->string (format iset null)) "."))
                                        (library-import env exps fail repl))))
                               ((eq? status 'error)
                                  (fail (list env)))
@@ -958,7 +958,7 @@
                      ((eq? status 'ok)
                         (env-fold env-put-raw env lib)) ;; <- TODO env op, should be in (owl env)
                      ((eq? status 'circular)
-                        (fail (list "Circular dependency causing reload of" (bytes->string (format-any lib null)))))
+                        (fail (list "Circular dependency causing reload of" (bytes->string (format lib null)))))
                      (else
                         (fail (list "BUG: bad library load status: " status))))))
             env exps))
@@ -1095,7 +1095,7 @@
                            (ok
                               (repl-message
                                  (bytes->string
-                                    (format-string "\b\b;; Imported " (format-any (cadr exp) null))))
+                                    (format-string "\b\b;; Imported " (format (cadr exp) null))))
                               envp))))
                   ((definition? exp)
                      (case (evaluator (caddr exp) env)
@@ -1107,7 +1107,7 @@
                               )
                               (ok
                                  (repl-message
-                                    (bytes->string (format-string ";; Defined " (format-any (cadr exp) null))))
+                                    (bytes->string (format-string ";; Defined " (format (cadr exp) null))))
                                  (bind-toplevel env))))
                         (['fail reason]
                            (fail
@@ -1163,7 +1163,7 @@
                                  (ok
                                     (repl-message
                                        (bytes->string
-                                          (foldr format-any null
+                                          (foldr format null
                                              (list "\b\b;; Library " name " added" ))))
                                     (env-set env '*libraries*
                                        (cons (cons name library)

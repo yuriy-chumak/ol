@@ -22,7 +22,7 @@
       write-formats ; write, write-simple
       print-formats ; display, print, print-to
 
-      format-any) ; convert argument to lazy utf-8 list, todo?: rename
+      format) ; convert argument to lazy utf-8 list, in sense of `print`
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
@@ -189,8 +189,7 @@
       (define (print-formatter obj k)
          (formatter print-formats obj k))
 
-      (define format-any print-formatter)
-      (define format format-any)
+      (define format print-formatter)
 
       ; -------------------------------------------------
       ; receipe book
