@@ -14,10 +14,7 @@
       
       ; other threading functions
       running-threads single-thread? kill
-      exit-thread shutdown
-
-      ; * internal functions
-      start-nested-parallel-computation wrap-the-whole-world-to-a-thunk)
+      exit-thread shutdown)
 
    (import
       (src vm)
@@ -59,6 +56,10 @@
       (define (running-threads)
          (mcp 8 #false #false))
 
+      ; get all thread ids
+      (define (running-threads)
+         (mcp 18 #false #false))
+
       ; send a mail
       (define (mail to msg)
          (mcp 9 to msg))
@@ -78,11 +79,6 @@
       (define (shutdown value)
          (mcp 19 value value) ;; set exit value proposal in thread scheduler
          (exit-thread value) value) ;; stop self and leave the rest (io etc) running to completion
-
-      (define (wrap-the-whole-world-to-a-thunk a b)
-         (mcp 16 a b))
-      (define (start-nested-parallel-computation a b)
-         (mcp 22 a b))
 
       (define (link id)
          (mcp 23 id id))

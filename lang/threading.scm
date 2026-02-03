@@ -241,7 +241,7 @@
                      (tc (cons* (car todo) waked (cdr todo)) done state)
                      (tc todo done state))))
 
-            ; 10, breaked - call signal handler
+            ; 10, breaked - call signal handler (unused)
             (λ (id a b c todo done state thread-controller)
                ; (system-println "interop 10 - break")
                (let ((all-threads (cons [id a] (append todo done))))
@@ -254,7 +254,7 @@
                ; (system-println "interop 11 - swapping mcp state")
                (tc threads null state))
 
-            ; 12, set break action
+            ; 12, set break action (unused)
             (λ (id cont choice x todo done state tc)
                ; (system-println "interop 12 - set break action")
                (tc
@@ -274,7 +274,6 @@
                      (else      ;; leave thread continuation waiting
                         (tc todo done (put state id cont))))))
 
-            ;; todo: switch memory limit to a hard one in ovm.c
             ; 14, memory limit was exceeded
             (λ (id a b c todo done state tc)
                (system-println "interop 14 - memlimit exceeded, dropping a thread")
@@ -350,7 +349,7 @@
       ])
 
       ;; todo: add deadlock detection here (and other bad terminal waits)
-      (define (halt-thread-controller state)
+      (define (thread-return-value state)
          (get state return-value-tag 0))
 
       (define (bytecode-of thing default)
@@ -382,8 +381,7 @@
          ;; (print-to stderr "(thread-controller " todo " - " done " + " state)
          (if (null? todo)
             (if (null? done)
-               (halt-thread-controller state)  ;; nothing left to run, TODO: use last one code if no "shutdown" code
-            else
+               (thread-return-value state)  ;; nothing left to run, TODO: use last one code if no "shutdown" code
                (thread-controller done #null state))    ;; new scheduler round
          else
             (let*((this todo todo)
