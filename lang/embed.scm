@@ -71,7 +71,7 @@
             (λ (args)
                (start-thread-controller
                   (list ; just 1 thread
-                     ['main
+                     [main-thread
                         (λ ()
                            (start-io-scheduler)
                            (fork-symbol-interner symbols) ; todo: rename to start-symbol-interner

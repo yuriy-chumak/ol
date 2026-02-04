@@ -14,6 +14,7 @@
 
    (export
       start-thread-controller
+      main-thread
       *debug-threading*)
 
    (import
@@ -35,6 +36,7 @@
       ; debug messages
       ; question: maybe change to *threading-log-level* and use (less? LEVEL *debug-threading*) instead of naked if
       (define *debug-threading* '(#f))
+      (define main-thread ['main])
 
       (define (sys:write fd buffer)
          (syscall 1 fd buffer #false))
