@@ -615,4 +615,4 @@
 (g_signal_connect window "destroy" (G_CALLBACK quit) NULL)
 
 (gtk_main)
-(shutdown 1)
+(exit 1)

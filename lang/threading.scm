@@ -105,7 +105,7 @@
                         (lambda (state code reason clarification)
                            (print-repl-error
                               (verbose-ol-error #e code reason clarification))))))
-                     
+
                (tc todo done (del state id))
             else
                (deliver-messages todo done
@@ -157,10 +157,13 @@
                (tc todo (cons [id a] done) state))
 
             ; 2, thread finished, drop
-            (λ (id a b c todo done state tc)
-               ; (system-println "mcp: interop 2 -- thread finished")
-               (drop-delivering todo done state id
-                  [id ['finished a b c]] tc))
+            (λ (id a b c todo done state tc) ; a - env
+               ;; (print "mcp: interop 2 -- thread " id " finished with " b " " c)
+               (drop-delivering todo done
+                  (if (eq? id main-thread)
+                     (put state return-value-tag b) ; main thread returns value (is it needed?)
+                     state)
+                  id [id ['finished a b c]] tc)) ; TODO: rename to 'evaluated, 'done, or smth
 
             ; 3, vm thrown internal error (on assert)
             (λ (id a b c todo done state tc)
@@ -214,7 +217,7 @@
                   (cons [id (λ () (cont (and (null? todo) (null? done))))] todo)
                   done state))
 
-            ; 8, get running thread ids (sans self)
+            ; 8, get running thread ids (excluding caller)
             (λ (id cont b c todo done state tc)
                ; (system-println "interop 8 - get running thread ids")
                (let
@@ -278,7 +281,7 @@
 
             ; 14, memory limit was exceeded
             (λ (id a b c todo done state tc)
-               (system-println "interop 14 - memlimit exceeded, dropping a thread")
+               ;; (system-println "interop 14 - memlimit exceeded, dropping a thread")
                ; for now, kill the currently active thread (a bit dangerous)
                (drop-delivering todo done state id
                   [id ['crash 'memory-limit b c]] tc))
@@ -314,9 +317,12 @@
                      (cons* [id (λ () (cont 'released))] info todo)
                      done state)))
 
-            ; 18, get a list of currently running thread ids
+            ; 18, get running thread ids (including caller)
             (λ (id cont b c todo done state tc)
                ; (system-println "interop 18 - get a list of currently running thread ids")
+               ;; (print "mcp: interop 18 - get a list of currently running thread ids (" id ")")
+               ;; (print "               -- todo: " todo)
+               ;; (print "               -- done: " done)
                (lets
                   ((grab (λ (l n) (cons (ref n 1) l)))
                    (ids (fold grab (fold grab null todo) done)))
@@ -331,9 +337,9 @@
             #false
             ; 21, end profiling, removed
             #false
-            ; 22, nestable parallel computation (deprecated, removed)
+            ; 22, ...
             #false
-      
+
             ; 23, link thread (if you forgot "-linked")
             (λ (id cont target c todo done state tc)
                (lets
@@ -348,43 +354,26 @@
                      done
                      (put state link-tag links))))
 
+            ; 24, thread terminated with (exit result-code), drop
+            (λ (id a b c todo done state tc) ; a - env
+               (if (eq? id main-thread)
+                  (vm:exit b))
+               ;; (print "mcp: interop 24 -- thread " id " exit with " b " " c)
+               (drop-delivering todo done state
+                  id [id ['exit a b c]] tc))
+
       ])
 
       ;; todo: add deadlock detection here (and other bad terminal waits)
-      (define (thread-return-value state)
+      (define (return-value state)
          (get state return-value-tag 0))
-
-      (define (bytecode-of thing default)
-         (cond
-            ((bytecode? thing) thing)
-            ((function? thing) (bytecode-of (ref thing 1) default))
-            (else default)))
-
-      ;; store profiling info about this call
-      ;; the exec is either a thunk to be run in a thread as a result of
-      ;; forking or a interop being answered, or a vm-generated vector which
-      ;; has arguments for the next function call and the function at the
-      ;; *last* slot of the vector.
-
-      (define (update-state state exec)
-         (if (eq? (type exec) type-vector) ;; vm thread suspensions are vectors
-            (lets
-               ((bcode (bytecode-of (ref exec (size exec)) 'not-a-function)) ;; identify place based in bytecode which is inert
-                (prof (get state 'prof #false))
-                (count (get prof bcode 0))
-                (prof (put prof bcode (+ count 1)))
-                (state (ff-update state 'prof prof)))
-               state)
-            ;; don't record anything for now for the rare thread starts and resumes with interop results
-            state))
-
 
       (define (thread-controller todo done state)
          ;; (print-to stderr "(thread-controller " todo " - " done " + " state)
          (if (null? todo)
             (if (null? done)
-               (thread-return-value state)  ;; nothing left to run, TODO: use last one code if no "shutdown" code
-               (thread-controller done #null state))    ;; new scheduler round
+               (return-value state)  ; nothing left to run
+               (thread-controller done #null state))  ; new scheduler round
          else
             (let*((this todo todo)
                   (id st this))

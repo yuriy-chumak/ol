@@ -5,7 +5,7 @@
 ;; 'MIT License' or 'GNU LGPLv3 License'.
 ;;
 
-(print "Loading code...")
+(print-to stderr "Loading code...")
 (define build-start (time-ms))
 
 ; drop all libraries except (otus core) which is
@@ -102,7 +102,7 @@
 (import (only (owl io)
    system-stderr))
 
-(print "Code loaded at " (- (time-ms) build-start) " ms.")
+(print-to stderr "Code loaded at " (- (time-ms) build-start) " ms.")
 
 ;; a temporary O(n) way to get some space in the heap
 
@@ -271,7 +271,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
 
                   ;; home
                   ((string-eq? (car args) "--home")
-                     (print "use --home=<path>")
+                     (print-to stderr "use --home=<path>")
                      (halt 1))
                   ((starts-with? (car args) "--home=")
                      (loop (put options 'home
@@ -285,7 +285,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                            (put options 'file file)
                            args)))
                   ((starts-with? (car args) "--")
-                     (print "unknown command line option '" (car args) "'")
+                     (print-to stderr "unknown command line option '" (car args) "'")
                      (halt 4))
 
                   (else
@@ -298,7 +298,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                   (unless (string-eq? file "-")
                      (let ((port (open-input-file file)))
                         (unless port
-                           (print "error: can't open file '" file "'")
+                           (print-to stderr "error: can't open file '" file "'")
                            (halt 3))
                         port))))
          (file (or file stdin))
@@ -416,32 +416,31 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                (halt (vm:pin evaluate)))
          else
             ; regular repl:
-            (coroutine ['repl] (lambda ()
-               (let*((lastone (repl-loop env file))
-                     (lastone (if compile?
-                                 (let*((path (options 'output #f))
-                                       (port (if path (open-output-file path) stdout)))
-                                    (if (not port)
-                                       (print-to stderr "Could not open " path " for write")
-                                    else
-                                       (write-bytes port (fasl-encode
-                                          (if (options '--entry #f)
-                                             (if (eq? (arity lastone) -1) ; (lambda args ...)
-                                                (make-entry (lambda (args) (exit (apply lastone args))))
-                                             else
-                                                (runtime-error "Entry must be a variadric procedure"))
+            (let*((lastone (repl-loop env file))
+                  (lastone (if compile?
+                              (let*((path (options 'output #f))
+                                    (port (if path (open-output-file path) stdout)))
+                                 (if (not port)
+                                    (print-to stderr "Could not open " path " for write")
+                                 else
+                                    (write-bytes port (fasl-encode
+                                       (if (options '--entry #f)
+                                          (if (eq? (arity lastone) -1) ; is a (lambda args ...)
+                                             (make-entry (lambda (args) (exit (apply lastone args))))
                                           else
-                                             lastone)))
-                                       (if path (close-port port))
-                                       #true))
-                                 lastone)))
-                  (exit-thread lastone)))))))
+                                             (runtime-error "Entry must be a variadric procedure"))
+                                       else
+                                          lastone)))
+                                    (if path (close-port port))
+                                    #true))
+                              lastone)))
+               (exit lastone)))))
 
 ;;;
 ;;; Dump the new repl
 ;;;
 
-(print "Compiling ...")
+(print-to stderr "Compiling ...")
 
 (import (otus fasl))
 (let*((path "boot.fasl")
@@ -452,10 +451,10 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
          (fasl-encode (make-entry main))))
    (if (not port)
    then
-      (print "Could not open " path " for write")
-      (exit -1) ; error
+      (print-to stderr "Could not open " path " for write")
+      (exit 1) ; error
    else ;; just save the fasl dump
       (write-bytes port bytes)
       (close-port port)
-      (print "Output written at " (- (time-ms) build-start) " ms.")
+      (print-to stderr "Output written at " (- (time-ms) build-start) " ms.")
       (exit 0))) ; ok

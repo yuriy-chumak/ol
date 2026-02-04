@@ -128,9 +128,11 @@
                   (list "error" opcode "->" a " / " b))))
          (case answer
             ;; evaluated, typical behavior (ok, fail)
-            (['finished result]
-               ;; (print-to stderr "finished with " (ref result 1))
-               result)
+            (['finished result]  result)
+            
+            ; (exit r)
+            (['exit result r]
+               ['exit r])
 
             ; (VM::FAIL ...), vm pushed an error
             (['crash opcode a b]
@@ -1208,6 +1210,8 @@
                                  (['ok result env]
                                     (prompt env result)
                                     (loop env in result "> "))
+                                 (['exit result]
+                                    (vm:exit result))
                                  (['fail reason]
                                     (repl-error env reason))))))))
                               

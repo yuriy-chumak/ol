@@ -13,8 +13,8 @@
       async-linked await-linked
       
       ; other threading functions
-      running-threads single-thread? kill
-      exit-thread shutdown)
+      running-threads running-threads-all single-thread? kill
+      exit-thread exit)
 
    (import
       (src vm)
@@ -26,7 +26,7 @@
       (define (mcp op a b)
          (call/cc (λ (resume) (vm:mcp resume op a b))))
 
-      ; 2 = exit from coroutine
+      ; 2 = normal stop the coroutine, is a default behavior on natural thread finish
       (define (exit-thread value) ; todo: rename to exit-coroutine
          (mcp 2 value value))
 
@@ -52,20 +52,20 @@
       (define (single-thread?)
          (mcp 7 #true #true))
 
-      ; get running thread ids
+      ; get running thread ids (including caller)
+      (define (running-threads-all)
+         (mcp 18 #false #false))
+
+      ; get running thread ids (excluding caller)
       (define (running-threads)
          (mcp 8 #false #false))
-
-      ; get all thread ids
-      (define (running-threads)
-         (mcp 18 #false #false))
 
       ; send a mail
       (define (mail to msg)
          (mcp 9 to msg))
 
-      ; drop a thread
-      (define (kill id) ; todo: rename
+      ; kill a thread
+      (define (kill id)
          (mcp 15 id #false))
 
       ;; (define (catch-thread id)
@@ -74,11 +74,9 @@
       ;; (define (release-thread thread)
       ;;    (mcp 17 #false thread))
 
-      ; exit current thread and make a proposal to the exit code
-      ; todo: Stop all threads and exit program with proposed value
-      (define (shutdown value)
-         (mcp 19 value value) ;; set exit value proposal in thread scheduler
-         (exit-thread value) value) ;; stop self and leave the rest (io etc) running to completion
+      ;; stop self and leave the rest (io etc) running to completion
+      (define (exit value)
+         (mcp 24 value value))
 
       (define (link id)
          (mcp 23 id id))
