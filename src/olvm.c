@@ -6190,9 +6190,13 @@ int main(int argc, char** argv)
 		OLVM_SETOPEN
 #endif
 		word r = OLVM_run(olvm, argc, argv);
-        // convert result to appropriate system value
-        if (is_number(r))
-            v = number(r);
+		// convert result to appropriate system value (according to r7rs)
+		// (r == ITRUE) => 0, which is already set "by default"
+		if (r == IFALSE)
+			v = 1;  // 1 for "general error"
+		else
+		if (is_number(r))
+			v = number(r);
 
 		OLVM_delete(olvm);
 	}
