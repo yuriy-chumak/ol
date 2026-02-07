@@ -8,7 +8,7 @@
    (link 'crasher)
    ;; trigger the crash
    (mail 'crasher 'itstime)
-   ;; check that we get a crash
+   ;; check that we get an error
    (let ((envelope (wait-mail)))
       (print (ref envelope 1)
          " -> " (ref (ref envelope 2) 1))))

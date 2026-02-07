@@ -2681,12 +2681,12 @@ word get(word *ff, word key, word def, jmp_buf ret)
 // CHECK produce ERRORs
 #define CHECK(exp, errorcode, a)  if (!(exp)) ERROR(errorcode, this, a);
 
-// "CRASH" is a critical error (produces 'crash, mcp #3)
+// "CRASH" is a critical error (produces 'fatal, mcp #3)
 #define CRASH3(code, a, b) ERROR5("CRASH", 3, code,a,b)
 #define CRASH2(code, a) CRASH3(code, this, a)
 #define CRASH(...) ERROR_MACRO(__VA_ARGS__, NOTHING,CRASH3,CRASH2,, NOTHING)(__VA_ARGS__)
 
-// "ASSERT" produce "CRASH"es
+// "ASSERT" produce "ERROR"s
 #define ASSERT(exp, errorcode, a) if (!(exp)) ERROR(errorcode, a, INULL);
 
 // "ARITY ERROR" macro

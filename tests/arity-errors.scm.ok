@@ -4,7 +4,7 @@ error detected. #(error 17 #<lambda> 3)
   (error 17 -> (wrong number of arguments: 3, but #<f> expects 1))
 error detected. #(error 17 #<lambda> 3)
   (error 17 -> (wrong number of arguments: 3, but #<g> expects one of #(1 2 (at least 4))))
-error detected. #(crash 0 #<lambda> 0)
+error detected. #(fatal 0 #<lambda> 0)
   (error 0 -> (unsupported vm code #<lambda>))
 error detected. hello, i'm error!
 error detected. #(error 17 63 (0 1 . #false))

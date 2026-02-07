@@ -100,7 +100,7 @@
                ;; no threads were waiting for something that is being removed, so tell stderr about it
                (case (ref (ref msg 2) 1)
                   ; runtime error or vm error
-                  ((error crash)
+                  ((error fatal)
                      (vector-apply (ref msg 2)
                         (lambda (state code reason clarification)
                            (print-repl-error
@@ -166,7 +166,7 @@
                ;; set crashed exit value proposal
                (let ((state (put state return-value-tag 127)))
                   (drop-delivering todo done state id
-                     [id ['crash a b c]] tc)))
+                     [id ['fatal a b c]] tc)))
 
             ; 4, coroutine
             (λ (id cont opts thunk todo done state tc)
@@ -279,7 +279,7 @@
                ;; (system-println "interop 14 - memlimit exceeded, dropping a thread")
                ; for now, kill the currently active thread (a bit dangerous)
                (drop-delivering todo done state id
-                  [id ['crash 'memory-limit b c]] tc))
+                  [id ['fatal 'memory-limit b c]] tc))
 
             ; 15, drop local thread
             (λ (id cont target c todo done state tc)

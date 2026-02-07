@@ -129,8 +129,8 @@
                result)
                result)
 
-            ; (VM::FAIL ...), vm pushed an error
-            (['crash opcode a b]
+            ; vm produced a fatal error, something went very unusual
+            (['fatal opcode a b]
                (runtime-error "vm error" (verbose-ol-error #e opcode a b)))
 
             ; (runtime-error ...)

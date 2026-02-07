@@ -135,9 +135,9 @@
             (['exit result r]
                ['exit r])
 
-            ; (VM::FAIL ...), vm pushed an error
-            (['crash opcode a b]
-               ;; (print-to stderr "crashed")
+            ; vm produced a fatal error,
+            ; something went very unusual
+            (['fatal opcode a b]
                (fail (describe-error env opcode a b)))
 
             ; (runtime-error ...), (raise ...)
