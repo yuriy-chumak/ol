@@ -2689,7 +2689,7 @@ word get(word *ff, word key, word def, jmp_buf ret)
 // "ASSERT" produce "CRASH"es
 #define ASSERT(exp, errorcode, a) if (!(exp)) ERROR(errorcode, a, INULL);
 
-// "ARITY_ERROR" macro
+// "ARITY ERROR" macro
 #if OLVM_NO_ADVANCED_ARITY_ERROR
 #	define ARITYERROR(this, acc, ...) ERROR(17, this, I(acc))
 #else
@@ -2760,7 +2760,7 @@ word runtime(struct olvm_t* ol)
 	word r3,r4,r5,r6;
 
 #ifdef DEBUG_COUNT_OPS
-    bzero(ops, sizeof(ops));
+	bzero(ops, sizeof(ops));
 #endif
 
 	// runtime loop
@@ -2786,7 +2786,7 @@ apply:;
 		if ((type & 0x3C) == TFF) { // (95% for "no")
 			// ff assumed to be valid
 			word continuation = R3;
-            word key = R4;
+			word key = R4;
 			switch (acc) {
 			case 2:
 				R3 = get((word*)this, key,  0, ol->ret); // 0 is "not found"
@@ -2809,7 +2809,7 @@ apply:;
 			word continuation = R3;
 			if (acc != 2)
 				ARITYERROR(this, acc-1, I1);
-            word index = R4;
+			word index = R4;
 			if (!is_enum(index))
 				ERROR(1032, this, index);
 
@@ -2827,8 +2827,8 @@ apply:;
 #if OLVM_FFI
 		else // running ffi function
 		if (type == TVPTR) { // todo: change to special type or/and add a second word - function name (== [ptr function-name])
-                             // todo: use same type by longer size, with function name
-							 // note: we don't need to save "this"
+			                 // todo: use same type by longer size, with function name
+			                 // note: we don't need to save "this"
 			ffi_t function = (ffi_t) car(this);
 			word* args = (word*)INULL;
 			for (int i = acc; i > 1; i--)
@@ -2887,7 +2887,7 @@ apply:;
 				R4 = (word) thread; // thread state
 				R5 = I(0); // I(breaked); // сюда можно передать userdata из потока
 				R6 = IFALSE;
-				acc = 4; // вот эти 4 аргумента, что возвращаются из (run) после его завершения
+				acc = 4; // 4 аргумента, которые мы передаем в thread-controller "op a b c",
 				// breaked = 0;
 
 				if (ol->idle)
@@ -2927,7 +2927,7 @@ apply:;
 	// ff call ({} key def) -> def
 	if (this == IEMPTY) {
 		word continuation = R3;
-        word key = R4;
+		word key = R4;
 		switch (acc) {
 		case 2:
 			ERROR(1049, this, key); // key
@@ -2951,8 +2951,8 @@ apply:;
 			goto done; // expected exit
 
 		R4 = R3;
-		R3 = I(2);     // 2 = thread finished, look at (mcp-syscalls) in lang/threading.scm
 		R5 = R6 = IFALSE;
+		R3 = I(2);     // 2 = thread finished, look at mcp-syscalls in lang/threading.scm
 		bank = ticker = 0;
 		goto mcp;
 	}
@@ -3308,8 +3308,8 @@ loop:;
 	// todo: add quantum type checking
 	//			if (ip[0] != 4 || ip[1] != 5)
 	//				STDERR("run reg[%d], reg[%d]", ip[0], ip[1]);
-		this = A0;
-		R0 = R3;
+		this = A0; // thunk
+		R0 = R3;   // continuation (?)
 		ticker = bank ? bank : (int) value(A1);
 		bank = 0;
 		if (!is_reference(this))
@@ -3406,7 +3406,7 @@ loop:;
 	// NOTE: Don't combine BNA and BNAV for the gods of speed
 	case BNA: {
 		long arity = ip[0];
-		if (acc != arity)
+		if (acc != arity) // unlikely
 			ip += (ip[1] << 8) | ip[2];
 
 		ip += 3; break;
@@ -4063,7 +4063,7 @@ loop:;
 		if (argc == 0)
 			ARITYERROR(I(SYSCALL), argc, I1, IFALSE); // , I(1), IFALSE
 
-		--argc; // skip syscall number
+		--argc;  // skip syscall command
 		word* r = (R) IFALSE;  // by default returning #false
 
 		// -----------------------------------------------------------------------------------
@@ -4109,7 +4109,7 @@ loop:;
 
 			/*! #### READ
 			* * `(syscall 0 port) -> bytevector | #t | #eof`
-            * * `(syscall 0 port count) -> bytevector | #t | #eof`
+			* * `(syscall 0 port count) -> bytevector | #t | #eof`
 			*
 			* Attempts to read up to *count* bytes from input port *port*
 			* into the bytevector.
@@ -4159,7 +4159,7 @@ loop:;
 #ifdef __EMSCRIPTEN__
 # ifdef __WAJIC__
 #  ifndef OLVM_NOASYNC
-					if (portfd == 0) {
+					if (portfd == 0) { // stdin
 						WaCoroYield();
 						r = (R) ITRUE;
 					}
@@ -4176,8 +4176,8 @@ loop:;
 			}
 
 			/*! #### WRITE
-			* * `(syscall 1 port object) -> number | #false`
-			* * `(syscall 1 port object count) -> number | #false`
+			* * `(syscall 1 port object) -> number | 0 | #false`
+			* * `(syscall 1 port object count) -> number | 0 | #false`
 			*
 			* Writes up to *count* bytes from the binary *object* to the output port *port*.
 			*
@@ -6430,8 +6430,6 @@ OLVM_run(OL* ol, int argc, char** argv)
 #ifndef __EMSCRIPTEN__
 	int r = setjmp(ol->ret);
 	if (r != 0) {
-		// TODO: restore old values
-		// TODO: if IFALSE - it's error
 		return ol->reg[3]; // returned value
 	}
 #endif

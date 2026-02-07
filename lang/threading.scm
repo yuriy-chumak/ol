@@ -144,22 +144,16 @@
       (define mcp-syscalls
          [
             ; id: name of the thread
-            ; a: 
-            ; b: 
-            ; c:
-            ; todo:
-            ; done:
-            ; state:
-            ; tc:
+            ; tc: thread-controller
 
             ; 1, runnig and time slice exhausted (the usual suspect, handled directly in scheduler)
+            ; typically will not call because optimized inside thread-controller
             (λ (id a b c todo done state tc)
-               ; (system-println "interop 1 - switch thread")
+               ; (print "interop 1 - switch thread")
                (tc todo (cons [id a] done) state))
 
-            ; 2, thread finished, drop
-            (λ (id a b c todo done state tc) ; a - env
-               ;; (print "mcp: interop 2 -- thread " id " finished with " b " " c)
+            ; 2, thread normally finished, drop
+            (λ (id a b c todo done state tc) ; a - last thread result
                (drop-delivering todo done
                   (if (eq? id main-thread)
                      (put state return-value-tag b) ; main thread returns value (is it needed?)
@@ -370,10 +364,9 @@
          (get state return-value-tag 0))
 
       (define (thread-controller todo done state)
-         ;; (print-to stderr "(thread-controller " todo " - " done " + " state)
          (if (null? todo)
             (if (null? done)
-               (return-value state)  ; nothing left to run
+               (return-value state)  ; nothing left to run, exit
                (thread-controller done #null state))  ; new scheduler round
          else
             (let*((this todo todo)

@@ -127,8 +127,9 @@
                (lambda (env opcode a b)
                   (list "error" opcode "->" a " / " b))))
          (case answer
-            ;; evaluated, typical behavior (ok, fail)
             (['finished result]  result)
+            ; evaluated, the typical behavior for REPL (ok, fail)
+            ; ['ok r env] or ['fail reason]
             
             ; (exit r)
             (['exit result r]
@@ -139,7 +140,7 @@
                ;; (print-to stderr "crashed")
                (fail (describe-error env opcode a b)))
 
-            ; (runtime-error ...)
+            ; (runtime-error ...), (raise ...)
             ; note, these could easily be made resumable if continuation
             (['error code reason clarification]
                (fail (describe-error env code reason clarification)))

@@ -58,7 +58,7 @@
       (if (error-object? x)
          (print "  " (error-object-message x))))
    (lambda ()
-      ; don't repeat, this is a dirty hack!
+      ; don't use, this is a dirty hack!
       ((vm:cast (bytevector 0) type-bytecode) 1 2 3)
 ))
 
