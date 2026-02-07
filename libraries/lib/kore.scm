@@ -164,7 +164,7 @@
 
    ; -----
    (define kore-constructor!
-      (vm:new type-constructor (lambda (args)
+      (vm:new type-constructor (lambda args
          (define kore (dlopen #false))
          (define svptr (size nullptr))
 

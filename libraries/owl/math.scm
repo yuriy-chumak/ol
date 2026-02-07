@@ -127,7 +127,7 @@
       ;(setq |+nan.0| (fsqrt -1)) ; sqrt( -1 ) = NaN
 
       (define math-constructor!
-         (vm:new type-constructor (lambda (args)
+         (vm:new type-constructor (lambda args
                ; special -0 for corrent printed such numbers
                (vm:set! |-0.0| (fmul -1 0))
                ; platform-dependent floating point constants

@@ -49,7 +49,7 @@
    ; todo: collect used by main functions, not all
    (define (make-portable-entry entry)
       (define functions (await (mail 'functions #f)))
-      ;(vm:new type-constructor (lambda (args)
+      ;(vm:new type-constructor (lambda args
       (make-entry (lambda (args)
          ; update `ffi`
          (vm:set! ffi (dlsym (dlopen) "OLVM_ffi"))

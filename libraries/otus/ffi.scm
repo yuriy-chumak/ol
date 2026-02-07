@@ -357,7 +357,7 @@
 
 ; notification for ",save":
 (begin
-   (define notification-text (vm:new type-constructor (lambda (args)
+   (define notification-text (vm:new type-constructor (lambda args
       (print "You restored session with ffi enabled.")
       (print "All ffi handles became invalid. Be careful!"))))
    (define (notification) notification-text)
