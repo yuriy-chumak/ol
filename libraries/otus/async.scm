@@ -27,10 +27,6 @@
       (define (mcp op a b)
          (call/cc (λ (resume) (vm:mcp resume op a b))))
 
-      ; 2 = normal stop the coroutine, is a default behavior on natural thread finish
-      (define (exit-thread value) ; todo: rename to exit-coroutine
-         (mcp 2 value value))
-
       ; 4 = create a thread
       (define (coroutine name thunk)
          (mcp 4 (list name) thunk))
@@ -44,6 +40,10 @@
       
       (define (actor-linked name handler)
          (mcp 4 (list name 'mailbox 'link) handler))
+
+      ; coroutine exit
+      (define (exit-thread value) ; TODO: rename to exit-coroutine
+         (mcp 22 value #false))
 
       ; (return-mails), * internal
       (define (return-mails rmails)
@@ -130,13 +130,15 @@
             ; thread finished normally by reaching the end, or with the `exit-thread`
             (['done result]
                result)
+            (['exit result] ; finished with `(exit ...)`
                result)
+            ; todo: handle 'killed-by
 
             ; vm produced a fatal error, something went very unusual
             (['fatal opcode a b]
                (runtime-error "vm error" (verbose-ol-error #e opcode a b)))
 
-            ; (runtime-error ...)
+            ; (runtime-error ...), (raise ...)
             ; note, these could easily be made resumable if continuation
             (['error code reason clarification]
                (runtime-error "ol error" (verbose-ol-error #e code reason clarification)))

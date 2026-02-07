@@ -49,6 +49,8 @@
          ;; ok, no issues
          (['done result]
             result)
+         (['exit result]
+            result)
 
          ; olvm critical errors (something is really wrong)
          (['fatal code a b]
@@ -57,6 +59,8 @@
          ; (runtime-error code info) or (raise info)
          (['error code reason info]
             (handler (if (eq? reason flag) info issue)))
+
+         ; todo: handle 'killed-by
 
          ; should not be happened
          (else is foo

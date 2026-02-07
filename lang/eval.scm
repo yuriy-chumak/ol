@@ -131,9 +131,9 @@
             ; ['ok r env] or ['fail reason]
             (['done result] result) ;['ok ...]
             
-            ; (exit r)
-            (['exit result r]
-               ['exit r])
+            ; (exit-thread r)
+            (['exit result]
+               ['exit result])
 
             ; vm produced a fatal error,
             ; something went very unusual
@@ -1212,8 +1212,12 @@
                                  (['ok result env]
                                     (prompt env result)
                                     (loop env in result "> "))
+
+                                 ; (exit-thread) in the eval-repl subthread happened,
+                                 ; do a real (exit-thread) on the main repl
                                  (['exit result]
-                                    (vm:exit result))
+                                    (exit-thread result))
+
                                  (['fail reason]
                                     (repl-error env reason))))))))
                               

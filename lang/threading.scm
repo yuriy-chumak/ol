@@ -276,7 +276,7 @@
 
             ; 13, look for mail in my inbox at state
             (λ (id cont foo nonblock? todo done state tc)
-               ; (system-println "interop 13 - look for mail in my inbox at state")
+               ;; (print "interop 13 - look for mail in " id " inbox at state " state)
                (lets ((valp queue (quncons (get state id qnull) #false)))
                   (cond
                      (valp      ;; envelope popped from inbox
@@ -306,7 +306,7 @@
                ; (system-println "interop 16 - wrap the whole world to a thunk")
                (let
                   ((resume
-                     (vm:new type-constructor (λ (args)
+                     (vm:new type-constructor (λ args
                         (tc (cons [id (λ () (cont 'resumed))] todo)
                            done state)))))
                   (tc (cons [id (λ () (cont resume))] todo) done state)))
@@ -330,7 +330,7 @@
 
             ; 19, set return value proposal
             (λ (id cont b c todo done state tc)
-               ; (system-println "interop 19 - set return value proposal")
+               ; (print "interop 19 - set return value proposal")
                (tc (cons [id (λ () (cont b))] todo) done (put state return-value-tag b)))
 
             ; 20, start profiling, removed
@@ -342,25 +342,15 @@
 
             ; 23, link thread (if you forgot "-linked")
             (λ (id cont target c todo done state tc)
-               (lets
-                  ((links (get state link-tag empty))
-                   (followers (get links target #n))
-                   (links
-                     (if (memq id followers)
+               (let*((links (get state link-tag empty))
+                     (followers (get links target #n))
+                     (links (if (memq id followers)
                         links
                         (put links target (cons id followers)))))
-                  (tc ;tc
+                  (tc
                      (cons [id (λ () (cont target))] todo)
                      done
                      (put state link-tag links))))
-
-            ; 24, thread terminated with (exit result-code), drop
-            (λ (id a b c todo done state tc) ; a - env
-               (if (eq? id main-thread)
-                  (vm:exit b))
-               ;; (print "mcp: interop 24 -- thread " id " exit with " b " " c)
-               (drop-delivering todo done state
-                  id [id ['exit a b c]] tc))
 
       ])
 
@@ -374,15 +364,17 @@
                (return-value state)  ; nothing left to run, exit
                (thread-controller done #null state))  ; new scheduler round
          else
-            (let*((this todo todo)
-                  (id st this))
-               (lets ((op a b c (vm:run st thread-quantum)))
+            (let*((this todo todo) ; first thread, next threads
+                  (id thunk this)) ; [id thunk]
+               (let* ((op a b c (vm:run thunk thread-quantum)))
+                  ; this is first continuation that puts in R0 register
+                  ; and, concurently, the thread controller
                   (if (eq? op 1)
-                     (thread-controller todo (cons [id a] done) state)
+                     (thread-controller todo (cons [id a] done) state) ; speedup for (ref mcp-syscalls 1)
                      ((ref mcp-syscalls op) id a b c todo done state thread-controller))))))
 
-      (define (start-thread-controller threads)
-         (thread-controller threads #null {}))
+   (define (start-thread-controller threads)
+      (thread-controller threads #null {}))
 
       ;; ;; signal handler which kills the 'repl-eval thread if there, or repl
       ;; ;; if not, meaning we are just at toplevel minding our own business.
