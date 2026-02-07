@@ -212,19 +212,32 @@
                   (cons [id (λ () (cont (and (null? todo) (null? done))))] todo)
                   done state))
 
-            ; 8, get running thread ids (excluding caller)
-            (λ (id cont b c todo done state tc)
-               ; (system-println "interop 8 - get running thread ids")
-               (let
-                  ((ids
-                     (append
-                        (map (λ (x) (ref x 1)) todo)
-                        (map (λ (x) (ref x 1)) done))))
-                  (tc
-                     (cons
-                        [id (λ () (cont ids))]
-                        todo)
-                     done state)))
+            ; 8, get threads
+            ;    all? - show all threads (possibly doubled in list)
+            ;    self? - add self as first thread list element
+            (λ (id cont all? self? todo done state tc)
+               (define (grab l n) (cons (ref n 1) l)) ; id from todo and done
+               (cond
+                  (all?
+                     ; collect all threads, not only running
+                     (let*((ids (let loop ((ids (keys state)) (out #n))
+                                    (if (null? ids)
+                                       out
+                                    else
+                                       (loop (cdr ids)
+                                             (let ((key (car ids)))
+                                                (if (or (eq? key link-tag)
+                                                        ;(eq? key signal-tag)
+                                                        (eq? key id)
+                                                        (eq? key return-value-tag))
+                                                   out
+                                                   (cons key out)))))))
+                           (ids (fold grab (fold grab ids todo) done)))
+                        (tc (cons [id (λ () (cont (if self? (cons id ids) ids)))] todo) done state)))
+                  (else
+                     ; get only running threads
+                     (let*((ids (fold grab (fold grab #null todo) done)))
+                        (tc (cons [id (λ () (cont (if self? (cons id ids) ids)))] todo) done state)))))
 
             ; 9, send mail
             ; return id of thread if delievered or not
@@ -312,16 +325,8 @@
                      (cons* [id (λ () (cont 'released))] info todo)
                      done state)))
 
-            ; 18, get running thread ids (including caller)
-            (λ (id cont b c todo done state tc)
-               ; (system-println "interop 18 - get a list of currently running thread ids")
-               ;; (print "mcp: interop 18 - get a list of currently running thread ids (" id ")")
-               ;; (print "               -- todo: " todo)
-               ;; (print "               -- done: " done)
-               (lets
-                  ((grab (λ (l n) (cons (ref n 1) l)))
-                   (ids (fold grab (fold grab null todo) done)))
-                  (tc (cons [id (λ () (cont (cons id ids)))] todo) done state)))
+            ; 18, empty
+            #false
 
             ; 19, set return value proposal
             (λ (id cont b c todo done state tc)

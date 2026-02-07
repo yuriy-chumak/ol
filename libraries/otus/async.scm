@@ -14,7 +14,7 @@
       
       ; other threading functions
       running-threads running-threads-all single-thread? kill
-      exit-thread exit)
+      threads running-threads single-thread? kill
 
    (import
       (src vm)
@@ -52,13 +52,12 @@
       (define (single-thread?)
          (mcp 7 #true #true))
 
-      ; get running thread ids (including caller)
-      (define (running-threads-all)
-         (mcp 18 #false #false))
+      (define (threads) ; ALL threads (except tags)
+         (mcp 8 #true #f))
 
       ; get running thread ids (excluding caller)
       (define (running-threads)
-         (mcp 8 #false #false))
+         (mcp 8 #false #f))
 
       ; send a mail
       (define (mail to msg)
