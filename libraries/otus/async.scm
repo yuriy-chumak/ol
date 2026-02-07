@@ -13,12 +13,13 @@
       async-linked await-linked
       
       ; other threading functions
-      running-threads running-threads-all single-thread? kill
       threads running-threads single-thread? kill
+      exit-thread die)
 
    (import
       (src vm)
       (scheme core)
+      (scheme list)
       (lang error))
 
    (begin
@@ -73,9 +74,12 @@
       ;; (define (release-thread thread)
       ;;    (mcp 17 #false thread))
 
-      ;; stop self and leave the rest (io etc) running to completion
-      (define (exit value)
-         (mcp 24 value value))
+      ;; stop the world
+      (define (die value)
+         (for-each kill (threads)) ; all threads except caller
+         (mcp 19 value #f) ; make global return value proposal
+         (exit-thread value))
+
 
       (define (link id)
          (mcp 23 id id))

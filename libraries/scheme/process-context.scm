@@ -14,9 +14,7 @@
 
    (import
       (scheme core)
-      (only (scheme list) for-each)
       (otus async)
-      (owl io)
       (owl string))
 
    (begin
@@ -27,10 +25,10 @@
 
       (define exit (case-lambda
          ((code)
-            (exit code))
+            (die code))
          (()
-            (exit 0))))
-      
+            (die 0))))
+
       (define emergency-exit (case-lambda
          ((code)
             (vm:exit code))
