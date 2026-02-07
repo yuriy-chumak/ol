@@ -337,8 +337,14 @@
             #false
             ; 21, end profiling, removed
             #false
-            ; 22, ...
-            #false
+
+            ; 22, finish thread forcibly with (exit-thread ...), drop
+            (λ (id cont b c todo done state tc) ; a - env?
+               (drop-delivering todo done
+                  (if (eq? id Main) ; main thread returns it's value as a program result
+                     (put state return-value-tag b)
+                     state)
+                  id [id ['exit b]] tc))
 
             ; 23, link thread (if you forgot "-linked")
             (λ (id cont target c todo done state tc)
