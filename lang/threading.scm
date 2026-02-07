@@ -14,7 +14,6 @@
 
    (export
       start-thread-controller
-      main-thread
       make-entry
       *debug-threading*)
 
@@ -37,7 +36,7 @@
       ; debug messages
       ; question: maybe change to *threading-log-level* and use (less? LEVEL *debug-threading*) instead of naked if
       (define *debug-threading* '(#f))
-      (define main-thread ['main])
+      (define Main ['Main])
 
       (define (sys:write fd buffer)
          (syscall 1 fd buffer #false))
@@ -155,8 +154,9 @@
             ; 2, thread normally finished, drop
             (λ (id a b c todo done state tc) ; a - last thread result
                (drop-delivering todo done
-                  (if (eq? id main-thread)
-                     (put state return-value-tag b) ; main thread returns value (is it needed?)
+                  ; main thread should returns last value as a program execution result
+                  (if (eq? id Main)
+                     (put state return-value-tag a)
                      state)
                   id [id ['finished a b c]] tc)) ; TODO: rename to 'evaluated, 'done, or smth
 
