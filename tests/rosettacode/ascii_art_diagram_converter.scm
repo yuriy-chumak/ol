@@ -36,7 +36,7 @@
 (define table (parse format-parser (str-iter format) #f #f #f))
 (unless table
    (print "Invalid template. Exiting.")
-   (halt 1))
+   (exit 1))
 
 (print "table structure:" format)
 (print "is encoded as " table " ")

@@ -146,7 +146,7 @@
       (glGetShaderInfoLog vs maxLengthValue maxLength errorLog)
       (print errorLog)
       (print "@")
-      (halt 0)))
+      (exit 0)))
 (glAttachShader po vs)
 
 ;; полезные шейдеры:
@@ -174,7 +174,7 @@
       (glGetShaderInfoLog fs maxLengthValue maxLength errorLog)
       (print errorLog)
       (print "@")
-      (halt 0)))
+      (exit 0)))
 (glAttachShader po fs)
 
 (glLinkProgram po)

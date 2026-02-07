@@ -10,7 +10,7 @@
 
 (unless (and ARB_depth_texture ARB_shadow)
    (print "ARB_depth_texture and ARB_shadow extensions required.")
-   (halt 1))
+   (exit 1))
 
 (import (lib math))
 (define (make-mat4x4) (map (lambda (_) #i0) (iota 16)))

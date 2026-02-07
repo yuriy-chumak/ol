@@ -186,6 +186,6 @@
    (define (make-kore-page page)
       (make-entry
          (lambda (args)
-            (halt (vm:pin page))
+            (exit (vm:pin page))
             kore-constructor!)))
 ))

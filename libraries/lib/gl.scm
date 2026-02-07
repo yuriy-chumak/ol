@@ -188,7 +188,7 @@
             ; 1. обработаем сообщения (todo: не более чем N за раз)
             (native:process-events context (lambda (event)
                (case event
-                  (['quit] (halt 0))
+                  (['quit] (exit 0))
                   (['mouse button x y]
                      ((this 'mouse-handler (lambda (b x y) #f)) button x y))
                   (['keyboard key pressed]

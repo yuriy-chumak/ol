@@ -1744,9 +1744,6 @@
             ((let*/cc var . body)
                (call/cc (λ (var) (let* . body))))))
 
-      ;; stop the vm *immediately* without flushing input or anything else with return value n
-      (define (halt n)               (vm:exit n))
-
       ;; owl backward compatibility
       (define null #null)
 )
@@ -1857,9 +1854,6 @@
 
       ; 6.14
       features
-
-      ; ol extension:
-      halt
 
       ; owl extension:
       null

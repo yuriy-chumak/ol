@@ -24,7 +24,7 @@
    }
 
    'exit {
-      'enter (lambda () (halt 1))
+      'enter (lambda () (exit 1))
    }
 
    'waiting {

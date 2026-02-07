@@ -8,13 +8,12 @@
    (lambda (args)
       (born-blinky)
       ; in simplest case we can just return a vector of pinned functions
-      (halt [
-         (vm:pin (lambda () points))
+      [  (vm:pin (lambda () points))
          (vm:pin get-blinky)
          (vm:pin (lambda () (ref (syscall 1117) 1)))
          (vm:pin (lambda () (ref (syscall 1117) 3)))
          (vm:pin eat-the-point)
          (vm:pin blinky-move)
          (vm:pin get-level)
-      ])))
+      ]))
    "tmp.bin")

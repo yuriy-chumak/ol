@@ -8,11 +8,11 @@
 (if (< (SDL_Init SDL_INIT_VIDEO) 0)
    (begin
       (print "Unable to Init SDL: " (SDL_GetError))
-      (halt 1)))
+      (exit 1)))
 
 (unless (eq? (IMG_Init IMG_INIT_PNG) IMG_INIT_PNG)
    (print "Unable to init SDL png image support: " (SDL_GetError))
-   (halt 1))
+   (exit 1))
 
 (define window (SDL_CreateWindow "Create SDL2 Window sample"
    SDL_WINDOWPOS_UNDEFINED SDL_WINDOWPOS_UNDEFINED

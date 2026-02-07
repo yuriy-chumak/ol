@@ -220,15 +220,15 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
 
                   ((string-eq? (car args) "--help")
                      (print help)
-                     (halt 0))
+                     (exit 0))
                   ;; version manipulation
                   ((string-eq? (car args) "-v")
                      (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
-                     (halt 0))
+                     (exit 0))
                   ((string-eq? (car args) "--version")
                      (print "ol (Otus Lisp) " (get options 'version (cdr *version*)))
                      (print copyright)
-                     (halt 0))
+                     (exit 0))
 
 
                   ((starts-with? (car args) "--version=")
@@ -272,7 +272,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                   ;; home
                   ((string-eq? (car args) "--home")
                      (print-to stderr "use --home=<path>")
-                     (halt 1))
+                     (exit 1))
                   ((starts-with? (car args) "--home=")
                      (loop (put options 'home
                               (substring (car args) 7))
@@ -286,7 +286,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                            args)))
                   ((starts-with? (car args) "--")
                      (print-to stderr "unknown command line option '" (car args) "'")
-                     (halt 4))
+                     (exit 4))
 
                   (else
                      (values
@@ -299,7 +299,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                      (let ((port (open-input-file file)))
                         (unless port
                            (print-to stderr "error: can't open file '" file "'")
-                           (halt 3))
+                           (exit 3))
                         port))))
          (file (or file stdin))
 
@@ -377,7 +377,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
          (if sandbox?
             (unless (sandbox sandbox?)
                (system-stderr "Failed to enter the sandbox.\nYou must have SECCOMP support enabled.\n")
-               (halt 2)))
+               (exit 2)))
 
          ; ohai:
          (if interactive?
@@ -400,7 +400,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                               (print-to stderr "error: " (ref error 2))
                               #false))))
                   (evaluate (lambda (expression)
-                        (halt
+                        (vm:exit ; TODO?: add "return" command for vm:exit
                            (let*((env (vm:deref (unbox this)))
                                  (exp args (uncons expression #f)))
                               (case (type exp)
@@ -413,7 +413,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                                  (type-bytevector
                                     (explain (eval-repl (fasl-decode (bytevector->list exp) #f) env #f evaluate) args))))))))
                ; return pinned evaluator to the caller
-               (halt (vm:pin evaluate)))
+               (vm:exit (vm:pin evaluate)))
          else
             ; regular repl:
             (let*((lastone (repl-loop env file)))

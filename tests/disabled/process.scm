@@ -15,7 +15,7 @@
                   #false)
                ((eq? x #true)
                   ;; exit with given value from child processes
-                  (halt exit-val))
+                  (exit exit-val))
                (else
                   ;; return pid to parent
                   x))))
