@@ -134,6 +134,9 @@
          type-vptr (lambda (this obj k)
                (cons* #\# #\v #\p #\t #\r k))
 
+         31 (lambda (this obj tl) ; thread
+               (cons* #\# #\< #\t #\h #\r #\e #\a #\d #\> tl))
+
          ; lists, vectors, bytevectors
          type-pair (lambda (this obj k)
                (cons #\(
