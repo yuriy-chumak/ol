@@ -206,7 +206,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
 
 ; entry point of the compiled image
 ; (called after starting mcp, symbol and bytecode interners)
-(define (main args)
+(define (main . args)
 
    (define (starts-with? string prefix)
       (and (<= (string-length prefix) (string-length string))
@@ -416,25 +416,25 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                (halt (vm:pin evaluate)))
          else
             ; regular repl:
-            (let*((lastone (repl-loop env file))
-                  (lastone (if compile?
-                              (let*((path (options 'output #f))
-                                    (port (if path (open-output-file path) stdout)))
-                                 (if (not port)
-                                    (print-to stderr "Could not open " path " for write")
-                                 else
-                                    (write-bytes port (fasl-encode
-                                       (if (options '--entry #f)
-                                          (if (eq? (arity lastone) -1) ; is a (lambda args ...)
-                                             (make-entry (lambda (args) (exit (apply lastone args))))
-                                          else
-                                             (runtime-error "Entry must be a variadric procedure"))
-                                       else
-                                          lastone)))
-                                    (if path (close-port port))
-                                    #true))
+            (let*((lastone (repl-loop env file)))
+               (if compile?
+                  (let*((path (options 'output #f))
+                        (port (if path (open-output-file path) stdout)))
+                     (if (not port)
+                        (print-to stderr "Could not open " path " for write")
+                     else
+                        (write-bytes port (fasl-encode
+                           (if (options '--entry #f)
+                              (if (eq? (arity lastone) -1) ; (lambda args ...)
+                                 (make-entry lastone)
+                              else
+                                 (runtime-error "Entry must be a variadric procedure"))
+                           else
                               lastone)))
-               (exit lastone)))))
+                        (if path (close-port port))
+                        #true))
+               else
+                  lastone)))))
 
 ;;;
 ;;; Dump the new repl

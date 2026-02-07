@@ -145,9 +145,10 @@
             (['error code reason clarification]
                (fail (describe-error env code reason clarification)))
 
-            ;; (['breaked]
-            ;;    (print-to stderr "breaked")
-            ;;    (fail (list "breaked")))
+            ; repl killed. return requested result
+            (['killed killer result]
+               ['exit result])
+
             (else is foo
                (fail (list "Funny result for compiler " foo)))))
 
