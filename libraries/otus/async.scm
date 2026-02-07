@@ -124,8 +124,9 @@
       (define (await-linked name)
          (define answer (await name))
          (case answer
-            ;; evaluated, typical behavior (ok, fail)
-            (['finished result]
+            ; thread finished normally by reaching the end, or with the `exit-thread`
+            (['done result]
+               result)
                result)
 
             ; (VM::FAIL ...), vm pushed an error

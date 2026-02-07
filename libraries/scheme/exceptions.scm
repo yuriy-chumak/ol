@@ -47,7 +47,7 @@
          (actor-linked ['with-exception-handler] thunk)))
       (case issue
          ;; ok, no issues
-         (['finished result]
+         (['done result]
             result)
 
          ; olvm critical errors (todo: rename to 'critical?)

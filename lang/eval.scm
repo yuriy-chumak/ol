@@ -127,9 +127,9 @@
                (lambda (env opcode a b)
                   (list "error" opcode "->" a " / " b))))
          (case answer
-            (['finished result]  result)
             ; evaluated, the typical behavior for REPL (ok, fail)
             ; ['ok r env] or ['fail reason]
+            (['done result] result) ;['ok ...]
             
             ; (exit r)
             (['exit result r]

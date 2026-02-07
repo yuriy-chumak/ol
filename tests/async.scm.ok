@@ -3,5 +3,5 @@
 1
 2
 3
-result: #(finished 720 #false #false)
-result: #(finished 362880 #false #false)
+result: #(done 720 #false #false)
+result: #(done 362880 #false #false)

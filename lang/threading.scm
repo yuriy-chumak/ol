@@ -158,7 +158,7 @@
                   (if (eq? id Main)
                      (put state return-value-tag a)
                      state)
-                  id [id ['finished a b c]] tc)) ; TODO: rename to 'evaluated, 'done, or smth
+                  id [id ['done a b c]] tc))
 
             ; 3, vm thrown internal error (on assert)
             (λ (id a b c todo done state tc)
