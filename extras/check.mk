@@ -25,6 +25,10 @@ regression-tests-native:
 
 # -----------------------------------------
 # enable as first part of global testing
+check: clean-log
+clean-log:
+	rm -f tmp/check.log
+
 check: regression-tests
 
 # -----------------------------
@@ -100,7 +104,9 @@ define notify
 endef
 
 define test-scm # testfile wine-or-something executable platform debug/release executable-suffix diff-options # TEST=test-filename
-	@if ([ -f $3-$4-$5$6 ]); then\
+	echo "$1:$2:$3:$4:$5:$6:$7" >> tmp/check.log;\
+	if ([ -f $3-$4-$5$6 ]); then\
+	    echo "    $2 $3-$4-$5$6 repl --home=libraries:$(TEST_HOME) $1" >> tmp/check.log;\
 	    if ([ -f $1.in ] && $2 $3-$4-$5$6 repl --home=libraries:$(TEST_HOME) $1 <$1.in 2>&1 \
 	                     || $2 $3-$4-$5$6 repl --home=libraries:$(TEST_HOME) $1 2>&1) \
 	            | diff $7 - $1.ok >/dev/null; then\
