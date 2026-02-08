@@ -177,7 +177,7 @@
                (22 ; (vm:cast ...)
                   `(invalid cast to ,(typename b (cons 'type b)) for ,a))
                (50 ; (vm:run ...)
-                  '(invalid vm:run state))
+                  '(invalid vm:run argument))
 
                ((23 18 82) ; VMNEW, VMMAKE, VMALLOC
                   `(memory allocation error))
