@@ -455,8 +455,8 @@
                (start-thread-controller
                   (list ; main 1 thread
                      [Main (λ ()
-                              (start-io-scheduler)
                               (fork-symbol-interner symbols) ; todo: rename to start-symbol-interner
                               (fork-bytecode-interner codes) ; todo: rename to start-bytecode-interner
                               (apply main args))] ))))))
+                                 (start-switchboard)
 ))

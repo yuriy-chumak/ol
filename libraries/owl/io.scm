@@ -5,7 +5,7 @@
 (define-library (owl io)
    (export
       ;; asynchronous i/o and threading
-      start-io-scheduler
+      start-switchboard
 
       wait wait-mail ; wait N ms, wait N ms or mail
       bell ; just wake, without message (notify actor to check mailbox)
@@ -113,22 +113,22 @@
 
       ; i/o scheduler
       ; todo?: rewrite as constructor
-      (define (start-io-scheduler)
-         (actor io-scheduler-name io-scheduler))
+      (define (start-switchboard)
+         (actor switchboard-name switchboard))
 
       ; wait for ms microseconds (or for bell or call)
       (define (wait ms)
-         (await (mail io-scheduler-name ['alarm ms])))
+         (await (mail switchboard-name ['alarm ms])))
 
       ; override wait-mail
       (define wait-mail
-         (define io-scheduler io-scheduler-name)
+         (define switchboard switchboard-name)
          (define (wait-mail-ms ms default)
             (let*((answer (check-mail))
                   (answer (or answer
-                              (if (mail io-scheduler ['alarm ms])
-                                 (wait-mail-from io-scheduler)))))
-               (if (eq? (ref answer 1) io-scheduler)
+                              (if (mail switchboard ['alarm ms])
+                                 (wait-mail-from switchboard)))))
+               (if (eq? (ref answer 1) switchboard)
                then ; timeout expired!
                   (or (check-mail) (if default [#false default]))
                else ; got real message
@@ -142,18 +142,18 @@
 
       ; returns #true if port is ready to be read, #false if timeout
       (define (wait-read port timeout)
-         (define answer (await (mail io-scheduler-name ['read-timeout port timeout])))
+         (define answer (await (mail switchboard-name ['read-timeout port timeout])))
          (not (eq? (ref answer 1) 'timeout))) ; timeout reached?      
 
       ; just wake the coroutine (if waiting)
       (define (bell whom)
-         (mail io-scheduler-name ['call whom]))
+         (mail switchboard-name ['call whom]))
 
       ; "call" is "urgent mail"
       ; send mail to the coroutine and wake it if required
       (define (call whom message)
          (when (mail whom message)
-            (mail io-scheduler-name ['call whom])
+            (mail switchboard-name ['call whom])
             whom))
 
      ;; ==================================================================================

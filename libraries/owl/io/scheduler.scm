@@ -1,7 +1,7 @@
 (define-library (owl io scheduler)
    (export
-      io-scheduler
-      io-scheduler-name
+      switchboard
+      switchboard-name
       ;; io-scheduler-timeout ; the message "timeout accurs"
    )
 
@@ -203,8 +203,8 @@
                         ;; bug. crash.
                         (car #false))))))))
 
-   (define io-scheduler-name ['io-scheduler])
-   (define io-scheduler
+   (define switchboard-name ["Switchboard"])
+   (define switchboard
       (delay (muxer #n #n #n)))
 
 ))
