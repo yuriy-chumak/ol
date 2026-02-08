@@ -203,7 +203,7 @@
                         ;; bug. crash.
                         (car #false))))))))
 
-   (define switchboard-name ["Switchboard"])
+   (define switchboard-name '|'Switchboard|)
    (define switchboard
       (delay (muxer #n #n #n)))
 
