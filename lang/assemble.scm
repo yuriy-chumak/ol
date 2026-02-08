@@ -87,7 +87,7 @@
                (values (insert-code codes bytecode #false) bytecode)))) ; value removed for feature use
 
       ; start internal assembly interner
-      (define bytecode-server ['bytecode-server]) ; make server name unique
+      (define bytecode-server ["Bytecodes"]) ; make server name unique
 
       (define (fork-bytecode-interner bytecodes)
          (let ((codes (fold
