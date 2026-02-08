@@ -431,7 +431,7 @@
          (λ (val result?) null))
 
       (define (repl-evaluate exp env)
-         (define uniq ['repl-evaluate])
+         (define uniq ["Eval"])
          (evaluate-as exp env uniq))
 
       ;; load and save path to *loaded*
