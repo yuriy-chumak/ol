@@ -68,12 +68,13 @@
 
 ; accept loop
 (let loop ()
-   (if (select conn
-         (if (null? (running-threads)) 3000000 1)) ; wait a 3 seconds if no running threads detected
-      (let ((fd (accept conn))) ; accept
-         (async (on-accept fd)))
+   (when (wait-read conn 30000)
+      (let ((fd (accept conn))) ; client trying to connect, accept connection
+         (when fd
+            (async (delay (on-accept fd)))))
       (sleep 0)) ; else just switch context
    (loop))
+
 
 (close-port conn)
 
