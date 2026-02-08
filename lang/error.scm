@@ -149,12 +149,15 @@
                         (list b 'for name))))))))
 
    ; returns detailed description of error as list
+   (setq syscall-argument "syscall argument")
+   (setq is-not-a "is-not-a")
+
    (define (error-description env code a b)
       (define (describe code a b)
          (list "error" code "->"
             (case code
                (0
-                  `(unsupported vm code ,a))
+                  `("unsupported vm code" ,a))
 
                (ARITY-ERROR ; 17
                   (cons* "wrong number of arguments:"
@@ -163,7 +166,7 @@
                ; not a procedure
                ; bug: 258 library fail
                ((258 261)
-                  `("operator is not a procedure:" ,a))
+                  `("operator is-not-a procedure:" ,a))
 
                (1049 ; FFAPPLY+1000
                   `("key not found:" ,b in ,a))
@@ -175,54 +178,54 @@
                      `(,b "cannot be a vector index")))
 
                (22 ; (vm:cast ...)
-                  `(invalid cast to ,(typename b (cons 'type b)) for ,a))
+                  `("invalid cast to" ,(typename b (cons 'type b)) for ,a))
                (50 ; (vm:run ...)
-                  '(invalid vm:run argument))
+                  '("invalid vm:run argument"))
 
                ((23 18 82) ; VMNEW, VMMAKE, VMALLOC
-                  `(memory allocation error))
+                  `("memory allocation error"))
 
                (52 ; (car not-a-pair)
-                  `(trying car of a non-pair ,a))
+                  `("trying car" "of a non-pair" ,a))
                (53 ; (cdr not-a-pair)
-                  `(trying cdr of a non-pair ,a))
+                  `("trying cdr" "of a non-pair" ,a))
 
                ; ------------------------------------------------------------
                ; syscall errors:
                (62001 ; port
-                  `(syscall argument ,a is not a port))
+                  `(,syscall-argument ,a is-not-a "port"))
                (62002 ; number
-                  `(syscall argument ,a is not a number))
+                  `(,syscall-argument ,a is-not-a "number"))
                (62003 ; positive number
-                  `(syscall argument ,a is not a positive number))
+                  `(,syscall-argument ,a is-not-a "positive number"))
                (62004 ; reference
-                  `(syscall argument ,a is not a reference))
+                  `(,syscall-argument ,a is-not-a "reference"))
                (62005 ; rawstream
-                  `(syscall argument ,a is not a binary sequence))
+                  `(,syscall-argument ,a is-not-a "binary sequence"))
                (62006 ; string
-                  `(syscall argument ,a is not a string))
+                  `(,syscall-argument ,a is-not-a "string"))
                (62007 ; vptr
-                  `(syscall argument ,a is not a vptr))
+                  `(,syscall-argument ,a is-not-a "vptr"))
                (62008 ; #t/#f
-                  `(syscall argument ,a is not a boolean))
+                  `(,syscall-argument ,a is-not-a "boolean"))
 
                (62020
-                  `(syscall argument ,a is not a number or #false))
+                  `(,syscall-argument ,a is-not-a "number or #false"))
                (62030
-                  `(syscall argument ,a is not a positive number or #false))
+                  `(,syscall-argument ,a is-not-a "positive number or #false"))
                (62016
-                  `(syscall argument ,a is not a port or string))
+                  `(,syscall-argument ,a is-not-a "port or string"))
                (62076
-                  `(syscall argument ,a is not a vptr or string))
+                  `(,syscall-argument ,a is-not-a "vptr or string"))
                (62026
-                  `(syscall argument ,a is not a number or string))
+                  `(,syscall-argument ,a is-not-a "number or string"))
                (62060
-                  `(syscall argument ,a is not a string or #false))
+                  `(,syscall-argument ,a is-not-a "string or #false"))
 
 
                (else
                   (if (less? code 256)
-                     `(,(primop-name code) reported error ": " ,a " " ,b)
+                     `(,(primop-name code) "reported error" ": " ,a " " ,b)
                      `(,code " .. " ,a " " ,b))))))
 
       (if (eq? (type code) type-closure) ; continuation, is a (runtime-error)
