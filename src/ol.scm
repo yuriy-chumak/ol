@@ -447,7 +447,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
          (open-output-file path))
 
       (bytes ;; encode entry as "autorun" function
-         (fasl-encode (make-entry main))))
+         (fasl-encode (make-entry main ["REPL"]))))
    (if (not port)
    then
       (print-to stderr "Could not open " path " for write")
