@@ -447,16 +447,20 @@
          (ff-fold (λ (out x n) (cons (cons x x) out)) null this)))
 
    ; generate proper multithreaded program entry (with io and symbols)
-   (define (make-entry main)
-      (let ((symbols (symbols-of main))
-            (codes   (codes-of   main)))
-         (vm:new type-constructor
-            (λ args
-               (start-thread-controller
-                  (list ; main 1 thread
-                     [Main (λ ()
-                              (fork-symbol-interner symbols) ; todo: rename to start-symbol-interner
-                              (fork-bytecode-interner codes) ; todo: rename to start-bytecode-interner
-                              (apply main args))] ))))))
+   (define make-entry
+      (define (make-entry main name)
+         (let ((symbols (symbols-of main))
+               (codes   (codes-of   main)))
+            (vm:new type-constructor
+               (λ args
+                  (start-thread-controller
+                     (list ; main 1 thread
+                        [name (λ ()
                                  (start-switchboard)
+                                 (fork-symbol-interner symbols) ; todo: rename to start-symbol-interner
+                                 (fork-bytecode-interner codes) ; todo: rename to start-bytecode-interner
+                                 (apply main args))] ))))))
+      (case-lambda
+         ((main) (make-entry main Main))
+         ((main name) (make-entry main name))))
 ))
