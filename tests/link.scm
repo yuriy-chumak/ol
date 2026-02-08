@@ -1,7 +1,7 @@
 (async 'crasher (lambda ()
    (begin
       (wait-mail) ;; wait for a message before fault
-      ((vm:make type-bytecode '(0))))))
+      ((vm:alloc type-bytecode '(0))))))
 
 (begin
    ;; link current thread to thread about to crash
