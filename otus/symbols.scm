@@ -15,7 +15,7 @@
       (otus async))
 
 (begin
-   (setq Symbols 'Symbols) ; don't change
+   (setq Symbols ["Symbols"]) ; don't change
 
    (define (symbol->string str)
       (if (symbol? str)
