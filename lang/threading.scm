@@ -16,6 +16,7 @@
       start-thread-controller
       make-entry
       *debug-threading*)
+      ; TODO: speedup the (get state ...) to (state ...)
 
    (import
       (scheme base)
@@ -301,7 +302,7 @@
                ; (system-println "interop 15 - drop local thread")
                (drop-thread target
                   (cons [id (λ () (cont ['killing target]))] todo)
-                  done state [target ['killed-by id]] tc))
+                  done state [target ['killed id c]] tc))
 
             ; 16, wrap the whole world to a thunk
             (λ (id cont path c todo done state tc)

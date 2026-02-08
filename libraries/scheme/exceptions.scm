@@ -60,7 +60,7 @@
          (['error code reason info]
             (handler (if (eq? reason flag) info issue)))
 
-         ; todo: handle 'killed-by
+         ; todo: handle 'killed
 
          ; should not be happened
          (else is foo

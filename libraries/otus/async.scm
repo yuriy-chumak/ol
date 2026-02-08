@@ -132,7 +132,7 @@
                result)
             (['exit result] ; finished with `(exit ...)`
                result)
-            ; todo: handle 'killed-by
+            ; todo: handle 'killed
 
             ; vm produced a fault, something went very wrong
             (['fault opcode a b]
