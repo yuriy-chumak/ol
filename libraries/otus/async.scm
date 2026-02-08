@@ -136,12 +136,12 @@
 
             ; vm produced a fault, something went very wrong
             (['fault opcode a b]
-               (runtime-error "vm error" (verbose-ol-error #e opcode a b)))
+               (runtime-error "vm error" (error-description #e opcode a b)))
 
             ; (runtime-error ...), (raise ...)
             ; note, these could easily be made resumable if continuation
             (['error code reason clarification]
-               (runtime-error "ol error" (verbose-ol-error #e code reason clarification)))
+               (runtime-error "ol error" (error-description #e code reason clarification)))
 
             (else is foo
                (runtime-error "unknown error" foo))))

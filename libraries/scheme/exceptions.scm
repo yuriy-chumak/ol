@@ -34,11 +34,11 @@
          (or (eq? (ref obj 1) 'error)
              (eq? (ref obj 1) 'fault))))
 
-   (define-syntax error-object-message
-      (syntax-rules (verbose-ol-error interaction-environment)
+   (define-syntax error-object-message ; r7rs name
+      (syntax-rules (error-description interaction-environment)
          ((error-object-message err)
             (vector-apply err (lambda (class code reason info)
-               (verbose-ol-error
+               (error-description
                   (interaction-environment) code reason info))))))
 
    ; error classes: 'error, 'fault

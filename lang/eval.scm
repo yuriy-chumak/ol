@@ -122,7 +122,7 @@
                (λ ()
                   (evaluate exp env)))))
          (define describe-error
-            (env-get env 'describe-ol-error
+            (env-get env 'error-description
                ; empty error printer:
                (lambda (env opcode a b)
                   (list "error" opcode "->" a " / " b))))

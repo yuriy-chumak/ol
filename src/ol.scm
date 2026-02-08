@@ -370,7 +370,6 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                                                                      (string->symbol (ref uname 5)))) ; Platform
                                                                *features*))))
                                           *features*))
-                     (cons 'describe-ol-error verbose-ol-error)
                      ;(cons '*scheme* 'r7rs)
                      (cons '*sandbox* sandbox?)))))
          ; go:

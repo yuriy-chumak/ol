@@ -1,7 +1,7 @@
 (define-library (lang error)
    (export
       typename
-      verbose-ol-error)
+      error-description)
 
    (import
       (scheme core)
@@ -149,7 +149,7 @@
                         (list b 'for name))))))))
 
    ; returns detailed description of error as list
-   (define (verbose-ol-error env code a b)
+   (define (error-description env code a b)
       (define (describe code a b)
          (list "error" code "->"
             (case code
