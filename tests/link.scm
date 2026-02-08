@@ -1,7 +1,7 @@
 (async 'crasher (lambda ()
    (begin
-      (wait-mail) ;; wait for a message before crashing
-      (/ 1 0))))
+      (wait-mail) ;; wait for a message before fault
+      ((vm:make type-bytecode '(0))))))
 
 (begin
    ;; link current thread to thread about to crash
@@ -9,6 +9,6 @@
    ;; trigger the crash
    (mail 'crasher 'itstime)
    ;; check that we get an error
-   (let ((envelope (wait-mail)))
-      (print (ref envelope 1)
-         " -> " (ref (ref envelope 2) 1))))
+   (let*((envelope (wait-mail))
+         (sender msg envelope))
+      (print "'" sender " thread failed with '" (ref msg 1))))

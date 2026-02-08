@@ -51,7 +51,7 @@
       (g 1 2 3)
 ))
 
-; - olvm critical errors (error class is 'fatal)
+; - olvm critical errors (error class is 'fault)
 (with-exception-handler
    (lambda (x)
       (print "error detected. " x)

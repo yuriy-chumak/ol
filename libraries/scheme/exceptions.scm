@@ -32,7 +32,7 @@
          (vector? obj)
          (eq? (size obj) 4)
          (or (eq? (ref obj 1) 'error)
-             (eq? (ref obj 1) 'fatal))))
+             (eq? (ref obj 1) 'fault))))
 
    (define-syntax error-object-message
       (syntax-rules (verbose-ol-error interaction-environment)
@@ -41,7 +41,7 @@
                (verbose-ol-error
                   (interaction-environment) code reason info))))))
 
-   ; error classes: 'error, 'fatal
+   ; error classes: 'error, 'fault
    (define (with-exception-handler handler thunk)
       (define issue (await
          (actor-linked ['with-exception-handler] thunk)))
@@ -52,8 +52,8 @@
          (['exit result]
             result)
 
-         ; olvm critical errors (something is really wrong)
-         (['fatal code a b]
+         ; olvm critical errors (something went really wrong)
+         (['fault code a b]
             (handler issue))
 
          ; (runtime-error code info) or (raise info)

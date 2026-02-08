@@ -1,11 +1,11 @@
 Exceptions
 ==========
 
-Ol and olvm throw two classes of exceptions: *error*s and *crash*es.
+Ol and olvm throw two classes of exceptions: *error*s and *fault*s.
 
 *Error* is a typical error that breaks the normal execution of a program. It could be calling of a lambda with an invalid number of arguments, or trying to evaluate an non-evaluable things, or getting `modulo` for strings, etc.
 
-*Crash* is an exceptional situation that you should never see. It could be running invalid bytecode, or reaching an out-of-memory situation, or something similarly critical.
+*Fault* is an exceptional situation that you should never see. It could be running invalid bytecode, or reaching an out-of-memory situation, or something similarly critical.
 
 You can't handle compile-time exceptions (e.g. `(cons 1 2 3)`), but runtime exceptions can be handled with `with-exception-handler`. You can describe the handled exception using default Ol describer named `error-object-message`.
 

@@ -2657,7 +2657,7 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define A4  reg[ip[4]]
 #define A5  reg[ip[5]]
 
-// generate errors and crashes
+// generate errors and faults
 #ifndef NTRACE
 #define TRACE(...) D(__VA_ARGS__)
 #else
@@ -2681,10 +2681,10 @@ word get(word *ff, word key, word def, jmp_buf ret)
 // CHECK produce ERRORs
 #define CHECK(exp, errorcode, a)  if (!(exp)) ERROR(errorcode, this, a);
 
-// "CRASH" is a critical error (produces 'fatal, mcp #3)
-#define CRASH3(code, a, b) ERROR5("CRASH", 3, code,a,b)
-#define CRASH2(code, a) CRASH3(code, this, a)
-#define CRASH(...) ERROR_MACRO(__VA_ARGS__, NOTHING,CRASH3,CRASH2,, NOTHING)(__VA_ARGS__)
+// "FAULT" is a critical vm error (produces 'fault, mcp #3)
+#define FAULT3(code, a, b) ERROR5("FAULT", 3, code,a,b)
+#define FAULT2(code, a) FAULT3(code, this, a)
+#define FAULT(...) ERROR_MACRO(__VA_ARGS__, NOTHING,FAULT3,FAULT2,, NOTHING)(__VA_ARGS__)
 
 // "ASSERT" produce "ERROR"s
 #define ASSERT(exp, errorcode, a) if (!(exp)) ERROR(errorcode, a, INULL);
@@ -3210,7 +3210,7 @@ loop:;
 		// TODO: JIT!
 		//	https://gcc.gnu.org/onlinedocs/gcc-5.1.0/jit/intro/tutorial04.html
 		default:
-			CRASH(0, I(op));
+			FAULT(0, I(op));
 		}
 		break;
 
@@ -3220,7 +3220,7 @@ loop:;
 	 * Throws "Invalid opcode" error.
 	 */
 	default:
-		CRASH(0, I(op));
+		FAULT(0, I(op));
 		break;
 
 	/*! #### NOP
@@ -3313,7 +3313,7 @@ loop:;
 		ticker = bank ? bank : (int) value(A1);
 		bank = 0;
 		if (!is_reference(this))
-			CRASH(RUN, this);
+			FAULT(RUN, this);
 
 		word hdr = ref(this, 0);
 		if (value_type (hdr) == TTHREAD) {
@@ -3499,7 +3499,7 @@ loop:;
 
 					// fail, no memory available:
 					if (fp + (len / mult) > heap->end)
-						CRASH(op, sandboxp ? ITRUE : IFALSE, I(size));
+						FAULT(op, sandboxp ? ITRUE : IFALSE, I(size));
 				}
 
 				word *ptr = (op == VMMAKE)

@@ -135,9 +135,9 @@
             (['exit result]
                ['exit result])
 
-            ; vm produced a fatal error,
-            ; something went very unusual
-            (['fatal opcode a b]
+            ; vm produced a fault,
+            ; something went very wrong
+            (['fault opcode a b]
                (fail (describe-error env opcode a b)))
 
             ; (runtime-error ...), (raise ...)
@@ -354,7 +354,7 @@
                      (else (loop (kvs)))))))))
 
       ;; render the value if isatty?, and print as such (or not at all) if it is a repl-message
-      ;; if interactive mode and output fails, the error is fatal
+      ;; if interactive mode and output fails, the error is fatal(?)
       (define (prompt env val)
          (when (interactive? env)
             (if (repl-message? val)
