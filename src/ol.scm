@@ -49,7 +49,7 @@
 
 ; let's prepare a new Ol compiler
 (import (otus symbols))
-(import (lang threading))
+(import (otus threading))
 
 (import (lang gensym))
 (import (lang env))

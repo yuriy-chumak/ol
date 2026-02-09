@@ -10,7 +10,7 @@
 
 ;; todo: make it a bug to send mail to a thread having no inbox.
 
-(define-library (lang threading)
+(define-library (otus threading)
 
    (export
       start-thread-controller

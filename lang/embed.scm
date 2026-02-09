@@ -9,7 +9,7 @@
       (owl io) (owl math)
       (otus symbols)
       (lang assemble)
-      (lang threading))
+      (otus threading))
 
 (begin
    (define make-entry make-entry)
