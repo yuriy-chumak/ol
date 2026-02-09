@@ -4,7 +4,7 @@
       string->uninterned-symbol
       symbol->string
 
-      format-symbol ; TODO?: rename to symbol->utf8stream
+      format-symbol ; symbol->utf8stream
       fork-symbol-interner
    )
 
@@ -26,8 +26,9 @@
 
    (define (string->symbol str) ; todo: move to (otus symbols)?
       (if (string? str)
-         (await (mail Symbols str)))) ; doesn't work without valid handler coroutine
+         (await (mail Symbols str)))) ; doesn't work without 'Symbols coroutine
 
+   ; symbol->utf8stream
    (define (format-symbol obj tl)
       (format-string
          (let ((str (symbol->string obj)))
