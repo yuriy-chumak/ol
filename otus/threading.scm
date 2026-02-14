@@ -43,23 +43,29 @@
 
       (define (sys:write fd buffer)
          (syscall 1 fd buffer #false))
-
       (define stderr (vm:cast 2 type-port))
+
+      ; override io library printers
+      ; (display ...) = (display-to stderr ...)
+      (define (display arg)
+         (sys:write stderr (make-bytevector (format arg #n))))
+      ; (print ...) = (print-to stderr ...)
       (define (print . args)
-         (sys:write stderr (make-bytevector (foldr format '(#\newline) args))))
+         (for-each display args)
+         (sys:write stderr (bytevector #\newline)))
 
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
 
-      (define link-tag "mcp/links")
-      (define signal-tag "mcp/break")
+      (define link-tag "|mcp/links")
+      (define signal-tag "|mcp/break")
 
       (define (signal-halt threads state controller)
-         (print-to stderr "stopping on signal")
+         (print "stopping on signal")
          (die 42)) ;; exit owl with a specific return value
       (define thread-quantum 10000)
 
       (define (bad-interop id a b c todo done state)
-         (system-println "mcp: got bad interop")
+         (print "mcp: got bad interop")
          (values todo done state))
 
       ; -> state ok? x #false|waked-thread
@@ -72,10 +78,8 @@
                      #false))
                ((not st) ;; no such thread, or just no inbox
                   (when (car *debug-threading*)
-                     (system-stderr "ol: dropping envelope to missing thread: ")
-                     (system-stderr (bytes->string (format to '(#\newline))))
-                     (system-stderr "    envelope: ")
-                     (system-stderr (bytes->string (format envelope '(#\newline)))))
+                     (print "ol: dropping envelope to missing thread: ")
+                     (print "    envelope: " envelope))
                   (values #false state #false))
                (else ;; activate the state function
                   (values #true
@@ -188,7 +192,7 @@
                                        ;; the thread should have a mailbox for communication in state
                                        (put state new-id qnull))
                                     (else
-                                       (system-println "fork: bad parameter")
+                                       (print "fork: bad parameter")
                                        state)))
                            state (cdr opts))))
                   (tc todo done state)))
