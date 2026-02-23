@@ -396,9 +396,9 @@ Ol command line is:
 
 * if no filename given ol will use stdin as source
 * if you want to use stdin as source but must provide an arguments, use "-" instead
-  * i.e. `echo '(print *vm-args*)' | ol - arg1 arg2`
+  * i.e. `echo '(print *command-line*)' | ol - arg1 arg2`
 * if you want to break vm-options scanning and provide filename like option (i.e. '--version' as a real file name), use "--" for 'end-of-option' flag and then a filename
-  * i.e. `echo '(print *vm-args*)' > --version; ol -- --version arg1 arg2 arg3`
+  * i.e. `echo '(print *command-line*)' > --version; ol -- --version arg1 arg2 arg3`
 
 Olvm command line options available:
 * `-v`: print olvm version then exit
