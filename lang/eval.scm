@@ -43,7 +43,7 @@
       (owl list-extra)
       (otus format)
       (owl string)
-      (owl parse) (lang sexp)
+      (data parse) (data s-exp)
       (owl string)
       (scheme misc)
       (scheme bytevector)
@@ -409,7 +409,7 @@
          (call/cc (lambda (return)
             ; in case of empty s-exp and #eof detected we just return an end-of-stream
             (when (eof? msg)
-               (define w-or-c (try-parse (greedy+ whitespace-or-comment) ll #f))
+               (define w-or-c (try-parse (greedy+ whitespace-or-comment) ll))
                (when w-or-c
                   (if (null? (cdr w-or-c))
                      (return #null))))
@@ -861,6 +861,20 @@
                         (file->list file))
                (file->list file))))
 
+      ; 
+      (define get-sexps
+         (greedy* sexp-parser))
+
+      (define get-padded-sexps
+         (let-parse*(
+               (data get-sexps)
+               ( -- (greedy* whitespace-or-comment)))
+            data))
+      (define (list->sexps lst)
+         ; parse parser data maybe-path maybe-error-msg fail-val
+         (parse get-padded-sexps lst))
+
+
       ;; try to find and parse contents of <path> and wrap to (begin ...) or call fail
       (define (repl-include env path fail)
          (let*((paths (map
@@ -874,7 +888,7 @@
             ;;  (datas (lmap (lambda (file) (library-file->list env file)) paths))
             ;;  (data (first (λ (x) x) datas #false)))
             (if data
-               (let ((exps (list->sexps data "library fail" path)))
+               (let ((exps (list->sexps data)))
                   (if exps ;; all of the file parsed to a list of sexps
                      (cons 'begin exps)
                      (fail (list "Failed to parse contents of " path))))
@@ -1285,7 +1299,7 @@
                   evaluate))
 
       (define (eval-string str env)
-         (define exps (try-parse get-padded-sexps (str-iter str) #false))
+         (define exps (try-parse get-padded-sexps (str-iter str)))
          (if exps
             (let loop ((exps (car exps)) (env env))
                (define exp (car exps))
