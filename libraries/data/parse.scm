@@ -3,6 +3,7 @@
       parse     ; (parse parser data fail-val) → result | fail-val (if no full match)
                 ; если же надо проверить, что больше ничего не осталось - используем специальный парсер "eof"
       let-parse ; returns pair '(value . stream), stream is #f if error, stream is #n if eof
+      try-parse
 
       let-parse*; parser declarator
       backtrack ; rollback stream if fail (internal, but shared for other parsers)
@@ -324,8 +325,8 @@
          (define (let-parse parser data fail)
             (let* ((l r p val (parser #null data 0 ok)))
                (if l
-                  (cons val r) ; '(val . #null) in case of full match
-                  (cons fail #f)))) ; fail
+                  (values val r) ; '(val . #null) in case of full match
+                  (values fail #f)))) ; fail
          (case-lambda
             ((parser data) (let-parse parser data #f))
             ((parser data fail) (let-parse parser data fail))))
@@ -342,6 +343,12 @@
          ; five arguments is deprecated:
          ((parser data fail)
             (parse parser data fail))))
+
+      ; returns false if failed, not a pair (data . stream)
+      (define (try-parse parser data)
+         (let*((v tail (let-parse parser data)))
+            (when tail
+               (cons v tail))))
 
 ))
 
