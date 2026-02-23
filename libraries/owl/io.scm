@@ -78,13 +78,12 @@
       (owl io scheduler)
       (owl queue)
       (owl string)
-      (only (owl parse) rune)
+      (data parse)
       (owl list-extra)
       (owl ff)
       (otus blobs)
       (otus format)
       (owl math)
-      (owl parse)
       (otus fasl)
       (owl lazy)
       (scheme bytevector)
@@ -610,8 +609,8 @@
       (define read-line
          (define (read-line port)
             (let* ((l r p val ((let-parse* (
-                                    (runes (greedy* (rune-if (lambda (r) (not (eq? r #\newline))))))
-                                    (newline (either (imm #\newline) (epsilon #eof))))
+                                    (runes (greedy* (rune (lambda (r) (not (eq? r #\newline))))))
+                                    (newline (either (byte #\newline) (epsilon #eof))))
                                  (if (and (null? runes) (eq? newline #eof))
                                     #false
                                     (runes->string runes)))
