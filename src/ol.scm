@@ -54,7 +54,6 @@
 (import (lang gensym))
 (import (lang env))
 (import (lang macro))
-(import (lang sexp))
 (import (lang error))
 
 (import (lang ast))

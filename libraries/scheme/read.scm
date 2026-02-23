@@ -5,12 +5,8 @@
 
 (import
    (scheme core)
-   (only (lang sexp) sexp)
    (owl io)
-   (owl io scheduler)
-   (owl parse)
-   (owl string)
-   (otus async))
+   (only (data s-exp) sexp))
 
 (begin
 
@@ -23,6 +19,7 @@
                               (values l r p v)))))
          (when l val)))
 
+   ; read is not interning symbols
    (define read (case-lambda
       ((port)
          (sexp-reader port))
