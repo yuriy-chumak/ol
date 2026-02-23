@@ -7,7 +7,7 @@
       (scheme core)
       (owl list)
       (owl string)
-      (only (lang sexp) list->number)
+      (only (data s-exp) list->number)
       (owl math))
 
 (begin
