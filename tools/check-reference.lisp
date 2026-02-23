@@ -1,7 +1,7 @@
 #!/usr/bin/env ol
 
-(import (owl parse))
-(import (lang sexp))
+(import (data parse))
+(import (data s-exp))
 (import (scheme repl))
 
 (define isatty (syscall 1016 (c-string "MAKE_TERMOUT")))
@@ -15,41 +15,42 @@
    (greedy+ (let-parse* (
          (text (let-parse* (
                      (text (lazy* byte))
-                     (skip (word "```scheme" #f)))
+                     ( --  (bytes "```scheme")))
                   text))
          (code (let-parse* (
                      (code (lazy* byte))
-                     (skip (greedy* (imm #\space)))
-                     (skip (word "```" #f)))
+                     ( --  (greedy* (byte #\space)))
+                     ( --  (bytes "```")))
                   code)))
-   (append code '(#\newline)))))
+      (append code '(#\newline)))))
 
 (define |> code\n answer|
    (let-parse* (
          (code (greedy+ (let-parse* (
-                  (skip (greedy* whitespace-or-comment))
-                  (prefix (word "> " #t)) ; строка запроса
+                  ( --  (greedy* whitespace-or-comment))
+                  ( --  (runes "> ")) ; строка запроса
                   (code sexp-parser)
-                  (skip (imm #\newline))) ; trailing newlines
+                  ( --  (byte #\newline))) ; trailing newlines
             code)))
          (answer (either
             (let-parse* (
-                  (skip (greedy* (imm #\space))) ; leading spaces
-                  (skip (imm #\newline)))
+                  ( --  (greedy* (byte #\space))) ; leading spaces
+                  ( --  (byte #\newline)))
                #null)
             (let-parse* (
-                  (skip (greedy* (imm #\space))) ; leading spaces
+                  ( --  (greedy* (byte #\space))) ; leading spaces
                   (text (lazy* rune))
-                  (skip (word "\n\n" #t)))  ; обязательный маркер конца примера
+                  ( --  (runes "\n\n")))  ; обязательный маркер конца примера
                text))))
       (cons code answer)))
 
 (define |code ==> answer|
    (let-parse* (
-         (skip (greedy* whitespace-or-comment))
+         ( --  (greedy* whitespace-or-comment))
          (code sexp-parser)
-         (arrow sexp-parser)  (verify (or (equal? arrow '==>)
-                                          (equal? arrow '===)) 'invalid-arrow-symbol)
+         (arrow sexp-parser)
+            (unless (or (equal? arrow '==>)
+                        (equal? arrow '===)) 'invalid-arrow-symbol)
          (answer sexp-parser)
          (skip (greedy* whitespace-or-comment)))
       (cons code answer)))
@@ -91,7 +92,7 @@
       (for-each (lambda (code-block)
             (let loop ((code-block code-block) (env (interaction-environment)))
                (cond
-                  ((try-parse |> code\n answer| code-block #false) => (lambda (expressions)
+                  ((try-parse |> code\n answer| code-block) => (lambda (expressions)
                      (let*((code (caar expressions))
                            (answer (cdar expressions))
                            (answer (s/[ \n]+/ /g (list->string answer)))
@@ -130,7 +131,7 @@
                                  (error code actual answer))
                               env))))
                         (loop (cdr expressions) env))))
-                  ((try-parse |code ==> answer| code-block #false) => (lambda (expressions)
+                  ((try-parse |code ==> answer| code-block) => (lambda (expressions)
                      (let*((code (caar expressions))
                            (answer (cdar expressions)))
                         ;; (print "code/answer: " code " / " answer)
@@ -145,7 +146,7 @@
                                  (equal? code-block '(10 10)))
                         (print code-block)
                         (print "incorrect samples block:\n```scheme\n" RED (bytes->string code-block) END "```"))))))
-         (car (or (try-parse parser (force (file->bytestream filename)) #f) '(()))))
+         (parse parser (file->bytestream filename)))
       (if (car ok)
          (print GREEN " ok" END)))
    *command-line*)
