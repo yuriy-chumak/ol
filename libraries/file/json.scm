@@ -19,7 +19,7 @@
 
    (import
       (otus lisp)
-      (owl parse)
+      (data parse)
       (lang sexp))
 (begin
 
@@ -80,7 +80,7 @@
                (display "null"))
          )))
 
-   (define whitespace (byte-if (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
+   (define whitespace (byte (lambda (x) (has? '(#\tab #\newline #\space #\return) x))))
    (define maybe-whitespaces (greedy* whitespace))
 
    ; https://www.ietf.org/rfc/rfc4627.txt
@@ -97,13 +97,13 @@
 
    (define get-quoted-string-char
       (let-parse* (
-            (skip (imm #\\))
+            (skip (byte #\\))
             (char (either
                      (let-parse* (
-                           (ch (byte-if (lambda (byte) (quoted-values byte #f)))))
+                           (ch (byte (lambda (byte) (quoted-values byte #f)))))
                         (quoted-values ch))
                      (let-parse* (
-                           (skip (imm #\u))
+                           (skip (byte #\u))
                            (c1 byte)
                            (c2 byte)
                            (c3 byte)
@@ -114,48 +114,48 @@
    (define string
       (either
          (let-parse* (
-               (skip (imm #\"))
+               (skip (byte #\"))
                (chars (greedy*
                         (either
                            get-quoted-string-char
-                           (rune-if (lambda (x) (not (has? '(#\" #\\) x)))))))
-               (skip (imm #\")))
+                           (rune (lambda (x) (not (has? '(#\" #\\) x)))))))
+               (skip (byte #\")))
             (runes->string chars))
          (let-parse* (
-               (skip (imm #\'))
+               (skip (byte #\'))
                (chars (greedy*
                         (either
                            get-quoted-string-char
-                           (rune-if (lambda (x) (not (has? '(#\' #\\) x)))))))
-               (skip (imm #\')))
+                           (rune (lambda (x) (not (has? '(#\' #\\) x)))))))
+               (skip (byte #\')))
             (runes->string chars))))
 
    (define natural
       (let-parse* (
-            (value (greedy+ (rune-if (lambda (rune) (<= #\0 rune #\9))))))
+            (value (greedy+ (rune (lambda (rune) (<= #\0 rune #\9))))))
          (list->number value 10)))
 
    (define number
       (let-parse* (
             (signer (any-of
-                  (word "+" (lambda (x) x))
-                  (word "-" (lambda (x) (negate x)))
-                  (epsilon  (lambda (x) x))))
+                  (runes "+" (lambda (x) x))
+                  (runes "-" (lambda (x) (negate x)))
+                  (epsilon   (lambda (x) x))))
             (int natural)
             (frac (either
                         (let-parse* (
-                              (skip (imm #\.))
-                              (digits (greedy* (rune-if (lambda (rune) (<= #\0 rune #\9))))))
+                              (skip (byte #\.))
+                              (digits (greedy* (rune (lambda (rune) (<= #\0 rune #\9))))))
                            (/ (list->number digits 10) (expt #i10 (length digits))))
                         (epsilon #f)))
             (exponent (any-of
                   (let-parse* (
-                        (e (imm #\e))
+                        (e (byte #\e))
                         (signer (any-of
-                           (word "+" (lambda (x) x))
-                           (word "-" (lambda (x) (negate x)))
-                           (epsilon  (lambda (x) x))))
-                        (exp (greedy+ (rune-if (lambda (rune) (<= #\0 rune #\9))))))
+                           (runes "+" (lambda (x) x))
+                           (runes "-" (lambda (x) (negate x)))
+                           (epsilon   (lambda (x) x))))
+                        (exp (greedy+ (rune (lambda (rune) (<= #\0 rune #\9))))))
                      (expt 10 (signer (list->number exp 10))))
                   (epsilon 1))))
          (if frac
@@ -167,39 +167,39 @@
             (/ maybe-whitespaces) ; skip leading whitespaces
             (value (any-of
                string
-               (word "true" #true)
-               (word "false" #false)
-               (word "null" #null)
+               (runes "true" #true)
+               (runes "false" #false)
+               (runes "null" #null)
                number
                ; objects:
                (let-parse* (
-                     (/ (imm #\{))
+                     (/ (byte #\{))
                      (kv (greedy*
                         (let-parse* (
                               (/ maybe-whitespaces)
                               (key string)
                               (/ maybe-whitespaces)
-                              (/ (imm #\:))
+                              (/ (byte #\:))
                               (value (object))
                               (/ maybe-whitespaces)
-                              (/ (greedy* (byte-if (lambda (x) (eq? x #\,))))))
+                              (/ (greedy* (byte (lambda (x) (eq? x #\,))))))
                            (cons key value))))
                      (/ maybe-whitespaces)
-                     (/ (imm #\})))
+                     (/ (byte #\})))
                   (fold (lambda (ff kv)
                            (put ff (string->symbol (car kv)) (cdr kv)))
                      #empty kv))
                ; vectors
                (let-parse* (
-                     (/ (imm #\[))
+                     (/ (byte #\[))
                      (value (greedy*
                         (let-parse* (
                               (value (object))
                               (/ maybe-whitespaces)
-                              (/ (greedy* (byte-if (lambda (x) (eq? x #\,))))))
+                              (/ (greedy* (byte (lambda (x) (eq? x #\,))))))
                            value)))
                      (/ maybe-whitespaces)
-                     (/ (imm #\])))
+                     (/ (byte #\])))
                   (list->vector value))))
             )
          value))
@@ -209,8 +209,7 @@
 
    (define (read-json-stream stream)
       (when stream
-         (define json (try-parse json-parser stream #f))
-         (if json (car json))))
+         (parse json-parser stream)))
 
    (define (read-json-port port)
       (when port

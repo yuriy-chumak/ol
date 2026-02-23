@@ -1,13 +1,13 @@
 (import
-   (owl parse)
+   (data parse)
    (file json))
 
 ; todo: add full json test suite
-(assert (car (try-parse json-parser (str-iter "{}") #t))
+(assert (parse json-parser (str-iter "{}"))
    ===> #empty)
-(assert (car (try-parse json-parser (str-iter "[]") #t))
+(assert (parse json-parser (str-iter "[]"))
    ===> [])
-(assert (car (try-parse json-parser (str-iter "{'something':[12,23,34],'old':{},'new':true}") #t))
+(assert (parse json-parser (str-iter "{'something':[12,23,34],'old':{},'new':true}"))
    ===> { 'something [12 23 34]
             'old #empty
             'new #true })
