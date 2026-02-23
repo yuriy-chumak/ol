@@ -236,8 +236,8 @@
       ;; truncate/
       ;; u8-ready?
    unless
-;  unquote           * reserved for use by Scheme, used in (lang sexp)
-;  unquote-splicing  * reserved for use by Scheme, used in (lang sexp)
+;  unquote           * reserved for use by Scheme, used in (data s-exp)
+;  unquote-splicing  * reserved for use by Scheme, used in (data s-exp)
    utf8->string
    values
    vector

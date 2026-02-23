@@ -2,7 +2,7 @@
  (import
   (otus lisp)
   (OpenAL version-1-1)
-  (owl parse) (lang sexp))
+  (owl parse) (data s-exp))
 
  (export
    (exports (OpenAL version-1-1))

@@ -16,7 +16,7 @@
       (otus lisp)
       (owl parse) (owl io)
       (owl unicode)
-      (lang sexp))
+      (data s-exp))
 (begin
 
    (define sexp-parser sexp-parser)

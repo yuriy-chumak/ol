@@ -1,7 +1,7 @@
 (define-library (file xpm)
 (import
    (otus lisp)
-   (only (lang sexp) list->number)
+   (only (data s-exp) list->number)
    (file parser))
 
 (export

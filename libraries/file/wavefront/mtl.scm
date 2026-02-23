@@ -7,7 +7,7 @@
 (import
    (otus lisp)
    (file parser)
-   (lang sexp))
+   (data s-exp))
 (begin
 
 (define get-rest-of-line

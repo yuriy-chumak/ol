@@ -1,7 +1,7 @@
 (define-library (file parser)
 
 (export
-   (exports (owl parse))
+   (exports (data parse))
 
    uint16
    uint32
@@ -10,7 +10,7 @@
 
 (import
    (otus lisp)
-   (owl parse))
+   (data parse))
 (begin
 
    (define uint16

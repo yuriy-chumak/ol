@@ -12,7 +12,7 @@
       (owl io)
       (owl io scheduler)
       (olvm syscalls)
-      (lang sexp))
+      (data s-exp))
 
 (begin
    (define (upper-case? x) (<= #\A x #\Z))

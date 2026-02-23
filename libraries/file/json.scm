@@ -20,7 +20,7 @@
    (import
       (otus lisp)
       (data parse)
-      (lang sexp))
+      (data s-exp))
 (begin
 
    (define (print-json-with display object)

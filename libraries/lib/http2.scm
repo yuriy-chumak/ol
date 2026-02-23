@@ -12,7 +12,7 @@
       (scheme exceptions)
 
       (owl math) (owl list) (owl io) (owl string) (owl ff) (owl list-extra)
-      (lang sexp))
+      (data s-exp))
 
 (begin
    ; unique session id:

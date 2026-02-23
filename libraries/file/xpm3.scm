@@ -2,7 +2,7 @@
 (import
    (otus lisp)
    (file parser)
-   (lang sexp))
+   (data s-exp))
 
 (export
    xpm3-parser

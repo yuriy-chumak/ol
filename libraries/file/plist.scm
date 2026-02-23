@@ -12,7 +12,7 @@
    (import
       (otus lisp)
       (owl parse)
-      (lang sexp))
+      (data s-exp))
 (begin
 
    (define whitespaces {
