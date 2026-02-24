@@ -27,7 +27,7 @@
    (glClear (vm:ior GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
 
    (glUseProgram program)
-   (glUniform1f (glGetUniformLocation program "time") (/ (mod (time-ms) 1000000) #i1000))
+   (glUniform1f (glGetUniformLocation program "time") (/ (mod (clock-ms) 1000000) #i1000))
    (glUniform2f (glGetUniformLocation program "dimensions") (gl:get-window-width) (gl:get-window-height))
 
    (glBegin GL_QUADS)

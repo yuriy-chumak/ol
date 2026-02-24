@@ -119,7 +119,7 @@
 
       (define po (unbox GLP))
       (glUseProgram po)
-      (glUniform1f (glGetUniformLocation po "time") (/ (mod (time-ms) 1000000) #i1000))
+      (glUniform1f (glGetUniformLocation po "time") (/ (mod (clock-ms) 1000000) #i1000))
       (glUniform2f (glGetUniformLocation po "dimensions")
          (gtk_widget_get_allocated_width widget) (gtk_widget_get_allocated_height widget))
 

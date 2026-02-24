@@ -1,6 +1,6 @@
 (import (owl random))
 
-(define seed (time-ms))
+(define seed (clock-ms))
 
 ;; decode 1000 encoded (valid) strings
 

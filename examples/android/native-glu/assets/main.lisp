@@ -33,7 +33,7 @@
       0 Y R
       0 1 0)
 
-   (define t (/ (mod (time-ms) 6283) #i1000))
+   (define t (/ (mod (clock-ms) 6283) #i1000))
    (glTranslatef 0 -2.1 -5)
    (glRotatef (* t 360/3.14) 0 1 0)
    (cube:draw)

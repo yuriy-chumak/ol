@@ -1,6 +1,6 @@
 (import (owl random))
 
-(define seed (time-ms))
+(define seed (clock-ms))
 
 (define (test n max)
    (let*((rs (seed->rands seed))

@@ -42,7 +42,7 @@
    (glClear GL_COLOR_BUFFER_BIT)
 
    (glUseProgramObject shader)
-   (glUniform1f (glGetUniformLocation shader "time") (/ (mod (time-ms) 1000000) #i1000))
+   (glUniform1f (glGetUniformLocation shader "time") (/ (mod (clock-ms) 1000000) #i1000))
    (glUniform2f (glGetUniformLocation shader "dimensions") (gl:get-window-width) (gl:get-window-height))
 
    (glColor3f 1 1 1)

@@ -85,7 +85,7 @@
 
 (gl:set-renderer (lambda (mouse)
    ; let's calculate newtonian world
-   (define now (/ (mod (time-ms) 1000000) #i1000))
+   (define now (/ (mod (clock-ms) 1000000) #i1000))
    (NewtonUpdate world (min (- now old) 0.05))
    (vm:set! old now)
 

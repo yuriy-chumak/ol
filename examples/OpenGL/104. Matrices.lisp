@@ -10,13 +10,13 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
-(define old (time-ms))
+(define old (clock-ms))
 
 ; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
-   (define delta (/ (mod (- (time-ms) old) 6283) #i1000))
+   (define delta (/ (mod (- (clock-ms) old) 6283) #i1000))
    (define x (* 3 (sin delta)))
    (define z (* 3 (cos delta)))
 

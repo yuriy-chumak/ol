@@ -53,7 +53,7 @@
    (for-each (lambda (fbo shader)
          (glBindFramebuffer GL_FRAMEBUFFER fbo)
          (glUseProgram shader)
-         (glUniform1f (glGetUniformLocation shader "time") (/ (mod (time-ms) 1000000) #i1000))
+         (glUniform1f (glGetUniformLocation shader "time") (/ (mod (clock-ms) 1000000) #i1000))
          (glUniform2f (glGetUniformLocation shader "dimensions") 255 255)
          (glBegin GL_QUADS)
             (glVertex2f -1.0 +1.0)
@@ -86,7 +86,7 @@
       0 1 0)
 
    ; world transformation
-   (define t (/ (mod (time-ms) 6283) #i1000))
+   (define t (/ (mod (clock-ms) 6283) #i1000))
    (glTranslatef 0 -2.1 -5)
    (glRotatef (* t 360/3.14) 0 1 0)
 

@@ -45,9 +45,9 @@
 
 (alSourcei (unbox source) AL_BUFFER (unbox buffer))
 (alSourcePlay (unbox source))
-(let loop ((stop (+ (time-ms) 3000))) ; 3 seconds
+(let loop ((stop (+ (clock-ms) 3000))) ; 3 seconds
    (sleep 1)
-   (if (< (time-ms) stop) (loop stop)))
+   (if (< (clock-ms) stop) (loop stop)))
 (alSourceStop (unbox source))
 (alSourcei (unbox source) AL_BUFFER #f)
 
@@ -72,9 +72,9 @@ then
 
    (alSourcei (unbox source) AL_BUFFER (unbox buffer))
    (alSourcePlay (unbox source))
-   (let loop ((stop (+ (time-ms) 3000)))
+   (let loop ((stop (+ (clock-ms) 3000)))
       (sleep 1)
-      (if (< (time-ms) stop) (loop stop)))
+      (if (< (clock-ms) stop) (loop stop)))
    (alSourceStop (unbox source))
    (alSourcei (unbox source) AL_BUFFER #f)
 else
@@ -101,9 +101,9 @@ then
 
    (alSourcei (unbox source) AL_BUFFER (unbox buffer))
    (alSourcePlay (unbox source))
-   (let loop ((stop (+ (time-ms) 3000)))
+   (let loop ((stop (+ (clock-ms) 3000)))
       (sleep 1)
-      (if (< (time-ms) stop) (loop stop)))
+      (if (< (clock-ms) stop) (loop stop)))
    (alSourceStop (unbox source))
    (alSourcei (unbox source) AL_BUFFER #f)
 else
