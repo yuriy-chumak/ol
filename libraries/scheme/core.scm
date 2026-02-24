@@ -1647,6 +1647,12 @@
             ((features)
                *features*)))
 
+      ; 
+      (define (clock-ms)
+         (syscall 228 1 1000))
+      (define (clock-us)
+         (syscall 228 1 1000000))
+
       ; 4.1.1  Variable references
 
 
@@ -1854,6 +1860,7 @@
 
       ; 6.14
       features
+      clock-ms clock-us
 
       ; owl extension:
       null

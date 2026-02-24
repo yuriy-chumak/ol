@@ -3166,6 +3166,7 @@ mainloop:;
 	#		endif
 	#		define SYSCALL_ARCHPRCTL 158 // disable unsafe syscalls
 	#		define SYSCALL_TIME 201
+	#		define SYSCALL_GETTIME 228	// clock_gettime
 
 	#		define SYSCALL_DLOPEN 174
 	#		define SYSCALL_DLCLOSE 176
@@ -5020,6 +5021,48 @@ loop:;
 				else
 #endif
 					r = new_number (seconds);
+				break;
+			}
+			// (syscall 228 type precision)
+			case SYSCALL_GETTIME: {
+				CHECK_ARGC_EQ(2);
+				CHECK_NUMBERP(1);
+				CHECK_NUMBERP(2);
+
+				long precision = numberp (A2); // expected jiffies per second
+
+#if _POSIX_TIMERS > 0
+				struct timespec ts;
+				int clock = numberp (A1);
+								// greatly optimized if the constants match:
+				if (clock_gettime((clock == 0) ? CLOCK_REALTIME :
+				                  (clock == 1) ? CLOCK_MONOTONIC :
+						#	ifdef CLOCK_PROCESS_CPUTIME_ID
+				                  (clock == 2) ? CLOCK_PROCESS_CPUTIME_ID :
+						#	endif
+						#	ifdef CLOCK_THREAD_CPUTIME_ID
+				                  (clock == 3) ? CLOCK_THREAD_CPUTIME_ID :
+						#	endif
+						#	ifdef CLOCK_MONOTONIC_RAW
+				                  (clock == 4) ? CLOCK_MONOTONIC_RAW : // CLOCK_MONOTONIC_PRECISE for bsd
+						#	endif
+				                //   (clock == 5) ? CLOCK_REALTIME_COARSE :
+				                //   (clock == 6) ? CLOCK_MONOTONIC_COARSE :
+				                //   (clock == 7) ? CLOCK_BOOTTIME :
+				                //   (clock == 8) ? CLOCK_REALTIME_ALARM :
+				                //   (clock == 9) ? CLOCK_BOOTTIME_ALARM :
+				                                 clock,
+				                  &ts) == 0)
+					r = new_number(ts.tv_sec * precision
+						+ (precision > 1000000000 ? ts.tv_nsec * (precision / 1000000000)
+						                          : ts.tv_nsec / (1000000000 / precision)));
+#else
+				struct timeval tv;
+				if (gettimeofday(&tv, NULL) == 0)
+					r = new_number(tv.tv_sec * precision
+					    + (precision > 1000000 ? tv.tv_usec * (precision / 1000000)
+					                           : tv.tv_usec / (1000000 / precision)));
+#endif
 				break;
 			}
 
