@@ -255,9 +255,10 @@
          (sys:close fd))
 
       (define (call-with-port port proc)
-         (let ((out (proc port)))
-            (close-port port)
-            out))
+         (when port
+            (let ((out (proc port)))
+               (close-port port)
+               out)))
 
 
       ;;;
@@ -462,13 +463,11 @@
       ;;       (maybe-close-port port)
       ;;       blob))
 
-      ; list:
+      ; reads file as text
       (define (file->list path) ; path -> vec | #false
-         (let ((port (maybe-open-binary-file path)))
-            (if port
-               (let ((data (read-blocks->list port null)))
-                  (maybe-close-port port)
-                  data))))
+         (call-with-port (open-input-file path)
+            (\ (port)
+               (read-blocks->list port null))))
 
       (define (stream-chunk buff pos tail)
          (if (eq? pos 0)
