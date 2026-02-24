@@ -1351,6 +1351,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 #endif
 
 #include <time.h>
+#ifdef _WIN32
+#include <time-ext.h> // own clock_gettime()
+#endif
+
 #include <math.h>
 
 // --------------------------------------------------------------------------
