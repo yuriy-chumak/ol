@@ -551,7 +551,7 @@
 
       (define (get-output-string port)
          (syscall 8 port 0 0) ; lseek
-         (call-with-port port->string))
+         (call-with-port port port->string))
 
       (define (open-input-string str)
          (let ((port (open-output-string)))
