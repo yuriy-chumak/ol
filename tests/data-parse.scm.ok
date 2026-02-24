@@ -1,0 +1,6 @@
+parse: (1 2 3 4)
+parse: (42 #(100) #u8(101 102))
+parse: (915 949 953 940)
+parse: (42)
+parse: #false
+parse: (42)
