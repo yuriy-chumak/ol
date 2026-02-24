@@ -18,7 +18,7 @@
                (loop #null (force stream)))
             (else
                (loop (cons (car stream) str) (cdr stream)))))
-      (syscall 3 fd)
+      (close-port fd)
       (let*((ss2 ms2 (clock)))
          (print "# " (timestamp) "> visitor leave us. It takes "  (+ (* (- ss2 ss1) 1000) (- ms2 ms1)) "ms.")))))
 

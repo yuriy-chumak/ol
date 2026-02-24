@@ -213,7 +213,7 @@
 
    (define (read-json-port port)
       (when port
-         (read-json-stream (force (port->bytestream port)))))
+         (read-json-stream (port->bytestream port))))
 
    (define (read-json-string str)
       (when str

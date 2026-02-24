@@ -1,7 +1,7 @@
 ```
-                  small,
-        `___`         embeddable
-        (o,O)             and
+                 small,
+        `___`       embeddable,
+        (o,O)            and
         \)  )          purely
       ---"-"---     functional!
   O t u s   L i s p
@@ -52,7 +52,7 @@ You can use Ol on Linux, Windows, macOS, Android, Chromebook*,
 on various hardware architectures (x86, arm, ppc, mips, etc.),
 and directly in the web browsers (in WebAssembly form).
 
-* 64KB is a typical size of the Otus Lisp Virtual Machine (olvm) binary and may vary across platforms.
+* 64KB is a typical size of the Otus Lisp Virtual Machine (olvm) binary and may vary across platforms.  
   Olvm can run compiled Ol code standalone or in embedded form.
 * The typical size of Ol with FFI and Compiler is 480KB (less than a megabyte. cool, huh?).
 

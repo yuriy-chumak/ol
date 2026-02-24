@@ -6,7 +6,7 @@
  *         \)  )            purely
  *       ---"-"---       functional!
  * 
- * Copyright(c) 2014 - 2023 Yuriy Chumak
+ * Copyright(c) 2014 - 2026 Yuriy Chumak
  * ```
  * *Based on Aki Helin's [Owl-Lisp](https://gitlab.com/owl-lisp/owl)*
  * - - -
@@ -2834,8 +2834,8 @@ apply:;
 			for (int i = acc; i > 1; i--)
 				args = cons(reg[i+2], args);
 
-			heap->fp = fp; // GC may be called
-			word x = function(ol, args);
+			heap->fp = fp;
+			word x = function(ol, args); // GC may be called
 			fp = heap->fp;
 
 			this = R3;
