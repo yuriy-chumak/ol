@@ -69,6 +69,7 @@
       unbuffered-input-stream
       read-char
       read-line
+      read-string
    )
 
    (import
@@ -613,6 +614,16 @@
             (()
                (read-line stdin))))
 
+      ; read port into string
+      (define read-string
+         (define (read-string len port)
+            (bytes->string
+               (if len
+                  (ltake (port->bytestream port) len)
+                  (port->bytestream port))))
+         (case-lambda
+            ((k) (read-string k stdin))
+            ((k port) (read-string k port))))
 
       ;; (define (read-lines fd)
       ;;    (let loop ((ll (port->bytestream fd)) (out null))
