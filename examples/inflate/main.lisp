@@ -1,14 +1,12 @@
 #!/usr/bin/env ol
 
-(import (owl parse))
+(import (data parse))
 (import (file gzip))
 
-(define gzfilename (or
-   (lref *command-line* 0)
-   "input.tar.gz"))
+(define gzfilename (car *command-line*))
 
 (print "filename: " gzfilename)
-(define file (try-parse gzip-parser (file->bytestream gzfilename) #false))
+(define file (parse gzip-parser (file->bytestream gzfilename)))
 ; (car file): decoded GZIP, https://datatracker.ietf.org/doc/html/rfc1952
 ;  'FLG:      internal flags
 ;  'OS:       (Operating System)
@@ -17,7 +15,6 @@
 ; (cdr file): gzipped stream
 
 (if file
-   (print (bytes->string ((car file) 'stream)))
-else
+   (print (bytes->string (file 'stream)))
    (print "stream is not gzipped"))
 (print)

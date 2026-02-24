@@ -21,10 +21,10 @@
    (define gif-parser
       (let-parse* (
             ; header:
-            (? (get-word "GIF" 'gif))
-            (? (any-of
-                  (get-word "87a" 'a87)
-                  (get-word "89a" 'a89)))
+            ( -- (bytes "GIF" 'gif))
+            ( -- (any-of
+                  (bytes "87a" 'a87)
+                  (bytes "89a" 'a89)))
             (width read-le2)
             (height read-le2)
             ; flags:
@@ -48,32 +48,32 @@
 
             ; extensions
             (extensions (greedy* (let-parse* (
-                  (? (get-imm #\!)) ; Extension Introducer
+                  ( -- (byte #\!)) ; Extension Introducer
                   (block (any-of
                         ; Application Extension
                         (let-parse* (
-                              (mark (imm #xFF))    ; Extension Label
-                              (block-size byte)    ; (imm 11)
+                              (mark (byte #xFF))    ; Extension Label
+                              (block-size byte)    ; (byte 11)
                               (id (times 8 byte))
                               (aac (times 3 byte))
                               (sub-blocks (greedy* ; Data Sub-blocks
                                  (let-parse* (
-                                       (block-size (byte-if (lambda (x) (> x 0))))
+                                       (block-size (byte (lambda (x) (> x 0))))
                                        (block (times block-size byte)))
                                     block)
                                  ))
-                              (? (imm 0)) ) ; Block Terminator
+                              ( -- (byte 0)) ) ; Block Terminator
                            {
                               'label "Application Extension"
                               'id (list->string id)
                            })
                         ; Graphic Control Extension
                         (let-parse* (
-                              (mark (imm #xF9))    ; Extension Label
+                              (mark (byte #xF9))    ; Extension Label
                               (block-size byte)
 
-                              (? (times block-size byte))
-                              (? (imm 0)) ) ; Block Terminator
+                              ( -- (times block-size byte))
+                              ( -- (byte 0)) ) ; Block Terminator
                            {
                               'label "Graphic Control Extension"
                            })
@@ -82,7 +82,7 @@
                block)))
 
             ; first frame
-            (image-separator (imm #\,))
+            (image-separator (byte #\,))
             (x read-le2) ; Start of image from the left side of the screen
             (y read-le2) ; Start of image from the top of the screen
             (w read-le2) ; Width
@@ -97,12 +97,12 @@
 
             (key-size byte)
             (data (greedy+ (let-parse* (
-                     (block-size (byte-if (lambda (x) (> x 0))))
+                     (block-size (byte (lambda (x) (> x 0))))
                      (block (times block-size byte)))
                   block)))
-            (? (imm 0))
+            ( -- (byte 0))
 
-            (? (imm #\;)) )
+            ( -- (byte #\;)) )
       {
          'file 'gif
          'width width
@@ -122,7 +122,7 @@
 
    (define (read-gif-stream stream)
       (when stream
-         (define gif (try-parse gif-parser stream #f))
+         (define gif (try-parse gif-parser stream))
          (if gif (car gif))))
 
    (define (read-gif-port port)

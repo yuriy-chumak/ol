@@ -15,29 +15,29 @@
    (define (block-comment)
       (either
          (let-parse* (
-               (skip (get-imm #\*))
-               (skip (get-imm #\/)))
+               ( -- (byte #\*))
+               ( -- (byte #\/)))
             'comment)
          (let-parse* (
-               (skip byte)
-               (skip (block-comment)))
+               ( -- byte)
+               ( -- (block-comment)))
             'comment)))
 
    (define whitespace
       (either
-         (byte-if (lambda (c) (has? '(#\tab #\newline #\space #\return) c)))
+         (byte (lambda (c) (has? '(#\tab #\newline #\space #\return) c)))
          (let-parse* (
-               (skip (get-imm #\/))
-               (skip (get-imm #\*))
-               (skip (block-comment)))
+               ( -- (byte #\/))
+               ( -- (byte #\*))
+               ( -- (block-comment)))
             'comment)))
 
    (define maybe-whitespaces (greedy* whitespace))
 
    (define rest-of-line
       (let-parse*
-         ((chars (greedy* (byte-if (lambda (x) (not (eq? x 10))))))
-            (skip (imm 10))) ;; <- note that this won't match if line ends to eof
+         ((chars (greedy* (byte (lambda (x) (not (eq? x 10))))))
+            (skip (byte 10))) ;; <- note that this won't match if line ends to eof
          chars))
 
    (define (digit? x) (<= #\0 x #\9))
@@ -45,40 +45,40 @@
    (define xpm-parser
       (let-parse* (
             ; header:
-            (/ maybe-whitespaces)
-            (/ (get-word "static char *" #t))
-            (/ rest-of-line)
+            ( -- maybe-whitespaces)
+            ( -- (bytes "static char *"))
+            ( -- rest-of-line)
             ; parameters:
-            (/ maybe-whitespaces)
-            (/ (imm #\"))
-            (width (greedy+ (byte-if digit?)))
-            (/ (imm #\space))
-            (height (greedy+ (byte-if digit?)))
-            (/ (imm #\space))
-            (colors (greedy+ (byte-if digit?)))
-            (/ (imm #\space))
-            (bpp (byte-if digit?)) ; supported only 1
-            (/ (imm #\")) (/ (imm #\,))
+            ( -- maybe-whitespaces)
+            ( -- (byte #\"))
+            (width (greedy+ (byte digit?)))
+            ( -- (byte #\space))
+            (height (greedy+ (byte digit?)))
+            ( -- (byte #\space))
+            (colors (greedy+ (byte digit?)))
+            ( -- (byte #\space))
+            (bpp (byte digit?)) ; supported only 1
+            ( -- (bytes [#\" #\,]))
             ; color table
             (color-table (times (list->number colors 10)
                (let-parse* (
-                     (/ maybe-whitespaces)
-                     (/ (imm #\"))
+                     ( -- maybe-whitespaces)
+                     ( -- (byte #\"))
                      (key byte)
-                     (/ (imm #\tab))
+                     ( -- (byte #\tab))
                      (ctype byte)
-                     (/ (imm #\space))
-                     (color (greedy+ (byte-if (lambda (b) (not (eq? b #\"))))))
-                     (/ (imm #\")) (/ (imm #\,)))
+                     ( -- (byte #\space))
+                     (color (greedy+ (byte (lambda (b) (not (eq? b #\"))))))
+                     ( -- (bytes [#\" #\,])))
                   [key ctype color])))
             ; bitmap
             (bitmap (times (list->number height 10)
                (let-parse* (
-                     (/ maybe-whitespaces)
-                     (/ (imm #\"))
+                     ( -- maybe-whitespaces)
+                     ( -- (byte #\"))
                      (row (times (list->number width 10) byte))
-                     (/ (imm #\"))
-                     (/ rest-of-line))
+                     ( -- (byte #\"))
+                     ( -- rest-of-line))
                   row)))
 
             ;; (out get-byte)

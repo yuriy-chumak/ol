@@ -15,29 +15,29 @@
    (define (block-comment)
       (either
          (let-parse* (
-               (skip (get-imm #\*))
-               (skip (get-imm #\/)))
+               ( -- (byte #\*))
+               ( -- (byte #\/)))
             'comment)
          (let-parse* (
-               (skip byte)
-               (skip (block-comment)))
+               ( -- byte)
+               ( -- (block-comment)))
             'comment)))
 
    (define whitespace
       (either
-         (byte-if (lambda (c) (has? '(#\tab #\newline #\space #\return) c)))
+         (byte (lambda (c) (has? '(#\tab #\newline #\space #\return) c)))
          (let-parse* (
-               (skip (get-imm #\/))
-               (skip (get-imm #\*))
-               (skip (block-comment)))
+               ( -- (byte #\/))
+               ( -- (byte #\*))
+               ( -- (block-comment)))
             'comment)))
 
    (define maybe-whitespaces (greedy* whitespace))
 
    (define rest-of-line
       (let-parse*
-         ((chars (greedy* (byte-if (lambda (x) (not (eq? x #\newline))))))
-            (skip (imm #\newline)))
+         ((chars (greedy* (byte (lambda (x) (not (eq? x #\newline))))))
+            ( -- (byte #\newline)))
          chars))
 
    (define (digit? x) (<= #\0 x #\9))
@@ -45,45 +45,45 @@
    (define xpm3-parser
       (let-parse* (
             ; header:
-            (? maybe-whitespaces)
-            (? (get-word "static char *" #t))
-            (? rest-of-line)
-            (? maybe-whitespaces)
+            ( -- maybe-whitespaces)
+            ( -- (bytes "static char *"))
+            ( -- rest-of-line)
+            ( -- maybe-whitespaces)
             ; parameters:
 
-            (? (imm #\"))
+            ( -- (byte #\"))
             (width number)
-            (? (imm #\space))
+            ( -- (byte #\space))
             (height number)
-            (? (imm #\space))
+            ( -- (byte #\space))
             (colors number)
-            (? (imm #\space))
-            (bpp (word "1 " 1)) ; supported only 1
-            (? rest-of-line)
+            ( -- (byte #\space))
+            (bpp (bytes "1 " 1)) ; supported only 1
+            ( -- rest-of-line)
 
             ; colour table:
             (color-table (times colors
                (let-parse* (
-                     (? (imm #\"))
+                     ( -- (byte #\"))
                      (key byte)
-                     (? maybe-whitespaces)
+                     ( -- maybe-whitespaces)
                      (ctype byte)
-                     (? maybe-whitespaces)
-                     (color (greedy+ (byte-if (lambda (b) (not (eq? b #\"))))))
-                     (? rest-of-line))
+                     ( -- maybe-whitespaces)
+                     (color (greedy+ (byte (lambda (b) (not (eq? b #\"))))))
+                     ( -- rest-of-line))
                   [key ctype color])))
             ; bitmap
-            (? maybe-whitespaces)
+            ( -- maybe-whitespaces)
             (bitmap (times height
                (let-parse* (
-                     (? (imm #\"))
+                     ( -- (byte #\"))
                      (row (times width byte))
-                     (? (imm #\"))
-                     (? rest-of-line))
+                     ( -- (byte #\"))
+                     ( -- rest-of-line))
                   row)))
             ; end
-            (? (word "};" #t))
-            (? maybe-whitespaces))
+            ( -- (bytes "};"))
+            ( -- maybe-whitespaces))
       {
          'width width
          'height height
@@ -94,5 +94,5 @@
       }))
 
    (define (xpm3-parse-file filename)
-      (parse xpm3-parser (file->bytestream filename) filename "xpm3 parse error" #f))
+      (parse xpm3-parser (file->bytestream filename)))
 ))

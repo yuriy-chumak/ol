@@ -7,16 +7,16 @@
       (file parser) (owl ff) (owl math) (owl string)
       (otus inflate))
 (begin
-
+   (import (owl io))
    (define gzip-parser
       (let-parse* (
             ; https://datatracker.ietf.org/doc/html/rfc1952
             (ID1 byte)
             (ID2 byte)
-            (verify (and (eq? ID1 #x1F) (eq? ID2 #x8B)) `not-a-gzip)
+            (unless (and (eq? ID1 #x1F) (eq? ID2 #x8B)) `not-a-gzip)
 
             (CM byte)
-            (verify (eq? CM 8) `not-a-deflate)
+            (unless (eq? CM 8) `not-a-deflate)
             (FLG byte)
             (MTIME (times 4 byte))
             (XFL byte)
@@ -31,8 +31,8 @@
             (FNAME (if (zero? (band FLG #b1000))
                (epsilon #f)
                (let-parse* (
-                     (filename (greedy* (byte-if (lambda (x) (less? 0 x)))))
-                     (zt (imm 0)))
+                     (filename (greedy* (byte (lambda (x) (less? 0 x)))))
+                     (zt (byte 0)))
                   (bytes->string filename))))
 
             ; header done

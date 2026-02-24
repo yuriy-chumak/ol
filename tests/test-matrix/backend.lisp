@@ -179,7 +179,7 @@
 ; -=( http run 8008 )=-------------------------------------
 (import (lib http)
    (file json)
-   (owl parse))
+   (data parse))
 (http:run 8008 (lambda (fd request headers stream return)
    (LOGD "\nRequest: " BLUE request END)
    (LOGD "\nHeaders: " WHITE headers END)
