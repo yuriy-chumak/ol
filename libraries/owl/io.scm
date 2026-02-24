@@ -32,8 +32,8 @@
       ;; file->blob write-blob
       file->list              ;; list io, may be moved elsewhere later
 
-      file->bytestream
       port->bytestream ;; makes lazy byte stream, is not closing port!
+      file->bytestream ;; makes lazy byte stream, is closing file after read all!
       bytestream->port
       bytestream->file
 
@@ -253,6 +253,10 @@
       (define (close-port fd)
          (sys:close fd))
 
+      (define (call-with-port port proc)
+         (let ((out (proc port)))
+            (close-port port)
+            out))
 
 
       ;;;
@@ -472,16 +476,22 @@
                (stream-chunk buff next
                   (cons (ref buff pos) tail)))))
 
-      ; is not closing port!
-      (define (port->bytestream fd)
+      ; very lazy!
+      (define (port->stream fd done)
          (λ ()
             (let ((buff (get-block fd input-block-size)))
                (cond
-                  ((eof? buff) #null) ; end of file
-                  ((not buff) #null) ; read fail
+                  ((eq? buff #eof) ; end of file
+                     (if done (done fd)) #null)
+                  ((eq? buff #false) ; read fail
+                     (if done (done fd)) #null)
                   (else
                      (stream-chunk buff (- (size buff) 1)
-                        (port->bytestream fd)))))))
+                        (port->stream fd done)))))))
+
+      ; is not closing port!
+      (define (port->bytestream fd)
+         (port->stream fd #f))
 
       (define (bytestream->port stream port)
          (cond
@@ -497,10 +507,11 @@
             (else
                (bytestream->port (force stream) port))))
 
+      ; is closing port
       (define (file->bytestream path)
-         (let ((port (maybe-open-binary-file path)))
+         (let ((port (open-binary-input-file path)))
             (if port
-               (port->bytestream port))))
+               (port->stream port close-port))))
 
       (define (bytestream->file stream path)
          (let ((port (open-binary-output-file path)))
@@ -540,8 +551,8 @@
          (syscall 85))
 
       (define (get-output-string port)
-         (syscall 8 port 0 0)
-         (bytes->string (port->bytestream port)))
+         (syscall 8 port 0 0) ; lseek
+         (call-with-port port->string))
 
       (define (open-input-string str)
          (let ((port (open-output-string)))
