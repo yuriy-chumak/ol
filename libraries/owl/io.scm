@@ -52,7 +52,6 @@
       write-bytes       ;; port byte-list   → bool
       get-block         ;; fd n → bvec | eof | #false
       try-get-block     ;; fd n block? → bvec | eof | #false=error | #true=block
-      lines             ;; fd → null | ll of string, read error is just null, each [\r]\n removed
 
       writer-to         ;; names → (port val → bool + io)
 
@@ -69,6 +68,7 @@
       unbuffered-input-stream
       read-char
       read-line
+      read-lines             ;; fd → null | ll of string, read error is just null, each [\r]\n removed
    )
 
    (import
@@ -497,28 +497,6 @@
             (else
                (bytestream->port (force stream) port))))
 
-      (define (lines fd)
-         (let loop ((ll (port->bytestream fd)) (out null))
-            (cond
-               ((pair? ll)
-                  (lets ((byte ll ll))
-                     (if (eq? byte #\newline)
-                        (lcons
-                           (list->string
-                              (reverse
-                                 (if (and (pair? out) (eq? #\return (car out)))
-                                    (cdr out)
-                                    out)))
-                           (loop ll null))
-                        (loop ll (cons byte out)))))
-               ((null? ll)
-                  (if (null? out)
-                     null
-                     (list
-                        (list->string (reverse out)))))
-               (else
-                  (loop (ll) out)))))
-
       (define (file->bytestream path)
          (let ((port (maybe-open-binary-file path)))
             (if port
@@ -624,5 +602,28 @@
                (read-line port))
             (()
                (read-line stdin))))
+
+
+      (define (read-lines fd)
+         (let loop ((ll (port->bytestream fd)) (out null))
+            (cond
+               ((pair? ll)
+                  (lets ((byte ll ll))
+                     (if (eq? byte #\newline)
+                        (lcons
+                           (list->string
+                              (reverse
+                                 (if (and (pair? out) (eq? #\return (car out)))
+                                    (cdr out)
+                                    out)))
+                           (loop ll null))
+                        (loop ll (cons byte out)))))
+               ((null? ll)
+                  (if (null? out)
+                     null
+                     (list
+                        (list->string (reverse out)))))
+               (else
+                  (loop (ll) out)))))
 
 ))
