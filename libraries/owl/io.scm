@@ -32,8 +32,8 @@
       ;; file->blob write-blob
       file->list              ;; list io, may be moved elsewhere later
 
-      port->bytestream       ;; fd → (byte ...) | thunk
       file->bytestream
+      port->bytestream ;; makes lazy byte stream, is not closing port!
       bytestream->port
       bytestream->file
 
@@ -472,16 +472,13 @@
                (stream-chunk buff next
                   (cons (ref buff pos) tail)))))
 
+      ; is not closing port!
       (define (port->bytestream fd)
          (λ ()
             (let ((buff (get-block fd input-block-size)))
                (cond
-                  ((eof? buff)
-                     (maybe-close-port fd)
-                     null)
-                  ((not buff)
-                     ;(print "bytes-stream-port: no buffer received?")
-                     null)
+                  ((eof? buff) #null) ; end of file
+                  ((not buff) #null) ; read fail
                   (else
                      (stream-chunk buff (- (size buff) 1)
                         (port->bytestream fd)))))))
