@@ -36,7 +36,7 @@
       )
 
    (import
-      (scheme core)
+      (scheme base)
       (scheme list)
       (owl math)
       (owl lazy)
@@ -46,8 +46,7 @@
       (owl rlist)
       (owl io)
       (otus async)
-      (owl sort)
-      (owl time))
+      (owl sort))
 
    (begin
       (define ncar car)

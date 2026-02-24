@@ -33,17 +33,10 @@
          (syscall 87 (c-string filename)))
 
       (define (call-with-input-file filename proc)
-         (let ((port (open-input-file filename)))
-            (when port
-               (let ((result (proc port)))
-                  (close-port port)
-                  result))))
+         (call-with-port (open-input-file filename) proc))
+
       (define (call-with-output-file filename proc)
-         (let ((port (open-output-file filename)))
-            (when port
-               (let ((result (proc port)))
-                  (close-port port)
-                  result))))
+         (call-with-port (open-output-file filename) proc))
 
       (define (sys:open path mode)
          (cond

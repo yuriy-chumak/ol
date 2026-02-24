@@ -230,6 +230,7 @@
       ;; syntax-error
       ;; syntax-rules
       ;; textual-port?
+   time-ms ; * legacy function, todo: change it to r7rs-compliant
    truncate
       ;; truncate-quotient
       ;; truncate-remainder
@@ -521,5 +522,10 @@
 
       (define (dlclose module)
          (syscall 176 module))
+
+      ; legacy function, to be removed
+      (define (time-ms)
+         (let* ((ss ms (clock))) 
+            (+ (* ss 1000) ms)))))
 
 ))

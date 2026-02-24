@@ -242,7 +242,6 @@
 ))
 
 (define (run-test rst test)
-	;(mail stdout 42) (flush-port 1)
 	(case test
 		(['unary gen-a name test]
 			(values-apply (gen-a rst)

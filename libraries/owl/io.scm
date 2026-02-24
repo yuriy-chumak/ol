@@ -18,7 +18,6 @@
       open-binary-input-file
       open-output-file        ;; path → fd | #false
       open-binary-output-file
-      flush-port              ;; fd → _
       close-port              ;; fd → _
       call-with-port
 
@@ -245,11 +244,6 @@
                                  (values eof-seen?
                                     (bvec-append this tail)))))))))))
 
-
-      ;; deprecated
-      (define (flush-port fd)
-         ;(mail fd 'flush)
-         42)
 
       (define (close-port fd)
          (sys:close fd))

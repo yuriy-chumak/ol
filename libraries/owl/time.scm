@@ -19,7 +19,6 @@
 
       (define (elapsed-real-time thunk)
          (display "timing: ")
-         (flush-port 1)
          (lets
             ((ss sms (clock))
              (res (thunk))
