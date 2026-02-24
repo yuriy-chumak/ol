@@ -14,6 +14,7 @@
       lzip ltake llast llen ; todo: remove lzip (change to lfold like fold)
       ledit
       ldrop llref lfind
+      lsplit
       lfor-each
       lpair?
       tail uncons
@@ -229,6 +230,19 @@
             ((pair? l) (ldrop (cdr l) (- n 1)))
             ((null? l) l)
             (else (ldrop (l) n))))
+
+      (define (lsplit l n)
+         (let take ((l l) (n n) (o #null))
+            (if (eq? n 0)
+               (values (reverse o) l)
+            else
+               (cond
+                  ((null? l)
+                     (values (reverse o) l))
+                  ((pair? l)
+                     (take (cdr l) (- n 1) (cons (car l) o)))
+                  (else
+                     (take (l) n o))))))
 
       (define blank '(blank))
 
