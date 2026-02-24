@@ -3283,20 +3283,22 @@ word OLVM_sizeof(olvm_t* self, word* arguments)
 	word A = car(arguments);
 	if (is_value(A)) {
 		int type = value(A);
+
 		// ansi c types
-		int size = c_sizeof(type);
-		if (size) return I(size);
+		int size;
+		size = c_sizeof(type);
+		if (size)
+			return I(size);
+
 		// ffi types
-		if (type & (FFT_PTR|FFT_REF)) {
-			size = ffi_sizeof(type & ~(FFT_PTR|FFT_REF));
-			if (size)
-				size = sizeof(int*); // typed pointer
-		}
-		else
-			size = ffi_sizeof(type);
-		if (size) return I(size);
+		size = ffi_sizeof(type);
+		if (size)
+			return I(size);
 	}
-	else if (is_pair(A))
+	else
+	if (is_pointer(car(A))) // (fft* ...) || (fft& ...)
+		return I(sizeof(void*));
+	else
 		return I(structure_size(0, A));
 
 	return IFALSE;
