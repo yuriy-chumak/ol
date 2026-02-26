@@ -265,8 +265,8 @@
             (case close?
                (#true
                   (print-to stderr id (if (syscall 3 fd) ": socket closed" ": can't close socket")))
-               (#eof ; socket already closed because of port->bytestream
-                  (print-to stderr id ": socket closed (auto)"))
+               (#eof ; socket ended by the peer
+                  (print-to stderr id (if (syscall 3 fd) ": socket ended" ": can't close socket")))
                (else
                   (loop (or close? stream))))))
       ; done.
