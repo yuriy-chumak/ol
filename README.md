@@ -13,6 +13,7 @@
 [![linux mipsel 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml)
 [![linux ppc 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml)
 [![linux ppcle 64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle.yml)
+[![linux sparc64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc.yml)
 [![macos intel/m](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml)
 [![win(e) 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
 
@@ -54,7 +55,7 @@ and directly in the web browsers (in WebAssembly form).
 
 * 64KB is a typical size of the Otus Lisp Virtual Machine (olvm) binary and may vary across platforms.  
   Olvm can run compiled Ol code standalone or in embedded form.
-* The typical size of Ol with FFI and Compiler is 480KB (less than a megabyte. cool, huh?).
+* The typical size of Ol with Compiler and FFI is 480KB (less than half a megabyte. cool, huh?).
 
 ### credits to
 Aki Helin (author of [Owl Lisp](https://gitlab.com/owl-lisp/owl), the project that gave birth to Otus Lisp),  
@@ -126,7 +127,7 @@ Some additional libraries can be installed using 'kiss' package manager. Instruc
          * `apk add musl-dev` for alpine-based,
          * etc.
 
-   1. Q. */usr/include/linux/errno.h:1:10: fatal error: asm/errno.h: No such file or directory*  
+   1. Q. */usr/include/linux/errno.h:1:10: **fatal error**: asm/errno.h: No such file or directory*  
       A. Install `linux-libc-dev:i386`
 
    1. Q. You reference to licenses **MIT and LGPL**. Can I freely choose between these two licenses?  

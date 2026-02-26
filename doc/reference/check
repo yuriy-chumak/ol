@@ -63,6 +63,9 @@ check-reference: $(wildcard doc/reference/*.md)
 	   if [ "$(DEV_MODE)$(HAVE_PPC64)" = "11" ]; then $(call check-reference,tmp/olvm,ppc64,release,$$F,$(PPC64)); fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_PPC64LE)" = "11" ]; then $(call check-reference,tmp/olvm,ppc64le,debug,$$F,$(PPC64LE)); fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_PPC64LE)" = "11" ]; then $(call check-reference,tmp/olvm,ppc64le,release,$$F,$(PPC64LE)); fi ;\
+	   : aarch64 linux ;\
+	   if [ "$(DEV_MODE)$(HAVE_SPARC64)" = "11" ]; then $(call check-reference,tmp/olvm,sparc64,debug,$$F,$(SPARC64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_SPARC64)" = "11" ]; then $(call check-reference,tmp/olvm,sparc64,release,$$F,$(SPARC64)); fi ;\
 	   : win32 wine ;\
 	   if [ "$(DEV_MODE)$(HAVE_WINE)" = "11" ]; then printf "| "; fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm,win32,debug,$$F,$(WINE),.exe); fi ;\

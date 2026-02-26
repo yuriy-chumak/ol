@@ -65,6 +65,8 @@ DEV_MODE ?= 0
 # ppc linux
 -include extras/platforms/ppc.mk
 -include extras/platforms/ppcle64.mk
+# sparc 64
+-include extras/platforms/sparc64.mk
 # x86 win(e)
 -include extras/platforms/win(e).mk
 
