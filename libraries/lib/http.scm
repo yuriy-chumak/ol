@@ -177,13 +177,13 @@
       (let-parse* (
             ; header bits
             (tag byte)
-            (FIN (eval (band tag #b10000000))) ; the final fragment in a message
-            (RSV (eval (band tag #b01110000))) ; rsv1, rsv2, rsv3
-            (opcode  (eval (band tag #b1111))) ; opcode
+            (FIN (epsilon (band tag #b10000000))) ; the final fragment in a message
+            (RSV (epsilon (band tag #b01110000))) ; rsv1, rsv2, rsv3
+            (opcode  (epsilon (band tag #b1111))) ; opcode
 
             (mlen byte) ; todo: Extended payload length
-            (MASK (eval (band mlen #x80)))
-            (plen (eval (band mlen #x7F)))
+            (MASK (epsilon (band mlen #x80)))
+            (plen (epsilon (band mlen #x7F)))
             (plen (cond
                      ; 1..125
                      ((< plen 126)
