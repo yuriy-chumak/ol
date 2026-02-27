@@ -8,9 +8,11 @@
       start-switchboard
 
       wait wait-mail ; wait N ms, wait N ms or mail
-      bell ; just wake, without message (notify actor to check mailbox)
-      call ; to wake and send a message (send an urgent mail and bell)
       wait-read ; 
+      wake ; just wake, without message (notify actor to check mailbox)
+      call ; to wake and send a message (send an urgent mail and wakes)
+
+      bell ring ; wake alternatives
 
       ;; general i/o
       ;; thread-oriented non-blocking io
@@ -145,8 +147,10 @@
          (not (eq? (ref answer 1) 'timeout))) ; timeout reached?      
 
       ; just wake the coroutine (if waiting)
-      (define (bell whom)
+      (define (wake whom)
          (mail switchboard-name ['call whom]))
+      (define bell wake)
+      (define ring wake)
 
       ; "call" is "urgent mail"
       ; send mail to the coroutine and wake it if required
