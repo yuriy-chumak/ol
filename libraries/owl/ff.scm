@@ -1,14 +1,15 @@
-;;;
-;;; Finite functions (or red-black key-value maps)
-;;; ассоциативный массив с прямой адресацией.
+#| Finite Functions
 
-;; fixme: ff unit tests went missing at some point. add with lib-compare vs naive alists.
-;; fixme: ffc[ad]r are no longer needed as primitives
+This library defines finite functions. They are commonly used in Ol to
+construct efficient key-value mappings. A finite function is much like
+an association list, which are frequently used in Lisp. The main difference
+is that finite functions are represented as red-black trees internally,
+so the performance is much better when there are many keys.
 
-; Note: objects in owl are *ordered*. The gc was specifically
-; designed to preserve order in order to improve locality and
-; allow O(log n) maps (called ffs to avoid collision with
-; the standard map function) of arbitrary objects.
+This data structure is made possible by the fact, that Ol has an
+order-preserving garbage collector. Therefore we have a total order on objects,
+which makes it possible to build balanced trees by comparison.
+|#
 
 (define-library (owl ff)
 
@@ -28,12 +29,10 @@
       ff-for-each
       ff-map      ; like list map but (op key val) -> val'
       ff-iter     ; ff -> ((key . value) ...) stream (in order)
-      ff-singleton?       ; deprecated
       list->ff ff->list
       pairs->ff ff->pairs ; deprecated
       alist->ff ff->alist
-      ff->sexp            ; deprecated
-      ff-ok?              ; deprecated
+      ff-debug            ; * internal
       empty
       empty?
 
@@ -106,17 +105,17 @@
       (define (color ff)
          (if (red? ff) 'R 'B))
 
-      (define (ff->sexp ff)
+      (define (ff-debug ff)
          (if (eq? ff #empty)
             ff
             (case (size ff)
                (2 (lets ((k v ff)) (list (color ff) k)))
                (3 (lets ((k v x ff))
                   (if (right? ff)
-                     (list (color ff) k '-> (ff->sexp x))
-                     (list (color ff) (ff->sexp x) '<- k))))
+                     (list (color ff) k '-> (ff-debug x))
+                     (list (color ff) (ff-debug x) '<- k))))
                (4 (lets ((k v l r ff))
-                  (list (color ff) (ff->sexp l) '<- k '-> (ff->sexp r))))
+                  (list (color ff) (ff-debug l) '<- k '-> (ff-debug r))))
                (else
                   (list 'BAD 'NODE ff)))))
 
@@ -155,18 +154,6 @@
                (if (and ld rd (eq? ld rd))
                   (f+ ld (if (red? ff) 0 1))
                   #false))))
-
-      ;; are invariants in order
-      (define (ff-ok? ff)
-         (cond
-            ((not (black-depth ff))
-               ;(print "FF ERROR, black depths differ")
-               #false)
-            ((red-red-violation? ff)
-               ;(print "FF ERROR, red-red violation")
-               #false)
-            (else
-               #true)))
 
       ;; bytecode above, vm primitive below
       (define-syntax with-ff
@@ -619,10 +606,6 @@
       (define (ff-diff a b)
          (ff-fold (λ (a b _) (if (get a b #false) (del a b) a)) a b))
 
-      ;; just one value? == is the root-node a black key-value pair
-      (define (ff-singleton? ff) ; deprecated
-         (eq? (size ff) 2))
-
       (define-syntax getf
          (syntax-rules ()
             ((getf ff key) (get ff key #false))))
@@ -631,40 +614,3 @@
          (ff-foldr (λ (out k v) (cons k out)) null ff))
 
 ))
-
-;(import (owl ff))
-;
-;(print
-;   (get
-;      (fold
-;         (λ (ff x)
-;            (if (not (ff-ok? ff))
-;               (print "FF BAD " (ff->sexp ff)))
-;            (put ff x (if (= x 42) 'correct (+ x 100))))
-;         #empty
-;         (lrange 0 1 100))
-;      42 'miss))
-;
-;
-;(lets
-;   ((rs (seed->rands (time-ms)))
-;    (rs keys (random-permutation rs (lrange 0 1 10)))
-;    (pairs (map (λ (x) (cons x (+ x 100))) keys))
-;    (ff (list->ff pairs))
-;    (_ (print (ff->alist ff)))
-;    (rs keys (random-permutation rs keys))
-;    (ff (fold (λ (ff x) (put ff x (+ x 200))) ff keys))
-;    (rs keys (random-permutation rs keys)))
-;   (for-each
-;      (λ (key)
-;         (let ((val (get ff key 'missing)))
-;            (if (= val (+ key 200))
-;               (print " ff[" key "] = " val)
-;               (print " ff[" key "] = " val " <- WRONG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"))))
-;      keys)
-;   (print (fold (λ (ff key) (del ff key)) ff keys)))
-;
-;
-;
-;
-;
