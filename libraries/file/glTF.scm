@@ -9,7 +9,7 @@
       (owl io)
       (owl ff) (owl string)
       (prefix (otus base64) base64:)
-      (owl parse)
+      (data parse)
       (file json))
 
 (begin
@@ -24,17 +24,17 @@
          ; binary glTF
          (let-parse* (
                ; 12-byte header
-               (header (word "glTF" #t))
+               (header (bytes "glTF"))
                (version skip32)
-               (flen skip32)
+               (flen    skip32)
                ; Chunk 0 (JSON)
-               (clen skip32)
-               (ctype (word "JSON" #t))
-               (json json-parser)
-               (spaces (greedy* (imm #\space)))
+               (clen    skip32)
+               (ctype  (bytes "JSON"))
+               (json    json-parser)
+               (spaces (greedy* (byte #\space)))
                ; Chunk 1 (BIN)
-               (skips (lazy+ byte))
-               (ctype (word "BIN\0" #t))
+               (skips  (lazy+ byte))
+               (ctype  (bytes "BIN\0"))
                (bin (greedy+ byte)) ) ; todo: read as bytevector
             ; replace buffers[0] with buffer data
             ; assert "(size buffers) == 1"
@@ -51,9 +51,7 @@
    (define (read-glTF-file filename)
       ; read the stream
       (define glTF (call-with-input-file filename (lambda (port)
-         (define data (try-parse glTF-parser (port->bytestream port) #f))
-         (when data
-            (car data)))))
+         (parse glTF-parser (port->bytestream port)))))
 
       ; binary buffers
       (define buffers (vector-map (lambda (buffer)
