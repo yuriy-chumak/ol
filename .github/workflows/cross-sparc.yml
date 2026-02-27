@@ -48,5 +48,11 @@ jobs:
     - name: Build Info
       run: 'file tmp/olvm-sparc64-release; qemu-sparc64 -L /usr/sparc64-linux-gnu tmp/olvm-sparc64-release repl --version; echo "(print (syscall 63))" |qemu-sparc64 -L /usr/sparc64-linux-gnu tmp/olvm-sparc64-release repl'
 
+    - name: Temp precheck 1
+      run: make tmp/olvm-sparc64-release
+
+    - name: Temp precheck 2
+      run: qemu-sparc64-static -L /usr/sparc64-linux-gnu tmp/olvm-sparc64-release repl --home=libraries tools/check-reference.lisp doc/reference/bytevectors.md
+
     - name: Check Reference
       run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_SPARC64=1 make check-reference
