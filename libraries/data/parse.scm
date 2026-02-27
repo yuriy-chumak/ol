@@ -59,10 +59,15 @@
 
       ; todo: bind instead of eval?
       (define-syntax let-parse*
-         (syntax-rules (!! unless eval backtrack)
-            ((let-parse* 42 l r p ok ((val (eval term)) . rest) body)
+         (syntax-rules (!! unless epsilon backtrack)
+            ((let-parse* 42 l r p ok ((val (epsilon term)) . rest) body) ;; (epsilon) handling speedup
                (let ((val term))
                   (let-parse* 42 l r p ok rest body)))
+
+            ;; ((let-parse* 42 l r p ok ((  (parser)) . rest) body) ; parse, but ignore result
+            ;;    (parser l r p
+            ;;       (λ (l r p val)
+            ;;          (let-parse* 42 l r p ok rest body))))
             ((let-parse* 42 l r p ok ((val parser) . rest) body)
                (parser l r p
                   (λ (l r p val)
@@ -80,11 +85,9 @@
                   (let-parse* 42 l r p ok rest body)
                   (backtrack l r p msg)))
             
-            ((let-parse* ((a . b) ...) body)
+            ((let-parse* ((a . b) ...) . body)
                (λ (l r p ok)
-                  (let-parse* 42 l r p ok ((a . b) ...) body)))
-            ((let-parse* ((a . b) ...) something . rest)
-               (let-parse* ((a . b) ...) (begin something . rest)))))
+                  (let-parse* 42 l r p ok ((a . b) ...) (begin . body))))))
 
       (define-syntax any-of
          (syntax-rules (either)
@@ -120,7 +123,7 @@
                   (else      (loop (r))))))
 
          (case-lambda
-            ; (value (byte)), convenient way to get a byte
+            ; (value (byte)), convenient way to get a next byte
             (() byte)
             ; (value byte), legacy but a bit faster behavior
             ((l r p ok)
@@ -138,6 +141,12 @@
                         (x byte)
                         (unless (f x) `("bad byte" ,x)))
                      x) ))
+            ; (let-parse* (( -- (byte a))) value))
+            ((a value)
+                  (let-parse* (
+                        (x byte)
+                        (unless (eq? x a) `("expected" ,a)))
+                     value))
          ))
 
       ; formerly (word ...)
@@ -223,6 +232,12 @@
                         (x rune)
                         (unless (f x) `("bad rune" ,x)))
                      x) ))
+            ; (let-parse* (( -- (rune a))) value))
+            ((a value)
+                  (let-parse* (
+                        (x rune)
+                        (unless (eq? x a) `("bad rune" ,a)))
+                     value))
          ))
 
       (define runes bytes) ; reuse bytes, will not work with vectors and bytevectors
