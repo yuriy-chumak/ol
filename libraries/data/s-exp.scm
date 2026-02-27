@@ -1,6 +1,6 @@
 (define-library (data s-exp)
    (export
-      sexp-parser sexp ; todo: rename to s-exp
+      sexp-parser s-exp ; todo: rename to s-exp
       ;get-sexps       ;; greedy* get-sexp
       ;; string->sexp
       ;bytevector->sexps
@@ -521,24 +521,24 @@
                   (list 'make-ff (cons 'list things))))))
 
       ; returns uninterned symbols
-      (define (sexp)
+      (define (s-exp)
          (let-parse* (
                (skip maybe-whitespace)
                (val (any-of
                         ; lists
-                        (list-of (sexp)) ; todo: move below
+                        (list-of (s-exp)) ; todo: move below
                         ; simple types
                         number
                         simple-symbol
-                        (special-word sexp)
+                        (special-word s-exp)
                         string
                         quoted-char
                         get-sexp-regex ; before symbols, which also may have "/" and "|"
                         symbol        ; 
                         ; containers
-                        (vector-of (sexp))
-                        (ff-of (sexp))
-                        (quoted (sexp))
+                        (vector-of (s-exp))
+                        (ff-of (s-exp))
+                        (quoted (s-exp))
                         ; eof
                         (byte eof?)))) ; TODO: change to just "eof"
             val))
@@ -546,7 +546,7 @@
       (define shebang+sexp
          (let-parse* (
                (hb (maybe shebang #f)) ; skip leading "#! ...\n"
-               (value (sexp)))
+               (value (s-exp)))
             value))
 
       (define (ok? x) (eq? (ref x 1) 'ok))
