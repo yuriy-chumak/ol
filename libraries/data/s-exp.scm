@@ -514,8 +514,8 @@
                   (greedy* parser))
                (-- maybe-whitespace)
                (-- (byte #\})))
-            (if (null? things) ; only lists can be in parsed expression
-               (list 'make-ff #null)
+            (if (null? things)
+               #empty
                (if q
                   (list 'make-ff (list q things))
                   (list 'make-ff (cons 'list things))))))
