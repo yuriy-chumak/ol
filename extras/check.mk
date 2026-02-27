@@ -102,7 +102,7 @@ define notify
 	[ -z "$(BACKEND_URL)" ] || \
 	curl -s "$(BACKEND_URL)" -X PUT \
 	     -H 'Content-Type: application/json' \
-	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'name':'$1', 'platform':'$2', 'target':'$3', 'status':$4}"
+	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'name':'$1', 'os':'$2', 'platform':'$3', 'target':'$4', 'status':$5}"
 endef
 
 define test-scm # testfile wine-or-something executable platform debug/release executable-suffix diff-options # TEST=test-filename
@@ -113,11 +113,11 @@ define test-scm # testfile wine-or-something executable platform debug/release e
 	                     || $2 $3-$4-$5$6 repl --home=libraries:$(TEST_HOME) $1 2>&1) \
 	            | diff $7 - $1.ok >/dev/null; then\
 	        printf \|$(ok) ;\
-	        $(call notify,$1,$(or $(PLATFORM),$4),$5,1) ;\
+	        $(call notify,$1,$(or $(OS),Linux),$(or $(PLATFORM),$4),$5,1) ;\
 	    else \
 	        printf \|$(fail);\
 	        echo $3-$4-$5$6: $1 >> $(FAILMARK);\
-	        $(call notify,$1,$(or $(PLATFORM),$4),$5,0) ;\
+	        $(call notify,$1,$(or $(OS),Linux),$(or $(PLATFORM),$4),$5,0) ;\
 	    fi;\
 	    true; \
 	fi

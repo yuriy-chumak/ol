@@ -45,6 +45,7 @@ test-matrix-subheader-win(e):
 
 
 scmtest: scmtest-win(e)
+scmtest-win(e): OS:="Win\(e\)"
 scmtest-win(e):
 # win(e)
 ifeq ($(DEV_MODE)$(HAVE_WINE),11)
