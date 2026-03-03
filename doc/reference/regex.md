@@ -306,11 +306,11 @@ Replaces matched part of given string (or stream).
 ```
 
 
-# string->regex
-`(string->regex str)`, *procedure*
+# string->regexp
+`(string->regexp str)`, *procedure*
 
 ```scheme
-> (define re (string->regex "m/a/"))
+> (define re (string->regexp "m/a/"))
 
 (re "hello")                ==>  #false
 (re "aloha")                ==>  #true

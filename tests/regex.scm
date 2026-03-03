@@ -2,12 +2,12 @@
 ;;; Testing
 ;;;
 
-; (import (owl regex)) ;; when testing without a heap rebuild
+; (import (otus regexp)) ;; when testing without a heap rebuild
 (import (scheme base))
 
 ;; regex str → did-match-ok?
 (define (test regex input should?)
-   (let*((rex (if (string? regex) (string->regex regex) regex)))
+   (let*((rex (if (string? regex) (string->regexp regex) regex)))
       (let ((res (rex input)))
          (cond
             ((equal? res should?)

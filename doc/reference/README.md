@@ -285,7 +285,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [sort](sorting.md#sort)
 [square](numerical-operations.md#square)
 [sqrt](numerical-operations.md#sqrt)
-[string->regex](regex.md#string-regex)
+[string->regexp](regex.md#string-regexp)
 [string->symbol](symbols.md#string-symbol)
 [string->uninterned-symbol](symbols.md#string-uninterned-symbol)
 [string->utf8](bytevectors.md#string-utf8)

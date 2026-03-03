@@ -26,7 +26,7 @@
 
 (define-library (otus regexp)
    (export
-      sexp-regexp
+      regexp
       string->regexp
       string->replace-regexp
       string->complete-match-regexp)
@@ -35,8 +35,7 @@
       (scheme core)
       (scheme list)
       (srfi 1)
-      (owl parse)
-      (prefix (data parse) ":")
+      (data parse)
       (owl ff)
       (owl list)
       (owl math)
@@ -47,9 +46,6 @@
 
    (begin
       (define-syntax lets (syntax-rules () ((lets . stuff) (let* . stuff)))) ; TEMP
-
-      ;; (define parse :parse)
-      (define byte :byte)
 
       ;;;
       ;;; Matching functions
@@ -428,7 +424,7 @@
             ((pair? x) x)
             ((null? x) x)
             ((string? x) (str-iter x))
-            ((blob? x) (blob-iter x)) ; todo: remove?
+            ;; ((blob? x) (blob-iter x)) ; todo: remove?
             (else (runtime-error "invalid regex argument" x))))
 
       ;; todo: now that the matchers are constructed here, the terminals /[^]...[$]/ could be handled externally!
@@ -585,12 +581,6 @@
       ;;; Regexp string parsing
       ;;;
 
-      (define get-dot  ;; .
-         (let-parses ((foo (get-imm #\.))) dot))
-
-      (define get-fini ;; $
-         (let-parses ((foo (get-imm #\$))) fini))
-
       ;; maybe get a ?
       (define get-altp
          (either
@@ -599,23 +589,23 @@
 
       ;; → (rex → rex')
       (define get-star
-         (let-parses
-            ((skip (get-imm #\*))
-             (altp get-altp))
+         (let-parse* (
+               (skip (byte #\*))
+               (altp get-altp))
             (if altp alt-star star)))
 
       ;; a+ = aa*
       (define get-plus
-         (let-parses
-            ((skip (get-imm #\+))
-             (altp get-altp))
+         (let-parse* (
+               (skip (byte #\+))
+               (altp get-altp))
             (if altp alt-plus plus)))
 
       ;; a? = a{0,1} = (a|"")
       (define get-quest
-         (let-parses
-            ((skip (get-imm #\?))
-             (altp get-altp))
+         (let-parse* (
+               (skip (byte #\?))
+               (altp get-altp))
             (if altp alt-quest quest)))
 
       (define (i x) x)
@@ -623,7 +613,9 @@
       (define special-chars '(#\( #\) #\| #\. #\/)) ;; kinda ugly. the parser should check for these first
 
       (define (imm-val imm val)
-         (let-parses ((d (get-imm imm))) val))
+         (let-parse* ((d (byte imm))) val))
+      (define (byte-val imm val)
+         (let-parse* ((d (byte imm))) val))
 
       (define digit?     (λ (b) (and (less? 47 b) (less? b 58)))) ;; 0-9
       (define alpha?     (λ (b) (and (less? 96 b) (less? b 123))));; a-z
@@ -646,33 +638,31 @@
       ;; strings are already sequences of unicode code points, so no need to decode here
       ;; accept any non-special char
       (define get-plain-char
-         (let-parses
-            ((val get-rune) ;; really get-code-point since the input is already decoded
-             (verify (not (has? special-chars val)) "bad special char"))
+         (let-parse* (
+               (val (rune (lambda (x) ;; really get-code-point since the input is already decoded
+                              (not (has? special-chars x))))))
             (imm val)))
 
       (define (quoted-imm val)
-         (let-parses
-            ((quote (get-imm #\\))
-             (val (get-imm val)))
+         (let-parse* (
+               ( -- (byte #\\))
+               (val (byte val)))
             val))
 
       (define get-reference ;; \0-\9
-         (let-parses
-            ((skip (get-imm #\\))
-             (d get-byte)
-             (verify (digit? d) "bad digit"))
-            (matched (- d #\0))))
+         (let-parse* (
+               ( -- (byte #\\))
+               (char (byte (lambda (x) (digit? x)))))
+            (matched (- char #\0))))
 
       (define get-digit
-         (let-parses
-            ((b get-byte)
-             (verify (digit? b) "bad digit"))
+         (let-parse* (
+               (b (byte (lambda (x) (digit? x)))))
             (- b #\0)))
 
       (define get-number
-         (let-parses
-            ((digits (get-greedy+ get-digit)))
+         (let-parse* (
+               (digits (greedy+ get-digit)))
             (fold (λ (n d) (+ (* n 10) d)) 0 digits)))
 
       ;; \<suff> → code-point (not acceptor as in get-quoted-char)
@@ -690,107 +680,102 @@
 
       (define get-hex
          (let-parse* (
-               (b get-byte)
-               (hex (get-epsilon (char->hex b)))
-               (verify hex "bad hex digit"))
+               (b byte)
+               (hex (epsilon (char->hex b)))
+               (unless hex "bad hex digit"))
             hex))
 
       (define get-8bit
-         (let-parses ((hi get-hex) (lo get-hex)) (bor (<< hi 4) lo)))
+         (let-parse* ((hi get-hex) (lo get-hex)) (bor (<< hi 4) lo)))
 
       (define get-16bit
-         (let-parses ((hi get-8bit) (lo get-8bit)) (bor (<< hi 8) lo)))
+         (let-parse* ((hi get-8bit) (lo get-8bit)) (bor (<< hi 8) lo)))
 
       (define get-32bit
-         (let-parses ((hi get-16bit) (lo get-16bit)) (bor (<< hi 16) lo)))
+         (let-parse* ((hi get-16bit) (lo get-16bit)) (bor (<< hi 16) lo)))
 
       ;; \<x>
       (define get-quoted-char
-         (let-parses
-            ((skip (get-imm #\\))
-             (val
-               (get-any-of
-                  (imm-val #\d accept-digit)       ;; \d = [0-9]
-                  (imm-val #\D accept-nondigit)    ;; \D = [^0-9]
-                  (imm-val #\. accept-dot)         ;; \. = .
-                  (imm-val #\w accept-word)        ;; \w = [_0-9a-zA-Z]
-                  (imm-val #\n (imm #\newline))    ;; \n = newline
-                  (imm-val #\r (imm #\return))     ;; \r = carriage return
-                  (imm-val #\t (imm #\tab))        ;; \t = tab
-                  (imm-val #\W accept-nonword)     ;; \W = [^_0-9a-zA-Z]
-                  (imm-val #\s accept-space)       ;; \s = [ \t\r\n\v\f]
-                  (imm-val #\S accept-nonspace)    ;; \S = [^ \t\r\n\v\f]
-                  (imm-val #\\ (imm #\\))          ;; \\ = /
-                  (imm-val #\| (imm #\|))          ;; \| = |
+         (let-parse* (
+               ( --  (byte #\\))
+               (char (any-of
+                        (byte #\d accept-digit)       ;; \d = [0-9]
+                        (byte #\D accept-nondigit)    ;; \D = [^0-9]
+                        (byte #\. accept-dot)         ;; \. = .
+                        (byte #\w accept-word)        ;; \w = [_0-9a-zA-Z]
+                        (byte #\n (imm #\newline))    ;; \n = newline
+                        (byte #\r (imm #\return))     ;; \r = carriage return
+                        (byte #\t (imm #\tab))        ;; \t = tab
+                        (byte #\W accept-nonword)     ;; \W = [^_0-9a-zA-Z]
+                        (byte #\s accept-space)       ;; \s = [ \t\r\n\v\f]
+                        (byte #\S accept-nonspace)    ;; \S = [^ \t\r\n\v\f]
+                        (byte #\\ (imm #\\))          ;; \\ = /
+                        (byte #\| (imm #\|))          ;; \| = |
 
-                  ;; (let-parse* ((: (get-imm #\c)) (char get-hex)) (imm char))    ;; \cX
-                  (let-parse* ((: (get-imm #\x)) (char get-8bit)) (imm char))   ;; \xhh
-                  (let-parses ((: (get-imm #\u)) (char get-16bit)) (imm char))  ;; \uhhhh
-                  (imm-val #\/ (imm #\/)) )))      ;; \/ = /
-            val))
+                        ;; (let-parse* ((: (byte #\c)) (char get-hex)) (imm char))    ;; \cX
+                        (let-parse* (( -- (byte #\x)) (char get-8bit)) (imm char))   ;; \xhh
+                        (let-parse* (( -- (byte #\u)) (char get-16bit)) (imm char))  ;; \uhhhh
+                        (byte #\/ (imm #\/)) )))      ;; \/ = /
+            char))
 
       ;; todo: what is the quotation used for 32-bit \xhhhhhhhh?
       (define parse-quoted-char-body
-         (get-any-of
+         (any-of
             ;; the usual quotations
-            (imm-val #\a  7)  ;; \a = 7
-            (imm-val #\b  8)  ;; \b = 8
-            (imm-val #\t  9)  ;; \t = 9
-            (imm-val #\n 10)  ;; \n = 10
-            (imm-val #\v 11)  ;; \v = 11
-            (imm-val #\f 12)  ;; \f = 12
-            (imm-val #\r 13)  ;; \r = 13
-            (get-imm #\[)     ;; \[ = [
-            (get-imm #\\)     ;; \\ = \
-            (get-imm #\])     ;; \] = ]
-            (get-imm #\^)     ;; \^ = ^
-            (let-parse* ((: (get-imm #\x)) (char get-8bit)) char)  ;; \xhh
-            (let-parse* ((: (get-imm #\u)) (char get-16bit)) char) ;; \uhhhh
+            (byte #\a  7)  ;; \a = 7
+            (byte #\b  8)  ;; \b = 8
+            (byte #\t  9)  ;; \t = 9
+            (byte #\n 10)  ;; \n = 10
+            (byte #\v 11)  ;; \v = 11
+            (byte #\f 12)  ;; \f = 12
+            (byte #\r 13)  ;; \r = 13
+            (byte #\[)     ;; \[ = [
+            (byte #\\)     ;; \\ = \
+            (byte #\])     ;; \] = ]
+            (byte #\^)     ;; \^ = ^
+            (let-parse* (( -- (byte #\x)) (char get-8bit)) char)  ;; \xhh
+            (let-parse* (( -- (byte #\u)) (char get-16bit)) char) ;; \uhhhh
          ))
 
       (define parse-quoted-char
-         (let-parses
-            ((skip (get-imm #\\))
-             (val parse-quoted-char-body))
+         (let-parse* (
+               ( -- (byte #\\))
+               (val parse-quoted-char-body))
             val))
 
       ;; todo: should probably also disallow \ to avoid accidental broken quotations
       ;; a quoted character or anything other than ]
       (define parse-char-class-char
-         (get-either
+         (either
             parse-quoted-char
-            (let-parses
-               ((char get-rune)
-                (verify (not (eq? char #\])) #false))
-               char)))
+            (rune (λ (x) (not (eq? x #\]))) )))
 
       ;; get a range or a single letter of a char class (treat single letter as ranges of length 1)
       (define char-class-elem
-         (let-parses
-            ((b parse-char-class-char)
-             (c
-               (get-either
-                  (let-parses
-                     ((skip (get-imm #\-))
-                      (c parse-char-class-char)
-                      (verify (<= b c) "bad range"))
-                     c)
-                  (get-epsilon b))))
+         (let-parse* (
+               (b parse-char-class-char)
+               (c (either
+                     (let-parse* (
+                           ( -- (byte #\-))
+                           (c parse-char-class-char)
+                           (unless (<= b c) "bad range"))
+                        c)
+                     (epsilon b))))
             (lrange b 1 (+ c 1))))
 
       (define get-maybe-caret
-         (get-either
-            (get-imm #\^)  ;; hack, returned 94 on match is also true
-            (get-epsilon #false)))
+         (either
+            (byte #\^)  ;; hack, returned 94 on match is also true
+            (epsilon #false)))
 
       (define get-char-class
-         (let-parses
-            ((open (get-imm #\[))
-             (comp? get-maybe-caret)
-             (charss (get-greedy+ char-class-elem)) ;; todo: [] might also be useful
-             (close (get-imm #\])))
+         (let-parse* (
+               ( -- (byte #\[))
+               (comp? get-maybe-caret)
+               (chars (greedy+ char-class-elem)) ;; todo: [] might also be useful
+               ( -- (byte #\])))
             (make-char-class comp?
-               (foldr append null charss))))
+               (foldr append null chars))))
 
       ;; n m|inf → (R → R{n,m})
       (define (make-repeater n m)
@@ -806,172 +791,182 @@
                   (λ (rx) (at-most m rx))
                   (λ (rx) (rex-and (exactly n rx) (at-most (- m n) rx)))))
             (else
-               (runtime-error "make-repeater: bad range: " n 'to m))))
+               (runtime-error "make-repeater: bad range: " n "to" m))))
 
       (define get-range
-         (let-parses
-            ((skip (get-imm #\{))   ; <{>...}
-             (start
-               (get-either get-number (get-epsilon 0))) ; <{[n]>...}
-             (end
-               (get-either
-                  (let-parses
-                     ((skip (get-imm #\,)) ; <{[n],>
-                      (val (get-either get-number (get-epsilon 'inf)))) ; <{[n],[n]>...}
+         (let-parse* (
+               ( -- (byte #\{))   ; <{>...}
+               (start
+                  (either get-number (epsilon 0))) ; <{[n]>...}
+               (end
+                  (either
+                  (let-parse* (
+                        ( -- (byte #\,)) ; <{[n],>
+                        (val (either get-number (epsilon 'inf)))) ; <{[n],[n]>...}
                      val)
-               (get-epsilon start))) ; <{[n]>..}
-             (verify (or (eq? end 'inf) (<= start end)) "bad range") ;; → can print error message with exact location in input if failes
-             (skip (get-imm #\}))) ; <{...}>
+               (epsilon start))) ; <{[n]>..}
+               (unless (or (eq? end 'inf) (<= start end)) "bad range") ;; → can print error message with exact location in input if failes
+               ( -- (byte #\}))) ; <{...}>
             (make-repeater start end)))
 
       ;; parse a sequence of regexp terms with implicit catenation
       (define (get-catn get-regex)
-         (let-parses
-            ((regex ;; parse a single regexp thing
-               (get-any-of
-                  get-dot
-                  get-fini
+         (let-parse* (
+               ;; parse a single regexp thing
+               (regex (any-of
+                  (byte #\. dot)
+                  (byte #\$ fini)
                   ;; todo: merge the parenthetical ones later
-                  (let-parses ;; (?:...), non-capturing submatch
-                     ((open (get-imm #\())
-                      (skip (get-imm #\?))
-                      (skip (get-imm #\:)) ;; read ?: explicitly while testing. there are really many more alternatives.
-                      (rex (get-regex))
-                      (close (get-imm #\))))
+                  (let-parse* ( ;; (?:...), non-capturing submatch
+                        ( -- (byte #\())
+                        ( -- (byte #\?))
+                        ( -- (byte #\:)) ;; read ?: explicitly while testing. there are really many more alternatives.
+                        (rex (get-regex))
+                        ( -- (byte #\))))
                      rex)
-                  (let-parses ;; (?=<regex>) → match if regex also would match
-                     ((open (get-imm #\())
-                      (skip (get-imm #\?))
-                      (skip (get-imm #\=))
-                      (rex (get-regex))
-                      (close (get-imm #\))))
+                  (let-parse* (;; (?=<regex>) → match if regex also would match
+                        ( -- (byte #\())
+                        ( -- (byte #\?))
+                        ( -- (byte #\=))
+                        (rex (get-regex))
+                        ( -- (byte #\))))
                      (lookahead rex))
-                  (let-parses ;; (?!<regex>) → match if regex would not match
-                     ((open (get-imm #\())
-                      (skip (get-imm #\?))
-                      (skip (get-imm #\!))
-                      (rex (get-regex))
-                      (close (get-imm #\))))
+                  (let-parse* ( ;; (?!<regex>) → match if regex would not match
+                        ( -- (byte #\())
+                        ( -- (byte #\?))
+                        ( -- (byte #\!))
+                        (rex (get-regex))
+                        ( -- (byte #\))))
                      (lookahead-not rex))
-                  (let-parses ;; (?<=<regex>) → match if regex matches on the left of current position
-                     ((open (get-imm #\()) ; #\(
-                      (skip (get-imm #\?))
-                      (skip (get-imm #\<)) ; #\<
-                      (skip (get-imm #\=)) ; #\=
-                      (rex (get-regex))
-                      (close (get-imm #\))))
+                  (let-parse* ( ;; (?<=<regex>) → match if regex matches on the left of current position
+                        ( -- (byte #\()) ; #\(
+                        ( -- (byte #\?))
+                        ( -- (byte #\<)) ; #\<
+                        ( -- (byte #\=)) ; #\=
+                        (rex (get-regex))
+                        ( -- (byte #\))))
                      (lookback rex))
-                  (let-parses ;; (?<!<regex>) → match if regex matches on the left of current position, not
-                     ((open (get-imm #\())
-                      (skip (get-imm #\?))
-                      (skip (get-imm #\<))
-                      (skip (get-imm #\!))
-                      (rex (get-regex))
-                      (close (get-imm #\))))
+                  (let-parse* ( ;; (?<!<regex>) → match if regex matches on the left of current position, not
+                        ( -- (byte #\())
+                        ( -- (byte #\?))
+                        ( -- (byte #\<))
+                        ( -- (byte #\!))
+                        (rex (get-regex))
+                        ( -- (byte #\))))
                      (lookback-not rex))
-                  (let-parses ;; (...) → match and store
-                     ((open (get-imm #\())
-                      (rex (get-regex))
-                      (close (get-imm #\))))
+                  (let-parse* ( ;; (...) → match and store
+                        ( -- (byte #\())
+                        (rex (get-regex))
+                        ( -- (byte #\))))
                      (chunk rex))
-                  get-char-class
+                  get-char-class ; todo: change name
                   get-reference
                   get-quoted-char
                   get-plain-char))
-             (repetition
-               (get-any-of
+               (repetition (any-of
                   get-star
                   get-plus
                   get-quest
                   get-range
-                  (get-epsilon i)))
-             (tail
-               (get-any-of
-                  (let-parses ;; join tail of exp with implicit catenation
-                     ((tl (get-catn get-regex)))
-                     (λ (head) (rex-and head tl)))
-                  (get-epsilon i)))) ;; nothing
+                  (epsilon i)))
+               (tail (any-of
+                  (let-parse* ( ;; join tail of exp with implicit catenation
+                        (tl (get-catn get-regex)))
+                     (λ (head)
+                        (rex-and head tl)))
+                  (epsilon i)))) ;; nothing
            (tail (repetition regex))))
 
       (define get-maybe-g
-         (get-either
-            (get-imm #\g)
-            (get-epsilon #false)))
+         (either
+            (byte #\g)
+            (epsilon #false)))
 
       ;; get a sequence of regexps with zero or more | in between and merge them
       (define (get-regex)
-         (let-parses
-            ((hd (get-catn get-regex))
-             (tl (get-greedy* (let-parses ((skip (get-imm #\|)) (rex (get-catn get-regex))) rex))))
+         (let-parse* (
+               (hd (get-catn get-regex))
+               (tl (greedy* (let-parse* (
+                        ( -- (byte #\|))
+                        (rex (get-catn get-regex)))
+                  rex))))
             (fold rex-or hd tl)))
 
       (define get-matcher-regex
-         (let-parses
-            ((skip (get-imm #\m)) ;; [m]atch
-             (skip (get-imm #\/))  ;; opening /
-             (start? (get-either (get-imm #\^) (get-epsilon #false))) ;; maybe get leading ^ (special)
-             (rex (get-regex))
-             (skip (get-imm #\/))) ;; closing /
+         (let-parse* (
+               ( -- (byte #\m)) ;; [m]atch
+               ( -- (byte #\/)) ;; opening /
+               (start? (either
+                           (byte #\^)
+                           (epsilon #false))) ;; maybe get leading ^ (special)
+               (rex (get-regex))
+               ( -- (byte #\/))) ;; closing /
             (make-matcher rex start?)))
 
       ;; a parser for terms like ab{1,3}a* with implicit ^ and $
       (define get-body-regex
-         (let-parses ((rex (get-regex)))
+         (let-parse* ((rex (get-regex)))
             (make-matcher (rex-and rex fini) #true)))
 
       (define get-copy-matcher-regex
-         (let-parses
-            ((skip (get-imm #\g)) ;; [g]rab
-             (skip (get-imm #\/))  ;; opening /
-             (start? (get-either (get-imm #\^) (get-epsilon #false))) ;; maybe get leading ^ (special)
-             (rex (get-regex))
-             (skip (get-imm #\/)) ;; closing /
-             (all? get-maybe-g))
+         (let-parse* (
+               ( -- (byte #\g)) ;; [g]rab
+               ( -- (byte #\/)) ;; opening /
+               (start? (either
+                           (byte #\^)
+                           (epsilon #false))) ;; maybe get leading ^ (special)
+               (rex (get-regex))
+               ( -- (byte #\/)) ;; closing /
+               (all? get-maybe-g))
             (make-copy-matcher rex start? (unless start? all?))))
 
       (define get-cutter-regex
-         (let-parses
-            ((skip (get-imm #\c))  ;; [c]ut
-             (skip (get-imm #\/))  ;; opening /
-             (start? (get-either (get-imm #\^) (get-epsilon #false))) ;; maybe get leading ^ (special)
-             (rex (get-regex))
-             (skip (get-imm #\/)) ;; closing /
+         (let-parse* (
+               ( -- (byte #\c))  ;; [c]ut
+               ( -- (byte #\/))  ;; opening /
+               (start? (either
+                           (byte #\^)
+                           (epsilon #false))) ;; maybe get leading ^ (special)
+               (rex (get-regex))
+               ( -- (byte #\/))) ;; closing /
+            ;TODO:
             ;(flags get-cut-flags) ;; [r]emove (default), keep as [p]refix, keep as [s]uffix
-                                   ;; (c/X/[r] "fooXbarXbaz") → '("foo" "bar" "baz")
+                                   ;; (c/X/[r] "fooXarXbaz") → '("foo" "bar" "baz")
                                    ;; (c/X/p   "fooXbarXbaz") → '("foo" "Xbar" "Xbaz")
                                    ;; (c/X/s    "fooXbarXbaz") → '("fooX" "barX" "baz")
-            )
-           (make-cutter rex start?)))
+            (make-cutter rex start?)))
 
       (define get-replace-char
-         (get-either
+         (either
             (let-parse* (;; quoted char with "\"
-                  (skip (get-imm #\\))
-                  (rune get-rune))
-               (list rune)) ; quoted char boxing
+                  ( -- (byte #\\))
+                  (char rune))
+               (list char)) ; quoted char boxing
             (let-parse* (;; something other than /
-                  (rune get-rune)
-                  (verify (not (eq? rune #\/)) #false)) ; (verify (eq? rune #\/) #true) ?
-               rune)))
+                  (char rune)
+                  (unless (not (eq? char #\/)) #false)) ; (unless (eq? rune #\/) #true) ?
+               char)))
 
       ; s/<regex>/<str>/[g]
       (define get-replace-regex
          (let-parse* (
-               (skip (get-imm #\s))  ;; opening s
-               (skip (get-imm #\/))  ;; opening /
-                  (start? (get-either (get-imm #\^) (get-epsilon #false))) ;; maybe get leading ^ (special)
-                  (rex (get-regex))
-               (skip (get-imm #\/))  ;; delimiting /
-                  (rep (get-greedy* get-replace-char))
-               (skip (get-imm #\/)) ;; closing /
+               ( -- (byte #\s))  ;; opening s
+               ( -- (byte #\/))  ;; opening /
+               (start? (either
+                           (byte #\^)
+                           (epsilon #false))) ;; maybe get leading ^ (special)
+               (rex (get-regex))
+               ( -- (byte #\/))  ;; delimiting /
+               (rep (greedy* get-replace-char))
+               ( -- (byte #\/)) ;; closing /
                (all? get-maybe-g)) ;; fixme: add other search/replace match than g
             (make-replacer rex rep all? start?)))
 
       ; global regex parser
-      (define sexp-regexp
-         (let-parse*(
+      (define regexp
+         (let-parse* (
                (from (lambda (l r p ok) (ok l r p l)))
-               (regex (get-any-of
+               (regex (any-of
                   get-replace-regex        ;; s/.../.../
                   get-matcher-regex        ;; m/.../
                   get-cutter-regex         ;; c/.../
@@ -994,15 +989,15 @@
 
       ;; str -> rex|#false, for conversion of strings to complete matchers
       (define (string->complete-match-regexp str)
-         (:parse get-body-regex (str-iter-bytes str)))
+         (parse get-body-regex (str-iter-bytes str)))
 
       ;; str → rex|#false, same as is used in owl parser
       (define (string->extended-regexp str)
-         (:parse sexp-regexp (str-iter-bytes str)))
+         (parse regexp (str-iter-bytes str)))
 
       ;; testing
       (define (string->replace-regexp str)
-         (:parse get-replace-regex (str-iter-bytes str)))
+         (parse get-replace-regex (str-iter-bytes str)))
 
       ;; POSIX (ERE)
       (define string->regexp

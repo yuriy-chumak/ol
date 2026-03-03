@@ -1,6 +1,6 @@
 (define-library (data s-exp)
    (export
-      sexp-parser s-exp ; todo: rename to s-exp
+      sexp-parser s-exp
       ;get-sexps       ;; greedy* get-sexp
       ;; string->sexp
       ;bytevector->sexps
@@ -26,7 +26,7 @@
       (owl lazy)
       (owl io) ; testing
       (owl unicode)
-      (only (otus regexp) sexp-regexp)
+      (only (otus regexp) regexp)
       
       (data parse))
 
@@ -533,7 +533,7 @@
                         (special-word s-exp)
                         string
                         quoted-char
-                        sexp-regexp ; before symbols, which also may have "/" and "|"
+                        regexp ; before symbols, which also may have "/" and "|"
                         symbol        ; 
                         ; containers
                         (vector-of (s-exp))
