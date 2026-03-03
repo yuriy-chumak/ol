@@ -818,39 +818,27 @@
                   (byte #\$ fini)
                   ;; todo: merge the parenthetical ones later
                   (let-parse* ( ;; (?:...), non-capturing submatch
-                        ( -- (byte #\())
-                        ( -- (byte #\?))
-                        ( -- (byte #\:)) ;; read ?: explicitly while testing. there are really many more alternatives.
+                        ( -- (bytes "(?:")) ;; read ?: explicitly while testing. there are really many more alternatives.
                         (rex (get-regex))
                         ( -- (byte #\))))
                      rex)
-                  (let-parse* (;; (?=<regex>) → match if regex also would match
-                        ( -- (byte #\())
-                        ( -- (byte #\?))
-                        ( -- (byte #\=))
+                  (let-parse* ( ;; (?=<regex>) → match if regex also would match
+                        ( -- (bytes "(?="))
                         (rex (get-regex))
                         ( -- (byte #\))))
                      (lookahead rex))
                   (let-parse* ( ;; (?!<regex>) → match if regex would not match
-                        ( -- (byte #\())
-                        ( -- (byte #\?))
-                        ( -- (byte #\!))
+                        ( -- (bytes "(?!"))
                         (rex (get-regex))
                         ( -- (byte #\))))
                      (lookahead-not rex))
                   (let-parse* ( ;; (?<=<regex>) → match if regex matches on the left of current position
-                        ( -- (byte #\()) ; #\(
-                        ( -- (byte #\?))
-                        ( -- (byte #\<)) ; #\<
-                        ( -- (byte #\=)) ; #\=
+                        ( -- (bytes "(?<="))
                         (rex (get-regex))
                         ( -- (byte #\))))
                      (lookback rex))
                   (let-parse* ( ;; (?<!<regex>) → match if regex matches on the left of current position, not
-                        ( -- (byte #\())
-                        ( -- (byte #\?))
-                        ( -- (byte #\<))
-                        ( -- (byte #\!))
+                        ( -- (bytes "(?<!"))
                         (rex (get-regex))
                         ( -- (byte #\))))
                      (lookback-not rex))
