@@ -10,7 +10,7 @@
 
    (import
       (scheme core)
-      (owl string) (owl regex)
+      (owl string)
       (scheme list)
       (otus async))
 

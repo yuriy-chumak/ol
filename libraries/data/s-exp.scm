@@ -26,7 +26,7 @@
       (owl lazy)
       (owl io) ; testing
       (owl unicode)
-      (only (owl regex) get-sexp-regex)
+      (only (otus regexp) sexp-regexp)
       
       (data parse))
 
@@ -533,7 +533,7 @@
                         (special-word s-exp)
                         string
                         quoted-char
-                        get-sexp-regex ; before symbols, which also may have "/" and "|"
+                        sexp-regexp ; before symbols, which also may have "/" and "|"
                         symbol        ; 
                         ; containers
                         (vector-of (s-exp))

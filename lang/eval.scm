@@ -50,7 +50,7 @@
       (owl lazy)
       (lang macro)
       (lang primop)
-      (only (owl regex) string->regex))
+      (only (otus regexp) string->regexp))
 
    (begin
       (define meta-tag '*owl-metadata*) ; key for object metadata
@@ -464,7 +464,7 @@
          (cond
             ((function? thing) thing)
             ((string? thing)
-               (string->regex
+               (string->regexp
                   (string-append "m/" thing "/")))
             ((symbol? thing)
                (thing->rex (symbol->string thing)))
