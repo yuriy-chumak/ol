@@ -4141,7 +4141,7 @@ loop:;
 
 				if (count < 0) {
 #if defined(FIONREAD) && !defined(_WIN32)
-					if (ioctl(portfd, FIONREAD, count) == -1)
+					if (ioctl(portfd, FIONREAD, &count) == -1)
 #endif
 						// сколько есть свободного места, столько читаем
 						count = ((heap->end - fp) - 1) * sizeof(word);
