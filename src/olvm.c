@@ -3286,7 +3286,7 @@ loop:;
 		word *lst = (word *) reg[r+1];
 
 		while (is_pair(lst)) { // unwind argument list
-			if (r > NR)
+			if (r >= NR)
 				ARITYERROR(this, r);
 			reg[r++] = car (lst);
 			lst = (word *) cdr(lst);
