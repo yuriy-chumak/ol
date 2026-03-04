@@ -159,7 +159,7 @@ typedef int64_t ret_t;
 #define TUINT64       (58)
 #define TUINT128      (59) // not implemented yet
 
-#define TMASK      0x00FFF // ffi type mask
+#define TMASK        0x3F  // types mask
 
 #define TCDECL     0x00000
 //efine TSYSCALL    // OS/2, not supported/required
@@ -173,8 +173,8 @@ typedef int64_t ret_t;
 //efine TSAFECALL   // Delphi/F-Pascal, not supported
 //efine TTHISCALL   // c++, use in toplevel code
 
-#define FFT_PTR    (1)
-#define FFT_REF    (2)
+#define FFT_PTR    (0x100)
+#define FFT_REF    (0x200)
 
 // -----------------
 // sizeof(long long):
@@ -3233,28 +3233,19 @@ return_result:
  * 48 .. 63 - ffi types
  */
 static
-int c_sizeof(int type)
-{
-	switch (type) {
-		// ansi c types
-		case 1: return sizeof(char);
-		case 2: return sizeof(short);
-		case 3: return sizeof(int);
-		case 4: return sizeof(long);
-		case 5: return sizeof(long long);
-		case 6: return sizeof(size_t);
-		// floating point types
-		case 10: return sizeof(float);
-		case 11: return sizeof(double);
-		// etc.
-		case 20: return sizeof(void*);
-	}
-	return 0;
-}
-static
 int ffi_sizeof(int type)
 {
 	switch (type) {
+		// ansi c types
+		case 101: return sizeof(char);
+		case 102: return sizeof(short);
+		case 103: return sizeof(int);
+		case 104: return sizeof(long);
+		case 105: return sizeof(long long);
+		case 106: return sizeof(size_t);
+		// ptr
+		case 49: return sizeof(void*);
+
 		// ffi types
 		case TVOID: return sizeof(void*);
 		case TBOOL: return sizeof(_Bool);
@@ -3284,13 +3275,8 @@ word OLVM_sizeof(olvm_t* self, word* arguments)
 	if (is_value(A)) {
 		int type = value(A);
 
-		// ansi c types
+		// basic types
 		int size;
-		size = c_sizeof(type);
-		if (size)
-			return I(size);
-
-		// ffi types
 		size = ffi_sizeof(type);
 		if (size)
 			return I(size);

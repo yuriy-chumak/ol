@@ -209,9 +209,9 @@
 
 ; type convertors
 (define (fft* type)
-   (cons 1 type))
+   (cons #x100 type))
 (define (fft& type)
-   (cons 2 type))
+   (cons #x200 type))
 
 (define type-callable 61)
 
@@ -242,15 +242,15 @@
 
 ; --=( platform dependent defaults )=----
 (define ffi:sizeof (dlsym (dlopen) "OLVM_sizeof"))
-   (setq |char| 1)
-   (setq |short| 2)
-   (setq |int| 3)
-   (setq |long| 4)
-   (setq |long long| 5)
-   (setq |size_t| 6)
-   (setq |float| 10)
-   (setq |double| 11)
-   (setq |void*| 20)
+   (setq |char|  101)
+   (setq |short| 102)
+   (setq |int|   103)
+   (setq |long|  104)
+   (setq |long long| 105)
+   (setq |size_t| 106)
+   (setq |float| fft-float)
+   (setq |double| fft-double)
+   (setq |void*| fft-void*)
 
 (define fft-signed-char fft-int8)
 (define fft-unsigned-char fft-uint8)
