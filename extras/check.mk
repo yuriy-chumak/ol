@@ -67,6 +67,8 @@ DEV_MODE ?= 0
 -include extras/platforms/ppcle64.mk
 # sparc 64
 -include extras/platforms/sparc64.mk
+# additional architectures
+-include extras/platforms/alpha.mk
 # x86 win(e)
 -include extras/platforms/win(e).mk
 

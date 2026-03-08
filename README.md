@@ -13,7 +13,8 @@
 [![linux mipsel 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml)
 [![linux ppc 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml)
 [![linux ppcle 64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle.yml)
-[![linux sparc64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc.yml)
+[![linux sparc64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml)
+[![linux alpha](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml)
 [![macos intel/m](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml)
 [![win(e) 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
 

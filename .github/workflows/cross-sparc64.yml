@@ -36,17 +36,26 @@ jobs:
     - name: Make ol/vm.h
       run: 'make includes/ol/vm.h'
 
-    - name: Install ppc64le toolchain
+    - name: Install gcc toolchain
       run: 'sudo apt install gcc-sparc64-linux-gnu -y'
 
     - name: Install qemu
       run: 'sudo apt install qemu-system-sparc64 qemu-user'
 
+    - name: Download QEMU 6.2
+      run: |
+        sudo curl -k -L https://iaaa.port0.org/ol/test-matrix/qemu-sparc64-6.2.0 -o /bin/qemu-sparc64
+        sudo chmod +x /bin/qemu-sparc64
+        qemu-sparc64 --version
+
     - name: Build
       run: 'make tmp/olvm-sparc64-release'
 
     - name: Build Info
-      run: 'file tmp/olvm-sparc64-release; qemu-sparc64 -L /usr/sparc64-linux-gnu tmp/olvm-sparc64-release repl --version; echo "(print (syscall 63))" |qemu-sparc64 -L /usr/sparc64-linux-gnu tmp/olvm-sparc64-release repl'
+      run: |
+        file tmp/olvm-sparc64-release
+        qemu-sparc64 -L /usr/sparc64-linux-gnu tmp/olvm-sparc64-release repl --version
+        echo "(print (syscall 63))" |qemu-sparc64 -L /usr/sparc64-linux-gnu tmp/olvm-sparc64-release repl
 
     - name: Check Reference
       run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_SPARC64=1 make check-reference
