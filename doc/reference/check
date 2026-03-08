@@ -15,7 +15,7 @@ check: check-reference
 
 # ------------------------------------
 define check-reference
-    $5 $1-$2-$3$6 repl tools/check-reference.lisp "$4" 1>/dev/null 2>/dev/null ;\
+    $5 $1-$2-$3$6 repl tools/check-reference.lisp "$4" 1>>tmp/check-reference.out 2>>tmp/check-reference.err ;\
 	   if [ $$? -eq 0 ]; then\
 	      printf \|$(ok) ;\
 		  $(call notify,$4,$(or $(OS),Linux),$(or $(PLATFORM),$2),$3,1) ;\
@@ -78,6 +78,7 @@ check-reference: $(wildcard doc/reference/*.md)
 	   if [ "$(DEV_MODE)" = "0" ]; then $(call check-reference,tmp/olvm,native,release,$$F); fi ;\
 	   echo "|";\
 	done
+	cat tmp/check-reference.err
 	case `test -f $(FAILMARK); echo $$?` in\
 	   0) echo "$(red)FAILED!$(done)"; exit 1;;\
 	   1) echo "$(green)passed!$(done)"; exit 0;;\
