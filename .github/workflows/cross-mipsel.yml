@@ -1,4 +1,4 @@
-name: linux mipsel 32/64
+name: mipsel 32/64
 # notes:
 #  don't forget for apt update before installing anything
 #  remove man-db autoupdate, it's too time consuming

@@ -1,4 +1,4 @@
-name: macos intel/m
+name: macos m1+
 
 on:
   workflow_dispatch:
@@ -18,20 +18,11 @@ jobs:
   make:
     strategy:
       matrix:
-        os: [ macos-14, macos-latest ] # intel, m1
+        os: [ macos-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Update submodules
-      run: 'git submodule update --init --recursive'
-
     - name: Build
-      run: 'make'
-
-    - name: Build Info
-      run: 'file ol; make describe'
+      uses: ./.github/actions/build-macos
 
     - name: Check Reference
       run: make check-reference-native
