@@ -1,7 +1,4 @@
-name: alpha
-# notes:
-#  don't forget for apt update before installing anything
-#  remove man-db autoupdate, it's too time consuming
+name: alpha 64
 
 on:
   workflow_dispatch:
@@ -35,6 +32,7 @@ jobs:
 
     - name: Make ol/vm.h
       run: 'make includes/ol/vm.h'
+
 
     - name: Install gcc toolchain
       run: 'sudo apt install gcc-alpha-linux-gnu -y'

@@ -1,4 +1,4 @@
-name: sparc64
+name: sparc 64
 # notes:
 #  don't forget for apt update before installing anything
 #  remove man-db autoupdate, it's too time consuming

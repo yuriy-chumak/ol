@@ -1,7 +1,4 @@
 name: mips 32/64
-# notes:
-#  don't forget for apt update before installing anything
-#  remove man-db autoupdate, it's too time consuming
 
 on:
   workflow_dispatch:
@@ -35,6 +32,7 @@ jobs:
 
     - name: Make ol/vm.h
       run: 'make includes/ol/vm.h'
+
 
     - name: Install mips toolchain (32- and 64-bit both)
       run: 'sudo apt install gcc-mips-linux-gnu gcc-mips64-linux-gnuabi64 -y'

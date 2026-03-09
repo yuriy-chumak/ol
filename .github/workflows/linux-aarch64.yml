@@ -1,4 +1,4 @@
-name: aarch64
+name: linux aarch64
 
 on:
   workflow_dispatch:
@@ -16,16 +16,19 @@ concurrency:
 
 jobs:
   make:
-    strategy:
-      matrix:
-        os: [ ubuntu-24.04-arm ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04-arm
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
-    - name: Prepare environment
-      uses: ./.github/actions/setup-env
+    - name: Update submodules
+      run: 'git submodule update --init --recursive'
+
+    - name: Apt update # save resources, remove man-db autoupdate
+      run: 'sudo rm -f /var/lib/man-db/auto-update; sudo apt update'
+
+    - name: Make ol/vm.h
+      run: 'make includes/ol/vm.h'
 
     - name: Build
       run: 'make'

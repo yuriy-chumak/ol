@@ -16,10 +16,7 @@ concurrency:
 
 jobs:
   make:
-    strategy:
-      matrix:
-        os: [ macos-14 ]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-14 # intel
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3

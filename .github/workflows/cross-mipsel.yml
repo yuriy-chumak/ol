@@ -30,7 +30,7 @@ jobs:
     - name: Update submodules
       run: 'git submodule update --init --recursive'
 
-    - name: Apt update
+    - name: Apt update # super time consuming
       run: 'sudo rm -f /var/lib/man-db/auto-update; sudo apt update'
 
     - name: Make ol/vm.h

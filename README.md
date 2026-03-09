@@ -7,24 +7,33 @@
   O t u s   L i s p
 ```
 
-[![linux x86 status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86%2Fx64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-x86+x64.yml)
-[![linux aarch64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/ubuntu-aarch64.yml)
-[![linux mips 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml)
-[![linux mipsel 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml)
-[![linux ppc 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml)
-[![linux ppcle 64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle.yml)
-[![linux sparc64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml)
-[![linux alpha](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml)
-[![macos intel/m](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel+m.yml)
-[![win(e) 32/64](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)
+[![x86/x64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86/x64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml)
+[![aarch64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml)
+[![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml)
+[![macos arm64 status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml)  
+[![alpha 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml)
+[![mips 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml)
+[![mipsel 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml)
+[![ppc 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml)
+[![ppcle 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle64.yml)
+[![sparc 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml)
+[![win(e) 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)  
 
 <a href="https://iaaa.port0.org/ol/test-matrix/"><img align="right" style="margin: 10px; " src="doc/img/test-matrix.png"></a>
 
 Every code change is automatically tested for regressions using github actions and our own test machine.
-It includes a set of core language [test suite](tests/), rosettacode [examples](tests/rosettacode/), [ffi tests](tests/ffi), and [language functions reference](doc/reference/README.md) examples.
+It includes a set of core language
+<a href="tests/">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DLANGUAGE&label=test%20suite" alt="test suite"></a>,
+rosettacode <a href="tests/rosettacode/">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DROSETTACODE&label=examples" alt="examples"></a>,
+<a href="tests/ffi/">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DFFI&label=ffi%20tests" alt="ffi tests"></a>,
+and language
+<a href="doc/reference/README.md">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DREFERENCE&label=functions%20reference" alt="ffi tests"></a>.
 
-Github actions results are provided as badges above.  
-A test matrix with the results of each test for different platforms is available as a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (github doesn't allow javascript to be included in the readme, so you can follow the link or just click the preview image to open it).
+Detailed test matrix with the results of each test for different platforms is available as a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (follow the link or click the preview image to open it).
 
 ### ✨ Note
 * Please see the frequently asked questions and answers in the [Q/A](#qa) section. This may prove important!

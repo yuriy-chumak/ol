@@ -1,4 +1,4 @@
-name: macos m1+
+name: macos arm64
 
 on:
   workflow_dispatch:
@@ -16,13 +16,19 @@ concurrency:
 
 jobs:
   make:
-    strategy:
-      matrix:
-        os: [ macos-latest ]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-15 # arm64
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Update submodules
+      run: 'git submodule update --init --recursive'
+
     - name: Build
-      uses: ./.github/actions/build-macos
+      run: 'make'
+
+    - name: Build Info
+      run: 'file ol; make describe'
 
     - name: Check Reference
       run: make check-reference-native
