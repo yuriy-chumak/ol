@@ -1,0 +1,49 @@
+name: riscv64
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+env:
+  TERM: xterm-256color
+
+# save resources, stop outdated workflows
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  make:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Update submodules
+      run: 'git submodule update --init --recursive'
+
+    - name: Apt update # save resources, remove man-db autoupdate
+      run: 'sudo rm -f /var/lib/man-db/auto-update; sudo apt update'
+
+    - name: Make ol/vm.h
+      run: 'make includes/ol/vm.h'
+
+    - name: Install riscv64 toolchain
+      run: 'sudo apt install gcc-riscv64-linux-gnu -y'
+
+    - name: Install qemu
+      run: 'sudo apt install qemu-system-riscv64 qemu-user'
+
+    - name: Build
+      run: 'make tmp/olvm-riscv64-release'
+
+    - name: Build Info
+      run: |
+        file tmp/olvm-riscv64-release
+        qemu-riscv64 -L /usr/riscv64-linux-gnu tmp/olvm-riscv64-release repl --version
+        echo "(print (syscall 63))" |qemu-riscv64 -L /usr/riscv64-linux-gnu tmp/olvm-riscv64-release repl
+
+    - name: Check Reference
+      run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_RISCV64=1 make check-reference

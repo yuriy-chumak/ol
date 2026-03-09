@@ -47,6 +47,9 @@ check-reference: $(wildcard doc/reference/*.md)
 	   : aarch64 linux ;\
 	   if [ "$(DEV_MODE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm,aarch64,debug,$$F,$(AARCH64)); fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_AARCH64)" = "11" ]; then $(call check-reference,tmp/olvm,aarch64,release,$$F,$(AARCH64)); fi ;\
+	   : riscv64 linux ;\
+	   if [ "$(DEV_MODE)$(HAVE_RISCV64)" = "11" ]; then $(call check-reference,tmp/olvm,riscv64,debug,$$F,$(RISCV64)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_RISCV64)" = "11" ]; then $(call check-reference,tmp/olvm,riscv64,release,$$F,$(RISCV64)); fi ;\
 	   : mips/mipsel linux ;\
 	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm,mips,debug,$$F,$(MIPS)); fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm,mips,release,$$F,$(MIPS)); fi ;\
@@ -69,6 +72,9 @@ check-reference: $(wildcard doc/reference/*.md)
 	   : alpha linux ;\
 	   if [ "$(DEV_MODE)$(HAVE_ALPHA)" = "11" ]; then $(call check-reference,tmp/olvm,alpha,debug,$$F,$(ALPHA)); fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_ALPHA)" = "11" ]; then $(call check-reference,tmp/olvm,alpha,release,$$F,$(ALPHA)); fi ;\
+	   : s390x linux ;\
+	   if [ "$(DEV_MODE)$(HAVE_S390X)" = "11" ]; then $(call check-reference,tmp/olvm,s390x,debug,$$F,$(S390X)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_S390X)" = "11" ]; then $(call check-reference,tmp/olvm,s390x,release,$$F,$(S390X)); fi ;\
 	   : win32 wine ;\
 	   if [ "$(DEV_MODE)$(HAVE_WINE)" = "11" ]; then printf "| "; fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_MINGW32)$(HAVE_WINE)" = "111" ]; then $(call check-reference,tmp/olvm,win32,debug,$$F,$(WINE),.exe); fi ;\

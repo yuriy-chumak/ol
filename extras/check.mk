@@ -59,6 +59,8 @@ DEV_MODE ?= 0
 # arm linux
 -include extras/platforms/arm.mk
 -include extras/platforms/aarch64.mk
+# risc-v
+-include extras/platforms/riscv64.mk
 # mips linux
 -include extras/platforms/mips.mk
 -include extras/platforms/mipsel.mk
@@ -69,6 +71,7 @@ DEV_MODE ?= 0
 -include extras/platforms/sparc64.mk
 # additional architectures
 -include extras/platforms/alpha.mk
+-include extras/platforms/s390x.mk
 # x86 win(e)
 -include extras/platforms/win(e).mk
 
