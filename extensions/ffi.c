@@ -2173,9 +2173,10 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&af[f++] = conv(arg); --i;\
 		})
-		#define STORE_D(conv, type, arg) ({\
-				STORE_F(conv, type, arg);\
-				++i; f++;\
+		#define STORE_D(conv, type, arg) ({ /* doubles always aligned by 8 */\
+				f = (f+1) & 2;\
+				*(type*)&af[f] = conv(arg); --i;\
+				f += 2;\
 		})
 #	elif __UINTPTR_MAX__ == 0xffffffffffffffffU // __mips64 || __powerpc64__
 		#define STORE_F(conv, type, arg) ({\
