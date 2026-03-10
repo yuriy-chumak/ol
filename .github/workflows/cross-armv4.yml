@@ -1,0 +1,61 @@
+name: armv4 32
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+env:
+  TERM: xterm-256color
+
+# save resources, stop outdated workflows
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  make:
+    strategy:
+      matrix:
+        os: [ ubuntu-24.04 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Update submodules
+      run: 'git submodule update --init --recursive'
+
+    - name: Apt update
+      run: 'sudo rm -f /var/lib/man-db/auto-update; sudo apt update'
+
+    - name: Make ol/vm.h
+      run: 'make includes/ol/vm.h'
+
+
+    - name: Install gcc toolchain
+      run: 'sudo apt install gcc-arm-linux-gnueabi -y'
+
+    - name: Install qemu
+      run: |
+        sudo apt install qemu-system-arm qemu-user
+        qemu-arm --version
+
+    - name: Download QEMU 6.2
+      run: |
+        sudo curl -k -L https://iaaa.port0.org/ol/test-matrix/qemu-arm-6.2.0 -o /bin/qemu-arm
+        sudo chmod +x /bin/qemu-arm
+        qemu-arm --version
+
+    - name: Build
+      run: 'make tmp/olvm-armv4t-release'
+
+    - name: Build Info
+      run: |
+        file tmp/olvm-armv4t-release
+        qemu-arm -L /usr/arm-linux-gnueabi -cpu arm926 tmp/olvm-armv4t-release repl --version
+        echo "(print (syscall 63))" |qemu-arm -L /usr/arm-linux-gnueabi -cpu arm926 tmp/olvm-armv4t-release repl
+
+    - name: Check Reference
+      run: DEV_MODE=1 HAVE_PLATFORM=0 HAVE_ARM4=1 make check-reference

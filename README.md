@@ -13,6 +13,8 @@
 [![macos arm64 status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml)
 [![win(e) 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)  
 [![riscv 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-riscv64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-riscv64.yml)
+[![armv4t 32 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv4.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv4.yml)
+[![armv7 soft/hard 32 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv7.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv7.yml)
 [![mips 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml)
 [![mipsel 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml)
 [![ppc 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml)
@@ -24,9 +26,8 @@
 
 <a href="https://iaaa.port0.org/ol/test-matrix/"><img align="right" style="margin: 10px; " src="doc/img/test-matrix.png"></a>
 
-Every code change is automatically tested for regressions using github actions and our own test machine.
-It includes a set of core language
-<a href="tests/">
+Every code change is automatically tested for regressions using GitHub Actions and our own testing machine. It includes a set of
+core language <a href="tests/">
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DLANGUAGE&label=test%20suite" alt="test suite"></a>,
 rosettacode <a href="tests/rosettacode/">
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DROSETTACODE&label=examples" alt="examples"></a>,
@@ -36,10 +37,10 @@ and language
 <a href="doc/reference/README.md">
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DREFERENCE&label=functions%20reference" alt="ffi tests"></a>.
 
-Detailed test matrix with the results of each test for different platforms is available as a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (follow the link or click the preview image to open it).
+A detailed test matrix with results for each test across different platforms is available on a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (follow the link or click the preview image to open it).
 
 ### ✨ Note
-* Please see the frequently asked questions and answers in the [Q/A](#qa) section. This may prove important!
+* Please read the frequently asked questions and answers in the [Q/A](#qa) section. This may prove to be important!
 * Scheme R<sup>7</sup>RS vs Ol [topic](#r7rs-differences) may be interested too.
 
 

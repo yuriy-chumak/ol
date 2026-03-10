@@ -50,6 +50,13 @@ check-reference: $(wildcard doc/reference/*.md)
 	   : riscv64 linux ;\
 	   if [ "$(DEV_MODE)$(HAVE_RISCV64)" = "11" ]; then $(call check-reference,tmp/olvm,riscv64,debug,$$F,$(RISCV64)); fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_RISCV64)" = "11" ]; then $(call check-reference,tmp/olvm,riscv64,release,$$F,$(RISCV64)); fi ;\
+	   : armv4/v7soft/v7hard ;\
+	   if [ "$(DEV_MODE)$(HAVE_ARM4)" = "11" ]; then $(call check-reference,tmp/olvm,armv4t,debug,$$F,$(ARM4t)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_ARM4)" = "11" ]; then $(call check-reference,tmp/olvm,armv4t,release,$$F,$(ARM4t)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_ARM7)" = "11" ]; then $(call check-reference,tmp/olvm,armv7soft,debug,$$F,$(ARM7soft)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_ARM7)" = "11" ]; then $(call check-reference,tmp/olvm,armv7soft,release,$$F,$(ARM7soft)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_ARM7)" = "11" ]; then $(call check-reference,tmp/olvm,armv7hard,debug,$$F,$(ARM7hard)); fi ;\
+	   if [ "$(DEV_MODE)$(HAVE_ARM7)" = "11" ]; then $(call check-reference,tmp/olvm,armv7hard,release,$$F,$(ARM7hard)); fi ;\
 	   : mips/mipsel linux ;\
 	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm,mips,debug,$$F,$(MIPS)); fi ;\
 	   if [ "$(DEV_MODE)$(HAVE_MIPS)" = "11" ]; then $(call check-reference,tmp/olvm,mips,release,$$F,$(MIPS)); fi ;\

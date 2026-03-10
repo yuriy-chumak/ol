@@ -54,13 +54,12 @@ DEV_MODE ?= 0
 
 
 # ================================================================
-# x86/x86_64
+# tier 1
 -include extras/platforms/i86.mk
-# arm linux
--include extras/platforms/arm.mk
 -include extras/platforms/aarch64.mk
-# risc-v
+# tier 2
 -include extras/platforms/riscv64.mk
+-include extras/platforms/arm.mk
 # mips linux
 -include extras/platforms/mips.mk
 -include extras/platforms/mipsel.mk
