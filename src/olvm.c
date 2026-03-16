@@ -809,16 +809,33 @@ word*p = new (TVECTOR, 13);\
 // I don't want to make a code completely unreadable to satisfy it.
 
 #if OLVM_ANSI_INT_LIMITS
-# define NOT_A_MIN_INT(i) \
-	__builtin_choose_expr(\
-		__builtin_types_compatible_p(typeof(i), int32_t),\
-			(i != INT32_MIN),\
-	__builtin_choose_expr(\
-		__builtin_types_compatible_p(typeof(i), int64_t),\
-			(i != INT64_MIN),\
-			1))
+#	define IS_THE_MIN_INT(i) \
+		__builtin_choose_expr(\
+			__builtin_types_compatible_p(typeof(i), int32_t),\
+				(i == INT32_MIN),\
+		__builtin_choose_expr(\
+			__builtin_types_compatible_p(typeof(i), int64_t),\
+				(i == INT64_MIN),\
+				0))
+
+// ansi int_max = -(int_min)+1
+# if UINTPTR_MAX == UINT32_MAX
+#	define new_intmin() ({\
+				(word)new_list(TINTN, \
+						make_enump(0), \
+						make_enump((INT32_MAX >> VBITS) + 1)); \
+})
+# else
+#	define new_intmin() ({\
+				(word)new_list(TINTN, \
+						make_enump(0), \
+						make_enump((INT64_MAX >> VBITS) + 1)); \
+})
+# endif
+
 #else
-# define NOT_A_MIN_INT(i) (1)
+#	define IS_THE_MIN_INT(i) (0)
+#	define new_intmin() IFALSE
 #endif
 
 #define new_snumber(val)  ({ \
@@ -828,9 +845,9 @@ word*p = new (TVECTOR, 13);\
 		(word*)({ \
 			typeof(val) _v = (val); \
 			big_t _x = _v < 0 ? (big_t)(-_v) : (big_t)_v; \
-			(_x < (big_t)HIGHBIT) && NOT_A_MIN_INT(_v) ? \
+			(_x < (big_t)HIGHBIT) ? \
 					(word)make_value(_v < 0 ? TENUMN : TENUMP, (word)_x): \
-			(_x < (big_t)HIGHBIT*(big_t)HIGHBIT) && NOT_A_MIN_INT(_v) ? \
+			(_x < (big_t)HIGHBIT*(big_t)HIGHBIT) ? \
 					(word)new_list(_v < 0 ? TINTN : TINTP, \
 							make_enump(_x & VMAX), \
 							make_enump(_x >> VBITS)): \
@@ -842,12 +859,13 @@ word*p = new (TVECTOR, 13);\
 	/* else: sizeof(val) == sizeof(word) */ \
 		(word*)({ \
 			typeof(val) _v = (val); \
-			word _x = (_v < 0) ? (word)(-_v) : (word)_v; \
-			(_x < (word)HIGHBIT) && NOT_A_MIN_INT(_v) ? \
-					(word)make_value(_v < 0 ? TENUMN : TENUMP, _x): \
-					(word)new_list(_v < 0 ? TINTN : TINTP, \
-							make_enump(_x & VMAX), \
-							make_enump(_x >> VBITS)); \
+			IS_THE_MIN_INT(_v) ? new_intmin() : ({ \
+				word _x = (_v < 0) ? (word)(-_v) : (word)_v; \
+				(_x < (word)HIGHBIT) \
+						? (word)make_value(_v < 0 ? TENUMN : TENUMP, _x) \
+						: (word)new_list(_v < 0 ? TINTN : TINTP, \
+									make_enump(_x & VMAX), \
+									make_enump(_x >> VBITS)); }); \
 		})\
 	));})
 
