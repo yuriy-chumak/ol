@@ -2,9 +2,9 @@
 
 # tests without test results in %.%.ok file are legal,
 #   but can not be used in batch testing!
-TEST_FILES += $(patsubst %.ok,%,\
+TEST_FILES += $(sort $(patsubst %.ok,%,\
                  $(wildcard tests/ffi/*.scm.ok)\
-                 $(wildcard tests/ffi/*.bin.ok))
+                 $(wildcard tests/ffi/*.bin.ok)))
 
 .PHONY: ffi-tests
 .PHONY: ffi-tests-native
@@ -33,12 +33,16 @@ tmp/ffi-%-release: TEST_DEPS += $(FFI_DEPS)
 tmp/ffi-%-release: TEST_CFLAGS_RELEASE += tests/ffi/src.c
 
 -include tests/ffi/platforms/i86.mk
--include tests/ffi/platforms/arm.mk
 -include tests/ffi/platforms/aarch64.mk
+-include tests/ffi/platforms/riscv64.mk
+-include tests/ffi/platforms/arm.mk
 -include tests/ffi/platforms/mips.mk
 -include tests/ffi/platforms/mipsel.mk
 -include tests/ffi/platforms/ppc.mk
 -include tests/ffi/platforms/ppcle64.mk
+-include tests/ffi/platforms/sparc64.mk
+-include tests/ffi/platforms/alpha.mk
+-include tests/ffi/platforms/s390x.mk
 -include tests/ffi/platforms/win(e).mk
 
 # native binaries
