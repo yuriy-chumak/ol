@@ -15,9 +15,9 @@
 
 (define MAX-ARGS-COUNT 24)
 
-,load "paramless.gen"
-,load "same-type-args.gen"
-,load "numbers.mixed-type-args.gen"
+,load "generators/paramless.gen"
+,load "generators/same-type-args.gen"
+,load "generators/numbers.mixed-type-args.gen"
 
 ;; --------------------------------------------------
 ,quit

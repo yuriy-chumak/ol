@@ -1,11 +1,6 @@
 #!/usr/bin/env -S ../../ffi ../../repl
 ,load "definitions"
 
-(define (try tag function args)
-   (for-each display (list "   " (cons tag args) " --> "))
-   (let ((out (apply function args)))
-      (print " = " out)))
-
 (print "
 ---------------------------------------------------------------
 parameterless function returning numeric type by value (neutral values, type limits)
@@ -23,8 +18,8 @@ type cN_()
 
             (try name function '()))
          Nn))
-   ; unsigned types         ; signed types
-   '("Q"                     "q"                           )
-   `(,fft-unsigned-long-long ,fft-signed-long-long         )
-   `((0 1 ,UINT64_MAX)       (,INT64_MIN -1 0 1 ,INT64_MAX))
+   ; floating points
+   '("f"                 "d"                )
+   `(,fft-float          ,fft-double        )
+   `((-1e10 -1 0 1 1e10) (-1e48 -1 0 1 1e48))
 )

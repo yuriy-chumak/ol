@@ -46,3 +46,33 @@ void v_cc..c(n)(type a1, type a2, .., type an)
    (void_ii -1 -2) --> {{ -1 -2 }} = #true
    (void_iii -1 -2 -3) --> {{ -1 -2 -3 }} = #true
    (void_iiii -1 -2 -3 -4) --> {{ -1 -2 -3 -4 }} = #true
+zeroes:
+   (void_CCCC 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+   (void_SSSS 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+   (void_IIII 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+   (void_cccc 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+   (void_cccc 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+   (void_ssss 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+   (void_ssss 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+   (void_iiii 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+   (void_iiii 0 0 0 0) --> {{ 0 0 0 0 }} = #true
+defaults (#f):
+   (void_CCCC #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+   (void_SSSS #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+   (void_IIII #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+   (void_cccc #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+   (void_cccc #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+   (void_ssss #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+   (void_ssss #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+   (void_iiii #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+   (void_iiii #false #false #false #false) --> {{ 0 0 0 0 }} = #true
+42s:
+   (void_CCCC 42 42 42 42) --> {{ 42 42 42 42 }} = #true
+   (void_SSSS 42 42 42 42) --> {{ 42 42 42 42 }} = #true
+   (void_IIII 42 42 42 42) --> {{ 42 42 42 42 }} = #true
+   (void_cccc 42 42 42 42) --> {{ 42 42 42 42 }} = #true
+   (void_cccc 42 42 42 42) --> {{ 42 42 42 42 }} = #true
+   (void_ssss 42 42 42 42) --> {{ 42 42 42 42 }} = #true
+   (void_ssss 42 42 42 42) --> {{ 42 42 42 42 }} = #true
+   (void_iiii 42 42 42 42) --> {{ 42 42 42 42 }} = #true
+   (void_iiii 42 42 42 42) --> {{ 42 42 42 42 }} = #true

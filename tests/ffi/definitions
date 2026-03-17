@@ -89,8 +89,14 @@
 ;; (define Sn ; 114 consecutive numbers 1..n
 ;;    (iota 114 1))
 
+(define (try tag function args)
+   (for-each display (list "   " (cons tag args) " --> "))
+   (let ((out (apply function args)))
+      (print " = " out)))
+
 ;; (import (scheme dynamic-bindings))
 
+; ----------------------------------------------------------------
 ; templates
 (define (|cc..c(n)2c| char n)
    (string-append (apply string-append (repeat char n)) "2" char))

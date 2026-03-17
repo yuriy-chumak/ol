@@ -1,11 +1,6 @@
 #!/usr/bin/env -S ../../ffi ../../repl
 ,load "definitions"
 
-(define (try tag function args)
-   (for-each display (list "   " (cons tag args) " --> "))
-   (let ((out (apply function args)))
-      (print " = " out)))
-
 (print "
 ---------------------------------------------------------------
 parameterless function returning numeric type by value (neutral values, type limits)
@@ -26,5 +21,5 @@ type cN_()
    ; unsigned types                                            ; signed types
    '("C"                "S"                 "I"                "c"                          "s"                            "i"                           )
    `(,fft-unsigned-char ,fft-unsigned-short ,fft-unsigned-int  ,fft-signed-char             ,fft-signed-short              ,fft-signed-int               )
-   `((0 1 ,UINT8_MAX)   (0 1 ,UINT16_MAX)   (0 1 ,UINT32_MAX)  (,INT8_MIN -1 0 1 ,INT8_MAX) (,INT16_MIN -1 0 1 ,INT16_MAX) (,INT32_MIN -1 0 1 ,INT32_MAX))
+   `((0 1 42 ,UINT8_MAX)   (0 1 42 ,UINT16_MAX)   (0 1 42 ,UINT32_MAX)  (,INT8_MIN -42 -1 0 1 42 ,INT8_MAX) (,INT16_MIN -42 -1 0 1 42 ,INT16_MAX) (,INT32_MIN -42 -1 0 1 42 ,INT32_MAX))
 )

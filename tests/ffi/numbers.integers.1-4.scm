@@ -1,11 +1,6 @@
 #!/usr/bin/env -S ../../ffi ../../repl
 ,load "definitions"
 
-(define (try tag function args)
-   (for-each display (list "   " (cons tag args) " --> "))
-   (let ((out (apply function args)))
-      (print " = " out)))
-
 (define -primes (map negate primes))
 (define iota24 (iota 24 1))
 (define -iota24 (map negate iota24))
@@ -37,4 +32,23 @@ void v_cc..c(n)(type a1, type a2, .., type an)
    (list "C"    "S"    "I"    "c"    "c"     "s"    "s"     "i"    "i"    )
    (list uchar  ushort uint   char   char    short  short   int    int    )
    (list iota24 iota24 iota24 iota24 -iota24 iota24 -iota24 iota24 -iota24)
+))
+
+(let ((MAX-ARGS-COUNT 4))
+(for-each (lambda (comment n)
+      (print comment)
+      (for-each (lambda (index typename)
+            ;; (define N (if (m/Q|q/ index) (/ MAX-ARGS-COUNT 2) MAX-ARGS-COUNT))
+            (define N MAX-ARGS-COUNT)
+            (define name (|v_cc..c(n)| index N))
+            (define rtty (repeat typename N)) ; args types
+            (define function (apply this (cons* void name rtty)))
+
+            (define args (repeat n N))
+            (try name function args))
+         ;      unsigned types   signed types   floating points
+         (list "C"    "S"    "I"    "c"    "c"     "s"    "s"     "i"    "i"    )
+         (list uchar  ushort uint   char   char    short  short   int    int    ) ))
+   '("zeroes:" "defaults (#f):" "42s:")
+   '( 0         #false           42)
 ))

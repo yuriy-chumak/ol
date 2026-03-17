@@ -5,4 +5,4 @@ check:
 	./check
 
 src.inc: src.inc.generator
-	./$^ >$@
+	ol $^ >$@
