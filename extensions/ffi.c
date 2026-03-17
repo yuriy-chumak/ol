@@ -718,12 +718,9 @@ __ASM__(//"arm32_call:_arm32_call:",
 //	"bx lr");
 }
 
-# else
-// gcc-arm-linux-gnueabihf: -mfloat-abi=hard and -D__ARM_PCS_VFP options
+# else // !(__ARM_PCS_VFP)
+// arm-linux-gnueabihf-gcc: -mfloat-abi=hard
 
-// __ARM_PCS_VFP, __ARM_PCS
-// __ARM_ARCH_7A__
-//
 static __attribute((__naked__)) // do not remove "naked", arm32 requires this form of function!
 ret_t arm32_call(word argv[], float af[], long i, long f, void* function, long type) {
 __ASM__(// "arm32_call:_arm32_call:",
@@ -733,8 +730,7 @@ __ASM__(// "arm32_call:_arm32_call:",
 	// r5: temporary
 	"stmfd   sp!, {r4, r5, lr}",
 
-	// check floats
-#ifdef __ARM_PCS_VFP // gnueabihf, -mfloat-abi=hard
+	// gnueabihf, -mfloat-abi=hard
 	"cmp r3, #0",  // f (count of floats)
 	"beq .Lnofloats",
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
@@ -780,7 +776,6 @@ __ASM__(// "arm32_call:_arm32_call:",
 	// "vldr.32 s30, [r1, #56]",
 	// "vldr.32 s31, [r1, #60]",
 ".Lnofloats:",
-#endif
 
 	"mov r4, sp", // save sp
 	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
@@ -808,15 +803,9 @@ __ASM__(// "arm32_call:_arm32_call:",
 	"ldr r0, [r0, #0]",
 	// call the function
 	"ldr r5, [r4,#12]", // function
-#ifdef __ARM_ARCH_4T__ // armv4t
-	"mov lr, pc",
-	"bx r5",
-#else
 	"blx r5", // call this function
-#endif
 	"mov sp, r4", // restore sp
 
-#ifdef __ARM_PCS_VFP
 	"ldr r5, [r4,#16]", // return type
 	"cmp r5, #46",          // TFLOAT
 	"beq .Lfconv",
@@ -825,7 +814,6 @@ __ASM__(// "arm32_call:_arm32_call:",
 ".Lfconv:",
 	"vmov r0, s0",
 	"vmov r1, s1",
-#endif
 
 ".Lret:",
 	// all values: int, long, float and double returns in r0+r1
@@ -2169,16 +2157,16 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		#define STORE_D(conv, type, arg) ({\
 				STORE_F(conv, type, arg);\
 		})
-#	elif __ARM_EABI__ && __ARM_PCS_VFP // only for -mfloat-abi=hard (?)
+#	elif __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard only
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&af[f++] = conv(arg); --i;\
 		})
 		#define STORE_D(conv, type, arg) ({ /* doubles always aligned by 8 */\
-				f = (f+1) & 2;\
+				f = (f+1) & -2;\
 				*(type*)&af[f] = conv(arg); --i;\
 				f += 2;\
 		})
-#	elif __UINTPTR_MAX__ == 0xffffffffffffffffU // __mips64 || __powerpc64__
+#	elif __UINTPTR_MAX__ == 0xffffffffffffffffU // __mips64 || __powerpc64__ || other 64-bit arch
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
 				atmask |= 0b10;\
@@ -2187,7 +2175,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				*(type*)&args[i] = conv(arg);\
 				atmask |= 0b11;\
 		})
-#	elif __UINTPTR_MAX__ == 0xffffffffU //__mips__ || __powerpc__ || __EMSCRIPTEN__
+#	elif __UINTPTR_MAX__ == 0xffffffffU //__mips__ || __powerpc__ || __EMSCRIPTEN__ || other 32-bit arch
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
 				atmask |= 0b10;\
@@ -2265,7 +2253,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	double ad[8];
 	int d = 0;
 
-#elif __ARM_EABI__ && __ARM_PCS_VFP // -mfloat-abi=hard (?)
+#elif __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
 	int f = 0;     // количество аргументов для af
@@ -2344,7 +2332,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		// подготовим маску к следующему аргументу
 #if (__x86_64__ && (__unix__ || __APPLE__))
 		atmask <<= 1;
-#elif __i386__ || __aarch64__ || __ARM_EABI__ || _WIN32
+#elif __i386__ || __aarch64__ || __arm__ || _WIN32
 		// nothing special
 #else   // __mips__ || __powerpc__ || __EMSCRIPTEN__ || (__UINTPTR_MAX__ == 0xffffffffU)
 		atmask <<= 2;
@@ -2925,9 +2913,9 @@ next_argument:
 		# ifndef __ARM_PCS_VFP
 			got = arm32_call(args, i, function);
 		# else // (?)
-			got = arm32_call(args, NULL,
-	        	i, 0,
-	        	function, returntype & 0x3F); //(?)
+			got = arm32_call(args, af,
+				i, f,
+				function, returntype & 0x3F); //(?)
 		# endif
 		// ------------------------------------
 		#elif __UINTPTR_MAX__ == 0xffffffffffffffffU
