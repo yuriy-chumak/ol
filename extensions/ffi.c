@@ -2223,7 +2223,12 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			goto return_result;
 		}
 		else if (returntype == TFLOAT) {
-			*(float*)&got = ((float (*)())function)();
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+			*(float*)(((unsigned char*)&got) + sizeof(word) - sizeof(float))
+#else
+			*(float*)(((unsigned char*)&got) + 0)
+#endif
+					= ((float (*)())function)();
 			fp = heap->fp;
 			goto return_inexact_result;
 		}
