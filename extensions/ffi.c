@@ -1131,7 +1131,7 @@ void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
 	assert(sizeof(float) == sizeof(word));
 
 	const int_t* argi = (int_t*)arg;
-	const float* argf = (float*)arg;
+	#define argf(i) *(float*)&arg[i]
 	#define argd(i) *(double*)&arg[i]
 
 	int rtype = type;
@@ -1169,7 +1169,7 @@ void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
 	case 0b100:
 		CALL((int_t), (argi[ 0]));
 	case 0b110:
-		CALL((float), (argf[ 0]));
+		CALL((float), (argf( 0)));
 	case 0b111:
 		CALL((double),(argd( 0)));
 
@@ -1179,26 +1179,26 @@ void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
 		     (argi[ 0], argi[ 1]));
 	case 0b10010:
 		CALL((int_t, float),
-		     (argi[ 0], argf[ 1]));
+		     (argi[ 0], argf( 1)));
 	case 0b11000:
 		CALL((float, int_t),
-		     (argf[ 0], argi[ 1]));
+		     (argf( 0), argi[ 1]));
 	case 0b11010:
 		CALL((float, float),
-		     (argf[ 0], argf[ 1]));
+		     (argf( 0), argf( 1)));
 
 	case 0b10011: // 3
 		CALL((int_t, double),
 		     (argi[ 0], argd( 1)));
 	case 0b11011: // 3
 		CALL((float, double),
-		     (argf[ 0], argd( 1)));
+		     (argf( 0), argd( 1)));
 	case 0b11100: // 3
 		CALL((double, int_t),
 		     (argd( 0), argi[ 2]));
 	case 0b11110: // 3
 		CALL((double, float),
-		     (argd( 0), argf[ 2]));
+		     (argd( 0), argf( 2)));
 	case 0b11111: // 4
 		CALL((double,double),
 		     (argd( 0), argd( 2)));
@@ -1209,66 +1209,64 @@ void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
 		     (argi[ 0], argi[ 1], argi[ 2]));
 	case 0b1000010:
 		CALL((int_t, int_t, float),
-		     (argi[ 0], argi[ 1], argf[ 2]));
+		     (argi[ 0], argi[ 1], argf( 2)));
 	case 0b1001000:
 		CALL((int_t, float, int_t),
-		     (argi[ 0], argf[ 1], argi[ 2]));
+		     (argi[ 0], argf( 1), argi[ 2]));
 	case 0b1001010:
 		CALL((int_t, float, float),
-		     (argi[ 0], argf[ 1], argf[ 2]));
+		     (argi[ 0], argf( 1), argf( 2)));
 	case 0b1100000:
 		CALL((float, int_t, int_t),
-		     (argf[ 0], argi[ 1], argi[ 2]));
+		     (argf( 0), argi[ 1], argi[ 2]));
 	case 0b1100010:
 		CALL((float, int_t, float),
-		     (argf[ 0], argi[ 1], argf[ 2]));
+		     (argf( 0), argi[ 1], argf( 2)));
 	case 0b1101000:
 		CALL((float, float, int_t),
-		     (argf[ 0], argf[ 1], argi[ 2]));
+		     (argf( 0), argf( 1), argi[ 2]));
 	case 0b1101010:
 		CALL((float, float, float),
-		     (argf[ 0], argf[ 1], argf[ 2]));
-
+		     (argf( 0), argf( 1), argf( 2)));
 
 	case 0b1000011: // 4
 		CALL((int_t, int_t, double),
 		     (argi[ 0], argi[ 1], argd( 2)));
 	case 0b1001011: // 4
 		CALL((int_t, float, double),
-		     (argi[ 0], argf[ 1], argd( 2)));
+		     (argi[ 0], argf( 1), argd( 2)));
 	case 0b1100011: // 4
 		CALL((float, int_t, double),
-		     (argf[ 0], argi[ 1], argd( 2)));
+		     (argf( 0), argi[ 1], argd( 2)));
 	case 0b1101011: // 4
 		CALL((float, float, double),
-		     (argf[ 0], argf[ 1], argd( 2)));
+		     (argf( 0), argf( 1), argd( 2)));
 
 	case 0b1001100: // 4
 		CALL((int_t, double, int_t),
 		     (argi[ 0], argd( 1), argi[ 3]));
 	case 0b1001110: // 4
 		CALL((int_t, double, float),
-		     (argi[ 0], argd( 1), argf[ 3]));
+		     (argi[ 0], argd( 1), argf( 3)));
 	case 0b1101100: // 4
 		CALL((float, double, int_t),
-		     (argf[ 0], argd( 1), argi[ 3]));
+		     (argf( 0), argd( 1), argi[ 3]));
 	case 0b1101110: // 4
 		CALL((float, double, float),
-		     (argf[ 0], argd( 1), argf[ 3]));
+		     (argf( 0), argd( 1), argf( 3)));
 
 	case 0b1110000: // 4
 		CALL((double, int_t, int_t),
 		     (argd( 0), argi[ 2], argi[ 3]));
 	case 0b1110010: // 4
 		CALL((double, int_t, float),
-		     (argd( 0), argi[ 2], argf[ 3]));
+		     (argd( 0), argi[ 2], argf( 3)));
 	case 0b1111000: // 4
 		CALL((double, float, int_t),
-		     (argd( 0), argf[ 2], argi[ 3]));
+		     (argd( 0), argf( 2), argi[ 3]));
 	case 0b1111010: // 4
 		CALL((double, float, float),
-		     (argd( 0), argf[ 2], argf[ 3]));
-
+		     (argd( 0), argf( 2), argf( 3)));
 
 	case 0b1111111: // 6
 		CALL((double, double, double),
@@ -1280,49 +1278,49 @@ void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
 		     (argi[ 0], argi[ 1], argi[ 2], argi[ 3]));
 	case 0b100000010:
 		CALL((int_t, int_t, int_t, float),
-		     (argi[ 0], argi[ 1], argi[ 2], argf[ 3]));
+		     (argi[ 0], argi[ 1], argi[ 2], argf( 3)));
 	case 0b100001000:
 		CALL((int_t, int_t, float, int_t),
-		     (argi[ 0], argi[ 1], argf[ 2], argi[ 3]));
+		     (argi[ 0], argi[ 1], argf( 2), argi[ 3]));
 	case 0b100001010:
 		CALL((int_t, int_t, float, float),
-		     (argi[ 0], argi[ 1], argf[ 2], argf[ 3]));
+		     (argi[ 0], argi[ 1], argf( 2), argf( 3)));
 	case 0b100100000:
 		CALL((int_t, float, int_t, int_t),
-		     (argi[ 0], argf[ 1], argi[ 2], argi[ 3]));
+		     (argi[ 0], argf( 1), argi[ 2], argi[ 3]));
 	case 0b100100010:
 		CALL((int_t, float, int_t, float),
-		     (argi[ 0], argf[ 1], argi[ 2], argf[ 3]));
+		     (argi[ 0], argf( 1), argi[ 2], argf( 3)));
 	case 0b100101000:
 		CALL((int_t, float, float, int_t),
-		     (argi[ 0], argf[ 1], argf[ 2], argi[ 3]));
+		     (argi[ 0], argf( 1), argf( 2), argi[ 3]));
 	case 0b100101010:
 		CALL((int_t, float, float, float),
-		     (argi[ 0], argf[ 1], argf[ 2], argf[ 3]));
+		     (argi[ 0], argf( 1), argf( 2), argf( 3)));
 	case 0b110000000:
 		CALL((float, int_t, int_t, int_t),
-		     (argf[ 0], argi[ 1], argi[ 2], argi[ 3]));
+		     (argf( 0), argi[ 1], argi[ 2], argi[ 3]));
 	case 0b110000010:
 		CALL((float, int_t, int_t, float),
-		     (argf[ 0], argi[ 1], argi[ 2], argf[ 3]));
+		     (argf( 0), argi[ 1], argi[ 2], argf( 3)));
 	case 0b110001000:
 		CALL((float, int_t, float, int_t),
-		     (argf[ 0], argi[ 1], argf[ 2], argi[ 3]));
+		     (argf( 0), argi[ 1], argf( 2), argi[ 3]));
 	case 0b110001010:
 		CALL((float, int_t, float, float),
-		     (argf[ 0], argi[ 1], argf[ 2], argf[ 3]));
+		     (argf( 0), argi[ 1], argf( 2), argf( 3)));
 	case 0b110100000:
 		CALL((float, float, int_t, int_t),
-		     (argf[ 0], argf[ 1], argi[ 2], argi[ 3]));
+		     (argf( 0), argf( 1), argi[ 2], argi[ 3]));
 	case 0b110100010:
 		CALL((float, float, int_t, float),
-		     (argf[ 0], argf[ 1], argi[ 2], argf[ 3]));
+		     (argf( 0), argf( 1), argi[ 2], argf( 3)));
 	case 0b110101000:
 		CALL((float, float, float, int_t),
-		     (argf[ 0], argf[ 1], argf[ 2], argi[ 3]));
+		     (argf( 0), argf( 1), argf( 2), argi[ 3]));
 	case 0b110101010:
 		CALL((float, float, float, float),
-		     (argf[ 0], argf[ 1], argf[ 2], argf[ 3]));
+		     (argf( 0), argf( 1), argf( 2), argf( 3)));
 
 
 	// 5
@@ -1331,13 +1329,13 @@ void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
 		     (argi[ 0], argi[ 1], argi[ 2], argi[ 3], argi[ 4]));
 	case 0b10000000010: // int, long long, float
 		CALL((int_t, int_t, int_t, int_t, float),
-		     (argi[ 0], argi[ 1], argi[ 2], argi[ 3], argf[ 4]));
+		     (argi[ 0], argi[ 1], argi[ 2], argi[ 3], argf( 4)));
 	case 0b11000000000: // float, long long, int
 		CALL((float, int_t, int_t, int_t, int_t),
-		     (argf[ 0], argi[ 1], argi[ 2], argi[ 3], argi[ 4]));
+		     (argf( 0), argi[ 1], argi[ 2], argi[ 3], argi[ 4]));
 	case 0b11000000010: // float, long long, float
 		CALL((float, int_t, int_t, int_t, float),
-		     (argf[ 0], argi[ 1], argi[ 2], argi[ 3], argf[ 4]));
+		     (argf( 0), argi[ 1], argi[ 2], argi[ 3], argf( 4)));
 
 	// 8
 	case 0b111111111:
