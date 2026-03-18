@@ -2392,15 +2392,10 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				break;
 
 			case TINT64: case TUINT64:
-	# if UINT64_MAX > UINTPTR_MAX
 				// 32-bit machines
 				// IFmips32(i = (i+1)&-2); // 32-bit mips dword align
 				// *(int64_t*)&args[i++] = to_int64(arg);
-				STORE(to_int64, int64_t, arg); i++; // todo: add "i++" to the macro
-	# else
-				// 64-bit machines
-				STORE(to_int, int64_t, arg);
-	# endif
+				STORE(to_int64, int64_t, arg); // 32-bit i++ already in macro
 				break;
 	#endif
 
