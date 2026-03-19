@@ -2650,20 +2650,6 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			// -------------------
 			// целочисленные типы:
 
-	#if __aarch64__ // TODO: why? retest
-			case TINT8:  case TUINT8:
-				STORE(to_int, int8_t, arg);
-				break;
-			case TINT16: case TUINT16:
-				STORE(to_int, int16_t, arg);
-				break;
-			case TINT32: case TUINT32:
-				STORE(to_int, int32_t, arg);
-				break;
-			case TINT64: case TUINT64:
-				STORE(to_int, int64_t, arg);
-				break;
-	#else
 			case TINT8:  case TUINT8:
 			case TINT16: case TUINT16:
 			case TINT32: case TUINT32:
@@ -2679,7 +2665,6 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	#	endif
 				STORE(to_int64, int64_t, arg); // i++ already in macro if 32-bit
 				break;
-	#endif
 
 			// -------------------
 			// с плавающей запятой:
