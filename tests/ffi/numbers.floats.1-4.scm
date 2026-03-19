@@ -26,10 +26,10 @@ void v_cc..c(n)(type a1, type a2, .., type an)
             (try name function args))
 
          (iota N 1)))
-   ;     single floats  double floats
-   (list "f"    "f"     "d"    "d"    )
-   (list float  float   double double )
-   (list primes -primes primes -primes)
+   ;     single floats   double floats
+   (list "f"    "f"      "d"    "d"    )
+   (list float  float    double double )
+   (list primes -primes  primes -primes)
 ))
 
 (let ((MAX-ARGS-COUNT 4))
@@ -44,7 +44,7 @@ void v_cc..c(n)(type a1, type a2, .., type an)
 
             (define args (repeat n N))
             (try name function args))
-         ;      unsigned types   signed types   floating points
+         ;     float double
          (list "f"   "d"   )
          (list float double) ))
    '("zeroes:" "defaults (#f):" "42s:")

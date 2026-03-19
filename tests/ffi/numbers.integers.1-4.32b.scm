@@ -46,9 +46,9 @@ void v_cc..c(n)(type a1, type a2, .., type an)
 
             (define args (repeat n N))
             (try name function args))
-         ;      unsigned types   signed types   floating points
-         (list "C"    "S"    "I"    "c"    "c"     "s"    "s"     "i"    "i"    )
-         (list uchar  ushort uint   char   char    short  short   int    int    ) ))
+         ;     unsigned types      signed types
+         (list "C"    "S"    "I"   "c"  "s"   "i" )
+         (list uchar  ushort uint  char short int ) ))
    '("zeroes:" "defaults (#f):" "42s:")
    '( 0         #false           42)
 ))

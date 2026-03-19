@@ -51,28 +51,19 @@ zeroes:
    (void_SSSS 0 0 0 0) --> {{ 0 0 0 0 }} = #true
    (void_IIII 0 0 0 0) --> {{ 0 0 0 0 }} = #true
    (void_cccc 0 0 0 0) --> {{ 0 0 0 0 }} = #true
-   (void_cccc 0 0 0 0) --> {{ 0 0 0 0 }} = #true
    (void_ssss 0 0 0 0) --> {{ 0 0 0 0 }} = #true
-   (void_ssss 0 0 0 0) --> {{ 0 0 0 0 }} = #true
-   (void_iiii 0 0 0 0) --> {{ 0 0 0 0 }} = #true
    (void_iiii 0 0 0 0) --> {{ 0 0 0 0 }} = #true
 defaults (#f):
    (void_CCCC #false #false #false #false) --> {{ 0 0 0 0 }} = #true
    (void_SSSS #false #false #false #false) --> {{ 0 0 0 0 }} = #true
    (void_IIII #false #false #false #false) --> {{ 0 0 0 0 }} = #true
    (void_cccc #false #false #false #false) --> {{ 0 0 0 0 }} = #true
-   (void_cccc #false #false #false #false) --> {{ 0 0 0 0 }} = #true
    (void_ssss #false #false #false #false) --> {{ 0 0 0 0 }} = #true
-   (void_ssss #false #false #false #false) --> {{ 0 0 0 0 }} = #true
-   (void_iiii #false #false #false #false) --> {{ 0 0 0 0 }} = #true
    (void_iiii #false #false #false #false) --> {{ 0 0 0 0 }} = #true
 42s:
    (void_CCCC 42 42 42 42) --> {{ 42 42 42 42 }} = #true
    (void_SSSS 42 42 42 42) --> {{ 42 42 42 42 }} = #true
    (void_IIII 42 42 42 42) --> {{ 42 42 42 42 }} = #true
    (void_cccc 42 42 42 42) --> {{ 42 42 42 42 }} = #true
-   (void_cccc 42 42 42 42) --> {{ 42 42 42 42 }} = #true
    (void_ssss 42 42 42 42) --> {{ 42 42 42 42 }} = #true
-   (void_ssss 42 42 42 42) --> {{ 42 42 42 42 }} = #true
-   (void_iiii 42 42 42 42) --> {{ 42 42 42 42 }} = #true
    (void_iiii 42 42 42 42) --> {{ 42 42 42 42 }} = #true
