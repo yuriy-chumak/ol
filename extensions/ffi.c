@@ -135,8 +135,10 @@
 
 #ifdef __arm__
 #	define IFarm32(...) __VA_ARGS__
+#	define NOarm32(...)
 #else
 #	define IFarm32(...)
+#	define NOarm32(...) __VA_ARGS__
 #endif
 
 
@@ -2657,11 +2659,18 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				break;
 
 			case TINT64: case TUINT64:
+	#	if __powerpc__ && !__PPC64__ /* very strange powerpc 32-bit fix */
+				if (i == 1 && atmask == 0x18) // (float, long long), don't align
+					atmask <<= 2;
+				else
+	#	endif
 	#	if __UINTPTR_MAX__ == 0xffffffffU && !(__i386__) // all 32-bits but i386
+				{
 	#		ifndef __arm__
-				atmask <<= ((i&1)<<1) + 2; // atmask fix: 2 + (2 if was aligned)
+					atmask <<= ((i&1)<<1) + 2; // 2 + (2 if was aligned)
 	#		endif
-				i = (i+1) & -2;
+					i = (i+1) & -2;
+				}
 	#	endif
 				STORE(to_int64, int64_t, arg); // i++ already in macro if 32-bit
 				break;
