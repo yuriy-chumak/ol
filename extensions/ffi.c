@@ -2420,15 +2420,30 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		#define STORE_D(conv, type, arg) ({\
 				STORE_F(conv, type, arg);\
 		})
-#	elif __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard only
-		#define STORE_F(conv, type, arg) ({\
-				*(type*)&af[f++] = conv(arg); --i;\
+#	elif __arm__
+#	 if	__ARM_PCS_VFP // -mfloat-abi=hard only
+		#define STORE_F(conv, type, arg) ({ /* assert (type == float && conv = OL2F) */\
+				int index = __builtin_ctz(~fmask);\
+				*(type*)&af[index] = conv(arg); --i;\
+				f = max(f, index + 1);\
+				fmask |= 1 << index;\
 		})
 		#define STORE_D(conv, type, arg) ({ /* doubles always aligned by 8 */\
 				f = (f+1) & -2;\
 				*(type*)&af[f] = conv(arg); --i;\
 				f += 2;\
+				fmask |= 3 << (f-2);\
 		})
+#	 else // without fpu
+		#define STORE_F(conv, type, arg) ({\
+				*(type*)&args[i] = conv(arg);\
+		})
+		#define STORE_D(conv, type, arg) ({ /* doubles always aligned by 8 */\
+				i = (i+1) & -2;\
+				*(type*)&args[i] = conv(arg);\
+				++i;\
+		})
+#	 endif
 #	elif __UINTPTR_MAX__ == 0xffffffffffffffffU // __mips64 || __powerpc64__ || other 64-bit arch
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
@@ -2669,22 +2684,12 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			// -------------------
 			// с плавающей запятой:
 			case TFLOAT: {
-	#	if __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard only
-				int index = __builtin_ctz(~fmask);
-				*(float*)&af[index] = OL2F(arg); --i;
-				f = max(f, index + 1);
-				fmask |= 1 << index;
-	#	else
 				STORE_F(OL2F, float, arg);
-	#	endif
 				break;
 			}
 			case TDOUBLE:
 			tdouble:
 				STORE_D(OL2D, double, arg);
-	#	if __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard only
-				fmask |= 3 << (f-2);
-	#	endif
 				break;
 
 			// bool
