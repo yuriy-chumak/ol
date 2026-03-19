@@ -734,7 +734,7 @@ __ASM__(// "arm32_call:_arm32_call:",
 	// r0: argv, r1: af, r2: i, r3: ad, f: [sp, #12], g: [sp, #16]
 	// r4: saved sp
 	// r5: temporary
-	"stmfd   sp!, {r4, r5, lr}",
+	"stmfd   sp!, {r4, r5, r6, lr}", // keep 8-byte alignment by push regs in pairs
 
 	// gnueabihf, -mfloat-abi=hard
 	"cmp r3, #0",  // f (count of floats)
@@ -784,13 +784,15 @@ __ASM__(// "arm32_call:_arm32_call:",
 ".Lnofloats:",
 
 	"mov r4, sp", // save sp
+	// finally, sending regular (integer) arguments
+	"cmp r2, #4",  // if (i > 4)
+	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
+
 	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
 	"sub r1, sp, r2, asl #2",// try to predict stack alighnment (к текущему стеку прибавим количество аргументов * размер слова)
 	"and r1, r1, #4", // попадает ли стек на границу слова?
 	"sub sp, sp, r1", // если да, то на слово его и опустим
-	// finally, sending regular (integer) arguments
-	"cmp r2, #4",  // if (i > 4)
-	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
+
 	"add r1, r0, r2, asl #2",
 	"sub r1, r1, #4",
 ".Lextraregs:", // push argv[i]
@@ -808,11 +810,11 @@ __ASM__(// "arm32_call:_arm32_call:",
 	"ldr r1, [r0, #4]",
 	"ldr r0, [r0, #0]",
 	// call the function
-	"ldr r5, [r4,#12]", // function
+	"ldr r5, [r4,#16]", // function
 	"blx r5", // call this function
 	"mov sp, r4", // restore sp
 
-	"ldr r5, [r4,#16]", // return type
+	"ldr r5, [r4,#20]", // return type
 	"cmp r5, #46",          // TFLOAT
 	"beq .Lfconv",
 	"cmp r5, #47",          // TDOUBLE
@@ -823,7 +825,7 @@ __ASM__(// "arm32_call:_arm32_call:",
 
 ".Lret:",
 	// all values: int, long, float and double returns in r0+r1
-	"ldmfd   sp!, {r4, r5, pc}");
+	"ldmfd   sp!, {r4, r5, r6, pc}");
 }
 # endif
 
@@ -2523,6 +2525,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
 	float af[18]; // для флоатов отдельный массив (почему не 16?)
 	int f = 0;     // количество аргументов для af
+	int fmask = 0;
 
 #else // all the rest platforms default floating point handling
 	  // __mips__ || __powerpc__ || __EMSCRIPTEN__
@@ -2665,12 +2668,23 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 
 			// -------------------
 			// с плавающей запятой:
-			case TFLOAT:
+			case TFLOAT: {
+	#	if __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard only
+				int index = __builtin_ctz(~fmask);
+				*(float*)&af[index] = OL2F(arg); --i;
+				f = max(f, index + 1);
+				fmask |= 1 << index;
+	#	else
 				STORE_F(OL2F, float, arg);
+	#	endif
 				break;
+			}
 			case TDOUBLE:
 			tdouble:
 				STORE_D(OL2D, double, arg);
+	#	if __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard only
+				fmask |= 3 << (f-2);
+	#	endif
 				break;
 
 			// bool
