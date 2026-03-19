@@ -10,7 +10,6 @@
 all numeric types together")
 
 ; -----------------------------------------------------------------------------
-(let ((MAX-ARGS-COUNT 4))
 (print "
 -------------------------------------------------------------------------------
 void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
@@ -21,6 +20,8 @@ void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
 (define indices '("C" "S" "I" "Q" "c" "s" "i" "q" "f" "d"))
 (define typenames (list fft-unsigned-char fft-unsigned-short fft-unsigned-int fft-unsigned-long-long fft-signed-char fft-signed-short fft-signed-int fft-long-long fft-float fft-double))
 (assert (= (length indices) (length typenames)))
+
+(define M (max MIN-ARGS-COUNT 2))
 
 (for-each (lambda (N)
 (for-each (lambda (index typename)
@@ -47,4 +48,4 @@ void v_cc..d[i]..c(n)(typeA a1, typeA a2, .., typeB b, .., type an)
          typenames))
    indices
    typenames
-)) (iota (- MAX-ARGS-COUNT 1) 2)))
+)) (iota (- MAX-ARGS-COUNT M -1) M))

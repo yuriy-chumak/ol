@@ -1,0 +1,39 @@
+Notes:
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} is native code output
+
+---------------------------------------------------------------
+void v_cc..c(n)(type a1, type a2, .., type an)
+{
+   printf('{{ %d %d .. %d(n) }}', a1, a2, .., an); fflush(stdout);
+}, n = (1 .. 16)
+   (void_QQQ 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_QQQQ 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_QQQQQ 1 2 3 4 5) --> {{ 1 2 3 4 5 }} = #true
+   (void_QQQQQQ 1 2 3 4 5 6) --> {{ 1 2 3 4 5 6 }} = #true
+   (void_QQQQQQQ 1 2 3 4 5 6 7) --> {{ 1 2 3 4 5 6 7 }} = #true
+   (void_QQQQQQQQ 1 2 3 4 5 6 7 8) --> {{ 1 2 3 4 5 6 7 8 }} = #true
+   (void_qqq 1 2 3) --> {{ 1 2 3 }} = #true
+   (void_qqqq 1 2 3 4) --> {{ 1 2 3 4 }} = #true
+   (void_qqqqq 1 2 3 4 5) --> {{ 1 2 3 4 5 }} = #true
+   (void_qqqqqq 1 2 3 4 5 6) --> {{ 1 2 3 4 5 6 }} = #true
+   (void_qqqqqqq 1 2 3 4 5 6 7) --> {{ 1 2 3 4 5 6 7 }} = #true
+   (void_qqqqqqqq 1 2 3 4 5 6 7 8) --> {{ 1 2 3 4 5 6 7 8 }} = #true
+   (void_qqq -1 -2 -3) --> {{ -1 -2 -3 }} = #true
+   (void_qqqq -1 -2 -3 -4) --> {{ -1 -2 -3 -4 }} = #true
+   (void_qqqqq -1 -2 -3 -4 -5) --> {{ -1 -2 -3 -4 -5 }} = #true
+   (void_qqqqqq -1 -2 -3 -4 -5 -6) --> {{ -1 -2 -3 -4 -5 -6 }} = #true
+   (void_qqqqqqq -1 -2 -3 -4 -5 -6 -7) --> {{ -1 -2 -3 -4 -5 -6 -7 }} = #true
+   (void_qqqqqqqq -1 -2 -3 -4 -5 -6 -7 -8) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 }} = #true
+zeroes:
+   (void_QQQQQQQQ 0 0 0 0 0 0 0 0) --> {{ 0 0 0 0 0 0 0 0 }} = #true
+   (void_qqqqqqqq 0 0 0 0 0 0 0 0) --> {{ 0 0 0 0 0 0 0 0 }} = #true
+defaults (#f):
+   (void_QQQQQQQQ #false #false #false #false #false #false #false #false) --> {{ 0 0 0 0 0 0 0 0 }} = #true
+   (void_qqqqqqqq #false #false #false #false #false #false #false #false) --> {{ 0 0 0 0 0 0 0 0 }} = #true
+42s:
+   (void_QQQQQQQQ 42 42 42 42 42 42 42 42) --> {{ 42 42 42 42 42 42 42 42 }} = #true
+   (void_qqqqqqqq 42 42 42 42 42 42 42 42) --> {{ 42 42 42 42 42 42 42 42 }} = #true

@@ -1,0 +1,14 @@
+Notes:
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} is native code output
+
+// too much arguments (4 needed, more provided):
+long long function(char c, short s, int i, long long q)
+{
+   return c+s+i+q;
+}
+   16 arguments (1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8)> [1, 2, 3, 4 => 10]  = 10
+   64 arguments (1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8 1 2 3 4 5 6 7 8)> [1, 2, 3, 4 => 10]  = 10

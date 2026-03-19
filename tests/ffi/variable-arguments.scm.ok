@@ -1,0 +1,15 @@
+Notes:
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} is native code output
+
+// variable arguments test (returns count of printed arguments):
+int format(const char *format, ...)
+{
+   printf(format, ...);
+}
+   numbers ("%i %f %i %f" (fft-int . 42) (fft-double . -10000000000) (fft-int . -42) (fft-double . 10000000000))> ['%i %f %i %f' = {42 -10000000000.000000 -42 10000000000.000000} -> 4]  = 4
+   utf-8 strings/symbols ("<%s/%s/%s/%s>" "ansi" "юнікод" 'σύμβολο "ユニコード")> ['<%s/%s/%s/%s>' = {<ansi/юнікод/σύμβολο/ユニコード>} -> 4]  = 4
+   empty strings/symbols ("<%s/%s/%s>" "" "" '||)> ['<%s/%s/%s>' = {<//>} -> 3]  = 3

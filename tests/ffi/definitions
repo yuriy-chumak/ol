@@ -6,7 +6,6 @@
 ; arm64: minimal 17 (8 ints, 8 floats, 1 stack)
 ; arm32: minimal 21 (4 nums, 16 floats, 1 stack) ?
 ; mips64: minimal ?
-(define MAX-ARGS-COUNT 24) ; how much arguments we test maximally
 
 (import (otus ffi))
 

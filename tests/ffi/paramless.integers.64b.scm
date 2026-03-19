@@ -1,4 +1,4 @@
-#!/usr/bin/env -S ../../ffi ../../repl
+#!/usr/bin/env -S ../../ffi
 ,load "definitions"
 
 (print "

@@ -1,0 +1,18 @@
+Notes:
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} is native code output
+
+// reverse strings:
+   reverse_string(hello): olleh - ok. 
+   reverse_string_wide(hello): olleh - ok. 
+   reverse_string(привіт): тівирп - ok. 
+   reverse_string_wide(привіт): тівирп - ok. 
+   reverse_string(Совы (Strigiformes) суть релатівно чісленым рядом класы птахів обсягуюча веце як 200 видів.): .відив 002 кя ецев ачюугясбо віхатп ысалк модяр мынелсіч онвіталер ьтус )semrofigirtS( ывоС - ok. 
+   reverse_string_wide(Совы (Strigiformes) суть релатівно чісленым рядом класы птахів обсягуюча веце як 200 видів.): .відив 002 кя ецев ачюугясбо віхатп ысалк модяр мынелсіч онвіталер ьтус )semrofigirtS( ывоС - ok. 
+   reverse_string(ბუსნაირნი (ლათ. Strigiformes) — ფრინველთა რიგი. ფართოდაა გავრცელებული მსოფლიოში (ანტარქტიკული და ზოგიერთი ოკეანური კუნძულის გამოკლებით).): .)თიბელკომაგ სილუძნუკ ირუნაეკო ითრეიგოზ ად ილუკიტქრატნა( იშოილფოსმ ილუბელეცრვაგ აადოთრაფ .იგირ ათლევნირფ — )semrofigirtS .თალ( ინრიანსუბ - ok. 
+   reverse_string_wide(ბუსნაირნი (ლათ. Strigiformes) — ფრინველთა რიგი. ფართოდაა გავრცელებული მსოფლიოში (ანტარქტიკული და ზოგიერთი ოკეანური კუნძულის გამოკლებით).): .)თიბელკომაგ სილუძნუკ ირუნაეკო ითრეიგოზ ად ილუკიტქრატნა( იშოილფოსმ ილუბელეცრვაგ აადოთრაფ .იგირ ათლევნირფ — )semrofigirtS .თალ( ინრიანსუბ - ok. 
+   reverse_string(フクロウ目（フクロウもく、梟目、学名 Strigiformes）は鳥類の1目である。): 。るあで目1の類鳥は）semrofigirtS 名学、目梟、くもウロクフ（目ウロクフ - ok. 
+   reverse_string_wide(フクロウ目（フクロウもく、梟目、学名 Strigiformes）は鳥類の1目である。): 。るあで目1の類鳥は）semrofigirtS 名学、目梟、くもウロクフ（目ウロクフ - ok. 

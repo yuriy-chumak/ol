@@ -1,4 +1,4 @@
-#!/usr/bin/env -S ../../ffi ../../repl
+#!/usr/bin/env -S ../../ffi
 (import (otus ffi))
 
 (when (or

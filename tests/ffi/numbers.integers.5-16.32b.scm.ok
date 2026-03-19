@@ -1,0 +1,141 @@
+Notes:
+ * no tests for type 'long' because 'long' is either 'int' or 'long long' depends on OS
+   and is completely covered by other tests ('int' and 'long long').
+ * type legend: 'c' for char, 's' for short, 'i' for int, 'q' for long long,
+   capital chars for unsigned prefixes;  'f' for float, 'd' for double.
+ * output inside {{ .. }} is native code output
+
+---------------------------------------------------------------
+void v_cc..c(n)(type a1, type a2, .., type an)
+{
+   printf('{{ %d %d .. %d(n) }}', a1, a2, .., an); fflush(stdout);
+}, n = (1 .. 16)
+   (void_CCCCC 1 2 3 4 5) --> {{ 1 2 3 4 5 }} = #true
+   (void_CCCCCC 1 2 3 4 5 6) --> {{ 1 2 3 4 5 6 }} = #true
+   (void_CCCCCCC 1 2 3 4 5 6 7) --> {{ 1 2 3 4 5 6 7 }} = #true
+   (void_CCCCCCCC 1 2 3 4 5 6 7 8) --> {{ 1 2 3 4 5 6 7 8 }} = #true
+   (void_CCCCCCCCC 1 2 3 4 5 6 7 8 9) --> {{ 1 2 3 4 5 6 7 8 9 }} = #true
+   (void_CCCCCCCCCC 1 2 3 4 5 6 7 8 9 10) --> {{ 1 2 3 4 5 6 7 8 9 10 }} = #true
+   (void_CCCCCCCCCCC 1 2 3 4 5 6 7 8 9 10 11) --> {{ 1 2 3 4 5 6 7 8 9 10 11 }} = #true
+   (void_CCCCCCCCCCCC 1 2 3 4 5 6 7 8 9 10 11 12) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 }} = #true
+   (void_CCCCCCCCCCCCC 1 2 3 4 5 6 7 8 9 10 11 12 13) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 }} = #true
+   (void_CCCCCCCCCCCCCC 1 2 3 4 5 6 7 8 9 10 11 12 13 14) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 }} = #true
+   (void_CCCCCCCCCCCCCCC 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }} = #true
+   (void_CCCCCCCCCCCCCCCC 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 }} = #true
+   (void_SSSSS 1 2 3 4 5) --> {{ 1 2 3 4 5 }} = #true
+   (void_SSSSSS 1 2 3 4 5 6) --> {{ 1 2 3 4 5 6 }} = #true
+   (void_SSSSSSS 1 2 3 4 5 6 7) --> {{ 1 2 3 4 5 6 7 }} = #true
+   (void_SSSSSSSS 1 2 3 4 5 6 7 8) --> {{ 1 2 3 4 5 6 7 8 }} = #true
+   (void_SSSSSSSSS 1 2 3 4 5 6 7 8 9) --> {{ 1 2 3 4 5 6 7 8 9 }} = #true
+   (void_SSSSSSSSSS 1 2 3 4 5 6 7 8 9 10) --> {{ 1 2 3 4 5 6 7 8 9 10 }} = #true
+   (void_SSSSSSSSSSS 1 2 3 4 5 6 7 8 9 10 11) --> {{ 1 2 3 4 5 6 7 8 9 10 11 }} = #true
+   (void_SSSSSSSSSSSS 1 2 3 4 5 6 7 8 9 10 11 12) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 }} = #true
+   (void_SSSSSSSSSSSSS 1 2 3 4 5 6 7 8 9 10 11 12 13) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 }} = #true
+   (void_SSSSSSSSSSSSSS 1 2 3 4 5 6 7 8 9 10 11 12 13 14) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 }} = #true
+   (void_SSSSSSSSSSSSSSS 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }} = #true
+   (void_SSSSSSSSSSSSSSSS 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 }} = #true
+   (void_IIIII 1 2 3 4 5) --> {{ 1 2 3 4 5 }} = #true
+   (void_IIIIII 1 2 3 4 5 6) --> {{ 1 2 3 4 5 6 }} = #true
+   (void_IIIIIII 1 2 3 4 5 6 7) --> {{ 1 2 3 4 5 6 7 }} = #true
+   (void_IIIIIIII 1 2 3 4 5 6 7 8) --> {{ 1 2 3 4 5 6 7 8 }} = #true
+   (void_IIIIIIIII 1 2 3 4 5 6 7 8 9) --> {{ 1 2 3 4 5 6 7 8 9 }} = #true
+   (void_IIIIIIIIII 1 2 3 4 5 6 7 8 9 10) --> {{ 1 2 3 4 5 6 7 8 9 10 }} = #true
+   (void_IIIIIIIIIII 1 2 3 4 5 6 7 8 9 10 11) --> {{ 1 2 3 4 5 6 7 8 9 10 11 }} = #true
+   (void_IIIIIIIIIIII 1 2 3 4 5 6 7 8 9 10 11 12) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 }} = #true
+   (void_IIIIIIIIIIIII 1 2 3 4 5 6 7 8 9 10 11 12 13) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 }} = #true
+   (void_IIIIIIIIIIIIII 1 2 3 4 5 6 7 8 9 10 11 12 13 14) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 }} = #true
+   (void_IIIIIIIIIIIIIII 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }} = #true
+   (void_IIIIIIIIIIIIIIII 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 }} = #true
+   (void_ccccc 1 2 3 4 5) --> {{ 1 2 3 4 5 }} = #true
+   (void_cccccc 1 2 3 4 5 6) --> {{ 1 2 3 4 5 6 }} = #true
+   (void_ccccccc 1 2 3 4 5 6 7) --> {{ 1 2 3 4 5 6 7 }} = #true
+   (void_cccccccc 1 2 3 4 5 6 7 8) --> {{ 1 2 3 4 5 6 7 8 }} = #true
+   (void_ccccccccc 1 2 3 4 5 6 7 8 9) --> {{ 1 2 3 4 5 6 7 8 9 }} = #true
+   (void_cccccccccc 1 2 3 4 5 6 7 8 9 10) --> {{ 1 2 3 4 5 6 7 8 9 10 }} = #true
+   (void_ccccccccccc 1 2 3 4 5 6 7 8 9 10 11) --> {{ 1 2 3 4 5 6 7 8 9 10 11 }} = #true
+   (void_cccccccccccc 1 2 3 4 5 6 7 8 9 10 11 12) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 }} = #true
+   (void_ccccccccccccc 1 2 3 4 5 6 7 8 9 10 11 12 13) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 }} = #true
+   (void_cccccccccccccc 1 2 3 4 5 6 7 8 9 10 11 12 13 14) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 }} = #true
+   (void_ccccccccccccccc 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }} = #true
+   (void_cccccccccccccccc 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 }} = #true
+   (void_ccccc -1 -2 -3 -4 -5) --> {{ -1 -2 -3 -4 -5 }} = #true
+   (void_cccccc -1 -2 -3 -4 -5 -6) --> {{ -1 -2 -3 -4 -5 -6 }} = #true
+   (void_ccccccc -1 -2 -3 -4 -5 -6 -7) --> {{ -1 -2 -3 -4 -5 -6 -7 }} = #true
+   (void_cccccccc -1 -2 -3 -4 -5 -6 -7 -8) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 }} = #true
+   (void_ccccccccc -1 -2 -3 -4 -5 -6 -7 -8 -9) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 }} = #true
+   (void_cccccccccc -1 -2 -3 -4 -5 -6 -7 -8 -9 -10) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 }} = #true
+   (void_ccccccccccc -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 }} = #true
+   (void_cccccccccccc -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 }} = #true
+   (void_ccccccccccccc -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 }} = #true
+   (void_cccccccccccccc -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 }} = #true
+   (void_ccccccccccccccc -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 }} = #true
+   (void_cccccccccccccccc -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16 }} = #true
+   (void_sssss 1 2 3 4 5) --> {{ 1 2 3 4 5 }} = #true
+   (void_ssssss 1 2 3 4 5 6) --> {{ 1 2 3 4 5 6 }} = #true
+   (void_sssssss 1 2 3 4 5 6 7) --> {{ 1 2 3 4 5 6 7 }} = #true
+   (void_ssssssss 1 2 3 4 5 6 7 8) --> {{ 1 2 3 4 5 6 7 8 }} = #true
+   (void_sssssssss 1 2 3 4 5 6 7 8 9) --> {{ 1 2 3 4 5 6 7 8 9 }} = #true
+   (void_ssssssssss 1 2 3 4 5 6 7 8 9 10) --> {{ 1 2 3 4 5 6 7 8 9 10 }} = #true
+   (void_sssssssssss 1 2 3 4 5 6 7 8 9 10 11) --> {{ 1 2 3 4 5 6 7 8 9 10 11 }} = #true
+   (void_ssssssssssss 1 2 3 4 5 6 7 8 9 10 11 12) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 }} = #true
+   (void_sssssssssssss 1 2 3 4 5 6 7 8 9 10 11 12 13) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 }} = #true
+   (void_ssssssssssssss 1 2 3 4 5 6 7 8 9 10 11 12 13 14) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 }} = #true
+   (void_sssssssssssssss 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }} = #true
+   (void_ssssssssssssssss 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 }} = #true
+   (void_sssss -1 -2 -3 -4 -5) --> {{ -1 -2 -3 -4 -5 }} = #true
+   (void_ssssss -1 -2 -3 -4 -5 -6) --> {{ -1 -2 -3 -4 -5 -6 }} = #true
+   (void_sssssss -1 -2 -3 -4 -5 -6 -7) --> {{ -1 -2 -3 -4 -5 -6 -7 }} = #true
+   (void_ssssssss -1 -2 -3 -4 -5 -6 -7 -8) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 }} = #true
+   (void_sssssssss -1 -2 -3 -4 -5 -6 -7 -8 -9) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 }} = #true
+   (void_ssssssssss -1 -2 -3 -4 -5 -6 -7 -8 -9 -10) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 }} = #true
+   (void_sssssssssss -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 }} = #true
+   (void_ssssssssssss -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 }} = #true
+   (void_sssssssssssss -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 }} = #true
+   (void_ssssssssssssss -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 }} = #true
+   (void_sssssssssssssss -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 }} = #true
+   (void_ssssssssssssssss -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16 }} = #true
+   (void_iiiii 1 2 3 4 5) --> {{ 1 2 3 4 5 }} = #true
+   (void_iiiiii 1 2 3 4 5 6) --> {{ 1 2 3 4 5 6 }} = #true
+   (void_iiiiiii 1 2 3 4 5 6 7) --> {{ 1 2 3 4 5 6 7 }} = #true
+   (void_iiiiiiii 1 2 3 4 5 6 7 8) --> {{ 1 2 3 4 5 6 7 8 }} = #true
+   (void_iiiiiiiii 1 2 3 4 5 6 7 8 9) --> {{ 1 2 3 4 5 6 7 8 9 }} = #true
+   (void_iiiiiiiiii 1 2 3 4 5 6 7 8 9 10) --> {{ 1 2 3 4 5 6 7 8 9 10 }} = #true
+   (void_iiiiiiiiiii 1 2 3 4 5 6 7 8 9 10 11) --> {{ 1 2 3 4 5 6 7 8 9 10 11 }} = #true
+   (void_iiiiiiiiiiii 1 2 3 4 5 6 7 8 9 10 11 12) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 }} = #true
+   (void_iiiiiiiiiiiii 1 2 3 4 5 6 7 8 9 10 11 12 13) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 }} = #true
+   (void_iiiiiiiiiiiiii 1 2 3 4 5 6 7 8 9 10 11 12 13 14) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 }} = #true
+   (void_iiiiiiiiiiiiiii 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 }} = #true
+   (void_iiiiiiiiiiiiiiii 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16) --> {{ 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 }} = #true
+   (void_iiiii -1 -2 -3 -4 -5) --> {{ -1 -2 -3 -4 -5 }} = #true
+   (void_iiiiii -1 -2 -3 -4 -5 -6) --> {{ -1 -2 -3 -4 -5 -6 }} = #true
+   (void_iiiiiii -1 -2 -3 -4 -5 -6 -7) --> {{ -1 -2 -3 -4 -5 -6 -7 }} = #true
+   (void_iiiiiiii -1 -2 -3 -4 -5 -6 -7 -8) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 }} = #true
+   (void_iiiiiiiii -1 -2 -3 -4 -5 -6 -7 -8 -9) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 }} = #true
+   (void_iiiiiiiiii -1 -2 -3 -4 -5 -6 -7 -8 -9 -10) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 }} = #true
+   (void_iiiiiiiiiii -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 }} = #true
+   (void_iiiiiiiiiiii -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 }} = #true
+   (void_iiiiiiiiiiiii -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 }} = #true
+   (void_iiiiiiiiiiiiii -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 }} = #true
+   (void_iiiiiiiiiiiiiii -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 }} = #true
+   (void_iiiiiiiiiiiiiiii -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16) --> {{ -1 -2 -3 -4 -5 -6 -7 -8 -9 -10 -11 -12 -13 -14 -15 -16 }} = #true
+zeroes:
+   (void_CCCCCCCCCCCCCCCC 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_SSSSSSSSSSSSSSSS 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_IIIIIIIIIIIIIIII 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_cccccccccccccccc 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_ssssssssssssssss 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_iiiiiiiiiiiiiiii 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+defaults (#f):
+   (void_CCCCCCCCCCCCCCCC #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_SSSSSSSSSSSSSSSS #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_IIIIIIIIIIIIIIII #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_cccccccccccccccc #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_ssssssssssssssss #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+   (void_iiiiiiiiiiiiiiii #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false #false) --> {{ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }} = #true
+42s:
+   (void_CCCCCCCCCCCCCCCC 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42) --> {{ 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 }} = #true
+   (void_SSSSSSSSSSSSSSSS 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42) --> {{ 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 }} = #true
+   (void_IIIIIIIIIIIIIIII 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42) --> {{ 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 }} = #true
+   (void_cccccccccccccccc 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42) --> {{ 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 }} = #true
+   (void_ssssssssssssssss 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42) --> {{ 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 }} = #true
+   (void_iiiiiiiiiiiiiiii 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42) --> {{ 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 }} = #true
