@@ -6,6 +6,21 @@ provided by the OS (operation system) or third-party libraries.
 
 For example, you can use the Sqlite library directly without including it's support in olvm and without writing any C code.
 
+### Platforms
+
+Platform FFI support is categorized into two tiers:
+
+* **Tier 1**: Full support for all argument types and counts.
+* **Tier 2**: Limited support for argument counts. This includes full support for 1–4 arguments and a curated set of the most commonly used configurations for higher argument counts.
+
+#### Tier 1
+
+Tier 1 includes
+* **x86** and **x86_64**
+* **aarch64**
+* arm (good old **armv4**, **armv7soft** with software math, **armv7hard** with hardware math)
+* **win32**, **win64**.
+
 ### Glossary
 
 * `value` - an integer that fits in the olvm word (machine word minus 8 bits),

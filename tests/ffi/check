@@ -66,13 +66,12 @@ endif
 ffi-binaries:
 
 # ------ ffi tests -------------------------------------
+include tests/ffi/tier-1/Makefile
+include tests/ffi/tier-2/Makefile
+
 .SILENT: ffi-tests
 ffi-tests: ffi-binaries
-ffi-tests: RUNNER=FFI
-ffi-tests: $(wildcard tests/ffi/*.scm) \
-           $(wildcard tests/ffi/*.bin)
-	echo " "
-	echo "# $(RUNNER) TESTS"
-	FAILMARK=$(shell mktemp -u tmp/fail.FFI.XXXXXXXXX) \
-	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) \
-	TESTS="$^" EXECUTABLE=ffi TEST_HOME=tests/ffi $(MAKE) tests
+ffi-tests: ffi-tier-1-tests
+ffi-tests: ffi-tier-2-tests
+ffi-tests:
+	true

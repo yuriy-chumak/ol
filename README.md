@@ -31,8 +31,11 @@ core language <a href="tests/">
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DLANGUAGE&label=test%20suite" alt="test suite"></a>,
 rosettacode <a href="tests/rosettacode/">
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DROSETTACODE&label=examples" alt="examples"></a>,
+FFI
 <a href="tests/ffi/">
-<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DFFI&label=ffi%20tests" alt="ffi tests"></a>,
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DFFI-Tier-1&label=tier-1%20tests" alt="ffi tests"></a>
+<a href="tests/ffi/">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DFFI-Tier-2&label=tier-2%20tests" alt="ffi tests"></a>,
 and language
 <a href="doc/reference/README.md">
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DREFERENCE&label=functions%20reference" alt="ffi tests"></a>.
