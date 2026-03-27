@@ -4858,20 +4858,23 @@ loop:;
 						si.dwFlags |= STARTF_USESTDHANDLES;
 						si.hStdInput = (HANDLE) _get_osfhandle(STDIN_FILENO);
 						if (is_pair(c)) {
-							if (is_port(car(c))) // stdin in
-								si.hStdInput = (HANDLE) _get_osfhandle(port(car(c)));
+							word p = car(c); // stdin
+							if (is_pair(p) && is_port(car(p))) // in
+								si.hStdInput = (HANDLE) _get_osfhandle(port(car(p)));
 							c = cdr(c);
 						}
 						si.hStdOutput = (HANDLE) _get_osfhandle(STDOUT_FILENO);
 						if (is_pair(c)) {
-							if (is_port(car(c))) // stdout out
-								si.hStdOutput = (HANDLE) _get_osfhandle(port(car(c)));
+							word p = car(c); // stdout
+							if (is_pair(p) && is_port(cdr(p))) // out
+								si.hStdOutput = (HANDLE) _get_osfhandle(port(cdr(p)));
 							c = cdr(c);
 						}
 						si.hStdError = (HANDLE) _get_osfhandle(STDERR_FILENO);
 						if (is_pair(c)) {
-							if (is_port(car(c))) // stderr out
-								si.hStdError = (HANDLE) _get_osfhandle(port(car(c)));
+							word p = car(c); // stderr
+							if (is_pair(p) && is_port(cdr(p))) // out
+								si.hStdError = (HANDLE) _get_osfhandle(port(cdr(p)));
 							c = cdr(c);
 						}
 
