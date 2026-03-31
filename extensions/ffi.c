@@ -817,9 +817,9 @@ __ASM__(// "arm32_call:_arm32_call:",
 	"mov sp, r4", // restore sp
 
 	"ldr r5, [r4,#20]", // return type
-	"cmp r5, #46",          // TFLOAT
+	"cmp r5, #46", // TFLOAT
 	"beq .Lfconv",
-	"cmp r5, #47",          // TDOUBLE
+	"cmp r5, #47", // TDOUBLE
 	"beq .Lfconv",
 
 ".Lret:",
@@ -2357,9 +2357,9 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		})
 		#define STORE_F(conv, type, arg) ({\
 			if (__builtin_expect((d >= FRNC), 0)) {\
-                i = max(i, GRNC); \
+				i = max(i, GRNC); \
 				STORE_STCK(type, conv, arg) \
-            } else \
+			} else \
 				*(type*)&ad[d++] = conv(arg), --i;\
 		})
 #	else
