@@ -2427,15 +2427,25 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 #	 if	__ARM_PCS_VFP // -mfloat-abi=hard only
 		#define STORE_F(conv, type, arg) ({ /* assert (type == float && conv = OL2F) */\
 				int index = __builtin_ctz(~fmask);\
-				*(type*)&af[index] = conv(arg); --i;\
-				f = max(f, index + 1);\
-				fmask |= 1 << index;\
+				if (index >= 16) {\
+					i = max(i, 4);\
+					*(type*)&args[i] = conv(arg);\
+				} else {\
+					*(type*)&af[index] = conv(arg); --i;\
+					f = max(f, index + 1);\
+					fmask |= 1 << index;\
+				}\
 		})
 		#define STORE_D(conv, type, arg) ({ /* doubles always aligned by 8 */\
-				f = (f+1) & -2;\
-				*(type*)&af[f] = conv(arg); --i;\
-				f += 2;\
-				fmask |= 3 << (f-2);\
+				int index = (f+1) & -2;\
+				if (index >= 16) {\
+					i = max(i, 4);\
+					*(type*)&args[i++] = conv(arg);\
+				} else {\
+					*(type*)&af[index] = conv(arg); --i;\
+					f = index + 2;\
+					fmask |= 3 << (f-2);\
+				}\
 		})
 #	 else // without fpu
 		#define STORE_F(conv, type, arg) ({\
@@ -2540,10 +2550,10 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	int d = 0;
 
 #elif __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard
-	// арм int и float складывает в разные регистры (r?, s?), если сопроцессор есть
-	float af[18]; // для флоатов отдельный массив (почему не 16?)
+	// арм int и float складывает в разные регистры (r*, s*), если сопроцессор есть
+	float af[32]; // для флоатов отдельный массив (16 doubles)
 	int f = 0;     // количество аргументов для af
-	int fmask = 0;
+	long fmask = 0;
 
 #else // all the rest platforms default floating point handling
 	  // __mips__ || __powerpc__ || __EMSCRIPTEN__
