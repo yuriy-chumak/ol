@@ -337,18 +337,27 @@ typedef word* R;
 
 // всякая всячина:
 #define header_size(x)              (((word)(x)) >> SPOS) // header_t(x).size
-#define object_size(x)              (header_size(x))
-#define header_pads(x)              (unsigned char) ((((word)(x)) >> VPOS) & 7) // header_t(x).padding
+#define header_pads(x)              (unsigned) ((((word)(x)) >> VPOS) & 7) // header_t(x).padding
 
-#define value_type(x)               (unsigned char) ((((word)(x)) >> TPOS) & 0x3F)
+#define value_type(x)               (unsigned) ((((word)(x)) >> TPOS) & 0x3F)
 #define reference_type(x)           (value_type (*reference(x)))
 
-#define reference_size(x)           ((header_size(*reference(x)) - 1))
-#define rawstream_size(x)           ((header_size(*reference(x)) - 1) * sizeof(word) - header_pads(*reference(x)))
+#define object_size(x)              ({ word* _o = (word*)(x); header_size(*_o); })
+#define object_pads(x)              ({ word* _o = (word*)(x); header_pads(*_o); })
+#define reference_size(x)           ({ word* _r = (word*)(x); header_size(*_r) - 1; })
+#define rawstream_size(x)           ({ word* _r = (word*)(x);(header_size(*_r) - 1) * sizeof(word) - header_pads(*_r); })
 #define payload_offset(x)           (((word)(x)) + 1)
 
 
-// types:
+// types. 6 bits for type:
+// octal: -----------------------------------------------
+//         0, 1, 2, 3, 4, 5,  ,  ,  ,  ,  ,  ,12,13,  ,  ;
+//        16,17,18,19,  ,21,  ,  ,24,25,26,27,  ,  ,  ,31;
+//        32,  ,  ,  ,  ,  ,  ,  ,40,41,42,43,44,  , F, F;  46,47=floats
+//        48,49, F, F, F, F, F, F, F, F, F, F, F,  , F,63.  48=void,49=void*(vptr), 63=constructor/any
+//        -----------------------------------------------
+//  40+ lisp numeric types
+//  50+ ffi numeric types
 #define TPAIR                       (1)  // type-pair
 #define TVECTOR                     (2)  // type-vector
 #define TSTRING                     (3)  // type-string
@@ -362,7 +371,7 @@ typedef word* R;
 #define TBYTECODE                   (16) // type-bytecode
 #define TPROCEDURE                  (17) // type-procedure
 #define TCLOSURE                    (18) // type-closure
-#define TCONSTRUCTOR                (63) // вызываемая процедура (не байткод! не замыкание!), TODO: проверить, что точно работает
+#define TCONSTRUCTOR                (63) // type-constructor
 
 #define TFF                         (24) // 25, 26 are same
 #	define TRIGHT                     1  // flags for TFF
@@ -837,6 +846,7 @@ word*p = new (TVECTOR, 13);\
 #	define IS_THE_MIN_INT(i) (0)
 #	define new_intmin() IFALSE
 #endif
+
 
 #define new_snumber(val)  ({ \
 	__builtin_choose_expr(sizeof(val) < sizeof(word), \
@@ -1992,7 +2002,7 @@ static char* pvenv_main() {
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
 #define MEMPAD                     (1024) // space after end of heap to guarantee apply
-#define FREESPACE                  (4096) // minimal working memory buffer (in words)
+#define FREESPACE                  (4096) // minimal working memory buffer (in words), >=1024
 
 // 1024 - некое магическое число, подразумевающее количество
 // памяти, используемой между вызовами apply. мои тесты пока показывают максимальное число 96
@@ -2096,7 +2106,7 @@ ptrdiff_t resize_heap(heap_t *heap, int cells)
 		// fix_pointers
 		while (pos < end) {
 			word hdr = *pos;
-			int sz = object_size(hdr);
+			int sz = header_size(hdr);
 			if (is_rawstream(pos))
 				pos += sz; // no pointers in raw objects
 			else {
@@ -2150,7 +2160,7 @@ void mark(word *pos, word *end, heap_t* heap)
 				*ptr = ((word)pos | 1);
 
 				unless (hdr & (RAWBIT | 1))
-					pos = ((word *) val) + object_size(hdr);
+					pos = ((word *) val) + header_size(hdr);
 			}
 		}
 		--pos;
@@ -2177,7 +2187,7 @@ word *sweep(word* end, heap_t* heap)
 				val = *newobject;
 			}
 
-			word h = object_size(val);
+			word h = header_size(val);
 			if (old == newobject) {
 				old += h;
 				newobject += h;
@@ -2190,7 +2200,7 @@ word *sweep(word* end, heap_t* heap)
 			}
 		}
 		else
-			old += object_size(*old);
+			old += object_size(old); // header_size(*obj)
 	}
 	return newobject;
 }
@@ -2492,7 +2502,7 @@ word d2ol(struct heap_t* heap, double v) {
 			size_t len = (p - fp);
 
 			//word* m = (word*) __builtin_alloca(len * sizeof(word)) + len;
-			// allocation is safe during MEMPAD 
+			// allocation is safe because MEMPAD 
 			new_bytevector(sizeof(word) * len); // dummy,
 			               // will be destroyed during next gc()
 			word* m = fp;
@@ -2646,7 +2656,7 @@ word get(word *ff, word key, word def, jmp_buf ret)
 		if (this == key)
 			return ff[2];
 		hdr = ff[0];
-		switch (object_size(hdr)) {
+		switch (header_size(hdr)) {
 		case 5: ff = (word *) ((key < this) ? ff[3] : ff[4]);
 			continue;
 		case 3: return def;
@@ -2657,7 +2667,7 @@ word get(word *ff, word key, word def, jmp_buf ret)
 				ff = (word *) ((hdr & (1 << TPOS)) ? ff[3] : IEMPTY);
 			continue;
 		default:
-			E("assert! object_size(ff) == %d", (int)object_size(hdr));
+			E("assert! header_size(ff) == %d", (int)header_size(hdr));
 			longjmp(ret, IFALSE); // todo: return error code
 		}
 	}
@@ -2835,7 +2845,7 @@ apply:;
 			if (!is_enum(index))
 				ERROR(1032, this, index);
 
-			word size = object_size(*(R)this);
+			word size = object_size(this);
 			size_t i = is_enump (index) ? (value(index)) : (size - value(index));
 			if (i > 0 && i < size) { // objects are indexed from 1
 				R3 = ref(this, i);
@@ -3340,7 +3350,7 @@ loop:;
 
 		word hdr = ref(this, 0);
 		if (value_type (hdr) == TTHREAD) {
-			int pos = object_size(hdr) - 1;
+			int pos = header_size(hdr) - 1;
 			word code = ref(this, pos);
 			acc = pos - 3;
 			while (--pos)
@@ -3436,6 +3446,7 @@ loop:;
 	}
 
 	// BNAV, additionally packs extra arguments list
+	//       it's safe because MEMPAD and limited arity
 	case BNAV: {
 		long arity = ip[0];
 		if (acc >= arity) {
@@ -3679,7 +3690,7 @@ loop:;
 				// make an object clone with new type
 				word* ob = (word*)T;
 				word hdr = *ob++;
-				int size = object_size(hdr)-1; // (-1) for header
+				int size = header_size(hdr)-1; // (-1) for header
 				word *newobj = new (size);
 				word *res = newobj;
 				*newobj++ = (hdr & (~252)) | (type << TPOS);
@@ -3751,7 +3762,6 @@ loop:;
 	case REF: {  // ref t o -> r
 		word *p = (word *) A0;
 		if (is_reference(p) && is_enum(A1)) {
-			word hdr = *p;
 			if (is_rawstream(p)) {
 				word size = rawstream_size(p);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
@@ -3761,7 +3771,7 @@ loop:;
 					A2 = IFALSE;
 			}
 			else {
-				word size = object_size(hdr);
+				word size = object_size(p);
 				word pos = is_enump (A1) ? (value(A1)) : (size - value(A1));
 				if (pos && pos < size) // objects are indexed from 1
 					A2 = p[pos];
@@ -3782,7 +3792,7 @@ loop:;
 
 		if (is_reference(p) && is_enum(A1)) {
 			word hdr = *p;
-			word size = object_size (hdr) - 1; // -1 for header
+			word size = header_size (hdr) - 1; // -1 for header
 			word *newobj;
 			if (op == SETREF) { // __builtin_expect((x),1)
 				newobj = new (size);
@@ -3966,7 +3976,7 @@ loop:;
 
 		word pos = 1, n = *ip++;
 		//word hdr = *tuple;
-		//CHECK(!(is_raw(hdr) || object_size(hdr)-1 != n), VECTORAPPLY, vector);
+		//CHECK(!(is_raw(hdr) || header_size(hdr)-1 != n), VECTORAPPLY, vector);
 		while (n--)
 			reg[*ip++] = vector[pos++];
 
@@ -3982,7 +3992,7 @@ loop:;
 		word hdr = *ff++;
 		A2 = *ff++; // key
 		A3 = *ff++; // value
-		switch (object_size(hdr)) {
+		switch (header_size(hdr)) {
 		case 3: A1 = A4 = IEMPTY; break;
 		case 4:
 			if (hdr & (1 << TPOS)) // has right?
@@ -4038,8 +4048,8 @@ loop:;
 		A1 = (word)p;
 
 		word h = *node++;
-		*p++ = (h ^ (TRED << TPOS));
-		switch (object_size(h)) {
+		*p++ = (h ^ (TRED << TPOS)); // safe because of MEMPAD
+		switch (header_size(h)) {
 			case 5:  *p++ = *node++; // fall through
 			case 4:  *p++ = *node++; // fall through
 			default: *p++ = *node++;
@@ -4991,7 +5001,7 @@ loop:;
 
 				word function = (word)dlsym(module, name);
 				if (function)
-                    r = new_vptr(function);
+					r = new_vptr(function);
 				break;
 			}
 			case SYSCALL_DLERROR: { // (dlerror)
