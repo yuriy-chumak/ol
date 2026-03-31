@@ -17,7 +17,7 @@ Platform FFI support is categorized into two tiers:
 
 Tier 1 includes
 * **x86** and **x86_64**
-* **aarch64**
+* **aarch64**, **arm64** (macOS aarch64)
 * arm (good old **armv4**, **armv7soft** with software math, **armv7hard** with hardware math)
 * **win32**, **win64**.
 
