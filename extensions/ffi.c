@@ -821,13 +821,14 @@ __ASM__(// "arm32_call:_arm32_call:",
 	"beq .Lfconv",
 	"cmp r5, #47",          // TDOUBLE
 	"beq .Lfconv",
+
+".Lret:",
+	"ldmfd   sp!, {r4, r5, r6, pc}",
+
 ".Lfconv:",
 	"vmov r0, s0",
 	"vmov r1, s1",
-
-".Lret:",
-	// all values: int, long, float and double returns in r0+r1
-	"ldmfd   sp!, {r4, r5, r6, pc}");
+	"b .Lret");
 }
 # endif
 
