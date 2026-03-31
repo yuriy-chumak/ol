@@ -46,7 +46,7 @@
 // 0: rough
 //    a. allocate size * 4 (size of maximal utf-8 codepoint)
 //    b. encode string
-#define OLVM_FFI_MEMSAVING_UTF8 0
+#define OLVM_FFI_MEMSAVING_UTF8 1
 #endif
 
 
@@ -2799,9 +2799,9 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			tstring: {
 				int len =
 				#if OLVM_FFI_MEMSAVING_UTF8
-					string_length_as_utf8_rough(arg) + 1;
-				#else
 					string_length_as_utf8(arg) + 1;
+				#else
+					string_length_as_utf8_rough(arg) + 1;
 				#endif
 				char* str = (char*) alloca(len);
 				store_chars(str, arg);
@@ -2915,9 +2915,9 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 							else {
 								int len = 
 								#if OLVM_FFI_MEMSAVING_UTF8
-									string_length_as_utf8_rough(string) + 1;
-								#else
 									string_length_as_utf8(string) + 1;
+								#else
+									string_length_as_utf8_rough(string) + 1;
 								#endif
 
 								char* copy = (char*) alloca(len);
