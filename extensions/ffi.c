@@ -738,57 +738,25 @@ __ASM__(// "arm32_call:_arm32_call:",
 	// r5: temporary
 	"stmfd   sp!, {r4, r5, r6, lr}", // keep 8-byte alignment by push regs in pairs
 
-	// gnueabihf, -mfloat-abi=hard
 	"cmp r3, #0",  // f (count of floats)
 	"beq .Lnofloats",
 	// будем заполнять регистры с плавающей запятой по 4 или 8 (в целях оптимизации)
-	// https://developer.arm.com/technologies/floating-point
-	"vldr.32 s0, [r1]",
-	"vldr.32 s1, [r1, #4]",
-	"vldr.32 s2, [r1, #8]",
-	"vldr.32 s3, [r1, #12]",
-	"cmp r3, #4",
-	"ble .Lnofloats",
-	"vldr.32 s4, [r1, #16]",
-	"vldr.32 s5, [r1, #20]",
-	"vldr.32 s6, [r1, #24]",
-	"vldr.32 s7, [r1, #28]",
+	"vldr.64 d0, [r1]",
+	"vldr.64 d1, [r1, #8]",
+	"vldr.64 d2, [r1, #16]",
+	"vldr.64 d3, [r1, #24]",
 	"cmp r3, #8",
 	"ble .Lnofloats",
-	"vldr.32 s8, [r1, #32]",
-	"vldr.32 s9, [r1, #36]",
-	"vldr.32 s10, [r1, #40]",
-	"vldr.32 s11, [r1, #44]",
-	"vldr.32 s12, [r1, #48]",
-	"vldr.32 s13, [r1, #52]",
-	"vldr.32 s14, [r1, #56]",
-	"vldr.32 s15, [r1, #60]",
-	// todo: s16-s32 must be preserved across subroutine calls (ARM ABI)!
-	//  save this situation as flag and restore this regs after function call if so
-	// "cmp r3, 16",
-	// "ble .Lnofloats",
-	// "vldr.32 s16, [r1, #48]",
-	// "vldr.32 s17, [r1, #52]",
-	// "vldr.32 s18, [r1, #56]",
-	// "vldr.32 s19, [r1, #60]",
-	// "vldr.32 s20, [r1, #48]",
-	// "vldr.32 s21, [r1, #52]",
-	// "vldr.32 s22, [r1, #56]",
-	// "vldr.32 s23, [r1, #60]",
-	// "vldr.32 s24, [r1, #48]",
-	// "vldr.32 s25, [r1, #52]",
-	// "vldr.32 s26, [r1, #56]",
-	// "vldr.32 s27, [r1, #60]",
-	// "vldr.32 s28, [r1, #48]",
-	// "vldr.32 s29, [r1, #52]",
-	// "vldr.32 s30, [r1, #56]",
-	// "vldr.32 s31, [r1, #60]",
-".Lnofloats:",
+	"vldr.64 d4, [r1, #32]",
+	"vldr.64 d5, [r1, #40]",
+	"vldr.64 d6, [r1, #48]",
+	"vldr.64 d7, [r1, #56]",
 
+".Lnofloats:",
 	"mov r4, sp", // save sp
-	// finally, sending regular (integer) arguments
+	// sending regular (integer) arguments
 	"cmp r2, #4",  // if (i > 4)
-	"ble .Lnoextraregs",      // todo: do the trick -> jmp to corrsponded "ldrsh" instruction based on r3 value
+	"ble .Lnoextraregs",
 
 	// note: at public interface stack must be double-word aligned (SP mod 8 = 0).
 	"sub r1, sp, r2, asl #2",// try to predict stack alighnment (к текущему стеку прибавим количество аргументов * размер слова)
@@ -804,31 +772,27 @@ __ASM__(// "arm32_call:_arm32_call:",
 	"sub r1, r1, #4",
 	"cmp r2, #4",
 	"bgt .Lextraregs",
-	// todo: arrange stack pointer to dword
 
 ".Lnoextraregs:",
 	"ldr r3, [r0,#12]", // save all 4 registers without checking
 	"ldr r2, [r0, #8]",
 	"ldr r1, [r0, #4]",
 	"ldr r0, [r0, #0]",
-	// call the function
+// call the function
 	"ldr r5, [r4,#16]", // function
 	"blx r5", // call this function
 	"mov sp, r4", // restore sp
 
 	"ldr r5, [r4,#20]", // return type
-	"cmp r5, #46", // TFLOAT
+	"cmp r5, #46", // TFLOAT?
 	"beq .Lfconv",
-	"cmp r5, #47", // TDOUBLE
-	"beq .Lfconv",
+	"cmp r5, #47", // TDOUBLE?
+	"bne .Lret",
+".Lfconv:",
+	"vmov r0, r1, d0",
 
 ".Lret:",
-	"ldmfd   sp!, {r4, r5, r6, pc}",
-
-".Lfconv:",
-	"vmov r0, s0",
-	"vmov r1, s1",
-	"b .Lret");
+	"ldmfd   sp!, {r4, r5, r6, pc}");
 }
 # endif
 
