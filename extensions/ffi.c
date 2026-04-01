@@ -2700,9 +2700,9 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				case TSTRING:
 				case TSTRINGWIDE:
 				case TSTRINGSUPER:
-				case TSYMBOL: {
 					goto tstring;
-				}
+				case TSYMBOL:
+					goto tsymbol;
 
 				// inexact numbers - as doubles (maximize precision)
 				case TINEXACT:
@@ -2761,6 +2761,9 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				}
 				break;
 
+			case TSYMBOL:
+			tsymbol:
+				arg = car (arg); // fall through
 			case TSTRING:
 			tstring: {
 				int len =
