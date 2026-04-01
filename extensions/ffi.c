@@ -2326,17 +2326,16 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 			} else \
 				*(type*)&ad[d++] = conv(arg), --i;\
 		})
-#	else
+#	else // linux aarch64
 		#define STORE(conv, type, arg) ({\
 			args[i] = (word) conv (arg);\
 		})
 		#define STORE_F(conv, type, arg) ({\
-			if (d < FRNC) \
+			if (__builtin_expect((d >= FRNC), 0)) {\
+				l = max(i, l, GRNC); \
+				*(type*)&args[l] = conv(arg), --i, l++; /* todo: выравнять стек */ \
+			} else \
 				*(type*)&ad[d++] = conv(arg), --i;\
-			else { \
-				i = max(i, GRNC); \
-				*(type*)&args[i] = conv(arg);\
-			} \
 		})
 #	endif
 
@@ -2389,6 +2388,8 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		})
 #	elif __arm__
 #	 if	__ARM_PCS_VFP // -mfloat-abi=hard only
+		// armhf can store in FPU only 16 floats, all other floats must be pushed
+		// onto stack. and from this point all arguments must be send into  stack
 		#define STORE_F(conv, type, arg) ({ /* assert (type == float && conv = OL2F) */\
 				int index = __builtin_ctz(~fmask);\
 				if (index >= 16) {\
@@ -2408,7 +2409,7 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				} else {\
 					*(type*)&af[index] = conv(arg); --i;\
 					f = index + 2;\
-					fmask |= 3 << (f-2);\
+					fmask |= 3 << index;\
 				}\
 		})
 #	 else // without fpu
@@ -2512,6 +2513,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 #elif __aarch64__
 	double ad[8];
 	int d = 0;
+	int l = 0; // floating pointer stack pointer (if ad filled)
 
 #elif __arm__ && __ARM_PCS_VFP // -mfloat-abi=hard
 	// арм int и float складывает в разные регистры (r*, s*), если сопроцессор есть
@@ -2585,7 +2587,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		word arg = (word) car(p);
 
 #if (__x86_64__ && (__unix__ || __APPLE__))		// linux x64 and mac intel, struct-by-value-passing (check this)
-		if (i == GRNC && l) { // ??
+		if (i == GRNC && l) { // TODO: move to the end of switch (near the i++)
 			i = l; // check is l needed?
 		}
 #endif
@@ -3128,6 +3130,10 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				i--; // no data left, adjust i (because later we have i++);
 		}
 		i++;
+#if	__aarch64__
+		if (i >= GRNC) i = max(i, l); // if stack arguments already exists
+#endif
+
 next_argument:
 		p = (word*)cdr(p);
 		t = (t == RNULL) ? t : (word*)cdr(t);
@@ -3158,7 +3164,7 @@ next_argument:
 		# if __APPLE__ // m1 .. mN
 			i += WORDS(e);
 		# endif
-			got = arm64_call(args, ad, i, d, NULL, function, returntype & 0x3F, 0);
+			got = arm64_call(args, ad, max(i, l), d, NULL, function, returntype & 0x3F, 0);
 		// ------------------------------------
 		#elif __arm__
 			// arm calling abi http://infocenter.arm.com/help/topic/com.arm.doc.ihi0042f/IHI0042F_aapcs.pdf
