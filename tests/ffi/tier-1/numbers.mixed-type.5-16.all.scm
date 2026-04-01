@@ -1,4 +1,4 @@
-#!/usr/bin/env -S ../../ffi
+#!/usr/bin/env -S ../../../ffi --home=..:~
 
 (define MIN-ARGS-COUNT 5)
 (define MAX-ARGS-COUNT 16)

@@ -17,7 +17,13 @@
 
 ,load "generators/paramless.gen"
 ,load "generators/same-type-args.gen"
+,load "generators/numbers.together.gen"
+(define MIN-ARGS-COUNT 2)
+(define MAX-ARGS-COUNT 16)
 ,load "generators/numbers.mixed-type-args.gen"
+;(define MIN-ARGS-COUNT 20)
+;(define MAX-ARGS-COUNT 20)
+;,load "generators/numbers.mixed-type-args.gen"
 
 ;; --------------------------------------------------
 ,quit
