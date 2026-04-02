@@ -70,9 +70,10 @@ You can use Ol on Linux, Windows, macOS, Android, Chromebook*,
 on various hardware architectures (x86, arm, ppc, mips, etc.),
 and directly in the web browsers (in WebAssembly form).
 
-* 64KB is a typical size of the Otus Lisp Virtual Machine (olvm) binary and may vary across platforms.  
+* The actual size of Olvm (the Otus Lisp Virtual Machine) varies depending on the platform.
+  It takes 61KB for armhf, 130KB for aarch64, 82KB for riscv64, 94KB for x86_64, etc.  
   Olvm can run compiled Ol code standalone or in embedded form.
-* The typical size of Ol with Compiler and FFI is 480KB (less than half a megabyte. cool, huh?).
+* The typical size of Ol with Compiler and FFI is 400KB larger (less than half a megabyte. cool, huh?).
 
 ### credits to
 Aki Helin (author of [Owl Lisp](https://gitlab.com/owl-lisp/owl), the project that gave birth to Otus Lisp),  

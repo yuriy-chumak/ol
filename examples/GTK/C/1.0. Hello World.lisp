@@ -1,9 +1,5 @@
 #!/usr/bin/env ol
 
-;; =================
-;; C-like Code
-;; =================
-
 (import (lib glib-2)
    (lib gtk-3)
    (lib gtk-3 message-dialog))
