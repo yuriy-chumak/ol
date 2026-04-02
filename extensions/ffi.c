@@ -1109,7 +1109,7 @@ void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
 		case TINT8: case TINT16: 
 		case TUINT8: case TUINT16: case TUINT32:
 		case TVPTR:   // assert (sizeof(void*) == sizeof(uint32_t))
-		case TSTRING: // type-string == void*
+		case TSTRING: case TSTRINGWIDE: // strings == void*
 			rtype = TINT32;
 			break;
 	}
