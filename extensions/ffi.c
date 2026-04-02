@@ -894,11 +894,12 @@ void x64_call(ret_t r, word arg[], int fmask, void* function, int type)
 	#define argd(i) *(double*)&arg[i]
 
 	int rtype = type;
+	// returning type
 	switch (type) {
 		case TINT8:  case TINT16:  case TINT32:
 		case TUINT8: case TUINT16: case TUINT32: case TUINT64:
 		case TVPTR:   // assert (sizeof(void*) == sizeof(uint64_t))
-		case TSTRING: // type-string == void*
+		case TSTRING: case TSTRINGWIDE: // strings == void*
 			rtype = TINT64;
 			break;
 	}
