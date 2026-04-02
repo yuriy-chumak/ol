@@ -2391,32 +2391,45 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		// armhf can store in FPU only 16 floats, all other floats must be pushed
 		// onto stack. and from this point all arguments must be send into  stack
 		#define STORE_F(conv, type, arg) ({ /* assert (type == float && conv = OL2F) */\
-				int index = __builtin_ctz(~fmask);\
-				if (index >= 16) {\
-					i = max(i, 4);\
+				if (t == RNULL) { /* variadric fp parameters (...) */ \
+					/* fallback to softfp */\
 					*(type*)&args[i] = conv(arg);\
 				} else {\
-					*(type*)&af[index] = conv(arg); --i;\
-					f = max(f, index + 1);\
-					fmask |= 1 << index;\
+					int index = __builtin_ctz(~fmask);\
+					if (index >= 16) {\
+						i = max(i, 4);\
+						*(type*)&args[i] = conv(arg);\
+					} else {\
+						*(type*)&af[index] = conv(arg); --i;\
+						f = max(f, index + 1);\
+						fmask |= 1 << index;\
+					}\
 				}\
 		})
-		#define STORE_D(conv, type, arg) ({ /* doubles always aligned by 8 */\
-				int index = (f+1) & -2;\
-				if (index >= 16) {\
-					i = max(i, 4);\
-					*(type*)&args[i++] = conv(arg);\
+		#define STORE_D(conv, type, arg) ({\
+				if (t == RNULL) { /* variadric fp parameters (...) */ \
+					/* fallback to softfp, doubles always aligned by 8 */\
+					i = (i+1) & -2;\
+					*(type*)&args[i] = conv(arg);\
+					++i;\
 				} else {\
-					*(type*)&af[index] = conv(arg); --i;\
-					f = index + 2;\
-					fmask |= 3 << index;\
+					int index = (f+1) & -2;\
+					if (index >= 16) {\
+						i = max(i, 4);\
+						*(type*)&args[i++] = conv(arg);\
+					} else {\
+						*(type*)&af[index] = conv(arg); --i;\
+						f = index + 2;\
+						fmask |= 3 << index;\
+					}\
 				}\
 		})
-#	 else // without fpu
+#	 else // soft fp
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
 		})
-		#define STORE_D(conv, type, arg) ({ /* doubles always aligned by 8 */\
+		// doubles always aligned by 8
+		#define STORE_D(conv, type, arg) ({\
 				i = (i+1) & -2;\
 				*(type*)&args[i] = conv(arg);\
 				++i;\
