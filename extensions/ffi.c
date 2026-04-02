@@ -2310,9 +2310,9 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 
 #	if __APPLE__ /* m1 */
 		#define STORE_STCK(type, conv, arg) {\
-			TALIGN(e, type); \
-			*(type*)&extra[e] = (type) conv(arg);\
-			i-- /* adjust i (because later we have i++) */, e += sizeof(type);\
+			TALIGN(e, type);\
+			*(type*)&extra[e] = (type) conv(arg); \
+			e += sizeof(type), i--;\
 		}
 		#define STORE(conv, type, arg) ({\
 			if (__builtin_expect((i >= GRNC), 0)) \
@@ -2321,11 +2321,10 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 				args[i] = (word) conv (arg);\
 		})
 		#define STORE_F(conv, type, arg) ({\
-			if (__builtin_expect((d >= FRNC), 0)) {\
-				i = max(i, GRNC); \
+			if (__builtin_expect((d >= FRNC), 0)) \
 				STORE_STCK(type, conv, arg) \
-			} else \
-				*(type*)&ad[d++] = conv(arg), --i;\
+			else \
+				*(type*)&ad[d++] = conv(arg), i--;\
 		})
 #	else // linux aarch64
 		#define STORE(conv, type, arg) ({\
@@ -2334,9 +2333,9 @@ size_t restore_structure(void* memory, size_t ptr, word t, word a)
 		#define STORE_F(conv, type, arg) ({\
 			if (__builtin_expect((d >= FRNC), 0)) {\
 				l = max(i, l, GRNC); \
-				*(type*)&args[l] = conv(arg), --i, l++; /* todo: выравнять стек */ \
+				*(type*)&args[l] = conv(arg), i--, l++; \
 			} else \
-				*(type*)&ad[d++] = conv(arg), --i;\
+				*(type*)&ad[d++] = conv(arg), i--;\
 		})
 #	endif
 
@@ -2642,9 +2641,18 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			switch (value(tty)) {
 			// -------------------
 			// целочисленные типы:
-
+#	if __aarch64__ && __APPLE__
+			case TINT8:  case TUINT8:
+				STORE(to_int, int8_t, arg);
+				break;
+			case TINT16: case TUINT16:
+				STORE(to_int, int16_t, arg);
+				break;
+#	else
 			case TINT8:  case TUINT8:
 			case TINT16: case TUINT16:
+#	endif
+
 			case TINT32: case TUINT32:
 				STORE(to_int, int32_t, arg);
 				break;
@@ -3147,7 +3155,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				i--; // no data left, adjust i (because later we have i++);
 		}
 		i++;
-#if	__aarch64__
+#if	__aarch64__ && !__APPLE__
 		if (i >= GRNC) i = max(i, l); // if stack arguments already exists
 #endif
 
@@ -3179,7 +3187,8 @@ next_argument:
 		// ------------------------------------
 		#elif __aarch64__
 		# if __APPLE__ // m1 .. mN
-			i += WORDS(e);
+			if (e)
+				i = max(i, GRNC) + WORDS(e); // we have something in stack
 		# endif
 			got = arm64_call(args, ad, max(i, l), d, NULL, function, returntype & 0x3F, 0);
 		// ------------------------------------
