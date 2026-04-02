@@ -45,7 +45,8 @@
       (begin
          (setq SO (or
             (load-dynamic-library "libc.so")
-            (load-dynamic-library "libc.so.6")))
+            (load-dynamic-library "libc.so.6")
+            (load-dynamic-library "libc.so.6.1") )); DEC Alpha case
 
          ; todo: calculate at runtime
          (setq sizeof-dirent (if (eq? (size nullptr) 4) 268 280))

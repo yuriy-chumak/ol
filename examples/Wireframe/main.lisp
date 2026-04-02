@@ -3,41 +3,41 @@
 (define-library (file xpm)
    (export
       xpm3-parser
-      (exports (file parser)))
+      (exports (data parse)))
    (import
       (otus lisp)
-      (file parser)
+      (data parse)
       (data s-exp))
 (begin
    (define get-rest-of-line ; internal
       (let-parse* (
-            (/ (greedy* (byte-if (lambda (x) (not (eq? x #\newline))))))
-            (/ (get-imm #\newline))) ;; <- note that this won't match if line ends to eof
+            (/ (greedy* (byte (lambda (x) (not (eq? x #\newline))))))
+            (/ (byte #\newline))) ;; <- note that this won't match if line ends to eof
          #true))
 
    (define xpm3-parser
-      (let-parses (
+      (let-parse* (
             (* get-rest-of-line) ; /* XPM */
             (* get-rest-of-line) ; static char *sample[] = {
             (* get-rest-of-line) ; /* columns rows colors chars-per-pixel */
 
-            (c-code (get-imm #\"))
+            (c-code (byte #\"))
             (columns get-number)
-            (* (get-greedy+ (get-imm #\space)))
+            (* (greedy+ (byte #\space)))
             (rows get-number)
-            (* (get-greedy+ (get-imm #\space)))
+            (* (greedy+ (byte #\space)))
             (colors get-number)
-            (* (get-greedy+ (get-imm #\space)))
-            (chars-per-pixel (get-imm #\1))
-            (* (get-greedy+ (get-imm #\space)))
+            (* (greedy+ (byte #\space)))
+            (chars-per-pixel (byte #\1))
+            (* (greedy+ (byte #\space)))
             (* get-rest-of-line)
 
             (* (times colors get-rest-of-line))
             (* get-rest-of-line) ; /* pixels */
 
-            (bitmap (times rows (let-parses (
-                  (* (get-imm #\"))
-                  (row (times columns get-byte))
+            (bitmap (times rows (let-parse* (
+                  (* (byte #\"))
+                  (row (times columns byte))
                   (* get-rest-of-line))
                row)))
             (/ get-rest-of-line))
@@ -55,7 +55,7 @@
 ; --------------------------
 ; skeletal-animation library
 (define filename "sample.xpm")
-(define xpm3 (parse xpm3-parser (file->bytestream "sample.xpm") #f #f #f))
+(define xpm3 (parse xpm3-parser (file->bytestream "sample.xpm")))
 
 (define MAX 65536)  ; should be power of two
 ; size of game board (should be less than MAX)
