@@ -554,8 +554,8 @@ Copyright (c) 2011-2014 Aki Helin                    <br/>
 Copyright (c) 2014-2026 Yuriy Chumak                 <br/>
 
 
-----------------------------------------------------------------------
 Thanks to:
+---------------------------------------------------
 * Aki Helin (author of [Owl Lisp](https://gitlab.com/owl-lisp/owl), the project that gave birth to Otus Lisp),  
 * [the-man-with-a-golden-mind](https://github.com/the-man-with-a-golden-mind) (for ideas, usage, and lot of tests),
 * [nullscm](https://github.com/nullscm) (for usage and tests),
@@ -569,4 +569,4 @@ Additional resources:
 
 
 ---------------------------------------------------
-`SPDX-License-Identifier: MIT OR LGPL-3.0-or-later`
+`SPDX-License-Identifier: LGPL-3.0-or-later OR MIT`
