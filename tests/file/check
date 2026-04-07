@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cat <<EOF |ol
+(import (file json))
+(define json (read-json-file "quoted-string-chars.json"))
+(ff-for-each (lambda (key value)
+      (print key " -> " value))
+   json)
+EOF
+
+cat <<EOF |ol
+(import (file json))
+(define json (read-json-file "numbers.json"))
+(ff-for-each (lambda (key value)
+      (print key " -> " value))
+   json)
+EOF

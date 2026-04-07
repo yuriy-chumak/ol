@@ -1,7 +1,6 @@
 (define-library (file json)
    ; todo: add function toi encode json into stream
    (export
-      print-json-with
       json-parser
       
       read-json
@@ -15,12 +14,14 @@
       write-json-file
       
       stringify ; same as json->string, deprecated
+      print-json-with
       json->string)
 
    (import
       (otus lisp)
       (data parse)
-      (data s-exp))
+      (data s-exp)
+      (only (scheme file) call-with-input-file))
 (begin
 
    (define (print-json-with display object)
@@ -97,13 +98,13 @@
 
    (define get-quoted-string-char
       (let-parse* (
-            (skip (byte #\\))
+            ( --  (byte #\\))
             (char (either
                      (let-parse* (
                            (ch (byte (lambda (byte) (quoted-values byte #f)))))
                         (quoted-values ch))
                      (let-parse* (
-                           (skip (byte #\u))
+                           ( -- (byte #\u))
                            (c1 byte)
                            (c2 byte)
                            (c3 byte)
@@ -150,7 +151,7 @@
                         (epsilon #f)))
             (exponent (any-of
                   (let-parse* (
-                        (e (byte #\e))
+                        (e (either (byte #\e) (byte #\E)))
                         (signer (any-of
                            (runes "+" (lambda (x) x))
                            (runes "-" (lambda (x) (negate x)))
@@ -227,9 +228,8 @@
          ((pair? source) (read-json-stream source))))))
 
    (define (read-json-file filename)
-      (read-json (if (equal? filename "-")
-                     stdin
-                     (open-input-file filename)))) ; note: no need to close port
+      (call-with-input-file filename (lambda (port)
+         (read-json-port port))))
 
    (define write-json
       (define (write-json json port)

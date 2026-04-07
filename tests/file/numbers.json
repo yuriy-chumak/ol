@@ -1,0 +1,19 @@
+{   "comment": "based on https://github.com/briandfoy/json-acceptance-tests/tree/master/json-checker",
+    "integer": 1234567890,
+    "real": -9876.543210,
+    "e": 0.123456789e-12,
+    "E": 1.234567890E+34,
+    "zero": 0,
+    "one": 1,
+    "array": [
+    0.5 ,98.6
+,
+99.44
+,
+
+1066,
+1e1,
+0.1e1,
+1e-1,
+1e00,2e+00,2e-00
+]}
