@@ -17,8 +17,6 @@
       g_free
       ;; get_type
 
-      G_APPLICATION_FLAGS_NONE
-
       GCallback
       GClosureNotify
       GConnectFlags
@@ -93,8 +91,6 @@
    (define TRUE 1)
    (define FALSE 0)
    (define NULL (vm:cast 0 fft-void*))
-
-   (define G_APPLICATION_FLAGS_NONE 0)
 
    (define gint fft-int)
    (define guint fft-unsigned-int)
@@ -177,7 +173,7 @@
 (define (g_signal_connect instance detailed_signal c_handler data)
    (g_signal_connect_data instance detailed_signal c_handler data #false 0))
 (define g_signal_emit_by_name (GOBJECT void "g_signal_emit_by_name" gpointer type-string #|...|#))
-(define g_application_run (GIO gint "g_application_run" GApplication* gint (fft* fft-void*)))
+(define g_application_run (GIO gint "g_application_run" GApplication* gint (fft* type-string)))
 (define g_application_quit (GIO void "g_application_quit" GApplication*))
 
 (define GDateTime* type-vptr)

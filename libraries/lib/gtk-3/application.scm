@@ -5,6 +5,8 @@
 
       gtk_application_new
       gtk_application_window_new
+
+      G_APPLICATION_FLAGS_NONE
    )
    (import
       (scheme base)
@@ -19,4 +21,5 @@
    (define gtk_application_new (GTK3 GtkApplication* "gtk_application_new" type-string GApplicationFlags))
    (define gtk_application_window_new (GTK3 GtkWidget* "gtk_application_window_new" GtkApplication*))
 
+   (define G_APPLICATION_FLAGS_NONE 0)
 ))

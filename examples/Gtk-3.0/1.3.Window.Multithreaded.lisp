@@ -34,7 +34,7 @@
    ; show it
    ((window 'show-all)))
 
-;; create an application
+;; create the application
 (define app (GtkApplication {
    'multithreaded #true
 

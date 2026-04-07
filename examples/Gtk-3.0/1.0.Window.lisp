@@ -6,13 +6,13 @@
    ; create default window
    (define window (GtkWindow appl))
 
-   ; show it
+   ; display the window
    ((window 'show-all)))
 
-;; create an application
-(define application (GtkApplication {
+;; create the application
+(define app (GtkApplication {
    'on-activate activate
 }))
 
 ;; run
-((application 'run) (command-line))
+((app 'run) (command-line))

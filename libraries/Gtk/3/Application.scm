@@ -13,11 +13,12 @@
       (lib gtk-3 application))
 
 (begin
+   (import (owl io))
    (define GtkApplication
       (define (make ctor ptr options)
          (define this {
-            'class 'Application
             'Ptr* ptr  ; raw pointer
+            'class 'Application  'superclass #false
 
             'Application ptr
 

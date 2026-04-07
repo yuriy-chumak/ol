@@ -16,7 +16,7 @@
       (Gtk:quit))
 }))
 
-;; show it
+;; display the window
 ((window 'show-all))
 
 ;; run

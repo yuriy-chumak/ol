@@ -7,6 +7,7 @@
    (define window (GtkWindow app {
       'title "Gtk-3 Window With Content"
       'width 320  'height 180
+      'icon "dialog-information"
    }))
 
    ; add a label to the window
@@ -17,9 +18,8 @@
    ; display the window (with content)
    ((window 'show-all)))
 
-;; create an application
+;; create the application
 (define app (GtkApplication {
-   'id "org.gtk.example"
    'on-activate activate
 }))
 

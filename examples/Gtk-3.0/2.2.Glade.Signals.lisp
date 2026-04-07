@@ -3,7 +3,7 @@
    (lib glib-2)
    (lib gtk-3 message-dialog))
 
-;; explicitly init
+;; explicit init
 (Gtk:init)
 
 ;; load ui from the file
@@ -33,7 +33,7 @@
       (Gtk:quit))
 }))
 
-;; show it
+;; display the window
 ((window 'show-all))
 
 ;; run

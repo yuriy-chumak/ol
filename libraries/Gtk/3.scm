@@ -41,11 +41,11 @@
 
    (import
       (scheme core)
+      (only (otus async) sleep)
       (otus ffi)
       (lib glib-2)
 
       (lib gdk-3)
-      (only (otus async) sleep)
       (lib gtk-3 gtk)
 
       (Gtk 3 Application)
