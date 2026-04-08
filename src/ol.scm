@@ -64,14 +64,14 @@
 (import (lang assemble))
 (import (lang rtl))
 
-(import (lang eval))
+(import (otus eval))
 (import (lang embed))
 
 (import (olvm syscalls))
 (import (only (otus case-apply) arity))
 
-; replace old (otus core) to the new one, (only (lang eval) *otus-core*)
-(define *libraries* ; заменим старую (otus core) на новую из (lang eval)
+; replace old (otus core) to the new one, (only (otus eval) *otus-core*)
+(define *libraries* ; заменим старую (otus core) на новую из (otus eval)
    (cons
       (cons '(otus core) *otus-core*)
       (keep

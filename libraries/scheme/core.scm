@@ -1599,10 +1599,10 @@
 
       ;; 6.5  Eval
       ; ...
-      ; procedure:  (eval expression environment-specifier)  * (lang eval)
-      ; procedure:  (scheme-report-environment version)      * (lang eval)
-      ; procedure:  (null-environment version)               * (lang eval)
-      ; optional procedure:  (interaction-environment)       * (lang eval)
+      ; procedure:  (eval expression environment-specifier)  * (otus eval)
+      ; procedure:  (scheme-report-environment version)      * (otus eval)
+      ; procedure:  (null-environment version)               * (otus eval)
+      ; optional procedure:  (interaction-environment)       * (otus eval)
 
       ;; 6.6
       ; ...

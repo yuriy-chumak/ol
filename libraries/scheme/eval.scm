@@ -5,14 +5,14 @@
    (import
       (scheme core)
       (scheme repl)
-      (prefix (lang eval) lang/)
+      (prefix (otus eval) otus/)
       ; default Ol environment:
       (otus lisp))
 
 (begin
    (define eval
       (define (eval expr env)
-         (case (lang/eval expr env)
+         (case (otus/eval expr env)
             (['ok expr env]
                expr)
             (['fail reason]

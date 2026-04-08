@@ -66,14 +66,14 @@
    complex      ; * ol specific
    complex?
    cond
-;  cond-expand    * builtin, (lang eval)
+;  cond-expand    * builtin, (otus eval)
    cons cons*
    current-error-port
    current-input-port
    current-output-port
    define
    define-record-type
-;  define-syntax  * builtin (lang eval)
+;  define-syntax  * builtin (otus eval)
    define-values
    denominator
    dlopen ; * olvm specific

@@ -29,7 +29,7 @@
       (owl string)
       (otus format)
       (lang env)
-      (only (lang eval) print-repl-error)
+      (only (otus eval) print-repl-error)
       (lang error)
       (otus symbols)
       (lang assemble)

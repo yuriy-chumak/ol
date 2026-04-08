@@ -3,8 +3,7 @@
 ;; todo: add lib-http and allow including remote resources
 ;; todo:  ^ would need a way to sign libraries and/or SSL etc
 
-; used only in ol.scm
-(define-library (lang eval)
+(define-library (otus eval)
    (export
       repl-file
       repl-port
