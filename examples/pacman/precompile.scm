@@ -2,7 +2,6 @@
 
 (import (main))
 (import (otus fasl))
-(import (lang embed))
 
 (fasl-save (make-entry
    (lambda args

@@ -19,7 +19,7 @@
       (otus lisp)
       (otus ffi)
       (otus async)
-      (lang embed)
+      (otus threading)
       (scheme dynamic-bindings))
 
 (begin

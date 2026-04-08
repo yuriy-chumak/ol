@@ -2,8 +2,7 @@
 
 (import (otus fasl)
    (otus ffi)
-   (lib kore)
-   (lang embed))
+   (lib kore))
 
 (import (file json))
 

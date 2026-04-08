@@ -65,7 +65,6 @@
 (import (lang rtl))
 
 (import (otus eval))
-(import (lang embed))
 
 (import (olvm syscalls))
 (import (only (otus case-apply) arity))

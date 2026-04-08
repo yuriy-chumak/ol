@@ -47,7 +47,7 @@
 (import
    (scheme core) (owl io)
    (only (otus async) die)
-   (lang embed)
+   (otus threading)
    (otus ffi))
 
 (begin
