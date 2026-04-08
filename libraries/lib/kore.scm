@@ -46,6 +46,7 @@
 
 (import
    (scheme core) (owl io)
+   (only (otus async) die)
    (lang embed)
    (otus ffi))
 
@@ -143,7 +144,7 @@
       (bytevector->void* (kore_http_body req) 0))
 
    (define (kore_http_body_length req)
-      (bytevector->integer (kore_http_body req) 16 8))
+      (bytevector->int64 (kore_http_body req) 16))
 
 
    ;; ; json
@@ -165,6 +166,7 @@
    ; -----
    (define kore-constructor!
       (vm:new type-constructor (lambda args
+(print "kore-constructor! loaded")
          (define kore (dlopen #false))
          (define svptr (size nullptr))
 
@@ -185,7 +187,7 @@
 
    (define (make-kore-page page)
       (make-entry
-         (lambda (args)
-            (exit (vm:pin page))
+         (lambda args
+            (die (vm:pin page))
             kore-constructor!)))
 ))
