@@ -15,9 +15,7 @@
    (define (get-Value &iter)
       (case (dbus_message_iter_get_arg_type &iter)
          (DBUS_TYPE_STRING
-               (define reply_string (make-vptr))
-               (dbus_message_iter_get_basic &iter reply_string)
-               (vptr->string reply_string))
+               (dbus_message_iter_get_basic_string &iter))
          (DBUS_TYPE_BOOLEAN
                (define reply_boolean (make-vptr))
                (dbus_message_iter_get_basic &iter reply_boolean)

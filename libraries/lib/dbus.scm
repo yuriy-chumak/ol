@@ -51,6 +51,8 @@
          DBUS_TYPE_STRUCT
          DBUS_TYPE_DICT_ENTRY
       dbus_message_iter_get_basic
+      dbus_message_iter_get_basic_string
+      dbus_message_iter_get_basic_bool
       dbus_message_iter_recurse
 
       dbus_message_iter_init_append
@@ -106,16 +108,21 @@
             (type-string (fft* type-string))
             (type-value+  (fft* fft-int))
             (type-value-  (fft* fft-int))
-            (type-integer+   (fft* fft-int))
-            (type-integer-   (fft* fft-int))
+            (type-integer+  (fft* fft-int))
+            (type-integer-  (fft* fft-int))
             (else #false))
          (box value)))
 
    ;; error
    (setq DBusError* type-vptr)
+   (setq sizeof:DBusError
+      (sizeof (list
+         type-string type-string
+         fft-unsigned-int ; placeholders
+         void*)))
+
    (define (make-DBusError)
-      (let* ((lo hi (vm:mul (size nullptr) 4)))
-         (make-bytevector lo)))
+      (make-bytevector sizeof:DBusError))
 
    (define dbus_error_init (DBUS void "dbus_error_init" DBusError*))
    (define dbus_error_free (DBUS void "dbus_error_free" DBusError*))
@@ -139,8 +146,16 @@
    (define dbus_message_get_serial (DBUS dbus_uint32_t "dbus_message_get_serial" DBusMessage*))
 
    (setq DBusMessageIter* type-vptr)
+   (setq sizeof:DBusMessageIter
+      (sizeof (list
+         void* void*
+         fft-uint32
+         int int int int int int int int int
+         void* void*)))
+
    (define (make-DBusMessageIter)
-      (make-bytevector 72))
+      (make-bytevector sizeof:DBusMessageIter))
+
    (define dbus_message_iter_init (DBUS bool "dbus_message_iter_init" DBusMessage* DBusMessageIter*))
    (define dbus_message_iter_next (DBUS bool "dbus_message_iter_next" DBusMessageIter*))
    (define dbus_message_iter_get_arg_type (DBUS int "dbus_message_iter_get_arg_type" DBusMessageIter*))
@@ -163,6 +178,14 @@
       (define DBUS_TYPE_STRUCT      #\r)
       (define DBUS_TYPE_DICT_ENTRY  #\e)
    (define dbus_message_iter_get_basic (DBUS void "dbus_message_iter_get_basic" DBusMessageIter* void**))
+   (define (dbus_message_iter_get_basic_string iter)
+      (let ((ptr (make-vptr)))
+         (dbus_message_iter_get_basic iter ptr)
+         (vptr->string ptr)))
+   (define (dbus_message_iter_get_basic_bool iter)
+      (let ((ptr (make-vptr)))
+         (dbus_message_iter_get_basic iter ptr)
+         (vptr->bool ptr)))
    (define dbus_message_iter_recurse (DBUS void "dbus_message_iter_recurse" DBusMessageIter* DBusMessageIter*))
 
    (define dbus_message_iter_init_append (DBUS void "dbus_message_iter_init_append" DBusMessage* DBusMessageIter*))
