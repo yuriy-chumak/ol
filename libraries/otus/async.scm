@@ -20,7 +20,7 @@
       (src vm)
       (scheme core)
       (scheme list)
-      (lang error))
+      (otus error))
 
    (begin
       ; list of interop codes can be found in lang/threading as mcp-syscalls

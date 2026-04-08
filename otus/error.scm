@@ -1,4 +1,4 @@
-(define-library (lang error)
+(define-library (otus error)
    (export
       typename
       error-description)

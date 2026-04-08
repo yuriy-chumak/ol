@@ -85,7 +85,7 @@
             (#eof   (cons* #\# #\e #\o #\f k))
             (else   (cons* #\# #\? #\? k))))
 
-      ; todo: import code from the (lang error)
+      ; todo: import code from the (otus error)
       ;       and use (this 'env)
       (define (cook-function this obj k)
          (if (regex? obj)

@@ -49,12 +49,10 @@
 
 ; let's prepare a new Ol compiler
 (import (otus symbol))
-(import (otus threading))
 
 (import (lang gensym))
 (import (lang env))
 (import (lang macro))
-(import (lang error))
 
 (import (lang ast))
 (import (lang fixedpoint))
@@ -65,9 +63,11 @@
 (import (lang rtl))
 
 (import (otus eval))
+(import (otus error))
 
 (import (olvm syscalls))
 (import (only (otus case-apply) arity))
+(import (otus threading))
 
 ; replace old (otus core) to the new one, (only (otus eval) *otus-core*)
 (define *libraries* ; заменим старую (otus core) на новую из (otus eval)

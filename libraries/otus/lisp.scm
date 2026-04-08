@@ -42,7 +42,7 @@
       ; experimental features
       ; define-config
 
-      (exports (lang error)))
+      (exports (otus error)))
 
    (import
       (scheme core)
@@ -74,7 +74,7 @@
       (scheme exceptions)
       (scheme read)
 
-      (lang error))
+      (otus error))
 
 (begin
    

@@ -14,7 +14,7 @@
    (import
       (scheme core) (src vm)
       (otus async)
-      (lang error))
+      (otus error))
 
 (begin
    (setq flag ['exception])
