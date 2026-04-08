@@ -6,7 +6,7 @@
 (define-library (lang assemble)
    (export
       assemble-code
-      fork-bytecode-interner)
+      start-bytecode-interner)
 
    (import
       (scheme base)
@@ -89,7 +89,7 @@
       ; start internal assembly interner
       (define bytecode-server '|'Bytecodes|)
 
-      (define (fork-bytecode-interner bytecodes)
+      (define (start-bytecode-interner bytecodes)
          (let ((codes (fold
                         (λ (codes pair)
                            (insert-code codes (car pair) (cdr pair)))

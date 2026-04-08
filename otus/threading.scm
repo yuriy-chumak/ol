@@ -461,8 +461,8 @@
                      (list ; main 1 thread
                         [name (λ ()
                                  (start-switchboard)
-                                 (fork-symbol-interner symbols) ; todo: rename to start-symbol-interner
-                                 (fork-bytecode-interner codes) ; todo: rename to start-bytecode-interner
+                                 (start-symbol-interner symbols) ; todo: rename to start-symbol-interner
+                                 (start-bytecode-interner codes) ; todo: rename to start-bytecode-interner
                                  (apply main args))] ))))))
       (case-lambda
          ((main) (make-entry main Main))

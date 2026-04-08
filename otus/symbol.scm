@@ -5,7 +5,7 @@
       symbol->string
 
       format-symbol ; symbol->utf8stream
-      fork-symbol-interner
+      start-symbol-interner
    )
 
    (import
@@ -114,7 +114,7 @@
             (let ((new (string->uninterned-symbol str)))
                (values (put-symbol root new) new)))))
 
-   (define (fork-symbol-interner symbols)
+   (define (start-symbol-interner symbols)
       (actor Symbols (lambda ()
          (let loop ((codes (fold put-symbol empty-symbol-tree symbols)))
             (let*((envelope (wait-mail))
