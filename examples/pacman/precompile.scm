@@ -5,7 +5,7 @@
 (import (lang embed))
 
 (fasl-save (make-entry
-   (lambda (args)
+   (lambda args
       (born-blinky)
       ; in simplest case we can just return a vector of pinned functions
       [  (vm:pin (lambda () points))
