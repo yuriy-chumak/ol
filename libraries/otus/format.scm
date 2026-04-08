@@ -4,7 +4,7 @@
       (scheme core)
       (scheme list)
       (owl string)
-      (otus symbols)
+      (otus symbol)
       (owl list-extra)
       (owl ff)
       (owl rlist)

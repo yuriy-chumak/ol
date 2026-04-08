@@ -1,4 +1,4 @@
-(define-library (otus symbols)
+(define-library (otus symbol)
    (export
       string->symbol
       string->uninterned-symbol
@@ -24,7 +24,7 @@
    (define (string->uninterned-symbol str)
       (vm:new type-symbol str))
 
-   (define (string->symbol str) ; todo: move to (otus symbols)?
+   (define (string->symbol str)
       (if (string? str)
          (await (mail Symbols str)))) ; doesn't work without 'Symbols coroutine
 

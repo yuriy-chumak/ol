@@ -30,8 +30,8 @@
       (otus format)
       (lang env)
       (only (otus eval) print-repl-error)
-      (lang error)
-      (otus symbols)
+      (otus error)
+      (otus symbol)
       (lang assemble)
       (owl io))
 

@@ -45,7 +45,7 @@
       (scheme core)
       (scheme list)
 
-      (otus symbols)
+      (otus symbol)
 
       (owl math)
       (owl ff)

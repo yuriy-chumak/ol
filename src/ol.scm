@@ -33,7 +33,7 @@
 
 (import (otus core))    ;; olvm promops and ol special forms
 (import (scheme core))  ;; базовый языковый ...
-(import (scheme base))  ;; ... набор Scheme
+(import (scheme base))  ;;     ... набор Scheme
 (import (otus lisp))    ;; а теперь загрузим ВСЕ, чтобы успешно отработал bytecode-interner (и сократил размер образа)
 
 ;; core implementation features, used by cond-expand
@@ -48,7 +48,7 @@
 (define *loaded* '())   ;; can be removed soon, used by old ,load and ,require
 
 ; let's prepare a new Ol compiler
-(import (otus symbols))
+(import (otus symbol))
 (import (otus threading))
 
 (import (lang gensym))

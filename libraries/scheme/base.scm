@@ -270,7 +270,7 @@
       (scheme string)
       (scheme exceptions)
       (srfi 1)
-      (otus symbols)
+      (otus symbol)
       (owl io) (owl math) (owl math-extra)
       (scheme inexact)
       (owl string)
