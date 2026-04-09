@@ -24,20 +24,21 @@ hello
 ## Complex example
 This folder demonstrates a usage of Otus Lisp as part of a pacman-like game.
 
-The A* path searching algorithm and Blinky state completely implemented in Otus Lisp (main.scm file). The OpenGL rendering and keyboard processing implemented in C (main.c file).
+The A* path searching algorithm and Blinky (the yellow monster) state completely implemented in Ol (main.scm library file).
+The OpenGL rendering and keyboard processing implemented in C (main.c file).
 
 ![Screenshot.](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/pacman.png "screenshot")
 
 Files:
 * **main.c** - main "C" program with opengl, keyboard and win/lose logic.
 * **main.scm** - main "Lisp" program module with level and A* blinky brains.
-* **Makefile** - build script for all three embedding options.
+* **Makefile** - build script for all embedding options.
 * **resources/*.png** - game resources (background, sprites, etc.).
 * **texturing.c** - png texture reader.
 * **embed1.c** - embedding option 1, just a way.
-* **embed2.c** - embedding option 2, simpler way with few oddish C-macro.
-* **embed3.c** - embedding option 3, fastest and smallest way with precompiled lisp code (required deeper knowledge of otus lisp language).
-* **precompile.scm** - lisp compiler for option 3.
+* **embed2.c** - embedding option 2, simpler way with few *oddish* C-macro.
+* **embed3.c** - embedding option 3, fastest and smallest way with precompiled lisp code (requires a bit deeper knowledge of otus lisp language).
+  * **embed3.scm** - additional lisp code to option 3.
 
 Temporary files:
 * **repl.o** - Otus Lisp REPL binary (400 KB).
@@ -64,7 +65,8 @@ Just compare all three embedding options usage.
 
 ## embedding option 1
 
-Basic library usage:
+Basic embed usage. We call lisp functions as a direct source code calls.
+
 ```c
 // olvm:
 ol_t ol;
@@ -104,7 +106,8 @@ void ol_blinky_move(int x, int y)
 
 ## embedding option 2
 
-Smart macro, simpler usage:
+Smart macro, simpler usage. We don't need to call `new_string` and other conversion functions manually, the macro `eval` will do this for us.
+
 ```c
 // olvm:
 ol_t ol;
@@ -136,8 +139,22 @@ void ol_blinky_move(int x, int y)
 
 ## embedding option 3
 
-Precompiled ol code, fastest (near native) execution:
+Precompiled ol code, fastest (near native) execution.
+We need to prepare some kind of "startup" code to return vector of lisp functions for us. These functions we can call later directly using.
+```scheme
+(return [
+   (lambda () points)
+   get-blinky
+   ...
+   blinky-move
+   get-level
+])
+```
+
+
 ```c
+#include "embed3.inc"
+
 // olvm:
 struct olvm_t* vm;
 int get_blinky;
@@ -146,19 +163,17 @@ int blinky_move;
 extern unsigned char tmp_bin[];
 void ol_new_ol()
 {
-	vm = OLVM_new(tmp_bin);
+	vm = OLVM_new(embed3_bin);
 	OLVM_userdata(vm, &vm);
 
 	uintptr_t
 	r = OLVM_run(vm, 0, 0);
-	// well, we have our "smart" script prepared,
-	//  now save functions for feature use
 	assert (is_vector(r));
 
   ...
-	get_blinky = ol2int(ref(r, 2));
+	get_blinky = OLVM_pin(ref(r, 2));
   ...
-	blinky_move = ol2int(ref(r, 6));
+	blinky_move = OLVM_pin(ref(r, 6));
   ...
 }
 

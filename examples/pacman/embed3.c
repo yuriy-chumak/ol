@@ -1,4 +1,5 @@
 #include <ol/ol.h>
+#include "embed3.inc"
 
 // olvm:
 struct olvm_t* vm;
@@ -11,25 +12,26 @@ int eat_the_point;
 int blinky_move;
 int get_level;
 
-extern unsigned char tmp_bin[];
 void ol_new_ol()
 {
-	vm = OLVM_new(tmp_bin);
+	vm = OLVM_new(embed3_bin);
 	OLVM_userdata(vm, &vm);
 
 	uintptr_t
 	r = OLVM_run(vm, 0, 0);
+	assert (is_vector(r));
 	// well, we have our "smart" script prepared,
 	//  now save functions for feature use
-	assert (is_vector(r));
 
-	points = ol2int(ref(r, 1));
-	get_blinky = ol2int(ref(r, 2));
-	get_used_memory = ol2int(ref(r, 3));
-	get_heap_memory = ol2int(ref(r, 4));
-	eat_the_point = ol2int(ref(r, 5));
-	blinky_move = ol2int(ref(r, 6));
-	get_level = ol2int(ref(r, 7));
+	// we must pin functions because next GC run
+	//  they will change their memory locations.
+	points = OLVM_pin(vm, ref(r, 1));
+	get_blinky = OLVM_pin(vm, ref(r, 2));
+	get_used_memory = OLVM_pin(vm, ref(r, 3));
+	get_heap_memory = OLVM_pin(vm, ref(r, 4));
+	eat_the_point = OLVM_pin(vm, ref(r, 5));
+	blinky_move = OLVM_pin(vm, ref(r, 6));
+	get_level = OLVM_pin(vm, ref(r, 7));
 }
 
 void ol_delete_ol()
