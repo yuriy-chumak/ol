@@ -12,5 +12,7 @@
       (otus threading))
 
 (begin
+   (print-to stderr "(lang embed) is deprecated and will be removed. use (otus embed) instead.")
+
    (define make-entry make-entry)
 ))

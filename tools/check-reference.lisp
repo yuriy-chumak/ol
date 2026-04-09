@@ -56,7 +56,7 @@
       (cons code answer)))
 
 ; evaluator
-(import (lang eval))
+(import (otus eval))
 (import (lang macro))
 (define (supereval exp env)
    (define repl__ (lambda (env in)

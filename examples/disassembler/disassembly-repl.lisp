@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 
-(import (lang eval)
+(import (otus eval)
       (scheme repl))
 
 (define (function->name env function)

@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 
-(import (only (lang eval) disassembly))
+(import (only (otus eval) disassembly))
 
       (define (object->list obj)
          (let loop ((pos (size obj)) (tail #null))
