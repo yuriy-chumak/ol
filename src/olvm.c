@@ -990,7 +990,7 @@ inexact_t f = (inexact_t) a;\
 
 #define __OLVM_NAME__ "OL"
 #ifndef __OLVM_VERSION__
-#define __OLVM_VERSION__ "2.6"
+#define __OLVM_VERSION__ "2.7"
 #endif
 #ifndef lint
 __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";

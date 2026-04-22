@@ -11,6 +11,10 @@
 CHANGELOG
 =========
 
+### Otus Lisp, Version 2.7
+2.7.changelog:
+
+### Otus Lisp, Version 2.6
 2.6 changelog:
  * [!] large write/print upgrade
  * [!] large regex update

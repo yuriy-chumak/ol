@@ -20,27 +20,40 @@ If FILE is a binary (compiled) script, then FILE-ARGS is passed as a list to the
 This program follows the usual GNU command line syntax, with long
 options starting with two dashes (`-').
 A summary of essential command line flats options is included below.
+
+.TP
+.B \-\-help
+This help.
+.TP
+.B \-v
+Show short program version info.
 .TP
 .B \-\-version
-Show version of program.
+Show full program version info.
 .TP
 .B \-\-version=...
-Override real program version with different one.
+Override internal version string.
 .TP
-.B \-\-home=...
-Override library searching path.
+.B \-\-home=<path(s)>
+Run in a venv. Separate folders with `;' or `:'.
 .TP
 .B \-\-sandbox
-Goes to sandboxed environment (if applicable).
+Run in an sandboxed environment (if supported!).
 .TP
 .B \-\-interactive
-Forces the running mode into interactive one (useful when working remotely over pipe, for example).
+Make execution environment interactive.
 .TP
-.B \-\-no-interactive
-Forces the running mode into non-interactive.
+.B \-\-non-interactive
+Make execution environment non-interactive.
 .TP
-.B \-\-embed
-Special case when running as embedded.
+.B \-c, \-\-compile
+Compile execution result to stdout.
+.TP
+.B \-o=<filename>
+Put the output into file <filename>
+.TP
+.B \-\-entry
+Convert last lambda to entry point
 .TP
 .B \-\-
 End of options. Next argument will be treated as FILE even if its name looks like an option ("--version", for example).
