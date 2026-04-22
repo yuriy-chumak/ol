@@ -7,7 +7,7 @@
 ;--------------------------------
 ; Defines
 
-  !define REGISTRY_KEY "Software\Otus Lisp\2.6"
+  !define REGISTRY_KEY "Software\Otus Lisp\2.7"
 
 ;--------------------------------
 ; General
@@ -15,11 +15,11 @@
   !include x64.nsh
 
   ;Name and file
-  Name "Otus Lisp 2.6"
-  OutFile "ol-2.6.setup.exe"
+  Name "Otus Lisp 2.7"
+  OutFile "ol-2.7.setup.exe"
 
   ;Default installation folder
-  InstallDir "$LOCALAPPDATA\ol\2.6"
+  InstallDir "$LOCALAPPDATA\ol\2.7"
   
   ;Get installation folder from registry if available
   InstallDirRegKey HKCU "${REGISTRY_KEY}" ""
@@ -47,7 +47,7 @@
   ;Start Menu Folder Page Configuration
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "${REGISTRY_KEY}"
-  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Otus Lisp\2.6"
+  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Otus Lisp\2.7"
   
   !insertmacro MUI_PAGE_STARTMENU Application $StartMenuFolder
   

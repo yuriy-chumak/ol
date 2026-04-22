@@ -336,7 +336,7 @@ Otus Lisp homepage: <https://github.com/otus-lisp/>.|) 1))
                      ; (cons 'command-line (lambda () command-line)) ;; use (scheme process-context) library instead
                      (cons '*version* version)
                      ; 
-                     (cons '*features* (let*((*features* (cons* '|ol-2.6| *features*))
+                     (cons '*features* (let*((*features* (cons* '|ol-2.7| *features*))
                                              ; endiannes
                                              (*features* (let ((one (vm:cast 1 type-vptr)))
                                                             (cond

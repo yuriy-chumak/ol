@@ -94,12 +94,7 @@ Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (
 [The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
 # VERSIONS
-Current version is **[2.6](tree/2.6)**.  
-Version **2.7** is in beta state. It is planned for release by the beginning of this (2026) year.  
-<sub><sup>
-I'm really sorry for the delay. But maintaining the project amid the blackouts caused by the aggressive, fascist russian regime is a bit challenging. :(
-</sup></sub>
-
+Current version is **[2.7](tree/2.7)**.  
 
 # PACKAGING
 [![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
@@ -261,7 +256,7 @@ Advanced build instructions: [doc/BUILD.md](doc/BUILD.md)
 #### RUN
 ```
 $ ./ol
-Welcome to Otus Lisp 2.6
+Welcome to Otus Lisp 2.7
 type ',help' to help, ',quit' to end session.
 > 
 ```
@@ -313,7 +308,7 @@ You should have compiled [newton-dynamics.so](https://github.com/MADEAPPS/newton
 DEPRECATIONS
 ------------
 
-* 2.6 -> 2.7 (which is planned, but i'm not sure about)
+* 2.6 -> 2.7
   - i'm thinking about changing `(wait ms)` to `(wait s)`, it means the seconds usage instead of milliseconds.
 
 * 2.5 -> 2.6

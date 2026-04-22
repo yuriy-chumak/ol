@@ -396,13 +396,13 @@ define PVENV_ADD
 	tar -rf $$tar0 '$$library' \
 	    --absolute-names \
 	    --transform 's|.*|{}|' \
-	    --owner=OL/2.6 \
+	    --owner=OL/2.7 \
 	    --group=* 
 endef
 define PVENV_ADD_RAW
 	tar -rf $$tar0 \
 	    --absolute-names '{}' \
-	    --owner=OL/2.6 \
+	    --owner=OL/2.7 \
 	    --group=* 
 endef
 
