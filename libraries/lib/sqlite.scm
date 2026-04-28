@@ -732,27 +732,44 @@
                               (sqlite3_reset statement)
                               statement)))
       ; apply arguments:
+      (define (bind n arg)
+         (cond
+            ((integer? arg)
+               (sqlite3_bind_int64  statement n arg))
+            ((string? arg)
+               (sqlite3_bind_text   statement n arg -1 SQLITE_TRANSIENT))
+
+            ((rational? arg)
+               (sqlite3_bind_double statement n arg))
+            ((inexact? arg)
+               (sqlite3_bind_double statement n arg))
+
+            ((pair? arg) ; именованный параметр '(name value)
+               (define name (car arg))
+               (define value (cadr arg))
+               (bind (sqlite3_bind_parameter_index statement name) value))
+
+            ((ff? arg) ; пачка именованных параметров
+               (ff-for-each (lambda (name value)
+                     (bind (sqlite3_bind_parameter_index statement name) value))
+                  arg))
+
+            ((null? arg)
+               (sqlite3_bind_null   statement n))
+            ((bytevector? arg)
+               (sqlite3_bind_blob   statement n arg (size arg) SQLITE_TRANSIENT))
+
+            (else
+               (error "Unsupported parameter type" arg))))
+
       (let loop ((n 1) (args args))
          (unless (null? args)
             (let ((arg (car args)))
                (if arg
-                  (cond
-                     ((integer? arg)
-                        (sqlite3_bind_int64  statement n arg))
-                     ((rational? arg)
-                        (sqlite3_bind_double statement n arg))
-                     ((inexact? arg)
-                        (sqlite3_bind_double statement n arg))
-                     ((string? arg)
-                        (sqlite3_bind_text   statement n arg -1 SQLITE_TRANSIENT))
-                     ((bytevector? arg)
-                        (sqlite3_bind_blob   statement n arg (size arg) SQLITE_TRANSIENT))
-                     ((null? arg)
-                        (sqlite3_bind_null   statement n))
-                     (else
-                        (error "Unsupported parameter type" arg)))
+                  (bind n arg)
                   (sqlite3_bind_null statement n))
                (loop (+ n 1) (cdr args)))))
+
       ; analyze results:
       (if (string? query)
          ; good old string request
