@@ -824,8 +824,12 @@
       (if (string? query)
          (let ((statement (apply sqlite:query (cons database (cons query args)))))
             (case statement
-               (#f #false) ; error ; todo: raise error?
-               (#t #false) ; ok, but no data returned
+               (#f ; no result, constraint violation
+                  (sqlite3_finalize statement)
+                  #false)
+               (#t ; no result, just nothing to show
+                  (sqlite3_finalize statement)
+                  #false)
                (else ; got a values!
                   (let ((result (get-result-as-row statement)))
                      (sqlite3_finalize statement)
