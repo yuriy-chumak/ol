@@ -10,7 +10,8 @@
       isqrt iroot iexpt
       ilog               ;; integer log a b
 
-      expt expt-mod ** ^
+      expt expt-mod ^
+      ** *** ****
       ncr npr
       !
       dlog dlog-simple
@@ -411,6 +412,11 @@
                ((< y x) (rat1 y x))
                (else x))))))
 
-   (define ** expt)
+   (define ** (case-lambda
+      ((x) (mul x x))
+      ((x b) (expt x b))))
+   (define (*** x) (mul (mul x x) x))
+   (define (**** x) (expt x 4))
+
    (define ^ **)
 ))
