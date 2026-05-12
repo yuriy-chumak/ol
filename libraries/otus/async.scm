@@ -13,8 +13,9 @@
       async-linked await-linked
       
       ; other threading functions
+
       threads running-threads single-thread? kill
-      exit-thread die)
+      exit exit-thread die)
 
    (import
       (src vm)
@@ -42,6 +43,9 @@
          (mcp 4 (list name 'mailbox 'link) handler))
 
       ; coroutine exit
+      (define (exit value) ; TODO: rename to exit-coroutine
+         (mcp 22 value #false))
+
       (define (exit-thread value) ; TODO: rename to exit-coroutine
          (mcp 22 value #false))
 

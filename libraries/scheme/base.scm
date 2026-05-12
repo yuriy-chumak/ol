@@ -1,7 +1,6 @@
 (define-library (scheme base)
 (export
    (exports (scheme core))
-   (exports (scheme process-context))
 
    caaar caadr cadar caddr ; moved from (scheme cxr)
    cdaar cdadr cddar cdddr ; moved from (scheme cxr)
@@ -274,8 +273,7 @@
       (owl io) (owl math) (owl math-extra)
       (scheme inexact)
       (owl string)
-      (owl unicode)
-      (scheme process-context))
+      (owl unicode))
 
    (begin
       ; * internal staff
