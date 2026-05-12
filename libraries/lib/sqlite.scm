@@ -294,6 +294,9 @@
   ; User Data For Functions
    ;sqlite3_user_data
 
+  ; Database Connection For Functions
+    sqlite3_context_db_handle
+
   ; Setting The Result Of An SQL Function
    ;sqlite3_result_blob
    ;sqlite3_result_blob64
@@ -622,6 +625,7 @@
    (define sqlite3_value_numeric_type (sqlite int "sqlite3_value_numeric_type" sqlite3_stmt*))
 
    (define sqlite3_create_function_v2 (sqlite int "sqlite3_create_function_v2"   sqlite3* type-string int int fft-void* type-callable type-callable type-callable type-vptr))
+   (define sqlite3_context_db_handle (sqlite sqlite3* "sqlite3_context_db_handle" sqlite3_context*))
    ;
    ;(define sqlite3_value_int  (dlsym % type-integer+ "sqlite3_value_int" sqlite3_value*))
    (define sqlite3_result_int (sqlite fft-void "sqlite3_result_int" sqlite3_context* int))
@@ -756,6 +760,8 @@
 
             ((null? arg)
                (sqlite3_bind_null   statement n))
+            ((eq? arg #false)
+               (sqlite3_bind_null   statement n))
             ((bytevector? arg)
                (sqlite3_bind_blob   statement n arg (size arg) SQLITE_TRANSIENT))
 
@@ -825,10 +831,8 @@
          (let ((statement (apply sqlite:query (cons database (cons query args)))))
             (case statement
                (#f ; no result, constraint violation
-                  (sqlite3_finalize statement)
                   #false)
                (#t ; no result, just nothing to show
-                  (sqlite3_finalize statement)
                   #false)
                (else ; got a values!
                   (let ((result (get-result-as-row statement)))
