@@ -97,8 +97,18 @@
                      "#<lambda>") k))))
 
       (define (cook-ff this obj k)
-         (cons* #\# #\f #\f
-            (formatter this (ff->alist obj) k)))
+         (cons* #\# #\f #\f #\(
+            (cdr (let loop ((alist (ff->alist obj)) (tl (cons #\) k)))
+               (if (null? alist)
+                  tl
+                  (let ((key (caar alist))
+                        (value (cdar alist)))
+                     (cons* #\space #\(
+                        (formatter this key
+                        (cons* #\space #\. #\space
+                           (formatter this value
+                           (cons* #\)
+                              (loop (cdr alist) tl))))))))))))
 
       ; -------------------------------------------------
       ; (display), (print)
