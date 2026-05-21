@@ -3060,7 +3060,7 @@ mainloop:;
 		BNAV  = 12,     // Branch if Not Arity Variadric
 
 	// примитивы языка:
-		VMNEW   = 23,   // make a typed object (fast and simple)
+		VMNEW   = 62,   // make a typed object (fast and simple)
 		VMMAKE  = 18,   // make a typed object (slow, but smart)
 		VMALLOC = MODD(VMMAKE, 1),  // alloc a memory region
 		VMCAST  = 48,
