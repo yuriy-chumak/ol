@@ -3063,7 +3063,7 @@ mainloop:;
 		VMNEW   = 23,   // make a typed object (fast and simple)
 		VMMAKE  = 18,   // make a typed object (slow, but smart)
 		VMALLOC = MODD(VMMAKE, 1),  // alloc a memory region
-		VMCAST  = 22,
+		VMCAST  = 48,
 		VMSETE  = 43,   // vm:set!
 
 		VMPIN   = 35,
