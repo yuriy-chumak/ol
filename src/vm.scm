@@ -239,7 +239,7 @@
       ; additional
       (setq apply (make-bytecode '(20))) ; stub for (prim-opcodes)
       (setq arity-error (make-bytecode '(17))) ; stub for (prim-opcodes)
-      (setq apply/cc (make-bytecode '(84))) ; stub for (prim-opcodes)
+      (setq apply/cc (make-bytecode '(21))) ; stub for (prim-opcodes)
 
       ; other instructions
       (setq vm:mcp  (make-bytecode '(27 4 5 6 7 8  24 8)))

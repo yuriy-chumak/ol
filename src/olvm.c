@@ -3035,7 +3035,7 @@ mainloop:;
 
 	// управляющие команды
 		APPLY = 20,
-		APPLYCONT = MODD(APPLY, 1),
+		APPLYCONT = 21,
 		RET   = 24,
 		RUN   = 50,
 		ARITY_ERROR = 17,
@@ -3281,12 +3281,13 @@ loop:;
 
 	/*! #### APPLY
 	 */
-	case APPLY: { // (0%)
-		int r = 4;   // normal apply: cont=r3, func=r4, a0=r5,
+	case APPLY:
+	case APPLYCONT: { // (0%)
+		int r = 4;   // normal apply: cont=r3, func=r4, a0=r5, ...
 		int arity = 1;
 		acc -= 3; // ignore cont, function and stop before last one (the list)
 
-		if (op == APPLYCONT) {    // (_sans_cps apply): func=r3, a0=r4
+		if (op != APPLY) {    // (_sans_cps apply): func=r3, a0=r4
 			r = 3;
 			arity = 0;
 			acc += 1;
