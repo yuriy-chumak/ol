@@ -125,6 +125,8 @@
                ['be (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (['bf a then else]
                ['bf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
+            (['bt a then else]
+               ['bt (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (else
                (runtime-error "rtl-rename: what is this: " code))))
 
@@ -286,6 +288,8 @@
                (rtl-retard-jump rtl-retard 'be a empty  then else)) ; fp
             (['bz a then else]
                (rtl-retard-jump rtl-retard 'bz a empty  then else)) ; fp
+            (['bt a then else]
+               (rtl-retard-jump rtl-retard 'bt a empty  then else)) ; fp
 ;            ((jab a type then else)
 ;               (rtl-retard-jump rtl-retard 'jab a type then else))
             (else
