@@ -3056,8 +3056,8 @@ mainloop:;
 
 		BZNEF = 4,      // Branch if Zero (BZ, 16), Null (BN, 80), Empty (BE, 144), False (BF, 208)
 		BEQ   = 5,      // Branch if EQual
-		BNA   = 11,     // Branch if Not Arity (arity mismatch)
-		BNAV  = 12,     // Branch if Not Arity Variadric
+		BNA   = 6,      // Branch if Not Arity (arity mismatch)
+		BNAV  = 7,      // Branch if Not Arity Variadric
 
 	// примитивы языка:
 		VMNEW   = 62,   // make a typed object (fast and simple)
@@ -6452,7 +6452,7 @@ OLVM_new(unsigned char* bootstrap)
 		//
 		// (fasl-encode construction): entry must be (lambda args ...)
 		unsigned char construction[] = {
-			2,16,1,20,2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,32,11,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,45,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,32,11,4,0,27,4,1,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
+			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,45,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,32,6,4,0,27,4,1,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
 		};
 		// подсчет количества слов и объектов в этом коде
 		word wc = 0;
