@@ -3022,15 +3022,13 @@ mainloop:;
 	// Rn - регистр машины (reg[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
-	// todo: exchange NOP and APPLY operation codes
+	// todo: move APPLY to 21 operation code?
 
 	// todo: add "HLT" function (may be 0x0 ?)
 	#	define MODD(i, n) ((i) + ((n)<<6))
 
 	// список команд смотреть в assembly.scm
 	enum instruction_t {
-		NOP   = 21,
-
 	// безусловные переходы
 		GOTO  = 2,  // jmp a, nargs
 		CLOS  = 3,
@@ -3254,13 +3252,6 @@ loop:;
 	 */
 	default:
 		FAULT(0, I(op));
-		break;
-
-	/*! #### NOP
-	 * No OPeration
-	 * `21`
-	 */
-	case NOP:
 		break;
 
 	/*! #### ARITY_ERROR

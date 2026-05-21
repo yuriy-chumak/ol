@@ -516,7 +516,6 @@
 
                         (24 (DIS 2 "RET"))
                         
-                        (21 (DIS 1 "NOP"))
                         (27 (DIS 6 "MCP"))
                         (50 (DIS 3 "RUN"))
 

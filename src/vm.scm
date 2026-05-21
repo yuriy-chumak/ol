@@ -244,7 +244,6 @@
       (setq apply/cc (make-bytecode '(84))) ; stub for (prim-opcodes)
 
       ; other instructions
-      (setq vm:nop  (make-bytecode '(21)))
       (setq vm:mcp  (make-bytecode '(27 4 5 6 7 8  24 8)))
       (setq vm:run  (make-bytecode '(50 4 5)))
 
