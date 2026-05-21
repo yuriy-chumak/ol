@@ -125,11 +125,12 @@
       (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
 
       (setq LD/  12)  ; ld a, t:        Rt = a, signed byte
-      (setq LDE 0) (setq LDT 1) (setq LDN 2) (setq LDF 3)
+      (setq LD8  13)  ; ld a, t:        Rt = a, signed byte
+         (setq LDE 0) (setq LDT 1) (setq LDN 2) (setq LDF 3)
 
       ; conditional branches
       (setq B/    4)  ; conditional branches
-      (setq BZ 0) (setq BN 1) (setq BE 2) (setq BF 3)
+         (setq BZ 0) (setq BN 1) (setq BE 2) (setq BF 3)
       (setq BEQ   5)  ; beq a b o1 o2
       (setq BNA   6)  ; branch if arity mismatch
       (setq BNAV  7)  ; BNA with packing extra arguments in list

@@ -226,7 +226,7 @@
                      (let ((code (assemble cont fail)))
                         (if (> val 126) ;(or (> val 126) (< val -126)) ; would be a bug
                            (fail (list "ld: big value: " val)))
-                        (cons* LD
+                        (cons* LD8
                            (if (< val 0) (+ 256 val) val)
                            (reg to) code)))
                   (else

@@ -3044,6 +3044,7 @@ mainloop:;
 		MCP   = 27,     // MCP call
 
 		LDFTNE = 12,    // LDF, LDT, LDN, LDE
+		LD8   = 13,     // ld byte to reg
 		LD    = 14,     // ld 
 		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
 
@@ -3217,7 +3218,6 @@ loop:;
 	 * 
 	 * * set-ref+: `set-ref`, `set-ref!`
 	 * * vm:make+: `vm:make`, `vm:alloc`
-	 * * LD*: `LDE`, `LDN`, `LDT`, `LDF`
 	 */
 #ifdef DEBUG_COUNT_OPS
     ops[*ip]++;
@@ -3371,10 +3371,10 @@ loop:;
 		ip += 1; break;
 	}
 
-	/*! #### LD b r
+	/*! #### LD8 b r
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
-	case LD: // (5%)
+	case LD8:
 		A1 = I(ip[0]); // I(ip[0]) -> reg[ip[1]]
 		ip += 2; break;
 
