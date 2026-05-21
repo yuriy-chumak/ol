@@ -3055,7 +3055,7 @@ mainloop:;
 		MOV2  = 5,      // optimization for MOVE + MOVE
 
 		BZNEF = 4,      // Branch if Zero (BZ, 16), Null (BN, 80), Empty (BE, 144), False (BF, 208)
-		BEQ   = 8,      // Branch if EQual
+		BEQ   = 5,      // Branch if EQual
 		BNA   = 11,     // Branch if Not Arity (arity mismatch)
 		BNAV  = 12,     // Branch if Not Arity Variadric
 
@@ -3405,15 +3405,7 @@ loop:;
 	// todo: add MOV3?
 
 	// условные переходы
-	/*! #### BEQ a b ow
-	 * Branch to ip+ow if a == b, ow is a two-byte binary value
-	 */
-	case BEQ: // (5%) beq a b ow
-		if (A0 == A1) // 30% for "yes"
-			ip += (ip[3] << 8) + ip[2]; // little-endian
-		ip += 4; break;
-
-	/*! #### Bc a o (BZ, BN, BT, BF)
+	/*! #### B/ a o (BZ, BN, BT, BF)
 	 * - BZ, branch if a == 0
 	 * - BN, branch if a == #null
 	 * - BE, branch if a == #empty
@@ -3427,6 +3419,13 @@ loop:;
 			ip += (ip[2] << 8) + ip[1]; // little-endian
 		ip += 3; break;
 	}
+	/*! #### BEQ a b ow
+	 * Branch to ip+ow if a == b, ow is a two-byte binary value
+	 */
+	case BEQ:
+		if (A0 == A1) // 30% for "yes"
+			ip += (ip[3] << 8) + ip[2]; // little-endian
+		ip += 4; break;
 
 	// (13%) for BNA and BNAV
 	// NOTE: Don't combine BNA and BNAV for the gods of speed

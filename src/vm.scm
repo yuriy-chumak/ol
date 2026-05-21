@@ -132,7 +132,7 @@
       ; conditional branches
       (setq B/    4)  ; conditional branches
       (setq BZ 0) (setq BN 1) (setq BE 2) (setq BF 3)
-      (setq BEQ   8)  ; beq a b o1 o2
+      (setq BEQ   5)  ; beq a b o1 o2
       (setq BNA  11)  ; branch if arity mismatch
       (setq BNAV 12)  ; BNA with packing extra arguments in list
 
