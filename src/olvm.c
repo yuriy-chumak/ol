@@ -3043,15 +3043,16 @@ mainloop:;
 
 		MCP   = 27,     // MCP call
 
+		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
 		LDFTNE = 12,    // LDF, LDT, LDN, LDE
 		LD8   = 13,     // ld byte to reg
 		LD    = 14,     // ld 
-		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
 
 		MOVE  = 9,      //
 		MOV2  = 5,      // optimization for MOVE + MOVE
 
-		BZNEF = 4,      // Branch if Zero (BZ, 16), Null (BN, 80), Empty (BE, 144), False (BF, 208)
+		Bcond = 4,      // Branch if Zero (BZ, 4), Null (BN, 2), Empty (BE, 3), False (BF, 0), True (BT, 1)
+		BZNEF = 4,
 		BEQ   = 5,      // Branch if EQual
 		BNA   = 6,      // Branch if Not Arity (arity mismatch)
 		BNAV  = 7,      // Branch if Not Arity Variadric
@@ -3403,20 +3404,22 @@ loop:;
 	// todo: add MOV3?
 
 	// условные переходы
-	/*! #### B/ a o (BZ, BN, BT, BF)
-	 * - BZ, branch if a == 0
+	/*! #### B/ a o (BF, BT, BN, BE, BZ)
+	 * - BF, branch if a == #false
+	 * - BT, branch if a == #true
 	 * - BN, branch if a == #null
 	 * - BE, branch if a == #empty
-	 * - BF, branch if a == #false
+	 * - BZ, branch if a == 0
 	 */
-	case BZNEF: {
+	case Bcond: {
 		static
-		const word I[] = { I(0), INULL, IEMPTY, IFALSE }; // TODO: make IFALSE, INULL, IEMPTY, I(0), extend for more than 4, etc...
+		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY, I(0) };
 		int sop = *ip++;
 		if (A0 == I[sop])
 			ip += (ip[2] << 8) + ip[1]; // little-endian
 		ip += 3; break;
 	}
+
 	/*! #### BEQ a b ow
 	 * Branch to ip+ow if a == b, ow is a two-byte binary value
 	 */
@@ -3425,7 +3428,6 @@ loop:;
 			ip += (ip[3] << 8) + ip[2]; // little-endian
 		ip += 4; break;
 
-	// (13%) for BNA and BNAV
 	// NOTE: Don't combine BNA and BNAV for the gods of speed
 	case BNA: {
 		long arity = ip[0];
@@ -6450,7 +6452,7 @@ OLVM_new(unsigned char* bootstrap)
 		//
 		// (fasl-encode construction): entry must be (lambda args ...)
 		unsigned char construction[] = {
-			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,45,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,33,6,4,0,28,4,1,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,12,0,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
+			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,45,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,33,6,4,0,28,4,2,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,12,0,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
 		};
 		// подсчет количества слов и объектов в этом коде
 		word wc = 0;

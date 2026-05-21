@@ -254,9 +254,13 @@
                   (cond
                      ((< len #xffff) (cons* BEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list need-a-bigger-jump-instruction len))))))
-            (['bz a then else] ; todo: merge next four cases into one
+
+            (['bz a then else]
                (unless (reg8 a) (runtime-error "BZ16" a))
                (b BZ a then else))
+            (['bt a then else]
+               (unless (reg8 a) (runtime-error "BT16" a))
+               (b BT a then else))
             (['bn a then else]
                (unless (reg8 a) (runtime-error "BN16" a))
                (b BN a then else))
@@ -266,6 +270,7 @@
             (['bf a then else]
                (unless (reg8 a) (runtime-error "BF16" a))
                (b BF a then else))
+
             (else
                ;(print "assemble: what is " code)
                (fail (list "Unknown opcode " code)))))
