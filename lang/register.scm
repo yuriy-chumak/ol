@@ -10,8 +10,7 @@
 (define-library (lang register)
 
    (export
-      allocate-registers
-      n-registers)
+      allocate-registers)
 
    (import
       (scheme base)
@@ -193,8 +192,6 @@
                (cond
                   ((eq? a b)
                      (rtl-retard more)) ; drop useless instruction
-                  ((> b highest-register)
-                     (runtime-error "out of registers in move: " b))
                   (else
                      (lets
                         ((more uses (rtl-retard more))

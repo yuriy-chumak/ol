@@ -15,6 +15,7 @@
       (otus async)
       (owl list-extra)
       (src vm)
+      (only (owl list) all some)
       (lang env)
       (lang primop)
       (lang register))
@@ -109,12 +110,8 @@
             (vm:alloc type-bytecode bytes))))
 
 
-      (define (reg a)
-         (if (eq? (type a) type-value+)
-            (if (< a n-registers)
-               a
-               (runtime-error "register too high: " a))
-            (runtime-error "bad register: " a)))
+      (define (reg8 a) (less? a 256))
+      (define (reg a) a)
 
 
       ;;;
@@ -142,13 +139,18 @@
 
          (case code
             (['ret a]
+               (unless (reg8 a) (runtime-error "RET16" a))
                (list RET (reg a)))
             (['move a b more]
+               (unless (all reg8 (list a b)) (runtime-error "MOVE16" (list a b)))
                (let ((tl (assemble more fail)))
                   (if (eq? (car tl) MOVE) ;; [move a b] + [move c d] = [move2 a b c d] to remove a common dispatch
                      (cons* MOV2 (reg a) (reg b) (cdr tl))
                      (cons* MOVE (reg a) (reg b) tl))))
             (['prim op args to more]
+               (unless (all reg8 args) (runtime-error "PRIM16" args))
+               (unless (all reg8 (if (pair? to) to (list to)))
+                  (runtime-error "PRIM16to" to))
                (cond
                   ;; fixme: handle mk differently, this was supposed to be a temp hack
                   ((> op #xff) ; dead leaf - we do not have opcodes larger than 255 (for now)
@@ -190,6 +192,11 @@
                      (fail (list "Bad case of primop in assemble: " (primop-name op))))))
 
             (['cons-close closure? lpos offset env to more]
+               ;; (print "'cons-close " lpos " " offset " " env)
+               (unless (reg8 lpos) (runtime-error "CONSCLOSE16lpos" lpos))
+               (unless (all reg8 env) (runtime-error "CONSCLOSE16" env))
+               (unless (reg8 to) (runtime-error "CONSCLOSE16to" to))
+
                ; make a 2-level closure
                (cons* CLOS
                   (if closure? type-closure type-procedure) ;; type of object
@@ -200,6 +207,7 @@
                            (assemble more fail)))))
 
             (['ld val to cont]
+               (unless (reg8 to) (runtime-error "LD16to" to))
                (cond
                   ;; todo: add implicit load values to free bits of the instruction
                   ((eq? val #null)
@@ -224,10 +232,12 @@
                   (else
                      (fail (list "cannot assemble a load for " val)))))
             (['refi from offset to more]
+               (unless (all reg8 (list from to)) (runtime-error "REFI16" (list from to)))
                (cons*
                   REFI (reg from) offset (reg to)
                   (assemble more fail)))
             (['goto op nargs]
+               (unless (reg8 op) (runtime-error "GOTO16" op))
                (list GOTO (reg op) nargs))
             ;((goto-code op n)
             ;   (list GOTO-CODE (reg op) n)) ;; <- arity needed for dispatch
@@ -237,6 +247,7 @@
             ;   (list GOTO-CLOS (reg op) n))
             ;; todo: all jumps could have parameterized lengths (0 = 1-byte, n>0 = 2-byte, being the max code length)
             (['beq a b then else]
+               (unless (all reg8 (list a b)) (runtime-error "BEQ16" (list a b)))
                (let*((then (assemble then fail))
                      (else (assemble else fail))
                      (len (length else)))
@@ -244,12 +255,16 @@
                      ((< len #xffff) (cons* BEQ (reg a) (reg b) (band len #xff) (>> len 8) (append else then)))
                      (else (fail (list need-a-bigger-jump-instruction len))))))
             (['bz a then else] ; todo: merge next four cases into one
+               (unless (reg8 a) (runtime-error "BZ16" a))
                (br BZ a then else))
             (['bn a then else]
+               (unless (reg8 a) (runtime-error "BN16" a))
                (br BN a then else))
             (['be a then else]
+               (unless (reg8 a) (runtime-error "BE16" a))
                (br BE a then else))
             (['bf a then else]
+               (unless (reg8 a) (runtime-error "BF16" a))
                (br BF a then else))
             (else
                ;(print "assemble: what is " code)
