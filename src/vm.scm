@@ -22,7 +22,7 @@
 
       ; low level (assembly) commands
       GOTO RET ARITY-ERROR  ; used by (lang assemply) etc.
-      BEQ BZ BE BN BF BNA BNAV ; branches
+      B/ BZ BE BN BF BEQ BNA BNAV ; branches
       CLOS
       LD LDE LDN LDT LDF
       MOVE REFI MOV2
@@ -130,11 +130,9 @@
       (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
 
       ; conditional branches
+      (setq B/    4)  ; conditional branches
+      (setq BZ 0) (setq BN 1) (setq BE 2) (setq BF 3)
       (setq BEQ   8)  ; beq a b o1 o2
-      (setq BZ   16)  ; (+ 16 (<< 0 6))) ; branch if arg1 is zero
-      (setq BN   80)  ; (+ 16 (<< 1 6))) ; branch if arg1 is null
-      (setq BE  144)  ; (+ 16 (<< 2 6))) ; branch if arg1 is empty
-      (setq BF  208)  ; (+ 16 (<< 3 6))) ; branch if arg1 is false
       (setq BNA  11)  ; branch if arity mismatch
       (setq BNAV 12)  ; BNA with packing extra arguments in list
 

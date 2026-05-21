@@ -3054,8 +3054,8 @@ mainloop:;
 		MOVE  = 9,      //
 		MOV2  = 5,      // optimization for MOVE + MOVE
 
+		BZNEF = 4,      // Branch if Zero (BZ, 16), Null (BN, 80), Empty (BE, 144), False (BF, 208)
 		BEQ   = 8,      // Branch if EQual
-		BZNEF = 16,     // Branch if Zero (BZ, 16), Null (BN, 80), Empty (BE, 144), False (BF, 208)
 		BNA   = 11,     // Branch if Not Arity (arity mismatch)
 		BNAV  = 12,     // Branch if Not Arity Variadric
 
@@ -3412,16 +3412,17 @@ loop:;
 			ip += (ip[3] << 8) + ip[2]; // little-endian
 		ip += 4; break;
 
-	/*! #### Bx a o (BZ, BN, BT, BF)
+	/*! #### Bc a o (BZ, BN, BT, BF)
 	 * - BZ, branch if a == 0
 	 * - BN, branch if a == #null
 	 * - BE, branch if a == #empty
 	 * - BF, branch if a == #false
 	 */
-	case BZNEF: { // (10%) BZ, BN, BE, BF a ow, conditional branch
+	case BZNEF: {
 		static
-		const word I[] = { I(0), INULL, IEMPTY, IFALSE };
-		if (A0 == I[op>>6]) // 49% for "yes"
+		const word I[] = { I(0), INULL, IEMPTY, IFALSE }; // TODO: make IFALSE, INULL, IEMPTY, I(0), extend for more than 4, etc...
+		int sop = *ip++;
+		if (A0 == I[sop])
 			ip += (ip[2] << 8) + ip[1]; // little-endian
 		ip += 3; break;
 	}
@@ -6443,28 +6444,16 @@ OLVM_new(unsigned char* bootstrap)
 		// objects: список автостартующих функций (лежит в [nobjs]),
 		//          заменяет в загрузчике последнюю лямбду
 		// args: аргументы, которые предоставляет функция OLVM_run
-		//       (а мы пока положим #null)
 		//
-		// (define (construction args objects)
-		//    (unless (null? objects)
-		//       (construction args (cdr objects))
-		//       ((car objects) args)))
-		//
-		// (fasl-encode construction): OLD, for the entries as (lambda (args) ...)
-		// unsigned char construction[] = { 2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,23,11,1,
-		// 	0,18,1,1,2,4,52,4,5,1,1,4,3,1,1,3,4,2,5,2,17,2,16,31,11,4,0,26,80,5,18,0,53,
-		// 	5,7,3,17,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,4,1,0 };
-
 		// (define (construction args objects)
 		//    (unless (null? objects)
 		//       (construction args (cdr objects))
 		//       (apply (car objects) args)))
 		//
 		// (fasl-encode construction): entry must be (lambda args ...)
-		unsigned char construction[] = { 2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,1,
-		    20,2,16,32,11,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,5,5,4,8,5,
-		    2,6,3,17,1,17,2,1,2,2,16,31,11,4,0,26,80,5,18,0,53,5,7,3,18,5,1,2,5,4,
-		    3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,6,1,0 };
+		unsigned char construction[] = {
+			2,16,1,20,2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,32,11,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,45,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,32,11,4,0,27,4,1,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
+		};
 		// подсчет количества слов и объектов в этом коде
 		word wc = 0;
 		word no = count_fasl_objects(&wc, construction);

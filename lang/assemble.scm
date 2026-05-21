@@ -129,12 +129,12 @@
       ;; ast fail-cont → code' | (fail-cont <reason>)
       (define (assemble code fail)
          (define need-a-bigger-jump-instruction "need a bigger jump instruction: length is ")
-         (define (br OP a then else)
+         (define (b OP a then else)
             (let*((then (assemble then fail))
                   (else (assemble else fail))
                   (len (length else)))
                (cond
-                  ((< len #xffff) (cons* OP (reg a) (band len #xff) (>> len 8) (append else then)))
+                  ((< len #xffff) (cons* B/ OP (reg a) (band len #xff) (>> len 8) (append else then))) ; #o60 = B
                   (else (fail (list need-a-bigger-jump-instruction len))))))
 
          (case code
@@ -256,16 +256,16 @@
                      (else (fail (list need-a-bigger-jump-instruction len))))))
             (['bz a then else] ; todo: merge next four cases into one
                (unless (reg8 a) (runtime-error "BZ16" a))
-               (br BZ a then else))
+               (b BZ a then else))
             (['bn a then else]
                (unless (reg8 a) (runtime-error "BN16" a))
-               (br BN a then else))
+               (b BN a then else))
             (['be a then else]
                (unless (reg8 a) (runtime-error "BE16" a))
-               (br BE a then else))
+               (b BE a then else))
             (['bf a then else]
                (unless (reg8 a) (runtime-error "BF16" a))
-               (br BF a then else))
+               (b BF a then else))
             (else
                ;(print "assemble: what is " code)
                (fail (list "Unknown opcode " code)))))
