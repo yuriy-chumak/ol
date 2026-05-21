@@ -211,7 +211,7 @@
          ; системные вызовы
          (primop 'syscall 'any 1 syscall) ; (make-bytecode '(63 0 0))) ;; 63, system call
          ; additional applies
-         (primop 'vector-apply 1 #f vector-apply) ; (make-bytecode '(32 0 0)))
+         (primop 'vector-apply 1 #f vector-apply) ; (make-bytecode '(22)))
          (primop 'ff-apply     1 #f ff-apply) ; (make-bytecode '(49 0 0 0 0 0)))
 
          ; associative array

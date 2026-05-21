@@ -3111,7 +3111,7 @@ mainloop:;
 		  FEXPT = 0x81,
 
 	// vectors, trees
-		VECTORAPPLY = 32,
+		VECTORAPPLY = 22,
 		FFAPPLY = 49,
 
 		FFLEAF    = 42, // make ff leaf
