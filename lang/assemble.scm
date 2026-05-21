@@ -211,16 +211,16 @@
                (cond
                   ;; todo: add implicit load values to free bits of the instruction
                   ((eq? val #null)
-                     (cons* LDN (reg to)
+                     (cons* LD/ LDN (reg to)
                         (assemble cont fail)))
                   ((eq? val #false)
-                     (cons* LDF (reg to)
+                     (cons* LD/ LDE (reg to) ; TODO: LDF, TODO: (if (reg8 to) ... else ...16-bit...
                         (assemble cont fail)))
                   ((eq? val #true)
-                     (cons* LDT (reg to)
+                     (cons* LD/ LDT (reg to)
                         (assemble cont fail)))
                   ((eq? val #empty)
-                     (cons* LDE (reg to)
+                     (cons* LD/ LDF (reg to)
                         (assemble cont fail)))
                   ((eq? (type val) type-value+)
                      (let ((code (assemble cont fail)))

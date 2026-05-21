@@ -24,7 +24,7 @@
       GOTO RET ARITY-ERROR  ; used by (lang assemply) etc.
       B/ BZ BE BN BF BEQ BNA BNAV ; branches
       CLOS
-      LD LDE LDN LDT LDF
+      LD/ LDE LDN LDT LDF
       MOVE REFI MOV2
 
       NEW    ; used by (lang rtl)
@@ -122,12 +122,10 @@
       (setq MOV2  5) ; two moves, 4 args
 
       ; load
-      (setq LD   14)  ; ld a, t:        Rt = a, signed byte
-      (setq LDE  13)  ; (+ 13 (<< 0 6))) ; 13
-      (setq LDN  77)  ; (+ 13 (<< 1 6))) ; 77
-      (setq LDT 141)  ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
-      (setq LDF 205)  ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
       (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
+
+      (setq LD/  12)  ; ld a, t:        Rt = a, signed byte
+      (setq LDE 0) (setq LDT 1) (setq LDN 2) (setq LDF 3)
 
       ; conditional branches
       (setq B/    4)  ; conditional branches

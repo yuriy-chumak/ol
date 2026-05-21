@@ -3043,11 +3043,7 @@ mainloop:;
 
 		MCP   = 27,     // MCP call
 
-		LDENTF = 13,     // LDE (13), LDN (77), LDT (141), LDF (205)
-		  LDE = MODD(LDENTF, 0), // TODO?: somewhere in feature reorder bytecodes
-		  LDN = MODD(LDENTF, 1),
-		  LDT = MODD(LDENTF, 2),
-		  LDF = MODD(LDENTF, 3),
+		LDFTNE = 12,    // LDF, LDT, LDN, LDE
 		LD    = 14,     // ld 
 		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
 
@@ -3361,18 +3357,20 @@ loop:;
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
 
-	/*! #### LDENTF r (LDE, LDN, LDT, LDF)
-	 * - LDE Store `#empty` into register `r`
-	 * - LDN Store `#null` into register `r`
-	 * - LDT Store `#true` into register `r`
+	/*! #### LD(FTNE) r (LDE, LDN, LDT, LDF)
 	 * - LDF Store `#false` into register `r`
+	 * - LDT Store `#true` into register `r`
+	 * - LDN Store `#null` into register `r`
+	 * - LDE Store `#empty` into register `r`
 	 */
-	case LDENTF: {  // (1%) 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
+	case LDFTNE: {
 		static
-		const word I[] = { IEMPTY, INULL, ITRUE, IFALSE };
-		A0 = I[op>>6];
+		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
+		int sop = *ip++;
+		A0 = I[sop];
 		ip += 1; break;
 	}
+
 	/*! #### LD b r
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
@@ -6452,7 +6450,7 @@ OLVM_new(unsigned char* bootstrap)
 		//
 		// (fasl-encode construction): entry must be (lambda args ...)
 		unsigned char construction[] = {
-			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,45,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,32,6,4,0,27,4,1,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
+			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,45,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,33,6,4,0,28,4,1,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,12,0,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
 		};
 		// подсчет количества слов и объектов в этом коде
 		word wc = 0;
