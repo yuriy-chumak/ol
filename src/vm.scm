@@ -169,7 +169,7 @@
          (primop 'vm:cast   2 1 (make-bytecode '(48 4 5 6    24 6)))
          (primop 'set-ref   3 1 set-ref) ; (make-bytecode '(10 4 5 6 7  24 7)))
          ; ну и мутаторы сюда же добавим
-         (primop 'set-ref!  3 1 set-ref!) ; (make-bytecode '(74 4 5 6 7    24 7)))
+         (primop 'set-ref!  3 1 set-ref!) ; (make-bytecode '(11 4 5 6 7    24 7)))
          (primop 'vm:set! 'any 1 vm:set!) ; (make-bytecode '(43 N 4 5 . x  24 x)))
 
          ; описатели

@@ -3080,7 +3080,7 @@ mainloop:;
 
 	// ?
 		SETREF  = 10,
-		SETREFE = MODD(SETREF, 1), // set-ref!
+		SETREFE = 11, // set-ref!
 
 		// ?
 		EQQ   = 54, // eq?
@@ -3778,7 +3778,8 @@ loop:;
 	}
 
 	// if position out of bounds will return unchanged object
-	case SETREF: {  // (set-ref object position value), position starts from 1 to objects and 0 to blobs
+	case SETREF:
+	case SETREFE: { // (set-ref object position value), position starts from 1 to objects and 0 to blobs
 					// (set-ref! object position value), position starts from 1 to objects and 0 to blobs
 		word *p = (word *)A0;
 		word result = IFALSE;
