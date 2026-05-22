@@ -216,10 +216,10 @@
 
          ; associative array
          (primop 'ff:black  4 1 ff:black)  ; (make-bytecode '(42  4 5 6 7  8  24 8)))
-         (primop 'ff:red    4 1 ff:red)    ; (make-bytecode '(106 4 5 6 7  8  24 8))) ; 106 = 42+(1<<6)
+         (primop 'ff:red    4 1 ff:red)    ; (make-bytecode '(8 4 5 6 7  8  24 8)))
          (primop 'ff:toggle 1 1 ff:toggle) ; (make-bytecode '(46  4        5  24 5)))
          (primop 'ff:red?   1 1 ff:red?)   ; (make-bytecode '(41  4        5  24 5)))
-         (primop 'ff:right? 1 1 ff:right?) ; (make-bytecode '(105 4        5  24 5))) ; 105 = 41+(1<<6)
+         (primop 'ff:right? 1 1 ff:right?) ; (make-bytecode '(16 4        5  24 5)))
 
          ; vm-specific constants
          (primop 'vm:version  0 1 vm:version)  ; (make-bytecode '(28 4)))

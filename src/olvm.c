@@ -3114,10 +3114,10 @@ mainloop:;
 
 		FFLEAF    = 42, // make ff leaf
 		FFBLACK   = FFLEAF,
-		FFRED     = MODD(FFLEAF, 1),
+		FFRED     = 8,
 		FFTOGGLE  = 46, // toggle ff leaf color
 		FFREDQ    = 41, // is ff leaf read?
-		FFRIGHTQ  = MODD(FFREDQ, 1), // if ff leaf right?
+		FFRIGHTQ  = 16, // if ff leaf right?
 
 	// ALU
 		ADDITION       = 38,
@@ -4001,8 +4001,10 @@ loop:;
 	}
 
 	// create red/black node
-	case FFLEAF: { // {ff:black|ff:red} l k v r t
-		word t = (op == FFRED ? TRED : 0) |TFF;
+	case FFRED:
+	case FFBLACK: { // {ff:black|ff:red} l k v r t
+		// word t = (op == FFRED ? TRED : 0) |TFF;
+		word t = (op != FFBLACK ? TRED : 0) |TFF;
 		word l = A0;
 		word r = A3;
 
@@ -4053,7 +4055,8 @@ loop:;
 	}
 
 	// is node red/right predicate?
-	case FFREDQ: { // ff:red?|ff:right? node r
+	case FFREDQ:
+	case FFRIGHTQ: { // ff:red?|ff:right? node r
 		word t = (op == FFREDQ ? TRED : TRIGHT);
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
