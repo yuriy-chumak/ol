@@ -3030,12 +3030,12 @@ mainloop:;
 	// список команд смотреть в assembly.scm
 	enum instruction_t {
 	// безусловные переходы
-		GOTO  = 2,  // jmp a, nargs
-		CLOS  = 3,
+		GOTO  = 002,  // jmp a, nargs
+		CLOS  = 003,
 
 	// управляющие команды
-		APPLY = 20,
-		APPLYCONT = 21,
+		APPLY = 024,
+		APPLYCONT = 025,
 		RET   = 24,
 		RUN   = 50,
 		ARITY_ERROR = 17,
@@ -3043,24 +3043,22 @@ mainloop:;
 
 		MCP   = 27,     // MCP call
 
-		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
-		LDFTNE = 12,    // LDF, LDT, LDN, LDE
-		LD8   = 13,     // ld byte to reg
-		LD    = 14,     // ld 
+		REFI  = 001,  // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
+		LD    = 014,  // LDF, LDT, LDN, LDE
+		LD8   = 015,  // ld byte to reg
 
-		MOVE  = 9,      //
-		MOV2  = 5,      // optimization for MOVE + MOVE
+		MOVE  = 011,  //
+		MOV2  = 012,  // opt. for MOVE + MOVE
 
-		Bcond = 4,      // Branch if Zero (BZ, 4), Null (BN, 2), Empty (BE, 3), False (BF, 0), True (BT, 1)
-		BZNEF = 4,
-		BEQ   = 5,      // Branch if EQual
-		BNA   = 6,      // Branch if Not Arity (arity mismatch)
-		BNAV  = 7,      // Branch if Not Arity Variadric
+		BCOND = 004,  // Branch if Zero (BZ, 4), Null (BN, 2), Empty (BE, 3), False (BF, 0), True (BT, 1)
+		BEQ   = 005,  // Branch if EQual
+		BNA   = 006,  // Branch if Not Arity (arity mismatch)
+		BNAV  = 007,  // Branch if Not Arity Variadric
 
 	// примитивы языка:
-		VMNEW   = 62,   // make a typed object (fast and simple)
-		VMMAKE  = 18,   // make a typed object (slow, but smart)
-		VMALLOC = 19,   // alloc a memory region
+		VMNEW   = 020,   // make a typed object (fast and simple)
+		VMMAKE  = 022,   // make a typed object (slow, but smart)
+		VMALLOC = 023,   // alloc a memory region
 		VMCAST  = 48,
 		VMSETE  = 43,   // vm:set!
 
@@ -3079,7 +3077,7 @@ mainloop:;
 		REF   = 47,
 
 	// ?
-		SETREF  = 10,
+		SETREF  = 49,
 		SETREFE = 11, // set-ref!
 
 		// ?
@@ -3109,15 +3107,15 @@ mainloop:;
 		  FEXPT = 0x81,
 
 	// vectors, trees
-		VECTORAPPLY = 22,
-		FFAPPLY = 49,
+		VECTORAPPLY = 026,
+		FFAPPLY = 027,
 
 		FFLEAF    = 42, // make ff leaf
 		FFBLACK   = FFLEAF,
 		FFRED     = 8,
 		FFTOGGLE  = 46, // toggle ff leaf color
 		FFREDQ    = 41, // is ff leaf read?
-		FFRIGHTQ  = 16, // if ff leaf right?
+		FFRIGHTQ  = 32, // if ff leaf right?
 
 	// ALU
 		ADDITION       = 38,
@@ -3206,19 +3204,16 @@ mainloop:;
 loop:;
 	/*! ### OLVM Codes
 	 * 
-	 * | #o/8 | o0         | o1        | o2      | o3    | o4       | o5      | o6       | o7     |
-	 * |:-----|:----------:|:---------:|:-------:|:-----:|:--------:|:-------:|:--------:|:------:|
-	 * |**0o**|            | REFI      | GOTO    | CLOS  |          | MOV2    |          |        |
-	 * |**1o**| BEQ        | MOVE      | set-ref+| BNA   | BNAV     | LD*     | LD       | TYPE   |
-	 * |**2o**| BZ/BN/BE/BF|ARITY-ERROR| vm:make+|       | APPLY    | NOP     | CAST     | NEW    |
-	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION  | FEATURES| VMAX     | VSIZE  |
-	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE     | EXIT    | ADD      | MUL    |
-	 * |**5o**| SUB        | FF:RED?   | FF:BLACK| SET!  | LESS?    |         | FF:TOGGLE| REF    |
-	 * |**6o**|            | FF:APPLY  | RUN     | CONS  | CAR      | CDR     | EQ?      | AND    |
-	 * |**7o**| IOR        | XOR       | SHR     | SHL   | UNPIN    | CLOCK   |          | SYSCALL|
-	 * 
-	 * * set-ref+: `set-ref`, `set-ref!`
-	 * * vm:make+: `vm:make`, `vm:alloc`
+	 * | #o/8 | o0       | o1        | o2       | o3       | o4       | o5       | o6       | o7       |
+	 * |:-----|:--------:|:---------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|
+	 * |**0o**|          | REFI      | GOTO     | CLOS     | Bx       | BEQ      | BNA      | BNAV     | +
+	 * |**1o**| ff:red   | MOVE      | MOV2     | set-ref! | LDx      | LD8      |LDM8(todo)| TYPE     |
+	 * |**2o**| vm:new   |ARITY-ERROR| vm:make  | vm:alloc | apply    | apply/cc | vec-apply| ff-apply | +
+	 * |**3o**| RET      | DEREF     | DIV      | MCP      | VERSION  | FEATURES | VMAX     | VSIZE    |
+	 * |**4o**| ff:right?| FP1       | FP2      | PIN      | SIZE     | EXIT     | ADD      | MUL      |
+	 * |**5o**| SUB      | FF:RED?   | FF:BLACK | SET!     | LESS?    |          | FF:TOGGLE| REF      |
+	 * |**6o**| vm:cast  | set-ref   | RUN      | CONS     | CAR      | CDR      | EQ?      | AND      |
+	 * |**7o**| IOR      | XOR       | SHR      | SHL      | UNPIN    | CLOCK    |          | SYSCALL  |
 	 */
 #ifdef DEBUG_COUNT_OPS
     ops[*ip]++;
@@ -3364,7 +3359,7 @@ loop:;
 	 * - LDN Store `#null` into register `r`
 	 * - LDE Store `#empty` into register `r`
 	 */
-	case LDFTNE: {
+	case LD: {
 		static
 		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
 		int sop = *ip++;
@@ -3387,6 +3382,7 @@ loop:;
 		A2 = ref(A0, ip[1]); // A2 = A0[p]
 		ip += 3; break;
 	}
+
 	/*! #### MOVE a t
 	 * Rt = Ra
 	 */
@@ -3411,7 +3407,7 @@ loop:;
 	 * - BE, branch if a == #empty
 	 * - BZ, branch if a == 0
 	 */
-	case Bcond: {
+	case BCOND: {
 		static
 		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY, I(0) };
 		int sop = *ip++;
@@ -3453,21 +3449,6 @@ loop:;
 			ip += (ip[1] << 8) | ip[2];
 
 		ip += 3; break;
-	}
-
-	case CLOS:
-	{	// CLOS type size r i a1 a2 a3 a4 ...
-		word type = *ip++;
-		word size = *ip++;
-		word *T = new (type, size-1);
-
-		word vec = reg[*ip++];
-		T[1] = ref(vec,*ip++); // T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
-
-		for (size_t i = 2; i < size; )
-			T[i++] = reg[*ip++];
-		reg[*ip++] = (word) T; // reg[ret] = T
-		break;
 	}
 
 	/************************************************************************************/
@@ -3584,6 +3565,21 @@ loop:;
 		}
 
 	 	ip += size + 1; break;
+	}
+
+	case CLOS:
+	{	// CLOS type size r i a1 a2 a3 a4 ...
+		word type = *ip++;
+		word size = *ip++;
+		word *T = new (type, size-1);
+
+		word vec = reg[*ip++];
+		T[1] = ref(vec,*ip++); // T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
+
+		for (size_t i = 2; i < size; )
+			T[i++] = reg[*ip++];
+		reg[*ip++] = (word) T; // reg[ret] = T
+		break;
 	}
 
 
@@ -3924,9 +3920,9 @@ loop:;
 		#if SYSCALL_SYSINFO
 			| 000000200
 		#endif
-        #if SYSCALL_MEMFD
+		#if SYSCALL_MEMFD
 			| 000000400
-        #endif
+		#endif
 		#if SYSCALL_GETRLIMIT
 			| 000001000
 		#endif
@@ -6281,12 +6277,35 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef DEBUG_COUNT_OPS
-    for (int j = 0; j < 16; j++) {
-        for (int i = 0; i < 16; i++) {
-            printf("%8lld ", ops[i+j*16]);
-        }
-        printf("\n");
-    }
+	long long sum = 0;
+	for (int j = 0; j < 16; j++)
+		for (int i = 0; i < 16; i++)
+			sum += ops[i+j*16];
+
+	printf("------------------------------------------------\n");
+	for (int j = 0; j < 16; j++) {
+		for (int i = 0; i < 16; i++) {
+			int perc = (int)((100.0 * (float)ops[i+j*16]) / sum);
+			if (perc == 0)
+				if (ops[i+j*16] == 0)
+					printf("      ");
+				else
+					printf("\033[90m" "  .0  " "\033[0m");
+			else {
+				if (perc >  4) printf("\033[33m");
+				if (perc > 10) printf("\033[32m");
+				if (perc > 20) printf("\033[31m");
+				// printf("%4d‰ ", perc);
+				printf("%4d", perc);
+				printf("\033[90m" "%% " "\033[0m");
+			}
+			if (i == 7)
+				printf("\n");
+		}
+		printf("\n");
+		if (j % 4 == 3)
+			printf("------------------------------------------------\n");
+	}
 #endif
 
 ok:
@@ -6457,7 +6476,7 @@ OLVM_new(unsigned char* bootstrap)
 		//
 		// (fasl-encode construction): entry must be (lambda args ...)
 		unsigned char construction[] = {
-			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,45,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,33,6,4,0,28,4,2,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,12,0,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
+			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,10,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,33,6,4,0,28,4,2,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,12,0,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
 		};
 		// подсчет количества слов и объектов в этом коде
 		word wc = 0;

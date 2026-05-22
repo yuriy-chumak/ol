@@ -120,7 +120,7 @@
 
       ; copy
       (setq MOVE  9) ; move a, t:      Ra -> Rt
-      (setq MOV2  5) ; two moves, 4 args
+      (setq MOV2 10) ; two moves, 4 args
 
       ; load
       (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
@@ -212,7 +212,7 @@
          (primop 'syscall 'any 1 syscall) ; (make-bytecode '(63 0 0))) ;; 63, system call
          ; additional applies
          (primop 'vector-apply 1 #f vector-apply) ; (make-bytecode '(22)))
-         (primop 'ff-apply     1 #f ff-apply) ; (make-bytecode '(49 0 0 0 0 0)))
+         (primop 'ff-apply     1 #f ff-apply) ; (make-bytecode '(23)))
 
          ; associative array
          (primop 'ff:black  4 1 ff:black)  ; (make-bytecode '(42  4 5 6 7  8  24 8)))
