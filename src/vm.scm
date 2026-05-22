@@ -164,7 +164,7 @@
          ; прямые аллокаторы
          (primop 'vm:new   'any 1 vm:new)   ; (make-bytecode '(62 N ...))) ;; make new object, simplest and fastest allocator
          (primop 'vm:make  'any 1 vm:make)  ; (make-bytecode '(18 N ...))) ;; make new object. slower, but smarter
-         (primop 'vm:alloc 'any 1 vm:alloc) ; (make-bytecode '(82 N ...))) ;; make new binary object
+         (primop 'vm:alloc 'any 1 vm:alloc) ; (make-bytecode '(19 N ...))) ;; make new binary object
          ; косвенные аллокаторы
          (primop 'vm:cast   2 1 (make-bytecode '(48 4 5 6    24 6)))
          (primop 'set-ref   3 1 set-ref) ; (make-bytecode '(10 4 5 6 7  24 7)))

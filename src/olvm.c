@@ -3060,7 +3060,7 @@ mainloop:;
 	// примитивы языка:
 		VMNEW   = 62,   // make a typed object (fast and simple)
 		VMMAKE  = 18,   // make a typed object (slow, but smart)
-		VMALLOC = MODD(VMMAKE, 1),  // alloc a memory region
+		VMALLOC = 19,   // alloc a memory region
 		VMCAST  = 48,
 		VMSETE  = 43,   // vm:set!
 
@@ -3494,7 +3494,8 @@ loop:;
 	// (vm:make type list-of-values) ; length is list length
 	// (vm:make type length) ; default value is equal to #false
 	// (vm:make type length default-value)
-	case VMMAKE: { // and VMALLOC
+	case VMMAKE:
+	case VMALLOC: { // and VMALLOC
 	 	word size = *ip++;
 		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
 		word value = A1;
@@ -3517,7 +3518,7 @@ loop:;
 
 				// эта проверка необходима, так как действительно можно
 				//	выйти за пределы кучи (репродюсится стабильно)
-				int mult = (op == VMALLOC) ? sizeof(word) : 1;
+				int mult = (op != VMMAKE) ? sizeof(word) : 1;
 				if (fp + (len / mult) > heap->end) {
 					GC(len / mult);
 					
