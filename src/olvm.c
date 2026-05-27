@@ -2734,25 +2734,6 @@ word get(word *ff, word key, word def, jmp_buf ret)
 // # of function calls in a thread quantum
 #define TICKS  10000
 
-static
-void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char** ip0, word** fp, word* this)
-{
-	ptrdiff_t dp;
-	dp = *ip - *ip0;
-
-	ol->heap.fp = *fp; ol->this = *this;
-	ol->heap.gc(ol, words);
-	*fp = ol->heap.fp; *this = ol->this;
-
-	// (the bytecode of thread thunk is last element of)
-	*ip0 = (unsigned char*) &car(
-			reference_type(*this) == TTHREAD
-				? (word) ref(*this, reference_size(*this))
-				: *this);
-	*ip = *ip0 + dp;
-	return;
-}
-
 #ifdef DEBUG_COUNT_OPS
 static unsigned long long ops[256];
 #endif
@@ -2786,10 +2767,23 @@ word runtime(struct olvm_t* ol)
 	// vm instruction pointer(s)
 	unsigned char *ip = 0, *ip0;
 	// internal gc call wrapper
-#	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
+	void GC(word words)
+	{
+		ptrdiff_t dp;
+		dp = ip - ip0;
 
-	// error handling optimized variables
-	word r3,r4,r5,r6;
+		ol->heap.fp = fp; ol->this = this;
+		ol->heap.gc(ol, words);
+		fp = ol->heap.fp; this = ol->this;
+
+		// (the bytecode of thread thunk is last element of)
+		ip0 = (unsigned char*) &car(reference_type(this) == TTHREAD ? (word) ref(this, reference_size(this)) : this);
+		ip = ip0 + dp;
+	}
+// #	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
+
+	word a0,a1,a2,a3; // command arguments optimized variables
+	word r3,r4,r5,r6; // error handling optimized variables
 
 #ifdef DEBUG_COUNT_OPS
 	bzero(ops, sizeof(ops));
