@@ -40,7 +40,7 @@ and language
 <a href="doc/reference/README.md">
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DREFERENCE&label=functions%20reference" alt="ffi tests"></a>.
 
-A detailed test matrix with results for each test across different platforms is available on a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (follow the link or click the preview image to open it).
+A detailed test matrix for Ol ver. 3.0 with results for each test across different platforms is available on a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (follow the link or click the preview image to open it).
 
 ### ✨ Note
 * Please read the frequently asked questions and answers in the [Q/A](#qa) section. This may prove to be important!
@@ -95,6 +95,17 @@ Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (
 
 # VERSIONS
 Current version is **[2.7](tree/2.7)**.  
+Version **[3.0](tree/3.0)** under active development.
+
+### 3.0 changes
+* ✔ Keep high-level backward compatibility as much as possible - all tests (language, ffi, rosettacode, reference) should work without changes,
+* 🛠 Internal VM codes changing largerly with two sets of codes, older 8-bit and new one 16-bit,
+* 🛠 Less aggressive internal regs remapper - reducing compile time,
+* 🛠 No "256 args" function limitation (65536 *should be enough for everyone*),
+* 💬 No bytecode-interner (under discussion) - 20% larger bytecode, but there will be no confusion with the functions of the same body with a different name,
+* 💬 No register remappings (under discussion) in lang/register - small speedup, a bit simpler code
+* 💬 Dropping clang support (under discussion) - clearer and faster code, clang support requires lot of stupid sugar that makes code less readable.
+
 
 # PACKAGING
 [![Packaging status](https://repology.org/badge/vertical-allrepos/ol.svg)](https://repology.org/project/ol/versions)
@@ -178,9 +189,9 @@ Some additional libraries can be installed using 'kiss' package manager. Instruc
       ```
 
 
-Breaking changes (master branch), as part of Ol 2.7 preparation
-===============================================================
-The following breaking changes have been added to the master branch as part of 2.7 version preparation:
+Breaking changes (master branch), as part of Ol 2.7
+===================================================
+The following breaking changes have been added as part of 2.7 version:
 * ❗ internal type names are changed (type codes are NOT changed).  
   please, don't use internal type names in your code, use predicates instead
   * `type-string-displatch` type name changed to `type-superstring` (the old name caused confusing)️
@@ -191,8 +202,7 @@ The following breaking changes have been added to the master branch as part of 2
   * `type-int+` changed to `type-integer+` (the fewer name trancations, the better)
   * `type-int-` changed to `type-integer-` (same)
 * ❗ `values` with an empty argument list now returns *#false* instead of the string "no vals"
-* ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()*
-  but simply *#false* if nothing was returned
+* ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()* but simply *#false* if nothing was returned
   * use the "RETURNING" statement with INSERT and UPDATE if you want to return something.
 * ❗ Welcome invitation changed
 * ❗ `procedure?` made r7rs compatible (will now return *#false* for ff's)
