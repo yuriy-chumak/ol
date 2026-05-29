@@ -296,7 +296,8 @@
                (runtime-error "rtl-retard: unknown code: " code))))
 
       (define (allocate-registers rtl)
-         (lets ((rtl usages (rtl-retard rtl)))
-            rtl))
+         rtl)
+         ;; (lets ((rtl usages (rtl-retard rtl)))
+         ;;    rtl))
 
    ))

@@ -1385,6 +1385,14 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 
 #include <math.h>
 
+#ifdef _WIN32
+# if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#  define htole16(x) _byteswap_ushort(x) /* (uint16_t)((x >> 8) | (x << 8)) */
+# else
+#  define htole16(x) (x)
+# endif
+#endif
+
 // --------------------------------------------------------------------------
 //	https://gcc.gnu.org/wiki/FloatingPointMath
 #ifdef OLVM_BUILTIN_FMATH
@@ -2689,6 +2697,11 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define A4  reg[ip[4]]
 #define A5  reg[ip[5]]
 
+#define wip(x) htole16(((uint16_t*)ip)[x])
+#define WA0 reg[wip(0)]
+#define WA1 reg[wip(1)]
+#define WA2 reg[wip(2)]
+#define WA3 reg[wip(3)]
 // generate errors and faults
 #ifndef NTRACE
 #define TRACE(...) D(__VA_ARGS__)
@@ -2747,6 +2760,7 @@ static unsigned long long ops[256];
 #endif
 
 static //__attribute__((aligned(8)))
+__attribute__((hot))
 word runtime(struct olvm_t* ol)
 {
 	heap_t* heap = &ol->heap; // global vm heap
@@ -2766,6 +2780,7 @@ word runtime(struct olvm_t* ol)
 
 	// vm instruction pointer(s)
 	unsigned char *ip = 0, *ip0;
+
 	// internal gc call wrapper
 	void GC(word words)
 	{
@@ -2780,7 +2795,6 @@ word runtime(struct olvm_t* ol)
 		ip0 = (unsigned char*) &car(reference_type(this) == TTHREAD ? (word) ref(this, reference_size(this)) : this);
 		ip = ip0 + dp;
 	}
-// #	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
 
 	word a0,a1,a2,a3; // command arguments optimized variables
 	word r3,r4,r5,r6; // error handling optimized variables
@@ -3201,7 +3215,7 @@ loop:;
 	 * | #o/8 | o0       | o1        | o2       | o3       | o4       | o5       | o6       | o7       |
 	 * |:-----|:--------:|:---------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|
 	 * |**0o**|          | REFI      | GOTO     | CLOS     | Bx       | BEQ      | BNA      | BNAV     | +
-	 * |**1o**| ff:red   | MOVE      | MOV2     | set-ref! | LDx      | LD8      |LDM8(todo)| TYPE     |
+	 * |**1o**| ff:red   | MOVE      | MOV2     | set-ref! | LDx      | LD8      |          | TYPE     |
 	 * |**2o**| vm:new   |ARITY-ERROR| vm:make  | vm:alloc | apply    | apply/cc | vec-apply| ff-apply | +
 	 * |**3o**| RET      | DEREF     | DIV      | MCP      | VERSION  | FEATURES | VMAX     | VSIZE    |
 	 * |**4o**| ff:right?| FP1       | FP2      | PIN      | SIZE     | EXIT     | ADD      | MUL      |
@@ -3213,7 +3227,8 @@ loop:;
     ops[*ip]++;
 #endif
 
-	switch ((op = *ip++) & 0x3F) {
+	switch (op = *ip++) {
+	// switch ((op = *ip++) & 0x3F) {
 	/*! #### JIT
 	 * Reserved for feature use.
 	 *
@@ -3250,18 +3265,31 @@ loop:;
 	/*! #### GOTO
 	 * GO TO procedure, arity
 	 */
-	case GOTO: { // (10%)
-		this = A0;
-		acc = ip[1];
+	case GOTO: {
+		a0 = ip[0];
+		a1 = ip[1];
+GOTO:;
+		this = reg[a0];
+		acc = a1;
 		goto apply;
+	}
+	case GOTO+64: { // GOTO/16
+		a0 = wip(0);
+		a1 = wip(1);
+		goto GOTO;
 	}
 
 	/*! #### RET
 	 * RETurn from procedure
 	 */
-	case RET: { // (3%) return value
+	case RET: {
 		this = R3;
 		R3 = A0; acc = 1;
+		goto apply;
+	}
+	case RET+64: { // RET/16
+		this = R3;
+		R3 = WA0; acc = 1;
 		goto apply;
 	}
 
@@ -3306,7 +3334,7 @@ loop:;
 	/*! #### MCP
 	 */
 	// do mcp operation with continuation
-	case MCP: { // (1%) sys continuation op arg1 arg2
+	case MCP: {
 		this = R0;
 		R3 = A1; R4 = A0; R5 = A2; R6 = A3;
 		goto mcp;
@@ -3356,33 +3384,57 @@ loop:;
 	case LD: {
 		static
 		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
-		int sop = *ip++;
-		A0 = I[sop];
+		int i = *ip++;
+		A0 = I[i];
 		ip += 1; break;
+	}
+	case LD+64: { // LD/16
+		static
+		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
+		int i = *ip++;
+		WA0 = I[i];
+		ip += 2; break;
 	}
 
 	/*! #### LD8 b r
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
-	case LD8:
-		A1 = I(ip[0]); // I(ip[0]) -> reg[ip[1]]
+	case LD8: {
+		int i = *ip++;
+		A0 = I(i);
+		ip += 1; break;
+	}
+	case LD8+64: { // LD8/16
+		int i = *ip++;
+		WA0 = I(i);
 		ip += 2; break;
+	}
 
 
 	/*! #### REFI a p t
 	 * Rt = (ref reg[a] reg[p]), p is unsinged
 	 */
-	case REFI: { // (24%)
-		A2 = ref(A0, ip[1]); // A2 = A0[p]
+	case REFI: {
+		A2 = ref(A0, ip[1]);
 		ip += 3; break;
 	}
+	case REFI+64: { // REFI/16
+		WA2 = ref(WA0, wip(1));
+		ip += 6; break;
+	}
+
 
 	/*! #### MOVE a t
 	 * Rt = Ra
 	 */
-	case MOVE: // (3%)
+	case MOVE:
 		A1 = A0;
 		ip += 2; break;
+	case MOVE+64: { // MOVE/16
+		WA1 = WA0;
+		ip += 4; break;
+	}
+
 	/*! #### MOV2 a1 t1 a2 t2
 	 * Rt1 = Ra1,
 	 * Rt2 = Ra2
@@ -3455,14 +3507,25 @@ loop:;
 	case VMNEW: { // new t f1 .. fs r
 		// vm:new is a SPECIAL operation with different arguments order
 		word type = *ip++;
-		word size = *ip++ + 1; // the argument is n-1 to allow making a 255-tuple with 255, and avoid 0 length objects
-		word *p = new (type, size), i = 0; // s fields + header
+		word size = *ip++;
+		word *p = new (type, size), i = 0;
 		while (i < size) {
 			p[i+1] = reg[*ip++];
 			i++;
 		}
-		reg[*ip++] = (word) p;
-		break;
+		A0 = (word) p;
+		ip += 1; break;
+	}
+	case VMNEW+64: { // VMNEW/64
+		word type = *ip++;
+		word size = wip(0);  ip+=2;
+		word *p = new (type, size), i = 0;
+		while (i < size) {
+			p[i+1] = WA0;
+			ip += 2; i++;
+		}
+		WA0 = (word) p;
+		ip += 2; break;
 	}
 
 	// make typed reference from list
@@ -3578,9 +3641,12 @@ loop:;
 
 
 	// операции посложнее
-	case CONS:   // cons a b -> r : Rr = (cons Ra Rb)
-		A2 = (word) cons(A0, A1); // видимо, вызывается очень часто, так как замена на макрос дает +10% к скорости
+	case CONS:
+		A2 = (word) cons(A0, A1);
 		ip += 3; break;
+	case CONS+64: // CONS/16
+		WA2 = (word) cons(WA0, WA1);
+		ip += 6; break;
 
 
 	case TYPE: { // type o -> r

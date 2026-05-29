@@ -15,6 +15,7 @@
       (otus async)
       (owl list-extra)
       (src vm)
+      (owl io)
       (only (owl list) all some)
       (lang env)
       (lang primop)
@@ -105,25 +106,34 @@
                      (loop codes)))))))
 
       ;; make bytecode and intern it
+      ;; (define (bytes->bytecode bytes)
+      ;;    (await (mail bytecode-server
+      ;;       (vm:alloc type-bytecode bytes))))
+
+      ;; make bytecode
       (define (bytes->bytecode bytes)
-         (await (mail bytecode-server
-            (vm:alloc type-bytecode bytes))))
+         (vm:alloc type-bytecode bytes))
 
 
       (define (reg8 a) (less? a 256))
-      (define (reg a) a)
+
+
+      (define (LO x) (band x #xff)); TODO: change to macro
+      (define (HI x) (>> x 8))     ; TODO: change to macro
+      (define-macro reg (lambda (a) a))
 
 
       ;;;
       ;;; Bytecode assembly
       ;;;
 
-      (define (output-code op lst)
-         (if (eq? op (vm:and op #xff))
-            (cons op lst)
-            (output-code
-               (>> op 8)
-               (cons (band op #xff) lst))))
+      (define MOVE/16 (+ MOVE 64))
+      (define REFI/16 (+ REFI 64))
+      (define GOTO/16 (+ GOTO 64))
+
+      (define RET/16 (+ RET 64))
+      (define LD/16 (+ LD/ 64))
+      (define LD8/16 (+ LD8 64))
 
       ; rtl -> list of bytes
       ;; ast fail-cont → code' | (fail-cont <reason>)
@@ -139,53 +149,84 @@
 
          (case code
             (['ret a]
-               (unless (reg8 a) (runtime-error "RET16" a))
-               (list RET (reg a)))
+               (if (reg8 a)
+                  (list RET (reg a))
+                  (list RET/16 (LO a) (HI a))))
             (['move a b more]
-               (unless (all reg8 (list a b)) (runtime-error "MOVE16" (list a b)))
                (let ((tl (assemble more fail)))
-                  (if (eq? (car tl) MOVE) ;; [move a b] + [move c d] = [move2 a b c d] to remove a common dispatch
-                     (cons* MOV2 (reg a) (reg b) (cdr tl))
-                     (cons* MOVE (reg a) (reg b) tl))))
+                  (if (and (reg8 a) (reg8 b)) ; 8bit regs
+                     (if (eq? (car tl) MOVE) ;; [move a b] + [move c d] = [move2 a b c d] (very handy speedup)
+                        (cons* MOV2 (reg a) (reg b) (cdr tl))
+                        (cons* MOVE (reg a) (reg b) tl))
+                     (cons* MOVE/16 ; TODO: add MOVE2 16-bit version (maybe)
+                        (LO a) (HI a)
+                        (LO b) (HI b) tl))))
             (['prim op args to more]
-               (unless (all reg8 args) (runtime-error "PRIM16" args))
-               (unless (all reg8 (if (pair? to) to (list to)))
-                  (runtime-error "PRIM16to" to))
                (cond
-                  ;; fixme: handle mk differently, this was supposed to be a temp hack
-                  ((> op #xff) ; dead leaf - we do not have opcodes larger than 255 (for now)
-                     (output-code op
-                        (cons (reg (length (cdr args))) ; vector size
-                           (cons (reg (car args)) ; type
-                              (append (map reg (cdr args))
-                                 (cons (reg to)
-                                    (assemble more fail)))))))
+                  ; (vm:new) includes type as part of opcode (TODO: change to something more convenient)
+                  ((less? #xFF op)
+                     ; assert (HI op) == NEW
+                     (define len (length args))
+                     (if (all reg8 (cons* len to args))
+                        (cons* (HI op) (LO op) ; code, type
+                           len ; vector size
+                           (append args ; (map reg args)
+                              (cons (reg to)
+                                    (assemble more fail))))
+                        ; vm:new/64, assert (= (HI op) NEW)
+                        (cons* (+ (HI op) 64) (LO op) ; code, type
+                           (LO len) (HI len)
+                           (append (foldr (lambda (x tl)
+                                             (cons* (LO x) (HI x) tl))
+                                       #n args)
+                              (cons*
+                                 (LO to) (HI to)
+                                 (assemble more fail))))))
+                  ; vm:new, vm:make, vm:alloc, syscall, vm:set!
                   ((variable-input-arity? op)
+                     (unless (all reg8 args) (runtime-error "PRIM16" args))
+                     (unless (all reg8 (if (list? to) to (list to))) (runtime-error "PRIM16" to))
                      ;; fixme: no output arity check
                      (cons op
                         (cons (length args)
-                           (append (map reg args)
-                              (cons (reg to)
-                                 (assemble more fail))))))
-                  ((eq? (type to) type-value+)
-                     (if (opcode-arity-ok? op (length args) 1)
-                        (cons op
-                           (append (map reg args)
+                           (append args
                               (cons to
-                                 (assemble more fail))))
+                                 (assemble more fail))))))
+                  ; returning one argument
+                  ((eq? (type to) type-value+)
+                     (unless (memq op '(51)) ; TEMP, not a CONS
+                        (unless (all reg8 args) (runtime-error "PRIM16" args))
+                        (unless (reg8 to) (runtime-error "PRIM16" to)))
+
+                     (if (opcode-arity-ok? op (length args) 1)
+                        (if (all reg8 (cons to args))
+                           (cons op
+                              (append args ; (map reg args)
+                                 (cons (reg to)
+                                    (assemble more fail))))
+                           (cons (+ op 64) ;; wide opcode
+                              (append (foldr (lambda (x tl)
+                                                (cons* (LO x) (HI x) tl))
+                                          #n args)
+                                 (cons* (LO to) (HI to)
+                                    (assemble more fail)))))
                         (fail (list "Bad opcode arity for" (primop-name op) (length args) 1))))
+                  ; returning multiple arguments
                   ((list? to)
+                     (unless (all reg8 args) (runtime-error "PRIM16" args))
+                     (unless (all reg8 to) (runtime-error "PRIM16" to))
+
                      (if (opcode-arity-ok? op (length args) (length to))
                         (if (multiple-return-variable-primop? op)
                            (cons op
-                              (append (map reg args)
+                              (append args ; (map reg args)
                                  ; <- nargs implicit, FIXME check nargs opcode too
-                                 (append (map reg to)
+                                 (append to ; (map reg to)
                                     (assemble more fail))))
                            (cons op
-                              (append (map reg args)
+                              (append args ; (map reg args)
                                  (cons (length to)          ; <- prefix with output arity
-                                    (append (map reg to)
+                                    (append to ; (map reg to)
                                        (assemble more fail))))))
                         (fail (list "Bad opcode arity for " (primop-name op) (length args) (length to)))))
                   (else
@@ -202,43 +243,62 @@
                   (if closure? type-closure type-procedure) ;; type of object
                   (+ 2 (length env)) ;; size of object (hdr code e0 ... en)
                   (reg lpos) offset  ;; env (reg, index)
-                  (append (map reg env) ;; e0 ... en
+                  (append env ; (map reg env) ;; e0 ... en
                      (cons (reg to)
                            (assemble more fail)))))
 
             (['ld val to cont]
-               (unless (reg8 to) (runtime-error "LD16to" to))
                (cond
                   ;; todo: add implicit load values to free bits of the instruction
-                  ((eq? val #null)
-                     (cons* LD/ LDN (reg to)
-                        (assemble cont fail)))
+                  ((eq? val #null) ;; LDN
+                     (if (reg8 to)
+                        (cons* LD/ LDN (reg to)
+                           (assemble cont fail))
+                        (cons* LD/16 LDN (LO to) (HI to)
+                           (assemble cont fail))))
                   ((eq? val #false)
-                     (cons* LD/ LDE (reg to) ; TODO: LDF, TODO: (if (reg8 to) ... else ...16-bit...
+                     (unless (reg8 to) (runtime-error "LDF16" to))
+                     (cons* LD/ LDF (reg to) ; TODO: LDF, TODO: (if (reg8 to) ... else ...16-bit...
                         (assemble cont fail)))
                   ((eq? val #true)
-                     (cons* LD/ LDT (reg to)
-                        (assemble cont fail)))
+                     (if (reg8 to)
+                        (cons* LD/ LDT (reg to)
+                           (assemble cont fail))
+                        (cons* LD/16 LDT (LO to) (HI to)
+                           (assemble cont fail))))
                   ((eq? val #empty)
-                     (cons* LD/ LDF (reg to)
+                     (unless (reg8 to) (runtime-error "LDE16" to))
+                     (cons* LD/ LDE (reg to)
                         (assemble cont fail)))
                   ((eq? (type val) type-value+)
                      (let ((code (assemble cont fail)))
                         (if (> val 126) ;(or (> val 126) (< val -126)) ; would be a bug
                            (fail (list "ld: big value: " val)))
-                        (cons* LD8
-                           (if (< val 0) (+ 256 val) val)
-                           (reg to) code)))
+                        (if (reg8 to)
+                           (cons* LD8
+                              (if (< val 0) (+ 256 val) val)
+                              (reg to) code)
+                           (cons* LD8/16
+                              (if (< val 0) (+ 256 val) val)
+                              (LO to) (HI to) code))))
                   (else
                      (fail (list "cannot assemble a load for " val)))))
-            (['refi from offset to more]
-               (unless (all reg8 (list from to)) (runtime-error "REFI16" (list from to)))
-               (cons*
-                  REFI (reg from) offset (reg to)
-                  (assemble more fail)))
-            (['goto op nargs]
-               (unless (reg8 op) (runtime-error "GOTO16" op))
-               (list GOTO (reg op) nargs))
+            (['refi a offset b more]
+               (if (and (reg8 a) (reg8 b) (reg8 offset)) ; 8bit regs
+                  (cons* REFI
+                     a offset b
+                     (assemble more fail))
+               else
+                  (cons* REFI/16
+                     (LO a) (HI a)
+                     (LO offset) (HI offset)
+                     (LO b) (HI b)
+                     (assemble more fail))))
+            (['goto op nargs] ; +
+               (if (and (reg8 op) (reg8 nargs))
+                  (list GOTO op nargs)
+               else
+                  (list GOTO/16 (LO op) (HI op) (LO nargs) (HI nargs))))
             ;((goto-code op n)
             ;   (list GOTO-CODE (reg op) n)) ;; <- arity needed for dispatch
             ;((goto-proc op n)
@@ -279,6 +339,8 @@
       ;; todo: exit via fail cont
       ;; todo: pass tail here or have case-lambda nodes be handled internally with a foldr
       (define (assemble-code obj tail)
+         ;; (print "=======================")
+         ;; (print "assemble-code: " obj ", " tail)
          (case obj
             (['code arity insts]
                (assemble-code ['code-var #true arity insts] tail))
@@ -286,11 +348,16 @@
                (let* ((insts (allocate-registers insts)))
                   (if (not insts)
                      (runtime-error "failed to allocate registers")
+                  else
                      (let*/cc ret  ((fail (λ (why) (runtime-error "Error in bytecode assembly: " why) #false))
                                     (bytes (assemble insts fail))
                                     (len (length bytes)))
                         (if (> len #xffff) ; TODO: can be removed?
                            (runtime-error "too much bytecode: " len))
+                        (define end (append bytes
+                                       (if (null? tail)
+                                          (list ARITY-ERROR)
+                                          tail)))
                         (bytes->bytecode
                            (if fixed?
                               ; без проверки на арность проваливается тест "case-lambda"
@@ -298,17 +365,11 @@
                               (cons* BNA arity
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
-                                 (append bytes
-                                    (if (null? tail)
-                                       (list ARITY-ERROR)
-                                       tail)))
+                                 end)
                               (cons* BNAV (if fixed? arity (- arity 1))
                                  (band 255 (>> len 8))    ;; hi jump
                                  (band 255 len)           ;; low jump
-                                 (append bytes
-                                    (if (null? tail)
-                                       (list ARITY-ERROR) ;; force error
-                                       tail)))))))))
+                                 end)))))))
             (else
                (runtime-error "assemble-code: unknown AST node " obj))))
 

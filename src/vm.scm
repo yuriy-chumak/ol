@@ -127,7 +127,7 @@
 
       (setq LD/  12)  ; ld a, t:        Rt = a, signed byte
       (setq LD8  13)  ; ld a, t:        Rt = a, signed byte
-         (setq LDE 0) (setq LDT 1) (setq LDN 2) (setq LDF 3)
+         (setq LDF 0) (setq LDT 1) (setq LDN 2) (setq LDE 3)
 
       ; conditional branches
       (setq B/    4)  ; conditional branches
@@ -215,11 +215,11 @@
          (primop 'ff-apply     1 #f ff-apply) ; (make-bytecode '(23)))
 
          ; associative array
-         (primop 'ff:black  4 1 ff:black)  ; (make-bytecode '(42  4 5 6 7  8  24 8)))
-         (primop 'ff:red    4 1 ff:red)    ; (make-bytecode '(8 4 5 6 7  8  24 8)))
-         (primop 'ff:toggle 1 1 ff:toggle) ; (make-bytecode '(46  4        5  24 5)))
-         (primop 'ff:red?   1 1 ff:red?)   ; (make-bytecode '(41  4        5  24 5)))
-         (primop 'ff:right? 1 1 ff:right?) ; (make-bytecode '(16 4        5  24 5)))
+         (primop 'ff:black  4 1 ff:black)  ; (make-bytecode '(42 4 5 6 7  8  24 8)))
+         (primop 'ff:red    4 1 ff:red)    ; (make-bytecode '( 8 4 5 6 7  8  24 8))) ; TODO: change all
+         (primop 'ff:toggle 1 1 ff:toggle) ; (make-bytecode '(46 4        5  24 5)))
+         (primop 'ff:red?   1 1 ff:red?)   ; (make-bytecode '(41 4        5  24 5)))
+         (primop 'ff:right? 1 1 ff:right?) ; (make-bytecode '(32 4        5  24 5)))
 
          ; vm-specific constants
          (primop 'vm:version  0 1 vm:version)  ; (make-bytecode '(28 4)))
