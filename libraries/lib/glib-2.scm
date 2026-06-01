@@ -21,8 +21,12 @@
       GClosureNotify
       GConnectFlags
       GApplication*
+      GQuark
+      g_quark_from_string
       GError*
+      g_error_new
       g_error_free
+      g_error_get_message
 
       ; c
       GObject*
@@ -165,9 +169,18 @@
 (define (GObject? this)
    (get this gtag #f))
 
+(define GQuark fft-uint32)
+(define g_quark_from_string (GLIB GQuark "g_quark_from_string" gchar*))
+;g_quark_to_string
 
+(define GError (list GQuark gint gchar*))
 (define GError* type-vptr)
+(define g_error_new (GOBJECT GError* "g_error_new" GQuark gint gchar* #|...|#))
 (define g_error_free (GOBJECT void "g_error_free" GError*))
+(define (g_error_get_message gerror)
+   (vptr->string (bytevector->void*
+         (vptr->bytevector gerror (sizeof GError))
+         (sizeof (list GQuark gint)))))
 
 (define g_signal_connect_data (GOBJECT gulong "g_signal_connect_data" gpointer type-string GCallback gpointer GClosureNotify GConnectFlags))
 (define (g_signal_connect instance detailed_signal c_handler data)
