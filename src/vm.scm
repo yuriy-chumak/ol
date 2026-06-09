@@ -162,12 +162,12 @@
       ; note: uncomment 'make-bytecode' if you want to change a primop bytecode
       (setq *primops* (list
          ; прямые аллокаторы
-         (primop 'vm:new   'any 1 vm:new)   ; (make-bytecode '(62 N ...))) ;; make new object, simplest and fastest allocator
+         (primop 'vm:new   'any 1 vm:new)   ; (make-bytecode '(#o20 N ...))) ;; make new object, simplest and fastest allocator
          (primop 'vm:make  'any 1 vm:make)  ; (make-bytecode '(18 N ...))) ;; make new object. slower, but smarter
          (primop 'vm:alloc 'any 1 vm:alloc) ; (make-bytecode '(19 N ...))) ;; make new binary object
          ; косвенные аллокаторы
-         (primop 'vm:cast   2 1 (make-bytecode '(48 4 5 6    24 6)))
-         (primop 'set-ref   3 1 set-ref) ; (make-bytecode '(10 4 5 6 7  24 7)))
+         (primop 'vm:cast   2 1 vm:cast)  ; (make-bytecode '(48 4 5 6    24 6)))
+         (primop 'set-ref   3 1 set-ref)  ; (make-bytecode '(49 4 5 6 7  24 7)))
          ; ну и мутаторы сюда же добавим
          (primop 'set-ref!  3 1 set-ref!) ; (make-bytecode '(11 4 5 6 7    24 7)))
          (primop 'vm:set! 'any 1 vm:set!) ; (make-bytecode '(43 N 4 5 . x  24 x)))
