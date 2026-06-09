@@ -232,20 +232,27 @@
                   (else
                      (fail (list "Bad case of primop in assemble: " (primop-name op))))))
 
-            (['cons-close closure? lpos offset env to more]
-               ;; (print "'cons-close " lpos " " offset " " env)
-               (unless (reg8 lpos) (runtime-error "CONSCLOSE16lpos" lpos))
-               (unless (all reg8 env) (runtime-error "CONSCLOSE16" env))
-               (unless (reg8 to) (runtime-error "CONSCLOSE16to" to))
+            (['cons-close closure? lpos offset regs to more]
+               (define len (+ 2 (length regs)))
 
                ; make a 2-level closure
-               (cons* CLOS
-                  (if closure? type-closure type-procedure) ;; type of object
-                  (+ 2 (length env)) ;; size of object (hdr code e0 ... en)
-                  (reg lpos) offset  ;; env (reg, index)
-                  (append env ; (map reg env) ;; e0 ... en
-                     (cons (reg to)
-                           (assemble more fail)))))
+               (if (all reg8 (cons* lpos offset to regs))
+                  (cons* CLOS
+                     (if closure? type-closure type-procedure) ;; type of object
+                     len ;; size of object (hdr code e0 ... en)
+                     (reg lpos) offset  ;; env (reg, index)
+                     (append regs ; (map reg env) ;; e0 ... en
+                        (cons (reg to)
+                              (assemble more fail))))
+                  (cons* CLOS/16
+                     (if closure? type-closure type-procedure) ;; type of object
+                     (LO len) (HI len) ;; size of object (hdr code e0 ... en)
+                     (LO lpos) (HI lpos) (LO offset) (HI offset) ;; env (reg, index)
+                     (append (foldr (lambda (x tl) ; todo: change #n to (cons* (LO ...))
+                                       (cons* (LO x) (HI x) tl))
+                                 #n regs)
+                        (cons* (LO to) (HI to)
+                              (assemble more fail))))))
 
             (['ld val to cont]
                (cond
