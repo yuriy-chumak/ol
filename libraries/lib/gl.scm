@@ -94,8 +94,8 @@
                   'mouse mouse
                   'eye eye
                   ; TBD:
-                  'option1 #true
-                  'option2 #false
+                  ;'option1 #true
+                  ;'option2 #false
                })))
 
          (if (this 'vr-mode) ;; VR mode

@@ -25,7 +25,7 @@
          (define (gl:set-context-version major minor)
             (let*((context (await (mail 'opengl ['get 'context]))) ;#(display screen window cx)
                   (display screen window cx context)
-                  ; this functions requires GLX 1.3+
+                  ; this functions requires GLX 1.3+, TODO: handle case without glXChooseFBConfig
                   (glXChooseFBConfig (GL_LIBRARY fft-void* "glXChooseFBConfig" fft-void* fft-int fft-int* fft-int&)))
                   ;(glXGetVisualFromFBConfig (GLX fft-void* "glXGetVisualFromFBConfig" fft-void* fft-void*))
                ;; (print "display: " display)
@@ -51,10 +51,21 @@
                (define bestFbc (bytevector->void* fbc 0))
                ;; (define vi (glXGetVisualFromFBConfig display bestFbc))
 
-               (define contextAttribs (list
-                  GLX_CONTEXT_MAJOR_VERSION  major
-                  GLX_CONTEXT_MINOR_VERSION  minor
-                  0))
+               (print (config 'exact-context))
+               (define contextAttribs (append
+                  (list
+                     GLX_CONTEXT_MAJOR_VERSION  major
+                     GLX_CONTEXT_MINOR_VERSION  minor)
+                  ; поддерживать ли fixed-function функции
+                  (if (config 'core-profile #f)
+                     (list #x9126 1) ;GLX_CONTEXT_PROFILE_MASK_ARB GLX_CONTEXT_CORE_PROFILE_BIT_ARB
+                     (list))
+                  ; 
+                  (if (config 'exact-context #f)
+                     (list #x2094 2) ;GLX_CONTEXT_FLAGS_ARB GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
+                     (list))
+                  (list 0)
+               ))
                (define new_cx (glXCreateContextAttribs display bestFbc NULL 1 contextAttribs))
                (define new_context [display screen window new_cx])
 

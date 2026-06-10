@@ -3,8 +3,8 @@
 ; let's preconfigure (lib gl)
 (import
    (lib gl config))
-(config 'set 'width 1280)
-(config 'set 'height 720)
+(set-gl-option 'width 1280)
+(set-gl-option 'height 720)
 
 ; create opengl window
 (import (lib gl))

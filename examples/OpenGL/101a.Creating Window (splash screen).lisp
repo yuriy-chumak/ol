@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 
-; create opengl window
+; import only core gl library
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 
