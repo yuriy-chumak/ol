@@ -2,7 +2,7 @@
 
 ## OpenGL 1.x
 
-We can include just base library and then include needed OpenGL version as
+We can include just base library and then include needed OpenGL version as:
 ```scheme
 (import (lib gl))
 (gl:set-window-title "...")
@@ -10,7 +10,7 @@ We can include just base library and then include needed OpenGL version as
 (import (OpenGL 1.0))
 ```
 
-Or we can include required version in one line as
+Or we can include required version in one line as:
 ```scheme
 (import (lib gl 1.0))
 (gl:set-window-title "...")
@@ -18,7 +18,8 @@ Or we can include required version in one line as
 
 ## OpenGL 2.x, 3.0
 
-Same situation as in 1.x
+Same situation as in 1.x.
+
 ```scheme
 (import (lib gl))
 (gl:set-window-title "...")
@@ -33,12 +34,7 @@ or
 
 ## OpenGL 3.1+, 4.x
 
-The situation is different from 2.x and 1.x, we need to explicitly include helper library:
-```scheme
-(import (lib gl 3.1))
-(gl:set-window-title "...")
-```
-or
+The situation differs from 2.x and 1.x, we need to explicitly include helper library (not `lib gl`, but `(lib gl ...)`):
 ```scheme
 (import (lib gl 3 context))
 (gl:set-context-version 3 1)
@@ -46,6 +42,13 @@ or
 
 (import (OpenGL 3.1))
 ```
+
+Or in one line:
+```scheme
+(import (lib gl 3.1))
+(gl:set-window-title "...")
+```
+
 
 
 # Notes

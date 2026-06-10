@@ -4,7 +4,8 @@
    (owl math) (otus async)
    (lib gl)
    (lib gl config)
-   (otus ffi))
+   (otus ffi)
+   (only (scheme process-context) set-environment-variable!))
 
 (export
    gl:set-context-version ; recreate OpenGL with version
@@ -51,7 +52,7 @@
                (define bestFbc (bytevector->void* fbc 0))
                ;; (define vi (glXGetVisualFromFBConfig display bestFbc))
 
-               (print (config 'exact-context))
+               ; AMD/Intel cards
                (define contextAttribs (append
                   (list
                      GLX_CONTEXT_MAJOR_VERSION  major
@@ -59,11 +60,12 @@
                   ; поддерживать ли fixed-function функции
                   (if (config 'core-profile #f)
                      (list #x9126 1) ;GLX_CONTEXT_PROFILE_MASK_ARB GLX_CONTEXT_CORE_PROFILE_BIT_ARB
-                     (list))
-                  ; 
+                     (list #x9126 2));GLX_CONTEXT_PROFILE_MASK_ARB GLX_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB
+                  ; NVidia cards
                   (if (config 'exact-context #f)
                      (list #x2094 2) ;GLX_CONTEXT_FLAGS_ARB GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB
                      (list))
+                  ; end of options
                   (list 0)
                ))
                (define new_cx (glXCreateContextAttribs display bestFbc NULL 1 contextAttribs))

@@ -1,7 +1,6 @@
 (define-library (lib gl 3 context 4.6)
 (import
    (scheme core)
-   (lib gl)
    (lib gl 3 context))
 
 (export )

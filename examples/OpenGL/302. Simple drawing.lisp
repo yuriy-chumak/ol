@@ -1,8 +1,6 @@
 #!/usr/bin/env ol
-(import (lib gl-3))
+(import (lib gl 3.2))
 (gl:set-window-title "2. Drawing a Point")
-
-(gl:set-context-version 3 0) ; use OpenGL version 3.0
 
 ; let's check context version
 (define major (box 0))
@@ -13,7 +11,6 @@
 (print "OpenGL version: " (glGetString GL_VERSION))
 
 ; init
-(glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
 (define VBO (box 0))

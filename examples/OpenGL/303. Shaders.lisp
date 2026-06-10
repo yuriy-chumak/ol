@@ -1,8 +1,6 @@
 #!/usr/bin/env ol
-(import (lib gl-3))
+(import (lib gl 3.2 compat))
 (gl:set-window-title "4. Shaders")
-
-(gl:set-context-version 3 0) ; use OpenGL version 3.0
 
 ; let's check context version
 (define major (box 0))
@@ -13,7 +11,6 @@
 (print "OpenGL version: " (glGetString GL_VERSION))
 
 ; init
-(glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
 (define VBO (box 0))
@@ -59,3 +56,7 @@
    (glBindBuffer GL_ARRAY_BUFFER VBO)
    (glVertexAttribPointer 0 3 GL_FLOAT GL_FALSE 0 nullptr) ; 3 for x,y,z
    (glDrawArrays GL_TRIANGLE_STRIP 0 4))) ; 2 triangles (4 vertices)
+
+(import (lib keyboard))
+(gl:set-keyboard-handler (lambda (key)
+   (if (= key KEY_ESC) (exit 1))))

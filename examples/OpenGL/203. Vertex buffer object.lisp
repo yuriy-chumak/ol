@@ -1,5 +1,5 @@
 #!/usr/bin/env ol
-(import (lib gl-2))
+(import (lib gl 2.1))
 (gl:set-window-title "3. VBO")
 
 ; init

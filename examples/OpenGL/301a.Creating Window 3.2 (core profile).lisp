@@ -1,0 +1,36 @@
+#!/usr/bin/env ol
+
+(import (lib gl 3.2 core))
+(gl:set-window-title "1. Creating an OpenGL 3.2 compat Window")
+
+; let's check context version
+(define major (box 0))
+(define minor (box 0))
+(glGetIntegerv GL_MAJOR_VERSION major)
+(glGetIntegerv GL_MINOR_VERSION minor)
+(print "Context version: " (unbox major) "." (unbox minor))
+(print "OpenGL version: " (glGetString GL_VERSION))
+
+; try to load legacy functions
+(import (OpenGL 2.1))
+
+; init
+(glShadeModel GL_SMOOTH) ; legacy function, should NOT work
+(glClearColor 0.3 0.3 0.3 1)
+
+; draw loop
+(gl:set-renderer (lambda ()
+   (glClear GL_COLOR_BUFFER_BIT)
+
+   ; legacy functions, should NOT render triangle
+   (glBegin GL_TRIANGLES)
+      (glColor3f 1 0 0)
+      (glVertex2f -0.6 -0.6)
+
+      (glColor3f 0 1 0)
+      (glVertex2f +0.6 -0.6)
+
+      (glColor3f 0 0 1)
+      (glVertex2f -0.0 +0.7)
+   (glEnd) ))
+
