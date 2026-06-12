@@ -79,7 +79,7 @@
    dlopen ; * olvm specific
    dlsym ; * olvm specific
    dlclose ; * olvm specific
-      ;; do
+   do
       ;; dynamic-wind
    each ; * ol specific
 ;  else           * reserved for use by Scheme
@@ -297,6 +297,21 @@
       ; syntax: (include-ci hstring1i hstring2i ...)  * not supported
       (setq include-ci (lambda args
          (runtime-error "No include-ci is allowed." "(use ,load instead)")))
+
+      ; 4.2.4. Iteration
+      ;
+      (define-syntax do
+         (syntax-rules ()
+            ((do ((var init step) ...)
+                 (test expr ...)
+               body ...)
+            ; expanded to the next recursive loop:
+            (let loop ((var init) ...)
+               (if test
+                  (begin #f expr ...)
+                  (begin
+                     body ...
+                     (loop step ...)))))))
 
       ; 5.5  Record-type definitions
       ; syntax:  (define-record-type <name> <constructor> <pred> <field> ...)  * not supported
