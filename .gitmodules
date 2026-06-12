@@ -1,3 +1,6 @@
 [submodule "libraries/OpenGL"]
 	path = libraries/OpenGL
 	url = https://github.com/yuriy-chumak/libol-opengl.git
+[submodule "libraries/lib/gl"]
+	path = libraries/lib/gl
+	url = https://github.com/yuriy-chumak/libol-gl
