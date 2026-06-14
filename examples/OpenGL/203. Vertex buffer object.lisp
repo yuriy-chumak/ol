@@ -3,7 +3,6 @@
 (gl:set-window-title "3. VBO")
 
 ; init
-(glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
 
 (define po (gl:create-program

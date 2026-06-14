@@ -1,7 +1,8 @@
 #!/usr/bin/env ol
 
+; create OpenGL window with core profile
 (import (lib gl 3.2 core))
-(gl:set-window-title "1. Creating an OpenGL 3.2 compat Window")
+(gl:set-window-title "1. Creating an OpenGL 3.2 core Window")
 
 ; let's check context version
 (define major (box 0))
@@ -11,14 +12,14 @@
 (print "Context version: " (unbox major) "." (unbox minor))
 (print "OpenGL version: " (glGetString GL_VERSION))
 
-; try to load legacy functions
+; try to import legacy OpenGL functions
 (import (OpenGL 2.1))
 
-; init
+; global init
 (glShadeModel GL_SMOOTH) ; legacy function, should NOT work
 (glClearColor 0.3 0.3 0.3 1)
 
-; draw loop
+; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
@@ -33,4 +34,3 @@
       (glColor3f 0 0 1)
       (glVertex2f -0.0 +0.7)
    (glEnd) ))
-

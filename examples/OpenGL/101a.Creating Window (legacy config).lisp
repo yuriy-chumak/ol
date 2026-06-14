@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 
-;; preconfigure (lib gl)
+;; preconfigure (lib gl). it's legacy, don't use
 (define-library (lib gl config)
 (export config) (import (otus lisp))
 (begin
@@ -9,7 +9,7 @@
       'height 720
    })))
 
-; create opengl window
+; create OpenGL window
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 

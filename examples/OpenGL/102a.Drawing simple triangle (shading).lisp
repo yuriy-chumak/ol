@@ -1,9 +1,9 @@
 #!/usr/bin/env ol
 
-(import (lib gl))
-(gl:set-window-title "2. Drawing simple triangle (shadered)")
+; create OpenGL window and import OpenGL functions
+(import (lib gl 1.0))
+(gl:set-window-title "2. Drawing simple triangle (shading)")
 
-(import (OpenGL 1.0))
 (import (OpenGL ARB shader_objects))
 (import (OpenGL ARB shading_language_100))
 
@@ -18,7 +18,7 @@
 
 ; global init
 (glShadeModel GL_SMOOTH)
-(glClearColor 0.11 0.11 0.11 1)
+(glClearColor 0.3 0.3 0.3 1)
 
 (define shader (gl:create-program
 "// vertex shader
@@ -37,7 +37,7 @@
       gl_FragColor = vec4(vec3(1.,2.,8.)*c1+vec3(8.,2.,1.)*c2, 1.);
    }"))
 
-; draw
+; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
@@ -45,14 +45,10 @@
    (glUniform1f (glGetUniformLocation shader "time") (/ (mod (clock-ms) 1000000) #i1000))
    (glUniform2f (glGetUniformLocation shader "dimensions") (gl:get-window-width) (gl:get-window-height))
 
-   (glColor3f 1 1 1)
    (glBegin GL_TRIANGLES)
-      (glColor3f 1 0 0)
       (glVertex2f -0.6 -0.6)
 
-      (glColor3f 0 1 0)
       (glVertex2f +0.6 -0.6)
 
-      (glColor3f 0 0 1)
       (glVertex2f -0.0 +0.7)
    (glEnd) ))

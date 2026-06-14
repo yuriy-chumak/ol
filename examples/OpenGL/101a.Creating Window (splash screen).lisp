@@ -1,6 +1,6 @@
 #!/usr/bin/env ol
 
-; import only core gl library
+; create OpenGL window
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 
@@ -10,7 +10,6 @@
 (gl:splash-screen (gif 'width) (gif 'height) (gif->rgb24 gif))
 
 ; and now we can start long loading of all required libraries
-
 (wait 5000) ; let's simulate 5 second loading delay
 
 ; import OpenGL functions

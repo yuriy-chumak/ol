@@ -6,7 +6,7 @@
 (set-gl-option 'width 1280)
 (set-gl-option 'height 720)
 
-; create opengl window
+; create OpenGL window
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 

@@ -1,13 +1,19 @@
 #!/usr/bin/env ol
 
-(syscall 1014 "MESA_GL_VERSION_OVERRIDE\0" "3.2") ; AMD and Intel cards
+; AMD and Intel cards (mesa drivers):
+(import (scheme process-context))
+(set-environment-variable! "MESA_GL_VERSION_OVERRIDE" "3.2")
+; 3.2 - for Core Profile
+; 3.2COMPAT - for Compatibility Profile
+; 3.0FC - for Forward Compatible
 
-; update OpenGL config
+; NVidia cards:
 (import (lib gl config))
-(config 'set 'exact-context #true) ; NVidia cards
+(config 'set 'exact-context #true)
 
+; create OpenGL window with exact profile
 (import (lib gl 3.2))
-(gl:set-window-title "1. Creating an OpenGL 3.2 Window")
+(gl:set-window-title "1. Creating an OpenGL 3.2 exact Window")
 
 ; let's check context version
 (define major (box 0))
@@ -17,10 +23,10 @@
 (print "Context version: " (unbox major) "." (unbox minor))
 (print "OpenGL version: " (glGetString GL_VERSION))
 
-; init
+; global init
 ; no glShadeModel in 3.2 core profile
 (glClearColor 0.3 0.3 0.3 1)
 
-; draw loop
+; render pass
 (gl:set-renderer (lambda ()
-   (glClear GL_COLOR_BUFFER_BIT)))
+   (glClear GL_COLOR_BUFFER_BIT) ))

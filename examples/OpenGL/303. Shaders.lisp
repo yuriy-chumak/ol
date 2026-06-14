@@ -1,6 +1,7 @@
 #!/usr/bin/env ol
 (import (lib gl 3.2 compat))
-(gl:set-window-title "4. Shaders")
+(gl:set-window-title "3. Shaders")
+(import (lib gl 3 shading)) ; temp
 
 ; let's check context version
 (define major (box 0))

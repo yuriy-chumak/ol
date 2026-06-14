@@ -1,6 +1,15 @@
 #!/usr/bin/env ol
-(import (lib gl 3.1))
+
+; create OpenGL window
+(import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL 3.1 Window")
+
+; upgrade context to 3.1
+(import (lib gl 3 context))
+(gl:set-context-version 3 1)
+
+; import OpenGL functions
+(import (OpenGL 3.1))
 
 ; let's check context version
 (define major (box 0))
@@ -10,9 +19,9 @@
 (print "Context version: " (unbox major) "." (unbox minor))
 (print "OpenGL version: " (glGetString GL_VERSION))
 
-; init
+; global init
 (glClearColor 0.3 0.3 0.3 1)
 
-; draw loop
+; render pass
 (gl:set-renderer (lambda ()
-   (glClear GL_COLOR_BUFFER_BIT)))
+   (glClear GL_COLOR_BUFFER_BIT) ))

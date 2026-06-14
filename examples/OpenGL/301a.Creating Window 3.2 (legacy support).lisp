@@ -1,5 +1,6 @@
 #!/usr/bin/env ol
 
+; create OpenGL window with compat profile
 (import (lib gl 3.2 compat))
 (gl:set-window-title "1. Creating an OpenGL 3.2 compat Window")
 
@@ -11,11 +12,11 @@
 (print "Context version: " (unbox major) "." (unbox minor))
 (print "OpenGL version: " (glGetString GL_VERSION))
 
-; init
+; global init
 (glShadeModel GL_SMOOTH) ; legacy function, should work
 (glClearColor 0.3 0.3 0.3 1)
 
-; draw loop
+; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
@@ -30,4 +31,3 @@
       (glColor3f 0 0 1)
       (glVertex2f -0.0 +0.7)
    (glEnd) ))
-
