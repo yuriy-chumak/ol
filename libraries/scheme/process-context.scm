@@ -45,11 +45,11 @@
 
       (define set-environment-variable! (case-lambda
          ((name value)
-            (syscall 1014 name value))
+            (syscall 1014 (c-string name) (c-string value)))
          ((name value overwrite)
-            (syscall 1014 name value overwrite))))
+            (syscall 1014 (c-string name) (c-string value) overwrite))))
 
       (define (unset-environment-variable name)
-         (syscall 1014 name))
+         (syscall 1014 (c-string name)))
 
 ))
