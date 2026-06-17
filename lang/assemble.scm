@@ -130,6 +130,7 @@
       (define MOVE/16 (+ MOVE 64))
       (define REFI/16 (+ REFI 64))
       (define GOTO/16 (+ GOTO 64))
+      (define CLOS/16 (+ CLOS 64))
 
       (define RET/16 (+ RET 64))
       (define LD/16 (+ LD/ 64))
@@ -164,7 +165,8 @@
             (['prim op args to more]
                (cond
                   ; (vm:new) includes type as part of opcode (TODO: change to something more convenient)
-                  ((less? #xFF op)
+                  ; op > #xFF means "vm:new", that's the odd "new" encoding
+                  ((less? #xFF op) ; vm:new?
                      ; assert (HI op) == NEW
                      (define len (length args))
                      (if (all reg8 (cons* len to args))
@@ -176,25 +178,45 @@
                         ; vm:new/64, assert (= (HI op) NEW)
                         (cons* (+ (HI op) 64) (LO op) ; code, type
                            (LO len) (HI len)
-                           (append (foldr (lambda (x tl)
+                           (append (foldr (lambda (x tl) ; todo: change #n to (cons* (LO ...))
                                              (cons* (LO x) (HI x) tl))
                                        #n args)
                               (cons*
                                  (LO to) (HI to)
                                  (assemble more fail))))))
-                  ; vm:new, vm:make, vm:alloc, syscall, vm:set!
+                  ; vm:make, vm:alloc, syscall, vm:set!
                   ((variable-input-arity? op)
-                     (unless (all reg8 args) (runtime-error "PRIM16" args))
-                     (unless (all reg8 (if (list? to) to (list to))) (runtime-error "PRIM16" to))
+                     (define len (length args))
+                     (if (all reg8 (cons to args))
+                        (cons op
+                           (cons len
+                              (append args
+                                 (cons to
+                                    (assemble more fail)))))
+                     else
+                        (unless (or (eq? op #o22) (eq? op #o23))
+                           (runtime-error "PRIM16" (string-append "#o" (number->string op 8)) (cons to args)))
+                        (cons (+ op 64)
+                           (cons* (LO len) (HI len)
+                              (append (foldr (lambda (x tl)
+                                                (cons* (LO x) (HI x) tl))
+                                          #n args)
+                                 (cons* (LO to) (HI to)
+                                    (assemble more fail)))))))
+
+                     ;; (unless (all reg8 args) (runtime-error "PRIM16-via-args" (string-append "#o" (number->string op 8)) args))
+                     ;; (unless (all reg8 (if (list? to) to (list to))) (runtime-error "PRIM16-via-to" op to))
                      ;; fixme: no output arity check
-                     (cons op
-                        (cons (length args)
-                           (append args
-                              (cons to
-                                 (assemble more fail))))))
+                     ;; (cons op
+                     ;;    (cons (length args)
+                     ;;       (append args
+                     ;;          (cons to
+                     ;;             (assemble more fail))))))
+
                   ; returning one argument
                   ((eq? (type to) type-value+)
-                     (unless (memq op '(51)) ; TEMP, not a CONS
+                     ;; (print "'prim op args to: " op ", " args ", " to)
+                     (unless (memq op '(51)) ; TEMP, just not a CONS (because CONS already implemented)
                         (unless (all reg8 args) (runtime-error "PRIM16" args))
                         (unless (reg8 to) (runtime-error "PRIM16" to)))
 

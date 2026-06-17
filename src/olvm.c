@@ -403,8 +403,8 @@ typedef word* R;
 #define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
 #define TDLSYM                      (62) // type-dlsym, temp name
 
-//#define likely(x)                   __builtin_expect((x), 1)
-//#define unlikely(x)                 __builtin_expect((x), 0)
+#define likely(x)                   __builtin_expect(!!(x), 1)
+#define unlikely(x)                 __builtin_expect(!!(x), 0)
 
 #define is_enump(ob)                (is_value(ob)     && value_type (ob) == TENUMP)
 #define is_enumn(ob)                (is_value(ob)     && value_type (ob) == TENUMN)
@@ -2005,8 +2005,12 @@ static char* pvenv_main() {
 #endif
 
 
-#define NR                          256 // see n-registers in register.scm
-#define CR                          128 // available initial callables, should be more than 4!
+// TODO: allocate really 65536, but NR must be 256
+// increate NR by 256 if used 16-bit regs
+// all 16-bit tests hide under "unlikely"
+#define NR                          256 // static registers count
+#define MNR                       65536 // maximal registers count
+#define CR                            4 // available initial callables, should be more than 4!
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
 #define MEMPAD                     (1024) // space after end of heap to guarantee apply
@@ -2348,11 +2352,13 @@ struct olvm_t // subclass of heap_t
 
 	// 0 - mcp, 1 - this, 2 - clos-this, 3 - a0, often cont, 4 - a1, ..., NR - pin0, ...
 	// registers
-    word reg[NR];
+	int mnr; // Maximal Number of Regiters
+	int trn; // Top Register Number
+	word reg[MNR];
 
 #ifndef OLVM_NOPINS
 	// pinned objects support
-    word* pin;
+	word* pin;
 	size_t cr;  // pins count
 	size_t ffpin; // first free pin
 	size_t lfpin; // last free pin
@@ -2606,7 +2612,6 @@ word* string2ol(olvm_t* this, char* vptr)
 
 // =================================================================
 
-
 // проверить достаточно ли места в стеке, и если нет - вызвать сборщик мусора
 static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 {
@@ -2618,26 +2623,19 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 
 	word* r = ol->reg;
 
-	// попробуем освободить ненужные регистры
-    // (но не пины)
-	// !!! это неправильный код, так нельзя
-	// TODO: найти лучшее решение по освобождению регистров
-	// for (int i = 3 + ol->arity; i < NR; i++)
-	// 	r[i] = IFALSE; // todo: use wmemset?
-
 	// assert (fp + N + 3 < ol->heap.end);
-	int p = 0, N = NR, C = 1;
+	int p = 0, N = ol->trn, C = 1;
 
 	// создадим в топе временный объект со значениями всех регистров и пинов
 #ifndef OLVM_NOPINS
 	C += ol->cr;
 #endif
 
-	word *regs = new (TVECTOR, N + C); // N for regs, 1 for this, 1 for pins
+	word *regs = new (TVECTOR, N + C); // N for regs, 1 for this, C for pins
 	while (++p <= N) regs[p] = r[p-1]; // save regs
-	regs[p] = ol->this;
+	regs[p++] = ol->this;
 #ifndef OLVM_NOPINS
-	memcpy(regs+p+1, ol->pin, ol->cr * sizeof(word));
+	memcpy(&regs[p], ol->pin, ol->cr * sizeof(word));
 #endif
 
 	ol->heap.fp = fp; // выполним сборку мусора
@@ -2645,10 +2643,14 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 
 	// и восстановим все пины и регистры, уже подкорректированные сборщиком
 #ifndef OLVM_NOPINS
-	memcpy(ol->pin, regs+p+1, ol->cr * sizeof(word));
+	memcpy(ol->pin, &regs[p], ol->cr * sizeof(word));
 #endif
-	ol->this = regs[p];
+	ol->this = regs[--p];
 	while (--p >= 1) r[p-1] = regs[p];
+
+	// // cleanup all other registers (а надо ли?)
+	// for (int i = N; i < ol->mnr; i++)
+	// 	r[i] = IFALSE;
 
 	// закончили, почистим за собой:
 	ol->heap.fp = fp; // вручную удалим временный объект, (это оптимизация)
@@ -2702,6 +2704,31 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define WA1 reg[wip(1)]
 #define WA2 reg[wip(2)]
 #define WA3 reg[wip(3)]
+
+#ifdef max
+#undef max
+#endif
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define grow64(x) (((x) & ~63) + 64)
+
+#define WTEST1(ax) if (unlikely(ax >= ol->mnr)) {\
+	ol->mnr = grow64(ax);\
+}
+#define WTEST2(ax,ay) if (unlikely(ax >= ol->mnr && ay >= ol->mnr)) {\
+	ol->mnr = grow64(max(ax, ay));\
+}
+#define WTEST_MACRO(_1, _2, _3, NAME, ...) NAME
+#define WTEST(...) WTEST_MACRO(__VA_ARGS__, WTEST3, WTEST2, WTEST1, NOTHING)(__VA_ARGS__)
+
+
+#define NEW_MACRO(_1, _2, _3, NAME, ...) NAME
+#define new(...) NEW_MACRO(__VA_ARGS__, NEW_BINARY, NEW_OBJECT, NEW, NOTHING)(__VA_ARGS__)
+
+// #define AW0  reg[htole16(*(uint16_t*)&ip[0])]
+// #define AW1  reg[htole16(*(uint16_t*)&ip[2])]
+// #define AW2  reg[htole16(*(uint16_t*)&ip[4])]
+// #define AW3  reg[htole16(*(uint16_t*)&ip[6])]
+
 // generate errors and faults
 #ifndef NTRACE
 #define TRACE(...) D(__VA_ARGS__)
@@ -2787,6 +2814,7 @@ word runtime(struct olvm_t* ol)
 		ptrdiff_t dp;
 		dp = ip - ip0;
 
+		ol->trn = ol->mnr; // we don't know how many registers are valid at this point, so use all of them
 		ol->heap.fp = fp; ol->this = this;
 		ol->heap.gc(ol, words);
 		fp = ol->heap.fp; this = ol->this;
@@ -2796,8 +2824,12 @@ word runtime(struct olvm_t* ol)
 		ip = ip0 + dp;
 	}
 
-	word a0,a1,a2,a3; // command arguments optimized variables
-	word r3,r4,r5,r6; // error handling optimized variables
+	word a0,a1,a2,ar; // command arguments optimized variables
+	// word r3,r4,r5,r6; // error handling optimized variables
+#define r3 a0
+#define r4 a1
+#define r5 a2
+#define r6 ar
 
 #ifdef DEBUG_COUNT_OPS
 	bzero(ops, sizeof(ops));
@@ -2939,6 +2971,7 @@ apply:;
 		}
 
 		ol->arity = acc; // reflect possibly changed arity into vm state
+		// todo?: 
 
 		// теперь проверим доступную память
 
@@ -2946,10 +2979,23 @@ apply:;
 		// теоретически, это можно вычислить проанализировав текущий контекст
 		// а практически, пока поюзаем количество доступных регистров
 
-		// если места в буфере не хватает, то мы вызываем GC,
-		//	а чтобы автоматически подкорректировались регистры,
-		//	мы их складываем в память во временный объект.
-		if (fp >= heap->end) {
+		// если места в буфере не хватает, то мы вызываем GC
+		// во время этого вызова мы точно знаем какие регистры нам еще нужны,
+		// так что можем провести необходимую чистку
+		if (unlikely(fp >= heap->end)) {
+			// fprintf(stderr, ".");
+			// количество валидных регистров (+3?)
+			int trn = acc + 4;
+			// почистим "остальные" регистры
+			for (int i = trn; i < ol->mnr; i++)
+				reg[i] = IFALSE;
+			ol->trn = trn;
+			// а теперь и mnr поправим
+			// ol->mnr  = grow64(acc + 4);
+			if (acc + 4 < NR)
+				ol->mnr = NR; // mnr не может быть меньше NR
+
+			// всё, можно вызывать GC
 			heap->fp = fp; ol->this = this;
 			heap->gc(ol, 0);
 			fp = heap->fp; this = ol->this;
@@ -3042,7 +3088,7 @@ mainloop:;
 		CLOS  = 003,
 
 	// управляющие команды
-		APPLY = 024,
+		APPLY = 024,  // 20, 0x14
 		APPLYCONT = 025,
 		RET   = 24,
 		RUN   = 50,
@@ -3211,6 +3257,8 @@ mainloop:;
 	int op; //operation to execute
 loop:;
 	/*! ### OLVM Codes
+	 * TODO: отдельная VM команда на увеличение банка регистров?
+	 *       чтобы сэкономить на проверках regN > NR?
 	 * 
 	 * | #o/8 | o0       | o1        | o2       | o3       | o4       | o5       | o6       | o7       |
 	 * |:-----|:--------:|:---------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|
@@ -3222,6 +3270,7 @@ loop:;
 	 * |**5o**| SUB      | FF:RED?   | FF:BLACK | SET!     | LESS?    |          | FF:TOGGLE| REF      |
 	 * |**6o**| vm:cast  | set-ref   | RUN      | CONS     | CAR      | CDR      | EQ?      | AND      |
 	 * |**7o**| IOR      | XOR       | SHR      | SHL      | UNPIN    | CLOCK    |          | SYSCALL  |
+	 * set-ref -> o40, set-ref! -> o61, MOV2 -> o12
 	 */
 #ifdef DEBUG_COUNT_OPS
     ops[*ip]++;
@@ -3266,17 +3315,17 @@ loop:;
 	 * GO TO procedure, arity
 	 */
 	case GOTO: {
-		a0 = ip[0];
-		a1 = ip[1];
-GOTO:;
+		a0 = ip[0]; // reg
+		a1 = ip[1]; // arguments count
+	GOTO:;
 		this = reg[a0];
 		acc = a1;
 		goto apply;
 	}
 	case GOTO+64: { // GOTO/16
 		a0 = wip(0);
-		a1 = wip(1);
-		goto GOTO;
+		a1 = wip(1);  WTEST(a0, a1);
+		goto GOTO; // don't need to update ip
 	}
 
 	/*! #### RET
@@ -3284,13 +3333,16 @@ GOTO:;
 	 */
 	case RET: {
 		this = R3;
-		R3 = A0; acc = 1;
+		a0 = ip[0];
+		R3 = reg[a0]; acc = 1;
 		goto apply;
 	}
 	case RET+64: { // RET/16
 		this = R3;
-		R3 = WA0; acc = 1;
-		goto apply;
+		a0 = wip(0);  WTEST(a0);
+
+		R3 = reg[a0]; acc = 1;
+		goto apply; // don't need to update ip
 	}
 
 	/*! #### APPLY
@@ -3320,12 +3372,14 @@ GOTO:;
 		word *lst = (word *) reg[r+1];
 
 		while (is_pair(lst)) { // unwind argument list
-			if (r >= NR)
-				ARITYERROR(this, r);
+			// if (r >= NR)
+			// 	ARITYERROR(this, r);
 			reg[r++] = car (lst);
 			lst = (word *) cdr(lst);
 			arity++;
 		}
+		if (r > ol->mnr) // todo: unlikely
+			ol->mnr = grow64(r);
 		acc = arity;
 
 		goto apply;
@@ -3392,7 +3446,8 @@ GOTO:;
 		static
 		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
 		int i = *ip++;
-		WA0 = I[i];
+		a0 = wip(0);  WTEST(a0);
+		reg[a0] = I[i];
 		ip += 2; break;
 	}
 
@@ -3406,7 +3461,8 @@ GOTO:;
 	}
 	case LD8+64: { // LD8/16
 		int i = *ip++;
-		WA0 = I(i);
+		a0 = wip(0);  WTEST(a0);
+		reg[a0] = I(i);
 		ip += 2; break;
 	}
 
@@ -3419,7 +3475,12 @@ GOTO:;
 		ip += 3; break;
 	}
 	case REFI+64: { // REFI/16
-		WA2 = ref(WA0, wip(1));
+		a0 = wip(0);
+		a1 = wip(1); // imm
+		a2 = wip(2); // assert? a2 > a0
+		if (unlikely(a0 >= ol->mnr || a2 >= ol->mnr))
+			ol->mnr = grow64(max(a0, a2));
+		reg[a2] = ref(reg[a0], a1);
 		ip += 6; break;
 	}
 
@@ -3434,6 +3495,20 @@ GOTO:;
 		WA1 = WA0;
 		ip += 4; break;
 	}
+
+	// /*! #### MOVE a t
+	//  * Rt = Ra
+	//  */
+	// case MOVE: // A1 = A0;
+	// 	a0 = ip[0], a1 = ip[1];
+	// move:
+	// 	reg[a1] = reg[a0];
+	// 	ip += 2; break;
+	// case MOVE+64: { // MOVE16
+	// 	a0 = htole16(*(uint16_t*)&ip[0]);
+	// 	a1 = htole16(*(uint16_t*)&ip[2]);
+	// 	ip += 2; goto move;
+	// }
 
 	/*! #### MOV2 a1 t1 a2 t2
 	 * Rt1 = Ra1,
@@ -3504,7 +3579,7 @@ GOTO:;
 	// make object (fastest choice)
 	//	проверка размеров тут не нужна, так как в любом случае количество аргументов,
 	//	передаваемых в функцию не превысит предусмотренных пределов
-	case VMNEW: { // new t f1 .. fs r
+	case VMNEW: { // new t size f1 .. fs r
 		// vm:new is a SPECIAL operation with different arguments order
 		word type = *ip++;
 		word size = *ip++;
@@ -3519,6 +3594,9 @@ GOTO:;
 	case VMNEW+64: { // VMNEW/64
 		word type = *ip++;
 		word size = wip(0);  ip+=2;
+		if (fp + size > heap->end) // unlikely
+			GC(size);
+
 		word *p = new (type, size), i = 0;
 		while (i < size) {
 			p[i+1] = WA0;
@@ -3534,14 +3612,22 @@ GOTO:;
 	// (vm:make type length default-value)
 	case VMMAKE:
 	case VMALLOC: { // and VMALLOC
-	 	word size = *ip++;
-		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
-		word value = A1;
+	 	// word size = *ip++;
+		acc = *ip++;
+		a0 = ip[0];
+		a1 = ip[1];
+		a2 = ip[2];
+		ar = ip[acc];
+		ip += acc + 1;
+
+	vmmake:
+		word type = value (reg[a0]) & 63; // maybe better add type checking? todo: add and measure time
+		word value = reg[a1];
 
 		word el = IFALSE;
-		switch (size) {
+		switch (acc) {
 			case 3:
-				el = A2;
+				el = reg[a2];
 				// fall through
 			case 2: {
 				unsigned len = 0;
@@ -3557,20 +3643,20 @@ GOTO:;
 				// эта проверка необходима, так как действительно можно
 				//	выйти за пределы кучи (репродюсится стабильно)
 				int mult = (op != VMMAKE) ? sizeof(word) : 1;
-				if (fp + (len / mult) > heap->end) {
+				if (fp + (len / mult) > heap->end) { // unlikely
 					GC(len / mult);
-					
-					value = A1, el = A2; // reload values after possible gc
+					// reload values after possible gc
+					value = reg[a1], el = reg[a2];
 
 					// fail, no memory available:
 					if (fp + (len / mult) > heap->end)
-						FAULT(op, sandboxp ? ITRUE : IFALSE, I(size));
+						FAULT(op, sandboxp ? ITRUE : IFALSE, I(acc));
 				}
 
 				word *ptr = (op == VMMAKE)
 					? new (type, len)
 					: new_alloc(type, len);
-				reg[ip[size]] = (word)ptr;
+				reg[ar] = (word)ptr;
 
 				if (is_numberp(value)) { // no list, just
 					if (op == VMMAKE) {
@@ -3613,21 +3699,36 @@ GOTO:;
 				}
 				else {
 					// invalid parameters
-					reg[ip[size]] = IFALSE;
+					reg[ar] = IFALSE;
 				}
 				break;
 			}
 			default: fail:
-				ERROR(op, this, I(size));
+				ERROR(op, this, I(acc));
 		}
 
-	 	ip += size + 1; break;
+	 	break;
 	}
 
+	case VMMAKE+64:
+	case VMALLOC+64: // and VMALLOC
+	 	acc = wip(0); ip += 2;
+		a0 = wip(0);
+		a1 = wip(1);
+		a2 = wip(2);
+		ar = wip(acc);
+		if (unlikely(ar >= ol->mnr)) // a0, a1, a2 - already valid
+			ol->mnr = grow64(ar);
+
+		ip += (acc + 1) * 2;
+		op &= 63; goto vmmake;
+
+
+	// todo: move near GOTO
 	case CLOS:
 	{	// CLOS type size r i a1 a2 a3 a4 ...
 		word type = *ip++;
-		word size = *ip++;
+		word size = *ip++; // len+2
 		word *T = new (type, size-1);
 
 		word vec = reg[*ip++];
@@ -3637,6 +3738,22 @@ GOTO:;
 			T[i++] = reg[*ip++];
 		reg[*ip++] = (word) T; // reg[ret] = T
 		break;
+	}
+	case CLOS+64:
+	{	// CLOS type size r i a1 a2 a3 a4 ...
+		word type = *ip++;
+		word size = wip(0);
+		word *T = new (type, size-1);
+
+		word vec = reg[wip(1)]; // lpos
+		T[1] = ref(vec,wip(2)); // offset
+
+		ip += sizeof(int16_t) * 3;
+
+		for (size_t i = 2; i < size; ip += sizeof(int16_t))
+			T[i++] = reg[wip(0)];
+		reg[wip(0)] = (word) T; // reg[ret] = T
+		ip += 2; break;
 	}
 
 
@@ -5801,7 +5918,7 @@ GOTO:;
 		word object = A0;
 
 		int id = OLVM_pin(ol, object);
-        A1 = (id > 3) ? I(id) : IFALSE;
+		A1 = (id > 3) ? I(id) : IFALSE;
 		ip += 2; break;
 	}
 	case VMUNPIN: { // (vm:unpin pin) pin id => /object/, and free pin id
@@ -6412,11 +6529,6 @@ fail:;
 }
 #endif
 
-#ifdef max
-#undef max
-#endif
-#define max(a,b) ((a) > (b) ? (a) : (b))
-
 // TODO: optional olvm without malloc
 struct olvm_t*
 OLVM_new(unsigned char* bootstrap)
@@ -6465,6 +6577,8 @@ OLVM_new(unsigned char* bootstrap)
 	// дефолтный сборщик мусора (можно заменить на свой)
 	heap->gc = OLVM_gc;
 
+	handle->mnr = NR; // изначально оперируем только 256 регистрами
+	handle->trn = 4;  // safe low limit
 	// handle->max_heap_size = max_heap_size;
 
 	// Десериализация загруженного образа в объекты

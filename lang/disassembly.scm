@@ -4,6 +4,7 @@
    (import
       (scheme base)
       (scheme bytevector)
+      (scheme cxr)
       (owl ff)
       (owl list-extra)
       (owl io))
@@ -48,16 +49,18 @@
                (define (D name len)
                   (loop (drop src len)
                         (cons
-                           (append (list len name) (cdr (take src len)))
+                           (cons* len name (cdr (take src len)))
                            out)))
+               (define (wlen src offset)
+                  (* (+ (lref src offset)
+                        (<< (lref src (+ offset 1)) 8))
+                     2))
 
                (if (null? src)
                   (reverse out)
                else
-                  (print src)
                   (case (car src)
                      (#o0  (DIS 1 "ERROR"))
-                     ;; (62 (DIS 1 "INVALID"))
 
                      (24 (DIS 2 "RET"))     (#o130 (D "WRET" 3))
                      
@@ -69,7 +72,8 @@
                      (36 (DIS 3 "SIZE"))
 
                      (#o2  (D "GOTO" 3))    (#o102 (D "WGOTO" 5))
-                     (#o3  (D "CLOS" (+ (caddr src) 4))) ; todo: decode first closure argument in type
+                     (#o3  (D "CLOS" (+ (caddr src) 4)))
+                     (#o103(D "WCLOS" (+ (wlen src 2) 6)))
 
                      (#o4  (D (case (cadr src)
                                  (0 "BF") (1 "BT")
@@ -111,9 +115,13 @@
                      (#o13 (DIS 5 "SETREF!")) ; TODO: change
 
                      ; memory allocators
-                     (#o20 (D "NEW" (if (null? (cdr src)) 1 (+ (caddr src) 5))))
+                     (#o20 (D "NEW" (if (null? (cdr src)) 1 (+ (caddr src) 4))))
+                     (#o120 (D "WNEW" (+ (wlen src 2) 6)))
+
                      (#o22 (D "MAKE"  (if (null? (cdr src)) 1 (+ (cadr src) 3))))
+                     (#o122 (D "WMAKE" (+ (wlen src 1) 5)))
                      (#o23 (D "ALLOC" (if (null? (cdr src)) 1 (+ (cadr src) 3))))
+                     (#o123 (D "WALLOC" (+ (wlen src 1) 5)))
                      ; special
                      (#o24 (D "APPLY" 1))
                      (#o25 (D "APPLY/CC" 1))
@@ -160,6 +168,6 @@
                      (37 (DIS 3 "EXIT"))
 
                      (else
-                        (DIS "?"))))))))
+                        (D (string-append "?" (number->string (car src))) 1))))))))
 
 ))
