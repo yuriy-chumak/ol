@@ -332,8 +332,11 @@
                      (cons* [id (λ () (cont 'released))] info todo)
                      done state)))
 
-            ; 18, empty
-            #false
+            ; 18, get current thread id
+            (λ (id cont b c todo done state tc)
+               (tc
+                  (cons [id (λ () (cont id))] todo)
+                  done state))
 
             ; 19, set return value proposal
             (λ (id cont b c todo done state tc)
