@@ -7,6 +7,10 @@
   O t u s   L i s p
 ```
 
+❗ Master branch moved to new `3.0` version preparation. Latest release version 2.7 moved to [branch 2.7](tree/2.7).
+
+`3.0 (alpha)` build statuses:
+
 [![x86/x64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86/x64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml)
 [![aarch64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml)
 [![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml)
@@ -24,23 +28,24 @@
 [![s390x 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml)
 
 
-<a href="https://iaaa.port0.org/ol/test-matrix/"><img align="right" style="margin: 10px; " src="doc/img/test-matrix.png"></a>
+<a href="https://iaaa.port0.org/ol/test-matrix#3.0"><img align="right" style="margin: 10px; " src="doc/img/test-matrix.png"></a>
 
 Every code change is automatically tested for regressions using GitHub Actions and our own testing machine. It includes a set of
 core language <a href="tests/">
-<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DLANGUAGE&label=test%20suite" alt="test suite"></a>,
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus-3.0.json%3Frunner%3DLANGUAGE&label=test%20suite&version=3.0" alt="test suite"></a>,
 rosettacode <a href="tests/rosettacode/">
-<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DROSETTACODE&label=examples" alt="examples"></a>,
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus-3.0.json%3Frunner%3DROSETTACODE&label=examples&version=3.0" alt="examples"></a>,
 FFI
 <a href="tests/ffi/">
-<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DFFI-Tier-1&label=tier-1%20tests" alt="ffi tests"></a>
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus-3.0.json%3Frunner%3DFFI-Tier-1&label=tier-1%20tests&version=3.0" alt="ffi tests"></a>
 <a href="tests/ffi/">
-<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DFFI-Tier-2&label=tier-2%20tests" alt="ffi tests"></a>,
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus-3.0.json%3Frunner%3DFFI-Tier-2&label=tier-2%20tests&version=3.0" alt="ffi tests"></a>,
 and language
 <a href="doc/reference/README.md">
-<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DREFERENCE&label=functions%20reference" alt="ffi tests"></a>.
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus-3.0.json%3Frunner%3DREFERENCE&label=functions%20reference&version=3.0" alt="ffi tests"></a>.
 
-A detailed test matrix for Ol ver. 3.0 with results for each test across different platforms is available on a [separate web page](https://iaaa.port0.org/ol/test-matrix/) (follow the link or click the preview image to open it).
+A detailed `3.0` test matrix with results for each test across different platforms is available on a [separate web page](https://iaaa.port0.org/ol/test-matrix#3.0) (follow the link or click the preview image to open it).
+(`2.7` test matrix can be found [here](https://iaaa.port0.org/ol/test-matrix#2.7))
 
 ### ✨ Note
 * Please read the frequently asked questions and answers in the [Q/A](#qa) section. This may prove to be important!
@@ -94,17 +99,19 @@ Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (
 [The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
 # VERSIONS
-Current version is **[2.7](tree/2.7)**.  
-Version **[3.0](tree/3.0)** under active development.
+Latest stable release is **[2.7](tree/2.7)**.  
+Version **3.0** under active development in the master branch.
 
 ### 3.0 changes
-* ✔ Keep high-level backward compatibility as much as possible - all tests (language, ffi, rosettacode, reference) should work without changes,
-* 🛠 Internal VM codes changing largerly with two sets of codes, older 8-bit and new one 16-bit,
+* ❗ Keep high-level backward compatibility as much as possible - all tests (language, ffi, rosettacode, reference) should work without changes,
+* 🛠 Internal VM codes largerly changed and extended with second code set (16-bit),
+  * 🛠 No more "256 args" function limitation (65536 *should be enough for everyone*),
 * 🛠 Less aggressive internal regs remapper - reducing compile time,
-* 🛠 No "256 args" function limitation (65536 *should be enough for everyone*),
-* 💬 No bytecode-interner (under discussion) - 20% larger bytecode, but there will be no confusion with the functions of the same body with a different name,
+* 🛠 Better FFI structures marshalling support (inspired by the development of a Vulkan support library),
+* 💬 No bytecode-interner (still under discussion) - 20% larger bytecode, but there will be no confusion with the functions of the same body with a different name,
 * 💬 No register remappings (under discussion) in lang/register - small speedup, a bit simpler code
-* 💬 Dropping clang support (under discussion) - clearer and faster code, clang support requires lot of stupid sugar that makes code less readable.
+* 💬 Dropping clang support (sorry) - clearer and faster code, clang support requires lot of stupid syntax sugar that makes code much less readable.
+  * later, maybe, clang support will be returned. after tests and speed comparisons. possibly... i'm not sure.
 
 
 # PACKAGING
@@ -194,19 +201,21 @@ Breaking changes (master branch), as part of Ol 2.7
 The following breaking changes have been added as part of 2.7 version:
 * ❗ internal type names are changed (type codes are NOT changed).  
   please, don't use internal type names in your code, use predicates instead
-  * `type-string-displatch` type name changed to `type-superstring` (the old name caused confusing)️
+  * `type-string-displatch` type name changed to `type-superstring` (the old name caused confusions)️
     * you shoud use `string?` predicate to check the string,
-    * if you want to use older name, add `(define type-string-displatch type-superstring)` as compat layer
+    * if you want to use older name, add `(define type-string-displatch type-superstring)` as a compat layer
   * `type-enum+` changed to `type-value+` (accent on integer as a value)
   * `type-enum-` changed to `type-value-` (same)
   * `type-int+` changed to `type-integer+` (the fewer name trancations, the better)
   * `type-int-` changed to `type-integer-` (same)
 * ❗ `values` with an empty argument list now returns *#false* instead of the string "no vals"
-* ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()* but simply *#false* if nothing was returned
-  * use the "RETURNING" statement with INSERT and UPDATE if you want to return something.
 * ❗ Welcome invitation changed
 * ❗ `procedure?` made r7rs compatible (will now return *#false* for ff's)
 * ❗ arity errors changed (made more clear and descriptive)
+
+Important external libraries changes:
+* ❗ `sqlite:value` no longer returns the result of *sqlite3_changes()* but simply *#false* if nothing was returned
+  * use the "RETURNING" statement with INSERT and UPDATE if you want to return something.
 
 
 R<sup>7</sup>RS DIFFERENCES
@@ -250,7 +259,7 @@ BUILD / RUN / INSTALL
 
 #### BUILD REQUIREMENTS
 
-* GCC 3.2+ / CLANG 3.5+
+* GCC 3.2+
 * GNU MAKE
 
 Type `make help` (gmake for *BSD) to see a list of available targets.
@@ -319,7 +328,7 @@ DEPRECATIONS
 ------------
 
 * 2.6 -> 2.7
-  - i'm thinking about changing `(wait ms)` to `(wait s)`, it means the seconds usage instead of milliseconds.
+  - ...
 
 * 2.5 -> 2.6
   - feature `ol-2.5` changed to `ol-2.6`.
@@ -439,6 +448,9 @@ Ol command line options available:
 * `--non-interactive`: disable REPL interactive mode
 * `--embed`: run special reduced REPL for embed usage
 * `--`: end-of-options sign
+* `-c, --compile`: compile execution result to stdout
+* `-o=<filename>`: put the compilation output into file <filename> instead of stdout
+* `--entry`: convert execution result (which should be a `(lambda args ...)`) to entry point
 
 Ol can be executed interactively or in the unattended mode.
 
@@ -520,7 +532,7 @@ PORTABLE FORM
 FILES
 -----
 
-* `repl`  - the compiled ol binary interpreter/compiler (olvm bytecode)
+* `repl`  - the compiled ol interpreter/compiler binary (in the form of olvm bytecode)
 * `src/olvm.c`  - the ol virtual machine source code (C)
 * `includes/ol/ol.h`  - the common ol header (C, not required, just for use as embed)
 * `includes/ol/vm.h`  - the ol virtual machine header (C, not required, just for use as embed)
@@ -529,9 +541,10 @@ FILES
 * `libraries/**.scm` - various OL libraries (Lisp):
   * `libraries/scheme/core.scm` - r7rs core implementation
   * `libraries/owl/*.scm` - legacy basic libraries
+  * `libraries/otus/*.scm` - modern basic libraries
   * `libraries/lib/*.scm` - external native library mappings
   * etc.
-* `tests/**` - some basic automation tests (Lisp, C, Txt)
+* `tests/**` - language automation tests (Lisp, C, Txt)
 * `tests/rosettacode/*.scm` - additional automation tests (Lisp), described at the [Rosetta Code](https://rosettacode.org/wiki/Category:Ol) programming chrestomathy site.
 
 
