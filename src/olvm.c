@@ -403,8 +403,8 @@ typedef word* R;
 #define TCALLABLE                   (61) // type-callable, receives '(description . callable-lambda)
 #define TDLSYM                      (62) // type-dlsym, temp name
 
-//#define likely(x)                   __builtin_expect((x), 1)
-//#define unlikely(x)                 __builtin_expect((x), 0)
+#define likely(x)                   __builtin_expect(!!(x), 1)
+#define unlikely(x)                 __builtin_expect(!!(x), 0)
 
 #define is_enump(ob)                (is_value(ob)     && value_type (ob) == TENUMP)
 #define is_enumn(ob)                (is_value(ob)     && value_type (ob) == TENUMN)
@@ -420,6 +420,7 @@ typedef word* R;
 #define is_string(ob)               (is_reference(ob) && reference_type (ob) == TSTRING)
 #define is_vector(ob)               (is_reference(ob) && reference_type (ob) == TVECTOR)
 #define is_thread(ob)               (is_reference(ob) && reference_type (ob) == TTHREAD)
+#define is_bytevector(ob)           (is_reference(ob) && reference_type (ob) == TBYTEVECTOR)
 
 #define is_vptr(ob)                 (is_reference(ob) && (*(word*) (ob)) == make_header(TVPTR,     2, 0))
 #define is_callable(ob)             (is_reference(ob) && (*(word*) (ob)) == make_header(TCALLABLE, 2, 0))

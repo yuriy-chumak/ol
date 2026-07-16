@@ -219,8 +219,9 @@ typedef int64_t ret_t;
 
 // ------------------
 #define IDF(...)   (__VA_ARGS__) // Identity function
+#define ALIGN(ptr, size) ptr = ((ptr + size - 1) & -size)
 #define TALIGN(ptr, type) \
-	__builtin_choose_expr(sizeof(type) > 1, ptr = ((ptr + sizeof(type) - 1) & -sizeof(type)), (void)0)
+	__builtin_choose_expr(sizeof(type) > 1, ALIGN(ptr, sizeof(type)), (void)0)
 #define unless(...) if (! (__VA_ARGS__))
 
 #define max2(a,b) ({ \
@@ -1447,15 +1448,13 @@ word* string2ol(olvm_t* this, char* vptr);   // implemented in olvm.c
 				case TINTP:\
 				case TINTN: {\
 					int_t ivalue = (int_t)value;\
-					if (ivalue > VMAX || ivalue < -VMAX) {\
-						if (ivalue < 0) {\
-							*(word*)num = make_header(value < 0 ? TINTN : TINTP, 3);\
+					if (ivalue < -VMAX || ivalue > VMAX) {\
+						*(word*)num = make_header(value < 0 ? TINTN : TINTP, 3);\
+						if (ivalue < 0)\
 							value = -value;\
-						}\
-						else\
-							*(word*)num = make_header(TINTP, 3);\
-						*(word*)&car(num) = I(ivalue & VMAX);\
-						*(word*)&cadr(num) = I(ivalue >> VBITS);\
+						car(num) = I(ivalue & VMAX);\
+						cadr(num) = I(ivalue >> VBITS);\
+						cddr(num) = INULL;\
 					}\
 					else\
 						*(word*)l = make_enum(value);\
@@ -1951,7 +1950,7 @@ size_t structure_calc(word args, word rtty, size_t* total)
 	return 0;
 }
 
-static // structure or array of structures
+static // structure or array of structures ??
 size_t deep_array_calc(word args, word rtty, size_t* total)
 {
 	switch (reference_type(args)) {
@@ -2032,32 +2031,6 @@ again:;
 		(char*(*)(char*,word)) not_a_string);
 }
 
-static
-void store_string_array(word** ffp, char*** memory, word array)
-{
-	word* fp = *ffp;
-	if (is_pair(array) || array == INULL) {
-		int size = list_length(array);
-		char** p = *memory = (char**) &fp[1];
-		new (TBYTEVECTOR, size, 0);
-
-		while (array != INULL) {
-			int len = store_chars((char*)(fp+1), car(array)); // TODO: fix this!
-			*p++ = (char*)(fp+1);
-			new_bytevector(len);
-
-			array = cdr(array);
-		}
-		*ffp = fp;
-		return;
-	}
-	if (is_vector(array)) {
-		// TODO:
-		return;
-	}
-	assert (array == IFALSE);
-	*memory = NULL;
-}
 
 static
 size_t store_widechars(widechar* ptr, word str)
@@ -2079,8 +2052,9 @@ again:;
 // Structure Sending by Reference:
 // https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
 static
-size_t structure_size(size_t size, word t)
+size_t structure_size(size_t size, word t, size_t* alignment)
 {
+	size_t align = 1;
 	// http://www.catb.org/esr/structure-packing/
 	while (t != INULL) {
 		word p = car(t);
@@ -2088,9 +2062,13 @@ size_t structure_size(size_t size, word t)
 			if (is_pointer(car(p))) {
 				size_t subsize = sizeof(void*);
 				size = ((size + subsize - 1) & -subsize) + subsize; // align + size
+				align = max(align, subsize);
 			}
-			else
-				size = structure_size(size, p);
+			else {
+				size_t subslign;
+				size = structure_size(size, p, &subslign);
+				align = max(align, subslign);
+			}
 		}
 		else {
 			assert (is_value(p));
@@ -2102,180 +2080,54 @@ size_t structure_size(size_t size, word t)
 				switch (type) {
 					case TINT16: case TUINT16: subsize = sizeof(int16_t); break;
 					case TINT32: case TUINT32: subsize = sizeof(int32_t); break;
+					// TODO: 32-bit machines align 64-bit code on the 32-bit border
 					case TINT64: case TUINT64: subsize = sizeof(int64_t); break;
 					case TFLOAT:               subsize = sizeof(float);   break;
 					case TDOUBLE:              subsize = sizeof(double);  break;
 					default:                   subsize = sizeof( word );
 				}
 				size = ((size + subsize - 1) & -subsize) + subsize; // align + size
+				align = max(align, subsize);
+			}
+		}
+		t = cdr(t);
+	}
+	if (alignment) *alignment = align;
+	return ((size + align - 1) & -align); // structure always aligned to it's maximal alignment
+}
+
+static
+size_t structure_align(size_t size, word t)
+{
+	while (t != INULL) {
+		word p = car(t);
+		if (is_pair(p)) {
+			if (is_pointer(car(p))) {
+				size = max(size, sizeof(void*));
+			}
+			else
+				size = structure_align(size, p);
+		}
+		else {
+			assert (is_value(p));
+			int type = value(p);
+			if (type == TINT8 || type == TUINT8 || type == TBOOL)
+				; // no additional alignment
+			else {
+				switch (type) {
+					case TINT16: case TUINT16: size = max(size, sizeof(int16_t)); break;
+					case TINT32: case TUINT32: size = max(size, sizeof(int32_t)); break;
+					// TODO: 32-bit machines align 64-bit code on the 32-bit border
+					case TINT64: case TUINT64: size = max(size, sizeof(int64_t)); break;
+					case TFLOAT:               size = max(size, sizeof(float));   break;
+					case TDOUBLE:              size = max(size, sizeof(double));  break;
+					default:                   size = max(size, sizeof( word ));
+				}
 			}
 		}
 		t = cdr(t);
 	}
 	return size;
-}
-
-// Notes:
-//	* C standard guarantees that struct members always appear in memory in the
-//	  exact same order in which they are declared in code,
-//	* The first member must always start at the same memory address as the structure itself,
-//	* There may be padding at the end of the structure (?),
-// Btw:
-//	https://abstractexpr.com/2023/06/29/structures-in-c-from-basics-to-memory-alignment
-static
-size_t store_structure(word** ffp, char* memory, size_t ptr, word t, word a)
-{
-	word *fp;
-	#define SAVE(type, conv) {\
-		TALIGN(ptr, type);\
-		*(type*)(memory+ptr) = (type)conv(v);\
-		ptr += sizeof(type); \
-	}
-
-	while (t != INULL && a != INULL) {
-		word p = car(t); word v = car(a);
-		if (is_pair(p)) {
-			// pointers
-			if (is_pointer(car(p))) {
-				p = cdr(p);
-				switch (value(p)) {
-					case TSTRING:
-						TALIGN(ptr, char**);
-						fp = *ffp; // TODO: store array in stack of OLVM_ff, instead of ol heap?
-						store_string_array(&fp, (char***)(memory+ptr), v);
-						*ffp = fp;
-						ptr += sizeof(char**);
-						break;
-					// todo: other pointer types
-				}
-			}
-			else
-				ptr = store_structure(ffp, memory, ptr, p, v); // assert (is_pair v)
-		}
-		else {
-			if (v == IFALSE) v = I(0); // we accept "false" as "empty value, 0"!
-			switch (value(p)) {
-			case TINT8: case TUINT8:
-				*(int8_t*)(memory+ptr) = (int8_t)value(v); ptr += sizeof(int8_t);
-				break;
-			case TINT16: case TUINT16:
-				SAVE(int16_t, to_int);
-				break;
-			case TINT32: case TUINT32:
-				SAVE(int32_t, to_int);
-				break;
-			case TINT64: case TUINT64:
-				SAVE(int64_t, to_int64);
-				break;
-			case TFLOAT:
-				SAVE(float, OL2F);
-				break;
-			case TDOUBLE:
-				SAVE(double, OL2D);
-				break;
-
-			case TVPTR:
-				SAVE(void*, car);
-				break;
-
-			case TSTRING:
-				TALIGN(ptr, char*);
-				// TODO: change to alloca
-				// fp = *ffp;
-				// store_string(&fp, (char**)(memory+ptr), v);
-				// *ffp = fp;
-				break;
-			// todo: type-string-wide, etc.
-			default:
-				E("unhandled");
-				break;
-			}
-			//ptr += ((ptr + subsize - 1) & -subsize) + subsize;
-		}
-		t = cdr(t); a = cdr(a);
-	}
-	return ptr;
-}
-
-static
-size_t restore_structure(void* memory, size_t ptr, word t, word a)
-{
-	while (t != INULL && a != INULL) {
-		word p = car(t); word v = car(a);
-		if (is_pair(p)) {
-			// pointers
-			if (is_pointer(car(p))) {
-				p = cdr(p);
-				switch (value(p)) {
-					case TSTRING:
-						// TALIGN(ptr, char**);
-						// fp = *ffp;
-						// store_string_array(&fp, (char***)(memory+ptr), v);
-						// *ffp = fp;
-						// ptr += sizeof(char**);
-						assert (0);
-						break;
-					// todo: other pointer types
-				}
-			}
-			else
-				ptr = restore_structure(memory, ptr, p, v); // assert (is_pair v)
-		}
-		else {
-			if (v != IFALSE) // don't restore unspecified data
-			switch (value(p)) {
-				#define LOAD(type)\
-					TALIGN(ptr, type);\
-					type value = *(type*)(memory+ptr);\
-					ptr += sizeof(type);
-				#define WRITEBACK(type) { \
-					LOAD(type);\
-					if (is_value(v))\
-						*(R)&car(a) = make_enum(value);\
-					else {\
-						word num = v;\
-						word *l = &car(v);\
-						switch (reference_type(v)) {\
-							DESERIALIZE_INT()\
-							DESERIALIZE_INEXACT()\
-						}\
-					}}
-			// reflect integer types
-			case TINT8:  WRITEBACK(int8_t);  break;
-			case TUINT8: WRITEBACK(uint8_t); break;
-			case TINT16: WRITEBACK(int16_t); break;
-			case TUINT16:WRITEBACK(uint16_t);break;
-			case TINT32: WRITEBACK(int32_t); break;
-			case TUINT32:WRITEBACK(uint32_t);break;
-			case TINT64: WRITEBACK(int64_t); break;
-			case TUINT64:WRITEBACK(uint64_t);break;
-			case TFLOAT: WRITEBACK(float);   break;
-			case TDOUBLE:WRITEBACK(double);  break;
-
-			case TVPTR:
-				LOAD(void*);
-				if (is_vptr(v)) {
-					*(void**)&car(v) = value;
-				}
-				break;
-
-			case TSTRING:
-				//printf("s");
-				//TALIGN(ptr, char*);
-				//fp = *ffp;
-				//store_string(&fp, (char**)(memory+ptr), v);
-				//*ffp = fp;
-				break;
-			// todo: type-string-wide, etc.
-			default:
-				E("unhandled restore");
-				break;
-			}
-			//ptr += ((ptr + subsize - 1) & -subsize) + subsize;
-		}
-		t = cdr(t); a = cdr(a);
-	}
-	return ptr; // todo: word align?
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -2560,6 +2412,384 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	#define GRNC 6
 #endif
 
+	// ===== smart stack functions ====================
+	#define ARENA_BLOCK_SIZE 256 //1024
+	// static_assert (ARENA_BLOCK_SIZE is a power of 2)
+
+	typedef struct ArenaBlock {
+		struct ArenaBlock *next;
+		size_t used;
+		size_t capacity;
+		char   data[];
+	} ArenaBlock;
+
+	struct {
+		ArenaBlock current;
+		char data[ARENA_BLOCK_SIZE]; // todo: rename to "stack"
+	} Arena;
+	Arena.current.next = 0;
+	Arena.current.used = 0;
+	Arena.current.capacity = ARENA_BLOCK_SIZE;
+
+	void* arena_alloc(size_t size) {
+		size = (size + 7) & ~(size_t)7; // выравнивание по 8 байт
+		if (Arena.current.used + size <= Arena.current.capacity) {
+			char* ptr = &Arena.data[Arena.current.used];
+			Arena.current.used += size;
+			return ptr;
+		}
+		// else
+		ArenaBlock* arena = &Arena.current;
+		while (arena->next) {
+			arena = arena->next;
+			// enough space?
+			if (arena->used + size <= arena->capacity) {
+				char* ptr = &arena->data[arena->used];
+				arena->used += size;
+				return ptr;
+			}
+		}
+		// new block assign
+		size_t capacity = (size + ARENA_BLOCK_SIZE - 1) & -ARENA_BLOCK_SIZE;
+		arena = arena->next = malloc(sizeof(ArenaBlock) + capacity);
+		arena->next = 0;
+		arena->capacity = capacity;
+		arena->used = size;
+		return &arena->data[0];
+	}
+
+	inline __attribute__((always_inline))
+	void arena_cleanup() {
+		ArenaBlock* arena = Arena.current.next;
+		while (arena) {
+			ArenaBlock* block = arena;
+			arena = arena->next;
+			free(block);
+		}
+		return;
+	}
+
+	// store functions
+	char** store_string_array(word array)
+	{
+		char** payload = 0;
+		if (is_pair(array)) {
+			int length = list_length(array);
+			payload = arena_alloc(length * sizeof(char*));
+
+			char** pp = payload;
+			while (array != INULL) {
+				word string = car(array);
+				int size = string_length_as_utf8_rough(string); // TODO: hide under OLVM_FFI_MEMSAVING_UTF8
+				void* str = arena_alloc(size+1); // +1 to the "\0"
+				store_chars(str, string);
+
+				*pp++ = str;
+				array = cdr(array);
+			}
+		}
+		else
+		if (is_vector(array)) {
+			// TODO:
+		}
+		else
+			assert (array == IFALSE || array == INULL);
+		return payload;
+	}
+
+	// Notes:
+	//	* C standard guarantees that struct members always appear in memory in the
+	//	  exact same order in which they are declared in code,
+	//	* The first member must always start at the same memory address as the structure itself,
+	//	* There may be padding at the end of the structure (?),
+	// Btw:
+	//	https://abstractexpr.com/2023/06/29/structures-in-c-from-basics-to-memory-alignment
+	size_t store_structure(char* memory, size_t ptr, word t, word a)
+	{
+		#define SAVE(type, value) ({\
+			TALIGN(ptr, type);\
+			*(type*)(memory+ptr) = (type)(value);\
+			ptr += sizeof(type); \
+		})
+
+		while (t != INULL && a != INULL) {
+			word p = car(t); word v = car(a);
+			if (is_pair(p)) {
+				// pointers
+				if (is_pointer(car(p))) { // fft*, fft&
+					p = cdr(p);
+					if (is_value (p))
+					switch (value(p)) {
+						case TSTRING: { // char** as char*[]
+							char** payload = store_string_array(v);
+							SAVE(char**, payload);
+							break;
+						}
+						case TUINT32: {  // int32_t as int32_t[]
+							uint32_t* payload = 0;
+
+							word array = v;
+							if (is_pair(array)) { // '(float float float)
+								int length = list_length(array);
+								payload = arena_alloc(length * sizeof(uint32_t));
+
+								uint32_t* pp = payload;
+								while (length--) {
+									*pp++ = to_int(car(array));
+									array = cdr(array);
+								}
+							} // TODO: add is_vector()...
+							SAVE(uint32_t*, payload);
+							break;
+						}
+						case TFLOAT: {  // float* as float[]
+							float* payload = 0;
+
+							word array = v;
+							if (is_pair(array)) { // '(float float float)
+								int length = list_length(array);
+								payload = arena_alloc(length * sizeof(float));
+
+								float* pp = payload;
+								while (length--) {
+									*pp++ = OL2F(car(array));
+									array = cdr(array);
+								}
+							}
+							SAVE(float*, payload);
+							break;
+						}
+						case TPAIR: // pointer to typed structure '(type . value)
+							word type = car(v);
+							word value = cdr(v);
+							size_t align;
+							size_t size = structure_size(0, type, &align);
+							ALIGN(ptr, align); // structure alignment
+							word* payload = arena_alloc(size);
+							store_structure(payload, 0, type, value);
+							SAVE(void*, payload);
+							break;
+						case TVPTR: { // void** as void*[]
+							void** payload = 0;
+
+							word array = v;
+							if (is_pair(array)) { // '(void* void* ...)
+								int length = list_length(array);
+								payload = arena_alloc(length * sizeof(void*));
+
+								void** pp = payload;
+								while (length--) {
+									*pp++ = is_vptr(car(array)) ? caar(array) : 0;
+									array = cdr(array);
+								}
+							}
+							else
+							if (is_vector(array)) { // [void* void* ...]
+								int length = vector_length(array);
+								payload = arena_alloc(length * sizeof(void*));
+								void** pp = payload;
+								for (int i = 0; i < length; i++) {
+									word vptr = ref(v, i+1);
+									*pp++ = is_vptr(vptr) ? car(vptr) : 0;
+									array = cdr(array);
+								}
+							}
+							SAVE(float*, payload);
+							break;
+						}
+					}
+					else { // pointer to substructure
+						void* payload = 0;
+
+						if (is_pair(v)) {
+							size_t size = structure_size(0, p, 0);
+							payload = arena_alloc(size);
+							store_structure(payload, 0, p, v);
+						}
+						else
+						if (is_vector(v)) {
+							size_t size = structure_size(0, p, 0);
+							size_t length = reference_size (v);
+							payload = arena_alloc(size * length);
+							void* ptr = payload;
+							for (int i = 0; i < length; i++) {
+								store_structure(ptr, 0, p, ref(v, i+1));
+								ptr += size;
+							}
+						}
+
+						SAVE(void*, payload);
+					}
+				}
+				else { // not a pointer, but just a structure
+					size_t align = structure_align(1, p);
+					ALIGN(ptr, align);
+					ptr = store_structure(memory, ptr, p, v); // assert (is_pair v) //?
+				}
+			}
+			else {
+				if (v == IFALSE) v = I(0); // we accept "false" as "empty value, 0"!
+				switch (value(p)) {
+				case TINT8: case TUINT8:
+					*(int8_t*)(memory+ptr) = (int8_t)value(v); ptr += sizeof(int8_t);
+					break;
+				case TINT16: case TUINT16:
+					SAVE(int16_t, to_int(v));
+					break;
+				case TINT32: case TUINT32:
+					SAVE(int32_t, to_int(v));
+					break;
+				case TINT64: case TUINT64:
+					SAVE(int64_t, to_int64(v));
+					break;
+				case TFLOAT:
+					SAVE(float, OL2F(v));
+					break;
+				case TDOUBLE:
+					SAVE(double, OL2D(v));
+					break;
+
+				case TBYTEVECTOR:
+					if (v == I(0))
+						SAVE(void*, 0);
+					else
+					if (is_bytevector(v))
+						SAVE(void*, &car(v));
+					break;
+
+				case TVPTR:
+				tvptr:
+					// 
+					if (v == I(0))
+						SAVE(void*, 0);
+					else
+					if (is_vptr(v)) { // 
+						SAVE(void*, car(v)); // value of vptr
+					}
+					// else
+					// if (is_value(v)) { // TEMP (DEBUG PURPOSES)
+					// 	SAVE(void*, value(v));
+					// }
+					else // structure as '(type . value)
+					if (is_pair(v)) { // TODO: move to TPAIR, not to TVPTR!
+						word structure = car(v);
+						word value = cdr(v);
+						size_t size = structure_size(0, structure, 0);
+						void* payload = arena_alloc(size);
+						SAVE(void*, payload);
+						store_structure(payload, 0, structure, value);
+					}
+					else
+						printf("unknown void*");
+					break;
+
+				case TSTRING: {
+					size_t size = string_length_as_utf8_rough(v)+1; // TODO: hide under OLVM_FFI_MEMSAVING_UTF8
+					// void* payload = malloc(size); // alloca(size); // malloc(size); //
+					void* payload = arena_alloc(size); // +1 for "\0"
+					SAVE(char*, payload);
+
+					store_chars(payload, v);
+					break;
+				}
+
+				// todo: type-string-wide, etc.
+				default:
+					E("unhandled");
+					break;
+				}
+				//ptr += ((ptr + subsize - 1) & -subsize) + subsize;
+			}
+			t = cdr(t); a = cdr(a);
+		}
+		return ptr;
+		#undef SAVE
+	}
+
+	size_t restore_structure(void* memory, size_t ptr, word t, word a)
+	{
+		while (t != INULL && a != INULL) {
+			word p = car(t); word v = car(a);
+			if (is_pair(p)) {
+				// pointers
+				if (is_pointer(car(p))) {
+					p = cdr(p);
+					switch (value(p)) {
+						case TSTRING:
+							// TALIGN(ptr, char**);
+							// fp = *ffp;
+							// store_string_array(&fp, (char***)(memory+ptr), v);
+							// *ffp = fp;
+							// ptr += sizeof(char**);
+							assert (0);
+							break;
+						// todo: other pointer types
+					}
+				}
+				else
+					ptr = restore_structure(memory, ptr, p, v); // assert (is_pair v)
+			}
+			else {
+				switch (value(p)) {
+					#define LOAD(type)\
+						TALIGN(ptr, type);\
+						type value = *(type*)(memory+ptr);\
+						ptr += sizeof(type);
+					#define WRITEBACK(type) { \
+						LOAD(type);\
+						if (v == IFALSE) ; /* don't restore unspecified data */ \
+						else \
+						if (is_value(v))\
+							*(R)&car(a) = make_enum(value);\
+						else {\
+							word num = v;\
+							word*l = &car(a);\
+							switch (reference_type(v)) {\
+								DESERIALIZE_INT()\
+								DESERIALIZE_INEXACT()\
+							}\
+						}}
+				// TODO: check and change
+				// reflect integer types
+				case TINT8:  WRITEBACK(int8_t);  break;
+				case TUINT8: WRITEBACK(uint8_t); break;
+				case TINT16: WRITEBACK(int16_t); break;
+				case TUINT16:WRITEBACK(uint16_t);break;
+
+				case TINT32: WRITEBACK(int32_t); break;
+				case TUINT32:WRITEBACK(uint32_t);break;
+				case TINT64: WRITEBACK(int64_t); break;
+				case TUINT64: WRITEBACK(uint64_t);break;
+
+				case TFLOAT: WRITEBACK(float);   break;
+				case TDOUBLE:WRITEBACK(double);  break;
+
+				case TVPTR:
+					LOAD(void*);
+					if (is_vptr(v)) {
+						*(void**)&car(v) = value;
+					}
+					break;
+
+				case TSTRING:
+					//printf("s");
+					//TALIGN(ptr, char*);
+					//fp = *ffp;
+					//store_string(&fp, (char**)(memory+ptr), v);
+					//*ffp = fp;
+					break;
+				// todo: type-string-wide, etc.
+				default:
+					E("unhandled restore");
+					break;
+				}
+			}
+			t = cdr(t); a = cdr(a);
+		}
+		return ptr; // todo: word align?
+	}
+
+
 	// ==============================================
 	// 2. prepare arguments to push
 	word* p = (word*)C;  // ol arguments
@@ -2615,7 +2845,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 #endif
 
 		push:
-		if (arg == IFALSE) { // #false is a universal "0" value
+		if (arg == IFALSE) { // #false is a universal "0" value, TODO?: change to if (v == IFALSE) v = I(0);
 		//	- 0 -----------------------------------------------
 			if (is_value(tty))
 				switch (value(tty)) {
@@ -2850,7 +3080,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			}
 		}
 		else
-		if (is_pointer(car(tty))) {
+		if (is_pointer(car(tty))) { // fft* and fft&
 		//	- P -----------------------------------------------
 			writeback |= (value(car(tty)) & FFT_REF);
 
@@ -2876,20 +3106,45 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 					// raw pointers to pointers
 					case TVPTR: {
 						if (arg == INULL) // empty list will be sent as nullptr
-							break;
+							STORE(IDF, word, 0);
+						else
 						if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
 							STORE(IDF, word, &car(arg));
-						// pointer to structure, instant structure declaration
+						// pointer to void* array?
 						else if (is_pair(arg)) {
-							size_t size = structure_size(0, car(arg));
-							void* payload = alloca(size);
-							STORE(IDF, word, payload);
-							store_structure(&fp, payload, 0, car(arg), cdr(arg));
+							if (is_vptr(car(arg))) { // array of '(void* ...)
+								word array = arg;
+								size_t length = list_length(array);
+								void** payload = (void**) alloca(length * sizeof(void*));
+								STORE(IDF, word, payload);
+
+								while (length--) {
+									word ptr = car (array);
+									assert (reference_type(ptr) == TVPTR);
+									*payload++ = *(void**) &car(ptr);
+									array = cdr (array);
+								}
+							}
+							else
+							if (is_pair(car(arg))) { // pair of '(struct . value)
+								assert (0); // TODO: implement structure pushing
+								// TODO: tty = car(arg); arg = cdr(arg);
+								// goto push;
+							}
 						}
 						else
 							not_a_type("vptr*");
 						break;
 					}
+					case TPAIR: // pointer to typed structure '(type . value)
+						word type = car(arg);
+						word value = cdr(arg);
+						size_t size = structure_size(0, type, 0);
+						word* payload = alloca(size); // yes, we can use alloca here
+						STORE(IDF, word, payload);
+						store_structure(payload, 0, type, value);
+						break;
+
 					// char*[] as (fftX type-string)
 					case TSTRING: {
 						assert (is_pair(arg));
@@ -2926,13 +3181,54 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 				}
 			}
 			else {
-				// pointer to structure
+				// pointer to structure or structures array
 				assert (is_pair(cdr(tty)));
-				size_t size = structure_size(0, cdr(tty));
-				TALIGN(size, int); // structure's padding
-				void* payload = alloca(size);
-				STORE(IDF, word, payload);
-				store_structure(&fp, payload, 0, cdr(tty), arg);
+				if (is_pointer(cadr(tty))) { // (fft* (fft* structure)) - array of pointers
+					word type = cddr(tty);
+					size_t size = structure_size(0, type, 0);
+
+					if (is_pair(arg)) { // '(struct1 struct2 struct3 ...)
+						size_t length = list_length(arg);
+						void** payload = alloca(length * sizeof(void*)); // yes, we can use alloc here.
+
+						STORE(IDF, word, payload);
+						for (int i = 0; i < length; i++) {
+							void* ptr = alloca(size);
+							store_structure(ptr, 0, type, car(arg));
+							*payload++ = ptr, arg = cdr(arg);
+						}
+					}
+					else
+					if (is_vector(arg)) { // [struct1 struct2 struct3 ...]
+						size_t length = reference_size (arg);
+						void** payload = alloca(length * sizeof(void*)); // yes, we can use alloc here.
+
+						STORE(IDF, word, payload);
+						for (int i = 0; i < length; i++) {
+							void* ptr = alloca(size);
+							store_structure(ptr, 0, type, ref(arg, i+1));
+							*payload++ = ptr;
+						}
+					}
+				}
+				else { // (fft* structure) - array of structures (not pointers to structures)
+					size_t size = structure_size(0, cdr(tty), 0);
+					if (is_pair(arg)) { // pointer to single structure
+						void* payload = alloca(size); // yes, we can use alloca here.
+						STORE(IDF, word, payload);
+						store_structure(payload, 0, cdr(tty), arg);
+					}
+					else // pointer to first structure of array of structures
+					if (is_vector(arg)) { // [struct1 struct2 struct3 ...]
+						size_t length = reference_size (arg);
+						char* payload = alloca(size * length); // yes, we can use alloc here.
+						STORE(IDF, word, payload);
+						for (int i = 0; i < length; i++) {
+							store_structure(payload, 0, cdr(tty), ref(arg, i+1));
+							payload += size;
+						}
+					}
+				}
 			}
 		}
 		else {
@@ -2950,37 +3246,83 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			unsigned count = 0, fs = 0, ds = 0; // ONLY aarch64
 
 			// 1. calculate size
-			// todo: change to structure_size call (?)
-			size_t size = 0;
-			// http://www.catb.org/esr/structure-packing/
-			for (word p = car(t); p != INULL; p = cdr(p)) {
-				word subtype = car(p);
-
-				assert (is_value(subtype));
-				word stv = value(subtype);
-				// внутриструктурное выравнивание (по умолчанию)
-				switch (stv) {
-					case TINT8: case TUINT8:
-						size += sizeof(int8_t);  break;
-					case TINT16: case TUINT16:
-						TALIGN(size, int16_t); size += sizeof(int16_t);  break;
-					case TFLOAT:
-						fs++; // fall through
-					case TINT32: case TUINT32:
-						TALIGN(size, int32_t); size += sizeof(int32_t);  break;
-					case TDOUBLE:
-						ds++; // fall through
-					case TINT64: case TUINT64:
-	#if	__i386__ && __unix__
-						TALIGN(size, int32_t); size += sizeof(int64_t);  break;
-	#else // _WIN32, _WIN64, aarch64, etc.
-						TALIGN(size, int64_t); size += sizeof(int64_t);  break;
-	#endif
+			size_t structure_size(size_t size, word t)
+			{
+				// http://www.catb.org/esr/structure-packing/
+				while (t != INULL) {
+					word p = car(t);
+					if (is_pair(p)) {
+						if (is_pointer(car(p))) {
+							size_t subsize = sizeof(void*);
+							size = ((size + subsize - 1) & -subsize) + subsize; // align + size
+						}
+						else
+							size = structure_size(size, p);
+					}
+					else {
+						assert (is_value(p));
+						int type = value(p);
+						if (type == TINT8 || type == TUINT8 || type == TBOOL)
+							size++;
+						else {
+							size_t subsize;
+							switch (type) {
+								case TINT16: case TUINT16:
+									TALIGN(size, int16_t); size += sizeof(int16_t);
+									break;
+								case TFLOAT:
+									IFaarch64(fs++); // fall through
+								case TINT32: case TUINT32:
+									TALIGN(size, int32_t); size += sizeof(int32_t);
+									break;
+								case TDOUBLE:
+									IFaarch64(ds++); // fall through
+								// TODO: 32-bit systems should align for 32 bit, not for 64-bit !!!
+								case TINT64: case TUINT64: subsize = sizeof(int64_t); break;
+								default:                   subsize = sizeof( word );
+							}
+							size = ((size + subsize - 1) & -subsize) + subsize; // align + size
+						}
+					}
+					IFaarch64(count++);
+					t = cdr(t);
 				}
-				count++;
+				return size;
 			}
-			// todo: align for aarch64 for 8 bytes
-			TALIGN(size, word); // total size should be word aligned
+
+			// todo: align for aarch64 for 8 bytes?
+			size_t size = structure_size(0, car(t));
+			TALIGN(size, word); // we sending structure over stack, so align for stack granularity
+
+	// 		// http://www.catb.org/esr/structure-packing/ // combine with structure_size()
+	// 		for (word p = car(t); p != INULL; p = cdr(p)) {
+	// 			word subtype = car(p);
+
+	// 			assert (is_value(subtype));
+	// 			word stv = value(subtype);
+	// 			// внутриструктурное выравнивание (по умолчанию)
+	// 			switch (stv) {
+	// 				case TINT8: case TUINT8:
+	// 					size += sizeof(int8_t);  break;
+	// 				case TINT16: case TUINT16:
+	// 					TALIGN(size, int16_t); size += sizeof(int16_t);  break;
+	// 				case TFLOAT:
+	// 					fs++; // fall through
+	// 				case TINT32: case TUINT32:
+	// 					TALIGN(size, int32_t); size += sizeof(int32_t);  break;
+	// 				case TDOUBLE:
+	// 					ds++; // fall through
+	// 				case TINT64: case TUINT64:
+	// #if	__i386__ && __unix__
+	// 					TALIGN(size, int32_t); size += sizeof(int64_t);  break;
+	// #else // _WIN32, _WIN64, aarch64, etc.
+	// 					TALIGN(size, int64_t); size += sizeof(int64_t);  break;
+	// #endif
+	// 				default:
+	// 					TALIGN(size,  void* ); size += sizeof( void* );  break;
+	// 			}
+	// 			count++;
+	// 		}
 
 			int j = i;
 			char* ptr;
@@ -3036,111 +3378,132 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			else
 #	endif
 #endif
+
 			ptr = (char*)&args[j];
-
 			size_t offset = 0;
-			for (word p = car(t), a = arg; ; p = cdr(p), a = cdr(a)) {
-				word subtype = (p != INULL) ? car(p) : I(0);
 
-				assert (is_value(subtype));
-				word stv = value(subtype);
+			// p - types, a - values
+			void fill_structure(word p, word a) {
+				while (1) {
+					word subtype = (p != INULL) ? car(p) : I(0);
 
-				switch (stv) {
-					case TINT8:  case TUINT8:
-						// offset = offset;
-						break;
-					case TINT16: case TUINT16:
-						TALIGN(offset, int16_t);
-						break;
-					case TINT32: case TUINT32:
-					case TFLOAT:
-						TALIGN(offset, int32_t);
-						break;
-					case TINT64: case TUINT64:
-					case TDOUBLE:
-	#if	__i386__ && __unix__
-						TALIGN(offset, int32_t);
-	#else // _WIN32, _WIN64, aarch64, etc.
-						TALIGN(offset, int64_t);
+					if (is_reference(subtype)) {
+						fill_structure(subtype, car(a));
+						p = cdr(p), a = cdr(a);
+						continue;
+					}
+					assert (is_value(subtype));
+					word stv = value(subtype);
+
+					switch (stv) {
+						case TINT8:  case TUINT8:
+							// offset = offset;
+							break;
+						case TINT16: case TUINT16:
+							TALIGN(offset, int16_t);
+							break;
+						case TFLOAT:
+						case TINT32: case TUINT32:
+							TALIGN(offset, int32_t);
+							break;
+						case TDOUBLE:
+						case TINT64: case TUINT64:
+		#if	__i386__ && __unix__
+							TALIGN(offset, int32_t);
+		#else // _WIN32, _WIN64, aarch64, etc.
+							TALIGN(offset, int64_t);
+		#endif
+							break;
+						// TODO: default?
+						case 0: // 0 means "no more arguments"
+						case TVPTR:
+							TALIGN(offset, word);
+							break;
+					}
+
+	#if __aarch64__
+					if (size <= 16)
 	#endif
-						break;
-					case 0: // 0 means "no more arguments"
-						TALIGN(offset, word);
-						break;
-				}
+	#if _WIN64
+					if (size < 16)
+	#endif
+					if (offset >= sizeof(word)) { // пришло время "сложить" данные в регистр
+						assert (offset % sizeof(word) == 0);
 
-#if __aarch64__
-				if (size <= 16)
-#endif
-#if _WIN64
-				if (size < 16)
-#endif
-				if (offset >= sizeof(word)) { // пришло время "сложить" данные в регистр
-					assert (offset % sizeof(word) == 0);
+	#if __x86_64__ && (__unix__ || __APPLE__)
+						if (integer || (size > 16)) { // в целочисленный регистр
+							atmask <<= 1;
+							j++; ptr += 8;
 
-#if __x86_64__ && (__unix__ || __APPLE__)
-					if (integer || (size > 16)) { // в целочисленный регистр
-						atmask <<= 1;
-						j++; ptr += 8;
-
-						// если добрались до стека, а он уже что-то содержит
-						if (j == 6 && l)
-							j = l;
-					}
-					else { // в регистр с плавающей запятой
-						// move from ptr to the ad
-						*(int64_t*)&ad[d++] = args[j];
-						atmask |= 1;
-					}
-					integer = 0;
-#else
-					j += offset / sizeof(word);
-					ptr += offset / sizeof(word) * sizeof(word);
-#endif
-					offset %= sizeof(word);
-				}
-
-				// аргументы закончились?
-				if (p == INULL)
-					break;
-				assert (a != INULL);
-				// если аргументов недостаточно запушим 0?
-				// word arg = (a != INULL) ? car(a) : I(0);
-
-				switch (stv) {
-					case TINT8:  case TUINT8: {
-						*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
-						offset += sizeof(int8_t); IFx86_64(integer = 1);
-						break;
-					}
-					case TINT16: case TUINT16: {
-						*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
-						offset += sizeof(int16_t); IFx86_64(integer = 1);
-						break;
-					}
-					case TINT32: case TUINT32: {
-						*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
-						offset += sizeof(int32_t); IFx86_64(integer = 1);
-						break;
-					}
-					case TINT64: case TUINT64: {
-						*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
-						offset += sizeof(int64_t); IFx86_64(integer = 1);
-						break;
+							// если добрались до стека, а он уже что-то содержит
+							if (j == 6 && l)
+								j = l;
+						}
+						else { // в регистр с плавающей запятой
+							// move from ptr to the ad
+							*(int64_t*)&ad[d++] = args[j];
+							atmask |= 1;
+						}
+						integer = 0;
+	#else
+						j += offset / sizeof(word);
+						ptr += offset / sizeof(word) * sizeof(word);
+	#endif
+						offset %= sizeof(word);
 					}
 
-					case TFLOAT: {
-						*(float *)&ptr[offset] = OL2F(car(a));
-						offset += sizeof(float);
+					// аргументы закончились?
+					if (p == INULL)
 						break;
+					assert (a != INULL);
+					// если аргументов недостаточно запушим 0?
+					// word arg = (a != INULL) ? car(a) : I(0);
+
+					switch (stv) {
+						case TINT8:  case TUINT8: {
+							*(int8_t *)&ptr[offset] = (int8_t )to_int(car(a));
+							offset += sizeof(int8_t); IFx86_64(integer = 1);
+							break;
+						}
+						case TINT16: case TUINT16: {
+							*(int16_t*)&ptr[offset] = (int16_t)to_int(car(a));
+							offset += sizeof(int16_t); IFx86_64(integer = 1);
+							break;
+						}
+						case TINT32: case TUINT32: {
+							*(int32_t*)&ptr[offset] = (int32_t)to_int(car(a));
+							offset += sizeof(int32_t); IFx86_64(integer = 1);
+							break;
+						}
+						case TINT64: case TUINT64: {
+							*(int64_t*)&ptr[offset] = (int64_t)to_int64(car(a));
+							offset += sizeof(int64_t); IFx86_64(integer = 1);
+							break;
+						}
+						case TVPTR: {
+							*(void**)&ptr[offset] = *(void**)&car(a);
+							offset += sizeof( void* ); IFx86_64(integer = 1);
+							break;
+						}
+
+						case TFLOAT: {
+							*(float *)&ptr[offset] = OL2F(car(a));
+							offset += sizeof(float);
+							break;
+						}
+						case TDOUBLE: {
+							*(double*)&ptr[offset] = OL2D(car(a));
+							offset += sizeof(double);
+							break;
+						}
 					}
-					case TDOUBLE: {
-						*(double*)&ptr[offset] = OL2D(car(a));
-						offset += sizeof(double);
-						break;
-					}
+
+					// continue
+					p = cdr(p), a = cdr(a);
 				}
 			}
+
+			fill_structure(car(t), arg);
 
 #if __x86_64__ && (__unix__ || __APPLE__)
 			if (size > 16 && i < 6)
@@ -3280,29 +3643,42 @@ next_argument:
 							if (reference_type(arg) == TVPTR || reference_type(arg) == TBYTEVECTOR) // single vptr value or bytevector (todo: add bytevector size check)
 								break; // nothing to do
 
-							int c = list_length(arg);
-							void** f = (void**)args[i];
+							int length = list_length(arg);
+							void** payload = (void**) args[i];
 
-							word l = arg;
-							while (c--) {
-								void* value = *f++;
-								word num = car(l);
-								assert (reference_type(num) == TVPTR);
-								*(void**)&car(num) = value;
+							word array = arg;
+							while (length--) {
+								void* value = *payload++;
+								word ptr = car (array);
+								assert (reference_type(ptr) == TVPTR);
+								*(void**) &car (ptr) = value;
 
-								l = cdr(l);
+								array = cdr(array);
 							}
 						}
 						break;
 					}
 				}
 				else {
-					// pointer to structure
-					assert (is_pair(cdr(tty)));
+					assert (is_pair(cdr(tty))); // is structure declaration
 
+					// todo: pointer to structure if list (1 structure)
+					// todo: pointer to array of structures if vector (N structures)
+					// pointer to structure
 					word structure = cdr(tty);
 					void* payload = (void*) args[i];
-					restore_structure(payload, 0, structure, arg);
+					if (is_pair(arg)) {
+						restore_structure(payload, 0, structure, arg);
+					}
+					else
+					if (is_vector(arg)) {
+						size_t size = structure_size(0, structure, 0);
+						size_t length = reference_size (arg);
+						for (int i = 0; i < length; i++) {
+							restore_structure(payload, 0, structure, ref(arg, i+1));
+							payload += size;
+						}
+					}
 				}
 			}
 
@@ -3485,7 +3861,7 @@ return_result:
 				}
 			}
 			else {
-				// currest simplest case
+				// current simplest case
 				float* floats = (float*)&got;
 				inexact_t a = floats[0];
 				inexact_t b = floats[1];
@@ -3496,6 +3872,7 @@ return_result:
 			break;
 		}
 	}
+	arena_cleanup();
 
 	heap->fp = fp;
 	return result;
@@ -3558,7 +3935,7 @@ word OLVM_sizeof(olvm_t* self, word* arguments)
 	if (is_pointer(car(A))) // (fft* ...) || (fft& ...)
 		return I(sizeof(void*));
 	else
-		return I(structure_size(0, A));
+		return I(structure_size(0, A, 0));
 
 	return IFALSE;
 }
