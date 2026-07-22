@@ -7,7 +7,7 @@
   O t u s   L i s p
 ```
 
-❗ Master branch moved to new `3.0` version preparation. Latest release version 2.7 moved to [branch 2.7](/../2.7).
+❗ Master branch moved to new **3.0** version preparation. Latest released version 2.7 moved to [branch 2.7](/../2.7).
 
 `3.0 (alpha)` build statuses:
 

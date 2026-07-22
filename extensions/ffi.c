@@ -2065,9 +2065,12 @@ size_t structure_size(size_t size, word t, size_t* alignment)
 				align = max(align, subsize);
 			}
 			else {
-				size_t subslign;
-				size = structure_size(size, p, &subslign);
-				align = max(align, subslign);
+				size_t subalign;
+				size_t subsize = structure_size(0, p, &subalign);
+				size = ALIGN(size, subalign);
+				size += subsize;
+				// size += structure_size(0, p, &subslign);
+				align = max(align, subalign);
 			}
 		}
 		else {
@@ -2708,12 +2711,18 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 
 	size_t restore_structure(void* memory, size_t ptr, word t, word a)
 	{
+		#define LOAD(type)\
+			TALIGN(ptr, type);\
+			type value = *(type*)(memory+ptr);\
+			ptr += sizeof(type);
+
 		while (t != INULL && a != INULL) {
 			word p = car(t); word v = car(a);
 			if (is_pair(p)) {
 				// pointers
-				if (is_pointer(car(p))) {
+				if (is_pointer(car(p))) { // fft*, fft&
 					p = cdr(p);
+					if (is_value (p))
 					switch (value(p)) {
 						case TSTRING:
 							// TALIGN(ptr, char**);
@@ -2725,16 +2734,32 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 							break;
 						// todo: other pointer types
 					}
+					else { // pointer to substructure
+						if (is_pair(v)) {
+							restore_structure(memory, ptr, p, v);
+							ptr += sizeof(void*);
+						}
+						else
+						if (is_vector(v)) {
+							size_t size = structure_size(0, p, 0);
+							size_t length = reference_size (v);
+							void* array = (void*) (memory+ptr);
+							for (int i = 0; i < length; i++) {
+								restore_structure(array, 0, p, ref(v, i+1));
+								array += size;
+							}
+						}
+					}
+
 				}
-				else
-					ptr = restore_structure(memory, ptr, p, v); // assert (is_pair v)
+				else { // structure as a member, not as pointer
+					size_t align = structure_align(1, p);
+					ALIGN(ptr, align);
+					ptr = restore_structure(memory, ptr, p, v); // assert (is_pair v) ?
+				}
 			}
 			else {
 				switch (value(p)) {
-					#define LOAD(type)\
-						TALIGN(ptr, type);\
-						type value = *(type*)(memory+ptr);\
-						ptr += sizeof(type);
 					#define WRITEBACK(type) { \
 						LOAD(type);\
 						if (v == IFALSE) ; /* don't restore unspecified data */ \
@@ -3687,6 +3712,7 @@ next_argument:
 			i++;
 		}
 	}
+	arena_cleanup();
 
 	// RETURN
 return_result:
@@ -3872,7 +3898,6 @@ return_result:
 			break;
 		}
 	}
-	arena_cleanup();
 
 	heap->fp = fp;
 	return result;
