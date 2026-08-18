@@ -1,7 +1,7 @@
 Equivalence predicates
 ======================
 
-A *predicate* is a procedure that always returns a boolean value (#true or #false).
+A *predicate* is a procedure that always returns a boolean value (`#true` or `#false`).
 An *equivalence predicate* is the computational analogue of a mathematical equivalence relation; it is symmetric, reflexive, and transitive.
 
 [eq?](#eq), [eqv?](#eqv), [equal?](#equal)
@@ -9,16 +9,16 @@ An *equivalence predicate* is the computational analogue of a mathematical equiv
 # eq?
 `(eq? obj1 obj2)`, *primop*
 
-Returns #true if *obj1* and *obj2* are definitely the same object or same values.
+Returns `#true` if and only if *obj1* and *obj2* are the same object or represent the same value.
 
 ```scheme
-(eq? 'a 'a)                  ==>  #true  ; you can eq? symbols,
-(eq? "a" "a")                ==>  #false ; but not strings
+(eq? 'a 'a)                  ==>  #true  ; you can use eq? with symbols,
+(eq? "a" "a")                ==>  #false ; but not with strings
 (eq? 'a 'b)                  ==>  #false
 (eq? "" "")                  ==>  #false
 
 (eq? #false #false)          ==>  #true  ; same values
-(eq? '() '())                ==>  #true  ; same values: '() is #null, #null eq #null
+(eq? '() '())                ==>  #true  ; same values: '() is #null
 (eq? '(a) '(a))              ==>  #false
 (let ((q '(a)))
    (eq? q q))                ==>  #true
@@ -33,7 +33,7 @@ Returns #true if *obj1* and *obj2* are definitely the same object or same values
 (eq? (lambda (x) x)
      (lambda (x) x))         ==>  #true
 (eq? (lambda (x) x)
-     (lambda (y) y))         ==>  #true  ; code optimizer reuses same existing functions
+     (lambda (y) y))         ==>  #true  ; code optimizer reuses the same existing functions
 ```
 
 # eqv?

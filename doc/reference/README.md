@@ -1,27 +1,29 @@
 Otus Lisp
 =========
-
+```
 Otus Lisp (Ol in short) is a purely functional dialect of Lisp.
 
 Ol implements an extended subset of the R<sup>7</sup>RS Scheme
 ([PDF](https://small.r7rs.org/attachment/r7rs.pdf)), including
-but not limited to some SRFIs. It's tiny (~ 64KB), embeddable,
-and cross-platform;  provides a portable, high level interface
-to call code written in another language (c, python, lua, etc).
+but not limited to some SRFIs. It is tiny (~ 64KB), embeddable,
+and cross-platform;  provides a portable, high-level interface
+to call code written in another language (C, Python, Lua, etc).
+```
 
 Reference
 =========
 
-This is an Ol reference, not a Scheme. Scheme R<sup>7</sup>RS differences described in the [DIFFERENCES](../R7RS-DIFFERENCES.md) file.
+This is an Ol reference, not a Scheme reference.
+Differences from R<sup>7</sup>RS Scheme are described in the [DIFFERENCES](../R7RS-DIFFERENCES.md) file.
 
 Examples are provided in two forms:
-1. in the form of equivalence (in sense of [equal?](equivalence-predicates.md#equal)) using symbols `==>` and `===`,
+1. in the form of equivalence (in the sense of [equal?](equivalence-predicates.md#equal)) using symbols `==>` and `===`,
 ```scheme
 (+ 1 2 3)  ==>  6
 [1 2 3 4]  ===  (make-vector '(1 2 3 4))
 ```
 
-2. in the interactive form using prompt symbol `> `, which shows the behavior as if someone were typing code in an interactive ol session (REPL).
+2. in the interactive form using the prompt symbol `> `, which shows the behavior as if someone were typing code in an interactive Ol session (REPL).
 ```scheme
 > #i1.2
 1.199999999
@@ -37,7 +39,7 @@ Examples are provided in two forms:
 3.14169264
 ```
 
-All provided examples are tested with the Ol's latest build each time the code is submitted to GitHub.
+All examples are tested with the latest Ol build on every GitHub submission.
 
 Language Reference
 ------------------
@@ -45,7 +47,7 @@ Language Reference
 - [Otus Lisp type system](ol-type-system.md).
 
 
-List of Standard procedures
+List of Standard Procedures
 ---------------------------
 
 - [Pairs and Lists](pairs-and-lists.md).
@@ -67,13 +69,11 @@ List of Standard procedures
 - [JSON Files](json.md).
 - [Strings](strings.md), TBD.
 - [Control features](control-features.md), TBD.
-- [Exceptions](exceptions.md), TBD.
 - [Environments and evaluation](environments-and-evaluation.md), TBD.
 - [Input and output](input-and-output.md), TBD.
 - [System interface](system-interface.md), TBD.
 
 - [Dictionaries](dictionaries.md), TBD.
-- [Lazy evaluations](lazy-evaluations.md), TBD.
 
 - [Serialization/Deserialization](serialization-deserialization.md)
 
@@ -100,6 +100,8 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [/](numerical-operations.md#-7)
 [\\\\](infix-notation.md)
 ## <a name="#"></a>#
+[#f](booleans.md) [#F](booleans.md) [#false](booleans.md)
+[#t](booleans.md) [#T](booleans.md) [#true](booleans.md)
 [#null](pairs-and-lists.md#null)
 [#u8()](bytevectors.md#bytevectors)
 ## A
@@ -189,7 +191,7 @@ Alphabetic Index of Definitions of Concepts, Keywords, and Procedures
 [ff->alist](ffs.md#alist-ff)
 [ff->list](ffs.md#ff-list)
 [ff->pairs](ffs.md#ff-pairs)
-[ff-diff](ffs.ms#ff-diff)
+[ff-diff](ffs.md#ff-diff)
 [ff-fold](ffs.md#ff-fold)
 [ff-foldr](ffs.md#ff-foldr)
 [ff-map](ffs.md#ff-map)

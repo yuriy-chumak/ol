@@ -1,3 +1,5 @@
+# TODO: create libol-ffi.so, куда сгрузить ffi.c, это позволит собирать olvm без ffi, а сам ffi грузить из либы
+
 export PATH := .:$(PATH)
 $(shell mkdir -p config)
 export OL_HOME=libraries
@@ -166,6 +168,7 @@ CFLAGS_DEBUG   := -O0 -g3 -Wall
 CFLAGS_DEBUG   += -DCAR_CHECK=1 -DCDR_CHECK=1 -DNTRACE
 CFLAGS_RELEASE := $(if $(RPM_OPT_FLAGS), $(RPM_OPT_FLAGS), -O2 -DNDEBUG)
 CFLAGS_RELEASE += -Wno-unused-result -g0
+#CFLAGS_RELEASE += -Wno-unused-result -g3 -fno-omit-frame-pointer
 CFLAGS_TRACE   := -O0 -g3 -Wall
 CFLAGS_TRACE   += -DCAR_CHECK=1 -DCDR_CHECK=1
 
@@ -343,9 +346,6 @@ ol.exe: ol64.exe tmp/pvenv.tar # by default 64-bit exe
 
 # compiling the Ol language
 recompile: boot.fasl
-boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
-	@vm repl --version="$(VERSION)" --home=libraries \
-	   src/ol.scm
 	@if diff boot.fasl repl>/dev/null;then\
 	   echo '$(green)  `___`  $(done)' ;\
 	   echo '$(green)  (o,o)  $(done)' ;\
@@ -354,9 +354,13 @@ boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm librarie
 	   echo '$(green)Build Ok.$(done)' ;\
 	   touch src/repl.S ;\
 	else \
-	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
-	   cp -b $@ repl ;$(MAKE) $@ ;\
+	   echo `stat -c%s repl` -\> `stat -c%s $^` ;\
+	   cp -b $^ repl ;$(MAKE) recompile ;\
 	fi
+
+boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
+	@vm repl --version="$(VERSION)" --home=libraries \
+	   src/ol.scm
 
 # compiling infix math notation
 libraries/owl/math/infix.scm: tools/make-math-infix.scm vm
@@ -446,3 +450,5 @@ tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
 	tar -rf $$tar0 tmp/OpenGL.tar --transform 's|.*|./OpenGL/|' ;\
 	tar -vf $$tar0 --wildcards --delete './lib/gtk-3/*' ;\
 	tar -rf $$tar0 tmp/gtk-3.tar --transform 's|.*|./lib/gtk-3/|'
+
+-include test.mk
