@@ -20,7 +20,7 @@
    (define train-labels-parser
       (let-parse* (
             (magic (times 4 byte))
-            (verify (equal? magic '(#x00 #x00 #x08 #x01)) 'not-a-mnist-labels-file)
+            (unless (equal? magic '(#x00 #x00 #x08 #x01)) 'not-a-mnist-labels-file)
             (number-of-labels uint32)
             ; (number-of-labels (epsilon 20)) ; debug purposes
             (labels (times number-of-labels byte)))
@@ -33,7 +33,7 @@
    (define train-images-parser
       (let-parse* (
             (magic (times 4 byte))
-            (verify (equal? magic '(#x00 #x00 #x08 #x03)) 'not-a-mnist-images-file)
+            (unless (equal? magic '(#x00 #x00 #x08 #x03)) 'not-a-mnist-images-file)
             (number-of-images uint32)
             (number-of-rows uint32)
             (number-of-columns uint32)
