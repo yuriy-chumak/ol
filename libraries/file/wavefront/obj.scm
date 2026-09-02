@@ -15,6 +15,8 @@
    (data s-exp)
    (only (scheme file) call-with-input-file))
 (begin
+   (define (string?->number s)
+      (if s (string->number s)))
 
    (define get-rest-of-line
       (let-parse* (
@@ -167,7 +169,72 @@
 
    (define (read-wavefront-obj-port port)
       (when port
-         (read-wavefront-obj-stream (port->bytestream port))))
+         (let loop (
+               (mtllib #f)
+               (v #n) (vt #n) (vn #n)
+               (usemtl #f) (f #n)
+               (meshes #n))
+            (define line (read-line port))
+            (if line
+               (case (string-ref line 0)
+                  (#\# ; comment (skip)
+                     (loop mtllib v vt vn usemtl f meshes))
+                  (#\m ; "mtllib"?
+                     (define mtllib (c/ +/ line))
+                     (loop (second mtllib) v vt vn usemtl f meshes))
+                  (#\g ; group (skip)
+                     (loop mtllib v vt vn usemtl f meshes))
+
+                  (#\v ; vertex/normal/texcoord
+                     (define i (c/ +/ line))
+                     (case (string-ref line 1)
+                        (#\space ; v, vertex
+                           (loop mtllib
+                              (cons (make-vector (map inexact (map string->number (cdr i)))) v)
+                              vt vn usemtl f meshes))
+                        (#\n ; vn, normal
+                           (loop mtllib v vt
+                              (cons (make-vector (map inexact (map string->number (cdr i)))) vn)
+                              usemtl f meshes))
+                        (#\t ; vt, texcoord
+                           (loop mtllib v
+                              (cons (make-vector (map inexact (map string->number (cdr i)))) vt)
+                              vn usemtl f meshes))
+                        (else
+                           (runtime-error "unknown obj line " line))))
+
+                  (#\u ; usemtl
+                     (define name (c/ +/ line))
+                     (loop mtllib v vt vn (second name) #n
+                        (if usemtl ; previous object ended
+                           (cons {
+                              'name usemtl
+                              'facegroups (reverse f)
+                           } meshes)
+                        else meshes)))
+                  (#\f ; face
+                     (define i (c/ +/ line))
+                     (define faces (map (lambda (face)
+                           (make-vector (map string->number (c/\// face))))
+                        (cdr i)))
+                     (loop mtllib v vt vn usemtl (cons faces f) meshes))
+
+                  (else ; unknown or empty string
+                     (loop mtllib v vt vn usemtl f meshes)))
+
+            else { ; end of file
+                  'mtllib mtllib
+                  'v (reverse v)   ; vertices (list of vectors)
+                  'vn (reverse vn) ; normals (list of vectors)
+                  'vt (reverse vt) ; texcoords (list of vectors)
+
+                  'meshes (reverse (cons {
+                           'name usemtl
+                           'facegroups (reverse f)
+                        } meshes))
+
+                  'o #n ; backward compatibility
+               }))))
 
    (define read-wavefront-obj (case-lambda
       (() (read-wavefront-obj-port stdin))
