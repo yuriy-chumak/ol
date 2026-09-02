@@ -79,8 +79,18 @@
       ;       defined to real implementation in 6.1
       ; todo: change ===> to the ==>, and ==== to the ===
       (define-syntax assert
-         (syntax-rules (= ===> equal?)
+         (syntax-rules (= ===> ==> === equal?)
             ((assert expression ===> expectation)
+               (ifeq (equal? ((lambda (x) x) expression) expectation) #true
+                  #true
+                  (runtime-error "assertion error:"
+                     (quote expression) "must be" (quote expectation))))
+            ((assert expression === expectation)
+               (ifeq (equal? ((lambda (x) x) expression) expectation) #true
+                  #true
+                  (runtime-error "assertion error:"
+                     (quote expression) "must be" (quote expectation))))
+            ((assert expression ==> expectation)
                (ifeq (equal? ((lambda (x) x) expression) expectation) #true
                   #true
                   (runtime-error "assertion error:"

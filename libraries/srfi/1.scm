@@ -12,29 +12,53 @@
 (export
    ; Constructors
    cons list
-   xcons iota
+   xcons cons* iota ; make-list list-tabulate list-copy circular-list
 
+   ; Predicates
+   pair? null?
+   ;; proper-list? circular-list? dotted-list?
+   ;; not-pair? null-list?
+   ;; list=
+
+   ; Selectors
+   car cdr ; ... cddadr cddddr
+   list-ref
    first second third fourth fifth sixth seventh eighth ninth tenth
-   last
+   ; car+cdr
+   ;; take drop
+   ;; take-right drop-right
+   ;; take!      drop-right!
+   ;; split-at   split-at!
+   last ; last-pair
+
+   ; Miscellaneous
+   ;; length length+
+   ;; append  concatenate  reverse
+   ;; append! concatenate! reverse!
+   ;; append-reverse append-reverse!
+   ;; zip unzip1 unzip2 unzip3 unzip4 unzip5
+   ;; count
 
    filter)
 
 (begin
    ; cons a d -> pair   *[r5rs]
-   (assert (cons 'a '())        ===> '(a))
-   (assert (cons '(a) '(b c d)) ===> '((a) b c d))
-   (assert (cons "a" '(b c))    ===> '("a" b c))
-   (assert (cons 'a 3)          ===> '(a . 3))
-   (assert (cons '(a b) 'c)     ===> '((a b) . c))
+   (assert (cons 'a '())        ==> '(a))
+   (assert (cons '(a) '(b c d)) ==> '((a) b c d))
+   (assert (cons "a" '(b c))    ==> '("a" b c))
+   (assert (cons 'a 3)          ==> '(a . 3))
+   (assert (cons '(a b) 'c)     ==> '((a b) . c))
 
    ; list object ... -> list   *[r5rs]
-   (assert (list 'a (+ 3 4) 'c) ===>  '(a 7 c))
-   (assert (list)               ===>  '())
+   (assert (list 'a (+ 3 4) 'c) ==>  '(a 7 c))
+   (assert (list)               ==>  '())
 
    ; xcons d a -> pair
    ;;; Occasionally useful as a value to be passed to a fold or other
    ;;; higher-order procedure.
    (define (xcons d a) (cons a d))
+
+   (assert (cons* 1 2)          ==>  '(1 . 2))
 
 
    (define (first li)
