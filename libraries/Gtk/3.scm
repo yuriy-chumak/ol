@@ -5,6 +5,8 @@
       Gtk:quit
       ;; gtk_main_iteration
       ;; gtk_events_pending
+
+      GObject
       GTK_CALLBACK
 
       ;; gtk_check_version
@@ -71,10 +73,10 @@
       ((a1) (if (ff? a1)
                (let* ((argv (a1 'argv #f)))
                   (gtk_init (list (if argv (length argv) 0)) argv)
-                  (if (a1 'multithreaded #f)
+                  (when (a1 'multithreaded #f)
                      (gdk_threads_add_idle (G_CALLBACK
                         (GTK_CALLBACK (userdata)
-                           (sleep 0) ; handle waiting threads
+                           (sleep 1) ; handle waiting threads
                            TRUE))    ; G_SOURCE_CONTINUE
                         #f)))
             else

@@ -14,58 +14,46 @@
       (lib gtk-3 window))
 
 (begin
-   (define GtkWindow
-      (define (make ctor ptr options)
-         (define base (GtkContainer ctor ptr options))
-         (define this (ff-replace base {
-            'class 'Window  'superclass 'Container
-            'super base
+   (import (owl io))
+   (GTK_CLASS Window Container {
+         ; Sets the title of the GtkWindow.
+         'set-title (lambda (title)
+            (gtk_window_set_title ptr title))
 
-            'Window ptr
+         ; Sets the default size of a window.
+         'set-default-size (lambda (width height)
+            (gtk_window_set_default_size ptr width height))
 
-            ; Sets the title of the GtkWindow.
-            'set-title (lambda (title)
-               (gtk_window_set_title ptr title))
+         ; Sets the icon for the window from a named themed icon.
+         'set-icon (lambda (icon)
+            (cond
+               ((string? icon)
+                  (gtk_window_set_icon_name ptr icon))
+               (else
+                  (runtime-error "GtkWindow.set-default-icon: invalid icon" icon))))
 
-            ; Sets the default size of a window.
-            'set-default-size (lambda (width height)
-               (gtk_window_set_default_size ptr width height))
+         ; Get ...
+         'get-application (lambda ()
+            (GtkApplication (gtk_window_get_application ptr)))
 
-            ; Sets the icon for the window from a named themed icon.
-            'set-icon (lambda (icon)
-               (cond
-                  ((string? icon)
-                     (gtk_window_set_icon_name ptr icon))
-                  (else
-                     (runtime-error "GtkWindow.set-default-icon: invalid icon" icon))))
+         ; Sets or unsets the GtkApplication associated with the window.
+         'set-application (lambda (application)
+            (cond
+               ((eq? (type application) type-vptr)
+                  (gtk_window_set_application ptr application))
+               ((GObject? application)
+                  (gtk_window_set_application ptr (application 'Application)))
+               (else
+                  (runtime-error "GtkWindow: set-application: invalid application" application))))
+      }
 
-            ; Get ...
-            'get-application (lambda ()
-               (GtkApplication (gtk_window_get_application ptr)))
-
-            ; Sets or unsets the GtkApplication associated with the window.
-            'set-application (lambda (application)
-               (cond
-                  ((eq? (type application) type-vptr)
-                     (gtk_window_set_application ptr application))
-                  ((GObject? application)
-                     (gtk_window_set_application ptr (application 'Application)))
-                  (else
-                     (runtime-error "GtkWindow: set-application: invalid application" application))))
-         }))
-
-         ;; apply options
-         (when (options 'application #f)
-            ((this 'set-application) (options 'application)))
-         (when (options 'title #f)
-            ((this 'set-title) (options 'title)))
+      ; initialize
+      (
+         ('application . 'set-application)
+         ('title . 'set-title)
          (when (options 'width (options 'height #f))
             ((this 'set-default-size) (options 'width 640) (options 'height 480)))
-         (when (options 'icon #f)
-            ((this 'set-icon) (options 'icon)))
-
-         ;; smart object
-         (GObject this))
+         ('icon . 'set-icon))
 
    ; defaults
    (define default-title "Window")
@@ -77,9 +65,7 @@
                   (make make a1 #e))
                ; (GtkWindow Application)
                ((a1 'Application #f)
-                  (make make (gtk_window_new 0) {
-                        'application a1
-                     }))
+                  (make make (gtk_application_window_new (a1 'Application)) {}))
                (else
                   (runtime-error "GtkWindow: invalid argument" a1)) ))
 
@@ -90,9 +76,8 @@
                   (cond
                      ; (Application "window-title")
                      ((string? op)
-                        (make make (gtk_window_new 0) {
+                        (make make (gtk_application_window_new (a1 'Application)) {
                            'title op
-                           'application a1
                         }))
                      ; (Application options)
                      ((ff? op)

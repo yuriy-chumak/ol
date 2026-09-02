@@ -12,9 +12,6 @@
       gtk_gl_area_set_required_version
 
       gtk_gl_area_get_error
-
-      ; lisp interface
-      GtkGLArea
    )
    (import
       (scheme core)
@@ -49,53 +46,4 @@
    ; gtk_gl_area_set_error
    (define gtk_gl_area_get_error (GTK3 GError* "gtk_gl_area_get_error" GtkGLArea*))
 
-   ; lisp interface
-   (define GtkGLArea
-      (define (make ptr options)
-         (define base (GtkWidget ptr options))
-         (define this (ff-replace base {
-            ; Marks the currently rendered data (if any) as invalid, and queues a redraw of the widget.
-            'queue-render (lambda ()
-               (gtk_gl_area_queue_render ptr))
-            ; Retrieves the GdkGLContext used by area.
-            'get-context (lambda ()
-               (gtk_gl_area_get_context ptr))
-            ; Ensures that the GdkGLContext used by area is associated with the GtkGLArea.
-            'make-current (lambda ()
-               (gtk_gl_area_make_current ptr))
-            ; Gets the current error set on the area.
-            'get-error (lambda ()
-               (gtk_gl_area_get_error ptr))
-
-            'set-realize-handler (GtkEventHandler "realize" (widget userdata)
-                     (make widget #e))
-            'set-render-handler (GtkEventHandler "render" (widget context userdata)
-                     (make widget #e))
-
-            ; internals
-            'super base
-         }))
-         ; apply options
-         (if (options 'on-realize #f)
-            ((this 'set-realize-handler) (options 'on-realize)))
-         (if (options 'on-render #f)
-            ((this 'set-render-handler) (options 'on-render)))
-         ; smart object
-         (GObject this))
-
-   ; main
-   (case-lambda
-      ((a1) (cond
-               ((eq? (type a1) type-vptr)
-                  (make a1 #e))
-               ((GObject? a1)
-                  (make (gtk_gl_area_new) #e))
-               (else
-                  (runtime-error "GtkGLArea: invalid argument" a1)) ))
-      ((a1 op) (cond
-               ((and (eq? (type a1) type-vptr) (ff? op))
-                  (make a1 op))
-               (else
-                  (runtime-error "GtkGLArea: invalid arguments" (cons a1 op))) ))
-   ))
 ))

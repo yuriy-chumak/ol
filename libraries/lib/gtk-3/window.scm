@@ -13,6 +13,7 @@
       gtk_window_get_default_size
       gtk_window_resize
       gtk_window_present
+      gtk_window_fullscreen
    )
    (import
       (scheme base)
@@ -36,5 +37,6 @@
    (define gtk_window_get_default_size (GTK3 void "gtk_window_get_default_size" GtkWindow* (fft& gint) (fft& gint)))
    (define gtk_window_resize (GTK3 void "gtk_window_resize" GtkWindow* gint gint))
    (define gtk_window_present (GTK3 void "gtk_window_present" GtkWindow*))
+   (define gtk_window_fullscreen (GTK3 void "gtk_window_fullscreen" GtkWindow*))
 
 ))

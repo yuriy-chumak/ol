@@ -21,13 +21,19 @@
       GClosureNotify
       GConnectFlags
       GApplication*
+      GQuark
+      g_quark_from_string
       GError*
+      g_error_new
       g_error_free
+      g_error_get_message
 
       ; c
       GObject*
       g_object_ref
       g_object_unref
+      g_object_set
+
 
       ; lisp
       GObject GObject?
@@ -43,6 +49,7 @@
       g_value_get_int
       g_value_set_int64
       g_value_get_int64
+      g_value_unset
 
       GDateTime*
       g_date_time_new_from_unix_utc
@@ -158,6 +165,7 @@
 (define GObject* type-vptr)
 (define g_object_ref (GOBJECT gpointer "g_object_ref" gpointer))
 (define g_object_unref (GOBJECT void "g_object_unref" gpointer))
+(define g_object_set (GOBJECT void "g_object_set" gpointer type-string fft-any))
 
 (define gtag [])
 (define (GObject this)
@@ -165,9 +173,18 @@
 (define (GObject? this)
    (get this gtag #f))
 
+(define GQuark fft-uint32)
+(define g_quark_from_string (GLIB GQuark "g_quark_from_string" gchar*))
+;g_quark_to_string
 
+(define GError (list GQuark gint gchar*))
 (define GError* type-vptr)
+(define g_error_new (GOBJECT GError* "g_error_new" GQuark gint gchar* #|...|#))
 (define g_error_free (GOBJECT void "g_error_free" GError*))
+(define (g_error_get_message gerror)
+   (vptr->string (bytevector->void*
+         (vptr->bytevector gerror (sizeof GError))
+         (sizeof (list GQuark gint)))))
 
 (define g_signal_connect_data (GOBJECT gulong "g_signal_connect_data" gpointer type-string GCallback gpointer GClosureNotify GConnectFlags))
 (define (g_signal_connect instance detailed_signal c_handler data)

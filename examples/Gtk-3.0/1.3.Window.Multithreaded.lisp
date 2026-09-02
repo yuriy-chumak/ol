@@ -3,9 +3,9 @@
 (import (only (olvm syscalls) strftime))
 
 ;; application setup
-(define (activate appl)
-   ; create customized window with title
-   (define window (GtkWindow appl {
+(define (activate app)
+   ; main application window
+   (define window (GtkWindow app {
       'title "Multithreaded Gtk-3 Window"
       'width 640  'height 360
       'icon "dialog-information"
@@ -31,7 +31,7 @@
          (wait 1000)
          (infinity-loop))))
 
-   ; show it
+   ; display the window
    ((window 'show-all)))
 
 ;; create the application

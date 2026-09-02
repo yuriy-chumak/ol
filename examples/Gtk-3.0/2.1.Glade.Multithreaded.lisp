@@ -11,7 +11,7 @@
 (define builder (GtkBuilder "2.0.Glade.glade"))
 
 ;; demo infinite loop
-(async (lambda ()
+(async 'demo (lambda ()
    (define label ((builder 'get-Label) "label"))
 
    (let infinity-loop ()
@@ -24,8 +24,10 @@
 (define window ((builder 'get-Window) "window" {
    'title "Glade Multithreaded Example"
    'on-destroy (lambda (this)
-      ; stop running threads properly
-      (for-each kill (running-threads))
+      (kill 'demo) ; stop running threads properly
+      
+      ; when we do a (Gtk:main) we should use (Gtk:quit)
+      ;   instead of (GtkApplication 'quit)
       (Gtk:quit))
 }))
 

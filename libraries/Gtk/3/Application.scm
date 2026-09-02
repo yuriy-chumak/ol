@@ -13,47 +13,37 @@
       (lib gtk-3 application))
 
 (begin
-   (import (owl io))
-   (define GtkApplication
-      (define (make ctor ptr options)
-         (define this {
-            'Ptr* ptr  ; raw pointer
-            'class 'Application  'superclass #false
+   (GTK_CLASS Application #f {
+         'run (lambda (command-line)
+            (let ((status (g_application_run ptr (length command-line) command-line)))
+               (g_object_unref ptr)
+               status))
 
-            'Application ptr
+         'quit (lambda ()
+            (g_application_quit ptr))
 
-            'run (lambda (command-line)
-               (let ((status (g_application_run ptr (length command-line) command-line)))
-                  (g_object_unref ptr)
-                  status))
+         'set-activate-handler (GtkEventHandler "activate" ())
+      }
 
-            'quit (lambda ()
-               (g_application_quit ptr))
-
-            'set-activate-handler (GtkEventHandler "activate" ())
-         })
-
-         ;; handle options
+      ;; handle options
+      (
          ; emitted on the primary instance when an activation occurs
-         (when (options 'on-activate #f)
-            ((this 'set-activate-handler) (options 'on-activate)))
+         ('on-activate . 'set-activate-handler)
+
          ; ol: allow running actors in the background
          (when (options 'multithreaded #f)
             (gdk_threads_add_idle (G_CALLBACK
                (GTK_CALLBACK (userdata)
-                  (sleep 0) ; handle waiting threads
+                  (sleep 1) ; handle waiting threads
                   TRUE))    ; G_SOURCE_CONTINUE
-               #f))
-
-         ;; smart object
-         (GObject this))
+               #f)))
 
    ; defaults
    (define default-id "org.gtk.example")
    (define default-flags G_APPLICATION_FLAGS_NONE)
 
    ; main
-   (case-lambda
+   (GTK_CLASS:CONSTRUCTORS
       (()   (make make (gtk_application_new default-id default-flags)))
       ((a1) (cond
                ((vptr? a1)
@@ -68,8 +58,6 @@
                               (a1 'flags default-flags)) a1))
                (else
                   (error "GtkApplication" a1))))
-      ; inheritance: todo
-
       ; legacy (native) call
       ((a1 a2)
             (cond

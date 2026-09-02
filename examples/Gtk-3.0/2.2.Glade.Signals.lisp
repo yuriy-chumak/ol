@@ -29,7 +29,6 @@
 (define window ((builder 'get-Window) "window" {
    'title "Glade Signals Example"
    'on-destroy (lambda (this)
-      (print "Close pressed. Bye-bye.")
       (Gtk:quit))
 }))
 

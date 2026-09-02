@@ -10,9 +10,16 @@
 
       gtk_check_version
 
-
       GtkCallback
       GTK_CALLBACK
+
+      GtkAllocation*
+         GtkAllocation:x
+         GtkAllocation:y
+         GtkAllocation:width
+         GtkAllocation:height
+      GdkRectangle*
+
 
       ; GtkAlign
       ; GtkArrowType
@@ -95,6 +102,14 @@
    (define gtk_check_version (GTK3 type-string "gtk_check_version" guint guint guint))
 
 
+   (define GtkAllocation* type-vptr)
+   (define (GtkAllocation:x this) (bytevector->int32 (vptr->bytevector this 4) 0))
+   (define (GtkAllocation:y this) (bytevector->int32 (vptr->bytevector this 8) 4))
+   (define (GtkAllocation:width this) (bytevector->int32 (vptr->bytevector this 12) 8))
+   (define (GtkAllocation:height this) (bytevector->int32 (vptr->bytevector this 16) 12))
+
+   (define GdkRectangle* type-vptr)
+
    (define GtkOrientation gint)
    (define GTK_ORIENTATION_HORIZONTAL 0)
    (define GTK_ORIENTATION_VERTICAL 1)
@@ -105,6 +120,12 @@
    (define GtkCallback type-callable)
    (define-syntax GTK_CALLBACK
       (syntax-rules ()
+         ((GTK_CALLBACK ((t name) ...) . rest)
+            (vm:pin (cons
+               (cons gint (list t...))
+               (lambda (caller name...)
+                  .rest))))
+
          ((GTK_CALLBACK (userdata) . rest)
             (vm:pin (cons
                (cons gint (list gpointer))

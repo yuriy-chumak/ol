@@ -15,65 +15,68 @@
       (lib gtk-3 builder))
 
 (begin
-   (define GtkBuilder
-      (define (make ctor ptr options)
-         ; convert builder id into object
-         (define (get-Object Class)
-            (case-lambda
-               ((id) (Class (gtk_builder_get_object ptr id)))
-               ((id op)
-                     (Class (gtk_builder_get_object ptr id) op))))
+   ;; (define-syntax get-Object
+   ;;    (syntax-rules (case-lambda ptr gtk_builder_get_object)
+   ;;       ((get-Object Class)
+   ;;          (case-lambda
+   ;;             ((id) (Class (gtk_builder_get_object ptr id)))
+   ;;             ((id op)
+   ;;                   (Class (gtk_builder_get_object ptr id) op))))
+   ;;    ))
+   (define (make-getObject Class ptr)
+      (case-lambda
+         ((id) (Class (gtk_builder_get_object ptr id)))
+         ((id op)
+               (Class (gtk_builder_get_object ptr id) op))))
 
-         (define this {
-            'Ptr* ptr ; raw pointer
-            'class 'Builder  'superclass #false
+   (GTK_CLASS Builder #f {
+         'add-from-file (lambda (filename)
+            (> (gtk_builder_add_from_file ptr filename #f) 0))
 
-            'Builder ptr
+         'add-from-string (lambda (string)
+            (> (gtk_builder_add_from_string ptr string -1 #f) 0))
 
-            'add-from-file (lambda (filename)
-               (> (gtk_builder_add_from_file ptr filename #f) 0))
+         'add-callback-symbol (lambda (name handler)
+            (define callback
+               (cond
+                  ((eq? (type handler) type-callable) ; callback
+                     handler)
+                  ((and (eq? (type handler) type-value+) ; pin?
+                        (pair? (vm:deref handler))
+                        (function? (cdr (vm:deref handler))))
+                     (G_CALLBACK handler))
+                  (else
+                     (runtime-error "GtkBuilder" "invalid handler"))))
+            (gtk_builder_add_callback_symbol ptr name callback))
 
-            'add-from-string (lambda (string)
-               (> (gtk_builder_add_from_string ptr string -1 #f) 0))
+         ; This method is a simpler variation of gtk_builder_connect_signals_full
+         'connect-signals (case-lambda
+            (() (gtk_builder_connect_signals ptr #f))
+            ((userdata)
+                  (if (ff? userdata)
+                  then
+                     (ff-for-each (lambda (signal handler)
+                           ; TODO: check for type-callable and for function like in 'add-callback-symbol
+                           (gtk_builder_add_callback_symbol ptr signal handler))
+                        userdata)
+                     (gtk_builder_connect_signals ptr #f)
+                  else
+                     (gtk_builder_connect_signals ptr userdata))))
 
-            'add-callback-symbol (lambda (name handler)
-               (define callback
-                  (cond
-                     ((eq? (type handler) type-callable) ; callback
-                        handler)
-                     ((and (eq? (type handler) type-value+) ; pin?
-                           (pair? (vm:deref handler))
-                           (function? (cdr (vm:deref handler))))
-                        (G_CALLBACK handler))
-                     (else
-                        (runtime-error "GtkBuilder" "invalid handler"))))
-               (gtk_builder_add_callback_symbol ptr name callback))
+         'get-object (lambda (id)
+                        (gtk_builder_get_object ptr id))
 
-            ; This method is a simpler variation of gtk_builder_connect_signals_full
-            'connect-signals (case-lambda
-               (() (gtk_builder_connect_signals ptr #f))
-               ((userdata) (gtk_builder_connect_signals ptr userdata)))
+         'get-Widget (make-getObject GtkWidget ptr)
+         'get-Window (make-getObject GtkWindow ptr)
 
-            'get-object (lambda (id)
-               (gtk_builder_get_object ptr id))
+         'get-Label  (make-getObject GtkLabel ptr)
+         'get-Button (make-getObject GtkButton ptr)
+      }
 
-            'get-Widget (get-Object GtkWidget)
-            'get-Window (get-Object GtkWindow)
-
-            'get-Label (get-Object GtkLabel)
-            'get-Button (get-Object GtkButton)
-         })
-
-         ;; apply options
-         ; 
-         (if (options 'file #f)
-            ((this 'add-from-file) (options 'file)))
-         ;
-         (if (options 'xml #f)
-            ((this 'add-from-string) (options 'file)))
-
-         ;; smart object
-         (GObject this))
+      ;; apply options
+      (
+         ('file . 'add-from-file)
+         ('xml . 'add-from-string))
 
    ; main
    (case-lambda
