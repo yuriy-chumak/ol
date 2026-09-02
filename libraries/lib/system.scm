@@ -4,7 +4,7 @@
       close-pipe
       execvp waitpid
       system
-      popen)
+      popen pclose)
    (import
       (scheme core)
       (scheme list)
@@ -83,5 +83,11 @@
             (popen command "r"))
          ((command mode)
             (popen command mode)) ))
+
+   (define (pclose pipes)
+      (when pipes
+         (when (ref pipes 1) (close-port (ref pipes 1)))
+         (when (ref pipes 2) (close-port (ref pipes 2)))
+         (when (ref pipes 3) (close-port (ref pipes 3))) ))
 
 ))
