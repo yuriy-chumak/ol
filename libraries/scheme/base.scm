@@ -443,8 +443,8 @@
       (define (char>=? a . b)
          (compare greater-eq? a b))
 
-      (define char->integer idf)
-      (define integer->char idf)
+      (define char->integer (lambda (x) x))
+      (define integer->char (lambda (x) x))
 
       ;; 6.6.  Characters (additional staff)
 
