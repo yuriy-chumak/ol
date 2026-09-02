@@ -11,6 +11,11 @@
       webkit_user_content_manager_register_script_message_handler
       webkit_web_view_stop_loading
 
+      webkit_web_view_get_settings
+
+      webkit_network_proxy_settings_new
+      webkit_web_context_set_network_proxy_settings
+
       ; javascript support
       webkit_javascript_result_get_global_context
       webkit_javascript_result_get_value
@@ -24,6 +29,9 @@
       WebKitWebContext*
       webkit_web_context_get_default
       webkit_web_context_register_uri_scheme
+      webkit_web_context_get_website_data_manager
+
+      webkit_website_data_manager_clear
 
       ; WebKitURIRequest
       webkit_uri_request_get_uri
@@ -42,6 +50,7 @@
       (load-dynamic-library "libwebkit2gtk-4.0.so.37")))
 
    (define WebKitWebView* type-vptr)
+   (define WebKitSettings* type-vptr)
 
    (define GCancellable* (fft& GtkCallback))
    (define GAsyncReadyCallback GtkCallback)
@@ -69,6 +78,25 @@
    (define webkit_user_content_manager_register_script_message_handler (WEBKIT2 gboolean "webkit_user_content_manager_register_script_message_handler" WebKitUserContentManager* type-string))
    (define webkit_web_view_stop_loading (WEBKIT2 void "webkit_web_view_stop_loading" WebKitWebView*))
 
+   (define webkit_web_view_get_settings (WEBKIT2 WebKitSettings* "webkit_web_view_get_settings" WebKitWebView*))
+
+   ; context
+   (define WebKitWebContext* type-vptr)
+   (define WebKitWebsiteDataManager* type-vptr)
+   (define WebKitURISchemeRequestCallback* type-callable)
+   (define webkit_web_context_get_default (WEBKIT2 WebKitWebContext* "webkit_web_context_get_default"))
+   (define webkit_web_context_register_uri_scheme (WEBKIT2 fft-void "webkit_web_context_register_uri_scheme" WebKitWebContext* gchar* WebKitURISchemeRequestCallback* gpointer gpointer))
+   (define webkit_web_context_get_website_data_manager (WEBKIT2 WebKitWebsiteDataManager* "webkit_web_context_get_website_data_manager" WebKitWebContext*))
+
+   ; network
+   (setq WebKitNetworkProxySettings* type-vptr)
+   (setq WebKitNetworkProxyMode fft-enum)
+      (define WEBKIT_NETWORK_PROXY_MODE_DEFAULT 0)
+      (define WEBKIT_NETWORK_PROXY_MODE_NO_PROXY 1)
+      (define WEBKIT_NETWORK_PROXY_MODE_CUSTOM 2)
+   (define webkit_network_proxy_settings_new (WEBKIT2 WebKitNetworkProxySettings* "webkit_network_proxy_settings_new" type-string type-vptr))
+   (define webkit_web_context_set_network_proxy_settings (WEBKIT2 void "webkit_web_context_set_network_proxy_settings" WebKitWebContext* WebKitNetworkProxyMode WebKitNetworkProxySettings*))
+
    ; javascript
    (define JSValueRef type-vptr)
    (define JSGlobalContextRef type-vptr)
@@ -86,13 +114,11 @@
    (define JSStringGetUTF8CString (WEBKIT2 fft-size_t "JSStringGetUTF8CString" JSStringRef fft-void* fft-size_t))
    (define JSStringRelease (WEBKIT2 fft-void "JSStringRelease" JSStringRef))
 
-   ; context
-   (define WebKitWebContext* type-vptr)
-   (define WebKitURISchemeRequestCallback* type-callable)
-   (define webkit_web_context_get_default (WEBKIT2 WebKitWebContext* "webkit_web_context_get_default"))
-   (define webkit_web_context_register_uri_scheme (WEBKIT2 fft-void "webkit_web_context_register_uri_scheme" WebKitWebContext* gchar* WebKitURISchemeRequestCallback* gpointer gpointer))
-
    ; WebKitURIRequest
    (define WebKitURIRequest* type-vptr)
    (define webkit_uri_request_get_uri (WEBKIT2 gchar* "webkit_uri_request_get_uri" WebKitURIRequest*))
+
+   (define WebKitWebsiteDataTypes fft-enum)
+   (setq GTimeSpan type-vptr) ; temp
+   (define webkit_website_data_manager_clear (WEBKIT2 void "webkit_website_data_manager_clear" WebKitWebsiteDataManager* WebKitWebsiteDataTypes GTimeSpan GCancellable* GAsyncReadyCallback gpointer))
 ))

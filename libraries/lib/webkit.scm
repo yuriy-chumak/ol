@@ -13,6 +13,7 @@
 (begin
    (define WEBKIT (or
       (load-dynamic-library "libwebkit2gtk-4.0.so")
+      (load-dynamic-library "libwebkit2gtk-4.1.so")
       (load-dynamic-library "libwebkit2gtk-4.0.so.37")))
 
    (define WebKitWebView* type-vptr)
