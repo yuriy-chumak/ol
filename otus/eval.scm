@@ -1150,10 +1150,14 @@
       ; --- eval ---------------------------
       ; -> (['ok value env] args)
       (define (eval exp env)
-         (eval-repl exp env
-                  (lambda (env in)
-                     (repl env in evaluate))
-                  evaluate))
+         (define answer
+            (eval-repl exp env
+                     (lambda (env in)
+                        (repl env in evaluate))
+                     evaluate))
+         (if (repl-message? (ref answer 2))
+            [(ref answer 1) #f (ref answer 3)]
+            answer))
 
       (define (eval-string str env)
          (define exps (try-parse get-padded-sexps (str-iter str)))
