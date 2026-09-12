@@ -6,11 +6,33 @@
       ---"-"---     functional!
   O t u s   L i s p
 ```
+❗ Master branch moved to new **3.0** version preparation. Latest released (stable) version 2.7 moved to [branch 2.7](/../2.7).
 
-❗ Master branch moved to new **3.0** version preparation. Latest released version 2.7 moved to [branch 2.7](/../2.7).
+### `2.7 (release)` build statuses
+[![x86/x64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml?query=branch%3A2.7)
+[![aarch64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml?query=branch%3A2.7)
+[![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml?query=branch%3A2.7)
+[![macos arm64 status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml?query=branch%3A2.7)
+[![win(e) 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml?query=branch%3A2.7)
+[![riscv 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-riscv64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-riscv64.yml?query=branch%3A2.7)
+[![armv4t 32 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv4.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv4.yml?query=branch%3A2.7)
+[![armv7 soft/hard 32 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv7.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv7.yml?query=branch%3A2.7)
+[![mips 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml?query=branch%3A2.7)
+[![mipsel 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml?query=branch%3A2.7)
+[![ppc 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml?query=branch%3A2.7)
+[![ppcle 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle64.yml?query=branch%3A2.7)
+[![alpha 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml?query=branch%3A2.7)
+[![sparc 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml?query=branch%3A2.7)
+[![s390x 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml?query=branch%3A2.7)  
+Detailed `2.7` test matrix with results for each test across different platforms: [test matrix page](https://iaaa.port0.org/ol/test-matrix#2.7).  
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DLANGUAGE&label=test%20suite&version=2.7" alt="test suite">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DROSETTACODE&label=examples&version=2.7" alt="examples">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DFFI-Tier-1&label=tier-1%20tests&version=2.7" alt="ffi tests">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DFFI-Tier-2&label=tier-2%20tests&version=2.7" alt="ffi tests">
+<img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DREFERENCE&label=functions%20reference&version=2.7" alt="ffi tests">
 
-`3.0 (alpha)` build statuses:
 
+### `3.0 (alpha)` build statuses
 [![x86/x64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86/x64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml)
 [![aarch64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml)
 [![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml)
@@ -26,7 +48,6 @@
 [![alpha 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml)
 [![sparc 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml)
 [![s390x 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml)
-
 
 <a href="https://iaaa.port0.org/ol/test-matrix#3.0"><img align="right" style="margin: 10px; " src="doc/img/test-matrix.png"></a>
 
@@ -47,6 +68,7 @@ and language
 A detailed `3.0` test matrix with results for each test across different platforms is available on a [separate web page](https://iaaa.port0.org/ol/test-matrix#3.0) (follow the link or click the preview image to open it).
 (`2.7` test matrix can be found [here](https://iaaa.port0.org/ol/test-matrix#2.7))
 
+---
 ### ✨ Note
 * Please read the frequently asked questions and answers in the [Q/A](#qa) section. This may prove to be important!
 * Scheme R<sup>7</sup>RS vs Ol [topic](#r7rs-differences) may be interested too.
