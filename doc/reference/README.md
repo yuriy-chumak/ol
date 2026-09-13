@@ -42,7 +42,7 @@ All provided examples are tested with the Ol's latest build each time the code i
 Language Reference
 ------------------
 
-- [Otus Lisp type system](ol-type-system.md).
+- [Otus Lisp type system](../TYPE-SYSTEM.md).
 
 
 List of Standard procedures
