@@ -115,6 +115,7 @@ All:
 * 6.10. Control features
   * `apply` arguments count is **limited to 249** in Ol, but *unlimited* in Scheme.
     - note: Use `fold` instead in such cases, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
+    - note: Ol 3.0 will not have this limitation.
 
 * 6.13.3. Output
   * `print` function provided by Ol out-of-the-box, while *no* such widely used familiar *function* in Scheme, just older `display` and `write`.

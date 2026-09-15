@@ -6,7 +6,7 @@
       ---"-"---     functional!
   O t u s   L i s p
 ```
-❗ Master branch moved to new **3.0** version preparation. Latest released (stable) version 2.7 moved to [branch 2.7](/../2.7).
+❗ Master branch moved to new **3.0** version preparation. Latest released (and stable) version 2.7 moved to [branch 2.7](/../2.7). Use it instead of unstable `master`.
 
 ### `2.7 (release)` build statuses
 [![x86/x64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml?query=branch%3A2.7)
@@ -218,9 +218,9 @@ Some additional libraries can be installed using 'kiss' package manager. Instruc
       ```
 
 
-Breaking changes (master branch), as part of Ol 2.7
-===================================================
-The following breaking changes have been added as part of 2.7 version:
+Ol 2.7 changes
+==============
+The following changes have been added as part of 2.7 version:
 * ❗ internal type names are changed (type codes are NOT changed).  
   please, don't use internal type names in your code, use predicates instead
   * `type-string-displatch` type name changed to `type-superstring` (the old name caused confusions)️
@@ -260,6 +260,7 @@ The most important differences are:
   - note: Ol supports the full Unicode 15.0.0 (2022 Sep 13) character set.
   - note: To write a character use `write-char`, otherwise you'll write a number.
 * `apply` arguments count is **limited to 249** in Ol (but `list` elements count is unlimited, sure).
+  - note: Ol 3.0 will not have this limitation.
 * NEGATIVE indices in `substring` are **valid** in Ol (means "from the end of string", -1 means a last *rune*).
 * NEGATIVE vector indices are **valid** in Ol (means "from the end of vector", -1 means a last element).
 * Ol has **extended form** of `case` (with vectors support),

@@ -69,15 +69,17 @@ red=
 green=
 done=
 else
-red=\033[1;31m
-green=\033[1;32m
-done=\033[0m
+ESC   := $(shell printf '\033')
+red   := $(ESC)[1;31m
+green := $(ESC)[1;32m
+yellow:= $(ESC)[1;33m
+done  := $(ESC)[0m
 endif
 
 # check submodules
 # ----------------
 ifeq ($(shell ls -A libraries/OpenGL),)
-    $(warning $(red)Submodules not loaded. Run 'git submodule update --init --recursive' once.$(done))
+    $(warning $(red)Submodules not loaded. Run '$(yellow)git submodule update --init --recursive$(red)' once.$(done))
 endif
 
 # cleanup while insuccessfull builds
