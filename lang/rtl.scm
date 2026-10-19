@@ -436,6 +436,7 @@
       (define empty-value? (value-pred (λ (x) (eq? x #empty))))
       (define null-value? (value-pred (λ (x) (eq? x #null))))
       (define zero-value? (value-pred (λ (x) (eq? x 0))))
+      (define true-value? (value-pred (λ (x) (eq? x #true))))
 
       (define (simple-first a b cont)
          (cond
@@ -443,6 +444,7 @@
             ((empty-value? b) (cont b a))
             ((null-value? b)  (cont b a))
             ((zero-value? b)  (cont b a))
+            ((true-value? b)  (cont b a))
             (else
                (cont a b))))
 
@@ -482,6 +484,11 @@
                               (let ((then (rtl-any regs then))
                                     (else (rtl-any regs else)))
                                  ['bz bp then else]))))
+                        ((true-value? a) ; jump-if-true
+                           (rtl-simple regs b (λ (regs bp)
+                              (let ((then (rtl-any regs then))
+                                    (else (rtl-any regs else)))
+                                 ['bt bp then else]))))
                         (else
                            (rtl-simple regs a (λ (regs ap)
                               (rtl-simple regs b (λ (regs bp)

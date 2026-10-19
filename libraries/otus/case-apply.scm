@@ -11,10 +11,8 @@
       (case (type func)
          (type-bytecode
             (case (ref func 0)
-               (11 ; BNA
-                  (-- (ref func 1)))
-               (12 ; BNAV (indefinite arity)
-                  -1)
+               (BNA (-- (ref func 1)))
+               (BNAV -1)  ; indefinite array
                (else
                   #false)))
          (type-procedure

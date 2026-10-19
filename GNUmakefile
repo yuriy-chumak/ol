@@ -199,6 +199,7 @@ ifeq ($(UNAME),FreeBSD)
        -Xlinker --export-dynamic
 
   LD := ld.bfd
+  CC := gcc
 endif
 ifeq ($(UNAME),NetBSD)
   L := $(if $(HAVE_DLOPEN), -lc) \
@@ -345,9 +346,6 @@ ol.exe: ol64.exe tmp/pvenv.tar # by default 64-bit exe
 
 # compiling the Ol language
 recompile: boot.fasl
-boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
-	@vm repl --version="$(VERSION)" --home=libraries \
-	   src/ol.scm
 	@if diff boot.fasl repl>/dev/null;then\
 	   echo '$(green)  `___`  $(done)' ;\
 	   echo '$(green)  (o,o)  $(done)' ;\
@@ -356,9 +354,13 @@ boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm librarie
 	   echo '$(green)Build Ok.$(done)' ;\
 	   touch src/repl.S ;\
 	else \
-	   echo `stat -c%s repl` -\> `stat -c%s $@` ;\
-	   cp -b $@ repl ;$(MAKE) $@ ;\
+	   echo `stat -c%s repl` -\> `stat -c%s $^` ;\
+	   cp -b $^ repl ;$(MAKE) recompile ;\
 	fi
+
+boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
+	@vm repl --version="$(VERSION)" --home=libraries \
+	   src/ol.scm
 
 # compiling infix math notation
 libraries/owl/math/infix.scm: tools/make-math-infix.scm vm

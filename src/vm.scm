@@ -22,9 +22,10 @@
 
       ; low level (assembly) commands
       GOTO RET ARITY-ERROR  ; used by (lang assemply) etc.
-      BEQ BZ BE BN BF BNA BNAV ; branches
+      B/ BZ BE BN BF BT BEQ BNA BNAV ; branches
       CLOS
-      LD LDE LDN LDT LDF
+      LD/ LDE LDN LDT LDF
+      LD8
       MOVE REFI MOV2
 
       NEW    ; used by (lang rtl)
@@ -119,24 +120,21 @@
 
       ; copy
       (setq MOVE  9) ; move a, t:      Ra -> Rt
-      (setq MOV2  5) ; two moves, 4 args
+      (setq MOV2 10) ; two moves, 4 args
 
       ; load
-      (setq LD   14)  ; ld a, t:        Rt = a, signed byte
-      (setq LDE  13)  ; (+ 13 (<< 0 6))) ; 13
-      (setq LDN  77)  ; (+ 13 (<< 1 6))) ; 77
-      (setq LDT 141)  ; (+ 13 (<< 2 6))) ; 141  ldt t:          Rt = true
-      (setq LDF 205)  ; (+ 13 (<< 3 6))) ; 205  ldf t:          Rt = false
       (setq REFI  1) ; refi a, p, t:   Ra[p] -> Rt, p unsigned
 
+      (setq LD/  12)  ; ld a, t:        Rt = a, signed byte
+      (setq LD8  13)  ; ld a, t:        Rt = a, signed byte
+         (setq LDF 0) (setq LDT 1) (setq LDN 2) (setq LDE 3)
+
       ; conditional branches
-      (setq BEQ   8)  ; beq a b o1 o2
-      (setq BZ   16)  ; (+ 16 (<< 0 6))) ; branch if arg1 is zero
-      (setq BN   80)  ; (+ 16 (<< 1 6))) ; branch if arg1 is null
-      (setq BE  144)  ; (+ 16 (<< 2 6))) ; branch if arg1 is empty
-      (setq BF  208)  ; (+ 16 (<< 3 6))) ; branch if arg1 is false
-      (setq BNA  11)  ; branch if arity mismatch
-      (setq BNAV 12)  ; BNA with packing extra arguments in list
+      (setq B/    4)  ; conditional branches
+         (setq BZ 4) (setq BN 2) (setq BE 3) (setq BF 0) (setq BT 1)
+      (setq BEQ   5)  ; beq a b o1 o2
+      (setq BNA   6)  ; branch if arity mismatch
+      (setq BNAV  7)  ; BNA with packing extra arguments in list
 
 
       ; -------------------------------------------
@@ -164,14 +162,14 @@
       ; note: uncomment 'make-bytecode' if you want to change a primop bytecode
       (setq *primops* (list
          ; прямые аллокаторы
-         (primop 'vm:new   'any 1 vm:new)   ; (make-bytecode '(23 N ...))) ;; make new object, simplest and fastest allocator
+         (primop 'vm:new   'any 1 vm:new)   ; (make-bytecode '(#o20 N ...))) ;; make new object, simplest and fastest allocator
          (primop 'vm:make  'any 1 vm:make)  ; (make-bytecode '(18 N ...))) ;; make new object. slower, but smarter
-         (primop 'vm:alloc 'any 1 vm:alloc) ; (make-bytecode '(82 N ...))) ;; make new binary object
+         (primop 'vm:alloc 'any 1 vm:alloc) ; (make-bytecode '(19 N ...))) ;; make new binary object
          ; косвенные аллокаторы
-         (primop 'vm:cast   2 1 vm:cast) ; (make-bytecode '(22 4 5 6    24 6)))
-         (primop 'set-ref   3 1 set-ref) ; (make-bytecode '(10 4 5 6 7  24 7)))
+         (primop 'vm:cast   2 1 vm:cast)  ; (make-bytecode '(48 4 5 6    24 6)))
+         (primop 'set-ref   3 1 set-ref)  ; (make-bytecode '(49 4 5 6 7  24 7)))
          ; ну и мутаторы сюда же добавим
-         (primop 'set-ref!  3 1 set-ref!) ; (make-bytecode '(74 4 5 6 7    24 7)))
+         (primop 'set-ref!  3 1 set-ref!) ; (make-bytecode '(11 4 5 6 7    24 7)))
          (primop 'vm:set! 'any 1 vm:set!) ; (make-bytecode '(43 N 4 5 . x  24 x)))
 
          ; описатели
@@ -213,15 +211,15 @@
          ; системные вызовы
          (primop 'syscall 'any 1 syscall) ; (make-bytecode '(63 0 0))) ;; 63, system call
          ; additional applies
-         (primop 'vector-apply 1 #f vector-apply) ; (make-bytecode '(32 0 0)))
-         (primop 'ff-apply     1 #f ff-apply) ; (make-bytecode '(49 0 0 0 0 0)))
+         (primop 'vector-apply 1 #f vector-apply) ; (make-bytecode '(22)))
+         (primop 'ff-apply     1 #f ff-apply) ; (make-bytecode '(23)))
 
          ; associative array
-         (primop 'ff:black  4 1 ff:black)  ; (make-bytecode '(42  4 5 6 7  8  24 8)))
-         (primop 'ff:red    4 1 ff:red)    ; (make-bytecode '(106 4 5 6 7  8  24 8))) ; 106 = 42+(1<<6)
-         (primop 'ff:toggle 1 1 ff:toggle) ; (make-bytecode '(46  4        5  24 5)))
-         (primop 'ff:red?   1 1 ff:red?)   ; (make-bytecode '(41  4        5  24 5)))
-         (primop 'ff:right? 1 1 ff:right?) ; (make-bytecode '(105 4        5  24 5))) ; 105 = 41+(1<<6)
+         (primop 'ff:black  4 1 ff:black)  ; (make-bytecode '(42 4 5 6 7  8  24 8)))
+         (primop 'ff:red    4 1 ff:red)    ; (make-bytecode '( 8 4 5 6 7  8  24 8))) ; TODO: change all
+         (primop 'ff:toggle 1 1 ff:toggle) ; (make-bytecode '(46 4        5  24 5)))
+         (primop 'ff:red?   1 1 ff:red?)   ; (make-bytecode '(41 4        5  24 5)))
+         (primop 'ff:right? 1 1 ff:right?) ; (make-bytecode '(32 4        5  24 5)))
 
          ; vm-specific constants
          (primop 'vm:version  0 1 vm:version)  ; (make-bytecode '(28 4)))
@@ -241,10 +239,9 @@
       ; additional
       (setq apply (make-bytecode '(20))) ; stub for (prim-opcodes)
       (setq arity-error (make-bytecode '(17))) ; stub for (prim-opcodes)
-      (setq apply/cc (make-bytecode '(84))) ; stub for (prim-opcodes)
+      (setq apply/cc (make-bytecode '(21))) ; stub for (prim-opcodes)
 
       ; other instructions
-      (setq vm:nop  (make-bytecode '(21)))
       (setq vm:mcp  (make-bytecode '(27 4 5 6 7 8  24 8)))
       (setq vm:run  (make-bytecode '(50 4 5)))
 

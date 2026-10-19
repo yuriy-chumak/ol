@@ -496,7 +496,20 @@
                   (if (eq? (ref a n) (ref b n))
                      (if (eq? n 0)
                         #true
-                        (loop (-- n)))))))))))
+                        (loop (-- n))))))
+
+      ;  * ol 2.x backward compatibility
+      ;    (eqv? (lambda (x) x) (lambda (y) y)) ==> #true
+         (if (eq? typea type-bytecode)
+            (and
+               (eq? typea (type b))
+               (eq? (size a) (size b))
+               (let loop ((n (-- (size a))))
+                  (if (eq? (ref a n) (ref b n))
+                     (if (eq? n 0)
+                        #true
+                        (loop (-- n))))))
+      ))))))
 
       (assert (eqv? 'a 'a)                  ===> #true) ; symbols
       (assert (eqv? '() '())                ===> #true) ; empty lists
@@ -578,11 +591,13 @@
       ; eqv? must be a boolean
 
       (assert (eqv? #() #())                ===> #false) ; * ol specific, (in r7rs unspecified)
+      ; compat with 2.x:
       (assert (eqv? (lambda (x) x)
                     (lambda (x) x))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
+      ; compat with 2.x:
       (assert (eqv? (lambda (x) x)
                     (lambda (y) y))         ===> #true)  ; * ol specific, (in r7rs unspecified), depends on (lang assemble)
-      ;assert (eqv? 1.0e0 1.0e0)            ===> unspecified
+      ;assert (eqv? 1.0e0 1.0e0)            ===> #true
       (assert (eqv? +nan.0 +nan.0)          ===> #true)  ; * ol specific, (in r7rs unspecified)
 
       (assert (eqv? '(a) '(a))              ===> #false) ; * ol specific, (in r7rs unspecified)

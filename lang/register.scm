@@ -10,8 +10,7 @@
 (define-library (lang register)
 
    (export
-      allocate-registers
-      n-registers)
+      allocate-registers)
 
    (import
       (scheme base)
@@ -126,6 +125,8 @@
                ['be (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (['bf a then else]
                ['bf (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
+            (['bt a then else]
+               ['bt (op a) (rtl-rename then op target fail) (rtl-rename else op target fail)])
             (else
                (runtime-error "rtl-rename: what is this: " code))))
 
@@ -193,8 +194,6 @@
                (cond
                   ((eq? a b)
                      (rtl-retard more)) ; drop useless instruction
-                  ((> b highest-register)
-                     (runtime-error "out of registers in move: " b))
                   (else
                      (lets
                         ((more uses (rtl-retard more))
@@ -289,13 +288,16 @@
                (rtl-retard-jump rtl-retard 'be a empty  then else)) ; fp
             (['bz a then else]
                (rtl-retard-jump rtl-retard 'bz a empty  then else)) ; fp
+            (['bt a then else]
+               (rtl-retard-jump rtl-retard 'bt a empty  then else)) ; fp
 ;            ((jab a type then else)
 ;               (rtl-retard-jump rtl-retard 'jab a type then else))
             (else
                (runtime-error "rtl-retard: unknown code: " code))))
 
       (define (allocate-registers rtl)
-         (lets ((rtl usages (rtl-retard rtl)))
-            rtl))
+         rtl)
+         ;; (lets ((rtl usages (rtl-retard rtl)))
+         ;;    rtl))
 
    ))

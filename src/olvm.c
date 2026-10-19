@@ -1386,6 +1386,14 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 
 #include <math.h>
 
+#ifdef _WIN32
+# if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#  define htole16(x) _byteswap_ushort(x) /* (uint16_t)((x >> 8) | (x << 8)) */
+# else
+#  define htole16(x) (x)
+# endif
+#endif
+
 // --------------------------------------------------------------------------
 //	https://gcc.gnu.org/wiki/FloatingPointMath
 #ifdef OLVM_BUILTIN_FMATH
@@ -2690,6 +2698,11 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define A4  reg[ip[4]]
 #define A5  reg[ip[5]]
 
+#define wip(x) htole16(((uint16_t*)ip)[x])
+#define WA0 reg[wip(0)]
+#define WA1 reg[wip(1)]
+#define WA2 reg[wip(2)]
+#define WA3 reg[wip(3)]
 // generate errors and faults
 #ifndef NTRACE
 #define TRACE(...) D(__VA_ARGS__)
@@ -2735,25 +2748,6 @@ word get(word *ff, word key, word def, jmp_buf ret)
 // # of function calls in a thread quantum
 #define TICKS  10000
 
-static
-void runtime_gc(struct olvm_t *ol, word words, unsigned char** ip, unsigned char** ip0, word** fp, word* this)
-{
-	ptrdiff_t dp;
-	dp = *ip - *ip0;
-
-	ol->heap.fp = *fp; ol->this = *this;
-	ol->heap.gc(ol, words);
-	*fp = ol->heap.fp; *this = ol->this;
-
-	// (the bytecode of thread thunk is last element of)
-	*ip0 = (unsigned char*) &car(
-			reference_type(*this) == TTHREAD
-				? (word) ref(*this, reference_size(*this))
-				: *this);
-	*ip = *ip0 + dp;
-	return;
-}
-
 #ifdef DEBUG_COUNT_OPS
 static unsigned long long ops[256];
 #endif
@@ -2767,6 +2761,7 @@ static unsigned long long ops[256];
 #endif
 
 static //__attribute__((aligned(8)))
+__attribute__((hot))
 word runtime(struct olvm_t* ol)
 {
 	heap_t* heap = &ol->heap; // global vm heap
@@ -2786,11 +2781,24 @@ word runtime(struct olvm_t* ol)
 
 	// vm instruction pointer(s)
 	unsigned char *ip = 0, *ip0;
-	// internal gc call wrapper
-#	define GC(size) runtime_gc(ol, (size), &ip, &ip0, &fp, &this)
 
-	// error handling optimized variables
-	word r3,r4,r5,r6;
+	// internal gc call wrapper
+	void GC(word words)
+	{
+		ptrdiff_t dp;
+		dp = ip - ip0;
+
+		ol->heap.fp = fp; ol->this = this;
+		ol->heap.gc(ol, words);
+		fp = ol->heap.fp; this = ol->this;
+
+		// (the bytecode of thread thunk is last element of)
+		ip0 = (unsigned char*) &car(reference_type(this) == TTHREAD ? (word) ref(this, reference_size(this)) : this);
+		ip = ip0 + dp;
+	}
+
+	word a0,a1,a2,a3; // command arguments optimized variables
+	word r3,r4,r5,r6; // error handling optimized variables
 
 #ifdef DEBUG_COUNT_OPS
 	bzero(ops, sizeof(ops));
@@ -3023,22 +3031,20 @@ mainloop:;
 	// Rn - регистр машины (reg[n])
 	// An - регистр, на который ссылается операнд N (записанный в параметре n команды, начиная с 0)
 	// todo: добавить в комменты к команде теоретическое количество тактов на операцию
-	// todo: exchange NOP and APPLY operation codes
+	// todo: move APPLY to 21 operation code?
 
 	// todo: add "HLT" function (may be 0x0 ?)
 	#	define MODD(i, n) ((i) + ((n)<<6))
 
 	// список команд смотреть в assembly.scm
 	enum instruction_t {
-		NOP   = 21,
-
 	// безусловные переходы
-		GOTO  = 2,  // jmp a, nargs
-		CLOS  = 3,
+		GOTO  = 002,  // jmp a, nargs
+		CLOS  = 003,
 
 	// управляющие команды
-		APPLY = 20,
-		APPLYCONT = MODD(APPLY, 1),
+		APPLY = 024,
+		APPLYCONT = 025,
 		RET   = 24,
 		RUN   = 50,
 		ARITY_ERROR = 17,
@@ -3046,27 +3052,23 @@ mainloop:;
 
 		MCP   = 27,     // MCP call
 
-		LDENTF = 13,     // LDE (13), LDN (77), LDT (141), LDF (205)
-		  LDE = MODD(LDENTF, 0), // TODO?: somewhere in feature reorder bytecodes
-		  LDN = MODD(LDENTF, 1),
-		  LDT = MODD(LDENTF, 2),
-		  LDF = MODD(LDENTF, 3),
-		LD    = 14,     // ld 
-		REFI  = 1,      // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
+		REFI  = 001,  // refi a, p, t:   Rt = Ra[p], p unsigned (indirect-ref from-reg offset to-reg), TODO: rename to LDREF
+		LD    = 014,  // LDF, LDT, LDN, LDE
+		LD8   = 015,  // ld byte to reg
 
-		MOVE  = 9,      //
-		MOV2  = 5,      // optimization for MOVE + MOVE
+		MOVE  = 011,  //
+		MOV2  = 012,  // opt. for MOVE + MOVE
 
-		BEQ   = 8,      // Branch if EQual
-		BZNEF = 16,     // Branch if Zero (BZ, 16), Null (BN, 80), Empty (BE, 144), False (BF, 208)
-		BNA   = 11,     // Branch if Not Arity (arity mismatch)
-		BNAV  = 12,     // Branch if Not Arity Variadric
+		BCOND = 004,  // Branch if Zero (BZ, 4), Null (BN, 2), Empty (BE, 3), False (BF, 0), True (BT, 1)
+		BEQ   = 005,  // Branch if EQual
+		BNA   = 006,  // Branch if Not Arity (arity mismatch)
+		BNAV  = 007,  // Branch if Not Arity Variadric
 
 	// примитивы языка:
-		VMNEW   = 23,   // make a typed object (fast and simple)
-		VMMAKE  = 18,   // make a typed object (slow, but smart)
-		VMALLOC = MODD(VMMAKE, 1),  // alloc a memory region
-		VMCAST  = 22,
+		VMNEW   = 020,   // make a typed object (fast and simple)
+		VMMAKE  = 022,   // make a typed object (slow, but smart)
+		VMALLOC = 023,   // alloc a memory region
+		VMCAST  = 48,
 		VMSETE  = 43,   // vm:set!
 
 		VMPIN   = 35,
@@ -3084,8 +3086,8 @@ mainloop:;
 		REF   = 47,
 
 	// ?
-		SETREF  = 10,
-		SETREFE = MODD(SETREF, 1), // set-ref!
+		SETREF  = 49,
+		SETREFE = 11, // set-ref!
 
 		// ?
 		EQQ   = 54, // eq?
@@ -3114,15 +3116,15 @@ mainloop:;
 		  FEXPT = 0x81,
 
 	// vectors, trees
-		VECTORAPPLY = 32,
-		FFAPPLY = 49,
+		VECTORAPPLY = 026,
+		FFAPPLY = 027,
 
 		FFLEAF    = 42, // make ff leaf
 		FFBLACK   = FFLEAF,
-		FFRED     = MODD(FFLEAF, 1),
+		FFRED     = 8,
 		FFTOGGLE  = 46, // toggle ff leaf color
 		FFREDQ    = 41, // is ff leaf read?
-		FFRIGHTQ  = MODD(FFREDQ, 1), // if ff leaf right?
+		FFRIGHTQ  = 32, // if ff leaf right?
 
 	// ALU
 		ADDITION       = 38,
@@ -3211,26 +3213,23 @@ mainloop:;
 loop:;
 	/*! ### OLVM Codes
 	 * 
-	 * | #o/8 | o0         | o1        | o2      | o3    | o4       | o5      | o6       | o7     |
-	 * |:-----|:----------:|:---------:|:-------:|:-----:|:--------:|:-------:|:--------:|:------:|
-	 * |**0o**|            | REFI      | GOTO    | CLOS  |          | MOV2    |          |        |
-	 * |**1o**| BEQ        | MOVE      | set-ref+| BNA   | BNAV     | LD*     | LD       | TYPE   |
-	 * |**2o**| BZ/BN/BE/BF|ARITY-ERROR| vm:make+|       | APPLY    | NOP     | CAST     | NEW    |
-	 * |**3o**| RET        | DEREF     | DIV     | MCP   | VERSION  | FEATURES| VMAX     | VSIZE  |
-	 * |**4o**|VECTOR-APPLY| FP1       | FP2     | PIN   | SIZE     | EXIT    | ADD      | MUL    |
-	 * |**5o**| SUB        | FF:RED?   | FF:BLACK| SET!  | LESS?    |         | FF:TOGGLE| REF    |
-	 * |**6o**|            | FF:APPLY  | RUN     | CONS  | CAR      | CDR     | EQ?      | AND    |
-	 * |**7o**| IOR        | XOR       | SHR     | SHL   | UNPIN    | CLOCK   |          | SYSCALL|
-	 * 
-	 * * set-ref+: `set-ref`, `set-ref!`
-	 * * vm:make+: `vm:make`, `vm:alloc`
-	 * * LD*: `LDE`, `LDN`, `LDT`, `LDF`
+	 * | #o/8 | o0       | o1        | o2       | o3       | o4       | o5       | o6       | o7       |
+	 * |:-----|:--------:|:---------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|
+	 * |**0o**|          | REFI      | GOTO     | CLOS     | Bx       | BEQ      | BNA      | BNAV     | +
+	 * |**1o**| ff:red   | MOVE      | MOV2     | set-ref! | LDx      | LD8      |          | TYPE     |
+	 * |**2o**| vm:new   |ARITY-ERROR| vm:make  | vm:alloc | apply    | apply/cc | vec-apply| ff-apply | +
+	 * |**3o**| RET      | DEREF     | DIV      | MCP      | VERSION  | FEATURES | VMAX     | VSIZE    |
+	 * |**4o**| ff:right?| FP1       | FP2      | PIN      | SIZE     | EXIT     | ADD      | MUL      |
+	 * |**5o**| SUB      | FF:RED?   | FF:BLACK | SET!     | LESS?    |          | FF:TOGGLE| REF      |
+	 * |**6o**| vm:cast  | set-ref   | RUN      | CONS     | CAR      | CDR      | EQ?      | AND      |
+	 * |**7o**| IOR      | XOR       | SHR      | SHL      | UNPIN    | CLOCK    |          | SYSCALL  |
 	 */
 #ifdef DEBUG_COUNT_OPS
     ops[*ip]++;
 #endif
 
-	switch ((op = *ip++) & 0x3F) {
+	switch (op = *ip++) {
+	// switch ((op = *ip++) & 0x3F) {
 	/*! #### JIT
 	 * Reserved for feature use.
 	 *
@@ -3257,13 +3256,6 @@ loop:;
 		FAULT(0, I(op));
 		break;
 
-	/*! #### NOP
-	 * No OPeration
-	 * `21`
-	 */
-	case NOP:
-		break;
-
 	/*! #### ARITY_ERROR
 	 * Arity Error
 	 */
@@ -3274,29 +3266,43 @@ loop:;
 	/*! #### GOTO
 	 * GO TO procedure, arity
 	 */
-	case GOTO: { // (10%)
-		this = A0;
-		acc = ip[1];
+	case GOTO: {
+		a0 = ip[0];
+		a1 = ip[1];
+GOTO:;
+		this = reg[a0];
+		acc = a1;
 		goto apply;
+	}
+	case GOTO+64: { // GOTO/16
+		a0 = wip(0);
+		a1 = wip(1);
+		goto GOTO;
 	}
 
 	/*! #### RET
 	 * RETurn from procedure
 	 */
-	case RET: { // (3%) return value
+	case RET: {
 		this = R3;
 		R3 = A0; acc = 1;
+		goto apply;
+	}
+	case RET+64: { // RET/16
+		this = R3;
+		R3 = WA0; acc = 1;
 		goto apply;
 	}
 
 	/*! #### APPLY
 	 */
-	case APPLY: { // (0%)
-		int r = 4;   // normal apply: cont=r3, func=r4, a0=r5,
+	case APPLY:
+	case APPLYCONT: { // (0%)
+		int r = 4;   // normal apply: cont=r3, func=r4, a0=r5, ...
 		int arity = 1;
 		acc -= 3; // ignore cont, function and stop before last one (the list)
 
-		if (op == APPLYCONT) {    // (_sans_cps apply): func=r3, a0=r4
+		if (op != APPLY) {    // (_sans_cps apply): func=r3, a0=r4
 			r = 3;
 			arity = 0;
 			acc += 1;
@@ -3329,7 +3335,7 @@ loop:;
 	/*! #### MCP
 	 */
 	// do mcp operation with continuation
-	case MCP: { // (1%) sys continuation op arg1 arg2
+	case MCP: {
 		this = R0;
 		R3 = A1; R4 = A0; R5 = A2; R6 = A3;
 		goto mcp;
@@ -3370,39 +3376,66 @@ loop:;
 	// операции с данными
 	//	смотреть "vm-instructions" в "lang/assembly.scm"
 
-	/*! #### LDENTF r (LDE, LDN, LDT, LDF)
-	 * - LDE Store `#empty` into register `r`
-	 * - LDN Store `#null` into register `r`
-	 * - LDT Store `#true` into register `r`
+	/*! #### LD(FTNE) r (LDE, LDN, LDT, LDF)
 	 * - LDF Store `#false` into register `r`
+	 * - LDT Store `#true` into register `r`
+	 * - LDN Store `#null` into register `r`
+	 * - LDE Store `#empty` into register `r`
 	 */
-	case LDENTF: {  // (1%) 13,  -> ldi(lde, ldn, ldt, ldf){2bit what} [to]
+	case LD: {
 		static
-		const word I[] = { IEMPTY, INULL, ITRUE, IFALSE };
-		A0 = I[op>>6];
+		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
+		int i = *ip++;
+		A0 = I[i];
 		ip += 1; break;
 	}
-	/*! #### LD b r
+	case LD+64: { // LD/16
+		static
+		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
+		int i = *ip++;
+		WA0 = I[i];
+		ip += 2; break;
+	}
+
+	/*! #### LD8 b r
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
-	case LD: // (5%)
-		A1 = I(ip[0]); // I(ip[0]) -> reg[ip[1]]
+	case LD8: {
+		int i = *ip++;
+		A0 = I(i);
+		ip += 1; break;
+	}
+	case LD8+64: { // LD8/16
+		int i = *ip++;
+		WA0 = I(i);
 		ip += 2; break;
+	}
 
 
 	/*! #### REFI a p t
 	 * Rt = (ref reg[a] reg[p]), p is unsinged
 	 */
-	case REFI: { // (24%)
-		A2 = ref(A0, ip[1]); // A2 = A0[p]
+	case REFI: {
+		A2 = ref(A0, ip[1]);
 		ip += 3; break;
 	}
+	case REFI+64: { // REFI/16
+		WA2 = ref(WA0, wip(1));
+		ip += 6; break;
+	}
+
+
 	/*! #### MOVE a t
 	 * Rt = Ra
 	 */
-	case MOVE: // (3%)
+	case MOVE:
 		A1 = A0;
 		ip += 2; break;
+	case MOVE+64: { // MOVE/16
+		WA1 = WA0;
+		ip += 4; break;
+	}
+
 	/*! #### MOV2 a1 t1 a2 t2
 	 * Rt1 = Ra1,
 	 * Rt2 = Ra2
@@ -3414,29 +3447,30 @@ loop:;
 	// todo: add MOV3?
 
 	// условные переходы
-	/*! #### BEQ a b ow
-	 * Branch to ip+ow if a == b, ow is a two-byte binary value
-	 */
-	case BEQ: // (5%) beq a b ow
-		if (A0 == A1) // 30% for "yes"
-			ip += (ip[3] << 8) + ip[2]; // little-endian
-		ip += 4; break;
-
-	/*! #### Bx a o (BZ, BN, BT, BF)
-	 * - BZ, branch if a == 0
+	/*! #### B/ a o (BF, BT, BN, BE, BZ)
+	 * - BF, branch if a == #false
+	 * - BT, branch if a == #true
 	 * - BN, branch if a == #null
 	 * - BE, branch if a == #empty
-	 * - BF, branch if a == #false
+	 * - BZ, branch if a == 0
 	 */
-	case BZNEF: { // (10%) BZ, BN, BE, BF a ow, conditional branch
+	case BCOND: {
 		static
-		const word I[] = { I(0), INULL, IEMPTY, IFALSE };
-		if (A0 == I[op>>6]) // 49% for "yes"
+		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY, I(0) };
+		int sop = *ip++;
+		if (A0 == I[sop])
 			ip += (ip[2] << 8) + ip[1]; // little-endian
 		ip += 3; break;
 	}
 
-	// (13%) for BNA and BNAV
+	/*! #### BEQ a b ow
+	 * Branch to ip+ow if a == b, ow is a two-byte binary value
+	 */
+	case BEQ:
+		if (A0 == A1) // 30% for "yes"
+			ip += (ip[3] << 8) + ip[2]; // little-endian
+		ip += 4; break;
+
 	// NOTE: Don't combine BNA and BNAV for the gods of speed
 	case BNA: {
 		long arity = ip[0];
@@ -3464,21 +3498,6 @@ loop:;
 		ip += 3; break;
 	}
 
-	case CLOS:
-	{	// CLOS type size r i a1 a2 a3 a4 ...
-		word type = *ip++;
-		word size = *ip++;
-		word *T = new (type, size-1);
-
-		word vec = reg[*ip++];
-		T[1] = ref(vec,*ip++); // T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
-
-		for (size_t i = 2; i < size; )
-			T[i++] = reg[*ip++];
-		reg[*ip++] = (word) T; // reg[ret] = T
-		break;
-	}
-
 	/************************************************************************************/
 	// более высокоуровневые конструкции
 	//	смотреть "owl/primop.scm" и "lang/assemble.scm"
@@ -3489,21 +3508,33 @@ loop:;
 	case VMNEW: { // new t f1 .. fs r
 		// vm:new is a SPECIAL operation with different arguments order
 		word type = *ip++;
-		word size = *ip++ + 1; // the argument is n-1 to allow making a 255-tuple with 255, and avoid 0 length objects
-		word *p = new (type, size), i = 0; // s fields + header
+		word size = *ip++;
+		word *p = new (type, size), i = 0;
 		while (i < size) {
 			p[i+1] = reg[*ip++];
 			i++;
 		}
-		reg[*ip++] = (word) p;
-		break;
+		A0 = (word) p;
+		ip += 1; break;
+	}
+	case VMNEW+64: { // VMNEW/64
+		word type = *ip++;
+		word size = wip(0);  ip+=2;
+		word *p = new (type, size), i = 0;
+		while (i < size) {
+			p[i+1] = WA0;
+			ip += 2; i++;
+		}
+		WA0 = (word) p;
+		ip += 2; break;
 	}
 
 	// make typed reference from list
 	// (vm:make type list-of-values) ; length is list length
 	// (vm:make type length) ; default value is equal to #false
 	// (vm:make type length default-value)
-	case VMMAKE: { // and VMALLOC
+	case VMMAKE:
+	case VMALLOC: { // and VMALLOC
 	 	word size = *ip++;
 		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
 		word value = A1;
@@ -3526,7 +3557,7 @@ loop:;
 
 				// эта проверка необходима, так как действительно можно
 				//	выйти за пределы кучи (репродюсится стабильно)
-				int mult = (op == VMALLOC) ? sizeof(word) : 1;
+				int mult = (op != VMMAKE) ? sizeof(word) : 1;
 				if (fp + (len / mult) > heap->end) {
 					GC(len / mult);
 					
@@ -3594,11 +3625,29 @@ loop:;
 	 	ip += size + 1; break;
 	}
 
+	case CLOS:
+	{	// CLOS type size r i a1 a2 a3 a4 ...
+		word type = *ip++;
+		word size = *ip++;
+		word *T = new (type, size-1);
+
+		word vec = reg[*ip++];
+		T[1] = ref(vec,*ip++); // T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
+
+		for (size_t i = 2; i < size; )
+			T[i++] = reg[*ip++];
+		reg[*ip++] = (word) T; // reg[ret] = T
+		break;
+	}
+
 
 	// операции посложнее
-	case CONS:   // cons a b -> r : Rr = (cons Ra Rb)
-		A2 = (word) cons(A0, A1); // видимо, вызывается очень часто, так как замена на макрос дает +10% к скорости
+	case CONS:
+		A2 = (word) cons(A0, A1);
 		ip += 3; break;
+	case CONS+64: // CONS/16
+		WA2 = (word) cons(WA0, WA1);
+		ip += 6; break;
 
 
 	case TYPE: { // type o -> r
@@ -3786,7 +3835,8 @@ loop:;
 	}
 
 	// if position out of bounds will return unchanged object
-	case SETREF: {  // (set-ref object position value), position starts from 1 to objects and 0 to blobs
+	case SETREF:
+	case SETREFE: { // (set-ref object position value), position starts from 1 to objects and 0 to blobs
 					// (set-ref! object position value), position starts from 1 to objects and 0 to blobs
 		word *p = (word *)A0;
 		word result = IFALSE;
@@ -3877,7 +3927,7 @@ loop:;
 
 
 	case BINARY_AND: // vm:and a b r, prechecked
-		A2 = (A0 & A1);
+		A2 = (A0 & A1); // let's keep type of A0
 		ip += 3; break;
 	case BINARY_IOR: // vm:ior a b r, prechecked
 		A2 = (A0 | A1);
@@ -3931,9 +3981,9 @@ loop:;
 		#if SYSCALL_SYSINFO
 			| 000000200
 		#endif
-        #if SYSCALL_MEMFD
+		#if SYSCALL_MEMFD
 			| 000000400
-        #endif
+		#endif
 		#if SYSCALL_GETRLIMIT
 			| 000001000
 		#endif
@@ -4009,8 +4059,10 @@ loop:;
 	}
 
 	// create red/black node
-	case FFLEAF: { // {ff:black|ff:red} l k v r t
-		word t = (op == FFRED ? TRED : 0) |TFF;
+	case FFRED:
+	case FFBLACK: { // {ff:black|ff:red} l k v r t
+		// word t = (op == FFRED ? TRED : 0) |TFF;
+		word t = (op != FFBLACK ? TRED : 0) |TFF;
 		word l = A0;
 		word r = A3;
 
@@ -4061,7 +4113,8 @@ loop:;
 	}
 
 	// is node red/right predicate?
-	case FFREDQ: { // ff:red?|ff:right? node r
+	case FFREDQ:
+	case FFRIGHTQ: { // ff:red?|ff:right? node r
 		word t = (op == FFREDQ ? TRED : TRIGHT);
 		word node = A0;
 		if (is_reference(node)) // assert to IEMPTY || is_reference() ?
@@ -6285,12 +6338,35 @@ int main(int argc, char** argv)
 #endif
 
 #ifdef DEBUG_COUNT_OPS
-    for (int j = 0; j < 16; j++) {
-        for (int i = 0; i < 16; i++) {
-            printf("%8lld ", ops[i+j*16]);
-        }
-        printf("\n");
-    }
+	long long sum = 0;
+	for (int j = 0; j < 16; j++)
+		for (int i = 0; i < 16; i++)
+			sum += ops[i+j*16];
+
+	printf("------------------------------------------------\n");
+	for (int j = 0; j < 16; j++) {
+		for (int i = 0; i < 16; i++) {
+			int perc = (int)((100.0 * (float)ops[i+j*16]) / sum);
+			if (perc == 0)
+				if (ops[i+j*16] == 0)
+					printf("      ");
+				else
+					printf("\033[90m" "  .0  " "\033[0m");
+			else {
+				if (perc >  4) printf("\033[33m");
+				if (perc > 10) printf("\033[32m");
+				if (perc > 20) printf("\033[31m");
+				// printf("%4d‰ ", perc);
+				printf("%4d", perc);
+				printf("\033[90m" "%% " "\033[0m");
+			}
+			if (i == 7)
+				printf("\n");
+		}
+		printf("\n");
+		if (j % 4 == 3)
+			printf("------------------------------------------------\n");
+	}
 #endif
 
 ok:
@@ -6453,28 +6529,20 @@ OLVM_new(unsigned char* bootstrap)
 		// objects: список автостартующих функций (лежит в [nobjs]),
 		//          заменяет в загрузчике последнюю лямбду
 		// args: аргументы, которые предоставляет функция OLVM_run
-		//       (а мы пока положим #null)
 		//
-		// (define (construction args objects)
-		//    (unless (null? objects)
-		//       (construction args (cdr objects))
-		//       ((car objects) args)))
-		//
-		// (fasl-encode construction): OLD, for the entries as (lambda (args) ...)
-		// unsigned char construction[] = { 2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,23,11,1,
-		// 	0,18,1,1,2,4,52,4,5,1,1,4,3,1,1,3,4,2,5,2,17,2,16,31,11,4,0,26,80,5,18,0,53,
-		// 	5,7,3,17,5,1,2,5,4,3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,4,1,0 };
-
 		// (define (construction args objects)
 		//    (unless (null? objects)
 		//       (construction args (cdr objects))
 		//       (apply (car objects) args)))
 		//
 		// (fasl-encode construction): entry must be (lambda args ...)
-		unsigned char construction[] = { 2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,1,
-		    20,2,16,32,11,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,5,5,4,8,5,
-		    2,6,3,17,1,17,2,1,2,2,16,31,11,4,0,26,80,5,18,0,53,5,7,3,18,5,1,2,5,4,
-		    3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,6,1,0 };
+	//	unsigned char construction[] = { 2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,1,
+	//	    20,2,16,32,11,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,5,5,4,8,5,
+	//	    2,6,3,17,1,17,2,1,2,2,16,31,11,4,0,26,80,5,18,0,53,5,7,3,18,5,1,2,5,4,
+	//	    3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,6,1,0 };
+		unsigned char construction[] = {
+			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,10,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,33,6,4,0,28,4,2,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,12,0,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
+		};
 		// подсчет количества слов и объектов в этом коде
 		word wc = 0;
 		word no = count_fasl_objects(&wc, construction);
