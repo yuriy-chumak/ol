@@ -7,9 +7,9 @@
   O t u s   L i s p
 ```
 ❗ Master branch moved to new **3.0** version preparation.
-Latest released (and stable) version 2.7 moved to [branch 2.7](tree/2.7). Use it instead of unstable `master`.
+Latest released (and stable) version 2.7 moved to [branch 2.7](../../tree/2.7). Use it instead of unstable `master`.
 
-## [2.7](tree/2.7) ([release](releases/tag/2.7)) build statuses
+## [2.7](../../tree/2.7) ([release](../../releases/tag/2.7)) build statuses
 [![x86/x64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml?query=branch%3A2.7)
 [![aarch64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml?query=branch%3A2.7)
 [![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml?query=branch%3A2.7)
@@ -122,7 +122,7 @@ Alternatively the Libera.Chat [#otus-lisp](https://web.libera.chat/#otus-lisp) (
 [The Issues](https://github.com/yuriy-chumak/ol/issues) github page waiting for your bug reports and issues.
 
 # VERSIONS
-Latest stable release is **[2.7](tree/2.7)**.  
+Latest stable release is **[2.7](../../tree/2.7)**.  
 Version **3.0** under active development in the master branch.
 
 ### 3.0 changes
@@ -336,9 +336,9 @@ You can find working Ol examples at:
 
 Additionally,
 * "LogicWire" and "Digital rain" examples demonstrates native libraries direct usage (the [OpenGL](http://www.opengl.org/)):
-  * https://github.com/yuriy-chumak/ol/tree/master/examples/LogicWire ([idea source](https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/))
+  * (LogicWire)[../../tree/master/examples/LogicWire] ([idea source](https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/))
     <img src="https://raw.githubusercontent.com/yuriy-chumak/ol/master/doc/img/2023-04-10-21-47.gif" width="50%" height="50%">
-  * https://github.com/yuriy-chumak/ol/tree/master/examples/Matrix
+  * (Matrix)[../../tree/master/examples/Matrix]
     !["digital rain" screenshot](https://raw.githubusercontent.com/yuriy-chumak/ol/gh-pages/assets/ol/digital-rain.png)
 
 * "Pacman" sample demonstrates embedding Ol scripts in native "C" code - https://github.com/yuriy-chumak/ol/tree/master/examples/pacman  
