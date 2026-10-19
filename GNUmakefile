@@ -358,7 +358,7 @@ recompile: boot.fasl
 	   cp -b $^ repl ;$(MAKE) recompile ;\
 	fi
 
-boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm
+boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm libraries/owl/*.scm libraries/scheme/*.scm libraries/data/*.scm
 	@vm repl --version="$(VERSION)" --home=libraries \
 	   src/ol.scm
 

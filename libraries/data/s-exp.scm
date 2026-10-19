@@ -8,7 +8,9 @@
       list->number
 
       ; additional parsers
-      number get-number
+      rational integer number get-number
+      string
+
       whitespace
       whitespace-or-comment
 
@@ -157,7 +159,6 @@
       ;; separate parser with explicitly given base for string->number
       (define (number-in-base base)
          (let-parse* (
-               (sign signer) ;; default + <- could allow also an optional base here
                (num (integer base))
                (tail (either ;; optional after dot part be added
                         (let-parse* (
@@ -167,7 +168,7 @@
                               (expt base (length digits))))
                         (epsilon 0)))
                 (pow exponent))
-            (sign (* (+ num tail) pow))))
+            (* (+ num tail) pow)))
 
       ;; a sub-rational (other than as decimal notation) number
       (define bases {
