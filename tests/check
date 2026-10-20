@@ -74,5 +74,5 @@ language-tests: $(wildcard tests/*.scm) $(wildcard tests/*.bin)
 	echo " "
 	echo "# $(RUNNER) TESTS"
 	FAILMARK=$(shell mktemp -u tmp/do.$(RUNNER).XXXXXXXXX) \
-	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) \
+	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) VERSION=$(VERSION) \
 	TESTS="$^" EXECUTABLE=olvm $(MAKE) tests

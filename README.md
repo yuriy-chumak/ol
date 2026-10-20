@@ -6,9 +6,10 @@
       ---"-"---     functional!
   O t u s   L i s p
 ```
-❗ Master branch moved to new **3.0** version preparation. Latest released (and stable) version 2.7 moved to [branch 2.7](/../2.7). Use it instead of unstable `master`.
+❗ Master branch moved to new **3.0** version preparation.
+Latest released (and stable) version 2.7 moved to [branch 2.7](tree/2.7). Use it instead of unstable `master`.
 
-### `2.7 (release)` build statuses
+## [2.7](tree/2.7) ([release](releases/tag/2.7)) build statuses
 [![x86/x64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml?query=branch%3A2.7)
 [![aarch64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml?query=branch%3A2.7)
 [![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml?query=branch%3A2.7)
@@ -32,7 +33,7 @@ Detailed `2.7` test matrix with results for each test across different platforms
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus.json%3Frunner%3DREFERENCE&label=functions%20reference&version=2.7" alt="ffi tests">
 
 
-### `3.0 (alpha)` build statuses
+## 3.0 (alpha) build statuses
 [![x86/x64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86/x64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml)
 [![aarch64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml)
 [![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml)
@@ -65,7 +66,7 @@ and language
 <a href="doc/reference/README.md">
 <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fiaaa.port0.org%2Fol%2Ftest-matrix%2Fstatus-3.0.json%3Frunner%3DREFERENCE&label=functions%20reference&version=3.0" alt="ffi tests"></a>.
 
-A detailed `3.0` test matrix with results for each test across different platforms is available on a [separate web page](https://iaaa.port0.org/ol/test-matrix#3.0) (follow the link or click the preview image to open it).
+Detailed `3.0` test matrix with results for each test across different platforms is available on a [separate web page](https://iaaa.port0.org/ol/test-matrix#3.0) (follow the link or click the preview image to open it).
 (`2.7` test matrix can be found [here](https://iaaa.port0.org/ol/test-matrix#2.7))
 
 ---
@@ -126,10 +127,11 @@ Version **3.0** under active development in the master branch.
 
 ### 3.0 changes
 * ❗ Keep high-level backward compatibility as much as possible - all tests (language, ffi, rosettacode, reference) should work without changes,
-* 🛠 Internal VM codes largerly changed and extended with second code set (16-bit),
+* 🛠 Internal VM codes largerly changed and extended with second code set (16-bit codes),
   * 🛠 No more "256 args" function limitation (65536 *should be enough for everyone*),
 * 🛠 Less aggressive internal regs remapper - reducing compile time,
-* 🛠 Better FFI structures marshalling support (inspired by the development of a Vulkan support library),
+* 🛠 Better vm speed (stronger code optimizations),
+* 🛠 Better FFI structures marshalling (inspired by the development of a Vulkan support library),
 * 💬 No bytecode-interner (still under discussion) - 20% larger bytecode, but there will be no confusion with the functions of the same body with a different name,
 * 💬 No register remappings (under discussion) in lang/register - small speedup, a bit simpler code
 * 💬 Dropping clang support (sorry) - clearer and faster code, clang support requires lot of stupid syntax sugar that makes code much less readable.

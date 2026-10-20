@@ -9,5 +9,5 @@ ffi-tier-1-tests: $(wildcard tests/ffi/tier-1/*.scm) \
 	echo " "
 	echo "# $(RUNNER) TESTS"
 	FAILMARK=$(shell mktemp -u tmp/fail.FFI.XXXXXXXXX) \
-	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) \
+	BACKEND_URL=$(BACKEND_URL) RUNNER=$(RUNNER) SESSION=$(SESSION) VERSION=$(VERSION) \
 	TESTS="$^" EXECUTABLE=ffi TEST_HOME=tests/ffi $(MAKE) tests

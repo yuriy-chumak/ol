@@ -8,7 +8,7 @@ BACKEND_URL?=http://127.0.0.1:8008/ol/test-matrix
 
 test-matrix: SESSION=$(shell curl -s -X POST "$(BACKEND_URL)?build=$(VERSION)" 2>/dev/null)
 test-matrix:
-	BACKEND_URL=$(BACKEND_URL) SESSION=$(SESSION) \
+	BACKEND_URL=$(BACKEND_URL) SESSION=$(SESSION) VERSION=$(VERSION) \
 	$(MAKE) -s check
 
 # ############################################################
@@ -106,7 +106,7 @@ define notify
 	[ -z "$(BACKEND_URL)" ] || \
 	curl -s "$(BACKEND_URL)" -X PUT \
 	     -H 'Content-Type: application/json' \
-	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'name':'$1', 'os':'$2', 'platform':'$3', 'target':'$4', 'status':$5}"
+	     -d "{'session':$(SESSION), 'runner':'$(RUNNER)', 'version':$(VERSION), 'name':'$1', 'os':'$2', 'platform':'$3', 'target':'$4', 'status':$5}"
 endef
 
 define test-scm # testfile wine-or-something executable platform debug/release executable-suffix diff-options # TEST=test-filename
@@ -217,7 +217,7 @@ tests:
 	for F in $(filter %.scm %.bin,$(TESTS)); do \
 	   if [ -e $$F.ok ] ;then \
 	      printf "|%-$(F1LEN)s " "$$F" |sed 's/ /*/; s/ /./g; s/*/ /' ;\
-	      FAILMARK=$(FAILMARK) EXECUTABLE=$(EXECUTABLE) RUNNER=$(RUNNER) SESSION=$(SESSION) \
+	      FAILMARK=$(FAILMARK) EXECUTABLE=$(EXECUTABLE) RUNNER=$(RUNNER) SESSION=$(SESSION) VERSION=$(VERSION) \
 	         $(MAKE) -s -B $$F.ok;\
 	   fi ;\
 	done
