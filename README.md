@@ -7,21 +7,21 @@
   O t u s   L i s p
 ```
 
-[![x86/x64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20x86/x64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml)
-[![aarch64 status](https://github.com/yuriy-chumak/ol/workflows/linux%20aarch64/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml)
-[![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml)
-[![macos arm64 status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml)
-[![win(e) 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml)  
-[![riscv 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-riscv64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-riscv64.yml)
-[![armv4t 32 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv4.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv4.yml)
-[![armv7 soft/hard 32 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv7.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv7.yml)
-[![mips 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml)
-[![mipsel 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml)
-[![ppc 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml)
-[![ppcle 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle64.yml)
-[![alpha 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml)
-[![sparc 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml)
-[![s390x 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml/badge.svg)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml)
+[![x86/x64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-x86+x64.yml?query=branch%3A2.7)
+[![aarch64 status](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/linux-aarch64.yml?query=branch%3A2.7)
+[![macos intel status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-intel.yml?query=branch%3A2.7)
+[![macos arm64 status](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/macos-arm64.yml?query=branch%3A2.7)
+[![win(e) 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-win32+64.yml?query=branch%3A2.7)
+[![riscv 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-riscv64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-riscv64.yml?query=branch%3A2.7)
+[![armv4t 32 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv4.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv4.yml?query=branch%3A2.7)
+[![armv7 soft/hard 32 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv7.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-armv7.yml?query=branch%3A2.7)
+[![mips 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mips.yml?query=branch%3A2.7)
+[![mipsel 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-mipsel.yml?query=branch%3A2.7)
+[![ppc 32/64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppc.yml?query=branch%3A2.7)
+[![ppcle 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-ppcle64.yml?query=branch%3A2.7)
+[![alpha 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-alpha.yml?query=branch%3A2.7)
+[![sparc 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-sparc64.yml?query=branch%3A2.7)
+[![s390x 64 status](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml/badge.svg?branch=2.7)](https://github.com/yuriy-chumak/ol/actions/workflows/cross-s390x.yml?query=branch%3A2.7)  
 
 
 <a href="https://iaaa.port0.org/ol/test-matrix/"><img align="right" style="margin: 10px; " src="doc/img/test-matrix.png"></a>
