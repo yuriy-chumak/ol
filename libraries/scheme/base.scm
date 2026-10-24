@@ -67,6 +67,7 @@
    cond
 ;  cond-expand    * builtin, (otus eval)
    cons cons*
+   command-line ; (scheme process-context)
    current-error-port
    current-input-port
    current-output-port
@@ -268,6 +269,7 @@
       (scheme bytevector)
       (scheme string)
       (scheme exceptions)
+      (only (scheme process-context) command-line)
       (srfi 1)
       (otus symbol)
       (owl io) (owl math) (owl math-extra)
