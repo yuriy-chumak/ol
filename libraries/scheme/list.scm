@@ -12,27 +12,21 @@
       map for-each
       fold foldr
       
-      has? ; * ol specific, fast version of member
+      has? ; * ol specific, fast version of `member`
       each
    )
 
 
 (begin
 
+   ; * ol specific, fast version of `member`
    (define (has? lst x)
       (unless (null? lst)
-         (or (eq? (car lst) x)
+         (if (eq? (car lst) x)
+            #true
             (has? (cdr lst) x))))
 
-   ;; (define (has? lst x)
-   ;;    (unless (null? lst)
-   ;;       (if (eq? (car lst) x)
-   ;;          #true
-   ;;          (has? (cdr lst) x))))
-
-
    ; procedure:  (map proc list1 list2 ...)
-   ;
    (define map
       (define map (lambda (f a)
          (let loop ((a a))
@@ -45,19 +39,23 @@
                         (if (null? a)
                            #null
                            (cons (f (car a) (car b)) (loop (cdr a) (cdr b))))))
-         ; possible speedup:
+         ; uncomment to speedup if called really frequently.
+         ; because in average world:
+         ;   * (map arg) - ~85–90%
+         ;   * (map arg1 arg2) - ~10–14%
+         ;   * others - less than 1%
          ;((f a b c) (let loop ((a a)(b b)(c c))
          ;              (if (null? a)
          ;                 #null
          ;                 (cons (f (car a) (car b) (car c)) (loop (cdr a) (cdr b) (cdr c))))))
-         ((f a b . c) ; mapN
-                     (let loop ((args (cons a (cons b c))))
-                        (if (null? (car args)) ; закончились
+         ((f a . tl) ; mapN
+                     (let loop ((args (cons a tl)))
+                        (if (null? (car args))
                            #null
                            (cons (apply f (map car args)) (loop (map cdr args))))))
-         ((f ) #null)))
+         ((f) #null)))
 
-   (assert (map cadr '((a b) (d e) (g h)))  ===> '(b e h))
+   (assert (map cadr '((a b) (d e) (g h)))  ==> '(b e h))
 
 
    ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
@@ -70,14 +68,14 @@
                      (unless (null? a)
                         (f (car a) (car b))
                         (loop (cdr a) (cdr b)))))
-      ((f a b . c)
-                  (let loop ((a (cons a (cons b c))))
-                     (unless (null? (car a)) ; закончились
+      ((f a . tl)
+                  (let loop ((a (cons a tl)))
+                     (unless (null? (car a))
                         (apply f (map car a))
                         (loop (map cdr a)))))
       ((f) #false)))
 
-   ; procedure:  (for-each proc list1 list2 ...)  * (scheme base)
+   ; * ol specific
    (define each (case-lambda
       ((ok? a)    (call/cc (lambda (ret)
                      (let loop ((a a))
@@ -93,9 +91,9 @@
                               (ret #false))
                            (loop (cdr a) (cdr b))))
                      #true)))
-      ((ok? a . bs)
+      ((ok? a . tl)
                   (call/cc (lambda (ret)
-                     (let loop ((a (cons a bs)))
+                     (let loop ((a (cons a tl)))
                         (unless (null? (car a))
                            (unless (apply ok? (map car a))
                               (ret #false))
@@ -117,8 +115,8 @@
                               (if (null? a)
                                  state
                                  (loop (f state (car a) (car b)) (cdr a) (cdr b)))))
-         ((f state a b . c)
-                           (let loop ((state state) (args (cons* a b c)))
+         ((f state a . tl)
+                           (let loop ((state state) (args (cons a tl)))
                               (if (null? (car args))
                                  state
                                  (loop (apply f (cons state (map car args))) (map cdr args)))))
@@ -144,8 +142,8 @@
                               (if (null? a)
                                  state
                                  (f (car a) (car b) (loop state (cdr a) (cdr b))))))
-         ((f state a b . c)
-                           (let loop ((state state) (args (cons* a b c)))
+         ((f state a . tl)
+                           (let loop ((state state) (args (cons a tl)))
                               (if (null? (car args))
                                  state
                                  (apply f (append (map car args) (list (loop state (map cdr args))))))))
