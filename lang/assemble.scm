@@ -92,18 +92,19 @@
       (define bytecode-server '|'Bytecodes|)
 
       (define (start-bytecode-interner bytecodes)
-         (let ((codes (fold
-                        (λ (codes pair)
-                           (insert-code codes (car pair) (cdr pair)))
-                        #false bytecodes)))
-            (actor bytecode-server (lambda ()
-               (let loop ((codes codes))
-                  (let*((envelope (wait-mail))
-                        (sender msg envelope)
-                        ; assert (string? msg)
-                        (codes code (intern-code codes msg)))
-                     (mail sender code)
-                     (loop codes)))))))
+         #false)
+         ;; (let ((codes (fold
+         ;;                (λ (codes pair)
+         ;;                   (insert-code codes (car pair) (cdr pair)))
+         ;;                #false bytecodes)))
+         ;;    (actor bytecode-server (lambda ()
+         ;;       (let loop ((codes codes))
+         ;;          (let*((envelope (wait-mail))
+         ;;                (sender msg envelope)
+         ;;                ; assert (string? msg)
+         ;;                (codes code (intern-code codes msg)))
+         ;;             (mail sender code)
+         ;;             (loop codes)))))))
 
       ;; make bytecode and intern it
       ;; (define (bytes->bytecode bytes)
