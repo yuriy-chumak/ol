@@ -1959,7 +1959,7 @@ static char* pvenv_main() {
 
 					sectionLocation += sizeof(IMAGE_SECTION_HEADER);
 				}
-                // 0x200 - is a minimal non-empty tar file size
+				// 0x200 - is a minimal non-empty tar file size
 				if ((ptr + size + 0x200 < end) && (strncmp((ptr + size + 0x101), "ustar", 5) == 0))
 					pvenv = ptr + size;
 				else
@@ -2006,8 +2006,12 @@ static char* pvenv_main() {
 #endif
 
 
-#define NR                          256 // see n-registers in register.scm
-#define CR                          128 // available initial callables, should be more than 4!
+// TODO: allocate really 65536, but NR must be 256
+// increate NR by 256 if used 16-bit regs
+// all 16-bit tests hide under "unlikely"
+#define NR                          256 // basic registers count (sufficient for 8-bit codes)
+#define MNR                       65536 // maximal registers count
+#define CR                            8 // available initial callables, should be more than 4!
 
 #define GCPAD(nr)                  (nr+3) // space after end of heap to guarantee the GC work
 #define MEMPAD                     (1024) // space after end of heap to guarantee apply
@@ -2349,11 +2353,13 @@ struct olvm_t // subclass of heap_t
 
 	// 0 - mcp, 1 - this, 2 - clos-this, 3 - a0, often cont, 4 - a1, ..., NR - pin0, ...
 	// registers
-    word reg[NR];
+	int mnr; // Maximal Number of Regiters
+	int trn; // Top Register Number
+	word reg[MNR]; // TODO: make dynamic, allocate only NR, increase if used
 
 #ifndef OLVM_NOPINS
 	// pinned objects support
-    word* pin;
+	word* pin;
 	size_t cr;  // pins count
 	size_t ffpin; // first free pin
 	size_t lfpin; // last free pin
@@ -2619,26 +2625,19 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 
 	word* r = ol->reg;
 
-	// попробуем освободить ненужные регистры
-    // (но не пины)
-	// !!! это неправильный код, так нельзя
-	// TODO: найти лучшее решение по освобождению регистров
-	// for (int i = 3 + ol->arity; i < NR; i++)
-	// 	r[i] = IFALSE; // todo: use wmemset?
-
 	// assert (fp + N + 3 < ol->heap.end);
-	int p = 0, N = NR, C = 1;
+	int p = 0, N = ol->trn, C = 1;
 
 	// создадим в топе временный объект со значениями всех регистров и пинов
 #ifndef OLVM_NOPINS
 	C += ol->cr;
 #endif
 
-	word *regs = new (TVECTOR, N + C); // N for regs, 1 for this, 1 for pins
+	word *regs = new (TVECTOR, N + C); // N for regs, 1 for this, C for pins
 	while (++p <= N) regs[p] = r[p-1]; // save regs
-	regs[p] = ol->this;
+	regs[p++] = ol->this;
 #ifndef OLVM_NOPINS
-	memcpy(regs+p+1, ol->pin, ol->cr * sizeof(word));
+	memcpy(&regs[p], ol->pin, ol->cr * sizeof(word));
 #endif
 
 	ol->heap.fp = fp; // выполним сборку мусора
@@ -2646,10 +2645,14 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 
 	// и восстановим все пины и регистры, уже подкорректированные сборщиком
 #ifndef OLVM_NOPINS
-	memcpy(ol->pin, regs+p+1, ol->cr * sizeof(word));
+	memcpy(ol->pin, &regs[p], ol->cr * sizeof(word));
 #endif
-	ol->this = regs[p];
+	ol->this = regs[--p];
 	while (--p >= 1) r[p-1] = regs[p];
+
+	// // cleanup all other registers (а надо ли?)
+	// for (int i = N; i < ol->mnr; i++)
+	// 	r[i] = IFALSE;
 
 	// закончили, почистим за собой:
 	ol->heap.fp = fp; // вручную удалим временный объект, (это оптимизация)
@@ -2691,6 +2694,17 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define R5  reg[5]
 #define R6  reg[6]
 
+#define RA0 reg[ip[0]]
+#define RA1 reg[ip[1]]
+#define RA2 reg[ip[2]]
+
+#define wp(x) htole16(((uint16_t*)ip)[x]) // wide (16-bit) pointer
+#define RW0 reg[wp(0)]
+#define RW1 reg[wp(1)]
+#define RW2 reg[wp(2)]
+
+
+// legacy:
 #define A0  reg[ip[0]]
 #define A1  reg[ip[1]]
 #define A2  reg[ip[2]]
@@ -2698,11 +2712,35 @@ word get(word *ff, word key, word def, jmp_buf ret)
 #define A4  reg[ip[4]]
 #define A5  reg[ip[5]]
 
+// legacy
 #define wip(x) htole16(((uint16_t*)ip)[x])
 #define WA0 reg[wip(0)]
 #define WA1 reg[wip(1)]
 #define WA2 reg[wip(2)]
 #define WA3 reg[wip(3)]
+
+#ifdef max
+#undef max
+#endif
+#define max(a,b) ((a) > (b) ? (a) : (b))
+
+#define grow64(x) (((x) & ~63) + 64)
+
+#define MNR1(ax) if (unlikely(ax >= ol->mnr)) {\
+	ol->mnr = grow64(ax);\
+}
+#define MNR2(ax,ay) if (unlikely(ax >= ol->mnr && ay >= ol->mnr)) {\
+	ol->mnr = grow64(max(ax, ay));\
+}
+#define MNR_MACRO(_1, _2, _3, NAME, ...) NAME
+// TODO: rename
+#define MNRUP(...) MNR_MACRO(__VA_ARGS__, MNR3, MNR2, MNR1, NOTHING)(__VA_ARGS__)
+
+// #define AW0  reg[htole16(*(uint16_t*)&ip[0])]
+// #define AW1  reg[htole16(*(uint16_t*)&ip[2])]
+// #define AW2  reg[htole16(*(uint16_t*)&ip[4])]
+// #define AW3  reg[htole16(*(uint16_t*)&ip[6])]
+
 // generate errors and faults
 #ifndef NTRACE
 #define TRACE(...) D(__VA_ARGS__)
@@ -2788,6 +2826,7 @@ word runtime(struct olvm_t* ol)
 		ptrdiff_t dp;
 		dp = ip - ip0;
 
+		ol->trn = ol->mnr; // we don't know how many registers are valid at this point, so use all of them
 		ol->heap.fp = fp; ol->this = this;
 		ol->heap.gc(ol, words);
 		fp = ol->heap.fp; this = ol->this;
@@ -2797,7 +2836,7 @@ word runtime(struct olvm_t* ol)
 		ip = ip0 + dp;
 	}
 
-	word a0,a1,a2,a3; // command arguments optimized variables
+	// word a0,a1,a2,ar; // command arguments optimized variables
 	word r3,r4,r5,r6; // error handling optimized variables
 
 #ifdef DEBUG_COUNT_OPS
@@ -2947,10 +2986,23 @@ apply:;
 		// теоретически, это можно вычислить проанализировав текущий контекст
 		// а практически, пока поюзаем количество доступных регистров
 
-		// если места в буфере не хватает, то мы вызываем GC,
-		//	а чтобы автоматически подкорректировались регистры,
-		//	мы их складываем в память во временный объект.
-		if (fp >= heap->end) {
+		// если места в буфере не хватает, то мы вызываем GC
+		// во время этого вызова мы точно знаем какие регистры нам еще нужны,
+		// так что можем провести необходимую чистку
+		if (unlikely(fp >= heap->end)) {
+			// fprintf(stderr, ".");
+			// количество валидных регистров (+3?)
+			int trn = acc + 4;
+			// почистим "остальные" регистры
+			for (int i = trn; i < ol->mnr; i++)
+				reg[i] = IFALSE;
+			ol->trn = trn;
+			// а теперь и mnr поправим
+			// ol->mnr  = grow64(acc + 4);
+			if (acc + 4 < NR)
+				ol->mnr = NR; // mnr не может быть меньше NR
+
+			// всё, можно вызывать GC
 			heap->fp = fp; ol->this = this;
 			heap->gc(ol, 0);
 			fp = heap->fp; this = ol->this;
@@ -3043,7 +3095,7 @@ mainloop:;
 		CLOS  = 003,
 
 	// управляющие команды
-		APPLY = 024,
+		APPLY = 024,  // 20, 0x14
 		APPLYCONT = 025,
 		RET   = 24,
 		RUN   = 50,
@@ -3212,6 +3264,8 @@ mainloop:;
 	int op; //operation to execute
 loop:;
 	/*! ### OLVM Codes
+	 * TODO: отдельная VM команда на увеличение банка регистров?
+	 *       чтобы сэкономить на проверках regN > NR?
 	 * 
 	 * | #o/8 | o0       | o1        | o2       | o3       | o4       | o5       | o6       | o7       |
 	 * |:-----|:--------:|:---------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|
@@ -3264,34 +3318,38 @@ loop:;
 		break;
 
 	/*! #### GOTO
-	 * GO TO procedure, arity
+	 * GO TO procedure, set arity
 	 */
-	case GOTO: {
-		a0 = ip[0];
-		a1 = ip[1];
-GOTO:;
-		this = reg[a0];
-		acc = a1;
-		goto apply;
-	}
-	case GOTO+64: { // GOTO/16
-		a0 = wip(0);
-		a1 = wip(1);
-		goto GOTO;
+	#define GOTO(a0, a1) {\
+		this = reg[a0];\
+		acc = a1;\
+		goto apply; }
+	{
+		case GOTO:
+			word a0 = ip[0];
+			word a1 = ip[1];
+			GOTO(a0, a1)
+		case GOTO+64: // GOTO/16
+			word w0 = wp(0);//MNRUP(w0) already done somewhere else
+			word w1 = wp(1);  MNRUP(w1);
+			GOTO(w0, w1)
 	}
 
 	/*! #### RET
 	 * RETurn from procedure
 	 */
-	case RET: {
-		this = R3;
-		R3 = A0; acc = 1;
-		goto apply;
-	}
-	case RET+64: { // RET/16
-		this = R3;
-		R3 = WA0; acc = 1;
-		goto apply;
+	#define RET(a0) {\
+		this = R3;\
+		R3 = reg[a0];\
+		acc = 1;\
+		goto apply; }
+	{
+		case RET:
+			word a0 = ip[0];
+			RET(a0)
+		case RET+64: // RET/16
+			word w0 = wp(0);  MNRUP(w0);
+			RET(w0)
 	}
 
 	/*! #### APPLY
@@ -3321,14 +3379,13 @@ GOTO:;
 		word *lst = (word *) reg[r+1];
 
 		while (is_pair(lst)) { // unwind argument list
-			if (r >= NR)
-				ARITYERROR(this, r);
 			reg[r++] = car (lst);
-			lst = (word *) cdr(lst);
+			lst = (word *) cdr (lst);
 			arity++;
 		}
 		acc = arity;
 
+		MNRUP(r);
 		goto apply;
 	}
 
@@ -3382,58 +3439,79 @@ GOTO:;
 	 * - LDN Store `#null` into register `r`
 	 * - LDE Store `#empty` into register `r`
 	 */
-	case LD: {
+	#define LD(a0, i, n) {\
+		reg[a0] = I[i];\
+		ip += n; break;}
+	{
 		static
 		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
-		int i = *ip++;
-		A0 = I[i];
-		ip += 1; break;
-	}
-	case LD+64: { // LD/16
-		static
-		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
-		int i = *ip++;
-		WA0 = I[i];
-		ip += 2; break;
+		int i;
+
+		case LD:
+			i = *ip++;
+			word a0 = ip[0];
+			LD(a0, i, 1)
+		case LD+64: // LD/16
+			i = *ip++;
+			word w0 = wp(0);  MNRUP(w0);
+			LD(w0, i, 2)
 	}
 
 	/*! #### LD8 b r
 	 * Create `enum` from `b` binary value (0..255) and store it into register `r`
 	 */
-	case LD8: {
-		int i = *ip++;
-		A0 = I(i);
-		ip += 1; break;
-	}
-	case LD8+64: { // LD8/16
-		int i = *ip++;
-		WA0 = I(i);
-		ip += 2; break;
+	#define LD8(a0, i, n) {\
+		reg[a0] = I(i);\
+		ip += n; break;}
+	{
+		int i;
+
+		case LD8:
+			i = *ip++;
+			word a0 = ip[0];
+			LD8(a0, i, 1)
+		case LD8+64: // LD8/16
+			i = *ip++;
+			word w0 = wp(0);  MNRUP(w0);
+			LD8(w0, i, 2)
 	}
 
 
 	/*! #### REFI a p t
 	 * Rt = (ref reg[a] reg[p]), p is unsinged
 	 */
-	case REFI: {
-		A2 = ref(A0, ip[1]);
-		ip += 3; break;
-	}
-	case REFI+64: { // REFI/16
-		WA2 = ref(WA0, wip(1));
-		ip += 6; break;
+	#define REFI(a0, a1, a2, n) {\
+		reg[a2] = ref(reg[a0], a1);\
+		ip += n; break;}
+	{
+		case REFI:
+			word a0 = ip[0];
+			word a1 = ip[1]; // imm
+			word a2 = ip[2];
+			REFI(a0, a1, a2, 3)
+		case REFI+64: // REFI/16
+			word w0 = wp(0);//MNRUP(w0) already done somewhere else
+			word w1 = wp(1);
+			word w2 = wp(2);  MNRUP(w2);
+			REFI(w0, w1, w2, 6)
 	}
 
 
 	/*! #### MOVE a t
 	 * Rt = Ra
 	 */
-	case MOVE:
-		A1 = A0;
-		ip += 2; break;
-	case MOVE+64: { // MOVE/16
-		WA1 = WA0;
-		ip += 4; break;
+	#define MOVE(a0, a1, n) {\
+		reg[a1] = reg[a0];\
+		ip += n; break;}
+	{
+		case MOVE:
+			word a0 = ip[0];
+			word a1 = ip[1];
+			MOVE(a0, a1, 2)
+		case MOVE+64: // MOVE/16
+			word w0 = wp(0);//MNRUP(w0) already done somewhere else
+			word w1 = wp(1);  MNRUP(w1);
+			MOVE(w0, w1, 4)
 	}
 
 	/*! #### MOV2 a1 t1 a2 t2
@@ -3500,129 +3578,138 @@ GOTO:;
 
 	/************************************************************************************/
 	// более высокоуровневые конструкции
-	//	смотреть "owl/primop.scm" и "lang/assemble.scm"
 
 	// make object (fastest choice)
-	//	проверка размеров тут не нужна, так как в любом случае количество аргументов,
-	//	передаваемых в функцию не превысит предусмотренных пределов
-	case VMNEW: { // new t f1 .. fs r
-		// vm:new is a SPECIAL operation with different arguments order
-		word type = *ip++;
-		word size = *ip++;
-		word *p = new (type, size), i = 0;
-		while (i < size) {
-			p[i+1] = reg[*ip++];
-			i++;
+	// vm:new is a SPECIAL operation with different arguments order
+	{
+		case VMNEW: { // new t size f1 .. fs r
+			word type = *ip++;
+			word size = *ip++;
+			//	проверка размера тут не нужна, так как в любом случае количество
+			//	передаваемых в функцию аргументов не превысит предусмотренных пределов
+
+			word *p = new (type, size), i = 0;
+			while (i < size) {
+				p[i+1] = RA0;
+				ip += 1; i++;
+			}
+			RA0 = (word) p;
+			ip += 1; break;
 		}
-		A0 = (word) p;
-		ip += 1; break;
-	}
-	case VMNEW+64: { // VMNEW/64
-		word type = *ip++;
-		word size = wip(0);  ip+=2;
-		word *p = new (type, size), i = 0;
-		while (i < size) {
-			p[i+1] = WA0;
-			ip += 2; i++;
+		case VMNEW+64: { // VMNEW/64
+			word type = *ip++;
+			word size = wp(0); ip += 2;
+			if (unlikely(fp + size > heap->end)) // а вот здесь проверка нужна!
+				GC(size);
+
+			word *p = new (type, size), i = 0;
+			while (i < size) {
+				p[i+1] = RW0;
+				ip += 2; i++;
+			}
+			RW0 = (word) p;
+			ip += 2; break;
 		}
-		WA0 = (word) p;
-		ip += 2; break;
 	}
 
 	// make typed reference from list
 	// (vm:make type list-of-values) ; length is list length
 	// (vm:make type length) ; default value is equal to #false
 	// (vm:make type length default-value)
-	case VMMAKE:
-	case VMALLOC: { // and VMALLOC
-	 	word size = *ip++;
-		word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
-		word value = A1;
+	{
+		word a0, a1, a2, ar;
 
-		word el = IFALSE;
-		switch (size) {
-			case 3:
-				el = A2;
-				// fall through
-			case 2: {
-				unsigned len = 0;
-				word list = value;
-				if (is_numberp(value))
-					len = numberp(value);
-				else
-				while (is_pair(list)) {
-					++len;
-					list = cdr(list);
-				}
+		case VMMAKE:
+		case VMALLOC: { // and VMALLOC
+			word size = *ip++;
+			word type = value (A0) & 63; // maybe better add type checking? todo: add and measure time
+			word value = A1;
 
-				// эта проверка необходима, так как действительно можно
-				//	выйти за пределы кучи (репродюсится стабильно)
-				int mult = (op != VMMAKE) ? sizeof(word) : 1;
-				if (fp + (len / mult) > heap->end) {
-					GC(len / mult);
-					
-					value = A1, el = A2; // reload values after possible gc
-
-					// fail, no memory available:
-					if (fp + (len / mult) > heap->end)
-						FAULT(op, sandboxp ? ITRUE : IFALSE, I(size));
-				}
-
-				word *ptr = (op == VMMAKE)
-					? new (type, len)
-					: new_alloc(type, len);
-				reg[ip[size]] = (word)ptr;
-
-				if (is_numberp(value)) { // no list, just
-					if (op == VMMAKE) {
-						word* wp = ptr;
-						for (unsigned i = 0; i < len; i++)
-							*++wp = el;
+			word el = IFALSE;
+			switch (size) {
+				case 3:
+					el = A2;
+					// fall through
+				case 2: {
+					unsigned len = 0;
+					word list = value;
+					if (is_numberp(value))
+						len = numberp(value);
+					else
+					while (is_pair(list)) {
+						++len;
+						list = cdr(list);
 					}
-					else { // VMALLOC
-						unsigned char* wp = (unsigned char*)&ptr[1];
-						size_t elnum = (size_t) value(el);
-						for (unsigned i = 0; i < len; i++)
-							*wp++ = (unsigned char) elnum;
-						// clear the padding bytes, don't remove!
-						// actually not required, but sometimes very useful!
-						while ((word)wp % sizeof(word))
-							*wp++ = 0;
+
+					// эта проверка необходима, так как действительно можно
+					//	выйти за пределы кучи (репродюсится стабильно)
+					int mult = (op != VMMAKE) ? sizeof(word) : 1;
+					if (fp + (len / mult) > heap->end) {
+						GC(len / mult);
+						
+						value = A1, el = A2; // reload values after possible gc
+
+						// fail, no memory available:
+						if (fp + (len / mult) > heap->end)
+							FAULT(op, sandboxp ? ITRUE : IFALSE, I(size));
 					}
-				}
-				else
-				if ((is_pair(value)) || (value == INULL)) {
-					if (op == VMMAKE) {
-						word* wp = ptr;
-						while (value != INULL) {
-							*++wp = car (value);
-							value = cdr (value);
+
+					word *ptr = (op == VMMAKE)
+						? new (type, len)
+						: new_alloc(type, len);
+					reg[ip[size]] = (word)ptr;
+
+					if (is_numberp(value)) { // no list, just
+						if (op == VMMAKE) {
+							word* wp = ptr;
+							for (unsigned i = 0; i < len; i++)
+								*++wp = el;
+						}
+						else { // VMALLOC
+							unsigned char* wp = (unsigned char*)&ptr[1];
+							size_t elnum = (size_t) value(el);
+							for (unsigned i = 0; i < len; i++)
+								*wp++ = (unsigned char) elnum;
+							// clear the padding bytes, don't remove!
+							// actually not required, but sometimes very useful!
+							while ((word)wp % sizeof(word))
+								*wp++ = 0;
 						}
 					}
-					else { // VMALLOC
-						unsigned char* wp = (unsigned char*)&ptr[1];
-						while (is_pair(value) && len--) {
-							*wp++ = value(car(value)) & 255;
-							value = cdr (value);
+					else
+					if ((is_pair(value)) || (value == INULL)) {
+						if (op == VMMAKE) {
+							word* wp = ptr;
+							while (value != INULL) {
+								*++wp = car (value);
+								value = cdr (value);
+							}
 						}
-						// clear the padding bytes, don't remove!
-						while (len-- > 0) *wp++ = 0;
-						while ((word)wp % sizeof(word))
-							*wp++ = 0;
+						else { // VMALLOC
+							unsigned char* wp = (unsigned char*)&ptr[1];
+							while (is_pair(value) && len--) {
+								*wp++ = value(car(value)) & 255;
+								value = cdr (value);
+							}
+							// clear the padding bytes, don't remove!
+							while (len-- > 0) *wp++ = 0;
+							while ((word)wp % sizeof(word))
+								*wp++ = 0;
+						}
+						assert (value == INULL);
 					}
-					assert (value == INULL);
+					else {
+						// invalid parameters
+						reg[ip[size]] = IFALSE;
+					}
+					break;
 				}
-				else {
-					// invalid parameters
-					reg[ip[size]] = IFALSE;
-				}
-				break;
+				default: fail:
+					ERROR(op, this, I(size));
 			}
-			default: fail:
-				ERROR(op, this, I(size));
-		}
 
-	 	ip += size + 1; break;
+			ip += size + 1; break;
+		}
 	}
 
 	case CLOS:
@@ -3642,12 +3729,21 @@ GOTO:;
 
 
 	// операции посложнее
-	case CONS:
-		A2 = (word) cons(A0, A1);
-		ip += 3; break;
-	case CONS+64: // CONS/16
-		WA2 = (word) cons(WA0, WA1);
-		ip += 6; break;
+	#define CONS(a0, a1, a2, n) {\
+		reg[a2] = (word) cons(reg[a0], reg[a1]);\
+		ip += n; break; }
+	{
+		case CONS:
+			word a0 = ip[0];
+			word a1 = ip[1];
+			word a2 = ip[2];
+			CONS(a0, a1, a2, 3)
+		case CONS+64: // CONS/16
+			word w0 = wp(0);
+			word w1 = wp(1);
+			word w2 = wp(2);  MNRUP(w2);
+			CONS(w0, w1, w2, 6)
+	}
 
 
 	case TYPE: { // type o -> r
