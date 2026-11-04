@@ -96,9 +96,9 @@
    (pairs->ff
       (foldr append null
          (list
-            (map (lambda (d) (cons d (- d 48))) (lrange 48 1 58))  ;; 0-9
-            (map (lambda (d) (cons d (- d 55))) (lrange 65 1 71))  ;; A-F
-            (map (lambda (d) (cons d (- d 87))) (lrange 97 1 103)) ;; a-f
+            (map (lambda (d) (cons d (- d 48))) (range 48 58))  ;; 0-9
+            (map (lambda (d) (cons d (- d 55))) (range 65 71))  ;; A-F
+            (map (lambda (d) (cons d (- d 87))) (range 97 103)) ;; a-f
             ))))
 
 (define hex-table

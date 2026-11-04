@@ -761,7 +761,7 @@
                            (unless (<= b c) "bad range"))
                         c)
                      (epsilon b))))
-            (lrange b 1 (+ c 1))))
+            (range b (+ c 1))))
 
       (define get-maybe-caret
          (either

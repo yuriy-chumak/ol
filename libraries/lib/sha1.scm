@@ -54,7 +54,7 @@
 (define (message->words message)
 ;  (print (string-ref message 0) ":" message ", " (string-length message))
    (let cycle ((W
-               (let loop ((t (lrange 0 1 16)))
+               (let loop ((t (range 0 16)))
                   (if (null? t)
                      null
                   (let*((p (* (car t) 4)))

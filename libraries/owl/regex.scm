@@ -770,7 +770,7 @@
                       (verify (<= b c) "bad range"))
                      c)
                   (get-epsilon b))))
-            (lrange b 1 (+ c 1))))
+            (range b (+ c 1))))
 
       (define get-maybe-caret
          (get-either

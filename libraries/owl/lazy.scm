@@ -332,9 +332,9 @@
 
       (define subsets subs)
 
-      ; (lfold (lambda (n s) (print s) (+ n 1)) 0 (subsets (lrange 0 1 5)))
+      ; (lfold (lambda (n s) (print s) (+ n 1)) 0 (subsets (range 0 5)))
 
-      ; (lfold (lambda (n s) (print s) (+ n 1)) 0 (permutations (lrange 0 1 5)))
+      ; (lfold (lambda (n s) (print s) (+ n 1)) 0 (permutations (range 0 5)))
 
       (define (force-ll it)
          (cond

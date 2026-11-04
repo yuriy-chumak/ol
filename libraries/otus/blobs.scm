@@ -502,7 +502,7 @@
       ;; fixme: proper blob-range not implemented
       (define (blob-range-naive vec from to) ; O(m log n)
          (list->blob
-            (map (λ (p) (blob-ref vec p)) (lrange from 1 to))))
+            (map (λ (p) (blob-ref vec p)) (range from to))))
 
       (define blob-range blob-range-naive)
 

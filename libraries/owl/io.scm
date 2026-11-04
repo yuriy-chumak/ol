@@ -166,7 +166,7 @@
 
       ;; #[0 1 .. n .. m] n → #[n .. m]
       (define (bvec-tail bvec n)
-         (make-bytevector (map (lambda (p) (ref bvec p)) (lrange n 1 (size bvec)))))
+         (make-bytevector (map (lambda (p) (ref bvec p)) (range n (size bvec)))))
 
       (define (try-write-block fd bvec len)
          (if (port? fd) (sys:write fd bvec len) #false))

@@ -3,9 +3,11 @@
    (export 
       lref lset ldel
       led ledn lins
-      take drop lrange; iota
+      take drop range ; iota
       repeat
       split ;; lst n → head tail
+
+      lrange ; legacy `range` with uncommon arguments order
       )
 
    (import
@@ -80,23 +82,37 @@
       (define (range-up p s e)
          (if (< p e)
             (cons p (range-up (+ p s) s e))
-            null))
+            #null))
 
       (define (range-down p s e)
          (if (> p e)
             (cons p (range-down (+ p s) s e))
-            null))
+            #null))
 
+      ; legacy `range` with uncommon arguments order
       (define (lrange from step to)
          (cond
             ((> step 0)
-               (if (< to from) null (range-up from step to)))
+               (if (< to from) #null (range-up from step to)))
             ((< step 0)
-               (if (> to from) null (range-down from step to)))
+               (if (> to from) #null (range-down from step to)))
             ((= from to) 
                null)
             (else 
                (runtime-error "bad lrange: " (list 'lrange from step to)))))
+
+      (define range
+         (case-lambda
+            ((from to)
+               (if (< to from) #null (range-up from 1 to)))
+            ((from to step)
+               (cond
+                  ((> step 0)
+                     (if (< to from) #null (range-up from step to)))
+                  ((< step 0)
+                     (if (> to from) #null (range-down from step to)))
+                  (else
+                     (runtime-error "bad range: " from to step))))))
 
       (define (repeat thing n)
          (make-list n thing))

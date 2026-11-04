@@ -283,7 +283,7 @@
       ;;; (from ...) -> ((from . to) ...)
       (define (rtl-add-targets args)
          (map cons args
-            (lrange a0 1 (+ (length args) a0))))
+            (range a0 (+ (length args) a0))))
 
       (define (rtl-safe-registers n call)
          (let loop
@@ -584,7 +584,7 @@
       (define (bytecode->list thing)
          (cond
             ((bytecode? thing)
-               (map (λ (p) (ref thing p)) (lrange 0 1 (size thing))))
+               (map (λ (p) (ref thing p)) (range 0 (size thing))))
             ((function? thing)
                ;; get the bytecode
                (bytecode->list (ref thing 1)))

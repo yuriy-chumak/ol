@@ -269,7 +269,7 @@
                ((and (pair? lst) (null? (cdr lst)) (list? (car lst)))
                   (cons #\newline
                      (let ((ind (+ ind 2)))
-                        (append (map (λ (x) 32) (lrange 0 1 ind))
+                        (append (map (λ (x) 32) (range 0 ind))
                            (format-error (car lst) ind)))))
                ((pair? lst)
                   (format (car lst)
