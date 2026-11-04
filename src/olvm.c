@@ -3533,13 +3533,23 @@ loop:;
 	 * - BE, branch if a == #empty
 	 * - BZ, branch if a == 0
 	 */
-	case BCOND: {
+	#define BCOND(a0, i, n) {\
+		if (reg[a0] == I[i])\
+			ip += (ip[2] << 8) + ip[1]; /* little-endian */\
+		ip += n; break; }
+	{
 		static
 		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY, I(0) };
-		int sop = *ip++;
-		if (A0 == I[sop])
-			ip += (ip[2] << 8) + ip[1]; // little-endian
-		ip += 3; break;
+		int i;
+
+		case BCOND:
+			i = *ip++;
+			word a0 = ip[0];
+			BCOND(a0, i, 3);
+		case BCOND+64:
+			i = *ip++;
+			word w0 = wp(0); ip++;
+			BCOND(w0, i, 3);
 	}
 
 	/*! #### BEQ a b ow

@@ -134,8 +134,9 @@
       (define CLOS/16 (+ CLOS 64))
 
       (define RET/16 (+ RET 64))
-      (define LD/16 (+ LD/ 64))
+      (define LD/16  (+ LD/ 64))
       (define LD8/16 (+ LD8 64))
+      (define B/16   (+ B/  64))
 
       ; rtl -> list of bytes
       ;; ast fail-cont → code' | (fail-cont <reason>)
@@ -145,9 +146,12 @@
             (let*((then (assemble then fail))
                   (else (assemble else fail))
                   (len (length else)))
-               (cond
-                  ((< len #xffff) (cons* B/ OP (reg a) (band len #xff) (>> len 8) (append else then))) ; #o60 = B
-                  (else (fail (list need-a-bigger-jump-instruction len))))))
+               (if (< len #xffff)
+                  (if (reg8 a)
+                     (cons* B/ OP       a         (LO len) (HI len) (append else then))
+                     (cons* B/16 OP (LO a) (HI a) (LO len) (HI len) (append else then)))
+               else ; TODO: add LB/ instruction with long jump address
+                  (fail (list need-a-bigger-jump-instruction len)))))
 
          (case code
             (['ret a]
@@ -353,19 +357,14 @@
                      (else (fail (list need-a-bigger-jump-instruction len))))))
 
             (['bz a then else]
-               (unless (reg8 a) (runtime-error "BZ16" a))
                (b BZ a then else))
             (['bt a then else]
-               (unless (reg8 a) (runtime-error "BT16" a))
                (b BT a then else))
             (['bn a then else]
-               (unless (reg8 a) (runtime-error "BN16" a))
                (b BN a then else))
             (['be a then else]
-               (unless (reg8 a) (runtime-error "BE16" a))
                (b BE a then else))
             (['bf a then else]
-               (unless (reg8 a) (runtime-error "BF16" a))
                (b BF a then else))
 
             (else

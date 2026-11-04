@@ -4,6 +4,7 @@
 #   but can not be used in batch testing!
 TEST_FILES += $(patsubst %.ok,%,\
                  $(wildcard tests/*.scm)\
+                 $(wildcard tests/vm16/*.scm)\
                  $(wildcard tests/*.bin))
 
 .PHONY: language-tests
@@ -70,7 +71,7 @@ endif
 .SILENT: language-tests
 language-tests: olvm-binaries
 language-tests: RUNNER=LANGUAGE
-language-tests: $(wildcard tests/*.scm) $(wildcard tests/*.bin)
+language-tests: $(wildcard tests/*.scm) $(wildcard tests/*.bin) $(wildcard tests/vm16/*.scm)
 	echo " "
 	echo "# $(RUNNER) TESTS"
 	FAILMARK=$(shell mktemp -u tmp/do.$(RUNNER).XXXXXXXXX) \
