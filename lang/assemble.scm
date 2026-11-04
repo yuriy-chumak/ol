@@ -286,20 +286,26 @@
                            (assemble cont fail))
                         (cons* LD/16 LDN (LO to) (HI to)
                            (assemble cont fail))))
-                  ((eq? val #false)
-                     (unless (reg8 to) (runtime-error "LDF16" to))
-                     (cons* LD/ LDF (reg to) ; TODO: LDF, TODO: (if (reg8 to) ... else ...16-bit...
-                        (assemble cont fail)))
-                  ((eq? val #true)
+                  ((eq? val #false) ;; LDF
+                     (if (reg8 to)
+                        (cons* LD/ LDF (reg to)
+                           (assemble cont fail))
+                        (cons* LD/16 LDF (LO to) (HI to)
+                           (assemble cont fail))))
+                  ((eq? val #true) ;; LDT
                      (if (reg8 to)
                         (cons* LD/ LDT (reg to)
                            (assemble cont fail))
                         (cons* LD/16 LDT (LO to) (HI to)
                            (assemble cont fail))))
-                  ((eq? val #empty)
-                     (unless (reg8 to) (runtime-error "LDE16" to))
-                     (cons* LD/ LDE (reg to)
-                        (assemble cont fail)))
+                  ((eq? val #empty) ;; LDE
+                     (if (reg8 to)
+                        (cons* LD/ LDE (reg to)
+                           (assemble cont fail))
+                        (cons* LD/16 LDE (LO to) (HI to)
+                           (assemble cont fail))))
+
+                  ;; LD8
                   ((eq? (type val) type-value+)
                      (let ((code (assemble cont fail)))
                         (if (> val 126) ;(or (> val 126) (< val -126)) ; would be a bug
@@ -313,22 +319,23 @@
                               (LO to) (HI to) code))))
                   (else
                      (fail (list "cannot assemble a load for " val)))))
+
             (['refi a offset b more]
                (if (and (reg8 a) (reg8 b) (reg8 offset)) ; 8bit regs
                   (cons* REFI
                      a offset b
                      (assemble more fail))
-               else
                   (cons* REFI/16
                      (LO a) (HI a)
                      (LO offset) (HI offset)
                      (LO b) (HI b)
                      (assemble more fail))))
+
             (['goto op nargs] ; +
                (if (and (reg8 op) (reg8 nargs))
                   (list GOTO op nargs)
-               else
                   (list GOTO/16 (LO op) (HI op) (LO nargs) (HI nargs))))
+
             ;((goto-code op n)
             ;   (list GOTO-CODE (reg op) n)) ;; <- arity needed for dispatch
             ;((goto-proc op n)

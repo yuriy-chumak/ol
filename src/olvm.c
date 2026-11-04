@@ -3313,8 +3313,8 @@ loop:;
 	/*! #### ARITY_ERROR
 	 * Arity Error
 	 */
-	case ARITY_ERROR: // (0%)
-		ARITYERROR(this, acc-1);
+	case ARITY_ERROR:
+		ARITYERROR(this, acc - 1);
 		break;
 
 	/*! #### GOTO
@@ -3331,7 +3331,7 @@ loop:;
 			GOTO(a0, a1)
 		case GOTO+64: // GOTO/16
 			word w0 = wp(0);//MNRUP(w0) already done somewhere else
-			word w1 = wp(1);  MNRUP(w1);
+			word w1 = wp(1);//imm
 			GOTO(w0, w1)
 	}
 
@@ -3348,7 +3348,7 @@ loop:;
 			word a0 = ip[0];
 			RET(a0)
 		case RET+64: // RET/16
-			word w0 = wp(0);  MNRUP(w0);
+			word w0 = wp(0);//MNRUP(w0) already done somewhere else
 			RET(w0)
 	}
 
@@ -3441,7 +3441,7 @@ loop:;
 	 */
 	#define LD(a0, i, n) {\
 		reg[a0] = I[i];\
-		ip += n; break;}
+		ip += n; break; }
 	{
 		static
 		const word I[] = { IFALSE, ITRUE, INULL, IEMPTY };
@@ -3462,7 +3462,7 @@ loop:;
 	 */
 	#define LD8(a0, i, n) {\
 		reg[a0] = I(i);\
-		ip += n; break;}
+		ip += n; break; }
 	{
 		int i;
 
@@ -3482,16 +3482,16 @@ loop:;
 	 */
 	#define REFI(a0, a1, a2, n) {\
 		reg[a2] = ref(reg[a0], a1);\
-		ip += n; break;}
+		ip += n; break; }
 	{
 		case REFI:
 			word a0 = ip[0];
-			word a1 = ip[1]; // imm
+			word a1 = ip[1];//imm
 			word a2 = ip[2];
 			REFI(a0, a1, a2, 3)
 		case REFI+64: // REFI/16
 			word w0 = wp(0);//MNRUP(w0) already done somewhere else
-			word w1 = wp(1);
+			word w1 = wp(1);//imm
 			word w2 = wp(2);  MNRUP(w2);
 			REFI(w0, w1, w2, 6)
 	}
@@ -3502,7 +3502,7 @@ loop:;
 	 */
 	#define MOVE(a0, a1, n) {\
 		reg[a1] = reg[a0];\
-		ip += n; break;}
+		ip += n; break; }
 	{
 		case MOVE:
 			word a0 = ip[0];
@@ -3522,7 +3522,8 @@ loop:;
 		A1 = A0;
 		A3 = A2;
 		ip += 4; break;
-	// todo: add MOV3?
+	// TODO: add MOV2+64 (and in assemble.scm)
+	// TODO: add MOV3?
 
 	// условные переходы
 	/*! #### B/ a o (BF, BT, BN, BE, BZ)
@@ -3712,19 +3713,42 @@ loop:;
 		}
 	}
 
-	case CLOS:
-	{	// CLOS type size r i a1 a2 a3 a4 ...
-		word type = *ip++;
-		word size = *ip++;
-		word *T = new (type, size-1);
+	{
+		case CLOS:
+		{	// CLOS type size r i a1 a2 a3 a4 ...
+			word type = *ip++;
+			word size = *ip++; // len+2
+			//	проверка размера тут не нужна, так как в любом случае количество
+			//	передаваемых в функцию аргументов не превысит предусмотренных пределов
+			word *T = new (type, size-1);
 
-		word vec = reg[*ip++];
-		T[1] = ref(vec,*ip++); // T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
+			word vec = reg[*ip++];
+			T[1] = ref(vec,*ip++); // T[1] = ((word *) vec)[*ip++]; // (ref reg[r] i)
 
-		for (size_t i = 2; i < size; )
-			T[i++] = reg[*ip++];
-		reg[*ip++] = (word) T; // reg[ret] = T
-		break;
+			for (size_t i = 2; i < size; )
+				T[i++] = reg[*ip++];
+			reg[*ip++] = (word) T; // reg[ret] = T
+			break;
+		}
+
+		case CLOS+64:
+		{	// CLOS type size r i a1 a2 a3 a4 ...
+			word type = *ip++;
+			word size = wp(0);
+			if (unlikely(fp + size > heap->end)) // а вот здесь проверка нужна!
+				GC(size);
+			word *T = new (type, size-1);
+
+			word vec = reg[wp(1)]; // lpos
+			T[1] = ref(vec,wp(2)); // offset
+
+			ip += sizeof(int16_t) * 3;
+
+			for (size_t i = 2; i < size; ip += sizeof(int16_t))
+				T[i++] = reg[wp(0)];
+			reg[wip(0)] = (word) T; // reg[ret] = T
+			ip += 2; break;
+		}
 	}
 
 
