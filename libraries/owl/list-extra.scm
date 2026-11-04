@@ -3,10 +3,13 @@
    (export 
       lref lset ldel
       led ledn lins
-      take drop range ; iota
+      range ; iota
+      take drop ; * srfi 1
+      ; todo: add lazy range in srfi-41 as `stream-range`
       repeat
       split ;; lst n → head tail
 
+      ; don't delete these legacy functions:
       lrange ; legacy `range` with uncommon arguments order
       )
 
@@ -14,7 +17,7 @@
       (scheme core)
       (owl math)
       (owl list)
-      (otus async)) ;?
+      (only (srfi 1) take drop))
 
    (begin
       (define lref list-ref)
@@ -61,22 +64,6 @@
                (lets ((hd tl lst))
                   (cons hd (lins tl (- pos 1) val))))))
 
-      ; take at n (or less) elemts from list l
-
-      (define (take l n)
-         (cond	
-            ((eq? n 0) null)
-            ((null? l) null)
-            (else (cons (car l) (take (cdr l) (- n 1))))))
-
-      ; drop n elements (or less) from list l
-
-      (define (drop l n)
-         (cond
-            ((eq? n 0) l)
-            ((null? l) l)
-            (else (drop (cdr l) (- n 1)))))
-
       ; fixme, iotas should be unfolds
 
       (define (range-up p s e)
@@ -114,6 +101,7 @@
                   (else
                      (runtime-error "bad range: " from to step))))))
 
+      ; TODO: move to srfi-1
       (define (repeat thing n)
          (make-list n thing))
 

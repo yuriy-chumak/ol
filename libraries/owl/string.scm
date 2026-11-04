@@ -66,6 +66,7 @@
    (import (owl ff))
    (import (owl unicode))
    (import (owl list-extra))
+   (import (srfi 1))
    (import (owl lazy))
    (import (owl math))
 

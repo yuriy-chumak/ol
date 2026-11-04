@@ -23,7 +23,7 @@
    (import
       (scheme base)
       (scheme cxr)
-      (only (srfi 1) filter)
+      (only (srfi 1) filter take)
 
       (owl list)
       (lang rtl)

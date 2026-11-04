@@ -1,23 +1,72 @@
-(define-library (srfi 1)
-
 ; http://srfi.schemers.org/srfi-1/srfi-1.html
+(define-library (srfi 1)
+   ; reference code at
+   ;   https://github.com/scheme-requests-for-implementation/srfi-1/blob/master/srfi-1-reference.scm
+   (import
+      (scheme core)
+      (scheme list)
+      (owl math))
 
-; reference code at
-;   https://github.com/scheme-requests-for-implementation/srfi-1/blob/master/srfi-1-reference.scm
-(import
-   (scheme core)
-   (scheme list)
-   (owl math))
+   (export
+      ; Constructors
+      xcons cons* ; make-list list-tabulate list-copy circular-list
+      iota
 
-(export
-   ; Constructors
-   cons list
-   xcons iota
+      ; Predicates
+      ; proper-list? circular-list? dotted-list?
+      ; not-pair? null-list?
+      ; list=
 
-   first second third fourth fifth sixth seventh eighth ninth tenth
-   last
+      ; Selectors
+      first second third fourth fifth sixth seventh eighth ninth tenth
+      ; car+cdr
+      take       drop
+      ; take-right drop-right
+      ; take!      drop-right!
+      ; split-at   split-at!
+      last ; last-pair
 
-   filter)
+      ; Miscellaneous: length, append, concatenate, reverse, zip & count 
+      ; length+
+      ; concatenate
+      ; append! concatenate! reverse!
+      ; append-reverse append-reverse!
+      ; zip unzip1 unzip2 unzip3 unzip4 unzip5
+      ; count
+
+      ; Fold, unfold & map
+      ; fold       unfold       pair-fold       reduce
+      ; fold-right unfold-right pair-fold-right reduce-right
+      ; append-map append-map!
+      ; map! pair-for-each filter-map map-in-order
+
+      ; Filtering & partitioning
+      filter  ; partition  remove
+      ; filter! partition! remove!
+
+      ; Searching
+      ;; find find-tail
+      ;; any every
+      ;; list-index
+      ;; take-while drop-while take-while!
+      ;; span break span! break!
+
+      ; Deleting
+      ;; delete  delete-duplicates
+      ;; delete! delete-duplicates!
+
+      ; Association lists 
+      ;; alist-cons alist-copy
+      ;; alist-delete alist-delete!
+
+      ; Set operations on lists
+      ;; lset<= lset= lset-adjoin
+      ;; lset-union			lset-union!
+      ;; lset-intersection		lset-intersection!
+      ;; lset-difference		        lset-difference!
+      ;; lset-xor			lset-xor!
+      ;; lset-diff+intersection	        lset-diff+intersection!
+   )
 
 (begin
    ; cons a d -> pair   *[r5rs]
@@ -57,6 +106,22 @@
       (car (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr li))))))))))
    (define (tenth li)
       (car (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr (cdr li)))))))))))
+
+   ; take n (or less) elements from list l
+   ; todo: move to (srfi 1)
+   (define (take l n)
+      (cond	
+         ((eq? n 0) null)
+         ((null? l) null)
+         (else (cons (car l) (take (cdr l) (- n 1))))))
+
+   ; drop n (or less) elements from list l
+   ; todo: move to (srfi 1)
+   (define (drop l n)
+      (cond
+         ((eq? n 0) l)
+         ((null? l) l)
+         (else (drop (cdr l) (- n 1)))))
 
    ; 
    (define last

@@ -6,7 +6,7 @@
       (scheme bytevector)
       (scheme cxr)
       (owl ff)
-      (owl list-extra)
+      (srfi 1)
       (owl io))
 (begin
    (define (disassembly func)
@@ -52,8 +52,8 @@
                            (cons* len name (cdr (take src len)))
                            out)))
                (define (wlen src offset)
-                  (* (+ (lref src offset)
-                        (<< (lref src (+ offset 1)) 8))
+                  (* (+ (list-ref src offset)
+                        (<< (list-ref src (+ offset 1)) 8))
                      2))
 
                (if (null? src)
