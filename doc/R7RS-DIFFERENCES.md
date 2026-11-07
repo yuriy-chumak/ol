@@ -1,124 +1,107 @@
 R<sup>7</sup>RS DIFFERENCES
 ---------------------------
 
-Why doesn't Ol implement the full R<sup>7</sup>RS standard? Because Ol tries to be:
-  - as simple as possible (i'm sure it's one of the simplest languages),
-  - as small as possible (less than half Meg for a full language),
-  - as predictable as possible (exactly the same behavior for a wide range of different hardware, even without a floating point math processor),
-  - and as fast as possible (avoids unnecessary code executions).
+Why Ol does not implement the full R<sup>7</sup>RS standard?
+Because Ol aims to be:
+  - as simple as possible (I'm sure it's one of the simplest languages),
+  - as compact as possible (half a megabyte including the compiler),
+  - as predictable as possible (same behavior on a wide range of hardware, even without a floating-point coprocessor).
 
-And voila, we have a very simple, elegant and portable language with a nice syntax
-that is a pleasure to program in.
+As a result, we have a very simple, elegant, and portable language with a pleasant syntax that is enjoyable to program in.
 
+Below is a list of differences between the Ol implementation and the [R<sup>7</sup>RS](https://small.r7rs.org/attachment/r7rs.pdf) standard.
 
-This is almost a complete list of differences between Ol and [R<sup>7</sup>RS](https://small.r7rs.org/attachment/r7rs.pdf).
-
-Most important:
+Major differences:
 
 * 2.1. Identifiers
-  * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
+  * Ol is always **case-sensitive**, while in Scheme, the case *can be configured using* `#!fold-case` *and* `#!no-fold-case`.
 * 4.1.6. Assignments
-  * **No** `set!` in Ol.
+  * Ol **does not have** `set!`.
 * 4.3. Macros
-  * Ol have **three more** macro declarations (`define-macro`, `define-instant-macro` and `define-lazy-macro`, which differs in the parameters evaluation stages) in addition to the hygienic `define-syntax`, while Scheme have *only hygienic one*.
-* 6.2.5. Syntax of numerical constants
-  * `Numbers without precision` considered to be **exact** in Ol, but *inexact* in Scheme.
-* 6.8. Vectors
-  * NEGATIVE indices of a vector are **valid** in Ol, but *invalid* in Scheme.
+  * Ol has **three additional** MACRO declarations (`define-macro`, `define-instant-macro`, and `define-lazy-macro`, which differ in parameter evaluation stages) in addition to the hygienic `define-syntax`, while Scheme has *only the hygienic one*.
+* 6.2.5. Syntax of numeric constants
+  * Numbers WITH A FRACTIONAL PART are considered **exact** in Ol, but *inexact* in Scheme.
+* 6.8. Vectors and 6.7. Strings
+  * NEGATIVE INDICES for vectors (and strings) are **allowed** in Ol (and denote indexing from the end), but are *not allowed* in Scheme.
+* Other important language features missing in Scheme
+  * Ol provides INFIX NOTATION for mathematical expressions (through the `\\` macro), while Scheme contains only *prefix notation*.
+  * Ol provides built-in REGULAR EXPRESSIONS, which are *not* in Scheme.
+  * Ol provides a built-in ASSOCIATIVE DICTIONARY (known as `ff`), which is *not* in Scheme.
 
-All:
+Complete list:
 
 * 2.1. Identifiers
-  * Ol is definitely **case sensitive**, but Sheme is *configurable with #!fold-case and #!no-fold-case*.
+  * Ol is always **case-sensitive**, while in Scheme, the case *can be configured using* `#!fold-case` *and* `#!no-fold-case`.
   * `|\t\t|` and `|\x9;\x9;|` are **different** in Ol, but *the same* in Scheme.
-    - note: In such cases, just use real tabs. Newlines and anything but `|` are also available.
+    - note: in such cases, just use real tabs, newlines, and everything else except `|`.
 
-* 4.1.5. Conditionals
-  * Ol provides **extended `if`** with `then` and `else` keywords in forms:
+* 4.1.5. Conditional expressions
+  * Ol provides an **extended `if`** with the keywords `then` and `else` in the following forms:
     - `(if <condition> then <then1-clause>..<thenN-clause>)`,
     - `(if <condition> <then-clause> else <else1-clause>..<elseN-clause>)`,
     - `(if <condition> then <then1-clause>..<thenN-clause> else <else1-clause>..<elseN-clause>)`.
 
 * 4.1.6. Assignments
-  * **No** `set!` in Ol.
+  * Ol **does not have** `set!`.
     - explanation: Ol is a purely functional language.
-    - note: Use `define` instead.
-    - note: Dynamic variables are available via `(scheme dynamic-bindings)` library. With some speed impact, sure.
-    - note: Very limited support of `set-car!`, `set-cdr!`, and `set-ref!` functions are provided. Avoid using them.
+    - note: use `define` instead of the first `set!`.
+    - note: but if you need it, dynamic variables are available through the `(scheme dynamic-bindings)` library, although using them may slow down your program.
+    - note: a (somewhat limited) implementation of `set-car!`, `set-cdr!`, and `set-ref!` is provided. Please avoid using them.
 
 * 4.1.7. Inclusion
-  * **No** `include` and `include-ci` in Ol.
-    - note: Use libraries (`import`, `define-library`, `export`, etc.) instead.
-    - note: Top-level ",load" (",l" and ",include" as synonyms) REPL command is available.
+  * Ol **does not have** `include` and `include-ci`.
+    - note: use libraries (`import`) instead.
+    - note: the `,load` command is available in the REPL (synonyms are `,l` and `,include`).
 
-* 4.2.1. Conditionals
-  * Result of the `when` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
-  * Result of the `unless` expression is value **returned by the last expression** in Ol, but *unspecified* in Scheme.
-  * Extended form of `case` is available in Ol.
+* 4.2.1. Conditional expressions
+  * In Ol, the result of the `when` expression is the value **returned by the last expression**, but is *undefined* in Scheme.
+  * In Ol, the result of the `unless` expression is the value **returned by the last expression**, but is *undefined* in Scheme.
+  * An extended form of `case` is available in Ol.
 
-* 4.2.5. Delayed evaluation
-  * ~~**No** `delay-force`, `promise?` in Ol.~~
-    - note: Added in Ol 2.5.
+* 4.2.5. Delayed execution
+  * ~~Ol **does not have** `delay-force`, `promise?`.~~
+    - note: it already exists, added in Ol 2.5.
 
 * 4.2.7. Exception handling
-  * **No** `guard` in Ol.
-    - note: But `with-exception-handler` and `raise` works as expected.
+  * Ol **does not have** `guard`.
+    - note: but `with-exception-handler` and `raise` work as expected.
 
 * 4.3. Macros
-  * **No** `let-syntax` and `letrec-syntax` in Ol.
-    - note: Use global `define-syntax` instead.
-  * Ol have **three more** macro declarations (`define-macro`, `define-instant-macro` and `define-lazy-macro`, which differs in the parameters evaluation stages) in addition to the hygienic `define-syntax`, while Scheme have *only hygienic one*.
+  * Ol **does not have** `let-syntax` and `letrec-syntax`.
+    - note: use the global `define-syntax` instead.
+  * Ol has **three additional** MACRO declarations (`define-macro`, `define-instant-macro`, and `define-lazy-macro`, which differ in parameter evaluation stages) in addition to the hygienic `define-syntax`, while Scheme has *only the hygienic one*.
 
-* 5.5. Record-type definitions
-  * **No** `define-record-type` in Ol.
+* 5.5. Definition of record types
+  * Ol **does not have** `define-record-type`.
 
-* 5.6.1. Library Syntax
-  * **No** `include-ci` due to fundamental ambiguity.
-    - note: The `include` is fine for sure.
-  * **Additional** library terms `prefix`, `version`, `license`, `keywords`, `description`.
+* 5.6.1. Syntax of libraries
+  * Ol **does not have** `include-ci` due to fundamental ambiguity.
+    - note: `include` is perfectly fine.
+  * **Additional** library terms: `prefix`, `version`, `license`, `keywords`, `description`.
 
-* 6.1. Equivalence predicate `eqv?`
-  * `(eqv? +nan.0 +nan.0)` is **#true** in Ol, but *unspecified* in Scheme. The same is for `+inf.0` and `-inf.0`.
+* 6.1. The equivalence predicate `eqv?`
+  * `(eqv? +nan.0 +nan.0)` is **#true** in Ol, but *undefined* in Scheme. The same applies to `+inf.0` and `-inf.0`.
 
-* 6.2.5. Syntax of numerical constants
-  * `Numbers without precision` considered to be **exact** in Ol, but *inexact* in Scheme.
-    - explanation: Inexactness can be disabled by compiler features or/and unsupported by platform. Ol designed with respect for the same functionality of the program, independently of inexactness support (unless we directly use inexact numbers, sure).
+* 6.2.5. Syntax of numeric constants
+  * Numbers WITH A FRACTIONAL PART are considered **exact** in Ol, but *inexact* in Scheme.
+    - explanation: inexactness (working with floating-point numbers) can be disabled by compiler options or not supported by the target platform. Ol is designed to have the same behavior of the program regardless of the runtime environment. Of course, unless you are using inexact numbers directly.
 
-* 6.2.6. Numerical operations
-  * note: `complex?` is same as `number?`, like in Scheme.
-  * `integer?` for inexact numbers always returns **#false** in Ol, but can be *#true* in Scheme when `(= number (round number))`.
-    - explanation: Inexactness is an inexactness, we may lose the fractional part and not to be noticed about. So let's be a little paranoid.
-  * `sqrt` is **included** in base library profile while *not included* in Scheme.
-    - explanation: due to frequent use.
+* 6.2.6. Numeric operations
+  - note: `complex?` is the same as `number?`, as in Scheme.
+  - `integer?` for inexact numbers always returns **#false** in Ol, but may be *#true* in Scheme if `(= number (round number))`.
+    - explanation: inexactness is inexactness, we may lose the fractional part and not notice it; therefore, we will be a little paranoid.
+  - `sqrt` is **included** in the standard library, while it is *not included* in Scheme.
+    - explanation: because of its frequent use.
 
 * 6.4. Pairs and lists
-  * `memq` and `assq` behavior with short numbers (aka 'enumerations', 'enums') as first argument is fully **specified** in Ol, but *unspecified* in Scheme.
-    - *note: those numbers processed by memq and assq as usual elements.*
+  * The behavior of `memq` and `assq` with small numbers (passed by value) as the first argument is fully **defined** in Ol, but is *undefined* in Scheme.
+    - note: these numbers are treated as regular elements by `memq` and `assq`.
 
-* 6.6. Characters
-  * CHARACTERS in Ol are **small numbers** (aka 'enums'), but are *characters* in Scheme.
-    - explanation: This is due to historical reasons.  
-      Ol supports two types of numbers: small numbers (enumerations, enums, which is *values*) and long numbers (any other numbers, which is *references*).
-      Small numbers are used as *runes* (or *glyphs* in other word) inside strings for Unicode support.
-      An additional character type with requirement to use the char->integer and integer->char functions every time is too boring and slow. Thanks.
-    - note: Ol supports the full Unicode 17.0.0 (2025 Aug 20) character set.
-    - note: If you want to print a character in the form of a letter (or a digit, etc.) use `write-char` function, i.e. instead of `(print #\λ)` do the `(write-char #\λ)`, otherwise you will print a number 955. Or `(print (string #\λ))`, if you want.
+* 6.6. Characters (text literals)
+  * A CHARACTER in Ol is a **small number** (passed by value), but in Scheme, they have a separate type *char*.
+    - explanation: that's how it happened historically.
+      In Ol, there are two types of numbers: small numbers (that fit in the virtual machine register and are *values*) and large numbers (any other, they are *references*). Small numbers in strings are used as *runes* (or *glyphs* if you want) to represent both ANSI and Unicode literals.
+      An additional type for literals with the requirement to use `char->integer` and `integer->char` functions each time would be too cumbersome.
 
-* 6.7. Strings
-  * NEGATIVE indices in `substring` are **valid** in Ol, but *invalid* in Scheme.
-    - note: "-1" is the last rune of the string, "-2" is before the last rune, etc.
-
-* 6.8. Vectors
-  * NEGATIVE indices of a vector are **valid** in Ol, but *invalid* in Scheme.
-    - note: Negative vector indices can be used to access the n-th element from the end of the vector. This means that "-1" is the last element of the vector, "-2" is before the last element, "-n" is the n-th element from the end of the vector.
-
-* 6.10. Control features
-  * `apply` arguments count is **limited to 249** in Ol, but *unlimited* in Scheme.
-    - note: Use `fold` instead in such cases, like `(apply + '(1 2 3))` -> `(fold + '(1 2 3))`.
-    - note: Ol 3.0 will not have this limitation.
-
-* 6.13.3. Output
-  * `print` function provided by Ol out-of-the-box, while *no* such widely used familiar *function* in Scheme, just older `display` and `write`.
-
-* Ol has builtin **regular expressions** while Scheme *not*.
-  * note: you can use `m/<pattern>/` for match, `g/<pattern>/` for grab, `s/<expression>/<new-expression>/` with optional 'g' suffix for substitute, and `c/<pattern>/` for split strings and lists.
+* Ol **has** built-in REGULAR EXPRESSIONS, which are *not* in Scheme.
+  - note: you can use `m/<pattern>/` for matching, `g/<pattern>/` for capturing, `s/<expression>/<new-expression>/` with an optional 'g' suffix for replacement, and `c/<pattern>/` for splitting strings and lists.

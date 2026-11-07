@@ -1,0 +1,33 @@
+#!/bin/bash
+[[ $# -eq 0 ]] && exit
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+text=$(cat)
+
+payload=$(jq -n \
+  --arg model "translategemma:12b" \
+  --rawfile glossary "$1" \
+  --rawfile sys "$SCRIPT_DIR/system_prompt" \
+  --arg usr "$text" \
+  '{
+    model: $model,
+    messages: [
+      {
+        role: "system",
+        content: ($sys + "\n\nGlossary / Terminology mapping:\n" + $glossary)
+      },
+      {
+        role: "user",
+        content: $usr
+      }
+    ],
+    options: {
+      temperature: 0
+    },
+    stream: false,
+    keep_alive: "20m"
+  }')
+
+curl -s -X POST http://localhost:11434/api/chat \
+  -H "Content-Type: application/json" \
+  -d "$payload" | jq -r '.message.content'
