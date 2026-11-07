@@ -1,0 +1,2 @@
+- "R<sup>7</sup>RS" -> "R<sup>7</sup>RS"
+- "ассоциативный словарь" -> "associative dictionary"
