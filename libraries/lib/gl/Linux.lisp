@@ -1,9 +1,6 @@
 (define setup:autorender-mode #true)
 
-
-(setq X11 (or (load-dynamic-library "libX11.so")
-              (load-dynamic-library "libX11.so.6")))
-   (setq None 0)
+(setq X11 (load-dynamic-library "libX11.so.6"))
 
 ; context manipulations
 (setq XOpenDisplay   (X11 fft-void* "XOpenDisplay" type-string))
@@ -26,6 +23,8 @@
 (setq glXCreateContext  (GLX fft-void* "glXCreateContext" fft-void* fft-void* fft-void* fft-int))
 (setq glXMakeCurrent    (GLX fft-int "glXMakeCurrent" fft-void* fft-void* fft-void*))
 (setq glXSwapBuffers    (GLX fft-void "glXSwapBuffers" fft-void* fft-void*))
+
+(setq None 0)
 
 ; functions
 (define (native:create-context title)

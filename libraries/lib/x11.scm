@@ -122,8 +122,7 @@
 (define XImage* fft-void*)
 (define Drawable fft-void*)
 
-(define X11 (or (load-dynamic-library "libX11.so")
-                (load-dynamic-library "libX11.so.6")))
+(define X11 (load-dynamic-library "libX11.so.6"))
 
 ; functions
 (define XOpenDisplay  (X11 Display* "XOpenDisplay" type-string))
