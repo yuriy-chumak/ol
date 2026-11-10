@@ -36,20 +36,18 @@
             (vm:exit 0))))
 
       (define (get-environment-variable name)
-         (let ((name (c-string name)))
-            (if name
-               (syscall 1016 name))))
+         (syscall 1016 (c-string name)))
 
       (define (get-environment-variables)
          (syscall 1015))
 
       (define set-environment-variable! (case-lambda
          ((name value)
-            (syscall 1014 name value))
+            (syscall 1014 (c-string name) (c-string value)))
          ((name value overwrite)
-            (syscall 1014 name value overwrite))))
+            (syscall 1014 (c-string name) (c-string value) overwrite))))
 
       (define (unset-environment-variable name)
-         (syscall 1014 name))
+         (syscall 1014 (c-string name)))
 
 ))
