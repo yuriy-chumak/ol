@@ -15,4 +15,4 @@
 
 ; render pass
 (gl:set-renderer (lambda ()
-   (glClear GL_COLOR_BUFFER_BIT)))
+   (glClear GL_COLOR_BUFFER_BIT) ))

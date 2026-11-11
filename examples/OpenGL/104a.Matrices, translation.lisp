@@ -1,21 +1,22 @@
 #!/usr/bin/env ol
-(import (lib gl) (lib math))
+(import (scheme inexact))
+
+; create OpenGL window
+(import (lib gl))
 (gl:set-window-title "3. Matrices, translation")
 
+; import OpenGL functions
 (import (OpenGL 1.0))
 
-; init
+; global init
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
-(define started (let*((ss ms (clock))) (cons ss ms)))
-
-; draw
+; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
-   (define now (let*((ss ms (clock))) (cons ss ms)))
-   (define delta (* 0.5 (sin (/ (+ (* 1000 (- (car now) (car started))) (- (cdr now) (cdr started))) 500))))
+   (define delta (sin (/ (mod (clock-ms) 6283) #i1000)))
 
    (glLoadIdentity)
    (glTranslatef delta 0 0)
@@ -31,4 +32,6 @@
 
       (glColor3f 0 0 1)
       (glVertex2f -0.0 +0.7)
-   (glEnd)))
+   (glEnd)
+
+))

@@ -1,15 +1,17 @@
 #!/usr/bin/env ol
 
+; create OpenGL window
 (import (lib gl))
 (gl:set-window-title "2. Stipple lines")
 
+; import OpenGL functions
 (import (OpenGL 1.0))
 
-; init
+; global init
 (glShadeModel GL_SMOOTH)
-(glClearColor 0.2 0.2 0.2 1)
+(glClearColor 0.3 0.3 0.3 1)
 
-; draw
+; render pass
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 
@@ -31,4 +33,5 @@
       '(   0.9    0.5    0.1                0.5)
       '(   0.5    0.9    0.5                0.1)
    )
+
 ))

@@ -24,4 +24,6 @@
 
       (glColor3f 0 0 1)
       (glVertex2f -0.0 +0.7)
-   (glEnd) ))
+   (glEnd)
+
+))
