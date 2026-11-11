@@ -1,8 +1,10 @@
 #!/usr/bin/env ol
 
+; create OpenGL window
 (import (lib gl))
 (gl:set-window-title "2. Drawing simple triangle")
 
+; import OpenGL functions
 (import (OpenGL 1.0))
 
 ; global init

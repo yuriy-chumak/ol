@@ -1,8 +1,11 @@
 #!/usr/bin/env ol
 
-; create OpenGL window and import OpenGL functions
-(import (lib gl 1.0))
+; create OpenGL window
+(import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
+
+; import OpenGL functions
+(import (OpenGL 1.0))
 
 ; global init
 (glClearColor 0.3 0.3 0.3 1)

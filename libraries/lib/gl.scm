@@ -9,7 +9,9 @@
    (OpenGL platform))
 
 (export
-   gl:set-window-title gl:set-window-size
+   gl:set-window-size
+   gl:set-window-title
+
    gl:set-renderer ; OpenGL rendering function
    gl:set-prerenderer ; OpenGL pre-rendering function
    gl:set-calculator ; Math and Phys calculations
@@ -125,7 +127,7 @@
          'resize-handler (lambda (w h) (glViewport 0 0 w h)) ;todo: change window size
          'vr-mode #false
          'autorender setup:autorender-mode
-   }))
+      }))
    (cond
       ((check-mail) => (lambda (envelope)
          (let*((sender msg envelope))
@@ -272,7 +274,7 @@
    (define (gl:set-resize-handler handler)
       (mail 'opengl ['set-resize-handler handler]))
 
-   ; 
+   ; TODO: move to external library (lib gl splash-screen)
    (define (gl:splash-screen width height colors)
       ; load minimal function set
       (define glEnable      (GL_LIBRARY GLvoid "glEnable" GLenum))
