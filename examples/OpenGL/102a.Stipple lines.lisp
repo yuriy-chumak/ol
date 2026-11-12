@@ -11,7 +11,7 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
-; render pass
+; render loop
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 

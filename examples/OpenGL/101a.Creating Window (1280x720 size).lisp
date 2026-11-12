@@ -13,6 +13,6 @@
 ; set new window size
 (gl:set-window-size 1280 720)
 
-; render pass
+; render loop
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT) ))

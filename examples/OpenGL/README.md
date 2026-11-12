@@ -1,10 +1,10 @@
 # OpenGL Tutorial
 
-# OpenGL 1.4
+# OpenGL 1.0 - 1.4
 
 # OpenGL 2.1 (includes 1.4)
 
-# OpenGL 3.0+
+# OpenGL 3.1+
 
 # OpenGL 4.0+
 

@@ -39,7 +39,7 @@
       gl_FragColor = vec4(vec3(1.,2.,8.)*c1+vec3(8.,2.,1.)*c2, 1.);
    }"))
 
-; render pass
+; render loop
 (gl:set-renderer (lambda ()
    (glClear GL_COLOR_BUFFER_BIT)
 

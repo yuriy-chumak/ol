@@ -1,12 +1,13 @@
 #!/usr/bin/env ol
+; create OpenGL window
 (import (lib gl))
 (gl:set-window-title "6. Texturing")
 
-(import (OpenGL 1.1))
-(import (lib soil))
+; import OpenGL functions
+(import (OpenGL 1.1)
+   (lib soil))
 
-
-; init
+; global init
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.1 0.1 0.1 1)
 (glOrtho 0 2 0 2 0 2)
