@@ -410,43 +410,50 @@ define PVENV_ADD_RAW
 	    --group=* 
 endef
 
-tmp/pvenv.tar: $(wildcard libraries/*/*.scm)\
-               $(wildcard libraries/*/*/*.scm)\
-               $(wildcard libraries/*/*/*/*.scm)\
-               $(wildcard libraries/*/*.lisp)\
-               $(wildcard libraries/*/*/*.lisp)\
-               $(wildcard libraries/*/*/*/*.lisp)
+tmp/pvenv.tar: $(shell find libraries -name '*.scm' -o -name '*.lisp')
 	@$(MAKE) olvm
 	tar -cf $@ -T /dev/null
-
+	@\
 	`# macOS wants the template to be at the end` ;\
 	`# so use the same template under all os`     ;\
 	export library=`mktemp /tmp/scm.XXXXXXXXX` ;\
 	export olvm=${abspath ./olvm} ;\
 	export repl=${abspath ./repl} ;\
-	`# OpenGL tarfolder` ;\
+	export tar0=${abspath $@} ;\
+	cd libraries ;\
+	   find . -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
+	   find . -name "*.lisp" -exec bash -c "echo '{}'; $(PVENV_ADD_RAW)" \;;\
+	   for name in "./http/server"; do \
+	      eval `echo $(PVENV_ADD_RAW) |sed "s|{}|$$name|g"` ;\
+	   done ;\
+	cd .. ;\
+	rm -f $$library ;\
+	\
+	`# Final integration of all TAR subfolders` \
+	`# OpenGL/ tarfolder` ;\
 	export tar0=${abspath ./tmp/OpenGL.tar} ;\
 	tar -cf $$tar0 -T /dev/null ;\
 	cd libraries/OpenGL ;\
 	   find * -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
 	cd ../.. ;\
-	`# lib/gtk-3 tarfolder` ;\
+	tar -vf ${abspath $@} --wildcards --delete './OpenGL/*' ;\
+	tar -rf ${abspath $@} tmp/OpenGL.tar --transform 's|.*|./OpenGL/|' ;\
+	\
+	`# lib/gtk-3/ tarfolder` ;\
 	export tar0=${abspath ./tmp/gtk-3.tar} ;\
 	tar -cf $$tar0 -T /dev/null ;\
 	cd libraries/lib/gtk-3 ;\
 	   find * -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
 	cd ../../.. ;\
-	export tar0=${abspath $@} ;\
-	cd libraries ;\
-	   find . -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
+	tar -vf ${abspath $@} --wildcards --delete './lib/gtk-3/*' ;\
+	tar -rf ${abspath $@} tmp/gtk-3.tar --transform 's|.*|./lib/gtk-3/|' ;\
+	\
+	`# lib/gl/ tarfolder` ;\
+	export tar0=${abspath ./tmp/gl.tar} ;\
+	tar -cf $$tar0 -T /dev/null ;\
+	cd libraries/lib/gl ;\
+	   find * -name "*.scm"  -exec bash -c "echo '{}'; $(PVENV_ADD)" \;;\
 	   find . -name "*.lisp" -exec bash -c "echo '{}'; $(PVENV_ADD_RAW)" \;;\
-	   for name in "http/server"; do \
-	      eval `echo $(PVENV_ADD_RAW) |sed "s|{}|$$name|g"` ;\
-	   done ;\
-	cd .. ;\
-	rm -f $$library ;\
-	`# Final integration of all TAR subfolders` \
-	tar -vf $$tar0 --wildcards --delete './OpenGL/*' ;\
-	tar -rf $$tar0 tmp/OpenGL.tar --transform 's|.*|./OpenGL/|' ;\
-	tar -vf $$tar0 --wildcards --delete './lib/gtk-3/*' ;\
-	tar -rf $$tar0 tmp/gtk-3.tar --transform 's|.*|./lib/gtk-3/|'
+	cd ../../.. ;\
+	tar -vf ${abspath $@} --wildcards --delete './lib/gl/*' ;\
+	tar -rf ${abspath $@} tmp/gl.tar --transform 's|.*|./lib/gl/|'
