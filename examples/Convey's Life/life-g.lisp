@@ -53,11 +53,12 @@
       (if (eq? n 3)
          #true)))))
 
-(import (lib gl-2))
+(import (lib gl 2))
 (gl:set-window-title "Convey's The game of Life")
 (import (OpenGL EXT geometry_shader4))
 (unless EXT_geometry_shader4
-   (raise "Geometry shaders are not supported."))
+   (print "Geometry shaders are not supported.")
+   (die 1))
 
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.11 0.11 0.11 1)
@@ -102,9 +103,6 @@ GL_POINTS GL_TRIANGLE_STRIP 4
 "))
 
 ; shaders done
-;; (gl:set-resize-handler (lambda (width height)
-;;    (glViewport 0 0 width height)
-;;    (glPointSize (/ width WIDTH))))
 
 (define userdata (make-parameter
    (let ((initial population))
@@ -133,11 +131,14 @@ GL_POINTS GL_TRIANGLE_STRIP 4
       ) #f generation)
    (glEnd)
 
-   (print "cells count: "
-   (ff-fold (lambda (st key value)
+   (gl:set-window-title (string-append
+      "Convey's The game of Life ("
+      (number->string
+         (ff-fold (lambda (st key value)
                (+ st 1))
-      0
-      generation))
+            0
+            generation))
+      " cells)"))
 
    ;; speedup:
    ;; 1. select all possible points

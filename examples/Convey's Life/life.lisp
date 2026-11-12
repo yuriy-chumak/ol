@@ -86,11 +86,14 @@
       ) #f generation)
    (glEnd)
 
-   (print "cells count: "
-   (ff-fold (lambda (st key value)
+   (gl:set-window-title (string-append
+      "Convey's The game of Life ("
+      (number->string
+         (ff-fold (lambda (st key value)
                (+ st 1))
-      0
-      generation))
+            0
+            generation))
+      " cells)"))
 
    ;; speedup:
    ;; 1. select all possible points
