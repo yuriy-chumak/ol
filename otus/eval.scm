@@ -956,6 +956,22 @@
             (put (env-get env meta-tag empty) value
                `(defined in ,(env-get env current-library-key 'repl)))))
 
+      ; helper function
+      (define (rational->decimal-string q)
+      (let*((n (numerator q))
+            (d (denominator q)))
+         (let loop ((pow10 1) (k 0))
+            (if (= (modulo pow10 d) 0)
+               (if (= k 0)
+                  (number->string n)
+                  (let*((scaled (* n (quotient pow10 d)))
+                        (s (number->string (+ (* pow10 10) scaled)))
+                        (split (- (string-length s) k)))
+                     (string-append (substring s 1 split)
+                                    "."
+                                    (substring s split (string-length s)))))
+               (loop (* pow10 10) (+ k 1))))))
+
       (define (eval-repl exp env repl evaluator)
          (debug env "Evaling " exp)
          (case (macro-expand exp env)
@@ -970,7 +986,8 @@
                            (ok
                               (repl-message
                                  (bytes->string
-                                    (format-string "\b\b;; Imported " (format (cadr exp) null))))
+                                    (format-string "\b\b;; Imported "
+                                       (format (map (lambda (sym) (if (rational? sym) (rational->decimal-string sym) sym)) (cadr exp)) #null))))
                               envp))))
                   ((definition? exp)
                      (case (evaluator (caddr exp) env)
@@ -982,7 +999,8 @@
                               )
                               (ok
                                  (repl-message
-                                    (bytes->string (format-string ";; Defined " (format (cadr exp) null))))
+                                    (bytes->string
+                                       (format-string ";; Defined " (format (cadr exp) #null))))
                                  (bind-toplevel env))))
                         (['fail reason]
                            (fail
@@ -1039,7 +1057,7 @@
                                     (repl-message
                                        (bytes->string
                                           (foldr format null
-                                             (list "\b\b;; Library " name " added" ))))
+                                             (list "\b\b;; Library " (map symbol->string name) " added" ))))
                                     (env-set env '*libraries*
                                        (cons (cons name library)
                                           (keep  ;; drop the loading tag for this library
