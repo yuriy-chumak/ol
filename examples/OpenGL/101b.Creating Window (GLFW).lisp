@@ -4,7 +4,7 @@
 (import (lib glfw))
 (glfwInit)
 
-; create OpenGL 1.1 window
+; create OpenGL 1.0 window
 (glfwWindowHint GLFW_CONTEXT_VERSION_MAJOR 1)
 (glfwWindowHint GLFW_CONTEXT_VERSION_MINOR 0)
 (define window (glfwCreateWindow 1280 720 "1. Creating an OpenGL Window (using GLFW)" NULL NULL))

@@ -1,19 +1,8 @@
 #!/usr/bin/env ol
-(import (lib gl-3))
+(import (lib gl 3.3 compat))
 (gl:set-window-title "4. Shaders")
 
-(gl:set-context-version 3 0) ; use OpenGL version 3.0
-
-; let's check context version
-(define major (box 0))
-(define minor (box 0))
-(glGetIntegerv GL_MAJOR_VERSION major)
-(glGetIntegerv GL_MINOR_VERSION minor)
-(print "Context version: " (unbox major) "." (unbox minor))
-(print "OpenGL version: " (glGetString GL_VERSION))
-
 ; init
-(glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
 (define VBO (box 0))
