@@ -34,8 +34,6 @@
    gl:force-render
    gl:swap-buffers
 
-   gl:splash-screen
-
    ; * internal use (with gl3 and gl4)
    native:enable-context native:disable-context
    native:swap-buffers

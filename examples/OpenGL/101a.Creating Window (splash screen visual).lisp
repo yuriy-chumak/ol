@@ -4,10 +4,12 @@
 (import (lib gl))
 (gl:set-window-title "1. Creating an OpenGL Window")
 
-; load splash.gif to display as splash screen
-(import (file gif))
+; load splash.gif to display as a splash screen
+(import
+   (file gif)
+   (lib gl 2 splash-visual))
 (define gif (read-gif-stream (file->bytestream "splash.gif")))
-(gl:splash-screen (gif 'width) (gif 'height) (gif->rgb24 gif))
+(gl:splash-visual (gif 'width) (gif 'height) (gif->rgb24 gif))
 
 ; and now we can start long loading of all required libraries
 (wait 5000) ; let's simulate 5 second loading delay
