@@ -2568,7 +2568,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 							size_t align;
 							size_t size = structure_size(0, type, &align);
 							ALIGN(ptr, align); // structure alignment
-							word* payload = arena_alloc(size);
+							char* payload = arena_alloc(size);
 							store_structure(payload, 0, type, value);
 							SAVE(void*, payload);
 							break;
@@ -2582,7 +2582,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 
 								void** pp = payload;
 								while (length--) {
-									*pp++ = is_vptr(car(array)) ? caar(array) : 0;
+									*pp++ = is_vptr(car(array)) ? (void*)caar(array) : 0;
 									array = cdr(array);
 								}
 							}
@@ -2593,7 +2593,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 								void** pp = payload;
 								for (int i = 0; i < length; i++) {
 									word vptr = ref(v, i+1);
-									*pp++ = is_vptr(vptr) ? car(vptr) : 0;
+									*pp++ = is_vptr(vptr) ? (void*)car(vptr) : 0;
 									array = cdr(array);
 								}
 							}
@@ -2683,7 +2683,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 						store_structure(payload, 0, structure, value);
 					}
 					else
-						printf("unknown void*");
+						E("unknown void*");
 					break;
 
 				case TSTRING: {
@@ -3165,7 +3165,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 						word type = car(arg);
 						word value = cdr(arg);
 						size_t size = structure_size(0, type, 0);
-						word* payload = alloca(size); // yes, we can use alloca here
+						char* payload = alloca(size); // yes, we can use alloca here
 						STORE(IDF, word, payload);
 						store_structure(payload, 0, type, value);
 						break;
