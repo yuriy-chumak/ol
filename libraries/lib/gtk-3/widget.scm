@@ -21,6 +21,9 @@
       gtk_widget_get_sensitive
 
       gtk_widget_set_double_buffered
+      gtk_widget_get_parent
+      gtk_widget_set_size_request
+      gtk_widget_get_size_request
       gtk_widget_get_toplevel
       gtk_widget_get_display
 
@@ -29,6 +32,8 @@
       gtk_widget_get_allocated_width
       gtk_widget_get_allocated_height
 
+      gtk_widget_queue_allocate
+      gtk_widget_queue_draw
       gtk_widget_queue_resize
    )
    (import
@@ -57,12 +62,12 @@
    (define gtk_widget_realize (GTK3 void "gtk_widget_realize" GtkWidget*))
    ; gtk_widget_unrealize
    ; gtk_widget_draw
-   ; gtk_widget_queue_draw
+   (define gtk_widget_queue_draw (GTK3 void "gtk_widget_queue_draw" GtkWidget*))
    ; gtk_widget_queue_draw_area
    ; gtk_widget_queue_draw_region
    (define gtk_widget_queue_resize (GTK3 void "gtk_widget_queue_resize" GtkWidget*))
    ; gtk_widget_queue_resize_no_redraw
-   ; gtk_widget_queue_allocate
+   (define gtk_widget_queue_allocate (GTK3 void "gtk_widget_queue_allocate" GtkWidget*))
    ; gtk_widget_get_frame_clock
    ; gtk_widget_size_request
    ; gtk_widget_size_allocate
@@ -134,7 +139,7 @@
    ; gtk_widget_get_double_buffered
    ; gtk_widget_set_redraw_on_allocate
    ; gtk_widget_set_parent
-   ; gtk_widget_get_parent
+   (define gtk_widget_get_parent (GTK3 GtkWidget* "gtk_widget_get_parent" GtkWidget*))
    ; gtk_widget_set_parent_window
    ; gtk_widget_get_parent_window
    ; gtk_widget_set_child_visible
@@ -155,8 +160,8 @@
    ; gtk_widget_child_focus
    ; gtk_widget_keynav_failed
    ; gtk_widget_error_bell
-   ; gtk_widget_set_size_request
-   ; gtk_widget_get_size_request
+   (define gtk_widget_set_size_request (GTK3 fft-void "gtk_widget_set_size_request" GtkWidget* gint gint))
+   (define gtk_widget_get_size_request (GTK3 fft-void "gtk_widget_get_size_request" GtkWidget* (fft& gint) (fft& gint)))
    ; gtk_widget_set_events
    ; gtk_widget_add_events
    ; gtk_widget_set_device_events

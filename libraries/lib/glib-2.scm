@@ -32,6 +32,8 @@
       GObject*
       g_object_ref
       g_object_unref
+      g_object_set
+
 
       ; lisp
       GObject GObject?
@@ -47,6 +49,7 @@
       g_value_get_int
       g_value_set_int64
       g_value_get_int64
+      g_value_unset
 
       GDateTime*
       g_date_time_new_from_unix_utc
@@ -162,6 +165,7 @@
 (define GObject* type-vptr)
 (define g_object_ref (GOBJECT gpointer "g_object_ref" gpointer))
 (define g_object_unref (GOBJECT void "g_object_unref" gpointer))
+(define g_object_set (GOBJECT void "g_object_set" gpointer type-string fft-any))
 
 (define gtag [])
 (define (GObject this)

@@ -12,44 +12,33 @@
       
 (begin
    ; lisp interface
-   (define GtkLabel
-      (define (make ctor ptr options)
-         (define base (GtkWidget ptr options))
-         (define this (ff-replace base {
-            'class 'Label  'superclass 'Widget
-            'super base
+   (GTK_CLASS Label Widget {
+         ; Fetches the text from the label of the button.
+         'get-text (lambda ()
+            (gtk_label_get_text ptr))
+         ; Sets the text of the label of the button.
+         'set-text (lambda (text)
+            (gtk_label_set_text ptr text))
+         ; universal "get or set"
+         'text (case-lambda
+            (()(gtk_label_get_text ptr))
+            ((text)
+               (gtk_label_set_text ptr text)))
 
-            'Label ptr
+         ; Sets the labels text and attributes from markup.
+         'set-markup (lambda (markup)
+            (gtk_label_set_markup ptr markup))
+      }
 
-            ; Fetches the text from the label of the button.
-            'get-text (lambda ()
-               (gtk_label_get_text ptr))
-            ; Sets the text of the label of the button.
-            'set-text (lambda (text)
-               (gtk_label_set_text ptr text))
-            ; universal "get or set"
-            'text (case-lambda
-               (()(gtk_label_get_text ptr))
-               ((text)
-                  (gtk_label_set_text ptr text)))
+      ;; init
+      (('text . 'set-text)
+       ('markup . 'set-markup))
 
-            ; Sets the labels text and attributes from markup.
-            'set-markup (lambda (markup)
-               (gtk_label_set_markup ptr markup))
-         }))
+      ; defaults
+      (define default-text "a label")
 
-         ; setup and return
-         (if (options 'text #f)
-            ((this 'set-text) (options 'text)))
-         (if (options 'markup #f)
-            ((this 'set-markup) (options 'markup)))
-         (GObject this))
-
-   ; defaults
-   (define default-text "a label")
-
-   ; main
-   (case-lambda
+      ; main
+      (GTK_CLASS:CONSTRUCTORS
       (()   (make make (gtk_label_new default-text) #e))
       ((a1) (cond
                ((vptr? a1)
@@ -60,16 +49,6 @@
                   (make make (gtk_label_new (a1 'text default-text)) a1))
                (else
                   (error "GtkLabel" a1))))
-      ((a1 op) (cond
-               ((and (vptr? a1) (ff? op))
-                  (make make a1 op))
-               (else
-                  (error "GtkLabel" a1 op))))
-      ; Inheritance
-      ((a1 a2 a3) (if (ctor? a1)
-                     (make a1 a2 a3)
-                     (error "GtkWidget" a1 a2 a3)))
-      
    ))
 
 ))
