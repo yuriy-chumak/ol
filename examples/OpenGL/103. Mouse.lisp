@@ -11,6 +11,8 @@
 (glShadeModel GL_SMOOTH)
 (glClearColor 0.3 0.3 0.3 1)
 
+(gl:hide-cursor)
+
 ; render loop
 (gl:set-renderer (lambda (mouse)
    (glClear GL_COLOR_BUFFER_BIT)

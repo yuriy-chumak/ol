@@ -14,7 +14,8 @@
 ;  like ARB and _ARB, so you must change any thirdparty examples
 ;  by renaming symbols like "glUniform1fARB" into "glUniform1f".
 ;                             - or -
-;  if you still want to use suffixes "ARB" you must add two special imports:
+;  if you still want to use suffixes "ARB" you must add imports
+;  twice in special forms with suffixes "ARB" and "_ARB" -
 ;  the "(import (suffix (OpenGL ARB shader_objects) ARB))" for functions
 ;  and "(import (suffix (OpenGL ARB shader_objects) _ARB))" for constants.
 

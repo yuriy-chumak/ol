@@ -30,6 +30,7 @@
    ; additional functions
    gl:hide-cursor
    gl:redisplay ; (swap buffers)
+   gl:splash-text
 
    gl:force-render
    gl:swap-buffers
@@ -168,6 +169,10 @@
                      (resize-handler (ref STATE 3) (ref STATE 4)))
                   (loop (put this 'resize-handler resize-handler)))
 
+               (['set-renderer renderer]
+                  ((this 'splashcreen-remover (lambda () #f))) ; remove splash screen (if any)
+                  (loop (put this 'renderer renderer)))
+
                ; events
                (['resize width height]
                   (set-ref! STATE 3 width)  ; cache current window dimensions
@@ -231,10 +236,20 @@
       (native:swap-buffers
          (await (mail 'opengl ['get 'context]))))
 
+   (define gl:splash-text
+      (define (gl:splash-text text font color)
+         (define splash-text (await (mail 'opengl ['get 'splash-text])))
+         (when splash-text
+            (splash-text text font color)))
+      (case-lambda
+         ((text) (gl:splash-text text #f #f))
+         ((text font) (gl:splash-text text font #f))
+         ((text font color) (gl:splash-text text font color))))
+
    ; ----------------------------------------------------------
    ; just call a function
    (define (gl:set-renderer renderer)
-      (mail 'opengl ['set 'renderer renderer]))
+      (mail 'opengl ['set-renderer renderer]))
 
    (define (gl:set-prerenderer renderer)
       (mail 'opengl ['set 'prerenderer renderer]))
@@ -272,64 +287,12 @@
    (define (gl:set-resize-handler handler)
       (mail 'opengl ['set-resize-handler handler]))
 
-   ; TODO: move to external library (lib gl splash-screen)
-   (define (gl:splash-screen width height colors)
-      ; load minimal function set
-      (define glEnable      (GL_LIBRARY GLvoid "glEnable" GLenum))
-         (define GL_TEXTURE_2D #x0DE1)
-      (define glDisable     (GL_LIBRARY GLvoid "glDisable" GLenum))
-      ;; (setq glGenTextures (GL_LIBRARY GLvoid "glGenTextures" GLsizei GLuint&))
-      ;; (setq glDeleteTextures (GL_LIBRARY GLvoid "glDeleteTextures" GLsizei GLuint*))
-      (define glBindTexture (GL_LIBRARY GLvoid "glBindTexture" GLenum GLuint))
-      (define glTexParameteri (GL_LIBRARY GLvoid "glTexParameteri" GLenum GLenum GLint))
-         (define GL_TEXTURE_MAG_FILTER #x2800)
-         (define GL_TEXTURE_MIN_FILTER #x2801)
-         (define GL_LINEAR #x2601)  (define GL_NEAREST #x2600)
-      (define glTexImage2D  (GL_LIBRARY GLvoid "glTexImage2D" GLenum GLint GLint GLsizei GLsizei GLint GLenum GLenum fft-any))
-         (define GL_RGB #x1907)
-         (define GL_UNSIGNED_BYTE #x1401)
-      (define glBegin       (GL_LIBRARY GLvoid "glBegin" GLenum))
-         (define GL_QUADS #x0007)
-      (define glEnd         (GL_LIBRARY GLvoid "glEnd"))
-      (define glVertex2f    (GL_LIBRARY GLvoid "glVertex2f" GLfloat GLfloat))
-      (define glTexCoord2f  (GL_LIBRARY GLvoid "glTexCoord2f" GLfloat GLfloat))
-
-      ; upload texture
-      ;; (glGenTextures 1 id)
-      (glBindTexture GL_TEXTURE_2D 0) ;; (car id))
-      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER GL_NEAREST)
-      (glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER GL_NEAREST)
-      (glTexImage2D GL_TEXTURE_2D 0 GL_RGB
-         width height
-         0 GL_RGB GL_UNSIGNED_BYTE colors)
-
-      ; draw textured quad
-      (glEnable GL_TEXTURE_2D)
-      ;; (glColor3f 1 1 1)
-      (glBegin GL_QUADS)
-         (glTexCoord2f 0 0)
-         (glVertex2f -1  1)
-         (glTexCoord2f 0 1)
-         (glVertex2f -1 -1)
-         (glTexCoord2f 1 1)
-         (glVertex2f  1 -1)
-         (glTexCoord2f 1 0)
-         (glVertex2f  1  1)
-      (glEnd)
-
-      ; show it
-      (gl:redisplay)
-
-      ; done.
-      ;; (glDeleteTextures 1 id)
-      (glDisable GL_TEXTURE_2D)
-   )
-
    ; -=( main )=--------------------------
    ; do a window creation:
    (let ((context (native:create-context "Ol: OpenGL Window")))
-      (if context
-         (mail 'opengl ['set 'context context])
-         (runtime-error "Can't create OpenGL context")))
+      (unless context
+         (runtime-error "Can't create OpenGL context"))
+      (mail 'opengl ['set 'context context])
+      #true)
 
 ))
