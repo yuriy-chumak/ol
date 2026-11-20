@@ -319,6 +319,7 @@
                         ((m/.*\.pdf$/ realname) "application/pdf")
                         ((m/.*\.json$/ realname) "application/json")
                         ((m/.*\.xml$/ realname) "application/xml")
+                        ((m/.*\.wasm$/ realname) "application/wasm")
                         (else
                            "application/octet-stream"))
                      "\r\n"

@@ -92,6 +92,15 @@
 
 // --> end of standard definitions
 
+// builin low-level logger
+void E(char* format, ...);
+#ifdef NDEBUG
+#	define D(...)
+#else
+#	define D(...) E(__VA_ARGS__)
+#endif
+
+
 /*!- - -
  * ## Otus Lisp Virtual Machine
  * ### Source file: src/olvm.c
@@ -464,12 +473,6 @@ typedef word* R;
 #define REOF      ((R)IEOF)
 
 // ------- service functions ------------------
-void E(char* format, ...);
-#ifdef NDEBUG
-#	define D(...)
-#else
-#	define D(...) E(__VA_ARGS__)
-#endif
 
 // --------- memory ---------------------------
 // -----------------------------------------------------//--------------------
@@ -1247,6 +1250,10 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 #define HAVE_DLOPEN 1
 #endif
 
+#ifndef HAVE_POLL
+#define HAVE_POLL 1
+#endif
+
 #ifndef HAVE_SECCOMP
 #define HAVE_SECCOMP 0
 #endif
@@ -1736,16 +1743,21 @@ void E(char* format, ...)
 		}
 		case 'd': {
 			int d = va_arg(args, int);
+			if (d == 0) {
+				(void)write(fd, "0", 1);
+				break;
+			}
 			if (d < 0) {
 				(void)write(fd, "-", 1);
 				d = -d;
 			}
-			int q = 1;
-			for (int i = d; i != 0; i /= 10)
+			unsigned int q = 1;
+			for (unsigned int i = d; i != 0; i /= 10)
 				q *= 10;
 			q /= 10;
-			for (int i = q; i != 0; i /= 10)
+			for (unsigned int i = q; i != 0; i /= 10)
 				(void)write(fd, "0123456789" + (d / i) % 10, 1);
+
 			break;
 		}
 		case 'p': {
@@ -3204,7 +3216,9 @@ mainloop:;
 	#		define SYSCALL_OPEN 2    // 
 	#		define SYSCALL_CLOSE 3   // 
 	#		define SYSCALL_STAT 4    // same for fstat and lstat
-	#		define SYSCALL_POLL 7    // 
+	#	if HAVE_POLL
+	#		define SYSCALL_POLL 7
+	#	endif
 	#		define SYSCALL_LSEEK 8   // 
 	#		define SYSCALL_MMAP 9    // 
 	#		define SYSCALL_FSYNC 74  //
@@ -4646,6 +4660,7 @@ loop:;
 			}
 
 			// TODO: rewrite for "poll" if supported
+			#if HAVE_POLL
 			case SYSCALL_POLL: {
 				word a = A1;
 				word b = A2;
@@ -4699,6 +4714,7 @@ loop:;
 				r = cons(r1, r2);
 				break;
 			}
+			#endif
 
 			case SYSCALL_FSYNC: {
 				CHECK_ARGC_EQ(1);
@@ -4823,11 +4839,11 @@ loop:;
 				break;
 			}
 
-            case SYSCALL_ERRNO: {
+			case SYSCALL_ERRNO: {
 				CHECK_ARGC_EQ(0);
-                r = (R) I(errno);
-                break;
-            }
+				r = (R) I(errno);
+				break;
+			}	
 			// FOLDERS
 
 			// UNSAFES
