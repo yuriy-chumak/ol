@@ -1106,11 +1106,12 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 	char *emscripten_run_script_string(const char *script) { return 0; }
 #endif
 
-#ifdef __EMSCRIPTEN__
+#ifdef __wasm32__
 #	define SYSCALL_PRCTL 0
 
 #	define HAVE_SOCKETS 0
-#   define HAVE_MEMFD_CREATE 0
+#	define HAVE_POLL 0
+#	define HAVE_MEMFD_CREATE 0
 #endif
 
 #ifdef __ANDROID__
@@ -1371,12 +1372,6 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 #include <windows.h>
 #endif
 
-#ifdef __EMSCRIPTEN__
-# ifndef __WAJIC__
-#	include <emscripten.h>
-# endif
-#endif
-
 #ifdef __ANDROID__
 #include <android/log.h>
 #endif
@@ -1414,7 +1409,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 // # else
 // # endif
 // #elif __GCC_IEC_559 > 0 && __mips__
-#else // __CLANG, __TINYC__, __EMSCRIPTEN__, ...
+#else // __CLANG, __TINYC__, __wasm32__, ...
 #	define fsqrt sqrt
 #	define fsin sin
 #	define fcos cos
@@ -1511,10 +1506,10 @@ int (*puname)(struct utsname* out) = uname;
 // --------------------------------------------------------------------------
 // yield
 #ifdef __unix__
-# if !defined (__EMSCRIPTEN__) && HAS_CDEFS
+# if !defined (__wasm32__) && HAS_CDEFS
 #	include <sys/cdefs.h>
 # endif
-# if !defined (__EMSCRIPTEN__)
+# if !defined (__wasm32__)
 #	include <sched.h> // yield
 # endif
 #endif
@@ -1525,21 +1520,11 @@ int (*puname)(struct utsname* out) = uname;
 
 void yield()
 {
-#ifdef __EMSCRIPTEN__
-# ifdef __WAJIC__
-#  ifndef OLVM_NOASYNC
-	WaCoroYield();
-#  endif
-# else
-	emscripten_sleep(1);
-# endif
-#else
-# if defined(__unix__) || defined(__APPLE__)
+#if defined(__unix__) || defined(__APPLE__)
 	sched_yield();
-# endif
-# ifdef _WIN32
+#endif
+#ifdef _WIN32
 	Sleep(1);
-# endif
 #endif
 }
 // -----------------------
@@ -4387,17 +4372,11 @@ loop:;
 				else if (read == 0)
 					r = (R) IEOF;
 				else {
-#ifdef __EMSCRIPTEN__
-# ifdef __WAJIC__
-#  ifndef OLVM_NOASYNC
+#if 0 // __wasm32__
 					if (portfd == 0) { // stdin
 						WaCoroYield();
 						r = (R) ITRUE;
 					}
-#  endif
-# else
-					emscripten_sleep();
-# endif
 #endif
 					if (err == EAGAIN) // (may be the same value as EWOULDBLOCK) (POSIX.1)
 						r = (R) ITRUE;
@@ -4965,16 +4944,10 @@ loop:;
 
 				int_t us = numberp(A1);
 
-				#if defined(__EMSCRIPTEN__)
+				#if 0 // __wasm32__
 					int_t ms = us / 1000;
-				# ifdef __WAJIC__
-				#  ifndef OLVM_NOASYNC
-					WaCoroSleep(ms);
-				#  endif
-				# else
-					emscripten_sleep(ms);
+					wasm_sleep(ms);
 					r = (word*) ITRUE;
-				# endif
 				#elif defined(_WIN32) // windows
 					int_t ms = us / 1000;
 					Sleep(ms); // in ms
@@ -5001,8 +4974,8 @@ loop:;
 					word b = A2; // command line
 					word c = A3; // ports
 					#if defined(__unix__) || defined(__APPLE__)
-					# ifdef __EMSCRIPTEN__
-						emscripten_run_script(command);
+					# if 0 // __wasm32__
+						run_script(command);
 						r = (word*) ITRUE;
 					# else
 						// todo: add case (cons program environment)
@@ -5784,33 +5757,6 @@ loop:;
 				r = new_vector(I(g), I(f), I(t));
 				break;
 			}
-
-#ifdef __EMSCRIPTEN__
-			case 1201: { // TODO: merge with system (1017)
-				CHECK_ARGC_EQ(2);
-				//CHECK(is_number(a), a, SYSCALL);
-				//CHECK(is_string(b), b, SYSCALL);
-				char* string = string(A2);
-
-				switch (value(A1)) {
-				case TSTRING: {
-					char* v = emscripten_run_script_string(string);
-					if (v)
-						r = new_string(v);
-					break;
-				}
-				case TINTP: {
-					int v = emscripten_run_script_int(string);
-					r = (word*)make_enum(v);
-					break;
-				}
-				default:
-					emscripten_run_script(string);
-					r = (word*) ITRUE;
-				}
-				break;
-			}
-#endif
 
 			// SANDBOX/UNSAFES
 
@@ -6734,7 +6680,7 @@ void OLVM_delete(OL* ol)
 word
 OLVM_run(OL* ol, int argc, char** argv)
 {
-#ifndef __EMSCRIPTEN__
+#ifndef __wasm32__
 	int r = setjmp(ol->ret);
 	if (r != 0) {
 		return ol->reg[3]; // returned value
@@ -6757,7 +6703,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 
 	sandboxp = 0;  // static variable
 
-#ifndef __EMSCRIPTEN__
+#ifndef __wasm32__
 	longjmp(ol->ret,
 		(int)runtime(ol));
 #else
@@ -6769,7 +6715,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 word
 OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 {
-#ifndef __EMSCRIPTEN__
+#ifndef __wasm32__
 	int r = setjmp(ol->ret);
 	if (r != 0) {
 		return ol->reg[3];
@@ -6794,7 +6740,7 @@ OLVM_evaluate(OL* ol, word function, int argc, word* argv)
 	ol->this = this;
 	ol->arity = acc;
 
-#ifndef __EMSCRIPTEN__
+#ifndef __wasm32__
 	longjmp(ol->ret,
 		(int)runtime(ol));
 #else

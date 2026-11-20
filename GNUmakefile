@@ -373,8 +373,7 @@ GCC_WASM_ROOT=/opt/gcc-wasm/build/gcc
 tmp/olvm.wat: src/olvm.c $(shell find includes/wasm/ -type f -name '*.h')
 	$(GCC_WASM_ROOT)/xgcc -B$(GCC_WASM_ROOT) -ffreestanding -Iincludes/wasm -O0 \
 	   -Wno-error=int-conversion -Wno-int-conversion \
-	   -DHAVE_POLL=0 \
-	   -DHAVE_SOCKETS=0 -DHAVE_DLOPEN=0 \
+	   -DHAVE_DLOPEN=0 \
 	   -S $(filter %.c,$<) -o $@
 
 tmp/olvm.wat.o: tmp/olvm.wat

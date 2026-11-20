@@ -77,12 +77,6 @@
 #	include <windows.h>
 #endif
 
-#ifdef __EMSCRIPTEN__
-# ifndef __WAJIC__
-#	include <emscripten.h>
-# endif
-#endif
-
 #include <sys/mman.h> // we have own win32 implementation
 
 #ifndef WARN_ALL
@@ -199,8 +193,6 @@ typedef int64_t ret_t;
 
 #if defined(_WIN32)
 #	define EXPORT __declspec(dllexport)
-#elif defined(__EMSCRIPTEN__)
-#	define EXPORT EMSCRIPTEN_KEEPALIVE
 #else
 #	define EXPORT __attribute__ ((__visibility__("default")))
 #endif
@@ -1093,7 +1085,7 @@ void x64_call(ret_t r, word arg[], int fmask, void* function, int type)
 	};
 }
 
-#elif __UINTPTR_MAX__ == 0xffffffffU // includes __mips__, __EMSCRIPTEN__, __powerpc__
+#elif __UINTPTR_MAX__ == 0xffffffffU // includes __mips__, __wasm32__, __powerpc__
 // 	fmask is two-bits width with high bit 1 as a mark
 static
 void x32_call(ret_t r, word arg[], int fmask, void* function, int type)
@@ -2299,7 +2291,7 @@ size_t structure_align(size_t size, word t)
 				*(type*)&args[i] = conv(arg);\
 				atmask |= 0b11;\
 		})
-#	elif __UINTPTR_MAX__ == 0xffffffffU //__mips__ || __powerpc__ || __EMSCRIPTEN__ || other 32-bit arch
+#	elif __UINTPTR_MAX__ == 0xffffffffU //__mips__ || __powerpc__ || __wasm32__ || other 32-bit arch
 		#define STORE_F(conv, type, arg) ({\
 				*(type*)&args[i] = conv(arg);\
 				atmask |= 0b10;\
@@ -2390,7 +2382,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	long fmask = 0;
 
 #else // all the rest platforms default floating point handling
-	  // __mips__ || __powerpc__ || __EMSCRIPTEN__
+	  // __mips__ || __powerpc__ || __wasm32__
 	// двухбитная маска типа аргументов, 16 arguments maximum
 	//	00 - word
 	//	01 - quad (long long)
@@ -2865,7 +2857,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 		atmask <<= 1;
 #elif __i386__ || __aarch64__ || __arm__ || _WIN32
 		// nothing special
-#else   // __mips__ || __powerpc__ || __EMSCRIPTEN__ || (__UINTPTR_MAX__ == 0xffffffffU)
+#else   // __mips__ || __powerpc__ || __wasm32__ || (__UINTPTR_MAX__ == 0xffffffffU)
 		atmask <<= 2;
 #endif
 
