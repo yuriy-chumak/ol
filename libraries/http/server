@@ -20,6 +20,7 @@
 (define (yield) (syscall 1022 0))
 (define (time format seconds) (syscall 201 format seconds))
 (define uname (syscall 63))
+(import (only (olvm syscalls) strftime))
 
 (define OK "\e[0;32mOK\e[0;0m")
 (define FAIL "\e[0;31mFAIL\e[0;0m")
@@ -230,6 +231,7 @@
                "Connection: close\r\n"
                "Content-Type: " "text/html" "\r\n"
                "Server: " (car *version*) "/" (cdr *version*) "\r\n"
+               "Last-Modified: " (strftime "%a, %d %b %Y %H:%M:%S %Z" (ref stat 12)) "\r\n" ; st_mtime
                "\r\n")
             ; list folder:
             (unless onlyhead
@@ -325,6 +327,7 @@
                      "\r\n"
                   "Content-Length: " (ref stat 8) "\r\n"
                   "Server: " (car *version*) "/" (cdr *version*) "\r\n"
+                  "Last-Modified: " (strftime "%a, %d %b %Y %H:%M:%S %Z" (ref stat 12)) "\r\n" ; st_mtime
                   "\r\n")
                (unless onlyhead
                   (syscall 40 fd file 0 (ref stat 8))) ; sendfile
