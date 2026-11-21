@@ -313,9 +313,9 @@
                ; (system-println "interop 16 - wrap the whole world to a thunk")
                (let
                   ((resume
-                     (vm:new type-constructor (λ args
+                     (λ args
                         (tc (cons [id (λ () (cont 'resumed))] todo)
-                           done state)))))
+                           done state))))
                   (tc (cons [id (λ () (cont resume))] todo) done state)))
 
             ; 17, catch or release a running thread (not touching mailbox etc)
@@ -455,15 +455,14 @@
       (define (make-entry main name)
          (let ((symbols (symbols-of main))
                (codes   (codes-of   main)))
-            (vm:new type-constructor
-               (λ args
-                  (start-thread-controller
-                     (list ; main 1 thread
-                        [name (λ ()
-                                 (start-switchboard)
-                                 (start-symbol-interner symbols) ; todo: rename to start-symbol-interner
-                                 (start-bytecode-interner codes) ; todo: rename to start-bytecode-interner
-                                 (apply main args))] ))))))
+            (λ args
+               (start-thread-controller
+                  (list ; main 1 thread
+                     [name (λ ()
+                              (start-switchboard)
+                              (start-symbol-interner symbols) ; todo: rename to start-symbol-interner
+                              (start-bytecode-interner codes) ; todo: rename to start-bytecode-interner
+                              (apply main args))] )))))
       (case-lambda
          ((main) (make-entry main Main))
          ((main name) (make-entry main name))))

@@ -6609,12 +6609,13 @@ OLVM_new(unsigned char* bootstrap)
 
 //	handle->exit = exit;
 
+	// "deserialize" puts constructors chain to ptrs[nobjs], if any
 	// if no autorun points found, just run last one lambla (like old behavior)
 	// точка входа в программу: последняя лямбда загруженного образа (λ (args))
 	// TODO: make configurable
 	if (ptrs[nobjs] == INULL) {
-		handle->this = ptrs[nobjs-1]; // (construction constructors main args)
-		handle->arity = 2; // 1 argument
+		handle->this = ptrs[nobjs-1]; // last lambda
+		handle->arity = 1; // no arguments, will be updated by args in OLVM_run
 	}
 	// точка входа в программу - бутстрап, обрабатывающий список автовыполняемых функций
 	else {
@@ -6622,18 +6623,22 @@ OLVM_new(unsigned char* bootstrap)
 		//          заменяет в загрузчике последнюю лямбду
 		// args: аргументы, которые предоставляет функция OLVM_run
 		//
-		// (define (construction args objects)
-		//    (unless (null? objects)
-		//       (construction args (cdr objects))
-		//       (apply (car objects) args)))
+		// (define (main ctors . args)
+		//    (let loop ((ctors ctors))
+		//       (unless (null? ctors)
+		//          (loop (cdr ctors)) ; reverse reversed by (deserialize) constructors list
+		//          (apply (car ctors) args))))
 		//
 		// (fasl-encode construction): entry must be (lambda args ...)
-	//	unsigned char construction[] = { 2,16,12,11,3,0,7,1,1,2,6,2,6,4,17,2,16,1,
-	//	    20,2,16,32,11,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,5,5,4,8,5,
-	//	    2,6,3,17,1,17,2,1,2,2,16,31,11,4,0,26,80,5,18,0,53,5,7,3,18,5,1,2,5,4,
-	//	    3,3,9,7,5,2,6,4,205,7,24,7,17,1,17,2,1,2,1,17,2,6,1,0 };
 		unsigned char construction[] = {
-			2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,10,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,33,6,4,0,28,4,2,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,12,0,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
+			// 2,16,1,20,2,16,12,6,3,0,7,1,1,2,6,2,6,4,17,2,16,32,6,1,0,27,1,1,2,4,52,4,5,1,2,2,6,1,1,4,3,1,1,3,8,10,5,4,8,5,2,6,3,17,1,17,2,1,3,2,16,33,6,4,0,28,4,2,5,18,0,53,5,7,3,18,5,1,2,5,4,3,3,9,7,5,2,6,4,12,0,7,24,7,17,1,17,2,1,2,1,17,2,5,1,0
+			2,16,1,20,
+			2,16,35,6,1,0,30,1,1,2,4,52,4,5,1,2,2,6,1,1,4,7,1,1,3,8,9,5,4,10,7,3,8,5,2,6,3,17,
+			1,17,2,1,2,
+			2,16,39,6,3,0,34,4,2,4,24,0,53,4,6,1,1,2,7,3,18,5,2,2,4,7,3,8,10,6,4,8,3,2,5,3,12,0,6,24,6,17,
+			1,17,2,1,2,
+			2,16,18,7,2,0,13,3,18,3,1,2,5,6,9,6,5,2,5,3,17,
+			1,17,2,1,2,0
 		};
 		// подсчет количества слов и объектов в этом коде
 		word wc = 0;
@@ -6642,9 +6647,9 @@ OLVM_new(unsigned char* bootstrap)
 		word *p = new(TBYTEVECTOR, no + 1, 0);
 		fp = deserialize(&p[1], no, construction, fp);
 
-		handle->this = p[no]; // (construction constructors main args)
-		handle->reg[5] = ptrs[nobjs];
-		handle->arity = 3; // two arguments
+		handle->this = p[no]; // construction
+		handle->reg[4] = cons (ptrs[nobjs-1], ptrs[nobjs]); // objects
+		handle->arity = 2; // one argument, will be updated by args in OLVM_run
 	}
 
 	// теперь все готово для запуска главного цикла виртуальной машины
@@ -6688,18 +6693,11 @@ OLVM_run(OL* ol, int argc, char** argv)
 #endif
 
 	// подготовим аргументы:
-	word* fp;
-	word userdata = ol->reg[4];
 	{
-		argv += argc - 1;
-		for (ptrdiff_t i = argc; i > 0; i--, argv--) {
-			word* string = string2ol(ol, *argv);
-			fp = ol->heap.fp;
-			userdata = (word) cons (string, userdata);
-			ol->heap.fp = fp;
-		}
+		char** p = argv;
+		for (ptrdiff_t i = 0; i < argc; i++, p++)
+			ol->reg[3 + ol->arity++] = string2ol(ol, *p);
 	}
-	ol->reg[4] = userdata;
 
 	sandboxp = 0;  // static variable
 
