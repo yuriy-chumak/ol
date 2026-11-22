@@ -1,86 +1,28 @@
-# WAJIC toolset used
+# gcc-wasm toolset used
 
 ifndef MAKEFILE_MAIN
 $(error Use toplevel Makefile, please.)
 else
 
-$(shell [ -d extras/wajic ] || mkdir extras/wajic)
+# TODO: set OLVM_NOPINS, check running
 
-extras/wajic/wajicup.js:
-	curl -Lk https://github.com/yuriy-chumak/wajic/raw/refs/heads/master/wajicup.js -o $@
+GCC_WASM_ROOT=/opt/gcc-wasm/build/gcc
+tmp/olvm.wat: src/olvm.c $(shell find includes/wasm/ -type f -name '*.h')
+	$(GCC_WASM_ROOT)/xgcc -B$(GCC_WASM_ROOT) -ffreestanding -Iincludes/wasm -O0 \
+	   -Wno-error=int-conversion -Wno-int-conversion \
+	   -DHAVE_DLOPEN=0 \
+	   -S $(filter %.c,$<) -o $@
 
-extras/wajic/tmp/wajic_system_2.0.34_llvm12_and_higher.zip:
-	mkdir -p $(dir $@)
-	curl -Lk https://github.com/schellingb/wajic/releases/download/bin/wajic_system_2.0.34_llvm12_and_higher.zip -o $@
+tmp/olvm.wat.o: tmp/olvm.wat
+	/opt/wabt/build/wat2wasm --enable-annotations --relocatable $< -o $@
 
-extras/wajic/system: extras/wajic/tmp/wajic_system_2.0.34_llvm12_and_higher.zip
-	unzip -o $< -d extras/wajic
+olvm.wasm: tmp/olvm.wat.o
+	wasm-ld --no-entry --allow-undefined \
+	   --export=__main_argc_argv \
+	   --export=malloc --export=free --export=errno \
+	   --export-memory \
+	   $^ -o $@
+	#wasm-opt --enable-nontrapping-float-to-int --enable-sign-ext olvm.wasm -O3 -o olvm.wasm
 
-# just an ol virtual machine, asynchronous!
-olvm.wasm: src/olvm.c extras/wajic/wajicup.js extras/wajic/system
-	node extras/wajic/wajicup.js -v \
-	   $< \
-	   $(basename $@).wasm $(basename $@).js $(basename $@).html \
-	   -stacksize 1048576 \
-	   -no_minify \
-	   -cc "-I. -Iextras/wajic"
-
-# full ol, asynchronous!
-ol.wasm: src/olvm.c extras/wajic/wajicup.js extras/wajic/system
-	node extras/wajic/wajicup.js -v \
-	   $< \
-	   $(basename $@).wasm $(basename $@).js $(basename $@).html \
-	   -stacksize 67108864 \
-	   -no_minify \
-	   -cc "-I. -Iextras/wajic -DREPL=repl"
-
-# ol compiler (ol without main), syncronous!
-olc.wasm: extensions/wasm.c src/olvm.c tmp/repl.c
-	node extras/wajic/wajicup.js -v \
-	   -stacksize 1048576 \
-	$< \
-	   $(basename $@).wasm $(basename $@).js \
-	   -no_minify \
-	   -cc "-I. -Iextras/wajic -DREPL=repl -DOLVM_NOASYNC -DHAVE_DLOPEN=0"
-
-
-# # full ol, but in embed form (is ready to evaluate commands)
-# embed.wasm: src/olvm.c extras/wajic/wajicup.js extras/wajic/system
-# 	node extras/wajic/wajicup.js -v \
-# 	   $< \
-# 	   $(basename $@).wasm $(basename $@).js $(basename $@).html \
-# 	   -no_minify \
-# 	   -cc "-I. -Iextras/wajic -DREPL=repl -DOLVM_NOASYNC=1"
-
-# embed form with webgl and opengl libraries included
-webgl.wasm: jni/embed.c extras/wajic/wajicup.js extras/wajic/system
-	node extras/wajic/wajicup.js -v \
-	   -stacksize 1048576 \
-	$< \
-	   $(basename $@).wasm $(basename $@).js \
-	   -no_minify \
-	   -embed otus/ffi.scm        libraries/otus/ffi.scm \
-	   -embed otus/case-apply.scm libraries/otus/case-apply.scm \
-	   -embed math/infix-notation.scm \
-	                              libraries/math/infix-notation.scm \
-	   \
-	   -embed OpenGL/config.scm   libraries/OpenGL/config.scm \
-	   -embed OpenGL/platform.scm libraries/OpenGL/platform.scm \
-	   -embed OpenGL/1.scm        libraries/OpenGL/1.scm \
-	   -embed OpenGL/1.1.scm      libraries/OpenGL/1.1.scm \
-	   -embed OpenGL/1.2.scm      libraries/OpenGL/1.2.scm \
-	   -embed OpenGL/1.3.scm      libraries/OpenGL/1.3.scm \
-	   -embed OpenGL/1.4.scm      libraries/OpenGL/1.4.scm \
-	   -embed OpenGL/1.5.scm      libraries/OpenGL/1.5.scm \
-	   -embed OpenGL/2.scm        libraries/OpenGL/2.scm \
-	   -embed OpenGL/2.1.scm      libraries/OpenGL/2.1.scm \
-	   \
-	   -embed lib/gl.scm          libraries/lib/gl.scm \
-	   -embed lib/gl/config.scm   libraries/lib/gl/config.scm \
-	   -embed lib/gl/WebGL.lisp   libraries/lib/gl/WebGL.lisp \
-	   -cc "-I. -Iextras/wajic -DREPL=repl -DOLVM_NOASYNC=1"
-
-
-#	   -stacksize 33554432 \
-
+#$(GCC_WASM_ROOT)/xgcc -B$(GCC_WASM_ROOT) -E -v -x c /dev/null
 endif

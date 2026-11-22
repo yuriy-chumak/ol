@@ -2155,7 +2155,7 @@ word* chase(word* pos) {
 static
 void mark(word *pos, word *end, heap_t* heap)
 {
-	word genstart = (word)heap->genstart; // начало молодого поколения
+	word genstart = (word) heap->genstart; // начало молодого поколения
 
 //	assert(pos is NOT flagged)
 	while (pos != end) {
@@ -2284,7 +2284,7 @@ word gc(heap_t *heap, long query, word regs)
 	else
 	if (nused > (hsize * 4 / 5)) {  // if ((nfree - query) < hsize / 5) {
 		heap->genstart = heap->begin; // force start full generation
-		return gc(heap, query, regs);
+		regs = gc(heap, query, regs);
 	}
 	else
 		heap->genstart = (word*)regs; // simply start new generation
@@ -2623,15 +2623,15 @@ static int OLVM_gc(struct olvm_t* ol, long ws) // ws - required size in words
 	word* r = ol->reg;
 
 	// assert (fp + N + 3 < ol->heap.end);
-	int p = 0, N = ol->trn, C = 1;
+	int p = 0, N = ol->trn, C = 1; // 1 for "this"
 
 	// создадим в топе временный объект со значениями всех регистров и пинов
 #ifndef OLVM_NOPINS
 	C += ol->cr;
 #endif
 
-	word *regs = new (TVECTOR, N + C); // N for regs, 1 for this, C for pins
-	while (++p <= N) regs[p] = r[p-1]; // save regs
+	word *regs = new (TVECTOR, N + C); // N for regs, 1 for "this", C for pins
+	while (++p <= N) regs[p] = r[p-1]; // save regs, regs[0] is a vector header
 	regs[p++] = ol->this;
 #ifndef OLVM_NOPINS
 	memcpy(&regs[p], ol->pin, ol->cr * sizeof(word));
@@ -2809,7 +2809,7 @@ word runtime(struct olvm_t* ol)
 	int bank = 0; // ticks deposited at interop
 
 	word this = ol->this; // context
-	long acc = ol->arity; // arity
+	long acc = ol->arity; // arity of stored values array in ol->regs[4+] + 1
 
 	set_blocking(STDOUT_FILENO, 0);
 	set_blocking(STDERR_FILENO, 0);
@@ -5994,7 +5994,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 						ch = *hp++;
 						nat |= (word)(ch & 0x7F) << i;
 						if (!(ch & 0x80) && !(nat >> VBITS))
-							break; // early exit if number fits an 'enum'
+							break; // early exit if number fits in value
 
 						i += 7;
 						if (i > VBITS) {
@@ -6005,7 +6005,7 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 
 							obj[0] = make_header(type == TENUMP ? TINTP : TINTN, 3);
 							obj[1] = I(nat & VMAX);
-							obj[2] = INULL;
+							obj[2] = INULL; // tail
 
 							nat >>= VBITS;
 							i -= VBITS;
@@ -6031,8 +6031,8 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 							obj[2] = (word) (obj - 3);
 							obj += 3;
 						}
-						*fp++ = (word) (obj - 3);
-						ptrs[id] = (word) object; // обновим указатель
+						*fp++ = (word) (obj - 3); // assert(obj = object)
+						ptrs[id] = (word) object; // обновим указатель на object (он переместился)
 					}
 				}
 			}
@@ -6047,10 +6047,10 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 			if (type == TINEXACT) { // assert (size == 4 || size == 8)
 				inexact_t t;
 // is it a big-endian target architecture?
-#if (defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN) || \
-    (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) ||\
+#if	(defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN) || \
+	(defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) ||\
 	(defined(__BIG_ENDIAN__)) || \
-    (defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIBSEB) || defined(__MIBSEB) || defined(__MIBSEB__))
+	(defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIBSEB) || defined(__MIBSEB) || defined(__MIBSEB__))
 				// assert size == 4 || size == 8
 				int s = size;
 				unsigned char *p = fp + size;
@@ -6059,10 +6059,10 @@ word* deserialize(word *ptrs, int nobjs, unsigned char *bootstrap, word* fp)
 				t = (size == 4) ? *(float*)fp : *(double*)fp;
 // is it a little-endian target architecture?
 #elif\
-    (defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN) || \
-    (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) ||\
+	(defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN) || \
+	(defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) ||\
 	(defined(__LITTLE_ENDIAN__)) || \
-    (defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIBSEL) || defined(__MIBSEL) || defined(__MIBSEL__))
+	(defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIBSEL) || defined(__MIBSEL) || defined(__MIBSEL__))
 				t = (size == 4) ? *(float*)hp : *(double*)hp;
 				hp += size;
 #else
@@ -6583,9 +6583,11 @@ OLVM_new(unsigned char* bootstrap)
 		E("Error: can't allocate %d", CR * sizeof(word));
 		goto fail;
 	}
-    word* pin = handle->pin;
+	word* pin = handle->pin;
 	for (ptrdiff_t i = 0; i < CR; i++)
 		pin[i] = IFALSE;
+
+	handle->ffpin = 4; // first four pins are used internally
 #endif
 
 	// регистры виртуальной машины
@@ -6596,9 +6598,8 @@ OLVM_new(unsigned char* bootstrap)
 	reg[3] = IEXIT;  // continuation, just finish job
 	reg[4] = INULL;  // first argument
 
-#ifndef OLVM_NOPINS
-	handle->ffpin = 4; // first four pins are used internally
-#endif
+	handle->trn = 4;
+	handle->mnr = NR;// setup maximal regs amount
 
 	// i/o overrides
 	handle->open = os_open;
@@ -6648,7 +6649,7 @@ OLVM_new(unsigned char* bootstrap)
 		fp = deserialize(&p[1], no, construction, fp);
 
 		handle->this = p[no]; // construction
-		handle->reg[4] = cons (ptrs[nobjs-1], ptrs[nobjs]); // objects
+		handle->reg[4] = (word) cons (ptrs[nobjs-1], ptrs[nobjs]); // objects
 		handle->arity = 2; // one argument, will be updated by args in OLVM_run
 	}
 
@@ -6696,7 +6697,7 @@ OLVM_run(OL* ol, int argc, char** argv)
 	{
 		char** p = argv;
 		for (ptrdiff_t i = 0; i < argc; i++, p++)
-			ol->reg[3 + ol->arity++] = string2ol(ol, *p);
+			ol->reg[3 + ol->arity++] = (word) string2ol(ol, *p);
 	}
 
 	sandboxp = 0;  // static variable
@@ -6827,7 +6828,9 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
 	word* R = ol->reg;
 
 	// сохраним старый контекст:
+#ifndef	OLVM_NOPINS
 	size_t r3 = OLVM_pin(ol, R[3]); // continuation/result
+#endif
 
 	// вызовем колбек:
 //	R[0] = IFALSE;  // не надо, продолжаем использовать mcp
@@ -6845,7 +6848,9 @@ word OLVM_apply(struct olvm_t* ol, word object, word args)
 	word z = R[3]; // callback result
 
 	// восстановим контекст и вернем значение
+#ifndef	OLVM_NOPINS
 	R[3] = OLVM_unpin(ol, r3);
+#endif
 	return z;
 }
 

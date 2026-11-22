@@ -1,28 +1,21 @@
 #pragma once
-void E(char* format, ...);
 
-
-
-typedef __UINTPTR_TYPE__ uintptr_t;
 typedef __SIZE_TYPE__ size_t;
 typedef __PTRDIFF_TYPE__ ssize_t;
-// typedef __INTPTR_TYPE__ intptr_t;
 
+// .......
 extern int assert(...);
 extern int mkstemp(...);
 extern int unlink(...);
 typedef __INT32_TYPE__ off_t; // <sys/types.h>
 extern int send(...);
 
-extern int realloc(...);
 extern int exit(...);
-extern int fcntl(...);
 extern int signal(...);
 typedef int jmp_buf;
 #define INFINITY 0
 #define NAN 1
 extern int modf(...);
-extern int memcpy(...);
 extern int longjmp(...);
 #define htole16(x) x
 typedef __UINT16_TYPE__ uint16_t;
@@ -41,10 +34,6 @@ typedef __INT64_TYPE__ int64_t;
 typedef __UINT8_TYPE__ uint8_t;
 typedef __UINT32_TYPE__ uint32_t;
 typedef __UINT64_TYPE__ uint64_t;
-
-// fcntl.h
-#define F_GETFD		1	/* get close_on_exec */
-#define F_SETFL		4	/* set file->f_flags */
 
 // signal.h
 #define SIGINT		 2
@@ -71,16 +60,6 @@ typedef int time_t;
 extern int time(...);
 extern struct tm* localtime(...);
 extern int strftime(...);
-struct utsname
-  {
-    char sysname[10];
-    char nodename[10];
-    char release[10];
-    char version[10];
-    char machine[10];
-    char domainname[10];
-  };
-extern int uname(...);
 struct rlimit
   {
     int rlim_cur;
@@ -133,8 +112,8 @@ extern float acos(float);
 extern float floor(float);
 extern float atan2(float, float);
 extern float pow(float, float);
-extern int memmove(...);
 #define	EILSEQ		84	/* Illegal byte sequence */
-extern int memset(...);
 #define alloca __builtin_alloca
 extern int setjmp(...);
+
+extern void console_log(char* str);

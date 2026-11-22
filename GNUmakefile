@@ -366,25 +366,10 @@ boot.fasl: vm repl src/*.scm lang/*.scm otus/*.scm libraries/otus/*.scm librarie
 libraries/owl/math/infix.scm: tools/make-math-infix.scm vm
 	./vm repl tools/make-math-infix.scm >$@
 
-MAKEFILE_MAIN=1
 # additional targets (like packaging, tests, etc.)
+MAKEFILE_MAIN=1
 
-GCC_WASM_ROOT=/opt/gcc-wasm/build/gcc
-tmp/olvm.wat: src/olvm.c $(shell find includes/wasm/ -type f -name '*.h')
-	$(GCC_WASM_ROOT)/xgcc -B$(GCC_WASM_ROOT) -ffreestanding -Iincludes/wasm -O0 \
-	   -Wno-error=int-conversion -Wno-int-conversion \
-	   -DHAVE_DLOPEN=0 \
-	   -S $(filter %.c,$<) -o $@
-
-tmp/olvm.wat.o: tmp/olvm.wat
-	/opt/wabt/build/wat2wasm --enable-annotations --relocatable $< -o $@
-
-olvm.wasm: tmp/olvm.wat.o
-	wasm-ld --no-entry --allow-undefined \
-	   --export=__main_argc_argv \
-	   --export=malloc --export=free --export=errno \
-	   --export-memory \
-	   $^ -o $@
+-include extras/wasm.mk
 
 # tests
 check: # main testing target
