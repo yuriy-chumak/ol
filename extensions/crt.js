@@ -1,9 +1,57 @@
-/*
-*/
   // global wasm constants
   const PAGE_SIZE = 65536;
   const decoder = new TextDecoder("utf-8");
   const encoder = new TextEncoder();
+
+  // # environment tests
+  // ## JSPI
+  (async () => {
+    if (typeof WebAssembly?.Suspending !== "function" || typeof WebAssembly?.promising !== "function") {
+      console.log("JSPI API missing");
+      return;
+    }
+
+    // Минимальный валидный WASM-модуль:
+    // импортирует env.delay_add(i32) -> i32, экспортирует run(i32) -> i32: возвращает delay_add(x) + 1
+    const bytes = new Uint8Array([
+      0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+      // Type section (id=1, len=6): 1 type: (i32) -> i32
+      0x01, 0x06, 0x01, 0x60, 0x01, 0x7f, 0x01, 0x7f,
+      // Import section (id=2, len=17): 1 import: "env"."delay_add" func type 0
+      0x02, 0x11, 0x01, 0x03, 0x65, 0x6e, 0x76, 0x09,
+      0x64, 0x65, 0x6c, 0x61, 0x79, 0x5f, 0x61, 0x64, 0x64, 0x00, 0x00,
+      // Function section (id=3, len=2): 1 func using type 0
+      0x03, 0x02, 0x01, 0x00,
+      // Export section (id=7, len=7): 1 export: "run" -> func 1
+      0x07, 0x07, 0x01, 0x03, 0x72, 0x75, 0x6e, 0x00, 0x01,
+      // Code section (id=10, len=11): 1 body (len=9): 0 locals, local.get 0, call 0, i32.const 1, i32.add, end
+      0x0a, 0x0b, 0x01, 0x09, 0x00, 0x20, 0x00, 0x10, 0x00, 0x41, 0x01, 0x6a, 0x0b,
+    ]);
+    const asyncImport = new WebAssembly.Suspending(
+      (v) => new Promise((resolve) => setTimeout(() => resolve(v * 10), 50))
+    );
+
+    const { instance } = await WebAssembly.instantiate(bytes, {
+      env: { delay_add: asyncImport },
+    });
+
+    const runAsync = WebAssembly.promising(instance.exports.run);
+    const res = await runAsync(4); // ожидаем (4 * 10) + 1 = 41
+    console.log("JSPI suspension result:", res, res === 41 ? "OK" : "FAIL");
+  })();
+
+  // --------------------
+  // external libraries
+  const test_id = 1;
+  const test = {
+    "hello": (x) => {
+        console.log("hello", x);
+        return 42;
+      },
+  }
+
+
+
   // .. and functions
 
   // let timerId = null;
@@ -27,7 +75,7 @@
   //   }
   // }
 
-  async function preloadFile(name, url = `./${name}`) {
+  async function preloadFile(name, url = name) {
     const res = await fetch(url, { cache: 'reload' });
     if (!res.ok) {
       throw new Error(`Failed to load ${url}: ${res.status}`);
@@ -99,7 +147,9 @@
         new Uint8Array(exports.memory.buffer, ptr, data.length).set(data);
       }
 
-      files.set(name, { ptr, data, len: data.length });
+      let file = { ptr, data, len: data.length };
+      files.set(name, file);
+      return file;
     }
 
     function __memcpy(dst, src, n) {
@@ -114,6 +164,16 @@
 
     let nextFd = 3;
     const fds = new Map();   // fd -> { data: Uint8Array, ptr: number, end: number, cursor: number }
+    function __open(file, flags, mode) {
+      let fd = nextFd++;
+      fds.set(fd, {
+        ptr: file.ptr,
+        end: file.len,
+        cursor: 0,
+        data: file.data
+      });
+      return fd;
+    }
 
     // -- math fallback functions -----------------------
     // these math functions are fallback functions that usually should not be called
@@ -131,6 +191,123 @@
           return acc;
         }, {});
 
+    // -- dynamic libraries -----------------------
+    // these math functions are fallback functions that usually should not be called
+    function findTableIndex(table, fn) {
+      for (let i = 0; i < table.length; i++) {
+        // console.log(`i = ${i}, -> ${table.get(i)}`)
+        if (table.get(i) === fn) {
+          return i;
+        }
+      }
+      return 0;
+    }
+    function registerFunction(table, fn) {
+      const index = table.length;
+      table.grow(1, fn); // или fnTable.grow(1); fnTable.set(index, fn);
+      return index;
+    }
+
+    // ??????????????????????????????????
+// Кодирует массив байт в LEB128 (нужен для длин секций/строк)
+function encodeULEB128(value) {
+  const out = [];
+  do {
+    let byte = value & 0x7f;
+    value >>>= 7;
+    if (value !== 0) byte |= 0x80;
+    out.push(byte);
+  } while (value !== 0);
+  return out;
+}
+
+function encodeString(str) {
+  const bytes = new TextEncoder().encode(str);
+  return [...encodeULEB128(bytes.length), ...bytes];
+}
+
+function section(id, content) {
+  return [id, ...encodeULEB128(content.length), ...content];
+}
+
+// paramTypes и resultTypes — массивы Wasm-кодов типов, например [0x7f, 0x7f] и [0x7f]
+// TODO: reuse for same arguments, по ключу paramTypes.join(',') + ':' + resultTypes.join(',')
+function makeTrampolineWasm(paramTypes, resultTypes) {
+  const header = [0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00];
+
+  // Type section (id = 1): 1 тип функции
+  const funcType = [
+    0x60,
+    ...encodeULEB128(paramTypes.length), ...paramTypes,
+    ...encodeULEB128(resultTypes.length), ...resultTypes,
+  ];
+  const typeSec = section(1, [0x01, ...funcType]);
+
+  // Import section (id = 2): импортируем "env"."fn" как func с типом 0
+  const importSec = section(2, [
+    0x01,
+    ...encodeString("env"),
+    ...encodeString("fn"),
+    0x00, // kind = func
+    0x00, // typeidx = 0
+  ]);
+
+  // Export section (id = 7): экспортируем func 0 как "fn"
+  const exportSec = section(7, [
+    0x01,
+    ...encodeString("fn"),
+    0x00, // kind = func
+    0x00, // funcidx = 0
+  ]);
+
+  // Code section (id = 10): 0 тел функций (функция импортирована, не определена в модуле)
+  const codeSec = section(10, [0x00]);
+
+  return new Uint8Array([
+    ...header,
+    ...typeSec,
+    ...importSec,
+    ...exportSec,
+    ...codeSec,
+  ]);
+}
+
+const I32 = 0x7f; // int, unsigned int, ...
+const VPTR = 0x7f; // same as I32, void*, char*, etc.
+const I64 = 0x7e; // long long, (u)int64_t. для i64 JS должен вернуть BigInt, а не обычный Number
+const FLOAT = 0x7d;
+const DOUBLE = 0x7c;
+// externref = 0x6f, funcref = 0x70
+
+function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
+  const bytes = makeTrampolineWasm(paramTypes, resultTypes);
+  const mod = new WebAssembly.Module(bytes);
+  const inst = new WebAssembly.Instance(mod, { env: { fn: jsFn } });
+  return inst.exports.fn;
+}
+
+// Если таблица уже позволяет рост (--growable-table) или есть свободный слот:
+function putInTable(table, wasmFn) {
+  // если функции нет, можем использовать ее:
+  // for (let i = 0; i < table.length; i++) {
+  //   if (table.get(i) === null) {
+  //     table.set(i, wasmFn);
+  //     return i;
+  //   }
+  // }
+  const idx = table.length;
+  console.log("putInTable: ", table.length);
+  table.grow(1, wasmFn);
+  return idx;
+}
+
+// const wrapped = jsToWasmFunc((a, b) => a + b, [I32, I32], [I32]);
+// const ptr = putInTable(fnTable, wrapped);
+// return ptr;
+
+// ?????????????????????????    
+
+
     // --------------------------------------------------
     // ok
     return {
@@ -138,6 +315,8 @@
         exports = instance.exports;
         memory = instance.exports.memory; // todo: remove
         malloc = instance.exports.malloc; // todo: remove
+
+        console.log("OLVM_ffi: ", instance.exports.OLVM_ffi);
         return instance.exports;
       },
       mmap: __mmap,
@@ -172,37 +351,42 @@
         }
         mem32[argvIdxBase + encoded.length] = 0;
 
-        return __main_argc_argv(argc, argv);
+        return WebAssembly.promising(__main_argc_argv)(argc, argv);
       },
 
       env: {
         __wasm_grow: (pages) => {
           const prev = memory.grow(pages);
-          console.info(`__wasm_grow(${pages}) -> ${prev}`);
+          // console.info(`__wasm_grow(${pages}) -> ${prev}`);
           if (prev === -1) return 0;
           return (prev + pages) * PAGE_SIZE;
         },
 
         // stdio.h
-        open: (pathPtr, flags, mode) => {
-          const path = readCString(pathPtr);
+        open: new WebAssembly.Suspending((pathPtr, flags, mode) => {
+          const path = readCString(pathPtr).replace(/^(?:\.\/)+/, "");
+          console.log("path: ", path);
 
           let file = files.get(path);
-          if (!file) {
-            setInt(exports.errno.value, 2); // ENOENT
-            return -1;
-          }
+          if (file)
+            return __open(file, flags, mode);
 
-          let fd = nextFd++;
-          fds.set(fd, {
-            ptr: file.ptr,
-            end: file.len,
-            cursor: 0,
-            data: file.data
-          })
+          return (async () => {
+            try {
+              const res = await preloadFile(path);
+              console.log(`loaded ${path}, ${res.data.length} bytes length`);
 
-          return fd;
-        },
+              const file = __mmap(path, res.data);
+              console.log(`${path} mapped`)
+              return __open(file, flags, mode);
+
+            } catch (error) {
+              console.error("[open] async error:", error);
+              setInt(exports.errno.value, 2); // ENOENT
+              return -1;
+            }
+          })();
+        }),
         close: (fd) => {
           console.info("close", fd);
 
@@ -352,9 +536,7 @@
         dup2: (x) => { console.error(" *** dup2"); return 0; },
         tcgetattr: (x) => { console.error(" *** tcgetattr"); return 0; },
         nanosleep: (x) => { console.error(" *** nanosleep"); return 0; },
-        dlopen: (x) => { console.error(" *** dlopen"); return 0; },
         dlclose: (x) => { console.error(" *** dlclose"); return 0; },
-        dlsym: (x) => { console.error(" *** dlsym"); return 0; },
         dlerror: (x) => { console.error(" *** dlerror"); return 0; },
         time: (x) => { console.error(" *** time"); return 0; },
         localtime: (x) => { console.error(" *** localtime"); return 0; },
@@ -374,7 +556,64 @@
 
         console_log: (x) => {
           console.log(readCString(x));
-        }
+        },
+
+        // ----------------------------
+        dlopen: (path, flags) => {
+          console.error(` *** dlopen(${path}${path ? ': "' + readCString(path) + '"' : ''}, ${flags})`);
+          if (path == 0)
+            return -1;
+          path = readCString(path)
+          if (path == "test.so")
+            return 1;
+        },
+        dlsym: (handle, symbol) => {
+          console.error(` *** dlsym(${handle}, ${readCString(symbol)}`);
+          symbol = readCString(symbol);
+
+          if (handle == -1) {
+            const fn = exports[symbol];
+            console.log("HANDLE -1, fn: ", fn)
+            console.log(exports.__indirect_function_table)
+            if (typeof fn === "function") {
+              const idx = findTableIndex(exports.__indirect_function_table, fn);
+              if (idx !== 0) {
+                console.log("IDX: ", idx);
+                return idx;
+              }
+              let index = registerFunction(exports.__indirect_function_table, fn);
+              console.log("new index: ", index)
+              return index; // no function found
+            }
+            console.log("fail")
+            return 0;
+          }
+
+          // get table from handle
+          if (handle == 1) {
+            if (symbol == "my_hook") {
+              const jsFn = (a, b) => {
+                console.error(`my_hook called with ${a}, ${b}`);
+                return a + b;
+              };
+              const wrapped = jsToWasmFunc(jsFn, [I32, I32], [I32]);
+              console.log("wrapped: ", wrapped);
+              const ptr = putInTable(exports.__indirect_function_table, wrapped);
+              console.log("ptr: ", ptr);
+              return ptr;
+            }
+          }
+          // if (symbol === "my_hook") {
+          //     const jsFn = (a, b) => {
+          //       console.error(`my_hook called with ${a}, ${b}`);
+          //       return a + b;
+          //     };
+          //     return registerCallback(jsFn);
+          //   }
+
+          return 0;
+        },
+
       }
     }
   };

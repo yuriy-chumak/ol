@@ -3,7 +3,8 @@
 typedef __SIZE_TYPE__ size_t;
 typedef __PTRDIFF_TYPE__ ssize_t;
 
-#include <malloc.h>
+// ...
+typedef __WCHAR_TYPE__ wchar_t;
 
 // .......
 extern int mkstemp(...);
@@ -53,10 +54,6 @@ struct timespec {
 	long			tv_nsec;	/* nanoseconds */
 };
 extern int nanosleep(...);
-extern int dlopen(...);
-extern int dlclose(...);
-extern int dlsym(...);
-extern int dlerror(...);
 typedef int time_t;
 extern int time(...);
 extern struct tm* localtime(...);

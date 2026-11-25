@@ -1,0 +1,140 @@
+<!doctype html>
+<!-- comment -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm/css/xterm.css">
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm/lib/xterm.js"></script>
+</head>
+<body style="background-color: gray">
+  <!-- terminal emulator -->
+  Terminal Output:
+  <div id="term"></div>
+  <script>
+    const term = new Terminal({
+      convertEol: true,
+      scrollback: 32000,
+      cols: 99
+    });
+    term.open(document.getElementById("term"));
+    window.wasmPrint = (strOrUint8) => term.write(strOrUint8);
+    // window.wasmPrint = (strOrUint8) => { // DEBUG
+    //   term.write(strOrUint8);
+    //   const logBox = document.getElementById("logs");
+
+    //   const line = `[wasm] ${strOrUint8}`;
+    //   logBox.textContent += line;
+    //   // logBox.scrollTop = logBox.scrollHeight
+    // }
+
+    // refresh on F5
+    term.attachCustomKeyEventHandler((ev) => {
+    if (ev.type === "keydown" && ev.key === "F5") {
+      ev.preventDefault();
+      location.reload();
+      return false;
+    }
+    return true;
+  });
+  </script>
+
+  <!-- ol virtual machine run -->
+  <script src="extensions/crt.js"></script>
+  <script>
+
+    (async () => {
+      let repl = await preloadFile("repl");
+
+      runtime = new Cruntime();
+      WebAssembly.instantiateStreaming(fetch("./olvm.wasm", { cache: 'reload' }), runtime)
+        .then(({ instance }) => {
+          runtime.bind(instance);
+          runtime.mmap(repl.name, repl.data);
+
+          console.log("__indirect_function_table", instance.exports.__indirect_function_table);
+
+          let result = runtime.main("olvm.wasm", "repl", "--no-interactive", "--home=libraries", "test.scm");
+
+          console.log("execution result:", result);
+        })
+        .catch(console.error);
+    })();
+  </script>
+
+  <!-- debug log -->
+  Debug Log: <button type="button" onclick="copyLogs()">Скопироват лог</button>
+  <div id="logs" style="white-space: pre-wrap; font-family: monospace; background-color: darkgray; max-height: 15lh; overflow-y: auto;"></div>
+  <script>
+    (function () {
+      const logBox = document.getElementById("logs");
+
+      function formatArg(arg) {
+        if (typeof arg === "string") return arg;
+        if (arg instanceof Error) return arg.stack || arg.message;
+        try {
+          return JSON.stringify(arg);
+        } catch (error) {
+          return String(arg);
+        }
+      }
+
+      function appendLog(level, args) {
+        const line = `[${level}] ${Array.from(args, formatArg).join(" ")}\n`;
+        logBox.textContent += line;
+        logBox.scrollTop = logBox.scrollHeight
+      }
+
+      for (const method of ["log", "warn", "error", "info"]) {
+        const old = console[method].bind(console);
+        console[method] = function (...args) {
+          old(...args);
+          appendLog(method, args);
+        };
+      }
+    })();
+
+    function copyLogs() {
+      const el = document.getElementById('logs');
+      const range = document.createRange();
+      range.selectNodeContents(el);
+
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(el.innerText);
+      } else {
+        document.execCommand('copy');
+      }
+    }
+  </script>
+
+  <!-- auto reload -->
+  <script>
+    (() => {
+      const INTERVAL = 1000;
+      const wl = [location.href, "extensions/crt.js", "./eval", "olvm.wasm"];
+      const state = new Map();
+
+      setInterval(async () => {
+        for (const url of wl) {
+          try {
+            const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+            const tag = res.headers.get('ETag') || res.headers.get('Last-Modified');
+            if (!tag) continue;
+
+            const prev = state.get(url);
+            if (prev && prev !== tag) {
+              location.reload();
+              return;
+            }
+            state.set(url, tag);
+          } catch {}
+        }
+      }, INTERVAL);
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,10 +1,17 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
+
+void *malloc(size_t n_);
+void free(void *p);
+void *realloc(void *p, size_t n);
+
+// ----------------------------------------------------------------------------
+#ifdef __OLVM_NAME__
+
 #include <string.h>
 #include <assert.h>
 
-// --------------------------------------------------------------------------------------------------
 // Заголовок блока. Младший бит size = флаг занятости (1 = занят, 0 = свободен).
 #define ALIGN8(x) (((x) + 7u) & ~7u)
 #define PAGE_SIZE 65536
@@ -173,3 +180,4 @@ void *realloc(void *p, size_t n) {
     return q;
 }
 // --------------------------------------------------------------------------------------------------
+#endif

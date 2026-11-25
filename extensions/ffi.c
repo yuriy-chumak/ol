@@ -63,7 +63,7 @@
 #	include <alloca.h>
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__wasm32__)
 #	include <malloc.h>
 #endif
 

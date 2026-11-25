@@ -1049,34 +1049,15 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 
 #endif
 
-#ifdef __WAJIC__
-#	include <wajic.h>
-#	define typeof __typeof__
-#	define SYSCALL_GETRLIMIT 0
-#	define SYSCALL_GETRUSAGE 0
-
-# ifndef OLVM_NOASYNC
-	#define WA_CORO_IMPLEMENT_NANOSLEEP
-	#include <wajic_coro.h>
-	int FuncCoro(void* data) { return 0; }
-	void emscripten_sleep(unsigned int ms) { WaCoroSleep(ms); }
-# else
-	void emscripten_sleep(unsigned int ms) { }
-# endif
-
-	// TBD.
-	void emscripten_run_script(const char *script) { }
-	int emscripten_run_script_int(const char *script) { return 0; }
-	char *emscripten_run_script_string(const char *script) { return 0; }
-#endif
-
 #ifdef __wasm32__
 #	define SYSCALL_PRCTL 0
 
 #	define HAVE_SOCKETS 0
 #	define HAVE_POLL 0
 #	define HAVE_MEMFD_CREATE 0
+#	ifndef HAVE_DLOPEN
 #	define HAVE_DLOPEN 0
+#	endif
 #endif
 
 #ifdef __ANDROID__
@@ -1304,7 +1285,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 #if defined(__linux__) || defined(__APPLE__)
 #include <alloca.h>
 #endif
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__wasm32__)
 #include <malloc.h>
 #endif
 
