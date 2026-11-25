@@ -115,6 +115,23 @@
     let nextFd = 3;
     const fds = new Map();   // fd -> { data: Uint8Array, ptr: number, end: number, cursor: number }
 
+    // -- math fallback functions -----------------------
+    // these math functions are fallback functions that usually should not be called
+    const mathFallbacks = 
+      ["sqrt", "sin", "asin", "cos", "acos", "tan", "atan", "log", "exp", "pow", "floor", "atan2"]
+        .reduce((acc, name) => {
+          acc[name] = (...args) => {
+              console.error(` Math fallback ${name}(${args.join(", ")})`);
+              return Math[name](...args);
+          };
+          acc[name+"f"] = (...args) => {
+              console.error(` Math fallback ${name}f(${args.join(", ")})`);
+              return Math.fround(Math[name](...args));
+          };
+          return acc;
+        }, {});
+
+    // --------------------------------------------------
     // ok
     return {
       bind(instance) {
@@ -351,19 +368,7 @@
         strchr: (x) => { console.error(" *** strchr"); return 0; },
         system: (x) => { console.error(" *** system"); return 0; },
 
-        // these math functions are fallback functions that usually should not be called
-        sqrt: (x) => { console.error(" *** sqrt"); return Math.sqrt(0); },
-        sin: (x) => { console.error(" *** sin"); return 0; },
-        cos: (x) => { console.error(" *** cos"); return 0; },
-        tan: (x) => { console.error(" *** tan"); return 0; },
-        atan: (x) => { console.error(" *** atan"); return 0; },
-        log: (x) => { console.error(" *** log"); return 0; },
-        exp: (x) => { console.error(" *** exp"); return 0; },
-        asin: (x) => { console.error(" *** asin"); return 0; },
-        acos: (x) => { console.error(" *** acos"); return 0; },
-        floor: (x) => { console.error(" *** floor"); return 0; },
-        atan2: (x, y) => { console.error(" *** atan2"); return 0; },
-        pow: (x, y) => { console.error(" *** pow"); return 0; },
+        ...mathFallbacks,
 
         setjmp: (x) => { console.error(" *** setjmp"); return 0; },
 

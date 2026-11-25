@@ -1400,32 +1400,20 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 // --------------------------------------------------------------------------
 //	https://gcc.gnu.org/wiki/FloatingPointMath
 #ifdef OLVM_BUILTIN_FMATH
+#	define fsqrt __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), sqrt, sqrtf)
+#	define fsin  __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), sin,  sinf)
+#	define fasin __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), asin, asinf)
+#	define fcos  __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), cos,  cosf)
+#	define facos __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), acos, acosf)
+#	define ftan  __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), tan,  tanf)
+#	define fatan __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), atan, atanf)
+#	define flog  __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), log,  logf)
+#	define fexp  __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), exp,  expf)
+#	define fpow  __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), pow,  powf)
 
-/// __GCC_IEC_559 > 0 if float and double supported (only GCC)
-#if 0 // todo: __GCC_IEC_559 > 0 && __x86_64__
-// #elif __GCC_IEC_559 > 0 && __i386__
-// #elif __GCC_IEC_559 > 0 && __aarch64__
-// #elif __GCC_IEC_559 > 0 && __arm__
-// # ifndef __ARM_PCS_VFP
-// # else
-// # endif
-// #elif __GCC_IEC_559 > 0 && __mips__
-#else // __CLANG, __TINYC__, __wasm32__, ...
-#	define fsqrt sqrt
-#	define fsin sin
-#	define fcos cos
-#	define ftan tan
-#	define fatan atan
-#	define flog log
-#	define fexp exp
-#	define fasin asin
-#	define facos acos
-#	define ffloor floor
-// #	define __builtin_atan2 atan2
-// #	define __builtin_pow   pow
+#	define ffloor __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), floor, floorf)
+#	define fatan2 __builtin_choose_expr(__builtin_types_compatible_p(inexact_t, double), atan2, atan2f)
 #endif
-#endif//OLVM_BUILTIN_FMATH
-// -----------------------
 
 // --------------------------------------------------------------------------
 // memfd_create:
@@ -3162,7 +3150,7 @@ mainloop:;
 		  FMUL  = 0xC9,
 		  FDIV  = 0xF9,
 		  FATAN2= FATAN,
-		  FLOG2 = 0xF1,
+		  FLOGB = 0xF1,
 		  FEXPT = 0x81,
 
 	// vectors, trees
@@ -5871,13 +5859,13 @@ loop:;
 			break;
 	#if OLVM_BUILTIN_FMATH
 		case FATAN2: // fatan2
-			*inexact = atan2(a, b);
+			*inexact = fatan2(a, b);
 			break;
-		case FLOG2: // flog2
+		case FLOGB: // flog of base
 			*inexact = flog(a) / flog(b);
 			break;
 		case FEXPT: // fexpt
-			*inexact = pow(a, b);
+			*inexact = fpow(a, b);
 			break;
 	#endif
 		default:

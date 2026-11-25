@@ -101,17 +101,6 @@ extern int setenv(...);
 extern int getenv(...);
 extern int strchr(...);
 extern int system(...);
-extern float sin(float);
-extern float cos(float);
-extern float tan(float);
-extern float atan(float);
-extern float log(float);
-extern float exp(float);
-extern float asin(float);
-extern float acos(float);
-extern float floor(float);
-extern float atan2(float, float);
-extern float pow(float, float);
 #define	EILSEQ		84	/* Illegal byte sequence */
 #define alloca __builtin_alloca
 extern int setjmp(...);
