@@ -2,6 +2,7 @@
 
 void* wasm_memmove(void *dest, void* src, size_t n)
 {
+	D("wasm_memmove(%p, %p, %d)", dest, src, n);
 	unsigned char *d = (unsigned char *)dest;
 	unsigned char *s = (unsigned char *)src;
 	if (d < s)
@@ -27,113 +28,6 @@ void* wasm_memcpy(void *dest, const void *src, size_t n)
 	return dest;
 }
 #define memcpy wasm_memcpy
-
-
-// --------------------------------------------------------------------------------------------------
-// Заголовок блока. Младший бит size = флаг занятости (1 = занят, 0 = свободен).
-#define ALIGN8(x) (((x) + 7u) & ~7u)
-#define PAGE_SIZE 65536
-#define MIN_BLOCK 16
-
-extern unsigned char __heap_base;
-extern size_t __wasm_grow(size_t pages);
-
-typedef struct block {
-    uintptr_t size;   /* размер данных, младший бит = занят */
-    uintptr_t next;
-} block_t;
-
-#define HDR           ALIGN8(sizeof(block_t))
-#define SZ(b)         ((b)->size & ~(uintptr_t)1)
-#define USED(b)       ((b)->size & 1)
-#define DATA(b)       ((void *)((uintptr_t)(b) + HDR))
-#define BLK(p)        ((block_t *)((uintptr_t)(p) - HDR))
-#define NEXT(b)       ((block_t *)(b)->next)
-
-static struct {
-    uintptr_t begin;
-    uintptr_t end;
-} heap = { 0 };
-
-void *malloc(size_t n) {
-	// D("\033[32mmalloc(%d)\033[0m", n);
-    if (n == 0) return NULL;
-
-    if (heap.begin == 0) {
-        heap.begin = ALIGN8((uintptr_t)&__heap_base);
-        heap.end = __wasm_grow(0);
-        block_t *b = (block_t *)heap.begin;
-        b->size = heap.end - heap.begin - HDR;   /* свободен */
-        b->next = 0;
-    }
-
-    n = ALIGN8(n);
-    if (n < MIN_BLOCK) n = MIN_BLOCK;
-
-    for (int attempt = 0; attempt < 2; attempt++) {
-        block_t *last = NULL;
-        for (block_t *b = (block_t *)heap.begin; b; last = b, b = NEXT(b)) {
-            /* ленивое слияние свободных соседей */
-            while (!USED(b) && NEXT(b) && !USED(NEXT(b))) {
-                block_t *nx = NEXT(b);
-                b->size = SZ(b) + HDR + SZ(nx);
-                b->next = nx->next;
-            }
-            if (USED(b) || SZ(b) < n) continue;
-
-            if (SZ(b) >= n + HDR + MIN_BLOCK) {   /* делим */
-                block_t *rest = (block_t *)((uintptr_t)b + HDR + n);
-                rest->size = SZ(b) - n - HDR;
-                rest->next = b->next;
-                b->size = n | 1;
-                b->next = (uintptr_t)rest;
-            } else {
-                b->size |= 1;
-            }
-            return DATA(b);
-        }
-
-        /* места нет — растим кучу и добавляем свободный блок в конец */
-        size_t need = n + HDR;
-        size_t pages = (need + PAGE_SIZE - 1) / PAGE_SIZE;
-        size_t old_end = heap.end;
-        size_t new_end = __wasm_grow(pages);
-        if (new_end == 0 || new_end < old_end + need) return NULL;
-        heap.end = new_end;
-
-        block_t *b = (block_t *)old_end;
-        b->size = new_end - old_end - HDR;
-        b->next = 0;
-        if (last) last->next = (uintptr_t)b;
-    }
-    return NULL;
-}
-
-void free(void *p) {
-	// D("\033[32mfree(%p)\033[0m", p);
-    if (!p) return;
-    block_t *b = BLK(p);
-    if ((uintptr_t)b < heap.begin || (uintptr_t)b >= heap.end) return;
-    b->size &= ~(uintptr_t)1;
-}
-
-void *realloc(void *p, size_t n) {
-	// D("\033[31mrealloc(%p, %d)\033[0m", p, n);
-    if (!p) return malloc(n);
-    if (n == 0) { free(p); return NULL; }
-
-    block_t *b = BLK(p);
-    size_t old = SZ(b);
-    n = ALIGN8(n);
-    if (old >= n) return p;
-
-    void *q = malloc(n);
-    if (!q) return NULL;
-    memcpy(q, p, old);
-    free(p);
-    return q;
-}
-// --------------------------------------------------------------------------------------------------
 
 
 size_t strlen(char *str)

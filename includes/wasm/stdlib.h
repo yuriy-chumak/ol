@@ -3,8 +3,9 @@
 typedef __SIZE_TYPE__ size_t;
 typedef __PTRDIFF_TYPE__ ssize_t;
 
+#include <malloc.h>
+
 // .......
-extern int assert(...);
 extern int mkstemp(...);
 extern int unlink(...);
 typedef __INT32_TYPE__ off_t; // <sys/types.h>
@@ -115,5 +116,6 @@ extern float pow(float, float);
 #define	EILSEQ		84	/* Illegal byte sequence */
 #define alloca __builtin_alloca
 extern int setjmp(...);
+extern void abort();
 
 extern void console_log(char* str);

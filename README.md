@@ -579,6 +579,10 @@ EMBEDDING OL
 Please refer to the [embedding sample README](https://github.com/yuriy-chumak/ol/blob/master/examples/pacman/README.md).
 
 
+WEB ASSEMBLY
+------------
+Toolchain: https://gcc.gnu.org/wiki/WebAssemblyBackend
+
 DOCUMENTATION
 -------------
 

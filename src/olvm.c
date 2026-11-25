@@ -1112,6 +1112,7 @@ __attribute__((used)) const char copyright[] = "@(#)(c) 2014-2026 Yuriy Chumak";
 #	define HAVE_SOCKETS 0
 #	define HAVE_POLL 0
 #	define HAVE_MEMFD_CREATE 0
+#	define HAVE_DLOPEN 0
 #endif
 
 #ifdef __ANDROID__
@@ -6565,7 +6566,11 @@ OLVM_new(unsigned char* bootstrap)
 	// последнее место зарезервировано для конструктора.
 
 	// это временный объект на стеке, а не в куче. так что ...
+#ifdef __wasm32__
+	word *ptrs = malloc((nobjs + 1) * sizeof(word));
+#else
 	word *ptrs = alloca((nobjs + 1) * sizeof(word));
+#endif
 
 	fp = deserialize(ptrs, nobjs, bootstrap, fp);
 	if (!fp) {
@@ -6586,8 +6591,6 @@ OLVM_new(unsigned char* bootstrap)
 	word* pin = handle->pin;
 	for (ptrdiff_t i = 0; i < CR; i++)
 		pin[i] = IFALSE;
-
-	handle->ffpin = 4; // first four pins are used internally
 #endif
 
 	// регистры виртуальной машины
@@ -6598,8 +6601,9 @@ OLVM_new(unsigned char* bootstrap)
 	reg[3] = IEXIT;  // continuation, just finish job
 	reg[4] = INULL;  // first argument
 
-	handle->trn = 4;
-	handle->mnr = NR;// setup maximal regs amount
+#ifndef OLVM_NOPINS
+	handle->ffpin = 4; // first four pins are used internally
+#endif
 
 	// i/o overrides
 	handle->open = os_open;
@@ -6652,6 +6656,10 @@ OLVM_new(unsigned char* bootstrap)
 		handle->reg[4] = (word) cons (ptrs[nobjs-1], ptrs[nobjs]); // objects
 		handle->arity = 2; // one argument, will be updated by args in OLVM_run
 	}
+
+#ifdef __wasm32__
+	free(ptrs);
+#endif
 
 	// теперь все готово для запуска главного цикла виртуальной машины
 	heap->fp = fp;

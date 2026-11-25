@@ -8,10 +8,10 @@ else
 
 GCC_WASM_ROOT=/opt/gcc-wasm/build/gcc
 tmp/olvm.wat: src/olvm.c $(shell find includes/wasm/ -type f -name '*.h')
-	$(GCC_WASM_ROOT)/xgcc -B$(GCC_WASM_ROOT) -ffreestanding -Iincludes/wasm -O0 \
+	$(GCC_WASM_ROOT)/xgcc -B$(GCC_WASM_ROOT) \
+	   -ffreestanding -Iincludes/wasm -O3 \
 	   -Wno-error=int-conversion -Wno-int-conversion \
-	   -DHAVE_DLOPEN=0 \
-	   -S $(filter %.c,$<) -o $@
+	   -S $< -o $@
 
 tmp/olvm.wat.o: tmp/olvm.wat
 	/opt/wabt/build/wat2wasm --enable-annotations --relocatable $< -o $@
