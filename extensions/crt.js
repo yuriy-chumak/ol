@@ -351,7 +351,8 @@
         strchr: (x) => { console.error(" *** strchr"); return 0; },
         system: (x) => { console.error(" *** system"); return 0; },
 
-        sqrt: (x) => { console.error(" *** sqrt"); return 0; },
+        // these math functions are fallback functions that usually should not be called
+        sqrt: (x) => { console.error(" *** sqrt"); return Math.sqrt(0); },
         sin: (x) => { console.error(" *** sin"); return 0; },
         cos: (x) => { console.error(" *** cos"); return 0; },
         tan: (x) => { console.error(" *** tan"); return 0; },

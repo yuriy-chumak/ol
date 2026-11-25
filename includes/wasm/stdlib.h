@@ -101,7 +101,6 @@ extern int setenv(...);
 extern int getenv(...);
 extern int strchr(...);
 extern int system(...);
-extern float sqrt(float);
 extern float sin(float);
 extern float cos(float);
 extern float tan(float);
