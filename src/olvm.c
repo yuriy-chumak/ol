@@ -625,7 +625,6 @@ word*p = NEW_OBJECT (type, 2);\
 
 #define new_vector1(a1) ({\
 	word data1 = (word) (a1);\
-	/* точка следования */ \
 word*p = new (TVECTOR, 1);\
 	p[1] = data1;\
 	/*return*/ p;\
@@ -633,7 +632,6 @@ word*p = new (TVECTOR, 1);\
 #define new_vector2(a1,a2) ({\
 	word data1 = (word) (a1);\
 	word data2 = (word) (a2);\
-	/* точка следования */ \
 word*p = new (TVECTOR, 2);\
 	p[1] = data1;\
 	p[2] = data2;\
@@ -643,7 +641,6 @@ word*p = new (TVECTOR, 2);\
 	word data1 = (word) (a1);\
 	word data2 = (word) (a2);\
 	word data3 = (word) (a3);\
-	/* точка следования */ \
 word*p = new (TVECTOR, 3);\
 	p[1] = data1;\
 	p[2] = data2;\
@@ -651,79 +648,46 @@ word*p = new (TVECTOR, 3);\
 	/*return*/ p;\
 })
 #define new_vector5(a1,a2,a3,a4,a5) ({\
-	word data1 = (word) (a1);\
-	word data2 = (word) (a2);\
-	word data3 = (word) (a3);\
-	word data4 = (word) (a4);\
+	word data1 = (word) (a1); word data2 = (word) (a2);\
+	word data3 = (word) (a3); word data4 = (word) (a4);\
 	word data5 = (word) (a5);\
-	/* точка следования */ \
 word*p = new (TVECTOR, 5);\
-	p[1] = data1;\
-	p[2] = data2;\
-	p[3] = data3;\
-	p[4] = data4;\
+	p[1] = data1; p[2] = data2;\
+	p[3] = data3; p[4] = data4;\
 	p[5] = data5;\
-	/*return*/ p;\
-})
-#define new_vector9(a1,a2,a3,a4,a5,a6,a7,a8,a9) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	word data3 = (word) a3;\
-	word data4 = (word) a4;\
-	word data5 = (word) a5;\
-	word data6 = (word) a6;\
-	word data7 = (word) a7;\
-	word data8 = (word) a8;\
-	word data9 = (word) a9;\
-	/* точка следования */ \
-word*p = new (TVECTOR, 9);\
-	p[1] = data1;\
-	p[2] = data2;\
-	p[3] = data3;\
-	p[4] = data4;\
-	p[5] = data5;\
-	p[6] = data6;\
-	p[7] = data7;\
-	p[8] = data8;\
-	p[9] = data9;\
-	/*return*/ p;\
-})
-#define new_vector13(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13) ({\
-	word data1 = (word) a1;\
-	word data2 = (word) a2;\
-	word data3 = (word) a3;\
-	word data4 = (word) a4;\
-	word data5 = (word) a5;\
-	word data6 = (word) a6;\
-	word data7 = (word) a7;\
-	word data8 = (word) a8;\
-	word data9 = (word) a9;\
-	word data10 = (word) a10;\
-	word data11 = (word) a11;\
-	word data12 = (word) a12;\
-	word data13 = (word) a13;\
-	/* точка следования */ \
-word*p = new (TVECTOR, 13);\
-	p[1] = data1;\
-	p[2] = data2;\
-	p[3] = data3;\
-	p[4] = data4;\
-	p[5] = data5;\
-	p[6] = data6;\
-	p[7] = data7;\
-	p[8] = data8;\
-	p[9] = data9;\
-	p[10] = data10;\
-	p[11] = data11;\
-	p[12] = data12;\
-	p[13] = data13;\
 	/*return*/ p;\
 })
 
-#define NEW_TUPLE(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME
-#define new_vector(...) NEW_TUPLE(__VA_ARGS__, new_vector13, new_vector12, new_vector11,\
-			new_vector10, new_vector9, new_vector8, new_vector7, new_vector6, new_vector5,\
-			new_vector4, new_vector3, new_vector2, new_vector1, NOTHING)(__VA_ARGS__)
+#define new_vector9(a1,a2,a3,a4,a5,a6,a7,a8,a9) ({\
+	word data1 = (word) a1; word data2 = (word) a2; word data3 = (word) a3;\
+	word data4 = (word) a4; word data5 = (word) a5; word data6 = (word) a6;\
+	word data7 = (word) a7; word data8 = (word) a8; word data9 = (word) a9;\
+word*p = new (TVECTOR, 9);\
+	p[1] = data1; p[2] = data2; p[3] = data3;\
+	p[4] = data4; p[5] = data5; p[6] = data6;\
+	p[7] = data7; p[8] = data8; p[9] = data9;\
+	/*return*/ p;\
+})
+#define new_vectorD(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13) ({\
+	word data1 = (word) a1; word data2 = (word) a2; word data3 = (word) a3;\
+	word data4 = (word) a4; word data5 = (word) a5; word data6 = (word) a6;\
+	word data7 = (word) a7; word data8 = (word) a8; word data9 = (word) a9;\
+	word dataA = (word) a10; word dataB = (word) a11;\
+	word dataC = (word) a12; word dataD = (word) a13;\
+word*p = new (TVECTOR, 13);\
+	p[1] = data1; p[2] = data2; p[3] = data3;\
+	p[4] = data4; p[5] = data5; p[6] = data6;\
+	p[7] = data7; p[8] = data8; p[9] = data9;\
+	p[10] = dataA; p[11] = dataB;\
+	p[12] = dataC; p[13] = dataD;\
+	/*return*/ p;\
+})
+
+#define NEW_VECTOR(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, NAME, ...) NAME
+#define new_vector(...)  NEW_VECTOR(__VA_ARGS__,\
+			new_vectorF, new_vectorF, new_vectorE, new_vectorD, new_vectorC, new_vectorB,\
+			new_vectorA, new_vector9, new_vector8, new_vector7, new_vector6,\
+			new_vector5, new_vector4, new_vector3, new_vector2, new_vector1, NOTHING)(__VA_ARGS__)
 
 
 // -= числа =------------------------
