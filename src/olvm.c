@@ -1440,12 +1440,11 @@ int (*puname)(struct utsname* out) = uname;
 // --------------------------------------------------------------------------
 // yield
 #ifdef __unix__
-# if !defined (__wasm32__) && HAS_CDEFS
-#	include <sys/cdefs.h>
-# endif
-# if !defined (__wasm32__)
-#	include <sched.h> // yield
-# endif
+#	include <sched.h>
+#endif
+
+#ifdef __wasm32__
+#	include <sched.h>
 #endif
 
 #ifdef __APPLE__
@@ -1454,7 +1453,7 @@ int (*puname)(struct utsname* out) = uname;
 
 void yield()
 {
-#if defined(__unix__) || defined(__APPLE__)
+#if defined(__unix__) || defined(__APPLE__) || defined(__wasm32__)
 	sched_yield();
 #endif
 #ifdef _WIN32

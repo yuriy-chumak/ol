@@ -524,6 +524,9 @@ function putInTable(table, wasmFn) {
           throw { exitCode: code | 0 };
         },
 
+        sched_yield: () => new WebAssembly.Suspending(
+          () => new Promise(resolve => setTimeout(resolve, 0))),
+
         signal: (x) => { return 0; },
         modf: (x) => { console.error(" *** modf"); return 0; },
         longjmp: (x) => { console.error(" *** longjmp"); return 0; },
