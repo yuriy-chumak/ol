@@ -3,6 +3,19 @@
   const decoder = new TextDecoder("utf-8");
   const encoder = new TextEncoder();
 
+  window.scriptArgsMap = new Map();
+  let nextScriptId = 1;
+  // dynamic library registrar
+  Object.defineProperty(window, 'registerDynamicLibrary', {
+    get() {
+      const sid = document.currentScript?.dataset.sid;
+      if (!sid) return undefined;
+      const args = window.scriptArgsMap.get(sid);
+      return args.registerDynamicLibrary;
+    },
+    configurable: true
+  });
+
   // # environment tests
   // ## JSPI
   (async () => {
@@ -41,7 +54,7 @@
   })();
 
   // --------------------
-  // external libraries
+  // external libraries (TODO: remove it)
   const test_id = 1;
   const test = {
     "hello": (x) => {
@@ -192,6 +205,24 @@
         }, {});
 
     // -- dynamic libraries -----------------------
+    const dynamicLibraries = new Set();
+    // let nextDLibraryId = 1;
+
+    const dls = {};   // dl -> { }
+    let nextDl = 1;
+    function __dlopen(path) {
+      let library = dynamicLibraries[path];
+      if (library) {
+        let dl = nextDl++;
+        dls[dl] = library;
+        console.log("__dlopen: ", dls[1]);
+        return dl;
+      }
+      return 0;
+    }
+
+
+
     // these math functions are fallback functions that usually should not be called
     function findTableIndex(table, fn) {
       for (let i = 0; i < table.length; i++) {
@@ -203,6 +234,13 @@
       return 0;
     }
     function registerFunction(table, fn) {
+      // если функции нет, можем использовать ее:
+      // for (let i = 0; i < table.length; i++) {
+      //   if (table.get(i) === null) {
+      //     table.set(i, wasmFn);
+      //     return i;
+      //   }
+      // }
       const index = table.length;
       table.grow(1, fn); // или fnTable.grow(1); fnTable.set(index, fn);
       return index;
@@ -280,30 +318,22 @@ const DOUBLE = 0x7c;
 // externref = 0x6f, funcref = 0x70
 
 function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
+  console.log("jsToWasmFunc: ", "paramTypes", paramTypes, "resultTypes", resultTypes)
   const bytes = makeTrampolineWasm(paramTypes, resultTypes);
   const mod = new WebAssembly.Module(bytes);
   const inst = new WebAssembly.Instance(mod, { env: { fn: jsFn } });
   return inst.exports.fn;
 }
 
-// Если таблица уже позволяет рост (--growable-table) или есть свободный слот:
-function putInTable(table, wasmFn) {
-  // если функции нет, можем использовать ее:
-  // for (let i = 0; i < table.length; i++) {
-  //   if (table.get(i) === null) {
-  //     table.set(i, wasmFn);
-  //     return i;
-  //   }
-  // }
-  const idx = table.length;
-  console.log("putInTable: ", table.length);
-  table.grow(1, wasmFn);
-  return idx;
-}
-
 // const wrapped = jsToWasmFunc((a, b) => a + b, [I32, I32], [I32]);
 // const ptr = putInTable(fnTable, wrapped);
 // return ptr;
+
+    function registerDynamicLibrary(name, functions) {
+      console.log(`registerDynamicLibrary(${name}, ${functions})`)
+
+      dynamicLibraries[name] = functions;
+    }
 
 // ?????????????????????????    
 
@@ -381,7 +411,7 @@ function putInTable(table, wasmFn) {
               return __open(file, flags, mode);
 
             } catch (error) {
-              console.error("[open] async error:", error);
+              // console.error("[open] async error:", error);
               setInt(exports.errno.value, 2); // ENOENT
               return -1;
             }
@@ -562,22 +592,49 @@ function putInTable(table, wasmFn) {
         },
 
         // ----------------------------
-        dlopen: (path, flags) => {
+        dlopen: new WebAssembly.Suspending((path, flags) => {
           console.error(` *** dlopen(${path}${path ? ': "' + readCString(path) + '"' : ''}, ${flags})`);
           if (path == 0)
-            return -1;
+            return -1; // "-1" means "main module"
+
           path = readCString(path)
           if (path == "test.so")
             return 1;
-        },
+          return (async () => {
+            // our dynamic module is a "<name>.js"
+            const id = String(nextScriptId++);
+            scriptArgsMap.set(id, { registerDynamicLibrary: registerDynamicLibrary });
+            try {
+              const s = document.createElement('script');
+              s.src = "extensions/wasm/" + path;
+              s.dataset.sid = id;
+              s.async = false;
+
+              await new Promise((resolve, reject) => {
+                s.onload = () => resolve(s);
+                s.onerror = () => reject(new Error('Failed to load ' + path));
+                document.head.appendChild(s);
+              });
+
+              return __dlopen(path);
+
+            } catch (error) {
+              console.error("[dlopen] async error:", error);
+              return 0;
+            } finally {
+              scriptArgsMap.delete(id);
+            }
+          })();
+
+        }),
         dlsym: (handle, symbol) => {
           console.error(` *** dlsym(${handle}, ${readCString(symbol)}`);
           symbol = readCString(symbol);
 
           if (handle == -1) {
-            const fn = exports[symbol];
+            let fn = exports[symbol];
             console.log("HANDLE -1, fn: ", fn)
-            console.log(exports.__indirect_function_table)
+            console.log("exports.__indirect_function_table: ", exports.__indirect_function_table)
             if (typeof fn === "function") {
               const idx = findTableIndex(exports.__indirect_function_table, fn);
               if (idx !== 0) {
@@ -589,34 +646,20 @@ function putInTable(table, wasmFn) {
               return index; // no function found
             }
             console.log("fail")
-            return 0;
+            return 0; // not found
           }
 
-          // get table from handle
-          if (handle == 1) {
-            if (symbol == "my_hook") {
-              const jsFn = (a, b) => {
-                console.error(`my_hook called with ${a}, ${b}`);
-                return a + b;
-              };
-              const wrapped = jsToWasmFunc(jsFn, [I32, I32], [I32]);
-              console.log("wrapped: ", wrapped);
-              const ptr = putInTable(exports.__indirect_function_table, wrapped);
-              console.log("ptr: ", ptr);
-              return ptr;
-            }
-          }
-          // if (symbol === "my_hook") {
-          //     const jsFn = (a, b) => {
-          //       console.error(`my_hook called with ${a}, ${b}`);
-          //       return a + b;
-          //     };
-          //     return registerCallback(jsFn);
-          //   }
+          // 
+          const T = { v: VPTR, i: I32, l: I64, f: FLOAT, d: DOUBLE, '?': I32 };
+          const [sig, fn] = dls[handle][symbol];
+          const [p, r] = sig.split("->").map(s => [...s].map(c => T[c]));
 
-          return 0;
-        },
-
+          const wrapped = jsToWasmFunc(fn, p, r);
+          console.log("wrapped: ", wrapped);
+          const ptr = registerFunction(exports.__indirect_function_table, wrapped);
+          console.log("ptr: ", ptr);
+          return ptr;
+        }
       }
     }
   };
