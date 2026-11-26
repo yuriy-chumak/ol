@@ -6,7 +6,9 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm/css/xterm.css">
   <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm/lib/xterm.js"></script>
 </head>
+
 <body style="background-color: gray">
+  <!-- ------------------------------------------------------------------ -->
   <!-- terminal emulator -->
   Terminal Output:
   <div id="term"></div>
@@ -17,6 +19,7 @@
       cols: 99
     });
     term.open(document.getElementById("term"));
+
     window.wasmPrint = (strOrUint8) => term.write(strOrUint8);
     // window.wasmPrint = (strOrUint8) => { // DEBUG
     //   term.write(strOrUint8);
@@ -38,6 +41,55 @@
   });
   </script>
 
+  <!-- ------------------------------------------------------------------ -->
+  <!-- webgl canvas -->
+  <canvas id="glcanvas" style="position: absolute; visibility: hidden; pointer-events: none;"></canvas>
+  <script>
+    const termEl = document.getElementById('term');
+    const canvasEl = document.getElementById('glcanvas');
+    let canvasShown = false;
+
+    function place() {
+      const rect = termEl.getBoundingClientRect();
+      canvasEl.style.left = rect.left + window.scrollX + 'px';
+      canvasEl.style.top = rect.top + window.scrollY + 'px';
+      canvasEl.style.width = rect.width + 'px';
+      canvasEl.style.height = rect.height + 'px';
+
+      canvasEl.width = Math.round(rect.width);
+      canvasEl.height = Math.round(rect.height);
+      let gl = canvasEl.getContext('webgl');
+      if (gl) gl.viewport(0, 0, canvasEl.width, canvasEl.height);
+    }
+
+    place(); // immediately place
+
+    function toggleGL(show) {
+      canvasShown = show || !canvasShown;
+      if (canvasShown) {
+        place();
+        canvasEl.style.visibility = 'visible';
+        canvasEl.style.pointerEvents = 'auto';
+        termEl.style.visibility = 'hidden';
+      } else {
+        canvasEl.style.visibility = 'hidden';
+        canvasEl.style.pointerEvents = 'none';
+        termEl.style.visibility = 'visible';
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      place();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        toggleGL();
+      }
+    }, true);
+  </script>
+  <!-- ------------------------------------------------------------------ -->
   <!-- ol virtual machine run -->
   <script src="extensions/crt.js"></script>
   <script>
@@ -61,6 +113,7 @@
     })();
   </script>
 
+  <!-- ------------------------------------------------------------------ -->
   <!-- debug log -->
   Debug Log: <button type="button" onclick="copyLogs()">Скопироват лог</button>
   <div id="logs" style="white-space: pre-wrap; font-family: monospace; background-color: darkgray; max-height: 15lh; overflow-y: auto;"></div>
@@ -110,6 +163,7 @@
     }
   </script>
 
+  <!-- ------------------------------------------------------------------ -->
   <!-- auto reload -->
   <script>
     (() => {
