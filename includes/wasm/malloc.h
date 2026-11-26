@@ -52,7 +52,7 @@ static_assert (sizeof(block_t) % 8 == 0, "block_t size must be aligned by 8");
 #define HDR           ALIGN8(sizeof(block_t))
 
 void *malloc(size_t n_) {
-	DG("malloc(%d):", n_);
+	// DG("malloc(%d):", n_);
 	if (n_ == 0) return NULL;
 
 	bool USED(block_t *b) {
@@ -66,9 +66,9 @@ void *malloc(size_t n_) {
 
     if (heap.begin == 0) {
         heap.begin = ALIGN8((uintptr_t)&__heap_base);
-		DY("  malloc setup on %p", heap.begin);
+		// DY("  malloc setup on %p", heap.begin);
         heap.end = __wasm_grow(0);
-		DY("           end is %p (%d bytes in heap)", heap.end, heap.end - heap.begin);
+		// DY("           end is %p (%d bytes in heap)", heap.end, heap.end - heap.begin);
 
         block_t *b = (block_t *)heap.begin;
         b->size = heap.end - heap.begin - sizeof(*b);   // mark all heap as free
@@ -78,32 +78,32 @@ void *malloc(size_t n_) {
     size_t n = ALIGN8(n_);
 
     for (int attempt = 1; attempt <= 2; attempt++) {
-		DY("  attempt %d", attempt);
+		// DY("  attempt %d", attempt);
         block_t *last = NULL;
         for (block_t *b = (block_t *)heap.begin; b; last = b, b = b->next) {
-			DY("    %p(%d) is %s", b, SIZE(b), FREE(b) ? "free" : "used");
+			// DY("    %p(%d) is %s", b, SIZE(b), FREE(b) ? "free" : "used");
             // ленивое слияние свободных соседей
             while (FREE(b) && b->next && FREE(b->next)) {
-				DY("    merging %p(%d) and %p(%d) into %p(%d)",
-					b, SIZE(b),  b->next, SIZE(b->next),  b, SIZE(b) + HDR + SIZE(b->next));
+				// DY("    merging %p(%d) and %p(%d) into %p(%d)",
+				// 	b, SIZE(b),  b->next, SIZE(b->next),  b, SIZE(b) + HDR + SIZE(b->next));
                 block_t *nx = b->next;
                 b->size = SIZE(b) + HDR + SIZE(nx);
                 b->next = nx->next;
             }
             if (USED(b)) {
-				DY("      skip used block");
+				// DY("      skip used block");
 				continue;
 			}
             if (SIZE(b) < n) {
-				DY("      too small, skip");
+				// DY("      too small, skip");
 				continue;
 			}
 
-			DY("      this block is ok");
+			// DY("      this block is ok");
             if (SIZE(b) >= n + HDR) {   /* делим */
                 block_t *nx = (block_t *)((char*)&b->data + n);
-				DY("      split %p(%d) to %p(%d) and %p(%d)",
-					b, SIZE(b), b, n, nx, SIZE(b) - n - HDR);
+				// DY("      split %p(%d) to %p(%d) and %p(%d)",
+				// 	b, SIZE(b), b, n, nx, SIZE(b) - n - HDR);
 
                 nx->size = SIZE(b) - n - HDR;
                 nx->next = b->next;
@@ -112,7 +112,7 @@ void *malloc(size_t n_) {
             } else {
                 b->size |= 1;
             }
-			DG("malloc(%d) -> %p(%d)", n_, &b->data, SIZE(b));
+			// DG("malloc(%d) -> %p(%d)", n_, &b->data, SIZE(b));
 
 			// if (heap->begin < b) ; TODO: ?
 			// 	heap->begin = b;
@@ -120,7 +120,7 @@ void *malloc(size_t n_) {
         }
 
         /* места нет — растим кучу и добавляем свободный блок в конец */
-		DY("    enlarge heap");
+		// DY("    enlarge heap");
         size_t need = n + HDR;
         size_t pages = (need + PAGE_SIZE - 1) / PAGE_SIZE;
         size_t old_end = heap.end;
@@ -134,7 +134,7 @@ void *malloc(size_t n_) {
         block_t *b = (block_t *)old_end;
         b->size = new_end - old_end - HDR;
         b->next = 0;
-		DY("      allocated %p(%d)", b, SIZE(b));
+		// DY("      allocated %p(%d)", b, SIZE(b));
         if (last) last->next = b;
     }
 	DR("malloc(%d) -> NULL", n_);
@@ -144,7 +144,7 @@ void *malloc(size_t n_) {
 #define BLK(p)        ((block_t *)((uintptr_t)(p) - HDR))
 
 void free(void *p) {
-	DR("free(%p)", p);
+	// DG("free(%p)", p);
 	if (!p) return;
 
 	bool USED(block_t *b) {
@@ -163,7 +163,7 @@ void free(void *p) {
 }
 
 void *realloc(void *p, size_t n) {
-	DR("realloc(%p, %d)", p, n);
+	// DY("realloc(%p, %d)", p, n);
     if (!p) return malloc(n);
     if (n == 0) { free(p); return NULL; }
 

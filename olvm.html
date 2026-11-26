@@ -20,6 +20,7 @@
     });
     term.open(document.getElementById("term"));
 
+    window.wasmWrite = (strOrUint8) => term.write(strOrUint8);
     window.wasmPrint = (strOrUint8) => term.write(strOrUint8);
     // window.wasmPrint = (strOrUint8) => { // DEBUG
     //   term.write(strOrUint8);
@@ -146,21 +147,21 @@
       }
     })();
 
-    function copyLogs() {
-      const el = document.getElementById('logs');
-      const range = document.createRange();
-      range.selectNodeContents(el);
+  function copyLogs() {
+    const el = document.getElementById('logs');
+    const range = document.createRange();
+    range.selectNodeContents(el);
 
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
 
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(el.innerText);
-      } else {
-        document.execCommand('copy');
-      }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(el.innerText);
+    } else {
+      document.execCommand('copy');
     }
+  }
   </script>
 
   <!-- ------------------------------------------------------------------ -->
@@ -168,7 +169,7 @@
   <script>
     (() => {
       const INTERVAL = 1000;
-      const wl = [location.href, "extensions/crt.js", "./eval", "olvm.wasm"];
+      const wl = [location.href, "extensions/crt.js", "test.scm", "olvm.wasm"];
       const state = new Map();
 
       setInterval(async () => {

@@ -15,6 +15,14 @@
     },
     configurable: true
   });
+  Object.defineProperty(window, 'wasm', {
+    get() {
+      const sid = document.currentScript?.dataset.sid;
+      if (!sid) return undefined;
+      return window.scriptArgsMap.get(sid);
+    },
+    configurable: true
+  });
 
   // # environment tests
   // ## JSPI
@@ -137,6 +145,7 @@
 
       bytes.set(out, ptr);
       bytes[ptr + out.length] = 0;
+      return ptr;
     }
 
     // stdio
@@ -318,7 +327,6 @@ const DOUBLE = 0x7c;
 // externref = 0x6f, funcref = 0x70
 
 function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
-  console.log("jsToWasmFunc: ", "paramTypes", paramTypes, "resultTypes", resultTypes)
   const bytes = makeTrampolineWasm(paramTypes, resultTypes);
   const mod = new WebAssembly.Module(bytes);
   const inst = new WebAssembly.Instance(mod, { env: { fn: jsFn } });
@@ -351,6 +359,7 @@ function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
       },
       mmap: __mmap,
       main(...args) {
+        // collect arguments into wasm memory
         const { memory, malloc, free, __main_argc_argv } = exports;
         const enc = new TextEncoder();
 
@@ -431,7 +440,7 @@ function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
 
         read: (fd, dstPtr, count) => {
           // todo: handle stdin
-          console.log("read")
+          // console.log("read")
           let file = fds.get(fd);
           if (!file) {
             setInt(exports.errno.value, 2); // ENOENT
@@ -457,28 +466,11 @@ function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
 
           if (fd == 1) {
             const text = new TextDecoder("utf-8").decode(bytes);
-            stdout += text;
-
-            let i;
-            while ((i = stdout.indexOf("\n")) !== -1) {
-              const line = stdout.slice(0, i + 1);
-              stdout = stdout.slice(i + 1);
-              window.wasmPrint(line)
-            }
+            window.wasmWrite(text);
           }
           if (fd === 2) {
             const text = new TextDecoder("utf-8").decode(bytes);
-            stderr += text;
-
-            let i;
-            while ((i = stderr.indexOf("\n")) !== -1) {
-              const line = stderr.slice(0, i + 1);
-              stderr = stderr.slice(i + 1);
-              window.wasmPrint(line); // `\x1b[31m${line}\x1b[0m`
-            }
-            // if (stderr.length > 0) {
-            //   armTimer();
-            // }
+            window.wasmWrite(text);
           } else {
             // todo: write to file
             const text = new TextDecoder("utf-8").decode(bytes);
@@ -554,8 +546,9 @@ function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
           throw { exitCode: code | 0 };
         },
 
-        sched_yield: () => new WebAssembly.Suspending(
-          () => new Promise(resolve => setTimeout(resolve, 0))),
+        sched_yield: new WebAssembly.Suspending(() => {
+          return new Promise(resolve => setTimeout(resolve, 1));
+        }),
 
         signal: (x) => { return 0; },
         modf: (x) => { console.error(" *** modf"); return 0; },
@@ -593,7 +586,7 @@ function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
 
         // ----------------------------
         dlopen: new WebAssembly.Suspending((path, flags) => {
-          console.error(` *** dlopen(${path}${path ? ': "' + readCString(path) + '"' : ''}, ${flags})`);
+          console.info(` *** dlopen(${path}${path ? ': "' + readCString(path) + '"' : ''}, ${flags})`);
           if (path == 0)
             return -1; // "-1" means "main module"
 
@@ -603,7 +596,10 @@ function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
           return (async () => {
             // our dynamic module is a "<name>.js"
             const id = String(nextScriptId++);
-            scriptArgsMap.set(id, { registerDynamicLibrary: registerDynamicLibrary });
+            scriptArgsMap.set(id, {
+              malloc, setCString,
+              registerDynamicLibrary
+            });
             try {
               const s = document.createElement('script');
               s.src = "extensions/wasm/" + path;
@@ -628,36 +624,32 @@ function jsToWasmFunc(jsFn, paramTypes, resultTypes) {
 
         }),
         dlsym: (handle, symbol) => {
-          console.error(` *** dlsym(${handle}, ${readCString(symbol)}`);
+          // console.info(` *** dlsym(${handle}, ${readCString(symbol)}`);
           symbol = readCString(symbol);
 
           if (handle == -1) {
             let fn = exports[symbol];
-            console.log("HANDLE -1, fn: ", fn)
-            console.log("exports.__indirect_function_table: ", exports.__indirect_function_table)
             if (typeof fn === "function") {
               const idx = findTableIndex(exports.__indirect_function_table, fn);
-              if (idx !== 0) {
-                console.log("IDX: ", idx);
+              if (idx !== 0)
                 return idx;
-              }
+
               let index = registerFunction(exports.__indirect_function_table, fn);
-              console.log("new index: ", index)
-              return index; // no function found
+              return index;
             }
-            console.log("fail")
             return 0; // not found
           }
 
           // 
-          const T = { v: VPTR, i: I32, l: I64, f: FLOAT, d: DOUBLE, '?': I32 };
-          const [sig, fn] = dls[handle][symbol];
+          const library = dls[handle]; if (!library) return (console.error(`no library ${handle} is loaded`), 0);
+          const fsig = library[symbol];   if (!fsig) return (console.error(`no function name ${symbol} found`), 0);
+
+          const T = { v: VPTR, s: VPTR, i: I32, l: I64, f: FLOAT, d: DOUBLE, '?': I32 };
+          const [sig, fn] = fsig;
           const [p, r] = sig.split("->").map(s => [...s].map(c => T[c]));
 
           const wrapped = jsToWasmFunc(fn, p, r);
-          console.log("wrapped: ", wrapped);
           const ptr = registerFunction(exports.__indirect_function_table, wrapped);
-          console.log("ptr: ", ptr);
           return ptr;
         }
       }

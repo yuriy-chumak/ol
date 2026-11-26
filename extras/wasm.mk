@@ -8,17 +8,24 @@ else
 #config
 GCC_WASM_ROOT?=/opt/gcc-wasm/build
 
-# rules
-vpath %.c src extensions extensions/crt
-tmp/%.wat: %.c
+# build commands
+define build_wat
 	$(GCC_WASM_ROOT)/gcc/xgcc -B$(GCC_WASM_ROOT)/gcc \
 	   -ffreestanding -Iincludes/wasm -Iincludes -O3 \
 	   -Wno-error=int-conversion -Wno-int-conversion \
 	   -Wno-int-to-pointer-cast \
 	   -DHAVE_DLOPEN=1 \
 	   -S $< -o $@
+endef
+
 tmp/%.wat.o: tmp/%.wat
 	/opt/wabt/build/wat2wasm --enable-annotations --relocatable $< -o $@
+
+# rules
+
+vpath %.c src extensions extensions/crt
+tmp/%.wat: %.c
+	$(call build_wat)
 
 # build intermediate files
 tmp/olvm.wat: src/olvm.c \

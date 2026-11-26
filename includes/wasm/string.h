@@ -3,7 +3,7 @@
 static
 void* wasm_memmove(void *dest, void* src, size_t n)
 {
-	D("wasm_memmove(%p, %p, %d)", dest, src, n);
+	// D("wasm_memmove(%p, %p, %d)", dest, src, n);
 	unsigned char *d = (unsigned char *)dest;
 	unsigned char *s = (unsigned char *)src;
 	if (d < s)

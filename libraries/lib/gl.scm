@@ -74,8 +74,8 @@
 (cond-expand
    (Android (include "lib/gl/Android.lisp"))
    (Linux (include "lib/gl/Linux.lisp"))
-   (Emscripten (include "lib/gl/WebGL.lisp"))
    (Windows (include "lib/gl/Windows.lisp"))
+   (Wasm (include "lib/gl/WebGL.lisp"))
    (else
       (runtime-error "Unsupported platform!!" (uname))))
 
