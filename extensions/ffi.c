@@ -2333,12 +2333,16 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	if ((cdr(B)|C) == INULL) {
 		assert (function && "nullary ffi function must be valid");
 		// likely
+		if (returntype == TVOID) {
+			((void (*)())function)();
+			return ITRUE;
+		}
 		if (returntype != TFLOAT && returntype != TDOUBLE) {
 			got = ((ret_t (*)())function)();
 			fp = heap->fp; // function can call an ol code, so gc() may be called too
 			goto return_result;
 		}
-		else if (returntype == TFLOAT) {
+		if (returntype == TFLOAT) {
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 			*(float*)(((unsigned char*)&got) + sizeof(word) - sizeof(float))
 #else
@@ -2348,7 +2352,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 			fp = heap->fp;
 			goto return_inexact_result;
 		}
-		else if (returntype == TDOUBLE) {
+		if (returntype == TDOUBLE) {
 			*(double*)&got = ((double (*)())function)();
 			fp = heap->fp;
 			goto return_inexact_result;
@@ -2388,7 +2392,7 @@ word* OLVM_ffi(olvm_t* const this, word arguments)
 	//	01 - quad (long long)
 	//	10 - float
 	//	11 - double
-	long atmask = 1; // + старший бит-маркер,
+	unsigned long atmask = 1; // + старший бит-маркер,
 #endif
 
 	size_t words = 144; // default ol function call arguments
